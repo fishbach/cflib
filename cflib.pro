@@ -27,3 +27,7 @@ addSubdir(cflib/util)
 addSubdir(cflib/util/util_test, cflib/util)
 addSubdir(cflib/util/filefinder)
 addSubdir(cflib/util/gitversion)
+
+OTHER_FILES = \
+	README \
+	COPYING \

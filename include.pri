@@ -17,8 +17,11 @@
 
 CFLIB_DIR = $$PWD
 
-# read config if exists
-exists($${CFLIB_DIR}/../config.pri):include($${CFLIB_DIR}/../config.pri)
+# read configs if exists
+exists($${CFLIB_DIR}/config.pri):include($${CFLIB_DIR}/config.pri)
+exists(../../config.pri):include(../../config.pri)
+exists(../config.pri):include(../config.pri)
+exists(config.pri):include(config.pri)
 
 # clean release / debug
 CONFIG(debug, debug|release) {

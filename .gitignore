@@ -7,4 +7,6 @@ build
 build-*
 .DS_Store
 *~
+
+config.pri
 bin
