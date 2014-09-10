@@ -1,0 +1,106 @@
+/* Copyright (C) 2013-2014 Christian Fischbach <cf@cflib.de>
+ *
+ * This file is part of cflib.
+ *
+ * cflib is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * cflib is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with cflib. If not, see <http://www.gnu.org/licenses/>.
+ */
+
+#pragma once
+
+#include <QtCore>
+
+inline QByteArray operator<<(const char * lhs, const QByteArray & rhs) { QByteArray ba(lhs); return ba += rhs; }
+inline QByteArray & operator<<(QByteArray & lhs, const QByteArray & rhs) { return lhs += rhs; }
+inline QByteArray & operator<<(QByteArray & lhs, const char * rhs) { return lhs += rhs; }
+inline QByteArray & operator<<(QByteArray & lhs, char rhs) { return lhs += rhs; }
+
+inline QString & operator<<(QString & lhs, const QString & rhs) { return lhs += rhs; }
+inline QString & operator<<(QString & lhs, const char * rhs) { return lhs += rhs; }
+inline QString & operator<<(QString & lhs, char rhs) { return lhs += rhs; }
+
+namespace cflib { namespace util {
+
+QByteArray dateTimeForHTTP(const QDateTime & dateTime);
+void gzip(QByteArray & data, int compressionLevel = -1);
+
+QByteArray readFile(const QString & path);
+QString readTextfile(const QString & path);
+
+inline QRegExp minimalRE(const QString & re)
+{
+	QRegExp retval(re);
+	retval.setMinimal(true);
+	return retval;
+}
+
+inline QChar decomposedBase(const QChar & chr)
+{
+	if (chr.decompositionTag() != QChar::NoDecomposition) return chr.decomposition()[0];
+	return chr;
+}
+
+inline QString decomposedBase(const QString & str)
+{
+	QString retval = str;
+	for (QString::Iterator it = retval.begin() ; it != retval.end() ; ++it) {
+		QChar & chr = *it;
+		if (chr.decompositionTag() != QChar::NoDecomposition) chr = chr.decomposition()[0];
+	}
+	return retval;
+}
+
+QByteArray encodeQuotedPrintable(const QString & text);
+QByteArray encodeWord(const QString & str, bool strict);
+
+template<typename K, typename V>
+QString intHashToString(const QHash<K, V> & hash)
+{
+	QString rv('[');
+	QHashIterator<K, V> it(hash);
+	bool isFirst = true;
+	while (it.hasNext()) {
+		it.next();
+		if (isFirst) isFirst = false;
+		else rv += ',';
+		rv += QString::number(it.key());
+		rv += ':';
+		rv += it.value().toString();
+	}
+	rv += ']';
+	return rv;
+}
+
+template<typename K, typename V>
+QString intMapToString(const QMap<K, V> & hash)
+{
+	QString rv('[');
+	QMapIterator<K, V> it(hash);
+	bool isFirst = true;
+	while (it.hasNext()) {
+		it.next();
+		if (isFirst) isFirst = false;
+		else rv += ',';
+		rv += QString::number(it.key());
+		rv += ':';
+		rv += it.value().toString();
+	}
+	rv += ']';
+	return rv;
+}
+
+QString flatten(const QString & str);
+
+inline QString & add(QStringList & list) { list << QString(); return list.last(); }
+
+}}	// namespace

@@ -1,0 +1,10 @@
+*.pro.user
+*.o
+Makefile
+.qmake.cache
+.qmake.stash
+build
+build-*
+.DS_Store
+*~
+bin
