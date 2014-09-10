@@ -21,14 +21,14 @@
 int usage()
 {
 	QTextStream(stderr)
-		<< "usage: " << QCoreApplication::applicationName() << " <depend|create> <gitversion.h>" << endl;
+		<< "usage: " << QCoreApplication::applicationName() << " <depend|create> <.git search path> <gitversion.h>" << endl;
 
 	return 1;
 }
 
-QString findGitDir(int & retval)
+QString findGitDir(const QString & searchPath, int & retval)
 {
-	QDir dir;
+	QDir dir(searchPath);
 	QFileInfo fi = dir.absoluteFilePath(".git");
 	while (!fi.isDir()) {
 		if (!dir.cdUp()) {
@@ -46,10 +46,10 @@ QString findGitDir(int & retval)
 	return fi.canonicalFilePath();
 }
 
-int createHeader(const QString & filename)
+int createHeader(const QString & searchPath, const QString & filename)
 {
 	int retval;
-	QString gitDir = findGitDir(retval);
+	QString gitDir = findGitDir(searchPath, retval);
 	if (gitDir.isNull()) return retval;
 
 	// fetch tail
@@ -64,7 +64,7 @@ int createHeader(const QString & filename)
 
 	// extract hash
 	QString hash;
-	QRegExp re("\n\\s*[0-9a-f]{40} ([0-9a-f]{40}) ");
+	QRegExp re("(?:^|\n)\\s*[0-9a-f]{40} ([0-9a-f]{40}) ");
 	int pos = re.indexIn(tail);
 	while (pos != -1) {
 		hash = re.cap(1);
@@ -84,10 +84,10 @@ int createHeader(const QString & filename)
 	return 0;
 }
 
-int depend()
+int depend(const QString & searchPath)
 {
 	int retval;
-	QString gitDir = findGitDir(retval);
+	QString gitDir = findGitDir(searchPath, retval);
 	if (gitDir.isNull()) return retval;
 
 	QTextStream(stdout) << gitDir << "/logs/HEAD" << endl;
@@ -100,8 +100,8 @@ int main(int argc, char *argv[])
 	QStringList args = app.arguments();
 	args.removeFirst();
 
-	if (args.size() == 1 && args[0] == "depend") return depend();
-	if (args.size() == 2 && args[0] == "create") return createHeader(args[1]);
+	if (args.size() == 2 && args[0] == "depend") return depend(args[1]);
+	if (args.size() == 3 && args[0] == "create") return createHeader(args[1], args[2]);
 
 	return usage();
 }

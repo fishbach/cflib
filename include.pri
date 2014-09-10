@@ -55,18 +55,21 @@ defineTest(setBuildPaths) {
 	RCC_DIR      = build/gen/rcc
 	export(RCC_DIR)
 
-	# find fitting pch
-	modules = ""
-	for(mod, QT) {
-		modules = $${modules}_$${mod}
+	!no_pch {
+		# find fitting pch
+		modules = ""
+		for(mod, QT) {
+			modules = $${modules}_$${mod}
+		}
+		modules = $$replace(modules, ^_, )
+		PRECOMPILED_HEADER = $${CFLIB_DIR}/pch/$${modules}.h
+		export(PRECOMPILED_HEADER)
+		HEADERS += $$PRECOMPILED_HEADER
+		export(HEADERS)
+		CONFIG *= precompile_header
 	}
-	modules = $$replace(modules, ^_, )
-	PRECOMPILED_HEADER = $${CFLIB_DIR}/pch/$${modules}.h
-	export(PRECOMPILED_HEADER)
-	HEADERS += $$PRECOMPILED_HEADER
-	export(HEADERS)
 
-	CONFIG *= precompile_header stl_off exceptions_off
+	CONFIG *= stl_off exceptions_off
 	export(CONFIG)
 
 	equals(QMAKE_CXX, "clang++") {
@@ -212,18 +215,18 @@ defineTest(serializeGen) {
 # createGitVersionHeader(header.h)
 defineTest(createGitVersionHeader) {
 	win32 {
-		GIT_DIR = $$system($${CFLIB_DIR}/bin/gitversion.exe depend)
+		GIT_DIR = $$system($${CFLIB_DIR}/bin/gitversion.exe depend $$_PRO_FILE_PWD_)
 	} else {
-		GIT_DIR = $$system($${CFLIB_DIR}/bin/gitversion depend)
+		GIT_DIR = $$system($${CFLIB_DIR}/bin/gitversion depend $$_PRO_FILE_PWD_)
 	}
 	export(GIT_DIR)
 
 	gitVersion.input = GIT_DIR
 	win32 {
-		gitVersion.commands = $${CFLIB_DIR}/bin/gitversion.exe create $$1
+		gitVersion.commands = $${CFLIB_DIR}/bin/gitversion.exe create $$_PRO_FILE_PWD_ $$1
 		gitVersion.depends  = $${CFLIB_DIR}/bin/gitversion.exe
 	} else {
-		gitVersion.commands = $${CFLIB_DIR}/bin/gitversion create $$1
+		gitVersion.commands = $${CFLIB_DIR}/bin/gitversion create $$_PRO_FILE_PWD_ $$1
 		gitVersion.depends  = $${CFLIB_DIR}/bin/gitversion
 	}
 	gitVersion.output = $$1
