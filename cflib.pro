@@ -31,3 +31,5 @@ addSubdir(cflib/util/gitversion)
 OTHER_FILES = \
 	README \
 	COPYING \
+
+addOtherFiles(js)
