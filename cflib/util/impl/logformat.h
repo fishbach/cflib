@@ -87,6 +87,7 @@ inline void logFormat(QByteArray & dest, double val) { dest += QByteArray::numbe
 inline void logFormat(QByteArray & dest, char * str)            { dest += str; }
 inline void logFormat(QByteArray & dest, const char * str)      { dest += str; }
 inline void logFormat(QByteArray & dest, const QByteArray & ba) { dest += ba; }
+inline void logFormat(QByteArray & dest, const QChar & c)       { dest += c.toLatin1(); }
 inline void logFormat(QByteArray & dest, const QString & str)   { dest += str.toLatin1(); }
 
 // Qt classes

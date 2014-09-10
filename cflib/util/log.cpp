@@ -230,9 +230,6 @@ void Log::qtMessageHandler(QtMsgType type, const QMessageLogContext & context, c
 {
 	LogCategory cat = 0;
 	switch (type) {
-#if (QT_VERSION >= QT_VERSION_CHECK(5, 3, 0))
-		case QtTraceMsg:    cat = LogCat::Trace; break;
-#endif
 		case QtDebugMsg:    cat = LogCat::Debug; break;
 		case QtWarningMsg:  cat = LogCat::Warn;  break;
 		case QtCriticalMsg:

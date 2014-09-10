@@ -99,12 +99,17 @@ defineTest(addSubdir) {
 }
 
 # lib()
+# lib(path)
 defineTest(lib) {
+	defined(1, var) {
+		DESTDIR = $$1
+	} else {
+		DESTDIR = $${CFLIB_DIR}/lib
+	}
 	TEMPLATE = lib
 	export(TEMPLATE)
 	CONFIG *= staticlib
 	export(CONFIG)
-	DESTDIR = ../../lib
 	export(DESTDIR)
 	for(header, HEADERS) {
 		source = $$replace(header, \\.h, .cpp)
