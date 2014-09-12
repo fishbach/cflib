@@ -32,7 +32,9 @@ public:
 	static const Config & instance() { return *instance_; }
 
 public serialized:
+	bool isProduction;
 	bool emailsEnabled;
+	QString baseURL;
 
 protected:
 	virtual void init(const QMap<QString, QString> &) {}
