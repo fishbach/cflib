@@ -22,6 +22,7 @@ QT = core
 TARGET = cflib_dao
 
 HEADERS = \
+	config.h \
 	version.h \
 
 serializeGen()
