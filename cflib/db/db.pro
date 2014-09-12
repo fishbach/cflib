@@ -23,5 +23,6 @@ TARGET = cflib_db
 
 HEADERS = \
 	db.h \
+	dbconfig.h \
 
 lib()

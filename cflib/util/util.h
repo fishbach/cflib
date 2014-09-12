@@ -103,4 +103,11 @@ QString flatten(const QString & str);
 
 inline QString & add(QStringList & list) { list << QString(); return list.last(); }
 
+inline QDateTime readUTCDateTime(const QString & str)
+{
+	QDateTime rv = QDateTime::fromString(str, "yyyy-MM-dd HH:mm:ss");
+	rv.setTimeSpec(Qt::UTC);
+	return rv;
+}
+
 }}	// namespace
