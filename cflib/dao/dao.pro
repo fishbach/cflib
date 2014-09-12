@@ -15,25 +15,14 @@
 # You should have received a copy of the GNU General Public License
 # along with cflib. If not, see <http://www.gnu.org/licenses/>.
 
-include(../../../include.pri)
+include(../../include.pri)
 
 QT = core
 
-TARGET = serialize_test
+TARGET = cflib_dao
 
 HEADERS = \
-	gentest.h \
-	test.h \
-	test/gentest2.h \
-
-SOURCES = \
-	gen_ber_test.cpp \
-	gen_js_test.cpp \
-	serializeber_test.cpp \
-	serializejs_test.cpp \
-	typeinfo_test.cpp \
-	util_test.cpp \
+	version.h \
 
 serializeGen()
-useLibs(cflib_serialize cflib_util)
-test()
+lib()

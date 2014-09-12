@@ -18,6 +18,7 @@
 include(include.pri)
 
 addSubdir(cflib/crypt)
+addSubdir(cflib/dao)
 addSubdir(cflib/db)
 addSubdir(cflib/http)
 addSubdir(cflib/serialize)
