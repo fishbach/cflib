@@ -57,6 +57,7 @@ public:
 	void sendRedirect(const QByteArray & url) const;
 	void sendReply(const QByteArray & reply, const QByteArray & contentType, bool compression = true) const;
 	void sendText(const QString & reply, const QByteArray & contentType = "text/html", bool compression = true) const;
+	void addHeaderLine(const QByteArray & line) const;
 
 private:
 	void callNextHandler() const;

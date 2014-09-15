@@ -71,6 +71,7 @@ public:
 	impl::RequestParser * parser;
 	QTime watch;
 	bool replySent;
+	QList<QByteArray> sendHeaderLines;
 
 public:
 	QByteArray getRequestField(const QByteArray & key)
@@ -98,6 +99,8 @@ public:
 			cflib::util::gzip(body, 1);
 		}
 
+		QListIterator<QByteArray> it(sendHeaderLines);
+		while (it.hasNext()) header << it.next() << "\r\n";
 		header
 			<< "Content-Length: " << QByteArray::number(body.size()) << "\r\n"
 			<< "\r\n"
@@ -235,6 +238,11 @@ void Request::sendReply(const QByteArray & reply, const QByteArray & contentType
 void Request::sendText(const QString & reply, const QByteArray & contentType, bool compression) const
 {
 	sendReply(reply.toUtf8(), contentType + "; charset=utf-8", compression);
+}
+
+void Request::addHeaderLine(const QByteArray & line) const
+{
+	d->sendHeaderLines << line;
 }
 
 void Request::callNextHandler() const
