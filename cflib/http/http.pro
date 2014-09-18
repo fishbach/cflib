@@ -25,9 +25,11 @@ HEADERS = \
 	apiserver.h \
 	fileserver.h \
 	jsservice.h \
+	logservice.h \
 	server.h \
 	request.h \
 	requesthandler.h \
 	impl/requestparser.h \
 
+serializeGen()
 lib()
