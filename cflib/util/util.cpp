@@ -320,4 +320,13 @@ QString flatten(const QString & str)
 	return rv;
 }
 
+bool validWebInputChars(const QString & str)
+{
+	const char * const NotAllowed = "{}[]<>;\"\\";
+	const char * pos = NotAllowed;
+	char c;
+	while ((c = *(pos++))) if (str.contains(c)) return false;
+	return true;
+}
+
 }}	// namespace

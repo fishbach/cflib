@@ -110,4 +110,6 @@ inline QDateTime readUTCDateTime(const QString & str)
 	return rv;
 }
 
+bool validWebInputChars(const QString & str);
+
 }}	// namespace
