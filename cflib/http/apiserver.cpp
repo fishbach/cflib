@@ -21,6 +21,7 @@
 #include <cflib/crypt/util.h>
 #include <cflib/http/jsservice.h>
 #include <cflib/http/request.h>
+#include <cflib/http/uploadhandler.h>
 #include <cflib/util/log.h>
 #include <cflib/util/util.h>
 
@@ -221,6 +222,11 @@ void ApiServer::registerService(JSService * service)
 	}
 }
 
+void ApiServer::registerUploadHandler(UploadHandler * uploadHandler)
+{
+	uploadHandler_[uploadHandler->getName()] = uploadHandler;
+}
+
 void ApiServer::exportTo(const QString & dest) const
 {
 	QDir().mkpath(dest + "/js/services");
@@ -266,7 +272,9 @@ void ApiServer::handleRequest(const Request & request)
 	else if (path.startsWith("rmi/"))      doRMI(request, path.mid(4));
 	else if (path.startsWith("services/")) showServices(request, path.mid(9));
 	else if (path.startsWith("classes/"))  showClasses(request, path.mid(8));
-	else if (!path.contains('/'))          request.sendRedirect(path.toLatin1() + '/');
+	else if (path.startsWith("upload/"))   handleUpload(request, path.mid(7));
+	else if (!path.contains('/'))          request.sendRedirect("/api/" + path.toLatin1() + '/');
+	else request.sendNotFound();
 }
 
 void ApiServer::showServices(const Request & request, QString path) const
@@ -641,6 +649,13 @@ void ApiServer::exportClass(const ClassInfoEl & cl, const QString & path, const 
 			exportClass(*cl.infos[ns], p + ns, dest);
 		}
 	}
+}
+
+void ApiServer::handleUpload(const Request & request, QString path) const
+{
+	UploadHandler * hdl = uploadHandler_.value(path);
+	if (!hdl) request.sendNotFound();
+	else      hdl->processUploadRequest(request);
 }
 
 }}	// namespace

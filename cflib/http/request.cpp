@@ -33,6 +33,7 @@ public:
 	Shared(int connId, int requestId,
 		const KeyVal & headerFields, const QByteArray & method, const QUrl & url, const QByteArray & body,
 		const QList<RequestHandler *> & handlers,
+		bool passThrough,
 		impl::RequestParser * parser)
 	:
 		ref(1),
@@ -40,8 +41,14 @@ public:
 		headerFields(headerFields), method(method), url(url), body(body),
 		handlers(handlers),
 		parser(parser),
-		replySent(parser == 0)
+		replySent(parser == 0),
+		passThrough(passThrough)
 	{
+		if (headerFields.contains("x-remote-ip")) {
+			remoteIP = QString::fromLatin1(headerFields.value("x-remote-ip"));
+		} else if (parser) {
+			remoteIP = parser->getRemoteIP();
+		}
 		watch.start();
 		id << QByteArray::number(connId) << '-' << QByteArray::number(requestId);
 		logDebug("new request %1", id);
@@ -71,7 +78,9 @@ public:
 	impl::RequestParser * parser;
 	QTime watch;
 	bool replySent;
+	QHostAddress remoteIP;
 	QList<QByteArray> sendHeaderLines;
+	bool passThrough;
 
 public:
 	QByteArray getRequestField(const QByteArray & key)
@@ -130,16 +139,16 @@ public:
 };
 
 Request::Request() :
-	d(new Shared(0, 0, KeyVal(), QByteArray(), QUrl(), QByteArray(), QList<RequestHandler *>(), 0))
+	d(new Shared(0, 0, KeyVal(), QByteArray(), QUrl(), QByteArray(), QList<RequestHandler *>(), false, 0))
 {
 }
 
 Request::Request(int connId, int requestId,
 	const KeyVal & headerFields, const QByteArray & method, const QUrl & url, const QByteArray & body,
-	const QList<RequestHandler *> & handlers,
+	const QList<RequestHandler *> & handlers, bool passThrough,
 	impl::RequestParser * parser)
 :
-	d(new Shared(connId, requestId, headerFields, method, url, body, handlers, parser))
+	d(new Shared(connId, requestId, headerFields, method, url, body, handlers, passThrough, parser))
 {
 }
 
@@ -194,10 +203,7 @@ QByteArray Request::getBody() const
 
 QHostAddress Request::getRemoteIP() const
 {
-	if (d->headerFields.contains("X-Remote-IP"))
-		return QHostAddress(QString::fromLatin1(d->headerFields.value("X-Remote-IP")));
-	else
-		return d->parser ? d->parser->getRemoteIP() : QHostAddress();
+	return d->remoteIP;
 }
 
 void Request::sendNotFound() const
@@ -243,6 +249,22 @@ void Request::sendText(const QString & reply, const QByteArray & contentType, bo
 void Request::addHeaderLine(const QByteArray & line) const
 {
 	d->sendHeaderLines << line;
+}
+
+bool Request::isPassThrough() const
+{
+	return d->passThrough;
+}
+
+void Request::setPassThroughHandler(PassThroughHandler * hdl) const
+{
+	if (d->parser) d->parser->setPassThroughHandler(hdl);
+}
+
+QByteArray Request::readPassThrough(bool & isLast) const
+{
+	if (!d->parser) return QByteArray();
+	return d->parser->readPassThrough(isLast);
 }
 
 void Request::callNextHandler() const

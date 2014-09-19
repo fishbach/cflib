@@ -39,7 +39,9 @@ RequestParser::RequestParser(qintptr sock, const QList<RequestHandler *> & handl
 	contentLength_(-1),
 	requestCount_(0), nextReplyId_(1),
 	attachedRequests_(1),
-	socketClosed_(false)
+	socketClosed_(false),
+	passThrough_(false),
+	passThroughHandler_(0)
 {
 	sock_.setSocketDescriptor(sock);
 	connect(&sock_, SIGNAL(stateChanged(QAbstractSocket::SocketState)),
@@ -88,6 +90,33 @@ void RequestParser::detachRequest()
 	if (--attachedRequests_ == 0) deleteLater();
 }
 
+void RequestParser::setPassThroughHandler(PassThroughHandler * hdl)
+{
+	if (!verifyThreadCall(&RequestParser::setPassThroughHandler, hdl)) return;
+
+	passThroughHandler_ = hdl;
+}
+
+QByteArray RequestParser::readPassThrough(bool & isLast)
+{
+	SyncedThreadCall<QByteArray> stc(this);
+	if (!stc.verify(&RequestParser::readPassThrough, isLast)) return stc.retval();
+
+	const qint64 avail = sock_.bytesAvailable();
+	isLast = avail >= contentLength_;
+	if (!passThrough_ || avail <= 0) return QByteArray();
+	bool hasMore = avail > contentLength_;
+	QByteArray retval = sock_.read(hasMore ? contentLength_ : avail);
+	if (isLast) {
+		contentLength_ = -1;
+		passThrough_ = false;
+		if (hasMore) readyRead();
+	} else {
+		contentLength_ -= avail;
+	}
+	return retval;
+}
+
 void RequestParser::stateChanged(QAbstractSocket::SocketState state)
 {
 	if (state == QAbstractSocket::UnconnectedState) {
@@ -102,6 +131,11 @@ void RequestParser::readyRead()
 	const qint64 avail = sock_.bytesAvailable();
 	if (avail <= 0) return;
 	logCustom(LogCat::Network | LogCat::Trace)("received %1 bytes on connection %2", avail, id_);
+
+	if (passThrough_) {
+		if (passThroughHandler_) passThroughHandler_->morePassThroughData(id_, requestCount_);
+		return;
+	}
 
 	if (contentLength_ == -1) {
 		header_ += sock_.read(avail);
@@ -127,7 +161,12 @@ void RequestParser::readyRead()
 
 		// body ok?
 		const qint64 size = method_ == "GET" ? 0 : contentLength_;
-		if (body_.size() < size) return;
+
+		if (body_.size() < size) {
+			// small requests we hold in memory
+			if (size <= 8192) return;
+			passThrough_ = true;
+		}
 
 		// to much bytes?
 		if (body_.size() > size) {
@@ -139,10 +178,10 @@ void RequestParser::readyRead()
 
 		// notify handlers
 		++attachedRequests_;
-		Request(id_, ++requestCount_, headerFields_, method_, url_, body_, handlers_, this).callNextHandler();
+		Request(id_, ++requestCount_, headerFields_, method_, url_, body_, handlers_, passThrough_, this).callNextHandler();
 
 		// reset for next
-		contentLength_ = -1;
+		contentLength_ = passThrough_ ? (size - body_.size()) : -1;
 		headerFields_.clear();
 		method_.clear();
 		url_.clear();
@@ -166,20 +205,19 @@ bool RequestParser::parseHeader()
 			logWarn("funny line in header: %1", line);
 			return false;
 		}
-		QByteArray key = line.left(pos).trimmed();
+		QByteArray key = line.left(pos).trimmed().toLower();
 		QByteArray value = line.mid(pos + 1).trimmed();
 
 		headerFields_[key] = value;
 
-		QByteArray lKey = key.toLower();
-		if (lKey == "content-length") {
+		if (key == "content-length") {
 			bool ok;
 			contentLength_ = value.toUInt(&ok);
 			if (!ok) {
 				logWarn("could not understand Content-Length: %1", value);
 				return false;
 			}
-		} else if (lKey == "host") {
+		} else if (key == "host") {
 			const int p = value.indexOf(':');
 			if (p != -1) {
 				bool ok;

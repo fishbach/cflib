@@ -26,6 +26,7 @@
 namespace cflib { namespace http {
 
 class JSService;
+class UploadHandler;
 
 class ApiServer : public RequestHandler
 {
@@ -45,6 +46,7 @@ public:
 	~ApiServer();
 
 	void registerService(JSService * service);
+	void registerUploadHandler(UploadHandler * uploadHandler);
 
 	void exportTo(const QString & dest) const;
 
@@ -62,9 +64,11 @@ private:
 	void doRMI(const Request & request, const QString & path);
 	void checkExpire();
 	void exportClass(const ClassInfoEl & cl, const QString & path, const QString & dest) const;
+	void handleUpload(const Request & request, QString path) const;
 
 private:
 	QMap<QString, JSService *> services_;
+	QMap<QString, UploadHandler *> uploadHandler_;
 	ClassInfoEl classInfos_;
 	typedef QPair<uint, QDateTime> ClientIdTimestamp;
 	QMap<QByteArray, ClientIdTimestamp> clientIds_;

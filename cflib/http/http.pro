@@ -29,6 +29,7 @@ HEADERS = \
 	server.h \
 	request.h \
 	requesthandler.h \
+	uploadhandler.h \
 	impl/requestparser.h \
 
 serializeGen()

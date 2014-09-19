@@ -18,8 +18,6 @@
 
 #include "jsservice.h"
 
-#include <cflib/http/request.h>
-
 namespace cflib { namespace http {
 
 JSService::JSService(const QString & threadName) :

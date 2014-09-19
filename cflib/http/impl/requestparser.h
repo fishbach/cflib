@@ -24,6 +24,7 @@
 
 namespace cflib { namespace http {
 
+class PassThroughHandler;
 class RequestHandler;
 
 namespace impl {
@@ -38,6 +39,8 @@ public:
 	void sendReply(int id, const QByteArray & reply);
 
 	void detachRequest();
+	void setPassThroughHandler(PassThroughHandler * hdl);
+	QByteArray readPassThrough(bool & isLast);
 	QHostAddress getRemoteIP() const { return sock_.peerAddress(); }
 
 private slots:
@@ -68,6 +71,8 @@ private:
 
 	int attachedRequests_;
 	bool socketClosed_;
+	bool passThrough_;
+	PassThroughHandler * passThroughHandler_;
 };
 
 }}}	// namespace

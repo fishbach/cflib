@@ -24,8 +24,13 @@
 namespace cflib { namespace http {
 
 class RequestHandler;
-
 namespace impl { class RequestParser; }
+
+class PassThroughHandler
+{
+public:
+	virtual void morePassThroughData(int connId, int requestId) = 0;
+};
 
 class Request
 {
@@ -37,6 +42,7 @@ public:
 	Request(int connId, int requestId,
 		const KeyVal & headerFields, const QByteArray & method, const QUrl & url, const QByteArray & body,
 		const QList<RequestHandler *> & handlers,
+		bool passThrough,
 		impl::RequestParser * parser);
 
 	// implicit sharing
@@ -58,6 +64,10 @@ public:
 	void sendReply(const QByteArray & reply, const QByteArray & contentType, bool compression = true) const;
 	void sendText(const QString & reply, const QByteArray & contentType = "text/html", bool compression = true) const;
 	void addHeaderLine(const QByteArray & line) const;
+
+	bool isPassThrough() const;
+	void setPassThroughHandler(PassThroughHandler * hdl) const;
+	QByteArray readPassThrough(bool & isLast) const;
 
 private:
 	void callNextHandler() const;
