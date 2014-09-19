@@ -20,9 +20,45 @@
 
 namespace cflib { namespace http {
 
-UploadHandler::UploadHandler(const QString & threadName) :
-	util::ThreadVerify(threadName)
+UploadHandler::UploadHandler(const QString & path, const QString & threadName) :
+	util::ThreadVerify(threadName),
+	path_(path)
 {
+}
+
+void UploadHandler::processUploadRequest(const Request & request)
+{
+	if (!verifyThreadCall(&UploadHandler::processUploadRequest, request)) return;
+
+	foreach (const QByteArray & key, request.getHeaderFields().keys()) {
+		QTextStream(stderr) << key << ": " << request.getHeaderFields().value(key) << endl;
+	}
+
+	if (request.isPassThrough()) {
+		bool isLast;
+		request.readPassThrough(isLast);
+		if (!isLast) {
+			requests_[request.getId()] = request;
+			request.setPassThroughHandler(this);
+			return;
+		}
+	}
+	request.sendRedirect(request.getHeaderFields().value("referer"));
+}
+
+void UploadHandler::morePassThroughData(const Request::Id & id)
+{
+	if (!verifyThreadCall(&UploadHandler::morePassThroughData, id)) return;
+
+	if (!requests_.contains(id)) return;
+
+	Request & request = requests_[id];
+	bool isLast;
+	request.readPassThrough(isLast);
+	if (isLast) {
+		request.sendRedirect(request.getHeaderFields().value("referer"));
+		requests_.remove(id);
+	}
 }
 
 }}	// namespace

@@ -24,17 +24,13 @@
 namespace cflib { namespace http {
 
 class RequestHandler;
+class PassThroughHandler;
 namespace impl { class RequestParser; }
-
-class PassThroughHandler
-{
-public:
-	virtual void morePassThroughData(int connId, int requestId) = 0;
-};
 
 class Request
 {
 public:
+	typedef QPair<int, int> Id;
 	typedef QHash<QByteArray, QByteArray> KeyVal;
 
 public:
@@ -50,6 +46,7 @@ public:
 	Request(const Request & other);
 	Request & operator=(const Request & other);
 
+	Id getId() const;
 	bool replySent() const;
 
 	KeyVal getHeaderFields() const;
@@ -76,6 +73,12 @@ private:
 	class Shared;
 	Shared * d;
 	friend class impl::RequestParser;
+};
+
+class PassThroughHandler
+{
+public:
+	virtual void morePassThroughData(const Request::Id & id) = 0;
 };
 
 }}	// namespace

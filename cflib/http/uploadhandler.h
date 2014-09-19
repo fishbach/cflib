@@ -28,15 +28,18 @@ class Request;
 class UploadHandler : public util::ThreadVerify, public PassThroughHandler
 {
 public:
-	UploadHandler(const QString & threadName);
+	UploadHandler(const QString & path, const QString & threadName);
 
-	virtual QString getName() const = 0;
-	virtual void processUploadRequest(const Request & request) = 0;
-	virtual void morePassThroughData(int connId, int requestId) = 0;
+	QString getName() const { return path_; }
+	virtual void processUploadRequest(const Request & request);
+	virtual void morePassThroughData(const Request::Id & id);
 
+protected:
+	virtual void handleData(const Request & request, const QByteArray & data, bool isLast) = 0;
 
-//	request.sendRedirect(request.getHeaderFields().value("referer"));
-
+private:
+	const QString path_;
+	QHash<Request::Id, Request> requests_;
 };
 
 }}	// namespace

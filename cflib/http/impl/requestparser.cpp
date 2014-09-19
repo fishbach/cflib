@@ -133,7 +133,7 @@ void RequestParser::readyRead()
 	logCustom(LogCat::Network | LogCat::Trace)("received %1 bytes on connection %2", avail, id_);
 
 	if (passThrough_) {
-		if (passThroughHandler_) passThroughHandler_->morePassThroughData(id_, requestCount_);
+		if (passThroughHandler_) passThroughHandler_->morePassThroughData(qMakePair(id_, requestCount_));
 		return;
 	}
 

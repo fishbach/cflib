@@ -37,6 +37,7 @@ public:
 		impl::RequestParser * parser)
 	:
 		ref(1),
+		connId(connId),
 		requestId(requestId),
 		headerFields(headerFields), method(method), url(url), body(body),
 		handlers(handlers),
@@ -68,6 +69,7 @@ public:
 	}
 
 	QAtomicInt ref;
+	int connId;
 	int requestId;
 	QByteArray id;
 	KeyVal headerFields;
@@ -174,6 +176,11 @@ Request & Request::operator=(const Request & other)
 {
 	qAtomicAssign(d, other.d);
 	return *this;
+}
+
+Request::Id Request::getId() const
+{
+	return qMakePair(d->connId, d->requestId);
 }
 
 bool Request::replySent() const
