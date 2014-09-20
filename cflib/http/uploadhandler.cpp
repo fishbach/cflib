@@ -18,6 +18,7 @@
 
 #include "uploadhandler.h"
 
+#include <cflib/http/apiserver.h>
 #include <cflib/util/log.h>
 
 USE_LOG(LogCat::Http)
@@ -52,11 +53,8 @@ void UploadHandler::processUploadRequest(const Request & request)
 	rd.boundary = "--" + boundary.mid(pos + 9);
 	rd.buffer = request.getBody();
 	rd.state = 1;
+	rd.clientId = 0;
 	if (request.isPassThrough()) request.setPassThroughHandler(this);
-
-	QTextStream(stdout)
-		<< "boundary: X>" << rd.boundary << "<X" << endl
-		<< "body: X>" << rd.buffer << "<X" << endl;
 
 	parseMoreData(rd);
 }
@@ -95,7 +93,19 @@ void UploadHandler::parseMoreData(UploadHandler::RequestData & rd)
 						}
 						QByteArray key   = line.left(pos).trimmed().toLower();
 						QByteArray value = line.mid(pos + 1).trimmed();
-						QTextStream(stderr) << key << " => " << value << endl;
+						if (key == "content-type") rd.contentType = value;
+						else if (key == "content-disposition") {
+							int pos = value.indexOf("name=\"");
+							if (pos != -1) {
+								int pos2 = value.indexOf('"', pos + 6);
+								if (pos2 != -1) rd.name = value.mid(pos + 6, pos2 - pos - 6);
+							}
+							pos = value.indexOf("filename=\"");
+							if (pos != -1) {
+								int pos2 = value.indexOf('"', pos + 10);
+								if (pos2 != -1) rd.filename = value.mid(pos + 10, pos2 - pos - 10);
+							}
+						}
 					}
 				rd.buffer.remove(0, bodyPos + 4);
 				rd.state = 3;
@@ -105,12 +115,22 @@ void UploadHandler::parseMoreData(UploadHandler::RequestData & rd)
 			// search for end boundary
 			int pos = rd.buffer.indexOf(rd.boundary);
 			if (pos != -1) {
-				QByteArray b = rd.buffer.left(pos - 2);
-				handleData(rd.request, b, isLast);
+				QByteArray data = rd.buffer.left(pos - 2);
+				if (rd.name == "clientId") {
+					rd.clientId = apiServer_->getClientId(data);
+				} else handleData(rd.request.getId(), rd.clientId, rd.name, rd.filename, rd.contentType, data, isLast);
 				rd.buffer.remove(0, pos + rd.boundary.size() + 2);	// \r\n
 				rd.state = 2;
+			} else if (isLast) {
+				logWarn("broken request: last boundary is missing (%1/%2)",
+					rd.request.getId().first, rd.request.getId().second);
+				break;
+			} else if (rd.name == "clientId") {
+				break;	// we wait for more data
 			} else {
-				handleData(rd.request, rd.buffer, isLast);
+				// pass intermediate data on
+				handleData(rd.request.getId(), rd.clientId, rd.name, rd.filename, rd.contentType, rd.buffer, isLast);
+				rd.buffer.clear();
 				break;
 			}
 		}
