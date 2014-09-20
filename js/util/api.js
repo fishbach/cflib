@@ -115,6 +115,8 @@ define([
 		return requestActive;
 	};
 
+	api.getClientId = getClId;
+
 	// ========================================================================
 
 	api.map = function(arIn, func) {

@@ -224,6 +224,7 @@ void ApiServer::registerService(JSService * service)
 
 void ApiServer::registerUploadHandler(UploadHandler * uploadHandler)
 {
+	uploadHandler->setApiServer(this);
 	uploadHandler_[uploadHandler->getName()] = uploadHandler;
 }
 
@@ -654,8 +655,8 @@ void ApiServer::exportClass(const ClassInfoEl & cl, const QString & path, const 
 void ApiServer::handleUpload(const Request & request, QString path) const
 {
 	UploadHandler * hdl = uploadHandler_.value(path);
-	if (!hdl) request.sendNotFound();
-	else      hdl->processUploadRequest(request);
+	if (!hdl || !request.isPOST()) request.sendNotFound();
+	else                           hdl->processUploadRequest(request);
 }
 
 }}	// namespace

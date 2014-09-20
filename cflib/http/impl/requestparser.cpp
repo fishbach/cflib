@@ -205,14 +205,14 @@ bool RequestParser::parseHeader()
 			logWarn("funny line in header: %1", line);
 			return false;
 		}
-		QByteArray key = line.left(pos).trimmed().toLower();
+		QByteArray key   = line.left(pos).trimmed().toLower();
 		QByteArray value = line.mid(pos + 1).trimmed();
 
 		headerFields_[key] = value;
 
 		if (key == "content-length") {
 			bool ok;
-			contentLength_ = value.toUInt(&ok);
+			contentLength_ = value.toULongLong(&ok);
 			if (!ok) {
 				logWarn("could not understand Content-Length: %1", value);
 				return false;
@@ -288,6 +288,11 @@ void RequestParser::writeReply(const QByteArray & reply)
 		sock_.write(reply);
 		logCustom(LogCat::Network | LogCat::Trace)("wrote %1 bytes of request %2 on connection %3",
 			reply.size(), nextReplyId_, id_);
+	}
+	if (passThrough_) {
+		logCustom(LogCat::Network | LogCat::Debug)("Not all bytes from pass through read! Closing connection %1 of request %2",
+			id_, nextReplyId_);
+		sock_.disconnectFromHost();
 	}
 	++nextReplyId_;
 }
