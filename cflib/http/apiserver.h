@@ -50,7 +50,7 @@ public:
 
 	void exportTo(const QString & dest) const;
 
-	uint getClientId(const QByteArray & clIdData) const { return clientIds_[clIdData].first; }
+	uint getClientId(const QByteArray & clIdData);
 
 protected:
 	virtual void handleRequest(const Request & request);

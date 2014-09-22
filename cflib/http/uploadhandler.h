@@ -31,7 +31,7 @@ public:
 	UploadHandler(const QString & path, const QString & threadName);
 
 	QString getName() const { return path_; }
-	void setApiServer(const ApiServer * apiServer) { apiServer_ = apiServer; }
+	void setApiServer(ApiServer * apiServer) { apiServer_ = apiServer; }
 	virtual void processUploadRequest(const Request & request);
 	virtual void morePassThroughData(const Request::Id & id);
 
@@ -58,7 +58,7 @@ private:
 
 private:
 	const QString path_;
-	const ApiServer * apiServer_;
+	ApiServer * apiServer_;
 	QHash<Request::Id, RequestData> requests_;
 };
 

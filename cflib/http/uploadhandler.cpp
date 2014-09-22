@@ -68,6 +68,8 @@ void UploadHandler::morePassThroughData(const Request::Id & id)
 
 void UploadHandler::parseMoreData(UploadHandler::RequestData & rd)
 {
+	logFunctionTrace
+
 	bool isLast = true;
 	if (rd.request.isPassThrough()) {
 		rd.buffer += rd.request.readPassThrough(isLast);
@@ -137,7 +139,8 @@ void UploadHandler::parseMoreData(UploadHandler::RequestData & rd)
 	}
 
 	if (isLast) {
-		rd.request.sendRedirect(rd.request.getHeaderFields().value("referer"));
+		rd.request.sendText("ok");
+//		rd.request.sendRedirect(rd.request.getHeaderFields().value("referer"));
 		requests_.remove(rd.request.getId());
 	}
 }

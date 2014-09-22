@@ -242,6 +242,14 @@ void ApiServer::exportTo(const QString & dest) const
 	exportClass(classInfos_, "", dest);
 }
 
+uint ApiServer::getClientId(const QByteArray & clIdData)
+{
+	SyncedThreadCall<uint> stc(this);
+	if (!stc.verify(&ApiServer::getClientId, clIdData)) return stc.retval();
+
+	return clientIds_[clIdData].first;
+}
+
 void ApiServer::handleRequest(const Request & request)
 {
 	logInfo("request from IP %1: %2", request.getRemoteIP(), request.getUrl());
