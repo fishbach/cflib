@@ -20,6 +20,12 @@
 
 #include <QtCore>
 
+// Threadsafe Fifo
+// Many threads can put simultaneously
+// Only one is allowed to take.
+
+namespace cflib { namespace util {
+
 template<typename P>
 class ThreadFifo
 {
@@ -31,24 +37,24 @@ public:
 		do {
 			o = writer_;
 			w = (o + 1) % max_;
-			if (w == writer_) return false;
+			if (w == reader_) return false;
 		} while (!writer_.testAndSetOrdered(o, w));
-		El & el = buffer_[w];
+		El & el = (El &)buffer_[w];
 		el.data = data;
 		el.filled.storeRelease(1);
 		return true;
 	}
 
 	inline P * take() {
-		const int w = writer_.loadAcquire();
-		if (w == reader_) return 0;
-		El & el = buffer_[w];
+		const int w = reader_;
+		if (w == writer_) return 0;
+		El & el = (El &)buffer_[w];
 		if (el.filled.loadAcquire() == 0) return 0;
 		P * rv = el.data;
 		el.data = 0;
 		el.filled.storeRelease(0);
-		writer_.storeRelease((w + 1) % max_);
-		return el.data;
+		reader_.storeRelease((w + 1) % max_);
+		return rv;
 	}
 
 private:
@@ -57,8 +63,10 @@ private:
 		P * data;
 		El() : filled(false), data(0) {}
 	};
-	QVector<El> buffer_;
+	const QVector<El> buffer_;	// const for performance (no Qt ref counting)
 	const int max_;
 	QAtomicInt reader_;
 	QAtomicInt writer_;
 };
+
+}}	// namespace
