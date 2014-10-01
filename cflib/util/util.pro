@@ -27,6 +27,7 @@ HEADERS = \
 	hex.h \
 	log.h \
 	mailer.h \
+	tcpserver.h \
 	test.h \
 	threadfifo.h \
 	threadverify.h \
