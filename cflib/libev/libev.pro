@@ -15,23 +15,17 @@
 # You should have received a copy of the GNU General Public License
 # along with cflib. If not, see <http://www.gnu.org/licenses/>.
 
-include(include.pri)
+include(../../include.pri)
 
-addSubdir(cflib/crypt)
-addSubdir(cflib/dao, cflib/serialize/ser)
-addSubdir(cflib/db)
-addSubdir(cflib/http, cflib/serialize/ser)
-addSubdir(cflib/libev)
-addSubdir(cflib/serialize)
-addSubdir(cflib/serialize/ser)
-addSubdir(cflib/serialize/serialize_test, cflib/serialize/ser cflib/serialize cflib/util)
-addSubdir(cflib/util)
-addSubdir(cflib/util/util_test, cflib/util)
-addSubdir(cflib/util/filefinder)
-addSubdir(cflib/util/gitversion)
+QT =
+CONFIG += no_pch warn_off
 
-OTHER_FILES = \
-	README \
-	COPYING \
+TARGET = cflib_libev
 
-addOtherFiles(js)
+HEADERS = \
+	libev.h \
+
+SOURCES = \
+	libev.c \
+
+lib()
