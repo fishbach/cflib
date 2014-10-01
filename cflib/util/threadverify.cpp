@@ -24,16 +24,18 @@ USE_LOG(LogCat::Etc)
 
 namespace cflib { namespace util {
 
-ThreadVerify::ThreadVerify(const QString & threadName) :
-	verifyThread_(new impl::ThreadHolder(threadName)),
-	ownerOfVerifyThread_(true)
+ThreadVerify::ThreadVerify(const QString & threadName, bool useLibEV) :
+	verifyThread_(useLibEV ? new impl::ThreadHolderLibEV(threadName) : new impl::ThreadHolder(threadName)),
+	ownerOfVerifyThread_(true),
+	isLibEV_(useLibEV)
 {
 	verifyThread_->start();
 }
 
 ThreadVerify::ThreadVerify(ThreadVerify * other) :
 	verifyThread_(other->verifyThread_),
-	ownerOfVerifyThread_(false)
+	ownerOfVerifyThread_(false),
+	isLibEV_(other->isLibEV_)
 {
 }
 
@@ -55,6 +57,12 @@ void ThreadVerify::stopVerifyThread()
 	}
 }
 
+ev_loop * ThreadVerify::libEVLoop() const
+{
+	if (!isLibEV_) return 0;
+	return ((const impl::ThreadHolderLibEV *)verifyThread_)->loop();
+}
+
 void ThreadVerify::execCall(const impl::Functor * func)
 {
 	if (!verifyThread_->threadObject) {
@@ -69,7 +77,8 @@ void ThreadVerify::shutdownThread()
 	if (!verifyThreadCall(&ThreadVerify::shutdownThread)) return;
 	logFunctionTrace
 	deleteThreadData();
-	verifyThread_->quit();
+	if (!isLibEV_) verifyThread_->quit();
+	else           ((impl::ThreadHolderLibEV *)verifyThread_)->stopLoop();
 }
 
 }}	// namespace

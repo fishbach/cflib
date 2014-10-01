@@ -25,7 +25,7 @@ namespace cflib { namespace util {
 class ThreadVerify
 {
 public:
-	ThreadVerify(const QString & threadName);
+	ThreadVerify(const QString & threadName, bool useLibEV = false);
 	ThreadVerify(ThreadVerify * other);
 	~ThreadVerify();
 
@@ -34,6 +34,7 @@ public:
 
 protected:
 	virtual void deleteThreadData() {}
+	ev_loop * libEVLoop() const;
 
 	// ------------------------------------------------------------------------
 
@@ -187,7 +188,8 @@ private:
 
 private:
 	impl::ThreadHolder * verifyThread_;
-	bool ownerOfVerifyThread_;
+	const bool ownerOfVerifyThread_;
+	const bool isLibEV_;
 };
 
 }}	// namespace

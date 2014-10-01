@@ -18,6 +18,7 @@
 
 #include "threadverifyimpl.h"
 
+#include <cflib/libev/libev.h>
 #include <cflib/util/log.h>
 
 USE_LOG(LogCat::Etc)
@@ -42,15 +43,58 @@ ThreadHolder::ThreadHolder(const QString & threadName) :
 	threadObject->moveToThread(this);
 }
 
+ThreadHolder::ThreadHolder(const QString & threadName, ThreadObject * threadObject) :
+	threadName(threadName), threadObject(threadObject), isActive_(true)
+{
+}
+
 void ThreadHolder::run()
 {
-	logDebug("thread %1 started", threadName);
+	logDebug("thread %1 started with Qt event loop", threadName);
 	exec();
 	isActive_ = false;
 	logDebug("thread %1 events stopped", threadName);
 	delete threadObject;
 	threadObject = 0;
 	logDebug("thread %1 stopped", threadName);
+}
+
+ThreadHolderLibEV::ThreadHolderLibEV(const QString & threadName) :
+	ThreadHolder(threadName, 0),
+	loop_(ev_loop_new(EVFLAG_NOSIGMASK | EVBACKEND_ALL)),
+	wakeupWatcher_(new ev_async)
+{
+	wakeupWatcher_->data = this;
+	ev_async_init(wakeupWatcher_, &ThreadHolderLibEV::wakeup);
+    ev_async_start(loop_, wakeupWatcher_);
+}
+
+ThreadHolderLibEV::~ThreadHolderLibEV()
+{
+	ev_async_stop(loop_, wakeupWatcher_);
+	wakeupWatcher_->data = 0;
+	delete wakeupWatcher_;
+	ev_loop_destroy(loop_);
+}
+
+void ThreadHolderLibEV::stopLoop()
+{
+	ev_break(loop_, EVBREAK_ALL);
+}
+
+void ThreadHolderLibEV::run()
+{
+	logDebug("thread %1 started with libev backend %2", threadName, ev_backend(loop_));
+
+	ev_run(loop_, 0);
+
+	isActive_ = false;
+	logDebug("thread %1 stopped", threadName);
+}
+
+void ThreadHolderLibEV::wakeup(ev_loop *, ev_async * w, int)
+{
+	ThreadHolderLibEV * th = (ThreadHolderLibEV *)w->data;
 }
 
 }}}	// namespace

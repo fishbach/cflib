@@ -18,7 +18,9 @@
 
 #pragma once
 
-#define EV_STANDALONE 1
+#define EV_COMPAT3 0
 #define EV_MULTIPLICITY 1
+#define EV_STANDALONE 1
+#define EV_USE_KQUEUE 1
 
 #include "ev.h"

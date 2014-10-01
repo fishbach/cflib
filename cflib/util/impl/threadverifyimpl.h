@@ -20,6 +20,9 @@
 
 #include <QtCore>
 
+struct ev_async;
+struct ev_loop;
+
 namespace cflib { namespace util { namespace impl {
 
 template<typename T> struct RemoveConstRef            { typedef T Type; };
@@ -263,10 +266,31 @@ public:
 	ThreadObject * threadObject;
 
 protected:
+	ThreadHolder(const QString & threadName, ThreadObject * threadObject);
+    virtual void run();
+
+protected:
+	bool isActive_;
+};
+
+class ThreadHolderLibEV : public ThreadHolder
+{
+public:
+	ThreadHolderLibEV(const QString & threadName);
+	~ThreadHolderLibEV();
+
+	ev_loop * loop() const { return loop_; }
+	void stopLoop();
+
+protected:
     virtual void run();
 
 private:
-	bool isActive_;
+	static void wakeup(ev_loop * loop, ev_async * w, int revents);
+
+private:
+	ev_loop * loop_;
+	ev_async * wakeupWatcher_;
 };
 
 }}}	// namespace
