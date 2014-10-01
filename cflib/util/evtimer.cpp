@@ -20,6 +20,7 @@
 
 #include <cflib/libev/libev.h>
 #include <cflib/util/log.h>
+#include <cflib/util/threadverify.h>
 
 USE_LOG(LogCat::Etc)
 

@@ -23,6 +23,7 @@ TARGET = cflib_util
 
 HEADERS = \
 	evtimer.h \
+	functor.h \
 	hex.h \
 	log.h \
 	mailer.h \

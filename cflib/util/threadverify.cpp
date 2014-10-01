@@ -57,7 +57,7 @@ void ThreadVerify::stopVerifyThread()
 	}
 }
 
-void ThreadVerify::execCall(const impl::Functor * func)
+void ThreadVerify::execCall(const Functor * func)
 {
 	if (!verifyThread_->threadObject) {
 		logWarn("execCall for already terminated thread %1", verifyThread_->threadName);

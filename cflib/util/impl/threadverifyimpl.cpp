@@ -28,7 +28,7 @@ namespace cflib { namespace util { namespace impl {
 bool ThreadObject::event(QEvent * event)
 {
 	if (event->type() == QEvent::User) {
-		const impl::Functor * func = ((ThreadHolderEvent *)event)->func;
+		const Functor * func = ((ThreadHolderEvent *)event)->func;
 		(*func)();
 		delete func;
 		return true;

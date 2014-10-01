@@ -18,7 +18,7 @@
 
 #pragma once
 
-#include <cflib/util/threadverify.h>
+#include <cflib/util/functor.h>
 
 struct ev_loop;
 struct ev_timer;
@@ -31,7 +31,7 @@ public:
 	template<typename C>
 	EVTimer(C * obj, void (C::*method)()) :
 		loop_(0), timer_(0),
-		func_(new impl::Functor0<C>(obj, method))
+		func_(new Functor0<C>(obj, method))
 	{
 		init();
 	}
@@ -47,7 +47,7 @@ private:
 private:
 	ev_loop * loop_;
 	ev_timer * timer_;
-	impl::Functor * func_;
+	Functor * func_;
 };
 
 }}	// namespace
