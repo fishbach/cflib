@@ -19,8 +19,8 @@
 #pragma once
 
 #include <cflib/libev/libev.h>
-#include <cflib/util/functor.h>
-#include <cflib/util/threadverify.h>
+
+#include <QtCore>
 
 namespace cflib { namespace util {
 
@@ -34,11 +34,11 @@ public:
 	bool start(quint16 port, const QByteArray & ip);
 
 protected:
-	virtual void newConnection(int socket) = 0;
+	virtual void newConnection(int socket, const QByteArray & peerIP, quint16 peerPort) = 0;
 
 private:
-	ThreadVerify networkThread_;
-	int listenSock_;
+	class Impl;
+	Impl * impl_;
 };
 
 class TCPConn
@@ -50,7 +50,7 @@ public:
 
 	QByteArray read();
 	void write(const QByteArray & data);
-	void close();
+	void close();	// int shutdown(int socket, int how);
 
 protected:
 	virtual void newBytesAvailable() = 0;

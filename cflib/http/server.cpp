@@ -79,6 +79,7 @@ Server::Server() :
 Server::~Server()
 {
 	impl_->stopVerifyThread();
+	// delete is done by the parent (thread object)
 }
 
 bool Server::start(quint16 port, const QHostAddress & address)

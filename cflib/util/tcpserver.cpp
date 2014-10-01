@@ -19,6 +19,7 @@
 #include "tcpserver.h"
 
 #include <cflib/util/log.h>
+#include <cflib/util/threadverify.h>
 
 #include <arpa/inet.h>
 #include <fcntl.h>
@@ -29,17 +30,6 @@
 USE_LOG(LogCat::Network)
 
 namespace cflib { namespace util {
-
-TCPServer::TCPServer() :
-	networkThread_("Network", true),
-	listenSock_(-1)
-{
-}
-
-TCPServer::~TCPServer()
-{
-	networkThread_.stopVerifyThread();
-}
 
 namespace {
 
@@ -59,63 +49,112 @@ inline bool setNonBlocking(int fd)
 
 }
 
+class TCPServer::Impl : public util::ThreadVerify
+{
+public:
+	Impl(TCPServer & parent) :
+		ThreadVerify("TCPServer", true),
+		parent_(parent),
+		listenSock_(-1)
+	{
+	}
+
+	virtual ~Impl()
+	{
+		stopVerifyThread();
+	}
+
+	bool start(quint16 port, const QByteArray & ip)
+	{
+		SyncedThreadCall<bool> stc(this);
+		if (!stc.verify(&Impl::start, port, ip)) return stc.retval();
+
+		if (listenSock_ >= 0) {
+			logWarn("server already listening");
+			return false;
+		}
+
+		// create socket
+		listenSock_ = socket(AF_INET, SOCK_STREAM, 0);
+		if (listenSock_ < 0) {
+			logWarn("cannot create TCP socket");
+			return false;
+		}
+		if (!setNonBlocking(listenSock_)) return false;
+		{ int on = 1; setsockopt(listenSock_, SOL_SOCKET, SO_REUSEADDR, (void *)&on, sizeof(on)); }
+
+		// bind to address and port
+		struct sockaddr_in servAddr;
+		servAddr.sin_family = AF_INET;
+		if (inet_aton(ip.constData(), &servAddr.sin_addr) == 0) {
+			logWarn("no valid ip address: %1", ip);
+			close(listenSock_);
+			listenSock_ = -1;
+			return false;
+		}
+		servAddr.sin_port = htons(port);
+		if (bind(listenSock_, (struct sockaddr *)&servAddr, sizeof(servAddr)) < 0) {
+			logWarn("cannot bind to %1:%2", ip, port);
+			close(listenSock_);
+			listenSock_ = -1;
+			return false;
+		}
+
+		// start listening
+		if (listen(listenSock_, 1024) < 0) {
+			logWarn("cannot listen on fd %1", listenSock_);
+			close(listenSock_);
+			listenSock_ = -1;
+			return false;
+		}
+
+		// watching for incoming activity
+		ev_io_init(&readWatcher_, Impl::readable, listenSock_, EV_READ);
+		readWatcher_.data = this;
+		ev_io_start(libEVLoop(), &readWatcher_);
+
+		logInfo("listening on %1:%2", ip, port);
+		return true;
+	}
+
+private:
+	static void readable(ev_loop *, ev_io * w, int)
+	{
+		Impl * impl = (Impl *)w->data;
+		forever {
+			struct sockaddr_in cliAddr;
+			socklen_t len = sizeof(cliAddr);
+			int newSock = accept(impl->listenSock_, (struct sockaddr *)&cliAddr, &len);
+			if (newSock < 0) break;
+
+			setNonBlocking(newSock);
+
+			QByteArray peerIP = inet_ntoa(cliAddr.sin_addr);
+			quint16 peerPort = ntohs(cliAddr.sin_port);
+			logDebug("new connection from %1:%2", peerIP, peerPort);
+			impl->parent_.newConnection(newSock, peerIP, peerPort);
+		}
+	}
+
+private:
+	TCPServer & parent_;
+	int listenSock_;
+	ev_io readWatcher_;
+};
+
+TCPServer::TCPServer() :
+	impl_(new Impl(*this))
+{
+}
+
+TCPServer::~TCPServer()
+{
+	delete impl_;
+}
+
 bool TCPServer::start(quint16 port, const QByteArray & ip)
 {
-	// create socket
-	listenSock_ = ::socket(AF_INET, SOCK_STREAM, 0);
-	if (listenSock_ < 0) {
-		logWarn("cannot create TCP socket");
-		return false;
-	}
-	if (!setNonBlocking(listenSock_)) return false;
-	{ int on = 1; setsockopt(listenSock_, SOL_SOCKET, SO_REUSEADDR, (void *)&on, sizeof(on)); }
-
-	// bind to address and port
-	struct sockaddr_in srcAddr;
-	srcAddr.sin_family = AF_INET;
-	if (inet_aton(ip.constData(), &srcAddr.sin_addr) == 0) {
-		logWarn("no valid ip address: %1", ip);
-		close(listenSock_);
-		listenSock_ = -1;
-		return false;
-	}
-	srcAddr.sin_port = htons(port);
-	if (bind(listenSock_, (struct sockaddr *)&srcAddr, sizeof(srcAddr)) < 0) {
-		logWarn("cannot bind to %1:%2", ip, port);
-		close(listenSock_);
-		listenSock_ = -1;
-		return false;
-	}
-
-	// start listening
-	if (listen(listenSock_, 1024) < 0) {
-		logWarn("cannot listen on fd %1", listenSock_);
-		close(listenSock_);
-		listenSock_ = -1;
-		return false;
-	}
-
-	int newsockfd;
-	socklen_t clilen;
-	char buffer[256];
-	struct sockaddr_in cli_addr;
-	int n;
-
-
-	clilen = sizeof(cli_addr);
-	newsockfd = accept(listenSock_, (struct sockaddr *)&cli_addr, &clilen);
-
-	if (newsockfd < 0) ;//error("ERROR on accept");
-
-	bzero(buffer,256);
-	n = read(newsockfd,buffer,255);
-	if (n < 0) ;//error("ERROR reading from socket");
-	printf("Here is the message: %s\n",buffer);
-	n = write(newsockfd,"I got your message",18);
-	if (n < 0) ;//error("ERROR writing to socket");
-	close(newsockfd);
-
-
+	return impl_->start(port, ip);
 }
 
 }}	// namespace

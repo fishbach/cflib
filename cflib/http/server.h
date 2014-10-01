@@ -28,6 +28,7 @@ class RequestHandler;
 
 class Server
 {
+	Q_DISABLE_COPY(Server)
 public:
 	Server();
 	~Server();
