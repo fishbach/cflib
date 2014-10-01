@@ -62,7 +62,8 @@ void ThreadHolder::run()
 ThreadHolderLibEV::ThreadHolderLibEV(const QString & threadName) :
 	ThreadHolder(threadName, 0),
 	loop_(ev_loop_new(EVFLAG_NOSIGMASK | EVBACKEND_ALL)),
-	wakeupWatcher_(new ev_async)
+	wakeupWatcher_(new ev_async),
+	externalCalls_(1024)
 {
 	wakeupWatcher_->data = this;
 	ev_async_init(wakeupWatcher_, &ThreadHolderLibEV::wakeup);
@@ -82,6 +83,13 @@ void ThreadHolderLibEV::stopLoop()
 	ev_break(loop_, EVBREAK_ALL);
 }
 
+bool ThreadHolderLibEV::doCall(const Functor * func)
+{
+	if (!externalCalls_.put(func)) return false;
+	ev_async_send(loop_, wakeupWatcher_);
+	return true;
+}
+
 void ThreadHolderLibEV::run()
 {
 	logDebug("thread %1 started with libev backend %2", threadName, ev_backend(loop_));
@@ -95,6 +103,7 @@ void ThreadHolderLibEV::run()
 void ThreadHolderLibEV::wakeup(ev_loop *, ev_async * w, int)
 {
 	ThreadHolderLibEV * th = (ThreadHolderLibEV *)w->data;
+	while (const Functor * func = th->externalCalls_.take()) (*func)();
 }
 
 }}}	// namespace

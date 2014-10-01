@@ -69,7 +69,13 @@ void ThreadVerify::execCall(const impl::Functor * func)
 		logWarn("execCall for already terminated thread %1", verifyThread_->threadName);
 		return;
 	}
-	QCoreApplication::postEvent(verifyThread_->threadObject, new impl::ThreadHolderEvent(func));
+	if (!isLibEV_) QCoreApplication::postEvent(verifyThread_->threadObject, new impl::ThreadHolderEvent(func));
+	else {
+		while (!((impl::ThreadHolderLibEV *)verifyThread_)->doCall(func)) {
+			logWarn("Call queue of destination thread full! Waiting ...");
+			QThread::msleep(1000);
+		}
+	}
 }
 
 void ThreadVerify::shutdownThread()

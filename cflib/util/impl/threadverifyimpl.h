@@ -18,6 +18,8 @@
 
 #pragma once
 
+#include <cflib/util/threadfifo.h>
+
 #include <QtCore>
 
 struct ev_async;
@@ -281,6 +283,7 @@ public:
 
 	ev_loop * loop() const { return loop_; }
 	void stopLoop();
+	bool doCall(const impl::Functor * func);
 
 protected:
     virtual void run();
@@ -291,6 +294,7 @@ private:
 private:
 	ev_loop * loop_;
 	ev_async * wakeupWatcher_;
+	ThreadFifo<const impl::Functor *> externalCalls_;
 };
 
 }}}	// namespace

@@ -26,13 +26,13 @@
 
 namespace cflib { namespace util {
 
-template<typename P>
+template<typename T>
 class ThreadFifo
 {
 public:
 	ThreadFifo(int size) : buffer_(size), max_(size) {}
 
-	inline bool put(P * data) {
+	inline bool put(T data) {
 		int o, w;
 		do {
 			o = writer_;
@@ -45,12 +45,12 @@ public:
 		return true;
 	}
 
-	inline P * take() {
+	inline T take() {
 		const int w = reader_;
 		if (w == writer_) return 0;
 		El & el = (El &)buffer_[w];
 		if (el.filled.loadAcquire() == 0) return 0;
-		P * rv = el.data;
+		T rv = el.data;
 		el.data = 0;
 		el.filled.storeRelease(0);
 		reader_.storeRelease((w + 1) % max_);
@@ -60,7 +60,7 @@ public:
 private:
 	struct El {
 		QAtomicInt filled;
-		P * data;
+		T data;
 		El() : filled(false), data(0) {}
 	};
 	const QVector<El> buffer_;	// const for performance (no Qt ref counting)
