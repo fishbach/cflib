@@ -26,6 +26,7 @@ HEADERS = \
 	log.h \
 	mailer.h \
 	test.h \
+	threadfifo.h \
 	threadverify.h \
 	timeshifter.h \
 	unixsignal.h \
