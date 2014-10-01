@@ -18,7 +18,7 @@
 
 #pragma once
 
-#include <cflib/util/impl/threadverifyimpl.h>
+#include <cflib/util/threadverify.h>
 
 struct ev_loop;
 struct ev_timer;

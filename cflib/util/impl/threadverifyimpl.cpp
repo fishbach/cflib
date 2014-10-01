@@ -39,8 +39,6 @@ bool ThreadObject::event(QEvent * event)
 ThreadHolder::ThreadHolder(const QString & threadName) :
 	threadName(threadName), isActive_(true)
 {
-	setProperty("isLibEV", false);
-
 	threadObject = new ThreadObject();
 	threadObject->moveToThread(this);
 }
@@ -67,8 +65,6 @@ ThreadHolderLibEV::ThreadHolderLibEV(const QString & threadName) :
 	wakeupWatcher_(new ev_async),
 	externalCalls_(1024)
 {
-	setProperty("isLibEV", true);
-
 	ev_async_init(wakeupWatcher_, &ThreadHolderLibEV::wakeup);
 	wakeupWatcher_->data = this;
     ev_async_start(loop_, wakeupWatcher_);

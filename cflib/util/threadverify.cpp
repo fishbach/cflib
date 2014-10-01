@@ -57,12 +57,6 @@ void ThreadVerify::stopVerifyThread()
 	}
 }
 
-ev_loop * ThreadVerify::libEVLoop() const
-{
-	if (!isLibEV_) return 0;
-	return ((const impl::ThreadHolderLibEV *)verifyThread_)->loop();
-}
-
 void ThreadVerify::execCall(const impl::Functor * func)
 {
 	if (!verifyThread_->threadObject) {

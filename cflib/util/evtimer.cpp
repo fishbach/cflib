@@ -27,12 +27,12 @@ namespace cflib { namespace util {
 
 void EVTimer::init()
 {
-	if (!QThread::currentThread()->property("isLibEV").toBool()) {
+	loop_ = libEVLoop();
+	if (!loop_) {
 		logWarn("current thread does not have a libev event loop");
 		return;
 	}
 
-	loop_ = ((const impl::ThreadHolderLibEV *)QThread::currentThread())->loop();
 	timer_ = new ev_timer;
 	ev_init(timer_, &EVTimer::timeout);
 	timer_->data = this;

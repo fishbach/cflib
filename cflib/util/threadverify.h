@@ -34,7 +34,6 @@ public:
 
 protected:
 	virtual void deleteThreadData() {}
-	ev_loop * libEVLoop() const;
 
 	// ------------------------------------------------------------------------
 
@@ -191,5 +190,12 @@ private:
 	const bool ownerOfVerifyThread_;
 	const bool isLibEV_;
 };
+
+inline ev_loop * libEVLoop()
+{
+	const util::impl::ThreadHolderLibEV * thread = dynamic_cast<const impl::ThreadHolderLibEV *>(QThread::currentThread());
+	if (!thread) return 0;
+	return thread->loop();
+}
 
 }}	// namespace

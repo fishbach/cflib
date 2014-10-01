@@ -20,6 +20,7 @@
 
 #include <cflib/util/evtimer.h>
 #include <cflib/util/log.h>
+#include <cflib/util/threadverify.h>
 
 USE_LOG(LogCat::Db)
 
@@ -60,7 +61,8 @@ public:
 		db->setPassword(dbPassword);
 		if (!db->open()) logWarn("DB error: %1", db->lastError().text());
 
-		if (QThread::currentThread()->property("isLibEV").toBool()) {
+
+		if (util::libEVLoop()) {
 			evTimer_ = new util::EVTimer(this, &ThreadData::checkConnection);
 			evTimer_->start(60, 60);
 		} else {
