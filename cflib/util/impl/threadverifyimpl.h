@@ -20,8 +20,6 @@
 
 #include <cflib/util/threadfifo.h>
 
-#include <QtCore>
-
 struct ev_async;
 struct ev_loop;
 

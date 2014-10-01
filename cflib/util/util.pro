@@ -22,6 +22,7 @@ QT = core
 TARGET = cflib_util
 
 HEADERS = \
+	evtimer.h \
 	hex.h \
 	log.h \
 	mailer.h \

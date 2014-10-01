@@ -18,6 +18,7 @@
 
 #include "db.h"
 
+#include <cflib/util/evtimer.h>
 #include <cflib/util/log.h>
 
 USE_LOG(LogCat::Db)
@@ -43,11 +44,13 @@ public:
 	QSqlDatabase * db;
 	bool transactionActive;
 	bool doRollback;
+	util::EVTimer * evTimer_;
 
 	ThreadData() :
 		db(new QSqlDatabase(createNewConnection())),
 		transactionActive(false),
-		doRollback(false)
+		doRollback(false),
+		evTimer_(0)
 	{
 		logDebug("new DB connection: %1", db->connectionName());
 		db->setHostName("127.0.0.1");
@@ -57,12 +60,18 @@ public:
 		db->setPassword(dbPassword);
 		if (!db->open()) logWarn("DB error: %1", db->lastError().text());
 
-		QTimer * timer = new QTimer(this);
-		connect(timer, SIGNAL(timeout()), this, SLOT(checkConnection()));
-		timer->start(60 * 1000);
+		if (QThread::currentThread()->property("isLibEV").toBool()) {
+			evTimer_ = new util::EVTimer(this, &ThreadData::checkConnection);
+			evTimer_->start(60, 60);
+		} else {
+			QTimer * timer = new QTimer(this);
+			connect(timer, SIGNAL(timeout()), this, SLOT(checkConnection()));
+			timer->start(60 * 1000);
+		}
 	}
 	~ThreadData()
 	{
+		delete evTimer_;
 		QString name = db->connectionName();
 		db->close();
 		delete db;
