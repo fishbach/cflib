@@ -39,21 +39,21 @@ public:
 			w = (o + 1) % max_;
 			if (w == reader_) return false;
 		} while (!writer_.testAndSetOrdered(o, w));
-		El & el = (El &)buffer_[w];
+		El & el = (El &)buffer_[o];
 		el.data = data;
 		el.filled.storeRelease(1);
 		return true;
 	}
 
 	inline T take() {
-		const int w = reader_;
-		if (w == writer_) return 0;
-		El & el = (El &)buffer_[w];
+		const int r = reader_;
+		if (r == writer_) return 0;
+		El & el = (El &)buffer_[r];
 		if (el.filled.loadAcquire() == 0) return 0;
 		T rv = el.data;
 		el.data = 0;
 		el.filled.storeRelease(0);
-		reader_.storeRelease((w + 1) % max_);
+		reader_.storeRelease((r + 1) % max_);
 		return rv;
 	}
 

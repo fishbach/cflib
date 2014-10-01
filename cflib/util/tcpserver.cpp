@@ -69,6 +69,8 @@ public:
 		SyncedThreadCall<bool> stc(this);
 		if (!stc.verify(&Impl::start, port, ip)) return stc.retval();
 
+		logFunctionTrace
+
 		if (listenSock_ >= 0) {
 			logWarn("server already listening");
 			return false;

@@ -94,6 +94,11 @@ void ThreadHolderLibEV::run()
 {
 	logDebug("thread %1 started with libev backend %2", threadName, ev_backend(loop_));
 
+	while (const Functor * func = externalCalls_.take()) {
+		(*func)();
+		delete func;
+	}
+
 	ev_run(loop_, 0);
 
 	isActive_ = false;
