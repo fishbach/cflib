@@ -18,9 +18,7 @@
 
 #pragma once
 
-#include <cflib/util/threadverify.h>
-
-#include <QtNetwork>
+#include <QtCore>
 
 namespace cflib { namespace http {
 
@@ -33,7 +31,7 @@ public:
 	Server();
 	~Server();
 
-	bool start(quint16 port, const QHostAddress & address = QHostAddress::LocalHost);
+	bool start(quint16 port, const QByteArray & address = "127.0.0.1");
 
 	void registerHandler(RequestHandler * handler);
 

@@ -31,9 +31,11 @@ QAtomicInt connCount;
 
 }
 
-RequestParser::RequestParser(qintptr sock, const QList<RequestHandler *> & handlers, util::ThreadVerify * tv) :
-	QObject(tv->threadObject()),
+RequestParser::RequestParser(const util::TCPServer::ConnInitializer & init,
+	const QList<RequestHandler *> & handlers, util::ThreadVerify * tv)
+:
 	util::ThreadVerify(tv),
+	util::TCPConn(init),
 	handlers_(handlers),
 	id_(connCount.fetchAndAddRelaxed(1) + 1),
 	contentLength_(-1),
@@ -43,14 +45,9 @@ RequestParser::RequestParser(qintptr sock, const QList<RequestHandler *> & handl
 	passThrough_(false),
 	passThroughHandler_(0)
 {
-	sock_.setSocketDescriptor(sock);
-	connect(&sock_, SIGNAL(stateChanged(QAbstractSocket::SocketState)),
-			this, SLOT(stateChanged(QAbstractSocket::SocketState)));
-	connect(&sock_, SIGNAL(readyRead()), this, SLOT(readyRead()));
-
 	logCustom(LogCat::Network | LogCat::Debug)("new connection %1", id_);
 
-	readyRead();
+	newBytesAvailable();
 }
 
 RequestParser::~RequestParser()
@@ -76,8 +73,6 @@ void RequestParser::sendReply(int id, const QByteArray & reply)
 				break;
 			}
 		}
-
-		sock_.flush();
 	} else {
 		replies_[id] = reply;
 	}
@@ -87,7 +82,7 @@ void RequestParser::detachRequest()
 {
 	if (!verifyThreadCall(&RequestParser::detachRequest)) return;
 
-	if (--attachedRequests_ == 0) deleteLater();
+	if (--attachedRequests_ == 0) deleteNext();
 }
 
 void RequestParser::setPassThroughHandler(PassThroughHandler * hdl)
@@ -102,45 +97,37 @@ QByteArray RequestParser::readPassThrough(bool & isLast)
 	SyncedThreadCall<QByteArray> stc(this);
 	if (!stc.verify(&RequestParser::readPassThrough, isLast)) return stc.retval();
 
-	const qint64 avail = sock_.bytesAvailable();
-	isLast = avail >= contentLength_;
-	if (!passThrough_ || avail <= 0) return QByteArray();
-	bool hasMore = avail > contentLength_;
-	QByteArray retval = sock_.read(hasMore ? contentLength_ : avail);
+	if (!passThrough_) return QByteArray();
+	QByteArray retval = read();
+	isLast = retval.size() >= contentLength_;
 	if (isLast) {
+		bool hasMore = retval.size() > contentLength_;
+		if (hasMore) {
+			header_ += retval.mid(contentLength_);
+			retval.resize(contentLength_);
+		}
 		contentLength_ = -1;
 		passThrough_ = false;
-		if (hasMore) readyRead();
+		if (hasMore) newBytesAvailable();
 	} else {
-		contentLength_ -= avail;
+		contentLength_ -= retval.size();
 	}
 	return retval;
 }
 
-void RequestParser::stateChanged(QAbstractSocket::SocketState state)
+void RequestParser::newBytesAvailable()
 {
-	if (state == QAbstractSocket::UnconnectedState) {
-		socketClosed_ = true;
-		logCustom(LogCat::Network | LogCat::Debug)("connection %1 closed", id_);
-		detachRequest();
-	}
-}
-
-void RequestParser::readyRead()
-{
-	const qint64 avail = sock_.bytesAvailable();
-	if (avail <= 0) return;
-	logCustom(LogCat::Network | LogCat::Trace)("received %1 bytes on connection %2", avail, id_);
-
 	if (passThrough_) {
 		if (passThroughHandler_) passThroughHandler_->morePassThroughData(qMakePair(id_, requestCount_));
 		return;
 	}
 
-	if (contentLength_ == -1) {
-		header_ += sock_.read(avail);
-	} else {
-		body_ += sock_.read(avail);
+	{
+		QByteArray newBytes = read();
+		logCustom(LogCat::Network | LogCat::Trace)("received %1 bytes on connection %2", newBytes.size(), id_);
+
+		if (contentLength_ == -1) header_ += newBytes;
+		else                      body_   += newBytes;
 	}
 
 	do {
@@ -154,7 +141,7 @@ void RequestParser::readyRead()
 			header_.resize(pos);
 
 			if (!parseHeader()) {
-				sock_.abort();
+				close();
 				return;
 			}
 		}
@@ -188,6 +175,13 @@ void RequestParser::readyRead()
 		body_.clear();
 
 	} while (!header_.isEmpty());
+}
+
+void RequestParser::closed()
+{
+	socketClosed_ = true;
+	logCustom(LogCat::Network | LogCat::Debug)("connection %1 closed", id_);
+	detachRequest();
 }
 
 bool RequestParser::parseHeader()
@@ -285,14 +279,14 @@ void RequestParser::writeReply(const QByteArray & reply)
 		logCustom(LogCat::Network | LogCat::Info)("cannot write %1 bytes of request %2 on closed connection %3",
 			reply.size(), nextReplyId_, id_);
 	} else {
-		sock_.write(reply);
+		write(reply);
 		logCustom(LogCat::Network | LogCat::Trace)("wrote %1 bytes of request %2 on connection %3",
 			reply.size(), nextReplyId_, id_);
 	}
 	if (passThrough_) {
 		logCustom(LogCat::Network | LogCat::Debug)("Not all bytes from pass through read! Closing connection %1 of request %2",
 			id_, nextReplyId_);
-		sock_.disconnectFromHost();
+		close();
 	}
 	++nextReplyId_;
 }

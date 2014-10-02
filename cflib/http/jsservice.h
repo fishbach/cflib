@@ -43,7 +43,7 @@ protected:
 	uint clientId() const { return clId_; }
 	virtual void preCallInit(const Request & request, uint clId) { Q_UNUSED(request) Q_UNUSED(clId) }
 	Replier delayReply();
-	QHostAddress getRemoteIP() const;
+	QByteArray getRemoteIP() const;
 
 private:
 	uint clId_;

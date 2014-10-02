@@ -18,6 +18,7 @@
 
 #include "threadverify.h"
 
+#include <cflib/libev/libev.h>
 #include <cflib/util/log.h>
 
 USE_LOG(LogCat::Etc)
@@ -61,6 +62,50 @@ ev_loop * ThreadVerify::libEVLoop()
 {
 	if (!isLibEV_) return 0;
 	return ((impl::ThreadHolderLibEV *)verifyThread_)->loop();
+}
+
+namespace {
+
+class Deleter : public Functor
+{
+public:
+	Deleter(const ThreadVerify * obj) : obj_(obj) {}
+
+	virtual void operator()() const
+	{
+		delete obj_;
+	}
+
+private:
+	const ThreadVerify * obj_;
+};
+
+void callNextTimeout(ev_loop *,  ev_timer * w, int)
+{
+	const Functor * func = (const Functor *)w->data;
+	delete w;
+	(*func)();
+	delete func;
+}
+
+}
+
+void ThreadVerify::callNext(const Functor * func)
+{
+	if (!verifyThreadCall(&ThreadVerify::callNext, func)) return;
+
+	if (!isLibEV_) QCoreApplication::postEvent(verifyThread_->threadObject, new impl::ThreadHolderEvent(func));
+	else {
+		ev_timer * timer = new ev_timer;
+		ev_timer_init(timer, &callNextTimeout, 0, 0);
+		timer->data = (void *)func;
+		ev_timer_start(libEVLoop(), timer);
+	}
+}
+
+void ThreadVerify::deleteNext()
+{
+	callNext(new Deleter(this));
 }
 
 void ThreadVerify::execCall(const Functor * func)

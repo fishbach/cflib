@@ -19,7 +19,6 @@
 #pragma once
 
 #include <QtCore>
-#include <QtNetwork>
 
 namespace cflib { namespace http {
 
@@ -54,7 +53,7 @@ public:
 	bool isPOST() const { return !isGET(); }
 	QUrl getUrl() const;
 	QByteArray getBody() const;
-	QHostAddress getRemoteIP() const;
+	QByteArray getRemoteIP() const;
 
 	void sendNotFound() const;
 	void sendRedirect(const QByteArray & url) const;

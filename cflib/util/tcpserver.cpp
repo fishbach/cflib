@@ -73,7 +73,7 @@ public:
 	{
 	}
 
-	virtual ~Impl()
+	~Impl()
 	{
 		stopVerifyThread();
 	}

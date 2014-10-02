@@ -18,9 +18,8 @@
 
 #pragma once
 
+#include <cflib/util/tcpserver.h>
 #include <cflib/util/threadverify.h>
-
-#include <QtNetwork>
 
 namespace cflib { namespace http {
 
@@ -29,11 +28,11 @@ class RequestHandler;
 
 namespace impl {
 
-class RequestParser : public QObject, public util::ThreadVerify
+class RequestParser : public util::ThreadVerify, public util::TCPConn
 {
-	Q_OBJECT
 public:
-	RequestParser(qintptr sock, const QList<RequestHandler *> & handlers, util::ThreadVerify * tv);
+	RequestParser(const util::TCPServer::ConnInitializer & init,
+		const QList<RequestHandler *> & handlers, util::ThreadVerify * tv);
 	~RequestParser();
 
 	void sendReply(int id, const QByteArray & reply);
@@ -41,11 +40,10 @@ public:
 	void detachRequest();
 	void setPassThroughHandler(PassThroughHandler * hdl);
 	QByteArray readPassThrough(bool & isLast);
-	QHostAddress getRemoteIP() const { return sock_.peerAddress(); }
 
-private slots:
-	void stateChanged(QAbstractSocket::SocketState state);
-	void readyRead();
+protected:
+	virtual void newBytesAvailable();
+	virtual void closed();
 
 private:
 	bool parseHeader();
@@ -53,7 +51,6 @@ private:
 	void writeReply(const QByteArray & reply);
 
 private:
-	QTcpSocket sock_;
 	const QList<RequestHandler *> & handlers_;
 	const int id_;
 

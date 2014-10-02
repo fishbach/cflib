@@ -20,22 +20,26 @@
 
 #include <cflib/http/impl/requestparser.h>
 #include <cflib/util/log.h>
+#include <cflib/util/tcpserver.h>
 
 USE_LOG(LogCat::Http)
 
 namespace cflib { namespace http {
 
-class Server::Impl : public util::ThreadVerify, public QTcpServer
+class Server::Impl : public util::ThreadVerify, public util::TCPServer
 {
 public:
 	Impl() :
-		util::ThreadVerify("HTTP-Server")
+		util::ThreadVerify("HTTP-Server", true)
 	{
-		moveToThread(threadObject()->thread());
-		setParent(threadObject());
 	}
 
-	bool start(quint16 port, const QHostAddress & address)
+	~Impl()
+	{
+		stopVerifyThread();
+	}
+
+	bool start(quint16 port, const QByteArray & address)
 	{
 		SyncedThreadCall<bool> stc(this);
 		if (!stc.verify(&Impl::start, port, address)) return stc.retval();
@@ -45,11 +49,11 @@ public:
 			return false;
 		}
 
-		if (listen(address, port)) {
-			logInfo("HTTP-Server started on %1:%2", address.toString(), port);
+		if (util::TCPServer::start(port, address)) {
+			logInfo("HTTP-Server started on %1:%2", address, port);
 			return true;
 		} else {
-			logWarn("HTTP-Server cannot listen on %1:%2", address.toString(), port);
+			logWarn("HTTP-Server cannot listen on %1:%2", address, port);
 			return false;
 		}
 	}
@@ -62,9 +66,9 @@ public:
 	}
 
 protected:
-    virtual void incomingConnection(qintptr handle)
+	virtual void newConnection(const ConnInitializer & init)
     {
-		new impl::RequestParser(handle, handlers_, this);
+		new impl::RequestParser(init, handlers_, this);
     }
 
 private:
@@ -78,11 +82,10 @@ Server::Server() :
 
 Server::~Server()
 {
-	impl_->stopVerifyThread();
-	// delete is done by the parent (thread object)
+	delete impl_;
 }
 
-bool Server::start(quint16 port, const QHostAddress & address)
+bool Server::start(quint16 port, const QByteArray & address)
 {
 	return impl_->start(port, address);
 }

@@ -27,11 +27,13 @@ class ThreadVerify
 public:
 	ThreadVerify(const QString & threadName, bool useLibEV = false);
 	ThreadVerify(ThreadVerify * other);
-	~ThreadVerify();
+	virtual ~ThreadVerify();
 
 	inline QObject * threadObject() const { return verifyThread_->threadObject; }
 	void stopVerifyThread();
 	ev_loop * libEVLoop();
+	void callNext(const Functor * func);
+	void deleteNext();
 
 protected:
 	virtual void deleteThreadData() {}

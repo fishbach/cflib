@@ -17,7 +17,7 @@
 
 include(../../include.pri)
 
-QT = core network
+QT = core
 
 TARGET = cflib_http
 

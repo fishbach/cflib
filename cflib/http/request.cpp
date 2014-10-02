@@ -46,9 +46,9 @@ public:
 		passThrough(passThrough)
 	{
 		if (headerFields.contains("x-remote-ip")) {
-			remoteIP = QString::fromLatin1(headerFields.value("x-remote-ip"));
+			remoteIP = headerFields.value("x-remote-ip");
 		} else if (parser) {
-			remoteIP = parser->getRemoteIP();
+			remoteIP = parser->peerIP();
 		}
 		watch.start();
 		id << QByteArray::number(connId) << '-' << QByteArray::number(requestId);
@@ -80,7 +80,7 @@ public:
 	impl::RequestParser * parser;
 	QTime watch;
 	bool replySent;
-	QHostAddress remoteIP;
+	QByteArray remoteIP;
 	QList<QByteArray> sendHeaderLines;
 	bool passThrough;
 
@@ -208,7 +208,7 @@ QByteArray Request::getBody() const
 	return d->body;
 }
 
-QHostAddress Request::getRemoteIP() const
+QByteArray Request::getRemoteIP() const
 {
 	return d->remoteIP;
 }

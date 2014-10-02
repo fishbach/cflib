@@ -53,9 +53,9 @@ Replier JSService::delayReply()
 	return Replier(clId_, *requestPtr_, *prependDataPtr_);
 }
 
-QHostAddress JSService::getRemoteIP() const
+QByteArray JSService::getRemoteIP() const
 {
-	return requestPtr_ ? requestPtr_->getRemoteIP() : QHostAddress();
+	return requestPtr_ ? requestPtr_->getRemoteIP() : QByteArray();
 }
 
 void Replier::send()
