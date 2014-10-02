@@ -31,6 +31,7 @@ public:
 
 	inline QObject * threadObject() const { return verifyThread_->threadObject; }
 	void stopVerifyThread();
+	ev_loop * libEVLoop();
 
 protected:
 	virtual void deleteThreadData() {}
@@ -191,7 +192,7 @@ private:
 	const bool isLibEV_;
 };
 
-inline ev_loop * libEVLoop()
+inline ev_loop * libEVLoopOfThread()
 {
 	const util::impl::ThreadHolderLibEV * thread = dynamic_cast<const impl::ThreadHolderLibEV *>(QThread::currentThread());
 	if (!thread) return 0;

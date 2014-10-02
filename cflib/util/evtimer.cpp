@@ -28,7 +28,7 @@ namespace cflib { namespace util {
 
 void EVTimer::init()
 {
-	loop_ = libEVLoop();
+	loop_ = libEVLoopOfThread();
 	if (!loop_) {
 		logWarn("current thread does not have a libev event loop");
 		return;

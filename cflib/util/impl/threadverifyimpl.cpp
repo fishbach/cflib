@@ -93,22 +93,15 @@ bool ThreadHolderLibEV::doCall(const Functor * func)
 void ThreadHolderLibEV::run()
 {
 	logDebug("thread %1 started with libev backend %2", threadName, ev_backend(loop_));
-
-	while (const Functor * func = externalCalls_.take()) {
-		(*func)();
-		delete func;
-	}
-
 	ev_run(loop_, 0);
-
 	isActive_ = false;
 	logDebug("thread %1 stopped", threadName);
 }
 
 void ThreadHolderLibEV::wakeup(ev_loop *, ev_async * w, int)
 {
-	ThreadHolderLibEV * th = (ThreadHolderLibEV *)w->data;
-	while (const Functor * func = th->externalCalls_.take()) {
+	ThreadFifo<const Functor *> & calls = ((ThreadHolderLibEV *)w->data)->externalCalls_;
+	while (const Functor * func = calls.take()) {
 		(*func)();
 		delete func;
 	}

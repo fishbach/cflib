@@ -28,39 +28,52 @@ class TCPServer
 {
 	Q_DISABLE_COPY(TCPServer)
 public:
+	class ConnInitializer;
+	class Impl;
+public:
 	TCPServer();
 	virtual ~TCPServer();
 
-	bool start(quint16 port, const QByteArray & ip);
+	bool start(quint16 port, const QByteArray & ip = "0.0.0.0");
 
 protected:
-	virtual void newConnection(int socket, const QByteArray & peerIP, quint16 peerPort) = 0;
+	virtual void newConnection(const ConnInitializer & init) = 0;
 
 private:
-	class Impl;
 	Impl * impl_;
 };
 
 class TCPConn
 {
+	friend class TCPServer;
 	Q_DISABLE_COPY(TCPConn)
 public:
-	TCPConn(TCPServer * server, int socket);
+	TCPConn(const TCPServer::ConnInitializer & init);
 	virtual ~TCPConn();
 
 	QByteArray read();
 	void write(const QByteArray & data);
-	void close();	// int shutdown(int socket, int how);
+	void close();
+
+	int fd() const { return socket_; }
 
 protected:
 	virtual void newBytesAvailable() = 0;
-	virtual void closedByPeer() = 0;
+	virtual void closed() = 0;
 
 private:
+	static void readable (ev_loop * loop, ev_io * w, int revents);
+	static void writeable(ev_loop * loop, ev_io * w, int revents);
+
+private:
+	TCPServer::Impl & impl_;
 	const int socket_;
-	QByteArray writeBuf_;
+	const QByteArray peerIP_;
+	const quint16 peerPort_;
 	ev_io readWatcher_;
 	ev_io writeWatcher_;
+	const QByteArray readBuf_;
+	QByteArray writeBuf_;
 };
 
 }}	// namespace

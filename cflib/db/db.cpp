@@ -62,7 +62,7 @@ public:
 		if (!db->open()) logWarn("DB error: %1", db->lastError().text());
 
 
-		if (util::libEVLoop()) {
+		if (util::libEVLoopOfThread()) {
 			evTimer_ = new util::EVTimer(this, &ThreadData::checkConnection);
 			evTimer_->start(60, 60);
 		} else {
