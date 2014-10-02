@@ -46,6 +46,7 @@ protected:
 	virtual void closed();
 
 private:
+	void parseRequest();
 	bool parseHeader();
 	bool handleRequestLine(const QByteArray & line);
 	void writeReply(const QByteArray & reply);

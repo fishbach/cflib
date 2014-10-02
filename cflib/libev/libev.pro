@@ -17,7 +17,7 @@
 
 include(../../include.pri)
 
-QT =
+QT = core
 CONFIG += no_pch warn_off
 
 TARGET = cflib_libev

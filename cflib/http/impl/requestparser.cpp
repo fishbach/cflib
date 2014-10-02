@@ -46,8 +46,6 @@ RequestParser::RequestParser(const util::TCPServer::ConnInitializer & init,
 	passThroughHandler_(0)
 {
 	logCustom(LogCat::Network | LogCat::Debug)("new connection %1", id_);
-
-	newBytesAvailable();
 }
 
 RequestParser::~RequestParser()
@@ -105,10 +103,10 @@ QByteArray RequestParser::readPassThrough(bool & isLast)
 		if (hasMore) {
 			header_ += retval.mid(contentLength_);
 			retval.resize(contentLength_);
+			callNext(new util::Functor0<RequestParser>(this, &RequestParser::parseRequest));
 		}
 		contentLength_ = -1;
 		passThrough_ = false;
-		if (hasMore) newBytesAvailable();
 	} else {
 		contentLength_ -= retval.size();
 	}
@@ -124,14 +122,17 @@ void RequestParser::newBytesAvailable()
 		return;
 	}
 
-	{
-		QByteArray newBytes = read();
-		logCustom(LogCat::Network | LogCat::Trace)("received %1 bytes on connection %2", newBytes.size(), id_);
+	QByteArray newBytes = read();
+	logCustom(LogCat::Network | LogCat::Trace)("received %1 bytes on connection %2", newBytes.size(), id_);
 
-		if (contentLength_ == -1) header_ += newBytes;
-		else                      body_   += newBytes;
-	}
+	if (contentLength_ == -1) header_ += newBytes;
+	else                      body_   += newBytes;
 
+	parseRequest();
+}
+
+void RequestParser::parseRequest()
+{
 	do {
 
 		// header ok?

@@ -142,6 +142,13 @@ public:
 		return true;
 	}
 
+	void startReadWatcher(TCPConn * conn)
+	{
+		if (!verifyThreadCall(&Impl::startReadWatcher, conn)) return;
+
+		ev_io_start(libEVLoop(), conn->readWatcher_);
+	}
+
 	void writeToSocket(TCPConn * conn, const QByteArray & data)
 	{
 		if (!verifyThreadCall(&Impl::writeToSocket, conn, data)) return;
@@ -175,6 +182,8 @@ public:
 private:
 	static void readable(ev_loop *, ev_io * w, int)
 	{
+		logFunctionTrace
+
 		Impl * impl = (Impl *)w->data;
 		forever {
 			struct sockaddr_in cliAddr;
@@ -223,7 +232,6 @@ TCPConn::TCPConn(const TCPServer::ConnInitializer & init) :
 
 	ev_io_init(writeWatcher_, &TCPConn::writeable, socket_, EV_WRITE);
 	writeWatcher_->data = this;
-	ev_io_start(impl_.libEVLoop(), writeWatcher_);
 }
 
 TCPConn::~TCPConn()
@@ -240,20 +248,26 @@ QByteArray TCPConn::read()
 
 	forever {
 		ssize_t count = ::read(socket_, (void *)readBuf_.constData(), readBuf_.size());
-		if (count == 0) {
-			impl_.closeSocket(this, true);
-			return retval;
-		} if (count < 0) {
-			if (errno != EAGAIN && errno != EWOULDBLOCK) {
-				logDebug("read on fd %1 failed (errno: %2)", socket_, errno);
-				impl_.closeSocket(this, true);
-			}
-			return retval;
-		} else if (count < readBuf_.size()) {
-			retval += readBuf_.left(count);
-			return retval;
-		} else {
+		if (count == readBuf_.size()) {
 			retval += readBuf_;
+		} else {
+			if (count == 0) {
+				impl_.closeSocket(this, true);
+				return retval;
+			}
+			if (count < 0) {
+				if (errno != EAGAIN && errno != EWOULDBLOCK) {
+					logDebug("read on fd %1 failed (errno: %2)", socket_, errno);
+					impl_.closeSocket(this, true);
+					return retval;
+				}
+			} else {
+				retval += readBuf_.left(count);
+			}
+
+			logTrace("read %1 bytes", retval.size());
+			impl_.startReadWatcher(this);
+			return retval;
 		}
 	}
 }
@@ -268,12 +282,13 @@ void TCPConn::close()
 	shutdown(socket_, SHUT_RDWR);
 }
 
-void TCPConn::readable(ev_loop *, ev_io * w, int)
+void TCPConn::readable(ev_loop * loop, ev_io * w, int)
 {
+	ev_io_stop(loop, w);
 	((TCPConn *)w->data)->newBytesAvailable();
 }
 
-void TCPConn::writeable(ev_loop *, ev_io * w, int)
+void TCPConn::writeable(ev_loop * loop, ev_io * w, int)
 {
 	TCPConn * conn = (TCPConn *)w->data;
 	QByteArray & buf = conn->writeBuf_;
@@ -281,13 +296,19 @@ void TCPConn::writeable(ev_loop *, ev_io * w, int)
 	if (buf.isEmpty() || fd == -1) return;
 
 	ssize_t count = ::write(fd, buf.constData(), buf.size());
-	if (count == 0) return;
-	if (count < 0) {
-		logDebug("write on fd %1 failed (errno: %2)", fd, errno);
-	} else if (count == buf.size()) {
-		buf.clear();
+	logTrace("wrote %1 / %2 bytes", (qint64)count, buf.size());
+	if (count < buf.size()) {
+		if (count < 0 && errno != EAGAIN && errno != EWOULDBLOCK) {
+			logDebug("write on fd %1 failed (errno: %2)", fd, errno);
+			buf.clear();
+			conn->impl_.closeSocket(conn, true);
+			return;
+		}
+		if (count > 0) buf.remove(0, count);
+		if (!ev_is_active(w)) ev_io_start(loop, w);
 	} else {
-		buf.remove(0, count);
+		buf.clear();
+		if (ev_is_active(w)) ev_io_stop(loop, w);
 	}
 }
 
