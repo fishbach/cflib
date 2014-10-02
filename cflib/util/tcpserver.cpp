@@ -70,19 +70,21 @@ public:
 	Impl(TCPServer & parent) :
 		ThreadVerify("TCPServer", true),
 		parent_(parent),
-		listenSock_(-1)
+		listenSock_(-1),
+		readWatcher_(new ev_io)
 	{
 	}
 
 	~Impl()
 	{
 		stopVerifyThread();
+		delete readWatcher_;
 	}
 
 	virtual void deleteThreadData()
 	{
 		if (listenSock_ != -1) {
-			ev_io_stop(libEVLoop(), &readWatcher_);
+			ev_io_stop(libEVLoop(), readWatcher_);
 			close(listenSock_);
 		}
 	}
@@ -134,9 +136,9 @@ public:
 		}
 
 		// watching for incoming activity
-		ev_io_init(&readWatcher_, &Impl::readable, listenSock_, EV_READ);
-		readWatcher_.data = this;
-		ev_io_start(libEVLoop(), &readWatcher_);
+		ev_io_init(readWatcher_, &Impl::readable, listenSock_, EV_READ);
+		readWatcher_->data = this;
+		ev_io_start(libEVLoop(), readWatcher_);
 
 		logInfo("listening on %1:%2", ip, port);
 		return true;
@@ -202,7 +204,7 @@ private:
 private:
 	TCPServer & parent_;
 	int listenSock_;
-	ev_io readWatcher_;
+	ev_io * readWatcher_;
 };
 
 TCPServer::TCPServer() :
