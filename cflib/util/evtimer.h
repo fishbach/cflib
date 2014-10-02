@@ -38,6 +38,7 @@ public:
 	~EVTimer();
 
 	void start(double after, double repeat);
+	void start(double repeat) { start(repeat, repeat); }
 	void stop();
 
 private:

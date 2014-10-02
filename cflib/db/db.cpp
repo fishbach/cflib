@@ -64,7 +64,7 @@ public:
 
 		if (util::libEVLoopOfThread()) {
 			evTimer_ = new util::EVTimer(this, &ThreadData::checkConnection);
-			evTimer_->start(60, 60);
+			evTimer_->start(60);
 		} else {
 			QTimer * timer = new QTimer(this);
 			connect(timer, SIGNAL(timeout()), this, SLOT(checkConnection()));

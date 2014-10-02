@@ -117,6 +117,8 @@ QByteArray RequestParser::readPassThrough(bool & isLast)
 
 void RequestParser::newBytesAvailable()
 {
+	if (!verifyThreadCall(&RequestParser::newBytesAvailable)) return;
+
 	if (passThrough_) {
 		if (passThroughHandler_) passThroughHandler_->morePassThroughData(qMakePair(id_, requestCount_));
 		return;
@@ -179,6 +181,8 @@ void RequestParser::newBytesAvailable()
 
 void RequestParser::closed()
 {
+	if (!verifyThreadCall(&RequestParser::closed)) return;
+
 	socketClosed_ = true;
 	logCustom(LogCat::Network | LogCat::Debug)("connection %1 closed", id_);
 	detachRequest();
