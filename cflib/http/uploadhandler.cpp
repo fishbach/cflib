@@ -26,7 +26,7 @@ USE_LOG(LogCat::Http)
 namespace cflib { namespace http {
 
 UploadHandler::UploadHandler(const QString & path, const QString & threadName) :
-	util::ThreadVerify(threadName),
+	util::ThreadVerify(threadName, true),
 	path_(path),
 	apiServer_(0)
 {
@@ -49,7 +49,7 @@ void UploadHandler::processUploadRequest(const Request & request)
 	}
 
 	RequestData & rd = requests_[request.getId()];
-	rd.request  = request;
+	rd.request  = new Request(request);
 	rd.boundary = "--" + boundary.mid(pos + 9);
 	rd.buffer = request.getBody();
 	rd.state = 1;
@@ -71,9 +71,12 @@ void UploadHandler::parseMoreData(UploadHandler::RequestData & rd)
 	logFunctionTrace
 
 	bool isLast = true;
-	if (rd.request.isPassThrough()) {
-		rd.buffer += rd.request.readPassThrough(isLast);
+	if (rd.request->isPassThrough()) {
+		rd.buffer += rd.request->readPassThrough(isLast);
 	}
+
+	logDebug("iss pt: %1 / buf: %2 / last: %3 / state: %4",
+		rd.request->isPassThrough(), rd.buffer.size(), isLast, rd.state);
 
 	forever {
 		if (rd.state == 1) {
@@ -120,18 +123,18 @@ void UploadHandler::parseMoreData(UploadHandler::RequestData & rd)
 				QByteArray data = rd.buffer.left(pos - 2);
 				if (rd.name == "clientId") {
 					rd.clientId = apiServer_->getClientId(data);
-				} else handleData(rd.request.getId(), rd.clientId, rd.name, rd.filename, rd.contentType, data, isLast);
+				} else handleData(rd.request->getId(), rd.clientId, rd.name, rd.filename, rd.contentType, data, isLast);
 				rd.buffer.remove(0, pos + rd.boundary.size() + 2);	// \r\n
 				rd.state = 2;
 			} else if (isLast) {
 				logWarn("broken request: last boundary is missing (%1/%2)",
-					rd.request.getId().first, rd.request.getId().second);
+					rd.request->getId().first, rd.request->getId().second);
 				break;
 			} else if (rd.name == "clientId") {
 				break;	// we wait for more data
 			} else {
 				// pass intermediate data on
-				handleData(rd.request.getId(), rd.clientId, rd.name, rd.filename, rd.contentType, rd.buffer, isLast);
+				handleData(rd.request->getId(), rd.clientId, rd.name, rd.filename, rd.contentType, rd.buffer, isLast);
 				rd.buffer.clear();
 				break;
 			}
@@ -139,9 +142,11 @@ void UploadHandler::parseMoreData(UploadHandler::RequestData & rd)
 	}
 
 	if (isLast) {
-		rd.request.sendText("ok");
-//		rd.request.sendRedirect(rd.request.getHeaderFields().value("referer"));
-		requests_.remove(rd.request.getId());
+		Request * request = rd.request;
+		requests_.remove(request->getId());
+		request->sendText("ok");
+//		request->sendRedirect(rd.request.getHeaderFields().value("referer"));
+		delete request;
 	}
 }
 

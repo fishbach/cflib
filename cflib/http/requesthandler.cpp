@@ -23,7 +23,7 @@
 namespace cflib { namespace http {
 
 RequestHandler::RequestHandler(const QString & name) :
-	util::ThreadVerify(name)
+	util::ThreadVerify(name, true)
 {
 }
 

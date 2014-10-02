@@ -43,7 +43,7 @@ protected:
 
 private:
 	struct RequestData {
-		Request request;
+		Request * request;
 		QByteArray boundary;
 		QByteArray buffer;
 		int state;

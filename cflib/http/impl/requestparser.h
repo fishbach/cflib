@@ -31,7 +31,7 @@ namespace impl {
 class RequestParser : public util::ThreadVerify, public util::TCPConn
 {
 public:
-	RequestParser(const util::TCPServer::ConnInitializer & init,
+	RequestParser(const util::TCPServer::ConnInitializer * init,
 		const QList<RequestHandler *> & handlers, util::ThreadVerify * tv);
 	~RequestParser();
 

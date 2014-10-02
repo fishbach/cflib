@@ -66,8 +66,10 @@ public:
 	}
 
 protected:
-	virtual void newConnection(const ConnInitializer & init)
+	virtual void newConnection(const ConnInitializer * init)
     {
+		if (!verifyThreadCall(&Impl::newConnection, init)) return;
+
 		new impl::RequestParser(init, handlers_, this);
     }
 

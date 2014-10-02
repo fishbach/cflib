@@ -55,7 +55,7 @@ inline bool setNonBlocking(int fd)
 class TCPServer::ConnInitializer
 {
 public:
-	ConnInitializer(TCPServer::Impl & impl, const int socket, const QByteArray peerIP,const quint16 peerPort) :
+	ConnInitializer(TCPServer::Impl & impl, const int socket, const char * peerIP, const quint16 peerPort) :
 		impl(impl), socket(socket), peerIP(peerIP), peerPort(peerPort) {}
 
 	TCPServer::Impl & impl;
@@ -195,8 +195,9 @@ private:
 
 			setNonBlocking(newSock);
 
-			ConnInitializer ci(*impl, newSock, inet_ntoa(cliAddr.sin_addr), ntohs(cliAddr.sin_port));
-			logDebug("new connection from %1:%2", ci.peerIP, ci.peerPort);
+			const ConnInitializer * ci = new ConnInitializer(*impl,
+				newSock, inet_ntoa(cliAddr.sin_addr), ntohs(cliAddr.sin_port));
+			logDebug("new connection from %1:%2", ci->peerIP, ci->peerPort);
 			impl->parent_.newConnection(ci);
 		}
 	}
@@ -222,18 +223,19 @@ bool TCPServer::start(quint16 port, const QByteArray & ip)
 	return impl_->start(port, ip);
 }
 
-TCPConn::TCPConn(const TCPServer::ConnInitializer & init) :
-	impl_(init.impl), socket_(init.socket), peerIP_(init.peerIP), peerPort_(init.peerPort),
+TCPConn::TCPConn(const TCPServer::ConnInitializer * init) :
+	impl_(init->impl), socket_(init->socket), peerIP_(init->peerIP), peerPort_(init->peerPort),
 	readWatcher_(new ev_io),
 	writeWatcher_(new ev_io),
 	readBuf_(8192, '\0')
 {
+	delete init;
 	ev_io_init(readWatcher_, &TCPConn::readable, socket_, EV_READ);
 	readWatcher_->data = this;
-	ev_io_start(impl_.libEVLoop(), readWatcher_);
-
 	ev_io_init(writeWatcher_, &TCPConn::writeable, socket_, EV_WRITE);
 	writeWatcher_->data = this;
+
+	impl_.startReadWatcher(this);
 }
 
 TCPConn::~TCPConn()
@@ -251,26 +253,28 @@ QByteArray TCPConn::read()
 	forever {
 		ssize_t count = ::read(socket_, (void *)readBuf_.constData(), readBuf_.size());
 		if (count == readBuf_.size()) {
-			retval += readBuf_;
-		} else {
-			if (count == 0) {
+			retval.append(readBuf_.constData(), count);
+			continue;
+		}
+
+		if (count == 0) {
+			impl_.closeSocket(this, true);
+			return retval;
+		}
+
+		if (count < 0) {
+			if (errno != EAGAIN && errno != EWOULDBLOCK) {
+				logDebug("read on fd %1 failed (errno: %2)", socket_, errno);
 				impl_.closeSocket(this, true);
 				return retval;
 			}
-			if (count < 0) {
-				if (errno != EAGAIN && errno != EWOULDBLOCK) {
-					logDebug("read on fd %1 failed (errno: %2)", socket_, errno);
-					impl_.closeSocket(this, true);
-					return retval;
-				}
-			} else {
-				retval += readBuf_.left(count);
-			}
-
-			logTrace("read %1 bytes", retval.size());
-			impl_.startReadWatcher(this);
-			return retval;
+		} else {
+			retval.append(readBuf_.constData(), count);
 		}
+
+		logTrace("read %1 bytes", retval.size());
+		impl_.startReadWatcher(this);
+		return retval;
 	}
 }
 

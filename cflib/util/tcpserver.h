@@ -38,7 +38,7 @@ public:
 	bool start(quint16 port, const QByteArray & ip = "0.0.0.0");
 
 protected:
-	virtual void newConnection(const ConnInitializer & init) = 0;
+	virtual void newConnection(const ConnInitializer * init) = 0;
 
 private:
 	Impl * impl_;
@@ -49,7 +49,7 @@ class TCPConn
 	friend class TCPServer;
 	Q_DISABLE_COPY(TCPConn)
 public:
-	TCPConn(const TCPServer::ConnInitializer & init);
+	TCPConn(const TCPServer::ConnInitializer * init);
 	virtual ~TCPConn();
 
 	QByteArray read();

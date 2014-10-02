@@ -31,7 +31,7 @@ QAtomicInt connCount;
 
 }
 
-RequestParser::RequestParser(const util::TCPServer::ConnInitializer & init,
+RequestParser::RequestParser(const util::TCPServer::ConnInitializer * init,
 	const QList<RequestHandler *> & handlers, util::ThreadVerify * tv)
 :
 	util::ThreadVerify(tv),
@@ -123,6 +123,7 @@ void RequestParser::newBytesAvailable()
 	}
 
 	QByteArray newBytes = read();
+	if (newBytes.isEmpty()) return;
 	logCustom(LogCat::Network | LogCat::Trace)("received %1 bytes on connection %2", newBytes.size(), id_);
 
 	if (contentLength_ == -1) header_ += newBytes;
