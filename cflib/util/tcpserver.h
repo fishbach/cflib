@@ -55,7 +55,8 @@ public:
 	void write(const QByteArray & data);
 	void close();
 
-	int fd() const { return socket_; }
+	QByteArray peerIP() const { return peerIP_; }
+	quint16 peerPort() const { return peerPort_; }
 
 protected:
 	virtual void newBytesAvailable() = 0;
@@ -67,12 +68,12 @@ private:
 
 private:
 	TCPServer::Impl & impl_;
-	const int socket_;
+	int socket_;
 	const QByteArray peerIP_;
 	const quint16 peerPort_;
 	ev_io readWatcher_;
 	ev_io writeWatcher_;
-	const QByteArray readBuf_;
+	QByteArray readBuf_;
 	QByteArray writeBuf_;
 };
 

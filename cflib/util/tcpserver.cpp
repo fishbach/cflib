@@ -149,6 +149,28 @@ public:
 		TCPConn::writeable(0, &conn->writeWatcher_, 0);
 	}
 
+	void closeSocket(TCPConn * conn, bool informApi)
+	{
+		if (!verifyThreadCall(&Impl::closeSocket, conn, informApi)) return;
+
+		if (conn->socket_ == -1) return;
+
+		logFunctionTraceParam("closing socket %1", conn->socket_);
+
+		ev_io_stop(libEVLoop(), &conn->writeWatcher_);
+		ev_io_stop(libEVLoop(), &conn->readWatcher_);
+		close(conn->socket_);
+		conn->socket_ = -1;
+
+		if (informApi) conn->closed();
+	}
+
+	void closeSocketSync(TCPConn * conn)
+	{
+		if (!verifySyncedThreadCall(&Impl::closeSocketSync, conn)) return;
+		closeSocket(conn, false);
+	}
+
 private:
 	static void readable(ev_loop *, ev_io * w, int)
 	{
@@ -203,21 +225,23 @@ TCPConn::TCPConn(const TCPServer::ConnInitializer & init) :
 
 TCPConn::~TCPConn()
 {
-	ev_io_stop(impl_.libEVLoop(), &writeWatcher_);
-	ev_io_stop(impl_.libEVLoop(), &readWatcher_);
+	if (socket_ != -1) impl_.closeSocketSync(this);
 }
 
 QByteArray TCPConn::read()
 {
 	QByteArray retval;
+	if (socket_ == -1) return retval;
+
 	forever {
 		ssize_t count = ::read(socket_, (void *)readBuf_.constData(), readBuf_.size());
 		if (count == 0) {
-			logDebug("socket %1 closed", socket_);
+			impl_.closeSocket(this, true);
 			return retval;
 		} if (count < 0) {
 			if (errno != EAGAIN && errno != EWOULDBLOCK) {
 				logDebug("read on fd %1 failed (errno: %2)", socket_, errno);
+				impl_.closeSocket(this, true);
 			}
 			return retval;
 		} else if (count < readBuf_.size()) {
@@ -248,12 +272,13 @@ void TCPConn::writeable(ev_loop *, ev_io * w, int)
 {
 	TCPConn * conn = (TCPConn *)w->data;
 	QByteArray & buf = conn->writeBuf_;
-	if (buf.isEmpty()) return;
+	const int fd = conn->socket_;
+	if (buf.isEmpty() || fd == -1) return;
 
-	ssize_t count = ::write(conn->socket_, buf.constData(), buf.size());
+	ssize_t count = ::write(fd, buf.constData(), buf.size());
 	if (count == 0) return;
 	if (count < 0) {
-		logDebug("write on fd %1 failed (errno: %2)", conn->socket_, errno);
+		logDebug("write on fd %1 failed (errno: %2)", fd, errno);
 	} else if (count == buf.size()) {
 		buf.clear();
 	} else {
