@@ -18,6 +18,7 @@
 
 #include "tcpserver.h"
 
+#include <cflib/libev/libev.h>
 #include <cflib/util/log.h>
 #include <cflib/util/threadverify.h>
 
@@ -146,7 +147,7 @@ public:
 		if (!verifyThreadCall(&Impl::writeToSocket, conn, data)) return;
 
 		conn->writeBuf_ += data;
-		TCPConn::writeable(0, &conn->writeWatcher_, 0);
+		TCPConn::writeable(0, conn->writeWatcher_, 0);
 	}
 
 	void closeSocket(TCPConn * conn, bool informApi)
@@ -157,8 +158,8 @@ public:
 
 		logFunctionTraceParam("closing socket %1", conn->socket_);
 
-		ev_io_stop(libEVLoop(), &conn->writeWatcher_);
-		ev_io_stop(libEVLoop(), &conn->readWatcher_);
+		ev_io_stop(libEVLoop(), conn->writeWatcher_);
+		ev_io_stop(libEVLoop(), conn->readWatcher_);
 		close(conn->socket_);
 		conn->socket_ = -1;
 
@@ -212,20 +213,24 @@ bool TCPServer::start(quint16 port, const QByteArray & ip)
 
 TCPConn::TCPConn(const TCPServer::ConnInitializer & init) :
 	impl_(init.impl), socket_(init.socket), peerIP_(init.peerIP), peerPort_(init.peerPort),
+	readWatcher_(new ev_io),
+	writeWatcher_(new ev_io),
 	readBuf_(8192, '\0')
 {
-	ev_io_init(&readWatcher_, &TCPConn::readable, socket_, EV_READ);
-	readWatcher_.data = this;
-	ev_io_start(impl_.libEVLoop(), &readWatcher_);
+	ev_io_init(readWatcher_, &TCPConn::readable, socket_, EV_READ);
+	readWatcher_->data = this;
+	ev_io_start(impl_.libEVLoop(), readWatcher_);
 
-	ev_io_init(&writeWatcher_, &TCPConn::writeable, socket_, EV_WRITE);
-	writeWatcher_.data = this;
-	ev_io_start(impl_.libEVLoop(), &writeWatcher_);
+	ev_io_init(writeWatcher_, &TCPConn::writeable, socket_, EV_WRITE);
+	writeWatcher_->data = this;
+	ev_io_start(impl_.libEVLoop(), writeWatcher_);
 }
 
 TCPConn::~TCPConn()
 {
 	if (socket_ != -1) impl_.closeSocketSync(this);
+	delete readWatcher_;
+	delete writeWatcher_;
 }
 
 QByteArray TCPConn::read()

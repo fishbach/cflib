@@ -18,9 +18,10 @@
 
 #pragma once
 
-#include <cflib/libev/libev.h>
-
 #include <QtCore>
+
+struct ev_io;
+struct ev_loop;
 
 namespace cflib { namespace util {
 
@@ -71,8 +72,8 @@ private:
 	int socket_;
 	const QByteArray peerIP_;
 	const quint16 peerPort_;
-	ev_io readWatcher_;
-	ev_io writeWatcher_;
+	ev_io * readWatcher_;
+	ev_io * writeWatcher_;
 	QByteArray readBuf_;
 	QByteArray writeBuf_;
 };
