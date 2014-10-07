@@ -44,7 +44,6 @@ ThreadHolder::ThreadHolder(const QString & threadName) :
 ThreadHolderQt::ThreadHolderQt(const QString & threadName) :
 	ThreadHolder(threadName)
 {
-	logFunctionTrace
 	threadObject_ = new ThreadObject();
 	threadObject_->moveToThread(this);
 	start();
@@ -77,7 +76,6 @@ ThreadHolderLibEV::ThreadHolderLibEV(const QString & threadName, bool isWorkerOn
 	loop_(ev_loop_new(EVFLAG_NOSIGMASK | (isWorkerOnly ? EVBACKEND_SELECT : EVBACKEND_ALL))),
 	wakeupWatcher_(new ev_async)
 {
-	logFunctionTrace
 	ev_async_init(wakeupWatcher_, &ThreadHolderLibEV::asyncCallback);
 	wakeupWatcher_->data = this;
     ev_async_start(loop_, wakeupWatcher_);
@@ -85,7 +83,6 @@ ThreadHolderLibEV::ThreadHolderLibEV(const QString & threadName, bool isWorkerOn
 
 ThreadHolderLibEV::~ThreadHolderLibEV()
 {
-	logFunctionTrace
 	ev_async_stop(loop_, wakeupWatcher_);
 	wakeupWatcher_->data = 0;
 	delete wakeupWatcher_;
@@ -121,14 +118,11 @@ ThreadHolderWorkerPool::ThreadHolderWorkerPool(const QString & threadName, bool 
 	externalCalls_(1024),
 	stopLoop_(false)
 {
-	logFunctionTrace
-
+    start();
 	for (uint i = 2 ; i <= threadCount ; ++i) {
 		Worker * thread = new Worker(QString("%1 %2/%3").arg(threadName).arg(i).arg(threadCount), externalCalls_);
 		workers_ << thread;
 	}
-
-    start();
 }
 
 ThreadHolderWorkerPool::~ThreadHolderWorkerPool()
@@ -146,10 +140,17 @@ bool ThreadHolderWorkerPool::doCall(const Functor * func)
 
 void ThreadHolderWorkerPool::stopLoop()
 {
-	logFunctionTrace
 	stopLoop_ = true;
 	wakeUp();
 	foreach (Worker * w, workers_) w->stopLoop();
+}
+
+bool ThreadHolderWorkerPool::isOwnThread() const
+{
+	QThread * current = QThread::currentThread();
+	if (current == this) return true;
+	foreach (QThread * w, workers_) if (current == w) return true;
+	return false;
 }
 
 void ThreadHolderWorkerPool::wokeUp()
@@ -167,7 +168,6 @@ void ThreadHolderWorkerPool::wokeUp()
 
 void ThreadHolderWorkerPool::run()
 {
-	logFunctionTrace
 	ThreadHolderLibEV::run();
 	foreach (Worker * w, workers_) w->wait();
 }

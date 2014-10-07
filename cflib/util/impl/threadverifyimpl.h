@@ -52,6 +52,7 @@ public:
 	bool isActive() const { return isActive_; }
 	virtual bool doCall(const Functor * func) = 0;
 	virtual void stopLoop() = 0;
+	virtual bool isOwnThread() const { return QThread::currentThread() == this; }
 
 protected:
 	bool isActive_;
@@ -103,6 +104,7 @@ public:
 
 	virtual bool doCall(const Functor * func);
 	virtual void stopLoop();
+	virtual bool isOwnThread() const;
 
 protected:
     virtual void run();

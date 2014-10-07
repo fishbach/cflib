@@ -156,7 +156,7 @@ public:
 		if (!verifyThreadCall(&Impl::writeToSocket, conn, data)) return;
 
 		conn->writeBuf_ += data;
-		TCPConn::writeable(0, conn->writeWatcher_, 0);
+		TCPConn::writeable(libEVLoop(), conn->writeWatcher_, 0);
 	}
 
 	void closeSocket(TCPConn * conn, bool informApi)
