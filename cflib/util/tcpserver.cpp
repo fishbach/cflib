@@ -252,7 +252,7 @@ QByteArray TCPConn::read()
 
 	forever {
 		ssize_t count = ::read(socket_, (void *)readBuf_.constData(), readBuf_.size());
-		if (count == readBuf_.size()) {
+		if (count == readBuf_.size() && retval.size() < 0x40000000) {	// 1 mb
 			retval.append(readBuf_.constData(), count);
 			continue;
 		}
