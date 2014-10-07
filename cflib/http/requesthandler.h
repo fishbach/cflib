@@ -28,7 +28,7 @@ namespace impl { class RequestParser; }
 class RequestHandler : public util::ThreadVerify
 {
 public:
-	RequestHandler(const QString & name);
+	RequestHandler(const QString & name, uint threadCount = 1);
 
 protected:
 	virtual void handleRequest(const Request & request) = 0;

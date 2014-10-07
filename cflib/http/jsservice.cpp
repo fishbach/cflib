@@ -20,8 +20,8 @@
 
 namespace cflib { namespace http {
 
-JSService::JSService(const QString & threadName) :
-	util::ThreadVerify(threadName, true),
+JSService::JSService(const QString & threadName, uint threadCount) :
+	util::ThreadVerify(threadName, util::ThreadVerify::Worker, threadCount),
 	clId_(0), delayedReply_(false), requestPtr_(0), prependDataPtr_(0)
 {
 }

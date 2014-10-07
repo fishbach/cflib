@@ -28,7 +28,7 @@ namespace cflib { namespace util {
 Mailer * Mailer::instance_ = 0;
 
 Mailer::Mailer() :
-	ThreadVerify("Mailer"),
+	ThreadVerify("Mailer", ThreadVerify::Qt),
 	process_(0)
 {
 	if (!instance_) {

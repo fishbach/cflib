@@ -29,8 +29,8 @@ namespace cflib { namespace http {
 class Server::Impl : public util::ThreadVerify, public util::TCPServer
 {
 public:
-	Impl() :
-		util::ThreadVerify("HTTP-Server", true)
+	Impl(uint threadCount) :
+		util::ThreadVerify("HTTP-Server", util::ThreadVerify::Worker, threadCount)
 	{
 	}
 
@@ -77,8 +77,8 @@ private:
 	QList<RequestHandler *> handlers_;
 };
 
-Server::Server() :
-	impl_(new Impl())
+Server::Server(uint threadCount) :
+	impl_(new Impl(threadCount))
 {
 }
 

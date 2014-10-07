@@ -30,7 +30,7 @@ class Replier;
 class JSService : public util::ThreadVerify
 {
 public:
-	JSService(const QString & threadName);
+	JSService(const QString & threadName, uint threadCount = 1);
 
 	void processServiceJSRequest(const QByteArray & requestData, const Request & request, uint clId,
 		const QByteArray & prependData);

@@ -103,7 +103,7 @@ QByteArray RequestParser::readPassThrough(bool & isLast)
 		if (hasMore) {
 			header_ += retval.mid(contentLength_);
 			retval.resize(contentLength_);
-			callNext(new util::Functor0<RequestParser>(this, &RequestParser::parseRequest));
+			execCall(new util::Functor0<RequestParser>(this, &RequestParser::parseRequest));
 		}
 		contentLength_ = -1;
 		passThrough_ = false;

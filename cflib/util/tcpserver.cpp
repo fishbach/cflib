@@ -68,7 +68,7 @@ class TCPServer::Impl : public util::ThreadVerify
 {
 public:
 	Impl(TCPServer & parent) :
-		ThreadVerify("TCPServer", true),
+		ThreadVerify("TCPServer", ThreadVerify::Net),
 		parent_(parent),
 		listenSock_(-1),
 		readWatcher_(new ev_io)

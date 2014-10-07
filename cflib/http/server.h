@@ -28,7 +28,7 @@ class Server
 {
 	Q_DISABLE_COPY(Server)
 public:
-	Server();
+	Server(uint threadCount = 2);
 	~Server();
 
 	bool start(quint16 port, const QByteArray & address = "127.0.0.1");

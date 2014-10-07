@@ -39,39 +39,53 @@ bool ThreadObject::event(QEvent * event)
 ThreadHolder::ThreadHolder(const QString & threadName) :
 	threadName(threadName), isActive_(true)
 {
-	threadObject = new ThreadObject();
-	threadObject->moveToThread(this);
 }
 
-ThreadHolder::ThreadHolder(const QString & threadName, ThreadObject * threadObject) :
-	threadName(threadName), threadObject(threadObject), isActive_(true)
+ThreadHolderQt::ThreadHolderQt(const QString & threadName) :
+	ThreadHolder(threadName)
 {
+	logFunctionTrace
+	threadObject_ = new ThreadObject();
+	threadObject_->moveToThread(this);
+	start();
 }
 
-void ThreadHolder::run()
+bool ThreadHolderQt::doCall(const Functor * func)
+{
+	QCoreApplication::postEvent(threadObject_, new impl::ThreadHolderEvent(func));
+	return true;
+}
+
+void ThreadHolderQt::stopLoop()
+{
+	quit();
+}
+
+void ThreadHolderQt::run()
 {
 	logDebug("thread %1 started with Qt event loop", threadName);
 	exec();
 	isActive_ = false;
 	logDebug("thread %1 events stopped", threadName);
-	delete threadObject;
-	threadObject = 0;
+	delete threadObject_;
+	threadObject_ = 0;
 	logDebug("thread %1 stopped", threadName);
 }
 
-ThreadHolderLibEV::ThreadHolderLibEV(const QString & threadName) :
-	ThreadHolder(threadName, 0),
-	loop_(ev_loop_new(EVFLAG_NOSIGMASK | EVBACKEND_ALL)),
-	wakeupWatcher_(new ev_async),
-	externalCalls_(1024)
+ThreadHolderLibEV::ThreadHolderLibEV(const QString & threadName, bool isWorkerOnly) :
+	ThreadHolder(threadName),
+	loop_(ev_loop_new(EVFLAG_NOSIGMASK | (isWorkerOnly ? EVBACKEND_SELECT : EVBACKEND_ALL))),
+	wakeupWatcher_(new ev_async)
 {
-	ev_async_init(wakeupWatcher_, &ThreadHolderLibEV::wakeup);
+	logFunctionTrace
+	ev_async_init(wakeupWatcher_, &ThreadHolderLibEV::asyncCallback);
 	wakeupWatcher_->data = this;
     ev_async_start(loop_, wakeupWatcher_);
 }
 
 ThreadHolderLibEV::~ThreadHolderLibEV()
 {
+	logFunctionTrace
 	ev_async_stop(loop_, wakeupWatcher_);
 	wakeupWatcher_->data = 0;
 	delete wakeupWatcher_;
@@ -83,11 +97,9 @@ void ThreadHolderLibEV::stopLoop()
 	ev_break(loop_, EVBREAK_ALL);
 }
 
-bool ThreadHolderLibEV::doCall(const Functor * func)
+void ThreadHolderLibEV::wakeUp()
 {
-	if (!externalCalls_.put(func)) return false;
 	ev_async_send(loop_, wakeupWatcher_);
-	return true;
 }
 
 void ThreadHolderLibEV::run()
@@ -98,10 +110,91 @@ void ThreadHolderLibEV::run()
 	logDebug("thread %1 stopped", threadName);
 }
 
-void ThreadHolderLibEV::wakeup(ev_loop *, ev_async * w, int)
+void ThreadHolderLibEV::asyncCallback(ev_loop *, ev_async * w, int)
 {
-	ThreadFifo<const Functor *> & calls = ((ThreadHolderLibEV *)w->data)->externalCalls_;
-	while (const Functor * func = calls.take()) {
+	((ThreadHolderLibEV *)w->data)->wokeUp();
+}
+
+ThreadHolderWorkerPool::ThreadHolderWorkerPool(const QString & threadName, bool isWorkerOnly, uint threadCount)
+:
+	ThreadHolderLibEV(QString("%1 1/%2").arg(threadName).arg(threadCount), isWorkerOnly),
+	externalCalls_(1024),
+	stopLoop_(false)
+{
+	logFunctionTrace
+
+	for (uint i = 2 ; i <= threadCount ; ++i) {
+		Worker * thread = new Worker(QString("%1 %2/%3").arg(threadName).arg(i).arg(threadCount), externalCalls_);
+		workers_ << thread;
+	}
+
+    start();
+}
+
+ThreadHolderWorkerPool::~ThreadHolderWorkerPool()
+{
+	foreach (Worker * w, workers_) delete w;
+}
+
+bool ThreadHolderWorkerPool::doCall(const Functor * func)
+{
+	if (!externalCalls_.put(func)) return false;
+	wakeUp();
+	foreach (Worker * w, workers_) w->wakeUp();
+	return true;
+}
+
+void ThreadHolderWorkerPool::stopLoop()
+{
+	logFunctionTrace
+	stopLoop_ = true;
+	wakeUp();
+	foreach (Worker * w, workers_) w->stopLoop();
+}
+
+void ThreadHolderWorkerPool::wokeUp()
+{
+	if (stopLoop_) {
+		ThreadHolderLibEV::stopLoop();
+		return;
+	}
+
+	while (const Functor * func = externalCalls_.take()) {
+		(*func)();
+		delete func;
+	}
+}
+
+void ThreadHolderWorkerPool::run()
+{
+	logFunctionTrace
+	ThreadHolderLibEV::run();
+	foreach (Worker * w, workers_) w->wait();
+}
+
+ThreadHolderWorkerPool::Worker::Worker(const QString & threadName, ThreadFifo<const Functor> & externalCalls)
+:
+	ThreadHolderLibEV(threadName, true),
+	externalCalls_(externalCalls),
+	stopLoop_(false)
+{
+    start();
+}
+
+void ThreadHolderWorkerPool::Worker::stopLoop()
+{
+	stopLoop_ = true;
+	wakeUp();
+}
+
+void ThreadHolderWorkerPool::Worker::wokeUp()
+{
+	if (stopLoop_) {
+		ThreadHolderLibEV::stopLoop();
+		return;
+	}
+
+	while (const Functor * func = externalCalls_.take()) {
 		(*func)();
 		delete func;
 	}

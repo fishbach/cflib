@@ -21,47 +21,51 @@
 #include <QtCore>
 
 // Threadsafe Fifo
-// Many threads can put simultaneously
-// Only one is allowed to take.
+// put and take from multiple threads possible
 
 namespace cflib { namespace util {
 
 template<typename T>
 class ThreadFifo
 {
+	Q_DISABLE_COPY(ThreadFifo)
 public:
 	ThreadFifo(int size) : buffer_(size), max_(size) {}
 
-	inline bool put(T data) {
-		int o, w;
+	inline bool put(T * data) {
+		int o, n;
+		El * el;
 		do {
 			o = writer_;
-			w = (o + 1) % max_;
-			if (w == reader_) return false;
-		} while (!writer_.testAndSetOrdered(o, w));
-		El & el = (El &)buffer_[o];
-		el.data = data;
-		el.filled.storeRelease(1);
+			n = (o + 1) % max_;
+			el = (El *)&buffer_[o];
+			if (n == reader_ || el->filled.loadAcquire() == 1) return false;
+		} while (!writer_.testAndSetOrdered(o, n));
+		el->data = data;
+		el->filled.storeRelease(1);
 		return true;
 	}
 
-	inline T take() {
-		const int r = reader_;
-		if (r == writer_) return 0;
-		El & el = (El &)buffer_[r];
-		if (el.filled.loadAcquire() == 0) return 0;
-		T rv = el.data;
-		el.data = 0;
-		el.filled.storeRelease(0);
-		reader_.storeRelease((r + 1) % max_);
+	inline T * take() {
+		int o, n;
+		El * el;
+		do {
+			o = reader_;
+			n = (o + 1) % max_;
+			el = (El *)&buffer_[o];
+			if (o == writer_ || el->filled.loadAcquire() == 0) return 0;
+		} while (!reader_.testAndSetOrdered(o, n));
+		T * rv = el->data;
+		el->data = 0;
+		el->filled.storeRelease(0);
 		return rv;
 	}
 
 private:
 	struct El {
 		QAtomicInt filled;
-		T data;
-		El() : filled(false), data(0) {}
+		T * data;
+		El() : filled(0), data(0) {}
 	};
 	const QVector<El> buffer_;	// const for performance (no Qt ref counting)
 	const int max_;

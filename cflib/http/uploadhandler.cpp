@@ -25,8 +25,8 @@ USE_LOG(LogCat::Http)
 
 namespace cflib { namespace http {
 
-UploadHandler::UploadHandler(const QString & path, const QString & threadName) :
-	util::ThreadVerify(threadName, true),
+UploadHandler::UploadHandler(const QString & path, const QString & threadName, uint threadCount) :
+	util::ThreadVerify(threadName, util::ThreadVerify::Worker, threadCount),
 	path_(path),
 	apiServer_(0)
 {

@@ -28,7 +28,7 @@ class ApiServer;
 class UploadHandler : public util::ThreadVerify, public PassThroughHandler
 {
 public:
-	UploadHandler(const QString & path, const QString & threadName);
+	UploadHandler(const QString & path, const QString & threadName, uint threadCount = 1);
 
 	QString getName() const { return path_; }
 	void setApiServer(ApiServer * apiServer) { apiServer_ = apiServer; }

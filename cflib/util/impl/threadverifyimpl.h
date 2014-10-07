@@ -48,38 +48,86 @@ class ThreadHolder : public QThread
 public:
 	ThreadHolder(const QString & threadName);
 
-	bool isActive() const { return isActive_; }
 	const QString threadName;
-	ThreadObject * threadObject;
-
-protected:
-	ThreadHolder(const QString & threadName, ThreadObject * threadObject);
-    virtual void run();
+	bool isActive() const { return isActive_; }
+	virtual bool doCall(const Functor * func) = 0;
+	virtual void stopLoop() = 0;
 
 protected:
 	bool isActive_;
 };
 
-class ThreadHolderLibEV : public ThreadHolder
+class ThreadHolderQt : public ThreadHolder
 {
 public:
-	ThreadHolderLibEV(const QString & threadName);
-	~ThreadHolderLibEV();
+	ThreadHolderQt(const QString & threadName);
 
-	ev_loop * loop() const { return loop_; }
-	void stopLoop();
-	bool doCall(const Functor * func);
+	ThreadObject * threadObject() const { return threadObject_; }
+	virtual bool doCall(const Functor * func);
+	virtual void stopLoop();
 
 protected:
     virtual void run();
 
 private:
-	static void wakeup(ev_loop * loop, ev_async * w, int revents);
+	ThreadObject * threadObject_;
+};
+
+class ThreadHolderLibEV : public ThreadHolder
+{
+public:
+	virtual ~ThreadHolderLibEV();
+
+	virtual void stopLoop();
+	ev_loop * loop() const { return loop_; }
+	void wakeUp();
+
+protected:
+	ThreadHolderLibEV(const QString & threadName, bool isWorkerOnly);
+    virtual void run();
+    virtual void wokeUp() = 0;
+
+private:
+	static void asyncCallback(ev_loop * loop, ev_async * w, int revents);
 
 private:
 	ev_loop * loop_;
 	ev_async * wakeupWatcher_;
-	ThreadFifo<const Functor *> externalCalls_;
+};
+
+class ThreadHolderWorkerPool : public ThreadHolderLibEV
+{
+public:
+	ThreadHolderWorkerPool(const QString & threadName, bool isWorkerOnly, uint threadCount = 1);
+	~ThreadHolderWorkerPool();
+
+	virtual bool doCall(const Functor * func);
+	virtual void stopLoop();
+
+protected:
+    virtual void run();
+	virtual void wokeUp();
+
+private:
+	class Worker : public ThreadHolderLibEV
+	{
+	public:
+		Worker(const QString & threadName, ThreadFifo<const Functor> & externalCalls);
+
+		virtual bool doCall(const Functor *) { return false; }
+		virtual void stopLoop();
+
+	protected:
+		virtual void wokeUp();
+
+	private:
+		ThreadFifo<const Functor> & externalCalls_;
+		bool stopLoop_;
+	};
+
+	ThreadFifo<const Functor> externalCalls_;
+	QList<Worker *> workers_;
+	bool stopLoop_;
 };
 
 }}}	// namespace

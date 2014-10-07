@@ -25,18 +25,24 @@ USE_LOG(LogCat::Etc)
 
 namespace cflib { namespace util {
 
-ThreadVerify::ThreadVerify(const QString & threadName, bool useLibEV) :
-	verifyThread_(useLibEV ? new impl::ThreadHolderLibEV(threadName) : new impl::ThreadHolder(threadName)),
-	ownerOfVerifyThread_(true),
-	isLibEV_(useLibEV)
+ThreadVerify::ThreadVerify(const QString & threadName, LoopType loopType, uint threadCount) :
+	ownerOfVerifyThread_(true)
 {
-	verifyThread_->start();
+	if (loopType == Qt) {
+		if (threadCount != 1) logCritical("thread count must be 1 for Qt thread %1", threadName);
+		verifyThread_ = new impl::ThreadHolderQt(threadName);
+	} else if (loopType == Net) {
+		if (threadCount != 1) logCritical("thread count must be 1 for network thread %1", threadName);
+		verifyThread_ = new impl::ThreadHolderWorkerPool(threadName, false);
+	} else {
+		if (threadCount == 0) logCritical("thread count cannot be 0 for worker thread %1", threadName);
+		verifyThread_ = new impl::ThreadHolderWorkerPool(threadName, true, threadCount);
+	}
 }
 
 ThreadVerify::ThreadVerify(ThreadVerify * other) :
 	verifyThread_(other->verifyThread_),
-	ownerOfVerifyThread_(false),
-	isLibEV_(other->isLibEV_)
+	ownerOfVerifyThread_(false)
 {
 }
 
@@ -44,10 +50,17 @@ ThreadVerify::~ThreadVerify()
 {
 	if (ownerOfVerifyThread_) {
 		if (verifyThread_->isActive()) {
-			logWarn("thread %1 has not been stopped before destruction", verifyThread_->threadName);
+			logCritical("thread %1 has not been stopped before destruction", verifyThread_->threadName);
 		}
 		verifyThread_->deleteLater();
 	}
+}
+
+QObject * ThreadVerify::threadObject() const
+{
+	const impl::ThreadHolderQt * th = dynamic_cast<const impl::ThreadHolderQt *>(verifyThread_);
+	if (!th) return 0;
+	return th->threadObject();
 }
 
 void ThreadVerify::stopVerifyThread()
@@ -58,10 +71,11 @@ void ThreadVerify::stopVerifyThread()
 	}
 }
 
-ev_loop * ThreadVerify::libEVLoop()
+ev_loop * ThreadVerify::libEVLoop() const
 {
-	if (!isLibEV_) return 0;
-	return ((impl::ThreadHolderLibEV *)verifyThread_)->loop();
+	const impl::ThreadHolderLibEV * th = dynamic_cast<const impl::ThreadHolderLibEV *>(verifyThread_);
+	if (!th) return 0;
+	return th->loop();
 }
 
 namespace {
@@ -80,32 +94,11 @@ private:
 	const ThreadVerify * obj_;
 };
 
-void callNextTimeout(ev_loop *,  ev_timer * w, int)
-{
-	const Functor * func = (const Functor *)w->data;
-	delete w;
-	(*func)();
-	delete func;
-}
-
-}
-
-void ThreadVerify::callNext(const Functor * func)
-{
-	if (!verifyThreadCall(&ThreadVerify::callNext, func)) return;
-
-	if (!isLibEV_) QCoreApplication::postEvent(verifyThread_->threadObject, new impl::ThreadHolderEvent(func));
-	else {
-		ev_timer * timer = new ev_timer;
-		ev_timer_init(timer, &callNextTimeout, 0, 0);
-		timer->data = (void *)func;
-		ev_timer_start(libEVLoop(), timer);
-	}
 }
 
 void ThreadVerify::deleteNext()
 {
-	callNext(new Deleter(this));
+	execCall(new Deleter(this));
 }
 
 void ThreadVerify::execCall(const Functor * func)
@@ -114,22 +107,19 @@ void ThreadVerify::execCall(const Functor * func)
 		logWarn("execCall for already terminated thread %1", verifyThread_->threadName);
 		return;
 	}
-	if (!isLibEV_) QCoreApplication::postEvent(verifyThread_->threadObject, new impl::ThreadHolderEvent(func));
-	else {
-		while (!((impl::ThreadHolderLibEV *)verifyThread_)->doCall(func)) {
-			logWarn("Call queue of destination thread full! Waiting ...");
-			QThread::msleep(1000);
-		}
+	while (!verifyThread_->doCall(func)) {
+		logWarn("Call queue of destination thread full! Waiting ...");
+		QThread::msleep(1000);
 	}
 }
 
 void ThreadVerify::shutdownThread()
 {
 	if (!verifyThreadCall(&ThreadVerify::shutdownThread)) return;
+
 	logFunctionTrace
 	deleteThreadData();
-	if (!isLibEV_) verifyThread_->quit();
-	else           ((impl::ThreadHolderLibEV *)verifyThread_)->stopLoop();
+	verifyThread_->stopLoop();
 }
 
 }}	// namespace

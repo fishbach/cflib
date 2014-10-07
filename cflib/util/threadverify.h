@@ -25,14 +25,21 @@ namespace cflib { namespace util {
 class ThreadVerify
 {
 public:
-	ThreadVerify(const QString & threadName, bool useLibEV = false);
+	enum LoopType {
+		Qt     = 1,
+		Net    = 2,
+		Worker = 3
+	};
+
+public:
+	ThreadVerify(const QString & threadName, LoopType loopType, uint threadCount = 1);
 	ThreadVerify(ThreadVerify * other);
 	virtual ~ThreadVerify();
 
-	inline QObject * threadObject() const { return verifyThread_->threadObject; }
+	QObject * threadObject() const;
 	void stopVerifyThread();
-	ev_loop * libEVLoop();
-	void callNext(const Functor * func);
+	ev_loop * libEVLoop() const;
+	void execCall(const Functor * func);
 	void deleteNext();
 
 protected:
@@ -185,13 +192,11 @@ protected:
 	// ------------------------------------------------------------------------
 
 private:
-	void execCall(const Functor * func);
 	void shutdownThread();
 
 private:
 	impl::ThreadHolder * verifyThread_;
 	const bool ownerOfVerifyThread_;
-	const bool isLibEV_;
 };
 
 inline ev_loop * libEVLoopOfThread()

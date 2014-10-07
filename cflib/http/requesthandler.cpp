@@ -22,8 +22,8 @@
 
 namespace cflib { namespace http {
 
-RequestHandler::RequestHandler(const QString & name) :
-	util::ThreadVerify(name, true)
+RequestHandler::RequestHandler(const QString & name, uint threadCount) :
+	util::ThreadVerify(name, util::ThreadVerify::Worker, threadCount)
 {
 }
 
