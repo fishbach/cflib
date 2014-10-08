@@ -234,8 +234,6 @@ TCPConn::TCPConn(const TCPServer::ConnInitializer * init) :
 	readWatcher_->data = this;
 	ev_io_init(writeWatcher_, &TCPConn::writeable, socket_, EV_WRITE);
 	writeWatcher_->data = this;
-
-	impl_.startReadWatcher(this);
 }
 
 TCPConn::~TCPConn()
@@ -273,9 +271,13 @@ QByteArray TCPConn::read()
 		}
 
 		logTrace("read %1 bytes", retval.size());
-		impl_.startReadWatcher(this);
 		return retval;
 	}
+}
+
+void TCPConn::startReadWatcher()
+{
+	impl_.startReadWatcher(this);
 }
 
 void TCPConn::write(const QByteArray & data)

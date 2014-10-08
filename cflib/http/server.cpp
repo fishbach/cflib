@@ -60,16 +60,12 @@ public:
 
 	void registerHandler(RequestHandler * handler)
 	{
-		if (!verifyThreadCall(&Impl::registerHandler, handler)) return;
-
 		handlers_ << handler;
 	}
 
 protected:
 	virtual void newConnection(const ConnInitializer * init)
     {
-		if (!verifyThreadCall(&Impl::newConnection, init)) return;
-
 		new impl::RequestParser(init, handlers_, this);
     }
 

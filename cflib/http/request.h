@@ -35,9 +35,8 @@ public:
 public:
 	Request();
 	Request(int connId, int requestId,
-		const KeyVal & headerFields, const QByteArray & method, const QUrl & url, const QByteArray & body,
-		const QList<RequestHandler *> & handlers,
-		bool passThrough,
+		const KeyVal & headerFields, const QByteArray & method, const QUrl & url,
+		const QByteArray & body, const QList<RequestHandler *> & handlers, bool passThrough,
 		impl::RequestParser * parser);
 
 	// implicit sharing
@@ -64,6 +63,7 @@ public:
 	bool isPassThrough() const;
 	void setPassThroughHandler(PassThroughHandler * hdl) const;
 	QByteArray readPassThrough(bool & isLast) const;
+	void startReadWatcher() const;
 
 private:
 	void callNextHandler() const;
@@ -77,7 +77,7 @@ private:
 class PassThroughHandler
 {
 public:
-	virtual void morePassThroughData(const Request::Id & id) = 0;
+	virtual void morePassThroughData() = 0;
 };
 
 }}	// namespace

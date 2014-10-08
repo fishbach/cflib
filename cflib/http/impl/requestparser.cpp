@@ -46,6 +46,7 @@ RequestParser::RequestParser(const util::TCPServer::ConnInitializer * init,
 	passThroughHandler_(0)
 {
 	logCustom(LogCat::Network | LogCat::Debug)("new connection %1", id_);
+	startReadWatcher();
 }
 
 RequestParser::~RequestParser()
@@ -95,21 +96,26 @@ QByteArray RequestParser::readPassThrough(bool & isLast)
 	SyncedThreadCall<QByteArray> stc(this);
 	if (!stc.verify(&RequestParser::readPassThrough, isLast)) return stc.retval();
 
-	if (!passThrough_) return QByteArray();
+	if (!passThrough_ || socketClosed_) {
+		isLast = true;
+		return QByteArray();
+	}
 	QByteArray retval = read();
 	isLast = retval.size() >= contentLength_;
+	bool dataForNextRequest = false;
 	if (isLast) {
-		bool hasMore = retval.size() > contentLength_;
-		if (hasMore) {
-			header_ += retval.mid(contentLength_);
+		if (retval.size() > contentLength_) {
+			dataForNextRequest = true;
+			header_ = retval.mid(contentLength_);
 			retval.resize(contentLength_);
-			execCall(new util::Functor0<RequestParser>(this, &RequestParser::parseRequest));
 		}
 		contentLength_ = -1;
 		passThrough_ = false;
+		passThroughHandler_ = 0;
 	} else {
 		contentLength_ -= retval.size();
 	}
+	if (dataForNextRequest) execCall(new util::Functor0<RequestParser>(this, &RequestParser::parseRequest));
 	return retval;
 }
 
@@ -118,7 +124,7 @@ void RequestParser::newBytesAvailable()
 	if (!verifyThreadCall(&RequestParser::newBytesAvailable)) return;
 
 	if (passThrough_) {
-		if (passThroughHandler_) passThroughHandler_->morePassThroughData(qMakePair(id_, requestCount_));
+		if (passThroughHandler_) passThroughHandler_->morePassThroughData();
 		return;
 	}
 
@@ -139,14 +145,14 @@ void RequestParser::parseRequest()
 		// header ok?
 		if (contentLength_ == -1) {
 			const int pos = header_.indexOf("\r\n\r\n");
-			if (pos == -1) return;
+			if (pos == -1) break;
 
 			body_ = header_.mid(pos + 4);
 			header_.resize(pos);
 
 			if (!parseHeader()) {
 				close();
-				return;
+				break;
 			}
 		}
 
@@ -155,7 +161,7 @@ void RequestParser::parseRequest()
 
 		if (body_.size() < size) {
 			// small requests we hold in memory
-			if (size <= 8192) return;
+			if (size <= 8192) break;
 			passThrough_ = true;
 		}
 
@@ -169,7 +175,8 @@ void RequestParser::parseRequest()
 
 		// notify handlers
 		++attachedRequests_;
-		Request(id_, ++requestCount_, headerFields_, method_, url_, body_, handlers_, passThrough_, this).callNextHandler();
+		Request(id_, ++requestCount_, headerFields_, method_, url_, body_,
+			handlers_, passThrough_, this).callNextHandler();
 
 		// reset for next
 		contentLength_ = passThrough_ ? (size - body_.size()) : -1;
@@ -179,6 +186,8 @@ void RequestParser::parseRequest()
 		body_.clear();
 
 	} while (!header_.isEmpty());
+
+	startReadWatcher();
 }
 
 void RequestParser::closed()
@@ -187,7 +196,9 @@ void RequestParser::closed()
 
 	socketClosed_ = true;
 	logCustom(LogCat::Network | LogCat::Debug)("connection %1 closed", id_);
-	detachRequest();
+	detachRequest();	// removes initial ref, so that we will be deleted
+
+	if (passThroughHandler_) passThroughHandler_->morePassThroughData();
 }
 
 bool RequestParser::parseHeader()

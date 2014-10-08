@@ -664,7 +664,7 @@ void ApiServer::handleUpload(const Request & request, QString path) const
 {
 	UploadHandler * hdl = uploadHandler_.value(path);
 	if (!hdl || !request.isPOST()) request.sendNotFound();
-	else                           hdl->processUploadRequest(request);
+	else                           hdl->processRequest(request);
 }
 
 }}	// namespace

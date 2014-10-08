@@ -46,13 +46,13 @@ private:
 
 class TCPConn
 {
-	friend class TCPServer;
 	Q_DISABLE_COPY(TCPConn)
 public:
 	TCPConn(const TCPServer::ConnInitializer * init);
 	virtual ~TCPConn();
 
 	QByteArray read();
+	void startReadWatcher();
 	void write(const QByteArray & data);
 	void close();
 
@@ -76,6 +76,8 @@ private:
 	ev_io * writeWatcher_;
 	QByteArray readBuf_;
 	QByteArray writeBuf_;
+
+	friend class TCPServer;
 };
 
 }}	// namespace

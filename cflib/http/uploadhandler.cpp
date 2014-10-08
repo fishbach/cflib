@@ -26,127 +26,140 @@ USE_LOG(LogCat::Http)
 namespace cflib { namespace http {
 
 UploadHandler::UploadHandler(const QString & path, const QString & threadName, uint threadCount) :
-	util::ThreadVerify(threadName, util::ThreadVerify::Worker, threadCount),
+	ThreadVerify(threadName, util::ThreadVerify::Worker, threadCount),
 	path_(path),
 	apiServer_(0)
 {
 }
 
-void UploadHandler::processUploadRequest(const Request & request)
+UploadHandler::~UploadHandler()
 {
-	if (!verifyThreadCall(&UploadHandler::processUploadRequest, request)) return;
+	stopVerifyThread();
+}
 
-	const Request::KeyVal header = request.getHeaderFields();
+UploadRequestHandler::UploadRequestHandler(UploadHandler * uploadHandler, const Request & request) :
+	ThreadVerify(uploadHandler),
+	request_(request),
+	apiServer_(uploadHandler->apiServer_),
+	state_(1),
+	clientId_(0)
+{
+	init();
+}
+
+void UploadRequestHandler::morePassThroughData()
+{
+	if (!verifyThreadCall(&UploadRequestHandler::morePassThroughData)) return;
+
+	parseMoreData();
+}
+
+void UploadRequestHandler::init()
+{
+	if (!verifyThreadCall(&UploadRequestHandler::init)) return;
+
+	const Request::KeyVal header = request_.getHeaderFields();
 
 	// get boundary from content type
-	QByteArray boundary = header["content-type"];
-	const QByteArray cTypeLc = boundary.toLower();
+	boundary_ = header["content-type"];
+	const QByteArray cTypeLc = boundary_.toLower();
 	int pos = cTypeLc.indexOf("boundary=");
 	if (pos == -1 || !cTypeLc.startsWith("multipart/form-data")) {
-		logInfo("Wrong content type: %1", boundary);
-		request.sendNotFound();
+		logInfo("Wrong content type: %1", boundary_);
+		request_.sendNotFound();
+		deleteNext();
 		return;
 	}
+	boundary_ = "--" + boundary_.mid(pos + 9);
+	buffer_ = request_.getBody();
 
-	RequestData & rd = requests_[request.getId()];
-	rd.request  = new Request(request);
-	rd.boundary = "--" + boundary.mid(pos + 9);
-	rd.buffer = request.getBody();
-	rd.state = 1;
-	rd.clientId = 0;
-	if (request.isPassThrough()) request.setPassThroughHandler(this);
+	if (request_.isPassThrough()) request_.setPassThroughHandler(this);
 
-	parseMoreData(rd);
+	parseMoreData();
 }
 
-void UploadHandler::morePassThroughData(const Request::Id & id)
-{
-	if (!verifyThreadCall(&UploadHandler::morePassThroughData, id)) return;
-
-	if (requests_.contains(id)) parseMoreData(requests_[id]);
-}
-
-void UploadHandler::parseMoreData(UploadHandler::RequestData & rd)
+void UploadRequestHandler::parseMoreData()
 {
 	logFunctionTrace
 
 	bool isLast = true;
-	if (rd.request->isPassThrough()) {
-		rd.buffer += rd.request->readPassThrough(isLast);
-	}
+	if (request_.isPassThrough()) buffer_ += request_.readPassThrough(isLast);
 
 	logDebug("iss pt: %1 / buf: %2 / last: %3 / state: %4",
-		rd.request->isPassThrough(), rd.buffer.size(), isLast, rd.state);
+		request_.isPassThrough(), buffer_.size(), isLast, state_);
 
 	forever {
-		if (rd.state == 1) {
+
+		if (state_ == 1) {
 			// search for first boundary
-			if (rd.buffer.indexOf(rd.boundary) == 0) {
-				rd.buffer.remove(0, rd.boundary.size() + 2);	// \r\n
-				rd.state = 2;
-			} else break;
+			if (buffer_.indexOf(boundary_) != 0) break;
+
+			buffer_.remove(0, boundary_.size() + 2);	// \r\n
+			state_ = 2;
 		}
-		if (rd.state == 2) {
+
+		if (state_ == 2) {
 			// search for header end
-			int bodyPos = rd.buffer.indexOf("\r\n\r\n");
-			if (bodyPos != -1) {
-					foreach (const QByteArray & line, rd.buffer.left(bodyPos).split('\n')) {
-						const int pos = line.indexOf(':');
-						if (pos == -1) {
-							logWarn("funny line in header: %1", line);
-							continue;
-						}
-						QByteArray key   = line.left(pos).trimmed().toLower();
-						QByteArray value = line.mid(pos + 1).trimmed();
-						if (key == "content-type") rd.contentType = value;
-						else if (key == "content-disposition") {
-							int pos = value.indexOf("name=\"");
-							if (pos != -1) {
-								int pos2 = value.indexOf('"', pos + 6);
-								if (pos2 != -1) rd.name = value.mid(pos + 6, pos2 - pos - 6);
-							}
-							pos = value.indexOf("filename=\"");
-							if (pos != -1) {
-								int pos2 = value.indexOf('"', pos + 10);
-								if (pos2 != -1) rd.filename = value.mid(pos + 10, pos2 - pos - 10);
-							}
-						}
+			int bodyPos = buffer_.indexOf("\r\n\r\n");
+			if (bodyPos == -1) break;
+
+			foreach (const QByteArray & line, buffer_.left(bodyPos).split('\n')) {
+				const int pos = line.indexOf(':');
+				if (pos == -1) {
+					logWarn("funny line in header: %1", line);
+					continue;
+				}
+				QByteArray key   = line.left(pos).trimmed().toLower();
+				QByteArray value = line.mid(pos + 1).trimmed();
+				if (key == "content-type") contentType_ = value;
+				else if (key == "content-disposition") {
+					int pos = value.indexOf("name=\"");
+					if (pos != -1) {
+						int pos2 = value.indexOf('"', pos + 6);
+						if (pos2 != -1) name_ = value.mid(pos + 6, pos2 - pos - 6);
 					}
-				rd.buffer.remove(0, bodyPos + 4);
-				rd.state = 3;
-			} else break;
+					pos = value.indexOf("filename=\"");
+					if (pos != -1) {
+						int pos2 = value.indexOf('"', pos + 10);
+						if (pos2 != -1) filename_ = value.mid(pos + 10, pos2 - pos - 10);
+					}
+				}
+			}
+
+			buffer_.remove(0, bodyPos + 4);
+			state_ = 3;
 		}
-		if (rd.state == 3) {
+
+		if (state_ == 3) {
 			// search for end boundary
-			int pos = rd.buffer.indexOf(rd.boundary);
+			int pos = buffer_.indexOf(boundary_);
 			if (pos != -1) {
-				QByteArray data = rd.buffer.left(pos - 2);
-				if (rd.name == "clientId") {
-					rd.clientId = apiServer_->getClientId(data);
-				} else handleData(rd.request->getId(), rd.clientId, rd.name, rd.filename, rd.contentType, data, isLast);
-				rd.buffer.remove(0, pos + rd.boundary.size() + 2);	// \r\n
-				rd.state = 2;
+				QByteArray data = buffer_.left(pos - 2);
+				if (name_ == "clientId") {
+					clientId_ = apiServer_->getClientId(data);
+				} else handleData(data, true);	// finish
+				buffer_.remove(0, pos + boundary_.size() + 2);	// \r\n
+				state_ = 2;
 			} else if (isLast) {
 				logWarn("broken request: last boundary is missing (%1/%2)",
-					rd.request->getId().first, rd.request->getId().second);
+					request_.getId().first, request_.getId().second);
 				break;
-			} else if (rd.name == "clientId") {
+			} else if (name_ == "clientId") {
 				break;	// we wait for more data
 			} else {
 				// pass intermediate data on
-				handleData(rd.request->getId(), rd.clientId, rd.name, rd.filename, rd.contentType, rd.buffer, isLast);
-				rd.buffer.clear();
+				handleData(buffer_, false);
+				buffer_.clear();
 				break;
 			}
 		}
 	}
 
 	if (isLast) {
-		Request * request = rd.request;
-		requests_.remove(request->getId());
-		request->sendText("ok");
-//		request->sendRedirect(rd.request.getHeaderFields().value("referer"));
-		delete request;
+		requestEnd();
+		deleteNext();
+	} else {
+		request_.startReadWatcher();
 	}
 }
 

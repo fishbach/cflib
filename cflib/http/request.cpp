@@ -31,9 +31,8 @@ class Request::Shared
 {
 public:
 	Shared(int connId, int requestId,
-		const KeyVal & headerFields, const QByteArray & method, const QUrl & url, const QByteArray & body,
-		const QList<RequestHandler *> & handlers,
-		bool passThrough,
+		const KeyVal & headerFields, const QByteArray & method, const QUrl & url,
+		const QByteArray & body, const QList<RequestHandler *> & handlers, bool passThrough,
 		impl::RequestParser * parser)
 	:
 		ref(1),
@@ -146,8 +145,8 @@ Request::Request() :
 }
 
 Request::Request(int connId, int requestId,
-	const KeyVal & headerFields, const QByteArray & method, const QUrl & url, const QByteArray & body,
-	const QList<RequestHandler *> & handlers, bool passThrough,
+	const KeyVal & headerFields, const QByteArray & method, const QUrl & url,
+	const QByteArray & body, const QList<RequestHandler *> & handlers, bool passThrough,
 	impl::RequestParser * parser)
 :
 	d(new Shared(connId, requestId, headerFields, method, url, body, handlers, passThrough, parser))
@@ -272,6 +271,11 @@ QByteArray Request::readPassThrough(bool & isLast) const
 {
 	if (!d->parser) return QByteArray();
 	return d->parser->readPassThrough(isLast);
+}
+
+void Request::startReadWatcher() const
+{
+	if (d->parser) d->parser->startReadWatcher();
 }
 
 void Request::callNextHandler() const

@@ -25,41 +25,54 @@ namespace cflib { namespace http {
 
 class ApiServer;
 
-class UploadHandler : public util::ThreadVerify, public PassThroughHandler
+class UploadHandler : public util::ThreadVerify
 {
 public:
 	UploadHandler(const QString & path, const QString & threadName, uint threadCount = 1);
+	~UploadHandler();
 
 	QString getName() const { return path_; }
 	void setApiServer(ApiServer * apiServer) { apiServer_ = apiServer; }
-	virtual void processUploadRequest(const Request & request);
-	virtual void morePassThroughData(const Request::Id & id);
 
-protected:
-	virtual void handleData(
-		const Request::Id & id, uint clientId,
-		const QByteArray & name, const QByteArray & filename, const QByteArray & contentType,
-		const QByteArray & data, bool isLast) = 0;
-
-private:
-	struct RequestData {
-		Request * request;
-		QByteArray boundary;
-		QByteArray buffer;
-		int state;
-		uint clientId;
-		QByteArray name;
-		QByteArray filename;
-		QByteArray contentType;
-	};
-
-private:
-	void parseMoreData(RequestData & rd);
+	virtual void processRequest(const Request & request) = 0;
 
 private:
 	const QString path_;
 	ApiServer * apiServer_;
-	QHash<Request::Id, RequestData> requests_;
+
+	friend class UploadRequestHandler;
+};
+
+class UploadRequestHandler : public util::ThreadVerify, public PassThroughHandler
+{
+public:
+	UploadRequestHandler(UploadHandler * uploadHandler, const Request & request);
+
+	virtual void morePassThroughData();
+
+protected:
+	virtual void handleData(const QByteArray & data, bool isLast) = 0;
+	virtual void requestEnd() = 0;
+
+	const Request request_;
+	QByteArray contentType() const { return contentType_; }
+	QByteArray name() const { return name_; }
+	QByteArray filename() const { return filename_; }
+	uint clientId() const { return clientId_; }
+
+private:
+	void init();
+	void parseMoreData();
+
+private:
+	ApiServer * apiServer_;
+	QByteArray boundary_;
+	QByteArray buffer_;
+	int state_;
+	QByteArray contentType_;
+	QByteArray name_;
+	QByteArray filename_;
+	uint clientId_;
 };
 
 }}	// namespace
