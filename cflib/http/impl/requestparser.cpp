@@ -93,9 +93,6 @@ void RequestParser::setPassThroughHandler(PassThroughHandler * hdl)
 
 QByteArray RequestParser::readPassThrough(bool & isLast)
 {
-	SyncedThreadCall<QByteArray> stc(this);
-	if (!stc.verify(&RequestParser::readPassThrough, isLast)) return stc.retval();
-
 	if (!passThrough_ || socketClosed_) {
 		isLast = true;
 		return QByteArray();
@@ -187,7 +184,7 @@ void RequestParser::parseRequest()
 
 	} while (!header_.isEmpty());
 
-	startReadWatcher();
+	if (!passThrough_) startReadWatcher();
 }
 
 void RequestParser::closed()

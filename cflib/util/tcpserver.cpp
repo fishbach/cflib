@@ -227,7 +227,7 @@ TCPConn::TCPConn(const TCPServer::ConnInitializer * init) :
 	impl_(init->impl), socket_(init->socket), peerIP_(init->peerIP), peerPort_(init->peerPort),
 	readWatcher_(new ev_io),
 	writeWatcher_(new ev_io),
-	readBuf_(8192, '\0')
+	readBuf_(0x10000, '\0')
 {
 	delete init;
 	ev_io_init(readWatcher_, &TCPConn::readable, socket_, EV_READ);
