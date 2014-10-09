@@ -249,8 +249,8 @@ QByteArray TCPConn::read()
 	if (socket_ == -1) return retval;
 
 	forever {
-		ssize_t count = ::read(socket_, (void *)readBuf_.constData(), readBuf_.size());
-		if (count == readBuf_.size() && retval.size() < 0x40000000) {	// 1 mb
+		ssize_t count = ::recv(socket_, (void *)readBuf_.constData(), readBuf_.size(), 0);
+		if (count == readBuf_.size() && retval.size() < 0x100000) {	// 1 mb
 			retval.append(readBuf_.constData(), count);
 			continue;
 		}
@@ -303,7 +303,7 @@ void TCPConn::writeable(ev_loop * loop, ev_io * w, int)
 	const int fd = conn->socket_;
 	if (buf.isEmpty() || fd == -1) return;
 
-	ssize_t count = ::write(fd, buf.constData(), buf.size());
+	ssize_t count = ::send(fd, buf.constData(), buf.size(), 0);
 	logTrace("wrote %1 / %2 bytes", (qint64)count, buf.size());
 	if (count < buf.size()) {
 		if (count < 0 && errno != EAGAIN && errno != EWOULDBLOCK) {
