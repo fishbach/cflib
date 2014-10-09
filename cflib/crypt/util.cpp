@@ -71,6 +71,17 @@ quint32 randomUInt32()
 	return 0;
 }
 
+quint64 randomUInt64()
+{
+	TRY {
+		AutoSeeded_RNG rng;
+		quint64 retval = 0;
+		rng.randomize((byte *)&retval, 8);
+		return retval;
+	} CATCH
+	return 0;
+}
+
 QByteArray hashPassword(const QString & password)
 {
 	TRY {

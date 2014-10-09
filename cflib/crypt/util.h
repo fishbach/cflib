@@ -25,6 +25,7 @@ namespace cflib { namespace crypt {
 QByteArray random(int size);
 inline QByteArray randomId() { return random(20).toHex(); }
 quint32 randomUInt32();
+quint64 randomUInt64();
 
 QByteArray hashPassword(const QString & password);
 bool checkPassword(const QString & password, const QByteArray & hash);
