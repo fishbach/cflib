@@ -99,20 +99,21 @@ QByteArray RequestParser::readPassThrough(bool & isLast)
 	}
 	QByteArray retval = read();
 	isLast = retval.size() >= contentLength_;
-	bool dataForNextRequest = false;
 	if (isLast) {
-		if (retval.size() > contentLength_) {
-			dataForNextRequest = true;
-			header_ = retval.mid(contentLength_);
-			retval.resize(contentLength_);
-		}
-		contentLength_ = -1;
 		passThrough_ = false;
 		passThroughHandler_ = 0;
+		if (retval.size() > contentLength_) {
+			header_ = retval.mid(contentLength_);
+			retval.resize(contentLength_);
+			contentLength_ = -1;
+			execCall(new util::Functor0<RequestParser>(this, &RequestParser::parseRequest));
+		} else {
+			contentLength_ = -1;
+			startReadWatcher();
+		}
 	} else {
 		contentLength_ -= retval.size();
 	}
-	if (dataForNextRequest) execCall(new util::Functor0<RequestParser>(this, &RequestParser::parseRequest));
 	return retval;
 }
 
