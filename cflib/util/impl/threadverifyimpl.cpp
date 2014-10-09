@@ -114,7 +114,7 @@ void ThreadHolderLibEV::asyncCallback(ev_loop *, ev_async * w, int)
 
 ThreadHolderWorkerPool::ThreadHolderWorkerPool(const QString & threadName, bool isWorkerOnly, uint threadCount)
 :
-	ThreadHolderLibEV(QString("%1 1/%2").arg(threadName).arg(threadCount), isWorkerOnly),
+	ThreadHolderLibEV(threadCount > 1 ? QString("%1 1/%2").arg(threadName).arg(threadCount) : threadName, isWorkerOnly),
 	externalCalls_(1024),
 	stopLoop_(false)
 {
