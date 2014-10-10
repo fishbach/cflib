@@ -69,7 +69,7 @@ public:
 	CmdLine & operator<<(Arg & arg);
 	CmdLine & operator<<(Option & arg);
 
-	QString executable() const { return executable_; }
+	QByteArray executable() const { return executable_; }
 
 private:
 	QList<QByteArray> rawArgs_;

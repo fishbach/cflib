@@ -48,13 +48,16 @@ bool CmdLine::parse()
 				opt->values_ << it.next();
 			}
 		} else if (parseMoreOptions && raw.startsWith("-")) {
-			if (raw.length() != 2) return false;
-			Option * opt = shortOptions_.value(raw.at(1));
-			if (!opt || (!opt->isRepeatable_ && opt->count_ > 0)) return false;
-			opt->count_++;
-			if (opt->hasValue_) {
-				if (!it.hasNext()) return false;
-				opt->values_ << it.next();
+			if (raw.length() < 2) return false;
+			int pos = 0;
+			while (++pos < raw.length()) {
+				Option * opt = shortOptions_.value(raw.at(pos));
+				if (!opt || (!opt->isRepeatable_ && opt->count_ > 0)) return false;
+				opt->count_++;
+				if (opt->hasValue_) {
+					if (pos < raw.length() - 1 || !it.hasNext()) return false;
+					opt->values_ << it.next();
+				}
 			}
 		} else {
 			Arg * arg = args_.value(argCount);
