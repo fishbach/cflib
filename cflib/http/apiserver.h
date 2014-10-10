@@ -76,6 +76,7 @@ private:
 	QMap<QByteArray, ClientIdTimestamp> clientIds_;
 	uint lastId_;
 	QDateTime lastExpireCheck_;
+	const QRegularExpression containerRE_;
 };
 
 }}	// namespace

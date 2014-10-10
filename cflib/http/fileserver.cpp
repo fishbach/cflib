@@ -93,8 +93,8 @@ inline void handleVars(QStringList & vars, const QString & path, const QStringLi
 void writeHTMLFile(const QString & file, QString content)
 {
 	content
-		.replace(QRegExp("^\\s+|\\s+$"), "")
-		.replace(QRegExp("\\s+"), " ");
+		.replace(QRegularExpression("^\\s+|\\s+$"), "")
+		.replace(QRegularExpression("\\s+"), " ");
 
 	QFile f(file);
 	f.open(QFile::WriteOnly | QFile::Truncate);
@@ -105,9 +105,13 @@ void writeHTMLFile(const QString & file, QString content)
 
 // ============================================================================
 
-FileServer::FileServer(const QString & path) :
-	RequestHandler("FileServer"),
-	path_(path)
+FileServer::FileServer(const QString & path, bool parseHtml, uint threadCount) :
+	RequestHandler("FileServer", threadCount),
+	path_(path),
+	parseHtml_(parseHtml),
+	pathRE_("^/([_\\-\\w][._\\-\\w]*(/[_\\-\\w][._\\-\\w]*)*/?)?$"),
+	endingRE_("\\.(\\w+)$"),
+	elementRE_("<!\\s*(\\$|inc |if |else|end)(.*?)!>")
 {
 }
 
@@ -121,7 +125,7 @@ void FileServer::exportTo(const QString & dest) const
 	exportDir(path_, "/", dest);
 }
 
-void FileServer::set404Redirect(const QRegExp & re, const QString & dest)
+void FileServer::set404Redirect(const QRegularExpression & re, const QString & dest)
 {
 	redirects404_ << qMakePair(re, dest);
 }
@@ -130,9 +134,9 @@ void FileServer::handleRequest(const Request & request)
 {
 	logFunctionTrace
 
+	// check path for valid chars
 	QString path = request.getUrl().path();
-	static const QRegExp pathRE("^/([_-\\w][._-\\w]*(/[_-\\w][._-\\w]*)*/?)?$");
-	if (!pathRE.exactMatch(path)) {
+	if (!pathRE_.match(path).hasMatch()) {
 		logInfo("invalid path: %1", path);
 		return;
 	}
@@ -140,8 +144,9 @@ void FileServer::handleRequest(const Request & request)
 	// remove trailing slash
 	if (path.length() > 1 && path.endsWith('/')) { request.sendRedirect(path.left(path.length() - 1).toLatin1()); return; }
 
+	// auto generate partial files
 	bool isPart = false;
-	if (path.endsWith("/index_part.html")) {
+	if (parseHtml_ && path.endsWith("/index_part.html")) {
 		isPart = true;
 		path.remove(path.length() - 16, 16);
 		if (path.isEmpty()) path = '/';
@@ -150,11 +155,13 @@ void FileServer::handleRequest(const Request & request)
 	QString fullPath = path_ + path;
 	QFileInfo fi(fullPath);
 	if (fi.isDir()) fi.setFile(fullPath + "/index.html");
+
+	// check for redirects
 	if (!fi.isReadable()) {
 		bool wasRedirect = false;
 		const QString origPath = request.getUrl().path();
 		foreach (const Redirect & rd, redirects404_) {
-			if (rd.first.exactMatch(origPath)) {
+			if (rd.first.match(origPath).hasMatch()) {
 				isPart = false;
 				fi.setFile(path_ + rd.second);
 				if (fi.isReadable()) wasRedirect = true;
@@ -166,18 +173,22 @@ void FileServer::handleRequest(const Request & request)
 			return;
 		}
 	}
+
 	fullPath = fi.canonicalFilePath();
 
+	// parse html files
 	if (fullPath.endsWith(".html")) {
-		request.sendText(parseHtml(fullPath, isPart, path));
+		if (parseHtml_) request.sendText(parseHtml(fullPath, isPart, path));
+		else            request.sendText(cflib::util::readFile(fullPath));
 		return;
 	}
 
+	// deliver static content
 	bool compression = false;
 	QByteArray contentType = "application/octet-stream";
-	static const QRegExp endingRE("\\.(\\w+)$");
-	if (endingRE.indexIn(path) != -1) {
-		const QString ending = endingRE.cap(1);
+	const QRegularExpressionMatch match = endingRE_.match(path);
+	if (match.hasMatch()) {
+		const QString ending = match.captured(1);
 		     if (ending == "htm" ) { compression = true;  contentType = "text/html; charset=utf-8"; }
 		else if (ending == "ico" ) { compression = false; contentType = "image/x-icon"; }
 		else if (ending == "gif" ) { compression = false; contentType = "image/gif"; }
@@ -197,20 +208,19 @@ QString FileServer::parseHtml(const QString & fullPath, bool isPart, const QStri
 {
 	logFunctionTraceParam("parseHtml(%1, %2, %3, (%4))", fullPath, isPart, path, params.join(','));
 
-	static const QRegExp elementRE = cflib::util::minimalRE("<!\\s*(\\$|inc |if |else|end)(.*)!>");
-
 	QString retval;
 	QString html = cflib::util::readTextfile(fullPath);
 	QStack<bool> ifStack;
-	int pos;
-	while ((pos = elementRE.indexIn(html)) != -1) {
+	QRegularExpressionMatch m;
+	while ((m = elementRE_.match(html)).hasMatch()) {
+		int pos = m.capturedStart();
 		const bool skip = !ifStack.isEmpty() && !ifStack.top();
 		if (!skip) retval += html.left(pos);
-		pos += elementRE.matchedLength();
+		pos += m.capturedLength();
 		html.remove(0, pos);
 
-		const QString cmd   = elementRE.cap(1);
-		const QString param = elementRE.cap(2);
+		const QString cmd   = m.captured(1);
+		const QString param = m.captured(2);
 
 		if (cmd == "inc ") {
 			if (skip) continue;

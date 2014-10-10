@@ -161,14 +161,14 @@ QString formatJSTypeConstruction(const SerializeTypeInfo & ti, const QString & r
 	return js;
 }
 
-QString getJSFunctionName(const SerializeFunctionTypeInfo & func)
+QString getJSFunctionName(const QRegularExpression & containerRE, const SerializeFunctionTypeInfo & func)
 {
 	QString js = func.name;
 	js << '_';
 	foreach (const SerializeVariableTypeInfo & p, func.parameters) {
-		static const QRegExp containerRE("^(.+)<(.+)>$");
-		if (containerRE.indexIn(p.type.typeName) != -1) {
-			js << containerRE.cap(2) << containerRE.cap(1);
+		const QRegularExpressionMatch m = containerRE.match(p.type.typeName);
+		if (m.hasMatch()) {
+			js << m.captured(2) << m.captured(1);
 		} else {
 			js << p.type.typeName;
 		}
@@ -198,7 +198,8 @@ QString getJSParameters(const SerializeFunctionTypeInfo & func)
 ApiServer::ApiServer() :
 	RequestHandler("ApiServer"),
 	lastId_(0),
-	lastExpireCheck_(QDateTime::currentDateTime())
+	lastExpireCheck_(QDateTime::currentDateTime()),
+	containerRE_("^(.+)<(.+)>$")
 {
 }
 
@@ -536,7 +537,7 @@ QString ApiServer::generateJSForService(const SerializeTypeInfo & ti) const
 				"\tAPI.rmi('" << ti.typeName.toLower() << "', "
 				"['" << func.signature() << "'],";
 		} else {
-			js << objName << '.' << getJSFunctionName(func) << " = function("
+			js << objName << '.' << getJSFunctionName(containerRE_, func) << " = function("
 				<< getJSParameters(func) << ", callback, context) {\n"
 				"\tAPI.rmi('" << ti.typeName.toLower() << "', "
 				"['" << func.signature() << "', " << getJSParameters(func) << "],";

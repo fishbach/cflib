@@ -37,13 +37,6 @@ void gzip(QByteArray & data, int compressionLevel = -1);
 QByteArray readFile(const QString & path);
 QString readTextfile(const QString & path);
 
-inline QRegExp minimalRE(const QString & re)
-{
-	QRegExp retval(re);
-	retval.setMinimal(true);
-	return retval;
-}
-
 inline QChar decomposedBase(const QChar & chr)
 {
 	if (chr.decompositionTag() != QChar::NoDecomposition) return chr.decomposition()[0];

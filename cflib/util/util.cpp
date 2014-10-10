@@ -313,10 +313,10 @@ QString flatten(const QString & str)
 {
 	QString rv = str;
 	rv
-		.replace(QRegExp("[^a-zA-Z0-9\\-\\._\\s]+"), "")
-		.replace(QRegExp("^\\s+|\\s+$"), "")
-		.replace(QRegExp("\\s+"), "_")
-		.replace(QRegExp("__+"), "_");
+		.replace(QRegularExpression("[^a-zA-Z0-9\\-\\._\\s]+"), "")
+		.replace(QRegularExpression("^\\s+|\\s+$"), "")
+		.replace(QRegularExpression("\\s+"), "_")
+		.replace(QRegularExpression("__+"), "_");
 	return rv;
 }
 

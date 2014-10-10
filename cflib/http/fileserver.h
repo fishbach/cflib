@@ -27,11 +27,11 @@ namespace cflib { namespace http {
 class FileServer : public RequestHandler
 {
 public:
-	FileServer(const QString & path);
+	FileServer(const QString & path, bool parseHtml = true, uint threadCount = 1);
 	~FileServer();
 
 	void exportTo(const QString & dest) const;
-	void set404Redirect(const QRegExp & re, const QString & dest);
+	void set404Redirect(const QRegularExpression & re, const QString & dest);
 
 protected:
 	virtual void handleRequest(const Request & request);
@@ -42,9 +42,13 @@ private:
 	void exportDir(const QString & fullPath, const QString & path, const QString & dest) const;
 
 private:
-	QString path_;
-	typedef QPair<QRegExp, QString> Redirect;
+	const QString path_;
+	const bool parseHtml_;
+	typedef QPair<QRegularExpression, QString> Redirect;
 	QList<Redirect> redirects404_;
+	const QRegularExpression pathRE_;
+	const QRegularExpression endingRE_;
+	const QRegularExpression elementRE_;
 };
 
 }}	// namespace
