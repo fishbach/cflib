@@ -54,6 +54,13 @@ void UploadRequestHandler::morePassThroughData()
 	parseMoreData();
 }
 
+void UploadRequestHandler::requestEnd()
+{
+	request_.sendText(
+		"<html><body onload=\"location.href='" + request_.getHeaderFields().value("referer") + "'\"></body></html>"
+	);
+}
+
 void UploadRequestHandler::init()
 {
 	if (!verifyThreadCall(&UploadRequestHandler::init)) return;

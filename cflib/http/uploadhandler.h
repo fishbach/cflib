@@ -52,7 +52,7 @@ public:
 
 protected:
 	virtual void handleData(const QByteArray & data, bool isLast) = 0;
-	virtual void requestEnd() = 0;
+	virtual void requestEnd();
 
 	const Request request_;
 	QByteArray contentType() const { return contentType_; }
