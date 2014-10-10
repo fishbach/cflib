@@ -35,7 +35,9 @@ public:
 	TCPServer();
 	virtual ~TCPServer();
 
-	bool start(quint16 port, const QByteArray & ip = "0.0.0.0");
+	bool bindOnly(quint16 port, const QByteArray & ip = "127.0.0.1");
+	bool start();
+	bool start(quint16 port, const QByteArray & ip = "127.0.0.1");
 
 protected:
 	virtual void newConnection(const ConnInitializer * init) = 0;

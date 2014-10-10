@@ -89,15 +89,10 @@ public:
 		}
 	}
 
-	bool start(quint16 port, const QByteArray & ip)
+	bool bindOnly(quint16 port, const QByteArray & ip)
 	{
-		SyncedThreadCall<bool> stc(this);
-		if (!stc.verify(&Impl::start, port, ip)) return stc.retval();
-
-		logFunctionTrace
-
 		if (listenSock_ >= 0) {
-			logWarn("server already listening");
+			logWarn("port already bound");
 			return false;
 		}
 
@@ -105,6 +100,7 @@ public:
 		listenSock_ = socket(AF_INET, SOCK_STREAM, 0);
 		if (listenSock_ < 0) {
 			logWarn("cannot create TCP socket (errno: %1)", errno);
+			listenSock_ = -1;
 			return false;
 		}
 		if (!setNonBlocking(listenSock_)) return false;
@@ -127,6 +123,20 @@ public:
 			return false;
 		}
 
+		logInfo("bound to %1:%2", ip, port);
+		return true;
+	}
+
+	bool start()
+	{
+		SyncedThreadCall<bool> stc(this);
+		if (!stc.verify(&Impl::start)) return stc.retval();
+
+		if (listenSock_ == -1) {
+			logWarn("port not bound");
+			return false;
+		}
+
 		// start listening
 		if (listen(listenSock_, 1024) < 0) {
 			logWarn("cannot listen on fd %1 (errno: %4)", listenSock_, errno);
@@ -140,7 +150,7 @@ public:
 		readWatcher_->data = this;
 		ev_io_start(libEVLoop(), readWatcher_);
 
-		logInfo("listening on %1:%2", ip, port);
+		logInfo("listen started");
 		return true;
 	}
 
@@ -218,9 +228,19 @@ TCPServer::~TCPServer()
 	delete impl_;
 }
 
+bool TCPServer::bindOnly(quint16 port, const QByteArray & ip)
+{
+	return impl_->bindOnly(port, ip);
+}
+
+bool TCPServer::start()
+{
+	return impl_->start();
+}
+
 bool TCPServer::start(quint16 port, const QByteArray & ip)
 {
-	return impl_->start(port, ip);
+	return impl_->bindOnly(port, ip) && impl_->start();
 }
 
 TCPConn::TCPConn(const TCPServer::ConnInitializer * init) :

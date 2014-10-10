@@ -31,6 +31,8 @@ public:
 	Server(uint threadCount = 2);
 	~Server();
 
+	bool bindOnly(quint16 port, const QByteArray & ip = "127.0.0.1");
+	bool start();
 	bool start(quint16 port, const QByteArray & address = "127.0.0.1");
 
 	void registerHandler(RequestHandler * handler);

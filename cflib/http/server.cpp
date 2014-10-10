@@ -39,23 +39,14 @@ public:
 		stopVerifyThread();
 	}
 
-	bool start(quint16 port, const QByteArray & address)
+	bool start()
 	{
-		SyncedThreadCall<bool> stc(this);
-		if (!stc.verify(&Impl::start, port, address)) return stc.retval();
-
 		if (handlers_.isEmpty()) {
 			logWarn("no handlers registered");
 			return false;
 		}
 
-		if (util::TCPServer::start(port, address)) {
-			logInfo("HTTP-Server started on %1:%2", address, port);
-			return true;
-		} else {
-			logWarn("HTTP-Server cannot listen on %1:%2", address, port);
-			return false;
-		}
+		return util::TCPServer::start();
 	}
 
 	void registerHandler(RequestHandler * handler)
@@ -83,9 +74,19 @@ Server::~Server()
 	delete impl_;
 }
 
+bool Server::bindOnly(quint16 port, const QByteArray & address)
+{
+	return impl_->bindOnly(port, address);
+}
+
+bool Server::start()
+{
+	return impl_->start();
+}
+
 bool Server::start(quint16 port, const QByteArray & address)
 {
-	return impl_->start(port, address);
+	return impl_->bindOnly(port, address) && impl_->start();
 }
 
 void Server::registerHandler(RequestHandler * handler)
