@@ -22,9 +22,12 @@ QT = core
 TARGET = cflib_util
 
 HEADERS = \
+	cmdline.h \
 	evtimer.h \
 	functor.h \
 	hex.h \
+	impl/logformat.h \
+	impl/threadverifyimpl.h \
 	log.h \
 	mailer.h \
 	tcpserver.h \
@@ -34,7 +37,5 @@ HEADERS = \
 	timeshifter.h \
 	unixsignal.h \
 	util.h \
-	impl/logformat.h \
-	impl/threadverifyimpl.h \
 
 lib()
