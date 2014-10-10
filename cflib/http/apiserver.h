@@ -42,7 +42,7 @@ class ApiServer : public RequestHandler
 		cflib::serialize::SerializeTypeInfo ti;
 	};
 public:
-	ApiServer();
+	ApiServer(bool descriptionEnabled = true);
 	~ApiServer();
 
 	void registerService(JSService * service);
@@ -69,6 +69,7 @@ private:
 	void handleUpload(const Request & request, QString path) const;
 
 private:
+	const bool descriptionEnabled_;
 	QMap<QString, JSService *> services_;
 	QMap<QString, UploadHandler *> uploadHandler_;
 	ClassInfoEl classInfos_;

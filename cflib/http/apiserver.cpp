@@ -195,8 +195,9 @@ QString getJSParameters(const SerializeFunctionTypeInfo & func)
 
 // ============================================================================
 
-ApiServer::ApiServer() :
+ApiServer::ApiServer(bool descriptionEnabled) :
 	RequestHandler("ApiServer"),
+	descriptionEnabled_(descriptionEnabled),
 	lastId_(0),
 	lastExpireCheck_(QDateTime::currentDateTime()),
 	containerRE_("^(.+)<(.+)>$")
@@ -257,34 +258,29 @@ void ApiServer::handleRequest(const Request & request)
 
 	QString path = request.getUrl().path();
 
-	if (path.startsWith("/js/")) {
-		QString js = generateJS(path.mid(4));
-		if (!js.isNull()) request.sendText(js, "application/javascript");
-		return;
+	if (path.startsWith("/api/")) {
+		path.remove(0, 5);
+		if      (path.startsWith("rmi/"))    doRMI(request, path.mid(4));
+		else if (path.startsWith("upload/")) handleUpload(request, path.mid(7));
+		else if (descriptionEnabled_ && path.startsWith("services")) showServices(request, path.mid(8));
+		else if (descriptionEnabled_ && path.startsWith("classes"))  showClasses(request, path.mid(7));
+		else request.sendNotFound();
+	} else if (descriptionEnabled_) {
+		if (path.startsWith("/js/")) {
+			QString js = generateJS(path.mid(4));
+			if (!js.isNull()) request.sendText(js, "application/javascript");
+		} else if (path == "/api") {
+			QString info = HTMLDocHeader;
+			info <<
+				"<ul>\n"
+				"<li><a href=\"api/services\">services</a> - API Services Description</li>\n"
+				"<li><a href=\"api/classes\">classes</a> - API Classes Description</li>\n"
+				"</ul><ul>\n"
+				"<li>rmi/&lt;service&gt; - Service Interface</a></li>\n"
+				"</ul>\n";
+			request.sendText(info << footer);
+		}
 	}
-
-	if (!path.startsWith("/api")) return;
-	if (path.length() == 4) { request.sendRedirect("api/"); return; }
-	if (path[4] != '/') return;
-	path.remove(0, 5);
-
-	if (path.isEmpty()) {
-		QString info = HTMLDocHeader;
-		info <<
-			"<ul>\n"
-			"<li><a href=\"services/\">services/</a> - API Services Description</li>\n"
-			"<li><a href=\"classes/\">classes/</a> - API Classes Description</li>\n"
-			"</ul><ul>\n"
-			"<li>rmi/&lt;service&gt; - Service Interface</a></li>\n"
-			"</ul>\n";
-		request.sendText(info << footer);
-	}
-	else if (path.startsWith("rmi/"))      doRMI(request, path.mid(4));
-	else if (path.startsWith("services/")) showServices(request, path.mid(9));
-	else if (path.startsWith("classes/"))  showClasses(request, path.mid(8));
-	else if (path.startsWith("upload/"))   handleUpload(request, path.mid(7));
-	else if (!path.contains('/'))          request.sendRedirect("/api/" + path.toLatin1() + '/');
-	else request.sendNotFound();
 }
 
 void ApiServer::showServices(const Request & request, QString path) const
@@ -297,7 +293,7 @@ void ApiServer::showServices(const Request & request, QString path) const
 			"<ul>\n";
 		foreach (const QString & name, services_.keys()) {
 			info
-				<< "<li><a href=\"" << name << "\">"
+				<< "<li><a href=\"services/" << name << "\">"
 				<< services_[name]->getServiceInfo().typeName << "</a></li>\n";
 		}
 		info <<
@@ -306,6 +302,7 @@ void ApiServer::showServices(const Request & request, QString path) const
 		request.sendText(info << footer);
 		return;
 	}
+	path.remove(0, 1);
 
 	JSService * srv = services_.value(path);
 	if (!srv) return;
@@ -339,6 +336,7 @@ void ApiServer::showClasses(const Request & request, QString path) const
 		request.sendText(info << footer);
 		return;
 	}
+	path.remove(0, 1);
 
 	const SerializeTypeInfo ti = getTypeInfo(path);
 	if (ti.getName().isEmpty()) return;
@@ -374,7 +372,7 @@ void ApiServer::classesToHTML(QString & info, const ClassInfoEl & infoEl) const
 		if (!el.ti.getName().isEmpty()) {
 			QString path = el.ti.getName();
 			path.replace("::", "/");
-			info << "<li><a href=\"" << path.toLower() << "\">" << el.ti.typeName << "</a></li>\n";
+			info << "<li><a href=\"classes/" << path.toLower() << "\">" << el.ti.typeName << "</a></li>\n";
 		}
 		if (!el.infos.isEmpty()) {
 			info <<
