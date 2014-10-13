@@ -52,10 +52,10 @@ inline bool setNonBlocking(int fd)
 
 }
 
-class TCPServer::ConnInitializer
+class TCPConnInitializer
 {
 public:
-	ConnInitializer(TCPServer::Impl & impl, const int socket, const char * peerIP, const quint16 peerPort) :
+	TCPConnInitializer(TCPServer::Impl & impl, const int socket, const char * peerIP, const quint16 peerPort) :
 		impl(impl), socket(socket), peerIP(peerIP), peerPort(peerPort) {}
 
 	TCPServer::Impl & impl;
@@ -83,10 +83,7 @@ public:
 
 	virtual void deleteThreadData()
 	{
-		if (listenSock_ != -1) {
-			ev_io_stop(libEVLoop(), readWatcher_);
-			close(listenSock_);
-		}
+		if (listenSock_ != -1) stop();
 	}
 
 	bool start(int listenSocket)
@@ -109,10 +106,33 @@ public:
 		return true;
 	}
 
-	void startReadWatcher(TCPConn * conn)
+	bool stop()
 	{
-		if (!verifyThreadCall(&Impl::startReadWatcher, conn)) return;
+		SyncedThreadCall<bool> stc(this);
+		if (!stc.verify(&Impl::stop)) return stc.retval();
 
+		if (listenSock_ == -1) {
+			logWarn("server not running");
+			return false;
+		}
+
+		ev_io_stop(libEVLoop(), readWatcher_);
+		close(listenSock_);
+		listenSock_ = -1;
+
+		logInfo("server stopped");
+		return true;
+	}
+
+	void startWatcher(TCPConn * conn)
+	{
+		if (!verifyThreadCall(&Impl::startWatcher, conn)) return;
+
+		if (conn->socket_ == -1) {
+			logDebug("informing about close of fd %1", conn->socket_);
+			execCall(new Functor0<TCPConn>(conn, &TCPConn::closed));
+			return;
+		}
 		ev_io_start(libEVLoop(), conn->readWatcher_);
 	}
 
@@ -124,26 +144,42 @@ public:
 		TCPConn::writeable(libEVLoop(), conn->writeWatcher_, 0);
 	}
 
-	void closeSocket(TCPConn * conn, bool informApi)
+	void closeSocket(TCPConn * conn)
 	{
-		if (!verifyThreadCall(&Impl::closeSocket, conn, informApi)) return;
+		if (!verifyThreadCall(&Impl::closeSocket, conn)) return;
 
 		if (conn->socket_ == -1) return;
 
-		logFunctionTraceParam("closing socket %1", conn->socket_);
+		logFunctionTraceParam("socket %1 closed", conn->socket_);
 
 		ev_io_stop(libEVLoop(), conn->writeWatcher_);
 		ev_io_stop(libEVLoop(), conn->readWatcher_);
 		close(conn->socket_);
 		conn->socket_ = -1;
-
-		if (informApi) conn->closed();
 	}
 
-	void closeSocketSync(TCPConn * conn)
+	void closeNicely(TCPConn * conn)
 	{
-		if (!verifySyncedThreadCall(&Impl::closeSocketSync, conn)) return;
-		closeSocket(conn, false);
+		if (!verifyThreadCall(&Impl::closeNicely, conn)) return;
+
+		if (conn->socket_ == -1) return;
+
+		logFunctionTraceParam("closing socket %1 nicely", conn->socket_);
+
+		if (conn->writeBuf_.isEmpty()) {
+			shutdown(conn->socket_, SHUT_RDWR);
+		} else {
+			conn->closeAfterWriting_ = true;
+			shutdown(conn->socket_, SHUT_RD);
+		}
+	}
+
+	void destroyConn(TCPConn * conn)
+	{
+		if (!verifyThreadCall(&Impl::destroyConn, conn)) return;
+
+		if (conn->socket_ != -1) closeSocket(conn);
+		delete conn;
 	}
 
 private:
@@ -160,7 +196,7 @@ private:
 
 			setNonBlocking(newSock);
 
-			const ConnInitializer * ci = new ConnInitializer(*impl,
+			const TCPConnInitializer * ci = new TCPConnInitializer(*impl,
 				newSock, inet_ntoa(cliAddr.sin_addr), ntohs(cliAddr.sin_port));
 			logDebug("new connection from %1:%2", ci->peerIP, ci->peerPort);
 			impl->parent_.newConnection(ci);
@@ -173,9 +209,12 @@ private:
 	ev_io * readWatcher_;
 };
 
+TCPServer * TCPServer::instance_ = 0;
+
 TCPServer::TCPServer() :
 	impl_(new Impl(*this))
 {
+	if (!instance_) instance_ = this;
 }
 
 TCPServer::~TCPServer()
@@ -229,11 +268,47 @@ bool TCPServer::start(quint16 port, const QByteArray & ip)
 	return impl_->start(listenSocket);
 }
 
-TCPConn::TCPConn(const TCPServer::ConnInitializer * init) :
+bool TCPServer::stop()
+{
+	return impl_->stop();
+}
+
+const TCPConnInitializer * TCPServer::openConnection(const QByteArray & destIP, quint16 destPort)
+{
+	// create socket
+	int sock = socket(AF_INET, SOCK_STREAM, 0);
+	if (sock < 0) return 0;
+
+	if (!setNonBlocking(sock)) {
+		close(sock);
+		return 0;
+	}
+
+	// bind to address and port
+	struct sockaddr_in destAddr;
+	destAddr.sin_family = AF_INET;
+	if (inet_aton(destIP.constData(), &destAddr.sin_addr) == 0) {
+		close(sock);
+		return 0;
+	}
+	destAddr.sin_port = htons(destPort);
+	if (connect(sock, (struct sockaddr *)&destAddr, sizeof(destAddr)) < 0 && errno != EINPROGRESS) {
+		logDebug("connect failed with errno: %1", errno);
+		close(sock);
+		return 0;
+	}
+
+	const TCPConnInitializer * ci = new TCPConnInitializer(*impl_, sock, destIP, destPort);
+	logDebug("opened connection %1 to %2:%3", sock, ci->peerIP, ci->peerPort);
+	return ci;
+}
+
+TCPConn::TCPConn(const TCPConnInitializer * init) :
 	impl_(init->impl), socket_(init->socket), peerIP_(init->peerIP), peerPort_(init->peerPort),
 	readWatcher_(new ev_io),
 	writeWatcher_(new ev_io),
-	readBuf_(0x10000, '\0')
+	readBuf_(0x10000, '\0'),
+	closeAfterWriting_(false)
 {
 	delete init;
 	ev_io_init(readWatcher_, &TCPConn::readable, socket_, EV_READ);
@@ -244,7 +319,6 @@ TCPConn::TCPConn(const TCPServer::ConnInitializer * init) :
 
 TCPConn::~TCPConn()
 {
-	if (socket_ != -1) impl_.closeSocketSync(this);
 	delete readWatcher_;
 	delete writeWatcher_;
 }
@@ -262,14 +336,14 @@ QByteArray TCPConn::read()
 		}
 
 		if (count == 0) {
-			impl_.closeSocket(this, true);
+			impl_.closeSocket(this);
 			return retval;
 		}
 
 		if (count < 0) {
 			if (errno != EAGAIN && errno != EWOULDBLOCK) {
 				logDebug("read on fd %1 failed (errno: %2)", socket_, errno);
-				impl_.closeSocket(this, true);
+				impl_.closeSocket(this);
 				return retval;
 			}
 		} else {
@@ -281,9 +355,9 @@ QByteArray TCPConn::read()
 	}
 }
 
-void TCPConn::startReadWatcher()
+void TCPConn::startWatcher()
 {
-	impl_.startReadWatcher(this);
+	impl_.startWatcher(this);
 }
 
 void TCPConn::write(const QByteArray & data)
@@ -291,9 +365,26 @@ void TCPConn::write(const QByteArray & data)
 	impl_.writeToSocket(this, data);
 }
 
-void TCPConn::close()
+void TCPConn::closeNicely()
 {
-	shutdown(socket_, SHUT_RDWR);
+	impl_.closeNicely(this);
+}
+
+void TCPConn::abortConnection()
+{
+	impl_.closeSocket(this);
+}
+
+const TCPConnInitializer * TCPConn::detachFromSocket()
+{
+	const TCPConnInitializer * rv = new TCPConnInitializer(impl_, socket_, peerIP_, peerPort_);
+	socket_ = -1;
+	return rv;
+}
+
+void TCPConn::destroy()
+{
+	impl_.destroyConn(this);
 }
 
 void TCPConn::readable(ev_loop * loop, ev_io * w, int)
@@ -315,7 +406,7 @@ void TCPConn::writeable(ev_loop * loop, ev_io * w, int)
 		if (count < 0 && errno != EAGAIN && errno != EWOULDBLOCK) {
 			logDebug("write on fd %1 failed (errno: %2)", fd, errno);
 			buf.clear();
-			conn->impl_.closeSocket(conn, true);
+			conn->impl_.closeSocket(conn);
 			return;
 		}
 		if (count > 0) buf.remove(0, count);
@@ -323,6 +414,7 @@ void TCPConn::writeable(ev_loop * loop, ev_io * w, int)
 	} else {
 		buf.clear();
 		if (ev_is_active(w)) ev_io_stop(loop, w);
+		if (conn->closeAfterWriting_) shutdown(conn->socket_, SHUT_WR);
 	}
 }
 

@@ -16,21 +16,29 @@
  * along with cflib. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "requesthandler.h"
+#pragma once
 
-#include <cflib/http/request.h>
+#include <cflib/http/requesthandler.h>
+
+#include <QtCore>
 
 namespace cflib { namespace http {
 
-RequestHandler::RequestHandler(const QString & name, uint threadCount) :
-	util::ThreadVerify(name, util::ThreadVerify::Worker, threadCount)
+class ForwardServer : public RequestHandler
 {
-}
+public:
+	ForwardServer() : forwardPort_(0) {}
 
-void RequestHandler::doHandleRequest(const Request & request)
-{
-	if (!verifyThreadCall(&RequestHandler::doHandleRequest, request)) return;
-	handleRequest(request);
-}
+	void addHostOk(const QByteArray & hostname) { okHosts_ << hostname; }
+	void setForward(const QByteArray & ip, quint16 port) { forwardIP_ = ip; forwardPort_ = port; }
+
+protected:
+	virtual void handleRequest(const Request & request);
+
+private:
+	QSet<QByteArray> okHosts_;
+	QByteArray forwardIP_;
+	quint16 forwardPort_;
+};
 
 }}	// namespace

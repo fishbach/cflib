@@ -106,7 +106,7 @@ void writeHTMLFile(const QString & file, QString content)
 // ============================================================================
 
 FileServer::FileServer(const QString & path, bool parseHtml, uint threadCount) :
-	RequestHandler("FileServer", threadCount),
+	ThreadVerify("FileServer", Worker, threadCount),
 	path_(path),
 	parseHtml_(parseHtml),
 	pathRE_("^/([_\\-\\w][._\\-\\w]*(/[_\\-\\w][._\\-\\w]*)*/?)?$"),

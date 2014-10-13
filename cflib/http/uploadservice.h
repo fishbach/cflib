@@ -25,11 +25,11 @@ namespace cflib { namespace http {
 
 class ApiServer;
 
-class UploadHandler : public util::ThreadVerify
+class UploadService : public util::ThreadVerify
 {
 public:
-	UploadHandler(const QString & path, const QString & threadName, uint threadCount = 1);
-	~UploadHandler();
+	UploadService(const QString & path, const QString & threadName, uint threadCount = 1);
+	~UploadService();
 
 	QString getName() const { return path_; }
 	void setApiServer(ApiServer * apiServer) { apiServer_ = apiServer; }
@@ -46,7 +46,7 @@ private:
 class UploadRequestHandler : public util::ThreadVerify, public PassThroughHandler
 {
 public:
-	UploadRequestHandler(UploadHandler * uploadHandler, const Request & request);
+	UploadRequestHandler(UploadService * uploadHandler, const Request & request);
 
 	virtual void morePassThroughData();
 

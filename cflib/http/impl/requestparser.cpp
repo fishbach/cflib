@@ -31,7 +31,7 @@ QAtomicInt connCount;
 
 }
 
-RequestParser::RequestParser(const util::TCPServer::ConnInitializer * init,
+RequestParser::RequestParser(const util::TCPConnInitializer * init,
 	const QList<RequestHandler *> & handlers, util::ThreadVerify * tv)
 :
 	util::ThreadVerify(tv),
@@ -46,7 +46,7 @@ RequestParser::RequestParser(const util::TCPServer::ConnInitializer * init,
 	passThroughHandler_(0)
 {
 	logCustom(LogCat::Network | LogCat::Debug)("new connection %1", id_);
-	startReadWatcher();
+	startWatcher();
 }
 
 RequestParser::~RequestParser()
@@ -81,7 +81,7 @@ void RequestParser::detachRequest()
 {
 	if (!verifyThreadCall(&RequestParser::detachRequest)) return;
 
-	if (--attachedRequests_ == 0) deleteNext();
+	if (--attachedRequests_ == 0) destroy();
 }
 
 void RequestParser::setPassThroughHandler(PassThroughHandler * hdl)
@@ -109,7 +109,7 @@ QByteArray RequestParser::readPassThrough(bool & isLast)
 			execCall(new util::Functor0<RequestParser>(this, &RequestParser::parseRequest));
 		} else {
 			contentLength_ = -1;
-			startReadWatcher();
+			startWatcher();
 		}
 	} else {
 		contentLength_ -= retval.size();
@@ -149,7 +149,7 @@ void RequestParser::parseRequest()
 			header_.resize(pos);
 
 			if (!parseHeader()) {
-				close();
+				abortConnection();
 				break;
 			}
 		}
@@ -164,19 +164,19 @@ void RequestParser::parseRequest()
 		}
 
 		// to much bytes?
+		QByteArray nextHeader;
 		if (body_.size() > size) {
-			header_ = body_.mid(size);
+			nextHeader = body_.mid(size);
 			body_.resize(size);
-		} else {
-			header_.clear();
 		}
 
 		// notify handlers
 		++attachedRequests_;
-		Request(id_, ++requestCount_, headerFields_, method_, url_, body_,
+		Request(id_, ++requestCount_, header_, headerFields_, method_, url_, body_,
 			handlers_, passThrough_, this).callNextHandler();
 
 		// reset for next
+		header_ = nextHeader;
 		contentLength_ = passThrough_ ? (size - body_.size()) : -1;
 		headerFields_.clear();
 		method_.clear();
@@ -185,11 +185,12 @@ void RequestParser::parseRequest()
 
 	} while (!header_.isEmpty());
 
-	if (!passThrough_) startReadWatcher();
+	if (!passThrough_) startWatcher();
 }
 
 void RequestParser::closed()
 {
+	logFunctionTrace
 	if (!verifyThreadCall(&RequestParser::closed)) return;
 
 	socketClosed_ = true;
@@ -301,7 +302,7 @@ void RequestParser::writeReply(const QByteArray & reply)
 	if (passThrough_) {
 		logCustom(LogCat::Network | LogCat::Debug)("Not all bytes from pass through read! Closing connection %1 of request %2",
 			id_, nextReplyId_);
-		close();
+		closeNicely();
 	}
 	++nextReplyId_;
 }

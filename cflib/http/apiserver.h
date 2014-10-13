@@ -20,15 +20,14 @@
 
 #include <cflib/http/requesthandler.h>
 #include <cflib/serialize/serializetypeinfo.h>
-
-#include <QtCore>
+#include <cflib/util/threadverify.h>
 
 namespace cflib { namespace http {
 
 class JSService;
-class UploadHandler;
+class UploadService;
 
-class ApiServer : public RequestHandler
+class ApiServer : public RequestHandler, public util::ThreadVerify
 {
 	struct ClassInfoEl;
 	class ClassInfos : public QMap<QString, ClassInfoEl *> {
@@ -45,8 +44,8 @@ public:
 	ApiServer(bool descriptionEnabled = true);
 	~ApiServer();
 
-	void registerService(JSService * service);
-	void registerUploadHandler(UploadHandler * uploadHandler);
+	void registerJSService(JSService * service);
+	void registerUploadService(UploadService * uploadService);
 
 	void exportTo(const QString & dest) const;
 
@@ -71,7 +70,7 @@ private:
 private:
 	const bool descriptionEnabled_;
 	QMap<QString, JSService *> services_;
-	QMap<QString, UploadHandler *> uploadHandler_;
+	QMap<QString, UploadService *> uploadService_;
 	ClassInfoEl classInfos_;
 	typedef QPair<uint, QDateTime> ClientIdTimestamp;
 	QMap<QByteArray, ClientIdTimestamp> clientIds_;

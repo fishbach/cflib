@@ -45,7 +45,7 @@ public:
 	}
 
 protected:
-	virtual void newConnection(const ConnInitializer * init)
+	virtual void newConnection(const util::TCPConnInitializer * init)
     {
 		new impl::RequestParser(init, handlers_, this);
     }

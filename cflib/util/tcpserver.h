@@ -25,11 +25,12 @@ struct ev_loop;
 
 namespace cflib { namespace util {
 
+class TCPConnInitializer;
+
 class TCPServer
 {
 	Q_DISABLE_COPY(TCPServer)
 public:
-	class ConnInitializer;
 	class Impl;
 public:
 	TCPServer();
@@ -38,28 +39,43 @@ public:
 	static int openListenSocket(quint16 port, const QByteArray & ip = "127.0.0.1");
 	bool start(int listenSocket);
 	bool start(quint16 port, const QByteArray & ip = "127.0.0.1");
+	bool stop();
+
+	const TCPConnInitializer * openConnection(const QByteArray & destIP, quint16 destPort);
+
+	static TCPServer * instance() { return instance_; }
 
 protected:
-	virtual void newConnection(const ConnInitializer * init) = 0;
+	virtual void newConnection(const TCPConnInitializer * init) = 0;
 
 private:
 	Impl * impl_;
+	static TCPServer * instance_;
 };
 
 class TCPConn
 {
 	Q_DISABLE_COPY(TCPConn)
 public:
-	TCPConn(const TCPServer::ConnInitializer * init);
+	TCPConn(const TCPConnInitializer * init);
 	virtual ~TCPConn();
 
 	QByteArray read();
-	void startReadWatcher();
 	void write(const QByteArray & data);
-	void close();
+
+	void closeNicely();
+	void abortConnection();
+
+	void startWatcher();
+
+	bool isClosed() const { return socket_ == -1; }
 
 	QByteArray peerIP() const { return peerIP_; }
 	quint16 peerPort() const { return peerPort_; }
+
+	const TCPConnInitializer * detachFromSocket();
+
+	void destroy();
 
 protected:
 	virtual void newBytesAvailable() = 0;
@@ -78,6 +94,7 @@ private:
 	ev_io * writeWatcher_;
 	QByteArray readBuf_;
 	QByteArray writeBuf_;
+	bool closeAfterWriting_;
 
 	friend class TCPServer;
 };

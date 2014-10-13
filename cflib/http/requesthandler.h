@@ -18,23 +18,14 @@
 
 #pragma once
 
-#include <cflib/util/threadverify.h>
-
 namespace cflib { namespace http {
 
 class Request;
-namespace impl { class RequestParser; }
 
-class RequestHandler : public util::ThreadVerify
+class RequestHandler
 {
-public:
-	RequestHandler(const QString & name, uint threadCount = 1);
-
 protected:
 	virtual void handleRequest(const Request & request) = 0;
-
-private:
-	void doHandleRequest(const Request & request);
 	friend class Request;
 };
 

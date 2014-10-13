@@ -19,12 +19,11 @@
 #pragma once
 
 #include <cflib/http/requesthandler.h>
-
-#include <QtCore>
+#include <cflib/util/threadverify.h>
 
 namespace cflib { namespace http {
 
-class FileServer : public RequestHandler
+class FileServer : public RequestHandler, public util::ThreadVerify
 {
 public:
 	FileServer(const QString & path, bool parseHtml = true, uint threadCount = 1);

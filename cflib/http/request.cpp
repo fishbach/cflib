@@ -31,6 +31,7 @@ class Request::Shared
 {
 public:
 	Shared(int connId, int requestId,
+		const QByteArray & header,
 		const KeyVal & headerFields, const QByteArray & method, const QUrl & url,
 		const QByteArray & body, const QList<RequestHandler *> & handlers, bool passThrough,
 		impl::RequestParser * parser)
@@ -38,11 +39,13 @@ public:
 		ref(1),
 		connId(connId),
 		requestId(requestId),
+		header(header),
 		headerFields(headerFields), method(method), url(url), body(body),
 		handlers(handlers),
 		parser(parser),
 		replySent(parser == 0),
-		passThrough(passThrough)
+		passThrough(passThrough),
+		detached(false)
 	{
 		if (headerFields.contains("x-remote-ip")) {
 			remoteIP = headerFields.value("x-remote-ip");
@@ -57,7 +60,9 @@ public:
 	~Shared()
 	{
 		const int msec = watch.elapsed();
-		if (!replySent) {
+		if (detached) {
+			logDebug("request %1 detached", id);
+		} else if (!replySent) {
 			sendNotFound();
 			logDebug("request %1 finished with 404 (msec: %2)", id, msec);
 		} else {
@@ -71,6 +76,7 @@ public:
 	int connId;
 	int requestId;
 	QByteArray id;
+	QByteArray header;
 	KeyVal headerFields;
 	QByteArray method;
 	QUrl url;
@@ -82,6 +88,7 @@ public:
 	QByteArray remoteIP;
 	QList<QByteArray> sendHeaderLines;
 	bool passThrough;
+	bool detached;
 
 public:
 	QByteArray getRequestField(const QByteArray & key)
@@ -140,16 +147,17 @@ public:
 };
 
 Request::Request() :
-	d(new Shared(0, 0, KeyVal(), QByteArray(), QUrl(), QByteArray(), QList<RequestHandler *>(), false, 0))
+	d(new Shared(0, 0, QByteArray(), KeyVal(), QByteArray(), QUrl(), QByteArray(), QList<RequestHandler *>(), false, 0))
 {
 }
 
 Request::Request(int connId, int requestId,
+	const QByteArray & header,
 	const KeyVal & headerFields, const QByteArray & method, const QUrl & url,
 	const QByteArray & body, const QList<RequestHandler *> & handlers, bool passThrough,
 	impl::RequestParser * parser)
 :
-	d(new Shared(connId, requestId, headerFields, method, url, body, handlers, passThrough, parser))
+	d(new Shared(connId, requestId, header, headerFields, method, url, body, handlers, passThrough, parser))
 {
 }
 
@@ -188,6 +196,16 @@ bool Request::replySent() const
 	return d->replySent;
 }
 
+QByteArray Request::getHeader() const
+{
+	return d->header;
+}
+
+Request::KeyVal Request::getHeaderFields() const
+{
+	return d->headerFields;
+}
+
 bool Request::isGET() const
 {
 	return d->method == "GET";
@@ -196,11 +214,6 @@ bool Request::isGET() const
 QUrl Request::getUrl() const
 {
 	return d->url;
-}
-
-Request::KeyVal Request::getHeaderFields() const
-{
-	return d->headerFields;
 }
 
 QByteArray Request::getBody() const
@@ -274,14 +287,22 @@ QByteArray Request::readPassThrough(bool & isLast) const
 	return d->parser->readPassThrough(isLast);
 }
 
-void Request::startReadWatcher() const
+void Request::startWatcher() const
 {
-	if (d->parser) d->parser->startReadWatcher();
+	if (d->parser) d->parser->startWatcher();
+}
+
+const util::TCPConnInitializer * Request::detachFromSocket() const
+{
+	if (!d->parser) return 0;
+	d->replySent = true;
+	d->detached = true;
+	return d->parser->detachFromSocket();
 }
 
 void Request::callNextHandler() const
 {
-	d->handlers.takeFirst()->doHandleRequest(*this);
+	d->handlers.takeFirst()->handleRequest(*this);
 }
 
 }}	// namespace

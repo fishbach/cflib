@@ -21,7 +21,7 @@
 #include <cflib/crypt/util.h>
 #include <cflib/http/jsservice.h>
 #include <cflib/http/request.h>
-#include <cflib/http/uploadhandler.h>
+#include <cflib/http/uploadservice.h>
 #include <cflib/util/log.h>
 #include <cflib/util/util.h>
 
@@ -196,7 +196,7 @@ QString getJSParameters(const SerializeFunctionTypeInfo & func)
 // ============================================================================
 
 ApiServer::ApiServer(bool descriptionEnabled) :
-	RequestHandler("ApiServer"),
+	ThreadVerify("ApiServer", Worker),
 	descriptionEnabled_(descriptionEnabled),
 	lastId_(0),
 	lastExpireCheck_(QDateTime::currentDateTime()),
@@ -209,7 +209,7 @@ ApiServer::~ApiServer()
 	stopVerifyThread();
 }
 
-void ApiServer::registerService(JSService * service)
+void ApiServer::registerJSService(JSService * service)
 {
 	SerializeTypeInfo servInfo = service->getServiceInfo();
 	services_[servInfo.typeName.toLower()] = service;
@@ -224,10 +224,10 @@ void ApiServer::registerService(JSService * service)
 	}
 }
 
-void ApiServer::registerUploadHandler(UploadHandler * uploadHandler)
+void ApiServer::registerUploadService(UploadService * uploadService)
 {
-	uploadHandler->setApiServer(this);
-	uploadHandler_[uploadHandler->getName()] = uploadHandler;
+	uploadService->setApiServer(this);
+	uploadService_[uploadService->getName()] = uploadService;
 }
 
 void ApiServer::exportTo(const QString & dest) const
@@ -661,7 +661,7 @@ void ApiServer::exportClass(const ClassInfoEl & cl, const QString & path, const 
 
 void ApiServer::handleUpload(const Request & request, QString path) const
 {
-	UploadHandler * hdl = uploadHandler_.value(path);
+	UploadService * hdl = uploadService_.value(path);
 	if (!hdl || !request.isPOST()) request.sendNotFound();
 	else                           hdl->processRequest(request);
 }

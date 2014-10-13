@@ -16,7 +16,7 @@
  * along with cflib. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "uploadhandler.h"
+#include "uploadservice.h"
 
 #include <cflib/http/apiserver.h>
 #include <cflib/util/log.h>
@@ -25,19 +25,19 @@ USE_LOG(LogCat::Http)
 
 namespace cflib { namespace http {
 
-UploadHandler::UploadHandler(const QString & path, const QString & threadName, uint threadCount) :
+UploadService::UploadService(const QString & path, const QString & threadName, uint threadCount) :
 	ThreadVerify(threadName, util::ThreadVerify::Worker, threadCount),
 	path_(path),
 	apiServer_(0)
 {
 }
 
-UploadHandler::~UploadHandler()
+UploadService::~UploadService()
 {
 	stopVerifyThread();
 }
 
-UploadRequestHandler::UploadRequestHandler(UploadHandler * uploadHandler, const Request & request) :
+UploadRequestHandler::UploadRequestHandler(UploadService * uploadHandler, const Request & request) :
 	ThreadVerify(uploadHandler),
 	request_(request),
 	apiServer_(uploadHandler->apiServer_),
@@ -166,7 +166,7 @@ void UploadRequestHandler::parseMoreData()
 		requestEnd();
 		deleteNext();
 	} else {
-		request_.startReadWatcher();
+		request_.startWatcher();
 	}
 }
 

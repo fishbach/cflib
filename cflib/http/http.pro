@@ -24,13 +24,14 @@ TARGET = cflib_http
 HEADERS = \
 	apiserver.h \
 	fileserver.h \
+	forwardserver.h \
+	impl/requestparser.h \
 	jsservice.h \
 	logservice.h \
-	server.h \
 	request.h \
 	requesthandler.h \
-	uploadhandler.h \
-	impl/requestparser.h \
+	server.h \
+	uploadservice.h \
 
 serializeGen()
 lib()

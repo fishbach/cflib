@@ -20,10 +20,12 @@
 
 #include <QtCore>
 
+namespace cflib { namespace util { class TCPConnInitializer; } }
+
 namespace cflib { namespace http {
 
-class RequestHandler;
 class PassThroughHandler;
+class RequestHandler;
 namespace impl { class RequestParser; }
 
 class Request
@@ -35,6 +37,7 @@ public:
 public:
 	Request();
 	Request(int connId, int requestId,
+		const QByteArray & header,
 		const KeyVal & headerFields, const QByteArray & method, const QUrl & url,
 		const QByteArray & body, const QList<RequestHandler *> & handlers, bool passThrough,
 		impl::RequestParser * parser);
@@ -47,6 +50,7 @@ public:
 	Id getId() const;
 	bool replySent() const;
 
+	QByteArray getHeader() const;
 	KeyVal getHeaderFields() const;
 	bool isGET() const;
 	bool isPOST() const { return !isGET(); }
@@ -63,7 +67,9 @@ public:
 	bool isPassThrough() const;
 	void setPassThroughHandler(PassThroughHandler * hdl) const;
 	QByteArray readPassThrough(bool & isLast) const;
-	void startReadWatcher() const;
+	void startWatcher() const;
+
+	const util::TCPConnInitializer * detachFromSocket() const;
 
 private:
 	void callNextHandler() const;
