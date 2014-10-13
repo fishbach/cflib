@@ -35,8 +35,8 @@ public:
 	TCPServer();
 	virtual ~TCPServer();
 
-	bool bindOnly(quint16 port, const QByteArray & ip = "127.0.0.1");
-	bool start();
+	static int openListenSocket(quint16 port, const QByteArray & ip = "127.0.0.1");
+	bool start(int listenSocket);
 	bool start(quint16 port, const QByteArray & ip = "127.0.0.1");
 
 protected:

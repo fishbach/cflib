@@ -24,7 +24,7 @@ class ArgBase
 {
 public:
 	bool isSet() const { return count_ > 0; }
-	QByteArray value() const { return values_.isEmpty() ? QByteArray() : values_.first(); }
+	QByteArray value(const QByteArray & defaultValue = QByteArray()) const { return values_.isEmpty() ? defaultValue : values_.first(); }
 	QList<QByteArray> values() const { return values_; }
 	uint count() const { return count_; }
 

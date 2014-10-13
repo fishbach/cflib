@@ -39,16 +39,6 @@ public:
 		stopVerifyThread();
 	}
 
-	bool start()
-	{
-		if (handlers_.isEmpty()) {
-			logWarn("no handlers registered");
-			return false;
-		}
-
-		return util::TCPServer::start();
-	}
-
 	void registerHandler(RequestHandler * handler)
 	{
 		handlers_ << handler;
@@ -74,19 +64,14 @@ Server::~Server()
 	delete impl_;
 }
 
-bool Server::bindOnly(quint16 port, const QByteArray & address)
+bool Server::start(int listenSocket)
 {
-	return impl_->bindOnly(port, address);
-}
-
-bool Server::start()
-{
-	return impl_->start();
+	return impl_->start(listenSocket);
 }
 
 bool Server::start(quint16 port, const QByteArray & address)
 {
-	return impl_->bindOnly(port, address) && impl_->start();
+	return impl_->start(port, address);
 }
 
 void Server::registerHandler(RequestHandler * handler)

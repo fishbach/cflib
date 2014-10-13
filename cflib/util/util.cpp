@@ -343,15 +343,22 @@ bool daemonize()
 	if (pid < 0) return false;
 	if (pid > 0) exit(0);
 	if (setsid() < 0) return false;
-//	pid = fork();
-//	if (pid < 0) return false;
-//	if (pid > 0) exit(0);
 	if (chdir("/") < 0) return false;
 	close(STDIN_FILENO);
 	close(STDOUT_FILENO);
 	close(STDERR_FILENO);
 	umask(0);
 	return true;
+#endif
+}
+
+bool setProcessOwner(int uid, int gid)
+{
+#ifndef Q_OS_UNIX
+	Q_UNUSED(uid) Q_UNUSED(gid)
+	return false;
+#else
+	return setgid(gid) != -1 && setuid(uid) != -1;
 #endif
 }
 

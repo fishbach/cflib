@@ -89,68 +89,23 @@ public:
 		}
 	}
 
-	bool bindOnly(quint16 port, const QByteArray & ip)
-	{
-		if (listenSock_ >= 0) {
-			logWarn("port already bound");
-			return false;
-		}
-
-		// create socket
-		listenSock_ = socket(AF_INET, SOCK_STREAM, 0);
-		if (listenSock_ < 0) {
-			logWarn("cannot create TCP socket (errno: %1)", errno);
-			listenSock_ = -1;
-			return false;
-		}
-		if (!setNonBlocking(listenSock_)) return false;
-		{ int on = 1; setsockopt(listenSock_, SOL_SOCKET, SO_REUSEADDR, (void *)&on, sizeof(on)); }
-
-		// bind to address and port
-		struct sockaddr_in servAddr;
-		servAddr.sin_family = AF_INET;
-		if (inet_aton(ip.constData(), &servAddr.sin_addr) == 0) {
-			logWarn("no valid ip address: %1", ip);
-			close(listenSock_);
-			listenSock_ = -1;
-			return false;
-		}
-		servAddr.sin_port = htons(port);
-		if (bind(listenSock_, (struct sockaddr *)&servAddr, sizeof(servAddr)) < 0) {
-			logWarn("cannot bind to %1:%2 (errno: %3)", ip, port, errno);
-			close(listenSock_);
-			listenSock_ = -1;
-			return false;
-		}
-
-		logInfo("bound to %1:%2", ip, port);
-		return true;
-	}
-
-	bool start()
+	bool start(int listenSocket)
 	{
 		SyncedThreadCall<bool> stc(this);
-		if (!stc.verify(&Impl::start)) return stc.retval();
+		if (!stc.verify(&Impl::start, listenSocket)) return stc.retval();
 
-		if (listenSock_ == -1) {
-			logWarn("port not bound");
+		if (listenSock_ != -1) {
+			logWarn("server already running");
 			return false;
 		}
-
-		// start listening
-		if (listen(listenSock_, 1024) < 0) {
-			logWarn("cannot listen on fd %1 (errno: %4)", listenSock_, errno);
-			close(listenSock_);
-			listenSock_ = -1;
-			return false;
-		}
+		listenSock_ = listenSocket;
 
 		// watching for incoming activity
 		ev_io_init(readWatcher_, &Impl::readable, listenSock_, EV_READ);
 		readWatcher_->data = this;
 		ev_io_start(libEVLoop(), readWatcher_);
 
-		logInfo("listen started");
+		logInfo("server started");
 		return true;
 	}
 
@@ -228,19 +183,50 @@ TCPServer::~TCPServer()
 	delete impl_;
 }
 
-bool TCPServer::bindOnly(quint16 port, const QByteArray & ip)
+int TCPServer::openListenSocket(quint16 port, const QByteArray & ip)
 {
-	return impl_->bindOnly(port, ip);
+	// create socket
+	int rv = socket(AF_INET, SOCK_STREAM, 0);
+	if (rv < 0) return -1;
+
+	if (!setNonBlocking(rv)) {
+		close(rv);
+		return -1;
+	}
+	{ int on = 1; setsockopt(rv, SOL_SOCKET, SO_REUSEADDR, (void *)&on, sizeof(on)); }
+
+	// bind to address and port
+	struct sockaddr_in servAddr;
+	servAddr.sin_family = AF_INET;
+	if (inet_aton(ip.constData(), &servAddr.sin_addr) == 0) {
+		close(rv);
+		return -1;
+	}
+	servAddr.sin_port = htons(port);
+	if (bind(rv, (struct sockaddr *)&servAddr, sizeof(servAddr)) < 0) {
+		close(rv);
+		return -1;
+	}
+
+	// start listening
+	if (listen(rv, 1024) < 0) {
+		close(rv);
+		return -1;
+	}
+
+	return rv;
 }
 
-bool TCPServer::start()
+bool TCPServer::start(int listenSocket)
 {
-	return impl_->start();
+	return impl_->start(listenSocket);
 }
 
 bool TCPServer::start(quint16 port, const QByteArray & ip)
 {
-	return impl_->bindOnly(port, ip) && impl_->start();
+	int listenSocket = openListenSocket(port, ip);
+	if (listenSocket < 0) return false;
+	return impl_->start(listenSocket);
 }
 
 TCPConn::TCPConn(const TCPServer::ConnInitializer * init) :
