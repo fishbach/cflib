@@ -135,6 +135,7 @@ void Log::start(const QString & fileName)
 		QTextStream(stderr) << "could not open log file: " << fileName  << " (" << file.errorString() << ")" << endl;
 		return;
 	}
+	file.setPermissions(QFile::ReadOwner | QFile::WriteOwner | QFile::ReadGroup);
 	active = true;
 
 	writeLog(__FILE__, __LINE__, LogCat::Info, "started ...", 0);
