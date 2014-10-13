@@ -18,6 +18,11 @@
 
 #include "util.h"
 
+#ifdef Q_OS_UNIX
+#include <sys/stat.h>
+#include <unistd.h>
+#endif
+
 namespace cflib { namespace util {
 
 QByteArray dateTimeForHTTP(const QDateTime & dateTime)
@@ -327,6 +332,27 @@ bool validWebInputChars(const QString & str)
 	char c;
 	while ((c = *(pos++))) if (str.contains(c)) return false;
 	return true;
+}
+
+bool daemonize()
+{
+#ifndef Q_OS_UNIX
+	return false;
+#else
+	pid_t pid = fork();
+	if (pid < 0) return false;
+	if (pid > 0) exit(0);
+	if (setsid() < 0) return false;
+//	pid = fork();
+//	if (pid < 0) return false;
+//	if (pid > 0) exit(0);
+	if (chdir("/") < 0) return false;
+	close(STDIN_FILENO);
+	close(STDOUT_FILENO);
+	close(STDERR_FILENO);
+	umask(0);
+	return true;
+#endif
 }
 
 }}	// namespace

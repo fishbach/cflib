@@ -105,4 +105,6 @@ inline QDateTime readUTCDateTime(const QString & str)
 
 bool validWebInputChars(const QString & str);
 
+bool daemonize();
+
 }}	// namespace
