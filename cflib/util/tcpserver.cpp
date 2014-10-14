@@ -126,10 +126,11 @@ public:
 
 	void startWatcher(TCPConn * conn)
 	{
+		logFunctionTrace
 		if (!verifyThreadCall(&Impl::startWatcher, conn)) return;
 
 		if (conn->socket_ == -1) {
-			logDebug("informing about close of fd %1", conn->socket_);
+			logDebug("informing about close");
 			execCall(new Functor0<TCPConn>(conn, &TCPConn::closed));
 			return;
 		}

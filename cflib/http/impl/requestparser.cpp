@@ -42,6 +42,7 @@ RequestParser::RequestParser(const util::TCPConnInitializer * init,
 	requestCount_(0), nextReplyId_(1),
 	attachedRequests_(1),
 	socketClosed_(false),
+	detached_(false),
 	passThrough_(false),
 	passThroughHandler_(0)
 {
@@ -117,6 +118,14 @@ QByteArray RequestParser::readPassThrough(bool & isLast)
 	return retval;
 }
 
+const util::TCPConnInitializer * RequestParser::detachFromSocket()
+{
+	logFunctionTrace
+	detached_ = true;
+	detachRequest();	// removes initial ref, so that we will be deleted
+	return TCPConn::detachFromSocket();
+}
+
 void RequestParser::newBytesAvailable()
 {
 	if (!verifyThreadCall(&RequestParser::newBytesAvailable)) return;
@@ -138,6 +147,7 @@ void RequestParser::newBytesAvailable()
 
 void RequestParser::parseRequest()
 {
+	logFunctionTrace
 	do {
 
 		// header ok?
@@ -185,7 +195,7 @@ void RequestParser::parseRequest()
 
 	} while (!header_.isEmpty());
 
-	if (!passThrough_) startWatcher();
+	if (!passThrough_ && !detached_) startWatcher();
 }
 
 void RequestParser::closed()
