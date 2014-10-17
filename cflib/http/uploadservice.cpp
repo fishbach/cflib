@@ -92,9 +92,6 @@ void UploadRequestHandler::parseMoreData()
 	bool isLast = true;
 	if (request_.isPassThrough()) buffer_ += request_.readPassThrough(isLast);
 
-	logDebug("iss pt: %1 / buf: %2 / last: %3 / state: %4",
-		request_.isPassThrough(), buffer_.size(), isLast, state_);
-
 	forever {
 
 		if (state_ == 1) {
