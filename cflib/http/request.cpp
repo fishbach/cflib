@@ -54,7 +54,7 @@ public:
 		}
 		watch.start();
 		id << QByteArray::number(connId) << '-' << QByteArray::number(requestId);
-		logDebug("new request %1", id);
+		logDebug("new request %1 (body len: %2)", id, headerFields.value("content-length"));
 	}
 
 	~Shared()
