@@ -189,14 +189,15 @@ void FileServer::handleRequest(const Request & request)
 	const QRegularExpressionMatch match = endingRE_.match(path);
 	if (match.hasMatch()) {
 		const QString ending = match.captured(1);
-		     if (ending == "htm" ) { compression = true;  contentType = "text/html; charset=utf-8"; }
-		else if (ending == "ico" ) { compression = false; contentType = "image/x-icon"; }
-		else if (ending == "gif" ) { compression = false; contentType = "image/gif"; }
-		else if (ending == "png" ) { compression = false; contentType = "image/png"; }
-		else if (ending == "jpg" ) { compression = false; contentType = "image/jpeg"; }
-		else if (ending == "jpeg") { compression = false; contentType = "image/jpeg"; }
-		else if (ending == "js"  ) { compression = true;  contentType = "application/javascript; charset=utf-8"; }
-		else if (ending == "css" ) { compression = true;  contentType = "text/css; charset=utf-8"; }
+		     if (ending == "htm" )  { compression = true;  contentType = "text/html; charset=utf-8"; }
+		else if (ending == "ico" )  { compression = false; contentType = "image/x-icon"; }
+		else if (ending == "gif" )  { compression = false; contentType = "image/gif"; }
+		else if (ending == "png" )  { compression = false; contentType = "image/png"; }
+		else if (ending == "jpg" )  { compression = false; contentType = "image/jpeg"; }
+		else if (ending == "jpeg")  { compression = false; contentType = "image/jpeg"; }
+		else if (ending == "js"  )  { compression = true;  contentType = "application/javascript; charset=utf-8"; }
+		else if (ending == "css" )  { compression = true;  contentType = "text/css; charset=utf-8"; }
+		else if (ending == "data" ) { compression = true;  contentType = "application/octet-stream"; }
 	}
 
 	logDebug("delivering %1 (size=%2, contentType: %3)", fullPath, fi.size(), contentType);
