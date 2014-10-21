@@ -38,7 +38,7 @@ define(function() {
 	var ajax = new Ajax();
 
 	if (createXHR() === null) {
-		ajax.request = function(method, url, callback, content, headers, contentType) {
+		ajax.request = function(method, url, callback, content, headers, contentType, responseType) {
 			callback();
 		};
 //	} else if (createXHR().withCredentials === undefined && typeof XDomainRequest !== "undefined") {
@@ -57,7 +57,7 @@ define(function() {
 //			}
 //		};
 	} else {
-		ajax.request = function(method, url, callback, content, headers, contentType) {
+		ajax.request = function(method, url, callback, content, headers, contentType, responseType) {
 			var xhr = createXHR();
 			xhr.open(method, url, true);
 			if (headers) {
@@ -66,10 +66,11 @@ define(function() {
 				}
 			}
 			if (content) xhr.setRequestHeader('Content-Type', contentType ? contentType : 'text/plain');
+			if (responseType) xhr.responseType = responseType;
 			xhr.onreadystatechange = function() {
 				if (xhr.readyState != 4) return;
 				xhr.onreadystatechange = nop;
-				callback(xhr.status, xhr.responseText, xhr);
+				callback(xhr.status, responseType ? xhr.response : xhr.responseText, xhr);
 			};
 			try { xhr.send(content); } catch (e) {
 				callback();

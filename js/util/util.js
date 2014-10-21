@@ -17,9 +17,10 @@
  */
 
 define([
+	'cflib/util/ajax',
 	'cflib/util/api',
 	'cflib/ext/ZeroClipboard'
-], function(api, ZeroClipboard) {
+], function(ajax, api, ZeroClipboard) {
 
 	ZeroClipboard.config( { swfPath: '/swf/cflib/ZeroClipboard.swf' } );
 
@@ -201,6 +202,10 @@ define([
 		new ZeroClipboard(button).on('copy', function(e) {
 			e.clipboardData.setData('text/plain', dataFunc());
 		});
+	};
+
+	util.getArrayBuffer = function(url, callback, scope) {
+		ajax.request('GET', url, function(status, buf, xhr) { callback.call(scope, buf); }, null, null, null, 'arraybuffer');
 	};
 
 	return util;
