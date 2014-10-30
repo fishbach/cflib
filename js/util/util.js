@@ -208,5 +208,11 @@ define([
 		ajax.request('GET', url, function(status, buf, xhr) { callback.call(scope, buf); }, null, null, null, 'arraybuffer');
 	};
 
+	util.toHex = function(n, len) {
+		var rv = n.toString(16);
+		if (len) while (rv.length < len) rv = '0' + rv;
+		return rv;
+	};
+
 	return util;
 });

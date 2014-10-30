@@ -143,6 +143,7 @@ void UploadRequestHandler::parseMoreData()
 					clientId_ = apiServer_->getClientId(data);
 				} else handleData(data, true);	// finish
 				buffer_.remove(0, pos + boundary_.size() + 2);	// \r\n
+				logDebug("rest-buffer: %1", buffer_);
 				state_ = 2;
 			} else if (isLast) {
 				logWarn("broken request: last boundary is missing (%1/%2)",
