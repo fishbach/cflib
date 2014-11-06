@@ -214,5 +214,22 @@ define([
 		return rv;
 	};
 
+	util.setFullscreen = function(el) {
+		if (!el) el = document.documentElement;
+		if      (el.requestFullscreen      ) el.requestFullscreen();
+		else if (el.mozRequestFullScreen   ) el.mozRequestFullScreen();
+		else if (el.webkitRequestFullscreen) el.webkitRequestFullscreen();
+		else if (el.msRequestFullscreen    ) el.msRequestFullscreen();
+	};
+
+	util.getFullscreenEl = function() {
+		return (
+			document.fullscreenElement       ||
+			document.mozFullScreenElement    ||
+			document.webkitFullscreenElement ||
+			document.msFullscreenElement
+		);
+	};
+
 	return util;
 });
