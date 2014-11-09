@@ -38,6 +38,18 @@ define([
 		api.doAsyncRMI('logservice', ['void log(String,int32,uint16,String)', file, line, category, str]);
 	}
 
+	function base64CharToInt(c)
+	{
+		if (64 < c && c <  91) return c - 65;	// A-Z
+		if (96 < c && c < 123) return c - 71;	// a-z
+		if (47 < c && c <  58) return c + 4;	// 0-9
+		if (c == 43) return 62;					// +
+		if (c == 47) return 63;					// /
+		return 0;
+	}
+
+	var base64Chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
+
 	// ========================================================================
 
 	var Util = function() {};
@@ -229,6 +241,50 @@ define([
 			document.webkitFullscreenElement ||
 			document.msFullscreenElement
 		);
+	};
+
+	util.fromBase64 = function(base64Str) {
+		var inLen = base64Str.indexOf('=');
+		if (inLen == -1) inLen = base64Str.length;
+		var outLen = (inLen * 3 + 1) >> 2;
+		var rv = new Uint8Array(outLen);
+		var val = 0;
+		var j = 0;
+		for (var i = 0 ; i < inLen ; ++i) {
+			var pos = i & 3;
+			val |= base64CharToInt(base64Str.charCodeAt(i)) << (18 - 6 * pos);
+			if (pos == 3 || i == inLen - 1) {
+				rv[j++] = val >> 16;
+				if (j == outLen) break;
+				rv[j++] = (val >> 8) & 255;
+				if (j == outLen) break;
+				rv[j++] = val & 255;
+				val = 0;
+			}
+		}
+		return rv;
+	};
+
+	util.toBase64 = function(uint8Array) {
+		var rv = '';
+		var inLen = uint8Array.length;
+		var val = 0;
+		for (var i = 0 ; i < inLen ; ++i) {
+			var pos = i % 3;
+			val |= uint8Array[i] << (16 - 8 * pos);
+			if (pos == 2 || i == inLen - 1) {
+				rv += base64Chars[val >> 18];
+				rv += base64Chars[(val >> 12) & 63];
+				if (pos === 0) rv += '==';
+				else {
+					rv += base64Chars[(val >> 6) & 63];
+					if (pos == 1) rv += '=';
+					else          rv += base64Chars[val & 63];
+				}
+				val = 0;
+			}
+		}
+		return rv;
 	};
 
 	return util;
