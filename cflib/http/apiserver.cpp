@@ -147,7 +147,7 @@ QString formatJSTypeConstruction(const SerializeTypeInfo & ti, const QString & r
 	} else if (ti.type == SerializeTypeInfo::Basic) {
 		if (ti.typeName == "DateTime") {
 			js << "(!" << raw << " ? null : new Date(" << raw << "))";
-		} else if (ti.typeName == "String") {
+		} else if (ti.typeName == "String" || ti.typeName == "ByteArray") {
 			js << "(" << raw << " === undefined ? null : " << raw << ")";
 		} else if (ti.typeName.indexOf("int") != -1 || ti.typeName == "tribool") {
 			js << "(" << raw << " === undefined ? 0 : " << raw << ")";
