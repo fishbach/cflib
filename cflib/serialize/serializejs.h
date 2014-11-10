@@ -33,7 +33,7 @@ public:
 	}
 	JSSerializer & operator=(const JSSerializer & other) { data_ = other.data_; return *this; }
 
-	QByteArray data() const { return data_ + ']'; }
+	QByteArray data() const { return data_ + (base_.lastWasEmpty() ? ",]" : "]"); }
 
 	template <typename T>
 	inline JSSerializer & operator<<(const T & cl) { base_ << cl; return *this; }

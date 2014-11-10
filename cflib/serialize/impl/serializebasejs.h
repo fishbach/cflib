@@ -27,13 +27,15 @@ class JSSerializerBase
 {
 public:
 	JSSerializerBase(QByteArray & data) :
-		data_(data), isFirst_(true)
+		data_(data), isFirst_(true), lastWasEmpty_(false)
 	{
 		data_ += '[';
 	}
 
 	~JSSerializerBase()
 	{
+		// In JavaScript the last komma before ']' in an array is dropped
+		if (lastWasEmpty_) data_ += ',';
 		data_ += ']';
 	}
 
@@ -42,7 +44,9 @@ public:
 	{
 		if (isFirst_) isFirst_ = false;
 		else data_ += ',';
+		int old = data_.size();
 		serializeJS(cl, data_, *this); // *this is needed for C++ ADL
+		lastWasEmpty_ = data_.size() == old;
 		return *this;
 	}
 
@@ -50,12 +54,16 @@ public:
 	{
 		if (isFirst_) isFirst_ = false;
 		else data_ += ',';
+		lastWasEmpty_ = true;
 		return *this;
 	}
+
+	bool lastWasEmpty() const { return lastWasEmpty_; }
 
 private:
 	QByteArray & data_;
 	bool isFirst_;
+	bool lastWasEmpty_;
 };
 
 class JSDeserializerBase
