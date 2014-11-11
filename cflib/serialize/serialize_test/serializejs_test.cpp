@@ -84,9 +84,9 @@ class SerializeJS_Test: public QObject
 private slots:
 
 	void integer() {
-		QVERIFY(checkSerDeser<bool   >( false, "[]" ));
+		QVERIFY(checkSerDeser<bool   >( false, "[,]" ));
 		QVERIFY(checkSerDeser<bool   >(  true, "[1]" ));
-		QVERIFY(checkSerDeser<quint8 >(     0, "[]" ));
+		QVERIFY(checkSerDeser<quint8 >(     0, "[,]" ));
 		QVERIFY(checkSerDeser<quint8 >(     1, "[1]" ));
 		QVERIFY(checkSerDeser< qint8 >(    -1, "[-1]" ));
 		QVERIFY(checkSerDeser<quint64>(  1234, "[1234]"));
@@ -105,21 +105,21 @@ private slots:
 	}
 
 	void null() {
-		QVERIFY(checkSerDeser<bool   >(false, "[]"));
-		QVERIFY(checkSerDeser<quint8 >(    0, "[]"));
-		QVERIFY(checkSerDeser< qint8 >(    0, "[]"));
-		QVERIFY(checkSerDeser<quint16>(    0, "[]"));
-		QVERIFY(checkSerDeser<quint64>(    0, "[]"));
+		QVERIFY(checkSerDeser<bool   >(false, "[,]"));
+		QVERIFY(checkSerDeser<quint8 >(    0, "[,]"));
+		QVERIFY(checkSerDeser< qint8 >(    0, "[,]"));
+		QVERIFY(checkSerDeser<quint16>(    0, "[,]"));
+		QVERIFY(checkSerDeser<quint64>(    0, "[,]"));
 	}
 
 	void string() {
-		QVERIFY(checkSer<const char *>(0,    "[]"));
+		QVERIFY(checkSer<const char *>(0,    "[,]"));
 		QVERIFY(checkSer<const char *>("",   "['']"));
 		QVERIFY(checkSer<const char *>("X",  "['X']"));
 		QVERIFY(checkSer<const char *>("XY", "['XY']"));
 		QVERIFY(checkSer<const char *>("X\\r\r\n", "['X\\\\r\\r\\n']"));
 
-		QVERIFY(checkSerDeserNull<QByteArray>(QByteArray(),     "[]"));
+		QVERIFY(checkSerDeserNull<QByteArray>(QByteArray(),     "[,]"));
 		QVERIFY(checkSerDeserNull<QByteArray>(QByteArray(""),   "['']"));
 		QVERIFY(checkSerDeserNull<QByteArray>(QByteArray("X"),  "['X']"));
 		QVERIFY(checkSerDeserNull<QByteArray>(QByteArray("XY"), "['XY']"));
@@ -128,7 +128,7 @@ private slots:
 		QVERIFY(checkSerDeserNull<QByteArray>(QByteArray::fromHex("310032"), QByteArray("['1") + '\0' + "2']"));
 		QVERIFY(checkSerDeserNull<QByteArray>(QByteArray::fromHex("313200"), QByteArray("['12") + '\0' + "']"));
 
-		QVERIFY(checkSerDeserNull<QString>(QString(),     "[]"));
+		QVERIFY(checkSerDeserNull<QString>(QString(),     "[,]"));
 		QVERIFY(checkSerDeserNull<QString>(QString(""),   "['']"));
 		QVERIFY(checkSerDeserNull<QString>(QString("X"),  "['X']"));
 		QVERIFY(checkSerDeserNull<QString>(QString("XY"), "['XY']"));
@@ -190,9 +190,9 @@ private slots:
 		t2.t1.b = 0;
 		QVERIFY(checkSerDeser<Test2>(t2, "[[,67]]"));
 		t2.a = 0;
-		QVERIFY(checkSerDeser<Test2>(t2, "[[,]]"));
+		QVERIFY(checkSerDeser<Test2>(t2, "[[,,]]"));
 		t2.t1.a = 0x42;
-		QVERIFY(checkSerDeser<Test2>(t2, "[[[66,],]]"));
+		QVERIFY(checkSerDeser<Test2>(t2, "[[[66,,],,]]"));
 	}
 
 	void lists()
@@ -236,7 +236,7 @@ private slots:
 	{
 		JSSerializer ser;
 		ser << Placeholder() << "bla" << "dudi" << Placeholder();
-		QCOMPARE(ser.data(), QByteArray("[,'bla','dudi',]"));
+		QCOMPARE(ser.data(), QByteArray("[,'bla','dudi',,]"));
 		{
 			JSDeserializer deser("[,'bla','dudi',]");
 			QString a, b;
