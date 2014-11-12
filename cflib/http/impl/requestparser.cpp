@@ -67,7 +67,6 @@ void RequestParser::sendReply(int id, const QByteArray & reply)
 			it.next();
 			if (it.key() == nextReplyId_) {
 				writeReply(it.value());
-
 				it.remove();
 			} else {
 				break;

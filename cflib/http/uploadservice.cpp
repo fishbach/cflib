@@ -41,8 +41,7 @@ UploadRequestHandler::UploadRequestHandler(UploadService * uploadHandler, const 
 	ThreadVerify(uploadHandler),
 	request_(request),
 	apiServer_(uploadHandler->apiServer_),
-	state_(1),
-	clientId_(0)
+	state_(1)
 {
 	init();
 }
@@ -52,6 +51,10 @@ void UploadRequestHandler::morePassThroughData()
 	if (!verifyThreadCall(&UploadRequestHandler::morePassThroughData)) return;
 
 	parseMoreData();
+}
+
+void UploadRequestHandler::handleClientId(uint)
+{
 }
 
 void UploadRequestHandler::requestEnd()
@@ -140,7 +143,7 @@ void UploadRequestHandler::parseMoreData()
 			if (pos != -1) {
 				QByteArray data = buffer_.left(pos - 2);
 				if (name_ == "clientId") {
-					clientId_ = apiServer_->getClientId(data);
+					handleClientId(apiServer_->getClientId(data));
 				} else handleData(data, true);	// finish
 				buffer_.remove(0, pos + boundary_.size() + 2);	// \r\n
 				logDebug("rest-buffer: %1", buffer_);

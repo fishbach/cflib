@@ -292,6 +292,11 @@ void Request::startWatcher() const
 	if (d->parser) d->parser->startWatcher();
 }
 
+void Request::abort() const
+{
+	if (d->parser) d->parser->abortConnection();
+}
+
 const util::TCPConnInitializer * Request::detachFromSocket() const
 {
 	if (!d->parser) return 0;

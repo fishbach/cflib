@@ -51,6 +51,7 @@ public:
 	virtual void morePassThroughData();
 
 protected:
+	virtual void handleClientId(uint clId);
 	virtual void handleData(const QByteArray & data, bool isLast) = 0;
 	virtual void requestEnd();
 
@@ -58,7 +59,6 @@ protected:
 	QByteArray contentType() const { return contentType_; }
 	QByteArray name() const { return name_; }
 	QByteArray filename() const { return filename_; }
-	uint clientId() const { return clientId_; }
 
 private:
 	void init();
@@ -72,7 +72,6 @@ private:
 	QByteArray contentType_;
 	QByteArray name_;
 	QByteArray filename_;
-	uint clientId_;
 };
 
 }}	// namespace

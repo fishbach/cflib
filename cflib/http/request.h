@@ -68,6 +68,7 @@ public:
 	void setPassThroughHandler(PassThroughHandler * hdl) const;
 	QByteArray readPassThrough(bool & isLast) const;
 	void startWatcher() const;
+	void abort() const;
 
 	const util::TCPConnInitializer * detachFromSocket() const;
 
