@@ -168,7 +168,7 @@ void RequestParser::parseRequest()
 
 		if (body_.size() < size) {
 			// small requests we hold in memory
-			if (size <= 8192) break;
+			if (body_.size < 0x400000) break;
 			passThrough_ = true;
 		}
 
