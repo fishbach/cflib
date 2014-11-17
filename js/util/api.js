@@ -158,7 +158,7 @@ define([
 					else retval += ',';
 					var subSer = api.serialize(obj[i++]);
 					if (!subSer) lastWasEmpty = true;
-					else         retval += subSer
+					else         retval += subSer;
 				}
 				if (lastWasEmpty) retval += ',';
 				retval += ']';
