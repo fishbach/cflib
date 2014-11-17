@@ -150,13 +150,17 @@ define([
 		var retval = '';
 		if (typeof obj == 'object') {
 			if (obj instanceof Array) {
+				var lastWasEmpty = false;
 				retval += '[';
 				var i = 0, len = obj.length, isFirst = true;
 				while (i < len) {
 					if (isFirst) isFirst = false;
 					else retval += ',';
-					retval += api.serialize(obj[i++]);
+					var subSer = api.serialize(obj[i++]);
+					if (!subSer) lastWasEmpty = true;
+					else         retval += subSer
 				}
+				if (lastWasEmpty) retval += ',';
 				retval += ']';
 			} else if (obj instanceof api.Base) {
 				retval += api.serialize(obj.__memberArray());
