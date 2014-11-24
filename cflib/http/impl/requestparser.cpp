@@ -93,6 +93,9 @@ void RequestParser::setPassThroughHandler(PassThroughHandler * hdl)
 
 QByteArray RequestParser::readPassThrough(bool & isLast)
 {
+	SyncedThreadCall<QByteArray> stc(this);
+	if (!stc.verify(&RequestParser::readPassThrough, isLast)) return stc.retval();
+
 	if (!passThrough_ || socketClosed_) {
 		isLast = true;
 		return QByteArray();
@@ -119,6 +122,9 @@ QByteArray RequestParser::readPassThrough(bool & isLast)
 
 const util::TCPConnInitializer * RequestParser::detachFromSocket()
 {
+	SyncedThreadCall<const util::TCPConnInitializer *> stc(this);
+	if (!stc.verify(&RequestParser::detachFromSocket)) return stc.retval();
+
 	logFunctionTrace
 	detached_ = true;
 	detachRequest();	// removes initial ref, so that we will be deleted
