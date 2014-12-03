@@ -164,7 +164,7 @@ QByteArray Mail::raw(QString & destAddress) const
 	rv	<< "Content-type: text/plain; charset=utf-8\r\n"
 		<< "Content-transfer-encoding: quoted-printable\r\n";
 	QString addr;
-	if (!from.isNull()) rv << "From: " << encodeAddress(from, addr) << "\r\n";
+	if (!from.isEmpty()) rv << "From: " << encodeAddress(from, addr) << "\r\n";
 	rv	<< "To: " << encodeAddress(to, destAddress) << "\r\n"
 		<< "Subject: " << cflib::util::encodeWord(subject, false) << "\r\n"
 		<< "\r\n"
