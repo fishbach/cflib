@@ -264,6 +264,12 @@ define([
 		else if (document.webkitExitPointerLock) document.webkitExitPointerLock();
 	};
 
+	util.addPointerLockEventListener = function(cb) {
+		if      ('onpointerlockchange'       in document) document.addEventListener('pointerlockchange',       cb, false);
+		else if ('onmozpointerlockchange'    in document) document.addEventListener('mozpointerlockchange',    cb, false);
+		else if ('onwebkitpointerlockchange' in document) document.addEventListener('webkitpointerlockchange', cb, false);
+	};
+
 	util.fromBase64 = function(base64Str) {
 		var inLen = base64Str.indexOf('=');
 		if (inLen == -1) inLen = base64Str.length;
