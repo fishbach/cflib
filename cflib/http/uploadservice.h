@@ -18,8 +18,8 @@
 
 #pragma once
 
-#include <cflib/http/requesthandler.h>
 #include <cflib/http/request.h>
+#include <cflib/http/requesthandler.h>
 #include <cflib/util/threadverify.h>
 
 namespace cflib { namespace http {

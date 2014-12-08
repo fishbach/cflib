@@ -18,27 +18,25 @@
 
 #pragma once
 
-#include <cflib/http/request.h>
+#include <cflib/http/requesthandler.h>
 #include <cflib/util/threadverify.h>
 
 namespace cflib { namespace http {
 
 class ApiServer;
 
-class WebSocketService : public util::ThreadVerify
+class WebSocketService : public QObject, public RequestHandler, public util::ThreadVerify
 {
+	Q_OBJECT
 public:
-	WebSocketService(const QString & path, const QString & threadName, uint threadCount = 1);
+	WebSocketService(const QString & threadName, uint threadCount = 1);
 	~WebSocketService();
 
-	QString getName() const { return path_; }
-	void setApiServer(ApiServer * apiServer) { apiServer_ = apiServer; }
+signals:
+	void getClientId(const QByteArray & clIdData, uint & clId);
 
-	virtual void processRequest(const Request & request) = 0;
-
-private:
-	const QString path_;
-	ApiServer * apiServer_;
+protected:
+	virtual void handleRequest(const Request & request) = 0;
 };
 
 }}	// namespace

@@ -25,10 +25,8 @@ USE_LOG(LogCat::Http)
 
 namespace cflib { namespace http {
 
-WebSocketService::WebSocketService(const QString & path, const QString & threadName, uint threadCount) :
-	ThreadVerify(threadName, util::ThreadVerify::Worker, threadCount),
-	path_(path),
-	apiServer_(0)
+WebSocketService::WebSocketService(const QString & threadName, uint threadCount) :
+	ThreadVerify(threadName, util::ThreadVerify::Worker, threadCount)
 {
 }
 
