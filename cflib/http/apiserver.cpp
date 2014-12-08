@@ -224,12 +224,6 @@ void ApiServer::registerJSService(JSService * service)
 	}
 }
 
-void ApiServer::registerUploadService(UploadService * uploadService)
-{
-	uploadService->setApiServer(this);
-	uploadService_[uploadService->getName()] = uploadService;
-}
-
 void ApiServer::exportTo(const QString & dest) const
 {
 	QDir().mkpath(dest + "/js/services");
@@ -244,12 +238,11 @@ void ApiServer::exportTo(const QString & dest) const
 	exportClass(classInfos_, "", dest);
 }
 
-uint ApiServer::getClientId(const QByteArray & clIdData)
+void ApiServer::getClientId(const QByteArray & clIdData, uint & clId)
 {
-	SyncedThreadCall<uint> stc(this);
-	if (!stc.verify(&ApiServer::getClientId, clIdData)) return stc.retval();
+	if (!verifySyncedThreadCall(&ApiServer::getClientId, clIdData, clId)) return;
 
-	return clientIds_[clIdData].first;
+	clId = clientIds_[clIdData].first;
 }
 
 void ApiServer::handleRequest(const Request & request)
@@ -261,7 +254,6 @@ void ApiServer::handleRequest(const Request & request)
 	if (path.startsWith("/api/")) {
 		path.remove(0, 5);
 		if      (path.startsWith("rmi/"))    doRMI(request, path.mid(4));
-		else if (path.startsWith("upload/")) handleUpload(request, path.mid(7));
 		else if (descriptionEnabled_ && path.startsWith("services")) showServices(request, path.mid(8));
 		else if (descriptionEnabled_ && path.startsWith("classes"))  showClasses(request, path.mid(7));
 		else request.sendNotFound();
@@ -657,13 +649,6 @@ void ApiServer::exportClass(const ClassInfoEl & cl, const QString & path, const 
 			exportClass(*cl.infos[ns], p + ns, dest);
 		}
 	}
-}
-
-void ApiServer::handleUpload(const Request & request, QString path) const
-{
-	UploadService * hdl = uploadService_.value(path);
-	if (!hdl || !request.isPOST()) request.sendNotFound();
-	else                           hdl->processRequest(request);
 }
 
 }}	// namespace

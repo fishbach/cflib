@@ -27,8 +27,10 @@ namespace cflib { namespace http {
 class JSService;
 class UploadService;
 
-class ApiServer : public RequestHandler, public util::ThreadVerify
+class ApiServer : public QObject, public RequestHandler, public util::ThreadVerify
 {
+	Q_OBJECT
+private:
 	struct ClassInfoEl;
 	class ClassInfos : public QMap<QString, ClassInfoEl *> {
 		Q_DISABLE_COPY(ClassInfos)
@@ -45,11 +47,11 @@ public:
 	~ApiServer();
 
 	void registerJSService(JSService * service);
-	void registerUploadService(UploadService * uploadService);
 
 	void exportTo(const QString & dest) const;
 
-	uint getClientId(const QByteArray & clIdData);
+public slots:
+	void getClientId(const QByteArray & clIdData, uint & clId);
 
 protected:
 	virtual void handleRequest(const Request & request);
@@ -65,12 +67,10 @@ private:
 	void doRMI(const Request & request, const QString & path);
 	void checkExpire();
 	void exportClass(const ClassInfoEl & cl, const QString & path, const QString & dest) const;
-	void handleUpload(const Request & request, QString path) const;
 
 private:
 	const bool descriptionEnabled_;
 	QMap<QString, JSService *> services_;
-	QMap<QString, UploadService *> uploadService_;
 	ClassInfoEl classInfos_;
 	typedef QPair<uint, QDateTime> ClientIdTimestamp;
 	QMap<QByteArray, ClientIdTimestamp> clientIds_;

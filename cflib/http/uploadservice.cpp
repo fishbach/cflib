@@ -25,10 +25,8 @@ USE_LOG(LogCat::Http)
 
 namespace cflib { namespace http {
 
-UploadService::UploadService(const QString & path, const QString & threadName, uint threadCount) :
-	ThreadVerify(threadName, util::ThreadVerify::Worker, threadCount),
-	path_(path),
-	apiServer_(0)
+UploadService::UploadService(const QString & threadName, uint threadCount) :
+	ThreadVerify(threadName, util::ThreadVerify::Worker, threadCount)
 {
 }
 
@@ -40,9 +38,13 @@ UploadService::~UploadService()
 UploadRequestHandler::UploadRequestHandler(UploadService * uploadHandler, const Request & request) :
 	ThreadVerify(uploadHandler),
 	request_(request),
-	apiServer_(uploadHandler->apiServer_),
 	state_(1)
 {
+	connect(
+		this,          &UploadRequestHandler::getClientId,
+		uploadHandler,        &UploadService::getClientId,
+		Qt::DirectConnection
+	);
 	init();
 }
 
@@ -143,7 +145,9 @@ void UploadRequestHandler::parseMoreData()
 			if (pos != -1) {
 				QByteArray data = buffer_.left(pos - 2);
 				if (name_ == "clientId") {
-					handleClientId(apiServer_->getClientId(data));
+					uint clId = 0;
+					emit getClientId(data, clId);
+					handleClientId(clId);
 				} else handleData(data, true);	// finish
 				buffer_.remove(0, pos + boundary_.size() + 2);	// \r\n
 				state_ = 2;

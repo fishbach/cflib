@@ -18,6 +18,7 @@
 
 #pragma once
 
+#include <cflib/http/requesthandler.h>
 #include <cflib/http/request.h>
 #include <cflib/util/threadverify.h>
 
@@ -25,30 +26,30 @@ namespace cflib { namespace http {
 
 class ApiServer;
 
-class UploadService : public util::ThreadVerify
+class UploadService : public QObject, public RequestHandler, public util::ThreadVerify
 {
+	Q_OBJECT
 public:
-	UploadService(const QString & path, const QString & threadName, uint threadCount = 1);
+	UploadService(const QString & threadName, uint threadCount = 1);
 	~UploadService();
 
-	QString getName() const { return path_; }
-	void setApiServer(ApiServer * apiServer) { apiServer_ = apiServer; }
+signals:
+	void getClientId(const QByteArray & clIdData, uint & clId);
 
-	virtual void processRequest(const Request & request) = 0;
-
-private:
-	const QString path_;
-	ApiServer * apiServer_;
-
-	friend class UploadRequestHandler;
+protected:
+	virtual void handleRequest(const Request & request) = 0;
 };
 
-class UploadRequestHandler : public util::ThreadVerify, public PassThroughHandler
+class UploadRequestHandler : public QObject, public util::ThreadVerify, public PassThroughHandler
 {
+	Q_OBJECT
 public:
 	UploadRequestHandler(UploadService * uploadHandler, const Request & request);
 
 	virtual void morePassThroughData();
+
+signals:
+	void getClientId(const QByteArray & clIdData, uint & clId);
 
 protected:
 	virtual void handleClientId(uint clId);
@@ -65,7 +66,6 @@ private:
 	void parseMoreData();
 
 private:
-	ApiServer * apiServer_;
 	QByteArray boundary_;
 	QByteArray buffer_;
 	int state_;
