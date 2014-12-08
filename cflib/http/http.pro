@@ -32,6 +32,7 @@ HEADERS = \
 	requesthandler.h \
 	server.h \
 	uploadservice.h \
+	websocketservice.h \
 
 serializeGen()
 lib()
