@@ -243,6 +243,27 @@ define([
 		);
 	};
 
+	util.setPointerLock = function(el) {
+		if (!el) el = document.documentElement;
+		if      (el.requestPointerLock      ) el.requestPointerLock();
+		else if (el.mozRequestPointerLock   ) el.mozRequestPointerLock();
+		else if (el.webkitRequestPointerLock) el.webkitRequestPointerLock();
+	};
+
+	util.getPointerLockEl = function() {
+		return (
+			document.pointerLockElement       ||
+			document.mozPointerLockElement    ||
+			document.webkitPointerLockElement
+		);
+	};
+
+	util.unsetPointerLock = function(el) {
+		if      (document.exitPointerLock      ) document.exitPointerLock();
+		else if (document.mozExitPointerLock   ) document.mozExitPointerLock();
+		else if (document.webkitExitPointerLock) document.webkitExitPointerLock();
+	};
+
 	util.fromBase64 = function(base64Str) {
 		var inLen = base64Str.indexOf('=');
 		if (inLen == -1) inLen = base64Str.length;
