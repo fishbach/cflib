@@ -18,7 +18,6 @@
 
 #include "uploadservice.h"
 
-#include <cflib/http/apiserver.h>
 #include <cflib/util/log.h>
 
 USE_LOG(LogCat::Http)

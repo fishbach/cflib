@@ -30,4 +30,6 @@ quint64 randomUInt64();
 QByteArray hashPassword(const QString & password);
 bool checkPassword(const QString & password, const QByteArray & hash);
 
+QByteArray sha1(const QByteArray & data);
+
 }}	// namespace

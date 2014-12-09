@@ -29,14 +29,17 @@ class WebSocketService : public QObject, public RequestHandler, public util::Thr
 {
 	Q_OBJECT
 public:
-	WebSocketService(const QString & threadName, uint threadCount = 1);
+	WebSocketService(const QString & basePath);
 	~WebSocketService();
 
 signals:
 	void getClientId(const QByteArray & clIdData, uint & clId);
 
 protected:
-	virtual void handleRequest(const Request & request) = 0;
+	virtual void handleRequest(const Request & request);
+
+private:
+	const QString basePath_;
 };
 
 }}	// namespace

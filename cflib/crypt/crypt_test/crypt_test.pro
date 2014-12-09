@@ -15,24 +15,15 @@
 # You should have received a copy of the GNU General Public License
 # along with cflib. If not, see <http://www.gnu.org/licenses/>.
 
-include(include.pri)
+include(../../../include.pri)
 
-addSubdir(cflib/crypt)
-addSubdir(cflib/crypt/crypt_test, cflib/crypt cflib/util)
-addSubdir(cflib/dao, cflib/serialize/ser)
-addSubdir(cflib/db)
-addSubdir(cflib/http, cflib/serialize/ser)
-addSubdir(cflib/libev)
-addSubdir(cflib/serialize)
-addSubdir(cflib/serialize/ser)
-addSubdir(cflib/serialize/serialize_test, cflib/serialize/ser cflib/serialize cflib/util cflib/libev)
-addSubdir(cflib/util)
-addSubdir(cflib/util/util_test, cflib/util cflib/libev)
-addSubdir(cflib/util/filefinder)
-addSubdir(cflib/util/gitversion)
+QT = core
 
-OTHER_FILES = \
-	README \
-	COPYING \
+TARGET = crypt_test
 
-addOtherFiles(js)
+SOURCES = \
+	crypt_test.cpp \
+
+serializeGen()
+useLibs(cflib_crypt cflib_util)
+test()

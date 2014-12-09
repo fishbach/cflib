@@ -100,4 +100,15 @@ bool checkPassword(const QString & password, const QByteArray & hash)
 	return false;
 }
 
+QByteArray sha1(const QByteArray & data)
+{
+	TRY {
+		Pipe pipe(new Hash_Filter("SHA-1"));
+		pipe.process_msg((const byte *)data.constData(), data.size());
+		std::string hash = pipe.read_all_as_string();
+		return QByteArray(hash.c_str(), hash.length());
+	} CATCH
+	return QByteArray();
+}
+
 }}	// namespace

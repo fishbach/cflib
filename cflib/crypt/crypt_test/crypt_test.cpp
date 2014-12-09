@@ -16,21 +16,31 @@
  * along with cflib. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#pragma once
+#include <cflib/crypt/util.h>
+#include <cflib/util/test.h>
 
-#include <cflib/util/log.h>
+using namespace cflib::crypt;
 
-#include <botan/bcrypt.h>
-#include <botan/botan.h>
-#include <botan/filters.h>
+class Crypt_Test: public QObject
+{
+	Q_OBJECT
+private slots:
 
-#define TRY \
-	try
-#define CATCH \
-	catch (std::exception & e) { \
-		logWarn("Botan exception: %1", e.what()); \
-	} catch (...) { \
-		logWarn("unknown Botan exception"); \
+	void test_sha1()
+	{
+		QCOMPARE(sha1(""),    QByteArray::fromHex("da39a3ee5e6b4b0d3255bfef95601890afd80709"));
+		QCOMPARE(sha1("a"),   QByteArray::fromHex("86f7e437faa5a7fce15d1ddcb9eaeaea377667b8"));
+		QCOMPARE(sha1("abc"), QByteArray::fromHex("a9993e364706816aba3e25717850c26c9cd0d89d"));
 	}
 
-using namespace Botan;
+	void test_sha1ForWebSocket()
+	{
+		QCOMPARE(
+			sha1("x3JJHMbDL1EzLkh9GBhXDw==258EAFA5-E914-47DA-95CA-C5AB0DC85B11"),
+			QByteArray::fromBase64("HSmrc0sMlYUkAGmm5OPpG2HaGWk=")
+		);
+	}
+
+};
+#include "crypt_test.moc"
+ADD_TEST(Crypt_Test)

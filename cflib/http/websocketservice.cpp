@@ -18,21 +18,73 @@
 
 #include "websocketservice.h"
 
+#include <cflib/crypt/util.h>
 #include <cflib/http/apiserver.h>
+#include <cflib/http/request.h>
 #include <cflib/util/log.h>
 
 USE_LOG(LogCat::Http)
 
 namespace cflib { namespace http {
 
-WebSocketService::WebSocketService(const QString & threadName, uint threadCount) :
-	ThreadVerify(threadName, util::ThreadVerify::Worker, threadCount)
+namespace {
+
+class WSRequestHandler : public util::ThreadVerify
+{
+public:
+	WSRequestHandler(WebSocketService * service, const Request & request, const QString & name) :
+		ThreadVerify(service),
+		service_(*service),
+		request_(request),
+		name_(name)
+	{
+		logFunctionTrace
+
+		const Request::KeyVal headers = request_.getHeaderFields();
+		QByteArray wsKey = headers["sec-webSocket-key"];
+		if (headers["upgrade"          ] != "websocket" ||
+			headers["connection"       ] != "Upgrade"   ||
+			wsKey.isEmpty())
+		{
+			request.sendNotFound();
+			deleteNext();
+			return;
+		}
+
+		wsKey = cflib::crypt::sha1(wsKey + "258EAFA5-E914-47DA-95CA-C5AB0DC85B11").toBase64();
+
+	}
+
+	~WSRequestHandler()
+	{
+		logFunctionTrace
+	}
+
+private:
+	WebSocketService & service_;
+	const Request request_;
+	const QString & name_;
+};
+
+}
+
+WebSocketService::WebSocketService(const QString & basePath) :
+	ThreadVerify("WebSocketService", util::ThreadVerify::Worker, 1),
+	basePath_(basePath)
 {
 }
 
 WebSocketService::~WebSocketService()
 {
 	stopVerifyThread();
+}
+
+void WebSocketService::handleRequest(const Request & request)
+{
+	QString path = request.getUrl().path();
+	if (!path.startsWith(basePath_) || !request.isGET()) return;
+
+	new WSRequestHandler(this, request, path.mid(basePath_.length()));
 }
 
 }}	// namespace
