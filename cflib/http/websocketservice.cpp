@@ -73,6 +73,7 @@ public:
 			frame += len & 0xFF;
 		}
 		frame += data;
+		write(frame);
 	}
 
 protected:
@@ -94,11 +95,11 @@ private:
 	{
 		if (!isFirstMsg_) return false;
 		isFirstMsg_ = false;
-		if (!data.startsWith("CFLIB_clientId#")) return false;
-		emit service_.getClientId(data.mid(15), clientId_);
+		bool isIdMsg = data.startsWith("CFLIB_clientId#");
+		if (isIdMsg) emit service_.getClientId(data.mid(15), clientId_);
 		if (clientId_ != 0) service_.clients_.insert(clientId_, this);
 		emit service_.newClient(clientId_);
-		return true;
+		return isIdMsg;
 	}
 
 	void handleData()
