@@ -25,6 +25,8 @@ define([
 	var requestActive = false;
 	var waitingRequests = [];
 	var clId = null;
+	var webSock = null;
+	var webSockBuf = [];
 
 	function getClId()
 	{
@@ -38,6 +40,7 @@ define([
 	{
 		clId = newId;
 		Storage.set('clId', clId, true);
+		if (webSock) api.initWebSocket();
 	}
 
 	function doRMI(service, params, callback, context)
@@ -84,7 +87,8 @@ define([
 	api.ev = {
 		error:           new EV(api, "error"),		// int status, string msg
 		loading:         new EV(api, "loading"),	// bool isLoading
-		secureTokenLost: new EV(api, "secureTokenLost")
+		secureTokenLost: new EV(api, "secureTokenLost"),
+		newMessage:      new EV(api, "newMessage")	// (string / arraybuffer) data
 	};
 
 	api.rmi = function(service, params, callback, context) {
@@ -116,6 +120,26 @@ define([
 	};
 
 	api.getClientId = getClId;
+
+	api.initWebSocket = function() {
+		if (webSock) webSock.close();
+		var loc = window.location;
+		webSock = new WebSocket((loc.protocol == 'https' ? 'wss://' : 'ws://') + loc.host + '/ws');
+		webSock.binaryType = 'arraybuffer';
+		webSock.onmessage = function(e) { api.ev.newMessage.fire(e.data); };
+		webSock.onopen = function() {
+			webSock.send('CFLIB_clientId#' + getClId());
+			if (webSockBuf.length > 0) {
+				for (var i = 0, len = webSockBuf.length ; i < len ; ++i) webSock.send(webSockBuf[i]);
+				webSockBuf = [];
+			}
+		}
+	};
+
+	api.wsSend = function(data) {
+		if (webSock.readyState != 1) webSockBuf.push(data);
+		else webSock.send(data);
+	};
 
 	// ========================================================================
 
@@ -183,6 +207,8 @@ define([
 		}
 		return retval;
 	};
+
+	// ========================================================================
 
 	api.store = function(name, obj, permanent) {
 		if (!obj) Storage.remove(name);

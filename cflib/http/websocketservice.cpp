@@ -95,11 +95,21 @@ private:
 	{
 		if (!isFirstMsg_) return false;
 		isFirstMsg_ = false;
-		bool isIdMsg = data.startsWith("CFLIB_clientId#");
-		if (isIdMsg) emit service_.getClientId(data.mid(15), clientId_);
-		if (clientId_ != 0) service_.clients_.insert(clientId_, this);
-		emit service_.newClient(clientId_);
-		return isIdMsg;
+
+		if (data.startsWith("CFLIB_clientId#")) {
+			emit service_.getClientId(data.mid(15), clientId_);
+			if (clientId_ == 0) {
+				logInfo("unknown client id: %1", data);
+				closeNicely();
+			} else {
+				service_.clients_.insert(clientId_, this);
+				emit service_.newClient(clientId_);
+			}
+			return true;
+		} else {
+			emit service_.newClient(0);
+			return false;
+		}
 	}
 
 	void handleData()
@@ -216,10 +226,7 @@ void WebSocketService::handleRequest(const Request & request)
 
 	const Request::KeyVal headers = request.getHeaderFields();
 	const QByteArray wsKey = headers["sec-websocket-key"];
-	if (headers["upgrade"          ] != "websocket" ||
-		headers["connection"       ] != "Upgrade"   ||
-		wsKey.isEmpty())
-	{
+	if (headers["upgrade"] != "websocket" || wsKey.isEmpty()) {
 		request.sendNotFound();
 		return;
 	}
