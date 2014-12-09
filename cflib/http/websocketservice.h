@@ -29,17 +29,27 @@ class WebSocketService : public QObject, public RequestHandler, public util::Thr
 {
 	Q_OBJECT
 public:
-	WebSocketService(const QString & basePath);
+	WebSocketService(const QString & path);
 	~WebSocketService();
 
+	void send(uint clientId, const QByteArray & data, bool isBinary);
+	void sendAll(const QByteArray & data, bool isBinary);
+
 signals:
+	void newClient(uint clientId);
+	void newMsg(uint clientId, const QByteArray & data, bool isBinary);
+	void closed(uint clientId);
+
 	void getClientId(const QByteArray & clIdData, uint & clId);
 
 protected:
 	virtual void handleRequest(const Request & request);
 
 private:
-	const QString basePath_;
+	const QString path_;
+	class WSConnHandler;
+	QMultiHash<uint, WSConnHandler *> clients_;
+	QSet<WSConnHandler *> all_;
 };
 
 }}	// namespace

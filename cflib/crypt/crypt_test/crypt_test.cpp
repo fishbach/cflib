@@ -36,8 +36,8 @@ private slots:
 	void test_sha1ForWebSocket()
 	{
 		QCOMPARE(
-			sha1("x3JJHMbDL1EzLkh9GBhXDw==258EAFA5-E914-47DA-95CA-C5AB0DC85B11"),
-			QByteArray::fromBase64("HSmrc0sMlYUkAGmm5OPpG2HaGWk=")
+			sha1("x3JJHMbDL1EzLkh9GBhXDw==258EAFA5-E914-47DA-95CA-C5AB0DC85B11").toBase64(),
+			QByteArray("HSmrc0sMlYUkAGmm5OPpG2HaGWk=")
 		);
 	}
 

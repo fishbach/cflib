@@ -139,6 +139,7 @@ void ForwardServer::handleRequest(const Request & request)
 {
 	const QByteArray hostname = request.getHeaderFields().value("host");
 	if (okHosts_.contains(hostname)) return;
+
 	TCPServer * tcpServ = TCPServer::instance();
 	if (tcpServ && forwardPort_ > 0) {
 		const TCPConnInitializer * ci = tcpServ->openConnection(forwardIP_, forwardPort_);
