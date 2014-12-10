@@ -75,6 +75,8 @@ public:
 
 	const TCPConnInitializer * detachFromSocket();
 
+	void setNoDelay(bool noDelay);
+
 protected:
 	virtual void newBytesAvailable() = 0;
 	virtual void closed() = 0;

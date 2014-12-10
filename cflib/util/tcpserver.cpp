@@ -26,6 +26,7 @@
 #include <errno.h>
 #include <fcntl.h>
 #include <netinet/in.h>
+#include <netinet/tcp.h>
 #include <sys/socket.h>
 #include <sys/types.h>
 #include <unistd.h>
@@ -372,6 +373,12 @@ const TCPConnInitializer * TCPConn::detachFromSocket()
 	const TCPConnInitializer * rv = new TCPConnInitializer(impl_, socket_, peerIP_, peerPort_);
 	socket_ = -1;
 	return rv;
+}
+
+void TCPConn::setNoDelay(bool noDelay)
+{
+	int on = noDelay ? 1 : 0;
+	setsockopt(socket_, IPPROTO_TCP, TCP_NODELAY, (void *)&on, sizeof(on));
 }
 
 void TCPConn::readable(ev_loop * loop, ev_io * w, int)
