@@ -131,7 +131,10 @@ void RequestParser::newBytesAvailable()
 	}
 
 	QByteArray newBytes = read();
-	if (newBytes.isEmpty()) return;
+	if (newBytes.isEmpty()) {
+		startWatcher();
+		return;
+	}
 	logCustom(LogCat::Network | LogCat::Trace)("received %1 bytes on connection %2", newBytes.size(), id_);
 
 	if (contentLength_ == -1) header_ += newBytes;

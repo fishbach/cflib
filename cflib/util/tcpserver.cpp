@@ -126,7 +126,6 @@ public:
 
 	void startWatcher(TCPConn * conn)
 	{
-		logFunctionTrace
 		if (!verifyThreadCall(&Impl::startWatcher, conn)) return;
 
 		if (conn->socket_ == -1) {
@@ -191,7 +190,7 @@ private:
 
 			const TCPConnInitializer * ci = new TCPConnInitializer(*impl,
 				newSock, inet_ntoa(cliAddr.sin_addr), ntohs(cliAddr.sin_port));
-			logDebug("new connection from %1:%2", ci->peerIP, ci->peerPort);
+			logDebug("new connection (%1) from %2:%3", newSock, ci->peerIP, ci->peerPort);
 			impl->parent_.newConnection(ci);
 		}
 	}

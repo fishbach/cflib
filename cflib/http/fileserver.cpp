@@ -133,7 +133,6 @@ void FileServer::set404Redirect(const QRegularExpression & re, const QString & d
 void FileServer::handleRequest(const Request & request)
 {
 	if (!verifyThreadCall(&FileServer::handleRequest, request)) return;
-	logFunctionTrace
 
 	// check path for valid chars
 	QString path = request.getUrl().path();
@@ -141,6 +140,8 @@ void FileServer::handleRequest(const Request & request)
 		logInfo("invalid path: %1", path);
 		return;
 	}
+
+	logFunctionTraceParam("FileServer::handleRequest(%1)", path);
 
 	// remove trailing slash
 	if (path.length() > 1 && path.endsWith('/')) { request.sendRedirect(path.left(path.length() - 1).toLatin1()); return; }
@@ -200,15 +201,13 @@ void FileServer::handleRequest(const Request & request)
 		else if (ending == "css" )  { compression = true;  contentType = "text/css; charset=utf-8"; }
 		else if (ending == "data" ) { compression = true;  contentType = "application/octet-stream"; }
 	}
-
-	logDebug("delivering %1 (size=%2, contentType: %3)", fullPath, fi.size(), contentType);
 	request.sendReply(cflib::util::readFile(fullPath), contentType, compression);
 }
 
 QString FileServer::parseHtml(const QString & fullPath, bool isPart, const QString & path,
 	const QStringList & params) const
 {
-	logFunctionTraceParam("parseHtml(%1, %2, %3, (%4))", fullPath, isPart, path, params.join(','));
+	logFunctionTraceParam("FileServer::parseHtml(%1, %2, %3, (%4))", fullPath, isPart, path, params.join(','));
 
 	QString retval;
 	QString html = cflib::util::readTextfile(fullPath);
