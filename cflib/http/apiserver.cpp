@@ -226,6 +226,7 @@ void ApiServer::registerJSService(JSService * service)
 
 void ApiServer::exportTo(const QString & dest) const
 {
+	// write services
 	QDir().mkpath(dest + "/js/services");
 	foreach (const QString & name, services_.keys()) {
 		QString service = "services/" + name + ".js";
@@ -235,6 +236,7 @@ void ApiServer::exportTo(const QString & dest) const
 		f.write(js.toUtf8());
 	}
 
+	// write classes (recursive)
 	exportClass(classInfos_, "", dest);
 }
 
@@ -253,7 +255,7 @@ void ApiServer::handleRequest(const Request & request)
 
 	if (path.startsWith("/api/")) {
 		path.remove(0, 5);
-		if      (path.startsWith("rmi/"))    doRMI(request, path.mid(4));
+		if      (path.startsWith("rmi/"))                            doRMI(request, path.mid(4));
 		else if (descriptionEnabled_ && path.startsWith("services")) showServices(request, path.mid(8));
 		else if (descriptionEnabled_ && path.startsWith("classes"))  showClasses(request, path.mid(7));
 		else request.sendNotFound();
@@ -578,6 +580,8 @@ QString ApiServer::generateJSForService(const SerializeTypeInfo & ti) const
 
 void ApiServer::doRMI(const Request & request, const QString & path)
 {
+	if (!verifyThreadCall(&ApiServer::doRMI, request, path)) return;
+
 	if (!services_.contains(path) || !request.isPOST()) return;
 
 	QByteArray requestData = request.getBody();

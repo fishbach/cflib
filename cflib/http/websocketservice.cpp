@@ -80,6 +80,8 @@ public:
 protected:
 	virtual void newBytesAvailable()
 	{
+		if (!verifyThreadCall(&WSConnHandler::newBytesAvailable)) return;
+
 		buf_ += read();
 		if (buf_.size() >= 2) handleData();
 		startWatcher();
@@ -87,6 +89,8 @@ protected:
 
 	virtual void closed()
 	{
+		if (!verifyThreadCall(&WSConnHandler::closed)) return;
+
 		logFunctionTrace
 		emit service_.closed(clientId_);
 		deleteNext(this);

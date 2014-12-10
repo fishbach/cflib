@@ -132,6 +132,7 @@ void FileServer::set404Redirect(const QRegularExpression & re, const QString & d
 
 void FileServer::handleRequest(const Request & request)
 {
+	if (!verifyThreadCall(&FileServer::handleRequest, request)) return;
 	logFunctionTrace
 
 	// check path for valid chars

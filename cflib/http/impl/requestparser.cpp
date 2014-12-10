@@ -47,6 +47,7 @@ RequestParser::RequestParser(const util::TCPConnInitializer * init,
 	passThrough_(false),
 	passThroughHandler_(0)
 {
+	// thread TCPServer (1/1)
 	logCustom(LogCat::Network | LogCat::Debug)("new connection %1", id_);
 	startWatcher();
 }
@@ -58,8 +59,6 @@ RequestParser::~RequestParser()
 
 void RequestParser::sendReply(int id, const QByteArray & reply)
 {
-	if (!verifyThreadCall(&RequestParser::sendReply, id, reply)) return;
-
 	if (id == nextReplyId_) {
 		writeReply(reply);
 
@@ -80,23 +79,16 @@ void RequestParser::sendReply(int id, const QByteArray & reply)
 
 void RequestParser::detachRequest()
 {
-	if (!verifyThreadCall(&RequestParser::detachRequest)) return;
-
 	if (--attachedRequests_ == 0) deleteNext(this);
 }
 
 void RequestParser::setPassThroughHandler(PassThroughHandler * hdl)
 {
-	if (!verifyThreadCall(&RequestParser::setPassThroughHandler, hdl)) return;
-
 	passThroughHandler_ = hdl;
 }
 
 QByteArray RequestParser::readPassThrough(bool & isLast)
 {
-	SyncedThreadCall<QByteArray> stc(this);
-	if (!stc.verify(&RequestParser::readPassThrough, isLast)) return stc.retval();
-
 	if (!passThrough_ || socketClosed_) {
 		isLast = true;
 		return QByteArray();
@@ -123,9 +115,6 @@ QByteArray RequestParser::readPassThrough(bool & isLast)
 
 const util::TCPConnInitializer * RequestParser::detachFromSocket()
 {
-	SyncedThreadCall<const util::TCPConnInitializer *> stc(this);
-	if (!stc.verify(&RequestParser::detachFromSocket)) return stc.retval();
-
 	logFunctionTrace
 	detached_ = true;
 	detachRequest();	// removes initial ref, so that we will be deleted
@@ -149,6 +138,18 @@ void RequestParser::newBytesAvailable()
 	else                      body_   += newBytes;
 
 	parseRequest();
+}
+
+void RequestParser::closed()
+{
+	if (!verifyThreadCall(&RequestParser::closed)) return;
+	logFunctionTrace
+
+	socketClosed_ = true;
+	logCustom(LogCat::Network | LogCat::Debug)("connection %1 closed", id_);
+	detachRequest();	// removes initial ref, so that we will be deleted
+
+	if (passThroughHandler_) passThroughHandler_->morePassThroughData();
 }
 
 void RequestParser::parseRequest()
@@ -190,6 +191,7 @@ void RequestParser::parseRequest()
 		++attachedRequests_;
 		Request(id_, ++requestCount_, header_, headerFields_, method_, url_, body_,
 			handlers_, passThrough_, this).callNextHandler();
+		if (detached_) return;
 
 		// reset for next
 		header_ = nextHeader;
@@ -201,19 +203,7 @@ void RequestParser::parseRequest()
 
 	} while (!header_.isEmpty());
 
-	if (!passThrough_ && !detached_) startWatcher();
-}
-
-void RequestParser::closed()
-{
-	logFunctionTrace
-	if (!verifyThreadCall(&RequestParser::closed)) return;
-
-	socketClosed_ = true;
-	logCustom(LogCat::Network | LogCat::Debug)("connection %1 closed", id_);
-	detachRequest();	// removes initial ref, so that we will be deleted
-
-	if (passThroughHandler_) passThroughHandler_->morePassThroughData();
+	if (!passThrough_) startWatcher();
 }
 
 bool RequestParser::parseHeader()
