@@ -40,6 +40,7 @@ public:
 		isBinary_(false),
 		isFirstMsg_(true)
 	{
+		logFunctionTrace
 		startWatcher();
 	}
 
@@ -120,76 +121,78 @@ private:
 
 	void handleData()
 	{
-		quint8 * data = (quint8 *)buf_.constData();
-		uint dLen = buf_.size();
-		bool fin = data[0] & 0x80;
-		quint8 opcode = data[0] & 0xF;
-		bool mask = data[1] & 0x80;
+		do {
+			quint8 * data = (quint8 *)buf_.constData();
+			uint dLen = buf_.size();
+			bool fin = data[0] & 0x80;
+			quint8 opcode = data[0] & 0xF;
+			bool mask = data[1] & 0x80;
 
-		// clients must send masked data
-		if (!mask) {
-			logWarn("no mask in frame: %1", buf_);
-			abortConnection();
-			return;
-		}
+			// clients must send masked data
+			if (!mask) {
+				logWarn("no mask in frame: %1", buf_);
+				abortConnection();
+				return;
+			}
 
-		quint64 len = data[1] & 0x7F;
-		if (len < 126) {
-			data += 2;
-			dLen -= 2;
-		} else if (len == 126) {
-			if (dLen < 4) return;
-			len = data[2] << 8 | data[3];
+			quint64 len = data[1] & 0x7F;
+			if (len < 126) {
+				data += 2;
+				dLen -= 2;
+			} else if (len == 126) {
+				if (dLen < 4) return;
+				len = data[2] << 8 | data[3];
+				data += 4;
+				dLen -= 4;
+			} else {
+				if (dLen < 10) return;
+				len =
+					data[2] << 56 | data[3] << 48 | data[4] << 40 | data[5] << 32 |
+					data[6] << 24 | data[7] << 16 | data[8] <<  8 | data[9];
+				data += 10;
+				dLen -= 10;
+			}
+
+			// apply mask
+			if (dLen < len + 4) return;
+			const quint8 * maskKey = data;
 			data += 4;
 			dLen -= 4;
-		} else {
-			if (dLen < 10) return;
-			len =
-				data[2] << 56 | data[3] << 48 | data[4] << 40 | data[5] << 32 |
-				data[6] << 24 | data[7] << 16 | data[8] <<  8 | data[9];
-			data += 10;
-			dLen -= 10;
-		}
+			for (uint i = 0 ; i < len ; ++i) data[i] ^= maskKey[i % 4];
 
-		// apply mask
-		if (dLen < len + 4) return;
-		const quint8 * maskKey = data;
-		data += 4;
-		dLen -= 4;
-		for (uint i = 0 ; i < len ; ++i) data[i] ^= maskKey[i % 4];
-
-		if (opcode == 0x0) {
-			fragmentBuf_.append((const char *)data, len);
-			if (fin) {
-				if (!idMsg(fragmentBuf_)) emit service_.newMsg(clientId_, fragmentBuf_, isBinary_);
-				fragmentBuf_.clear();
-			}
-		} else if (opcode == 0x1 || opcode == 0x2) {
-			if (!fin) {
-				isBinary_ = opcode == 2;
+			if (opcode == 0x0) {
 				fragmentBuf_.append((const char *)data, len);
-			} else {
-				QByteArray payload((const char *)data, len);
-				if (!idMsg(payload)) emit service_.newMsg(clientId_, payload, opcode == 2);
+				if (fin) {
+					if (!idMsg(fragmentBuf_)) emit service_.newMsg(clientId_, fragmentBuf_, isBinary_);
+					fragmentBuf_.clear();
+				}
+			} else if (opcode == 0x1 || opcode == 0x2) {
+				if (!fin) {
+					isBinary_ = opcode == 2;
+					fragmentBuf_.append((const char *)data, len);
+				} else {
+					QByteArray payload((const char *)data, len);
+					if (!idMsg(payload)) emit service_.newMsg(clientId_, payload, opcode == 2);
+				}
+			} else if (opcode == 0x8) {	// close
+				logDebug("received close frame");
+				closeNicely();
+			} else if (opcode == 0x9) {	// ping
+				// send pong
+				quint8 * orig = (quint8 *)buf_.constData();
+				orig[0] = (orig[0] & 0xF) | 0xA;
+				orig[1] &= 0x7F;
+				QByteArray pong((const char *)orig, buf_.size() - dLen - 4);
+				pong.append((const char *)data, len);
+				write(pong);
+			} else if (opcode == 0xA) {	// pong
+				logDebug("pong received");
+			} else  {
+				logWarn("unknown opcode %1 in frame (%2)", opcode, buf_.toHex());
 			}
-		} else if (opcode == 0x8) {	// close
-			logDebug("received close frame");
-			closeNicely();
-		} else if (opcode == 0x9) {	// ping
-			// send pong
-			quint8 * orig = (quint8 *)buf_.constData();
-			orig[0] = (orig[0] & 0xF) | 0xA;
-			orig[1] &= 0x7F;
-			QByteArray pong((const char *)orig, buf_.size() - dLen - 4);
-			pong.append((const char *)data, len);
-			write(pong);
-		} else if (opcode == 0xA) {	// pong
-			logDebug("pong received");
-		} else  {
-			logWarn("unknown opcode %1 in frame (%2)", opcode, buf_.toHex());
-		}
 
-		buf_.remove(0, buf_.size() - dLen + len);
+			buf_.remove(0, buf_.size() - dLen + len);
+		} while (buf_.size() >= 2);
 	}
 
 private:
