@@ -18,6 +18,8 @@
 
 #pragma once
 
+#include <cflib/util/timer.h>
+
 #include <QtCore>
 
 inline QByteArray operator<<(const char * lhs, const QByteArray & rhs) { QByteArray ba(lhs); return ba += rhs; }
@@ -107,5 +109,7 @@ bool validWebInputChars(const QString & str);
 
 bool daemonize();
 bool setProcessOwner(int uid, int gid);
+
+template<typename C> void deleteNext(const C * obj) { Timer::singleShot(0, new Deleter<C>(obj)); }
 
 }}	// namespace

@@ -21,6 +21,7 @@
 #include <cflib/http/request.h>
 #include <cflib/util/log.h>
 #include <cflib/util/tcpserver.h>
+#include <cflib/util/util.h>
 
 using namespace cflib::util;
 
@@ -75,7 +76,7 @@ public:
 		const TCPConnInitializer * oldInit = request.detachFromSocket();
 		if (!oldInit) {
 			logWarn("could not detach from socket");
-			destroy();
+			deleteNext(this);
 		} else {
 			reader_ = new TCPReader(oldInit, this);
 			startWatcher();
@@ -108,7 +109,7 @@ protected:
 			reader_->detach();
 			reader_->closeNicely();
 		}
-		destroy();
+		deleteNext(this);
 	}
 
 private:
@@ -130,7 +131,7 @@ void TCPReader::closed()
 		forwarder_->detach();
 		forwarder_->closeNicely();
 	}
-	destroy();
+	deleteNext(this);
 }
 
 }

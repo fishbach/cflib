@@ -147,7 +147,7 @@ public:
 
 	void closeSocket(TCPConn * conn)
 	{
-		if (!verifyThreadCall(&Impl::closeSocket, conn)) return;
+		if (!verifySyncedThreadCall(&Impl::closeSocket, conn)) return;
 
 		if (conn->socket_ == -1) return;
 
@@ -173,14 +173,6 @@ public:
 			conn->closeAfterWriting_ = true;
 			shutdown(conn->socket_, SHUT_RD);
 		}
-	}
-
-	void destroyConn(TCPConn * conn)
-	{
-		if (!verifyThreadCall(&Impl::destroyConn, conn)) return;
-
-		if (conn->socket_ != -1) closeSocket(conn);
-		delete conn;
 	}
 
 private:
@@ -320,6 +312,7 @@ TCPConn::TCPConn(const TCPConnInitializer * init) :
 
 TCPConn::~TCPConn()
 {
+	impl_.closeSocket(this);
 	delete readWatcher_;
 	delete writeWatcher_;
 }
@@ -381,11 +374,6 @@ const TCPConnInitializer * TCPConn::detachFromSocket()
 	const TCPConnInitializer * rv = new TCPConnInitializer(impl_, socket_, peerIP_, peerPort_);
 	socket_ = -1;
 	return rv;
-}
-
-void TCPConn::destroy()
-{
-	impl_.destroyConn(this);
 }
 
 void TCPConn::readable(ev_loop * loop, ev_io * w, int)

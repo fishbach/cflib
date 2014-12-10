@@ -23,6 +23,7 @@
 #include <cflib/http/request.h>
 #include <cflib/util/log.h>
 #include <cflib/util/tcpserver.h>
+#include <cflib/util/util.h>
 
 USE_LOG(LogCat::Http)
 
@@ -86,8 +87,9 @@ protected:
 
 	virtual void closed()
 	{
+		logFunctionTrace
 		emit service_.closed(clientId_);
-		deleteNext();
+		deleteNext(this);
 	}
 
 private:

@@ -20,6 +20,7 @@
 
 #include <cflib/http/request.h>
 #include <cflib/util/log.h>
+#include <cflib/util/util.h>
 
 USE_LOG(LogCat::Http)
 
@@ -81,7 +82,7 @@ void RequestParser::detachRequest()
 {
 	if (!verifyThreadCall(&RequestParser::detachRequest)) return;
 
-	if (--attachedRequests_ == 0) destroy();
+	if (--attachedRequests_ == 0) deleteNext(this);
 }
 
 void RequestParser::setPassThroughHandler(PassThroughHandler * hdl)

@@ -34,6 +34,16 @@ public:
 	virtual void operator()() const = 0;
 };
 
+template<typename C>
+class Deleter : public Functor
+{
+public:
+	Deleter(const C * obj) : obj_(obj) {}
+	virtual void operator()() const { delete obj_; }
+private:
+	const C * obj_;
+};
+
 // ============================================================================
 
 template<typename C>

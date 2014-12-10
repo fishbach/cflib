@@ -34,6 +34,7 @@ HEADERS = \
 	test.h \
 	threadfifo.h \
 	threadverify.h \
+	timer.h \
 	timeshifter.h \
 	unixsignal.h \
 	util.h \

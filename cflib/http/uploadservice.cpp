@@ -19,6 +19,7 @@
 #include "uploadservice.h"
 
 #include <cflib/util/log.h>
+#include <cflib/util/util.h>
 
 USE_LOG(LogCat::Http)
 
@@ -78,7 +79,7 @@ void UploadRequestHandler::init()
 	if (pos == -1 || !cTypeLc.startsWith("multipart/form-data")) {
 		logInfo("Wrong content type: %1", boundary_);
 		request_.sendNotFound();
-		deleteNext();
+		deleteNext(this);
 		return;
 	}
 	boundary_ = "--" + boundary_.mid(pos + 9);
@@ -167,7 +168,7 @@ void UploadRequestHandler::parseMoreData()
 
 	if (isLast) {
 		requestEnd();
-		deleteNext();
+		deleteNext(this);
 	} else {
 		request_.startWatcher();
 	}

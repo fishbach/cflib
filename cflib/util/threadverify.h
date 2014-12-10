@@ -19,6 +19,7 @@
 #pragma once
 
 #include <cflib/util/impl/threadverifyimpl.h>
+#include <cflib/util/timer.h>
 
 namespace cflib { namespace util {
 
@@ -40,7 +41,6 @@ public:
 	void stopVerifyThread();
 	ev_loop * libEVLoop() const;
 	void execCall(const Functor * func);
-	void deleteNext();
 
 protected:
 	virtual void deleteThreadData() {}

@@ -78,29 +78,6 @@ ev_loop * ThreadVerify::libEVLoop() const
 	return th->loop();
 }
 
-namespace {
-
-class Deleter : public Functor
-{
-public:
-	Deleter(const ThreadVerify * obj) : obj_(obj) {}
-
-	virtual void operator()() const
-	{
-		delete obj_;
-	}
-
-private:
-	const ThreadVerify * obj_;
-};
-
-}
-
-void ThreadVerify::deleteNext()
-{
-	execCall(new Deleter(this));
-}
-
 void ThreadVerify::execCall(const Functor * func)
 {
 	if (!verifyThread_->isActive()) {

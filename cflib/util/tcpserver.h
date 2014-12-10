@@ -75,8 +75,6 @@ public:
 
 	const TCPConnInitializer * detachFromSocket();
 
-	void destroy();
-
 protected:
 	virtual void newBytesAvailable() = 0;
 	virtual void closed() = 0;
