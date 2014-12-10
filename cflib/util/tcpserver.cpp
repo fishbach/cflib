@@ -129,7 +129,6 @@ public:
 		if (!verifyThreadCall(&Impl::startWatcher, conn)) return;
 
 		if (conn->socket_ == -1) {
-			logDebug("informing about close");
 			execCall(new Functor0<TCPConn>(conn, &TCPConn::closed));
 			return;
 		}
@@ -150,7 +149,7 @@ public:
 
 		if (conn->socket_ == -1) return;
 
-		logFunctionTraceParam("socket %1 closed", conn->socket_);
+		logDebug("socket %1 closed", conn->socket_);
 
 		ev_io_stop(libEVLoop(), conn->writeWatcher_);
 		ev_io_stop(libEVLoop(), conn->readWatcher_);
@@ -164,7 +163,7 @@ public:
 
 		if (conn->socket_ == -1) return;
 
-		logFunctionTraceParam("closing socket %1 nicely", conn->socket_);
+		logDebug("closing socket %1 nicely", conn->socket_);
 
 		if (conn->writeBuf_.isEmpty()) {
 			shutdown(conn->socket_, SHUT_RDWR);

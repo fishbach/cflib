@@ -146,7 +146,6 @@ void RequestParser::newBytesAvailable()
 void RequestParser::closed()
 {
 	if (!verifyThreadCall(&RequestParser::closed)) return;
-	logFunctionTrace
 
 	socketClosed_ = true;
 	logCustom(LogCat::Network | LogCat::Debug)("connection %1 closed", id_);
