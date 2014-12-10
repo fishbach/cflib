@@ -65,10 +65,10 @@ public:
 			frame += len & 0xFF;
 		} else {
 			frame += 127;
-			frame += len >> 56;
-			frame += len >> 48;
-			frame += len >> 40;
-			frame += len >> 32;
+			frame += (char)0;	// len >> 56;
+			frame += (char)0;	// len >> 48;
+			frame += (char)0;	// len >> 40;
+			frame += (char)0;	// len >> 32;
 			frame += len >> 24;
 			frame += len >> 16;
 			frame += len >>  8;
@@ -141,14 +141,14 @@ private:
 				dLen -= 2;
 			} else if (len == 126) {
 				if (dLen < 4) return;
-				len = data[2] << 8 | data[3];
+				len = (quint64)data[2] << 8 | (quint64)data[3];
 				data += 4;
 				dLen -= 4;
 			} else {
 				if (dLen < 10) return;
 				len =
-					data[2] << 56 | data[3] << 48 | data[4] << 40 | data[5] << 32 |
-					data[6] << 24 | data[7] << 16 | data[8] <<  8 | data[9];
+					(quint64)data[2] << 56 | (quint64)data[3] << 48 | (quint64)data[4] << 40 | (quint64)data[5] << 32 |
+					(quint64)data[6] << 24 | (quint64)data[7] << 16 | (quint64)data[8] <<  8 | (quint64)data[9];
 				data += 10;
 				dLen -= 10;
 			}
