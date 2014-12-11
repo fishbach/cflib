@@ -137,8 +137,9 @@ define([
 	};
 
 	api.wsSend = function(data) {
-		if (webSock.readyState != 1) webSockBuf.push(data);
-		else webSock.send(data);
+		var rs = webSock.readyState;
+		if      (rs == 0) webSockBuf.push(data);
+		else if (rs == 1) webSock.send(data);
 	};
 
 	// ========================================================================

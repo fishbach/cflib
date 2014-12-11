@@ -22,6 +22,8 @@
 #include <cflib/serialize/serializetypeinfo.h>
 #include <cflib/util/threadverify.h>
 
+namespace cflib { namespace util { class EVTimer; }}
+
 namespace cflib { namespace http {
 
 class JSService;
@@ -55,8 +57,10 @@ public slots:
 
 protected:
 	virtual void handleRequest(const Request & request);
+	virtual void deleteThreadData();
 
 private:
+	void init();
 	void showServices(const Request & request, QString path) const;
 	void showClasses(const Request & request, QString path) const;
 	void classesToHTML(QString & info, const ClassInfoEl & infoEl) const;
@@ -75,8 +79,8 @@ private:
 	typedef QPair<uint, QDateTime> ClientIdTimestamp;
 	QMap<QByteArray, ClientIdTimestamp> clientIds_;
 	uint lastId_;
-	QDateTime lastExpireCheck_;
 	const QRegularExpression containerRE_;
+	util::EVTimer * expireTimer_;
 };
 
 }}	// namespace

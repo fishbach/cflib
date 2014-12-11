@@ -38,7 +38,8 @@ public:
 		service_(*service),
 		clientId_(0),
 		isBinary_(false),
-		isFirstMsg_(true)
+		isFirstMsg_(true),
+		abort_(false)
 	{
 		logFunctionTrace
 		setNoDelay(true);
@@ -47,9 +48,7 @@ public:
 
 	~WSConnHandler()
 	{
-		logFunctionTrace
-		if (clientId_ != 0) service_.clients_.remove(clientId_, this);
-		service_.all_.remove(this);
+		logTrace("~WSConnHandler()");
 	}
 
 	void send(const QByteArray & data, bool isBinary)
@@ -79,13 +78,19 @@ public:
 		write(frame);
 	}
 
+	void close()
+	{
+		abort_ = true;
+		closeNicely();
+	}
+
 protected:
 	virtual void newBytesAvailable()
 	{
 		if (!verifyThreadCall(&WSConnHandler::newBytesAvailable)) return;
 
 		buf_ += read();
-		if (buf_.size() >= 2) handleData();
+		handleData();
 		startWatcher();
 	}
 
@@ -94,7 +99,13 @@ protected:
 		if (!verifyThreadCall(&WSConnHandler::closed)) return;
 
 		logFunctionTrace
-		emit service_.closed(clientId_);
+		service_.all_.remove(this);
+		if (clientId_ == 0) {
+			if (!abort_) emit service_.closed(0);
+		} else {
+			service_.clients_.remove(clientId_, this);
+			if (!service_.clients_.contains(clientId_) && !abort_) emit service_.closed(clientId_);
+		}
 		deleteNext(this);
 	}
 
@@ -104,25 +115,40 @@ private:
 		if (!isFirstMsg_) return false;
 		isFirstMsg_ = false;
 
-		if (data.startsWith("CFLIB_clientId#")) {
-			emit service_.getClientId(data.mid(15), clientId_);
-			if (clientId_ == 0) {
-				logInfo("unknown client id: %1", data);
-				closeNicely();
-			} else {
-				service_.clients_.insert(clientId_, this);
-				emit service_.newClient(clientId_);
+		if (!data.startsWith("CFLIB_clientId#")) {
+			emit service_.newClient(0, abort_);
+			if (abort_) {
+				abortConnection();
+				return true;
 			}
-			return true;
-		} else {
-			emit service_.newClient(0);
+			service_.all_ << this;
 			return false;
 		}
+
+		emit service_.getClientId(data.mid(15), clientId_);
+		if (clientId_ == 0) {
+			logInfo("unknown client id: %1", data);
+			abort_ = true;
+			abortConnection();
+			return true;
+		}
+
+		if (!service_.clients_.contains(clientId_)) {
+			emit service_.newClient(clientId_, abort_);
+			if (abort_) {
+				abortConnection();
+				return true;
+			}
+		}
+
+		service_.all_ << this;
+		service_.clients_.insert(clientId_, this);
+		return true;
 	}
 
 	void handleData()
 	{
-		do {
+		while (buf_.size() >= 2 && !abort_) {
 			quint8 * data = (quint8 *)buf_.constData();
 			uint dLen = buf_.size();
 			bool fin = data[0] & 0x80;
@@ -193,7 +219,7 @@ private:
 			}
 
 			buf_.remove(0, buf_.size() - dLen + len);
-		} while (buf_.size() >= 2);
+		}
 	}
 
 private:
@@ -204,6 +230,7 @@ private:
 	bool isBinary_;
 	QByteArray fragmentBuf_;
 	bool isFirstMsg_;
+	bool abort_;
 };
 
 // ============================================================================
@@ -221,16 +248,29 @@ WebSocketService::~WebSocketService()
 
 void WebSocketService::send(uint clientId, const QByteArray & data, bool isBinary)
 {
+	if (!verifyThreadCall(&WebSocketService::send, clientId, data, isBinary)) return;
+
 	foreach (WSConnHandler * wsHdl, clients_.values(clientId)) wsHdl->send(data, isBinary);
 }
 
 void WebSocketService::sendAll(const QByteArray & data, bool isBinary)
 {
+	if (!verifyThreadCall(&WebSocketService::sendAll, data, isBinary)) return;
+
 	foreach (WSConnHandler * wsHdl, all_) wsHdl->send(data, isBinary);
+}
+
+void WebSocketService::close(uint clientId)
+{
+	if (!verifySyncedThreadCall(&WebSocketService::close, clientId)) return;
+
+	foreach (WSConnHandler * wsHdl, clients_.values(clientId)) wsHdl->close();
 }
 
 void WebSocketService::handleRequest(const Request & request)
 {
+	logFunctionTrace
+
 	QString path = request.getUrl().path();
 	if (path != path_ || !request.isGET()) return;
 
@@ -246,9 +286,7 @@ void WebSocketService::handleRequest(const Request & request)
 		logWarn("could not detach from socket");
 		return;
 	}
-
 	WSConnHandler * wsHdl = new WSConnHandler(this, connInit);
-	all_ << wsHdl;
 
 	QByteArray header =
 		"HTTP/1.1 101 Switching Protocols\r\n"

@@ -22,6 +22,7 @@
 #include <cflib/http/jsservice.h>
 #include <cflib/http/request.h>
 #include <cflib/http/uploadservice.h>
+#include <cflib/util/evtimer.h>
 #include <cflib/util/log.h>
 #include <cflib/util/util.h>
 
@@ -199,14 +200,29 @@ ApiServer::ApiServer(bool descriptionEnabled) :
 	ThreadVerify("ApiServer", Worker),
 	descriptionEnabled_(descriptionEnabled),
 	lastId_(0),
-	lastExpireCheck_(QDateTime::currentDateTime()),
-	containerRE_("^(.+)<(.+)>$")
+	containerRE_("^(.+)<(.+)>$"),
+	expireTimer_(0)
 {
+	init();
 }
 
 ApiServer::~ApiServer()
 {
 	stopVerifyThread();
+}
+
+void ApiServer::init()
+{
+	if (!verifyThreadCall(&ApiServer::init)) return;
+
+	expireTimer_ = new util::EVTimer(this, &ApiServer::checkExpire);
+	expireTimer_->start(60 * 60);	// 1 hour
+}
+
+void ApiServer::deleteThreadData()
+{
+	delete expireTimer_;
+	expireTimer_ = 0;
 }
 
 void ApiServer::registerService(JSService * service)
@@ -594,8 +610,6 @@ void ApiServer::doRMI(const Request & request, const QString & path)
 
 	logInfo("RMI call from IP %1: %2", request.getRemoteIP(), request.getUrl());
 
-	if (lastExpireCheck_.secsTo(QDateTime::currentDateTime()) > 60 * 60) checkExpire();
-
 	bool ok = false;
 	QByteArray clIdData;
 	if (pos == 40) {
@@ -629,14 +643,13 @@ void ApiServer::checkExpire()
 	while (it.hasNext()) {
 		it.next();
 		const ClientIdTimestamp & el = it.value();
-		if (el.second.secsTo(now) > 24 * 60 * 60) {
+		if (el.second.secsTo(now) > 24 * 60 * 60) {	// 1 day
 			foreach (JSService * srv, services_.values()) {
 				srv->clientExpired(el.first);
 			}
 			it.remove();
 		}
 	}
-	lastExpireCheck_ = QDateTime::currentDateTime();
 }
 
 void ApiServer::exportClass(const ClassInfoEl & cl, const QString & path, const QString & dest) const

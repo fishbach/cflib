@@ -34,9 +34,10 @@ public:
 
 	void send(uint clientId, const QByteArray & data, bool isBinary);
 	void sendAll(const QByteArray & data, bool isBinary);
+	void close(uint clientId);
 
 signals:
-	void newClient(uint clientId);
+	void newClient(uint clientId, bool & abort);
 	void newMsg(uint clientId, const QByteArray & data, bool isBinary);
 	void closed(uint clientId);
 
