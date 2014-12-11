@@ -209,7 +209,7 @@ ApiServer::~ApiServer()
 	stopVerifyThread();
 }
 
-void ApiServer::registerJSService(JSService * service)
+void ApiServer::registerService(JSService * service)
 {
 	SerializeTypeInfo servInfo = service->getServiceInfo();
 	services_[servInfo.typeName.toLower()] = service;

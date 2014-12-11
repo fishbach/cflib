@@ -31,6 +31,7 @@ class JSService : public util::ThreadVerify
 {
 public:
 	JSService(const QString & threadName, uint threadCount = 1);
+	JSService(ThreadVerify * other);
 
 	void processServiceJSRequest(const QByteArray & requestData, const Request & request, uint clId,
 		const QByteArray & prependData);

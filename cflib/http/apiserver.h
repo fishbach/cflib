@@ -46,7 +46,7 @@ public:
 	ApiServer(bool descriptionEnabled = true);
 	~ApiServer();
 
-	void registerJSService(JSService * service);
+	void registerService(JSService * service);
 
 	void exportTo(const QString & dest) const;
 

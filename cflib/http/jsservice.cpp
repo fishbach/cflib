@@ -26,6 +26,12 @@ JSService::JSService(const QString & threadName, uint threadCount) :
 {
 }
 
+JSService::JSService(util::ThreadVerify * other) :
+	util::ThreadVerify(other),
+	clId_(0), delayedReply_(false), requestPtr_(0), prependDataPtr_(0)
+{
+}
+
 void JSService::processServiceJSRequest(const QByteArray & requestData, const Request & request, uint clId,
 	const QByteArray & prependData)
 {
