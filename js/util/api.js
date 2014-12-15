@@ -133,13 +133,13 @@ define([
 				for (var i = 0, len = webSockBuf.length ; i < len ; ++i) webSock.send(webSockBuf[i]);
 				webSockBuf = [];
 			}
-		}
+		};
 	};
 
 	api.wsSend = function(data) {
 		var rs = webSock.readyState;
-		if      (rs == 0) webSockBuf.push(data);
-		else if (rs == 1) webSock.send(data);
+		if      (rs === 0) webSockBuf.push(data);
+		else if (rs ==  1) webSock.send(data);
 	};
 
 	// ========================================================================
