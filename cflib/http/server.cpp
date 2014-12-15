@@ -74,6 +74,16 @@ bool Server::start(quint16 port, const QByteArray & address)
 	return impl_->start(port, address);
 }
 
+bool Server::stop()
+{
+	return impl_->stop();
+}
+
+bool Server::isRunning() const
+{
+	return impl_->isRunning();
+}
+
 void Server::registerHandler(RequestHandler * handler)
 {
 	impl_->registerHandler(handler);

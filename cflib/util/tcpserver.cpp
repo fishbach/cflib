@@ -82,9 +82,14 @@ public:
 		delete readWatcher_;
 	}
 
+	bool isRunning() const
+	{
+		return listenSock_ != -1;
+	}
+
 	virtual void deleteThreadData()
 	{
-		if (listenSock_ != -1) stop();
+		if (isRunning()) stop();
 	}
 
 	bool start(int listenSocket)
@@ -92,7 +97,7 @@ public:
 		SyncedThreadCall<bool> stc(this);
 		if (!stc.verify(&Impl::start, listenSocket)) return stc.retval();
 
-		if (listenSock_ != -1) {
+		if (isRunning()) {
 			logWarn("server already running");
 			return false;
 		}
@@ -112,7 +117,7 @@ public:
 		SyncedThreadCall<bool> stc(this);
 		if (!stc.verify(&Impl::stop)) return stc.retval();
 
-		if (listenSock_ == -1) {
+		if (isRunning()) {
 			logWarn("server not running");
 			return false;
 		}
@@ -263,6 +268,11 @@ bool TCPServer::start(quint16 port, const QByteArray & ip)
 bool TCPServer::stop()
 {
 	return impl_->stop();
+}
+
+bool TCPServer::isRunning() const
+{
+	return impl_->isRunning();
 }
 
 const TCPConnInitializer * TCPServer::openConnection(const QByteArray & destIP, quint16 destPort)

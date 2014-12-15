@@ -33,6 +33,8 @@ public:
 
 	bool start(int listenSocket);
 	bool start(quint16 port, const QByteArray & address = "127.0.0.1");
+	bool stop();
+	bool isRunning() const;
 
 	void registerHandler(RequestHandler * handler);
 
