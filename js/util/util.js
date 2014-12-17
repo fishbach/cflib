@@ -314,5 +314,23 @@ define([
 		return rv;
 	};
 
+	util.browser = function() {
+		var ua = navigator.userAgent;
+		var match = ua.match(/(opera|chrome|safari|firefox|msie|trident(?=\/))\/?\s*(\d+)/i) || [];
+		var t;
+		if (/trident/i.test(match[1])) {
+			t = /\brv[ :]+(\d+)/g.exec(ua) || [];
+			return 'IE '+ (t[1] || '');
+		}
+		if (match[1] == 'Chrome') {
+			t = ua.match(/\bOPR\/(\d+)/);
+			if (t) return 'Opera ' + t[1];
+		}
+		match = match[2] ? [match[1], match[2]] : [navigator.appName, navigator.appVersion, '-?'];
+		t = ua.match(/version\/(\d+)/i);
+		if (t) match.splice(1, 1, t[1]);
+		return match[0];
+	};
+
 	return util;
 });
