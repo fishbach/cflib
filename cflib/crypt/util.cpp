@@ -24,7 +24,7 @@ USE_LOG(LogCat::Crypt)
 
 namespace {
 
-static const struct BotanInit
+struct BotanInit
 {
 	BotanInit() : init_(0)
 	{
@@ -41,13 +41,20 @@ static const struct BotanInit
 	{
 		delete init_;
 	}
+	bool ok() const { return init_ != 0; }
 private:
 	LibraryInitializer * init_;
-} botanInit;
+};
+Q_GLOBAL_STATIC(BotanInit, initBotan)
 
 }
 
 namespace cflib { namespace crypt {
+
+bool initCrypto()
+{
+	return initBotan()->ok();
+}
 
 QByteArray random(int size)
 {
@@ -108,7 +115,7 @@ QByteArray sha1(const QByteArray & data)
 		std::string hash = pipe.read_all_as_string();
 		return QByteArray(hash.c_str(), hash.length());
 	} CATCH
-	return QByteArray();
+			return QByteArray();
 }
 
 }}	// namespace

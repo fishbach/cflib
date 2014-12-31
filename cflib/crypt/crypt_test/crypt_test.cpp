@@ -26,6 +26,11 @@ class Crypt_Test: public QObject
 	Q_OBJECT
 private slots:
 
+	void initTestCase()
+	{
+		QVERIFY(initCrypto());
+	}
+
 	void test_sha1()
 	{
 		QCOMPARE(sha1(""),    QByteArray::fromHex("da39a3ee5e6b4b0d3255bfef95601890afd80709"));

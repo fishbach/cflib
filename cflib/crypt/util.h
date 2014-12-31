@@ -22,6 +22,7 @@
 
 namespace cflib { namespace crypt {
 
+bool initCrypto();
 QByteArray random(int size);
 inline QByteArray randomId() { return random(20).toHex(); }
 quint32 randomUInt32();
