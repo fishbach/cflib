@@ -1,4 +1,5 @@
 HEADERS += \
+	botan/build.h \
 	botan/buf_comp.h \
 	botan/key_spec.h \
 	botan/scan_name.h \
@@ -30,9 +31,13 @@ HEADERS += \
 	botan/secqueue.h \
 	botan/transform_filter.h \
 	botan/hash.h \
+	botan/mdx_hash.h \
+	botan/sha2_32.h \
+	botan/sha2_64.h \
 	botan/global_state.h \
 	botan/init.h \
 	botan/libstate.h \
+	botan/hmac.h \
 	botan/mac.h \
 	botan/bigint.h \
 	botan/divide.h \
@@ -97,8 +102,8 @@ SOURCES += \
 	botan/internal/mp_karat.cpp \
 	botan/internal/mp_misc.cpp \
 	botan/internal/mp_monty.cpp \
-	botan/internal/mp_shift.cpp \
 	botan/internal/mp_mulop.cpp \
+	botan/internal/mp_shift.cpp \
 	botan/internal/mp_numth.cpp \
 	botan/internal/powm_fw.cpp \
 	botan/internal/powm_mnt.cpp \

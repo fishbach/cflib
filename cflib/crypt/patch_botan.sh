@@ -34,9 +34,13 @@ HEADERS="\
 	filters/secqueue \
 	filters/transform_filter \
 	hash/hash \
+	hash/mdx_hash/mdx_hash \
+	hash/sha2_32/sha2_32 \
+	hash/sha2_64/sha2_64 \
 	libstate/global_state \
 	libstate/init \
 	libstate/libstate \
+	mac/hmac/hmac \
 	mac/mac \
 	math/bigint/bigint \
 	math/bigint/divide \
@@ -103,19 +107,24 @@ SOURCES="\
 	math/mp/mp_karat \
 	math/mp/mp_misc \
 	math/mp/mp_monty \
-	math/mp/mp_shift \
 	math/mp/mp_mulop \
+	math/mp/mp_shift \
 	math/numbertheory/mp_numth \
 	math/numbertheory/powm_fw \
 	math/numbertheory/powm_mnt \
 	math/numbertheory/primes \
 	utils/zero_mem \
 "
+DEFINES="\
+#define BOTAN_HAS_SHA2_32\n\
+#define BOTAN_HAS_SHA2_64\n\
+#define BOTAN_HAS_HMAC\n\
+"
 
 rm -rf botan &> /dev/null
 mkdir -p botan/internal
 cp "$BOTAN_SRC/doc/license.rst" botan
-sed 's/%{mp_bits}/32/;s/%{[^}]*}//g' "$BOTAN_SRC/src/build-data/buildh.in" > botan/build.h
+perl -pe 's/%{mp_bits}/32/;s/%{module_defines}/'"$DEFINES"'/;s/%{[^}]*}//g' "$BOTAN_SRC/src/build-data/buildh.in" > botan/build.h
 for H in $HEADERS ; do
 	cp "$BOTAN_SRC/src/lib/$H.h" botan
 	cp "$BOTAN_SRC/src/lib/$H.cpp" botan &> /dev/null
@@ -130,6 +139,7 @@ done
 
 (
 	echo 'HEADERS += \'
+	echo -e "\tbotan/build.h \\"
 	for H in $HEADERS ; do
 		echo -e "\tbotan/$(echo $H | sed 's/.*\///').h \\"
 	done
