@@ -45,6 +45,7 @@ defineTest(isInCFLib) {
 # setBuildPaths()
 defineTest(setBuildPaths) {
 	INCLUDEPATH += $$CFLIB_DIR
+	export(INCLUDEPATH)
 
 	OBJECTS_DIR  = build/$$DEBUG_RELEASE
 	export(OBJECTS_DIR)
@@ -69,25 +70,13 @@ defineTest(setBuildPaths) {
 		CONFIG *= precompile_header
 	}
 
-	CONFIG *= stl_off exceptions_off
+	CONFIG *= c++11 stl_off exceptions_off
 	export(CONFIG)
 
 	equals(QMAKE_CXX, "clang++") {
 		QMAKE_CXXFLAGS += -Wno-shift-count-overflow
 		export(QMAKE_CXXFLAGS)
 	}
-
-	# botan
-	exists(/usr/include/botan-1.10) {
-		INCLUDEPATH += /usr/include/botan-1.10
-	} else { exists(/usr/local/include/botan-1.10) {
-		INCLUDEPATH += /usr/local/include/botan-1.10
-		LIBS += -L/usr/local/lib
-	}}
-	LIBS += -lbotan-1.10
-
-	export(INCLUDEPATH)
-	export(LIBS)
 }
 
 # addSubdir(dir, dependandept1 dependant2 ...)

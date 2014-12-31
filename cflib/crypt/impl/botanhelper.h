@@ -18,11 +18,16 @@
 
 #pragma once
 
+#include <memory>
+
+using std::addressof;
+
 #include <cflib/util/log.h>
 
+#include <botan/auto_rng.h>
 #include <botan/bcrypt.h>
-#include <botan/botan.h>
 #include <botan/filters.h>
+#include <botan/init.h>
 
 #define TRY \
 	try

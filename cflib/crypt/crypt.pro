@@ -25,7 +25,10 @@ HEADERS = \
 	util.h \
 	impl/botanhelper.h \
 
+include(botan/botan.pri)
+
 lib()
 
-# botan needs them
+# botan
 CONFIG += exceptions
+QMAKE_CXXFLAGS += -fstack-protector
