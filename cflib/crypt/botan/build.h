@@ -126,6 +126,8 @@
 /*
 * Module availability definitions
 */
+#define BOTAN_HAS_ENTROPY_SRC_HIGH_RESOLUTION_TIMER
+#define BOTAN_HAS_ENTROPY_SRC_RDRAND
 #define BOTAN_HAS_HMAC
 #define BOTAN_HAS_SHA1
 #define BOTAN_HAS_SHA2_32

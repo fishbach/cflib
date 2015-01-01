@@ -77,6 +77,11 @@ defineTest(setBuildPaths) {
 		QMAKE_CXXFLAGS += -Wno-shift-count-overflow
 		export(QMAKE_CXXFLAGS)
 	}
+
+	win32 {
+		DEFINES += _WIN32_WINNT=0x0600
+		export(DEFINES)
+	}
 }
 
 # addSubdir(dir, dependandept1 dependant2 ...)
@@ -128,11 +133,7 @@ defineTest(useLibs) {
 	LIBS += -L$$path
 	for(lib, libs) {
 		LIBS += -l$$lib
-		win32 {
-			POST_TARGETDEPS += $${path}/$${lib}.lib
-		} else {
-			POST_TARGETDEPS += $${path}/lib$${lib}.a
-		}
+		POST_TARGETDEPS += $${path}/lib$${lib}.a
 	}
 	export(LIBS)
 	export(POST_TARGETDEPS)

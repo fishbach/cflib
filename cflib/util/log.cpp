@@ -36,6 +36,8 @@
 			#endif
 		}
 	#endif
+#else
+	#include <windows.h>
 #endif
 
 namespace cflib { namespace util {

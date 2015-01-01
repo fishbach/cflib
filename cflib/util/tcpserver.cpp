@@ -22,14 +22,24 @@
 #include <cflib/util/log.h>
 #include <cflib/util/threadverify.h>
 
-#include <arpa/inet.h>
 #include <errno.h>
 #include <fcntl.h>
-#include <netinet/in.h>
-#include <netinet/tcp.h>
-#include <sys/socket.h>
 #include <sys/types.h>
 #include <unistd.h>
+
+#ifndef Q_OS_WIN
+	#include <arpa/inet.h>
+	#include <netinet/in.h>
+	#include <netinet/tcp.h>
+	#include <sys/socket.h>
+#else
+	#include <winsock2.h>
+	#include <ws2tcpip.h>
+	#define socklen_t int
+	#define SHUT_RD   SD_RECEIVE
+	#define SHUT_WR   SD_SEND
+	#define SHUT_RDWR SD_BOTH
+#endif
 
 USE_LOG(LogCat::Network)
 
@@ -229,12 +239,12 @@ int TCPServer::openListenSocket(quint16 port, const QByteArray & ip)
 		close(rv);
 		return -1;
 	}
-	{ int on = 1; setsockopt(rv, SOL_SOCKET, SO_REUSEADDR, (void *)&on, sizeof(on)); }
+	{ int on = 1; setsockopt(rv, SOL_SOCKET, SO_REUSEADDR, (const char *)&on, sizeof(on)); }
 
 	// bind to address and port
 	struct sockaddr_in servAddr;
 	servAddr.sin_family = AF_INET;
-	if (inet_aton(ip.constData(), &servAddr.sin_addr) == 0) {
+	if (inet_pton(AF_INET, ip.constData(), &servAddr.sin_addr) == 0) {
 		close(rv);
 		return -1;
 	}
@@ -289,7 +299,7 @@ const TCPConnInitializer * TCPServer::openConnection(const QByteArray & destIP, 
 	// bind to address and port
 	struct sockaddr_in destAddr;
 	destAddr.sin_family = AF_INET;
-	if (inet_aton(destIP.constData(), &destAddr.sin_addr) == 0) {
+	if (inet_pton(AF_INET, destIP.constData(), &destAddr.sin_addr) == 0) {
 		close(sock);
 		return 0;
 	}
@@ -332,7 +342,7 @@ QByteArray TCPConn::read()
 	if (socket_ == -1) return retval;
 
 	forever {
-		ssize_t count = ::recv(socket_, (void *)readBuf_.constData(), readBuf_.size(), 0);
+		ssize_t count = ::recv(socket_, (char *)readBuf_.constData(), readBuf_.size(), 0);
 		if (count == readBuf_.size() && retval.size() < 0x100000) {	// 1 mb
 			retval.append(readBuf_.constData(), count);
 			continue;
@@ -388,7 +398,7 @@ const TCPConnInitializer * TCPConn::detachFromSocket()
 void TCPConn::setNoDelay(bool noDelay)
 {
 	int on = noDelay ? 1 : 0;
-	setsockopt(socket_, IPPROTO_TCP, TCP_NODELAY, (void *)&on, sizeof(on));
+	setsockopt(socket_, IPPROTO_TCP, TCP_NODELAY, (char *)&on, sizeof(on));
 }
 
 void TCPConn::readable(ev_loop * loop, ev_io * w, int)

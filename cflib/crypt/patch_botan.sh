@@ -74,12 +74,8 @@ HEADERS="\
 INTERNAL_HEADERS="\
 	algo_factory/algo_cache \
 	engine/core_engine/core_engine \
-	entropy/dev_random/dev_random \
-	entropy/egd/es_egd \
 	entropy/hres_timer/hres_timer \
-	entropy/proc_walk/proc_walk \
 	entropy/rdrand/rdrand \
-	entropy/unix_procs/unix_procs \
 	filters/out_buf \
 	math/mp/mp_core \
 	math/mp/mp_generic/mp_asmi \
@@ -124,12 +120,18 @@ SOURCES="\
 "
 PLATFORM_HEADERS="\
 	entropy/cryptoapi_rng/es_capi \
+	entropy/dev_random/dev_random \
+	entropy/egd/es_egd \
+	entropy/proc_walk/proc_walk \
+	entropy/unix_procs/unix_procs \
 	entropy/win32_stats/es_win32 \
 "
 PLATFORM_SOURCES="\
 	entropy/unix_procs/unix_proc_sources \
 "
 DEFINES="\
+#define BOTAN_HAS_ENTROPY_SRC_HIGH_RESOLUTION_TIMER\n\
+#define BOTAN_HAS_ENTROPY_SRC_RDRAND\n\
 #define BOTAN_HAS_HMAC\n\
 #define BOTAN_HAS_SHA1\n\
 #define BOTAN_HAS_SHA2_32\n\
