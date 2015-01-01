@@ -31,6 +31,39 @@ private slots:
 		QVERIFY(initCrypto());
 	}
 
+	void test_random()
+	{
+		QCOMPARE(random( 0).size(),  0);
+		QCOMPARE(random( 1).size(),  1);
+		QCOMPARE(random(13).size(), 13);
+		QVERIFY(random(8) != random(8));
+	}
+
+	void test_randomId()
+	{
+		QCOMPARE(randomId().size(), 40);
+		QVERIFY(randomId() != randomId());
+	}
+
+	void test_randomUInt32()
+	{
+		QVERIFY(randomUInt32() != randomUInt32());
+	}
+
+	void test_randomUInt64()
+	{
+		QVERIFY(randomUInt64() != randomUInt64());
+	}
+
+	void test_hashPassword()
+	{
+		QVERIFY(hashPassword("pwd") != hashPassword("pwd"));
+		QVERIFY(checkPassword("", hashPassword("")));
+		QVERIFY(checkPassword("p", hashPassword("p")));
+		QVERIFY(checkPassword("abcABC123!@#,.", hashPassword("abcABC123!@#,.")));
+		QVERIFY(!checkPassword("pwd1", hashPassword("pwd2")));
+	}
+
 	void test_sha1()
 	{
 		QCOMPARE(sha1(""),    QByteArray::fromHex("da39a3ee5e6b4b0d3255bfef95601890afd80709"));

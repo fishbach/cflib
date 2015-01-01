@@ -126,9 +126,10 @@
 /*
 * Module availability definitions
 */
+#define BOTAN_HAS_HMAC
+#define BOTAN_HAS_SHA1
 #define BOTAN_HAS_SHA2_32
 #define BOTAN_HAS_SHA2_64
-#define BOTAN_HAS_HMAC
 
 
 /*

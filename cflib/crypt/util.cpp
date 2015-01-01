@@ -115,7 +115,7 @@ QByteArray sha1(const QByteArray & data)
 		std::string hash = pipe.read_all_as_string();
 		return QByteArray(hash.c_str(), hash.length());
 	} CATCH
-			return QByteArray();
+	return QByteArray();
 }
 
 }}	// namespace

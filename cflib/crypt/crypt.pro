@@ -25,10 +25,33 @@ HEADERS = \
 	util.h \
 	impl/botanhelper.h \
 
+# botan
 include(botan/botan.pri)
+win32 {
+	HEADERS += \
+		botan/internal/es_win32.h \
+}
+unix {
+	SOURCES += \
+		botan/internal/unix_proc_sources.cpp \
+}
 
 lib()
 
 # botan
 CONFIG += exceptions
 QMAKE_CXXFLAGS += -fstack-protector
+unix {
+	DEFINES += \
+		BOTAN_HAS_ENTROPY_SRC_DEV_RANDOM \
+		BOTAN_HAS_ENTROPY_SRC_EGD \
+		BOTAN_HAS_ENTROPY_SRC_HIGH_RESOLUTION_TIMER \
+		BOTAN_HAS_ENTROPY_SRC_PROC_WALKER \
+		BOTAN_HAS_ENTROPY_SRC_RDRAND \
+		BOTAN_HAS_ENTROPY_SRC_UNIX_PROCESS_RUNNER \
+}
+win32 {
+	DEFINES += \
+		BOTAN_HAS_ENTROPY_SRC_CAPI \
+		BOTAN_HAS_ENTROPY_SRC_WIN32 \
+}

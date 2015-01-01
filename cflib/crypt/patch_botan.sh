@@ -35,6 +35,7 @@ HEADERS="\
 	filters/transform_filter \
 	hash/hash \
 	hash/mdx_hash/mdx_hash \
+	hash/sha1/sha160 \
 	hash/sha2_32/sha2_32 \
 	hash/sha2_64/sha2_64 \
 	libstate/global_state \
@@ -73,6 +74,12 @@ HEADERS="\
 INTERNAL_HEADERS="\
 	algo_factory/algo_cache \
 	engine/core_engine/core_engine \
+	entropy/dev_random/dev_random \
+	entropy/egd/es_egd \
+	entropy/hres_timer/hres_timer \
+	entropy/proc_walk/proc_walk \
+	entropy/rdrand/rdrand \
+	entropy/unix_procs/unix_procs \
 	filters/out_buf \
 	math/mp/mp_core \
 	math/mp/mp_generic/mp_asmi \
@@ -115,10 +122,18 @@ SOURCES="\
 	math/numbertheory/primes \
 	utils/zero_mem \
 "
+PLATFORM_HEADERS="\
+	entropy/cryptoapi_rng/es_capi \
+	entropy/win32_stats/es_win32 \
+"
+PLATFORM_SOURCES="\
+	entropy/unix_procs/unix_proc_sources \
+"
 DEFINES="\
+#define BOTAN_HAS_HMAC\n\
+#define BOTAN_HAS_SHA1\n\
 #define BOTAN_HAS_SHA2_32\n\
 #define BOTAN_HAS_SHA2_64\n\
-#define BOTAN_HAS_HMAC\n\
 "
 
 rm -rf botan &> /dev/null
@@ -129,11 +144,11 @@ for H in $HEADERS ; do
 	cp "$BOTAN_SRC/src/lib/$H.h" botan
 	cp "$BOTAN_SRC/src/lib/$H.cpp" botan &> /dev/null
 done
-for H in $INTERNAL_HEADERS ; do
+for H in $INTERNAL_HEADERS $PLATFORM_HEADERS ; do
 	cp "$BOTAN_SRC/src/lib/$H.h" botan/internal
 	cp "$BOTAN_SRC/src/lib/$H.cpp" botan/internal &> /dev/null
 done
-for S in $SOURCES ; do
+for S in $SOURCES $PLATFORM_SOURCES ; do
 	cp "$BOTAN_SRC/src/lib/$S.cpp" botan/internal
 done
 

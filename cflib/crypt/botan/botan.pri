@@ -32,6 +32,7 @@ HEADERS += \
 	botan/transform_filter.h \
 	botan/hash.h \
 	botan/mdx_hash.h \
+	botan/sha160.h \
 	botan/sha2_32.h \
 	botan/sha2_64.h \
 	botan/global_state.h \
@@ -68,6 +69,12 @@ HEADERS += \
 	botan/types.h \
 	botan/internal/algo_cache.h \
 	botan/internal/core_engine.h \
+	botan/internal/dev_random.h \
+	botan/internal/es_egd.h \
+	botan/internal/hres_timer.h \
+	botan/internal/proc_walk.h \
+	botan/internal/rdrand.h \
+	botan/internal/unix_procs.h \
 	botan/internal/out_buf.h \
 	botan/internal/mp_core.h \
 	botan/internal/mp_asmi.h \
