@@ -180,13 +180,15 @@ void Log::writeLog(const char * filename, int lineNo, LogCategory category, cons
 	*(pos++) = ' ';
 
 	// filename
-	{
+	if (filename) {
 		const char * f = filename + strlen(filename) - 20;
 		for (int i = 0 ; i < 20 ; ++i) {
 			if (f < filename) *pos = ' ';
 			else              *pos = *f;
 			++f; ++pos;
 		}
+	} else {
+		for (int i = 0 ; i < 20 ; ++i) *(pos++) = ' ';
 	}
 
 	// line no
