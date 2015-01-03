@@ -129,19 +129,9 @@ PLATFORM_HEADERS="\
 PLATFORM_SOURCES="\
 	entropy/unix_procs/unix_proc_sources \
 "
-DEFINES="\
-#define BOTAN_HAS_ENTROPY_SRC_HIGH_RESOLUTION_TIMER\n\
-#define BOTAN_HAS_ENTROPY_SRC_RDRAND\n\
-#define BOTAN_HAS_HMAC\n\
-#define BOTAN_HAS_SHA1\n\
-#define BOTAN_HAS_SHA2_32\n\
-#define BOTAN_HAS_SHA2_64\n\
-"
 
-rm -rf botan &> /dev/null
-mkdir -p botan/internal
+find botan -type f ! -name build.h -exec rm {} \;
 cp "$BOTAN_SRC/doc/license.rst" botan
-perl -pe 's/%{mp_bits}/32/;s/%{module_defines}/'"$DEFINES"'/;s/%{[^}]*}//g' "$BOTAN_SRC/src/build-data/buildh.in" > botan/build.h
 for H in $HEADERS ; do
 	cp "$BOTAN_SRC/src/lib/$H.h" botan
 	cp "$BOTAN_SRC/src/lib/$H.cpp" botan &> /dev/null
