@@ -207,7 +207,7 @@ private:
 
 			char ipAddr[16];
 			const TCPConnInitializer * ci = new TCPConnInitializer(*impl,
-				newSock, inet_ntop(AF_INET, &cliAddr.sin_addr, ipAddr, 16), ntohs(cliAddr.sin_port));
+				newSock, inet_ntop(AF_INET, &cliAddr.sin_addr, ipAddr, sizeof(ipAddr)), ntohs(cliAddr.sin_port));
 			logDebug("new connection (%1) from %2:%3", newSock, ci->peerIP, ci->peerPort);
 			impl->parent_.newConnection(ci);
 		}

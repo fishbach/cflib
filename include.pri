@@ -164,6 +164,11 @@ defineTest(app) {
 		export(CONFIG)
 	}
 
+	win32 {
+		LIBS += -lAdvapi32 -lUser32
+		export(LIBS)
+	}
+
 	setBuildPaths()
 }
 

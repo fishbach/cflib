@@ -1,32 +1,16 @@
-
 #ifndef BOTAN_BUILD_CONFIG_H__
 #define BOTAN_BUILD_CONFIG_H__
 
-/*
-* This file was automatically generated  UTC by
-* @ running ''
-*
-* Target
-*  - Compiler:
-*  - Arch: /
-*  - OS:
-*/
+#define BOTAN_VERSION_MAJOR 1
+#define BOTAN_VERSION_MINOR 11
+#define BOTAN_VERSION_PATCH 11
+#define BOTAN_VERSION_DATESTAMP 20141222
 
-#define BOTAN_VERSION_MAJOR
-#define BOTAN_VERSION_MINOR
-#define BOTAN_VERSION_PATCH
-#define BOTAN_VERSION_DATESTAMP
+#define BOTAN_VERSION_RELEASE_TYPE "released"
 
-#define BOTAN_VERSION_RELEASE_TYPE ""
+#define BOTAN_VERSION_VC_REVISION "mtn:05f2ccf4ecb3ebdb349362354fb023efa49736bb"
 
-#define BOTAN_VERSION_VC_REVISION ""
-
-#define BOTAN_DISTRIBUTION_INFO ""
-
-#define BOTAN_INSTALL_PREFIX ""
-#define BOTAN_INSTALL_HEADER_DIR "/botan-."
-#define BOTAN_INSTALL_LIB_DIR ""
-#define BOTAN_LIB_LINK ""
+#define BOTAN_DISTRIBUTION_INFO "unspecified"
 
 #ifndef BOTAN_DLL
   #define BOTAN_DLL
@@ -74,15 +58,10 @@
 
 /* Target identification and feature test macros */
 
-
-
-
 #if defined(BOTAN_TARGET_CPU_IS_LITTLE_ENDIAN) || \
     defined(BOTAN_TARGET_CPU_IS_BIG_ENDIAN)
   #define BOTAN_TARGET_CPU_HAS_KNOWN_ENDIANNESS
 #endif
-
-
 
 #if defined(_MSC_VER)
   // 4250: inherits via dominance (diamond inheritence issue)
@@ -115,6 +94,7 @@
 
 #if defined(_MSC_VER)
   #define BOTAN_CURRENT_FUNCTION __FUNCTION__
+  #define noexcept
 #else
   #define BOTAN_CURRENT_FUNCTION __func__
 #endif
@@ -132,10 +112,6 @@
 #define BOTAN_HAS_SHA1
 #define BOTAN_HAS_SHA2_32
 #define BOTAN_HAS_SHA2_64
-
-#ifdef _MSC_VER
-#define noexcept
-#endif
 
 /*
 * Local configuration options (if any) follow
