@@ -99,7 +99,6 @@ inline ThreadData & getThreadData()
 	return *(threadData.localData());
 }
 
-#include "db.moc"
 }
 
 ScopedTransaction::ScopedTransaction(const util::LogFileInfo & lfi, int line) :
@@ -204,3 +203,5 @@ quint32 lastInsertId()
 }
 
 }}	// namespace
+
+#include "db.moc"

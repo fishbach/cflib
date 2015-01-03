@@ -194,28 +194,30 @@ inline void writeTag(QByteArray & data, quint64 tag, quint8 tagLen)
 		data += (char)tag;
 		return;
 	}
-	quint8 bytes[tagLen];
-	writeTag(bytes, tag, tagLen);
-	data.append((const char *)bytes, tagLen);
+	const int oldSize = data.size();
+	data.resize(oldSize + tagLen);
+	writeTag((quint8 *)data.constData() + oldSize, tag, tagLen);
 }
 
 inline void writeNull(QByteArray & data, quint64 tag, quint8 tagLen)
 {
 	if (!isZeroTag(tag, tagLen)) return;
 
-	quint8 bytes[tagLen + 1];
-	writeTag(bytes, tag, tagLen);
-	bytes[tagLen] = 0;
-	data.append((const char *)bytes, tagLen + 1);
+	const int oldSize = data.size();
+	data.resize(oldSize + tagLen + 1);
+	quint8 * pos = (quint8 *)data.constData() + oldSize;
+	writeTag(pos, tag, tagLen);
+	pos[tagLen] = 0;
 }
 
 inline void writeZero(QByteArray & data, quint64 tag, quint8 tagLen)
 {
-	quint8 bytes[tagLen + 2];
-	writeTag(bytes, tag, tagLen);
-	bytes[tagLen] = 0x81;
-	bytes[tagLen + 1] = 0;
-	data.append((const char *)bytes, tagLen + 2);
+	const int oldSize = data.size();
+	data.resize(oldSize + tagLen + 2);
+	quint8 * pos = (quint8 *)data.constData() + oldSize;
+	writeTag(pos, tag, tagLen);
+	pos[tagLen] = 0x81;
+	pos[tagLen + 1] = 0;
 }
 
 class TLWriter

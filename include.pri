@@ -44,7 +44,7 @@ defineTest(isInCFLib) {
 
 # setBuildPaths()
 defineTest(setBuildPaths) {
-	INCLUDEPATH += $$CFLIB_DIR
+	INCLUDEPATH += . $$CFLIB_DIR
 	export(INCLUDEPATH)
 
 	OBJECTS_DIR  = build/$$DEBUG_RELEASE
@@ -133,7 +133,11 @@ defineTest(useLibs) {
 	LIBS += -L$$path
 	for(lib, libs) {
 		LIBS += -l$$lib
-		POST_TARGETDEPS += $${path}/lib$${lib}.a
+		*-msvc* {
+			POST_TARGETDEPS += $${path}/$${lib}.lib
+		} else {
+			POST_TARGETDEPS += $${path}/lib$${lib}.a
+		}
 	}
 	export(LIBS)
 	export(POST_TARGETDEPS)

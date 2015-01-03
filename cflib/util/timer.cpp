@@ -43,7 +43,6 @@ private:
 	const Functor * func_;
 };
 
-#include "timer.moc"
 }
 
 void Timer::singleShot(double after, const Functor * func)
@@ -61,3 +60,5 @@ void Timer::timeout(int, void * arg)
 }
 
 }}	// namespace
+
+#include "timer.moc"

@@ -1,6 +1,9 @@
 *.pro.user
 *.o
+*.obj
+*.pch
 Makefile
+Makefile.*
 .qmake.cache
 .qmake.stash
 build

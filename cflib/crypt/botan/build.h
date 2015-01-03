@@ -7,15 +7,15 @@
 * @ running ''
 *
 * Target
-*  - Compiler:  
+*  - Compiler:
 *  - Arch: /
-*  - OS: 
+*  - OS:
 */
 
-#define BOTAN_VERSION_MAJOR 
-#define BOTAN_VERSION_MINOR 
-#define BOTAN_VERSION_PATCH 
-#define BOTAN_VERSION_DATESTAMP 
+#define BOTAN_VERSION_MAJOR
+#define BOTAN_VERSION_MINOR
+#define BOTAN_VERSION_PATCH
+#define BOTAN_VERSION_DATESTAMP
 
 #define BOTAN_VERSION_RELEASE_TYPE ""
 
@@ -29,7 +29,7 @@
 #define BOTAN_LIB_LINK ""
 
 #ifndef BOTAN_DLL
-  #define BOTAN_DLL 
+  #define BOTAN_DLL
 #endif
 
 /* How much to allocate for a buffer of no particular size */
@@ -133,6 +133,9 @@
 #define BOTAN_HAS_SHA2_32
 #define BOTAN_HAS_SHA2_64
 
+#ifdef _MSC_VER
+#define noexcept
+#endif
 
 /*
 * Local configuration options (if any) follow

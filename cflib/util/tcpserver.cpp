@@ -25,20 +25,22 @@
 #include <errno.h>
 #include <fcntl.h>
 #include <sys/types.h>
-#include <unistd.h>
 
 #ifndef Q_OS_WIN
 	#include <arpa/inet.h>
 	#include <netinet/in.h>
 	#include <netinet/tcp.h>
 	#include <sys/socket.h>
+	#include <unistd.h>
 #else
 	#include <winsock2.h>
 	#include <ws2tcpip.h>
+	#define ssize_t int
 	#define socklen_t int
 	#define SHUT_RD   SD_RECEIVE
 	#define SHUT_WR   SD_SEND
 	#define SHUT_RDWR SD_BOTH
+	#define close closesocket
 #endif
 
 USE_LOG(LogCat::Network)
@@ -203,8 +205,9 @@ private:
 
 			setNonBlocking(newSock);
 
+			char ipAddr[16];
 			const TCPConnInitializer * ci = new TCPConnInitializer(*impl,
-				newSock, inet_ntoa(cliAddr.sin_addr), ntohs(cliAddr.sin_port));
+				newSock, inet_ntop(AF_INET, &cliAddr.sin_addr, ipAddr, 16), ntohs(cliAddr.sin_port));
 			logDebug("new connection (%1) from %2:%3", newSock, ci->peerIP, ci->peerPort);
 			impl->parent_.newConnection(ci);
 		}
