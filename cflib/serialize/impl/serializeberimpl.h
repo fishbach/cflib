@@ -53,6 +53,25 @@ inline void serializeBERInt(T v, quint64 tag, quint8 tagLen, QByteArray & data, 
 	}
 }
 
+template <>
+inline void serializeBERInt(bool v, quint64 tag, quint8 tagLen, QByteArray & data, bool)
+{
+	if (!v) { writeNull(data, tag, tagLen); return; }
+
+	const int size = data.size();
+	data.resize(size + tagLen + 2);
+	quint8 * p = (quint8 *)data.constData() + size;	// constData for performance
+
+	// write tag
+	writeTag(p, tag, tagLen);
+
+	// write len
+	p[tagLen] = 1;
+
+	// write value
+	p[tagLen + 1] = 1;
+}
+
 inline void serializeBERInt(quint64 v, quint64 tag, quint8 tagLen, QByteArray & data)
 {
 	serializeBERInt<quint64>(v, tag, tagLen, data, (v >> 63));
@@ -69,6 +88,12 @@ inline void deserializeBERInt(T & v, const quint8 * data, int len)
 	v = *b;
 	if (v & 0x80) v = (-1 << 8) | v;
 	while (--len > 0) v = (v << 8) | *(++b);
+}
+
+template <>
+inline void deserializeBERInt(bool & v, const quint8 * data, int len)
+{
+	v = len > 0 && (quint8)*data == 1;
 }
 
 // ----------------------------------------------------------------------------
