@@ -54,7 +54,7 @@ inline void deserializeJSInt(T & v, const quint8 * data, int len)
 template <>
 inline void deserializeJSInt(bool & v, const quint8 * data, int len)
 {
-	v = len > 0 && (quint8)*data == 1;
+	v = len > 0 && (char)*data == '1';
 }
 
 // ----------------------------------------------------------------------------
