@@ -55,6 +55,12 @@ private slots:
 		QVERIFY(randomUInt64() != randomUInt64());
 	}
 
+	void test_memorableRandom()
+	{
+		QCOMPARE(memorableRandom().length(), 8);
+		QVERIFY(memorableRandom() != memorableRandom());
+	}
+
 	void test_hashPassword()
 	{
 		QVERIFY(hashPassword("pwd") != hashPassword("pwd"));

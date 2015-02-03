@@ -56,7 +56,7 @@ bool initCrypto()
 	return initBotan()->ok();
 }
 
-QByteArray random(int size)
+QByteArray random(uint size)
 {
 	TRY {
 		AutoSeeded_RNG rng;
@@ -87,6 +87,18 @@ quint64 randomUInt64()
 		return retval;
 	} CATCH
 	return 0;
+}
+
+QByteArray memorableRandom()
+{
+	const char * vowels     = "aeiou";
+	const char * consonants = "bcdfghjklmnpqrstvwxyz";
+	const QByteArray rnd = random(8);
+	if (rnd.size() != 8) return QByteArray();
+	QByteArray rv(8, '\0');
+	for (int i = 0 ; i < 6 ; ++i) rv[i] = (i % 2 == 0) ? consonants[(uchar)rnd[i] * 21 / 256] : vowels[(uchar)rnd[i] * 5 / 256];
+	for (int i = 6 ; i < 8 ; ++i) rv[i] = '0' + ((uchar)rnd[i] * 10 / 256);
+	return rv;
 }
 
 QByteArray hashPassword(const QString & password)
