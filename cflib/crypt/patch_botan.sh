@@ -1,6 +1,6 @@
 #!/bin/bash
 
-BOTAN_SRC=Botan-1.11.11
+BOTAN_SRC=Botan-1.11.13
 
 HEADERS="\
 	algo_base/buf_comp \
@@ -131,7 +131,7 @@ PLATFORM_SOURCES="\
 "
 
 find botan -type f ! -name build.h -exec rm {} \;
-cp "$BOTAN_SRC/doc/license.rst" botan
+cp "$BOTAN_SRC/doc/license.txt" botan
 for H in $HEADERS ; do
 	cp "$BOTAN_SRC/src/lib/$H.h" botan
 	cp "$BOTAN_SRC/src/lib/$H.cpp" botan &> /dev/null

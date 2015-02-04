@@ -2,7 +2,7 @@
 * PK Operations
 * (C) 1999-2010 Jack Lloyd
 *
-* Distributed under the terms of the Botan license
+* Botan is released under the Simplified BSD License (see license.txt)
 */
 
 #include <botan/internal/core_engine.h>
@@ -41,6 +41,10 @@
 
 #if defined(BOTAN_HAS_ECDH)
   #include <botan/ecdh.h>
+#endif
+
+#if defined(BOTAN_HAS_CURVE_25519)
+  #include <botan/curve25519.h>
 #endif
 
 namespace Botan {
@@ -88,6 +92,11 @@ Core_Engine::get_key_agreement_op(const Private_Key& key, RandomNumberGenerator&
 #if defined(BOTAN_HAS_ECDH)
    if(const ECDH_PrivateKey* ecdh = dynamic_cast<const ECDH_PrivateKey*>(&key))
       return new ECDH_KA_Operation(*ecdh);
+#endif
+
+#if defined(BOTAN_HAS_CURVE_25519)
+   if(const Curve25519_PrivateKey* c25519 = dynamic_cast<const Curve25519_PrivateKey*>(&key))
+      return new Curve25519_KA_Operation(*c25519);
 #endif
 
    return nullptr;

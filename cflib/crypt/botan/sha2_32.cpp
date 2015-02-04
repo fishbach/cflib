@@ -3,7 +3,7 @@
 * (C) 1999-2010 Jack Lloyd
 *     2007 FlexSecure GmbH
 *
-* Distributed under the terms of the Botan license
+* Botan is released under the Simplified BSD License (see license.txt)
 */
 
 #include <botan/sha2_32.h>
@@ -171,8 +171,7 @@ void SHA_224::compress_n(const byte input[], size_t blocks)
 */
 void SHA_224::copy_out(byte output[])
    {
-   for(size_t i = 0; i != output_length(); i += 4)
-      store_be(digest[i/4], output + i);
+   copy_out_vec_be(output, output_length(), digest);
    }
 
 /*
@@ -204,8 +203,7 @@ void SHA_256::compress_n(const byte input[], size_t blocks)
 */
 void SHA_256::copy_out(byte output[])
    {
-   for(size_t i = 0; i != output_length(); i += 4)
-      store_be(digest[i/4], output + i);
+   copy_out_vec_be(output, output_length(), digest);
    }
 
 /*

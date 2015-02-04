@@ -2,7 +2,7 @@
 * BigInt Base
 * (C) 1999-2011,2012 Jack Lloyd
 *
-* Distributed under the terms of the Botan license
+* Botan is released under the Simplified BSD License (see license.txt)
 */
 
 #include <botan/bigint.h>
@@ -121,27 +121,6 @@ s32bit BigInt::cmp(const BigInt& other, bool check_signs) const
 
    return bigint_cmp(this->data(), this->sig_words(),
                      other.data(), other.sig_words());
-   }
-
-/*
-* Return byte n of this number
-*/
-byte BigInt::byte_at(size_t n) const
-   {
-   const size_t WORD_BYTES = sizeof(word);
-   size_t word_num = n / WORD_BYTES, byte_num = n % WORD_BYTES;
-   if(word_num >= size())
-      return 0;
-   else
-      return get_byte(WORD_BYTES - byte_num - 1, m_reg[word_num]);
-   }
-
-/*
-* Return bit n of this number
-*/
-bool BigInt::get_bit(size_t n) const
-   {
-   return ((word_at(n / MP_WORD_BITS) >> (n % MP_WORD_BITS)) & 1);
    }
 
 /*

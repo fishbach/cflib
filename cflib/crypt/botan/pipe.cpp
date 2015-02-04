@@ -2,7 +2,7 @@
 * Pipe
 * (C) 1999-2007 Jack Lloyd
 *
-* Distributed under the terms of the Botan license
+* Botan is released under the Simplified BSD License (see license.txt)
 */
 
 #include <botan/pipe.h>
@@ -126,12 +126,12 @@ void Pipe::process_msg(const byte input[], size_t length)
 */
 void Pipe::process_msg(const secure_vector<byte>& input)
    {
-   process_msg(&input[0], input.size());
+   process_msg(input.data(), input.size());
    }
 
 void Pipe::process_msg(const std::vector<byte>& input)
    {
-   process_msg(&input[0], input.size());
+   process_msg(input.data(), input.size());
    }
 
 /*

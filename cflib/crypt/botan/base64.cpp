@@ -1,8 +1,8 @@
 /*
 * Base64 Encoding and Decoding
-* (C) 2010 Jack Lloyd
+* (C) 2010,2015 Jack Lloyd
 *
-* Distributed under the terms of the Botan license
+* Botan is released under the Simplified BSD License (see license.txt)
 */
 
 #include <botan/base64.h>
@@ -78,7 +78,10 @@ size_t base64_encode(char out[],
 std::string base64_encode(const byte input[],
                           size_t input_length)
    {
-   std::string output((round_up<size_t>(input_length, 3) / 3) * 4, 0);
+   const size_t output_length = (input_length == 0)
+           ? 0
+           : (round_up<size_t>(input_length, 3) / 3) * 4;
+   std::string output(output_length, 0);
 
    size_t consumed = 0;
    size_t produced = base64_encode(&output[0],
@@ -217,14 +220,17 @@ size_t base64_decode(byte output[],
                      const std::string& input,
                      bool ignore_ws)
    {
-   return base64_decode(output, &input[0], input.length(), ignore_ws);
+   return base64_decode(output, input.data(), input.length(), ignore_ws);
    }
 
 secure_vector<byte> base64_decode(const char input[],
                                  size_t input_length,
                                  bool ignore_ws)
-   {
-   secure_vector<byte> bin((round_up<size_t>(input_length, 4) * 3) / 4);
+   { 
+   const size_t output_length = (input_length == 0)
+           ? 0
+           : (round_up<size_t>(input_length, 4) * 3) / 4;
+   secure_vector<byte> bin(output_length);
 
    size_t written = base64_decode(&bin[0],
                                   input,
@@ -238,7 +244,7 @@ secure_vector<byte> base64_decode(const char input[],
 secure_vector<byte> base64_decode(const std::string& input,
                                  bool ignore_ws)
    {
-   return base64_decode(&input[0], input.size(), ignore_ws);
+   return base64_decode(input.data(), input.size(), ignore_ws);
    }
 
 

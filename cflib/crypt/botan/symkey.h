@@ -2,7 +2,7 @@
 * OctetString
 * (C) 1999-2007 Jack Lloyd
 *
-* Distributed under the terms of the Botan license
+* Botan is released under the Simplified BSD License (see license.txt)
 */
 
 #ifndef BOTAN_SYMKEY_H__
@@ -86,7 +86,7 @@ class BOTAN_DLL OctetString
       * Create a new OctetString
       * @param in a bytestring
       */
-      OctetString(const std::vector<byte>& in) : bits(&in[0], &in[in.size()]) {}
+      OctetString(const std::vector<byte>& in) : bits(in.begin(), in.end()) {}
    private:
       secure_vector<byte> bits;
    };

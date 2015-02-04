@@ -3,7 +3,7 @@
 * (C) 1999-2008,2012 Jack Lloyd
 *     2007 FlexSecure
 *
-* Distributed under the terms of the Botan license
+* Botan is released under the Simplified BSD License (see license.txt)
 */
 
 #ifndef BOTAN_BIGINT_H__
@@ -12,6 +12,7 @@
 #include <botan/rng.h>
 #include <botan/secmem.h>
 #include <botan/mp_types.h>
+#include <botan/get_byte.h>
 #include <iosfwd>
 
 namespace Botan {
@@ -275,7 +276,10 @@ class BOTAN_DLL BigInt
      * @param n the bit offset to test
      * @result true, if the bit at position n is set, false otherwise
      */
-     bool get_bit(size_t n) const;
+     bool get_bit(size_t n) const
+        {
+        return ((word_at(n / BOTAN_MP_WORD_BITS) >> (n % BOTAN_MP_WORD_BITS)) & 1);
+        }
 
      /**
      * Return (a maximum of) 32 bits of the complete value
@@ -297,7 +301,11 @@ class BOTAN_DLL BigInt
      * @param n the offset to get a byte from
      * @result byte at offset n
      */
-     byte byte_at(size_t n) const;
+     byte byte_at(size_t n) const
+        {
+        return get_byte(sizeof(word) - (n % sizeof(word)) - 1,
+                        word_at(n / sizeof(word)));
+        }
 
      /**
      * Return the word at a specified position of the internal register
