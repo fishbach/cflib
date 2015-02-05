@@ -263,7 +263,7 @@ public:
 
 }
 
-class TLS_test: public QObject
+class TLS_test : public QObject
 {
 	Q_OBJECT
 private slots:

@@ -21,7 +21,7 @@
 
 using namespace cflib::crypt;
 
-class Util_test: public QObject
+class Util_test : public QObject
 {
 	Q_OBJECT
 private slots:

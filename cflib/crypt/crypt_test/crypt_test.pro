@@ -23,6 +23,7 @@ TARGET = crypt_test
 
 SOURCES = \
 	tls_test.cpp \
+	tlscredentials_test.cpp \
 	util_test.cpp \
 
 serializeGen()

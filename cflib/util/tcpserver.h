@@ -31,8 +31,6 @@ class TCPServer
 {
 	Q_DISABLE_COPY(TCPServer)
 public:
-	class Impl;
-public:
 	TCPServer();
 	virtual ~TCPServer();
 
@@ -50,8 +48,11 @@ protected:
 	virtual void newConnection(const TCPConnInitializer * init) = 0;
 
 private:
+	class Impl;
 	Impl * impl_;
 	static TCPServer * instance_;
+	friend class TCPConn;
+	friend class TCPConnInitializer;
 };
 
 class TCPConn

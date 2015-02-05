@@ -18,25 +18,23 @@
 
 #pragma once
 
-#include <memory>
+#include <QtCore>
 
-using std::addressof;
+namespace cflib { namespace crypt {
 
-#include <cflib/util/log.h>
+class TLSCredentials
+{
+	Q_DISABLE_COPY(TLSCredentials)
+public:
+	TLSCredentials();
+	~TLSCredentials();
 
-#include <botan/auto_rng.h>
-#include <botan/bcrypt.h>
-#include <botan/credentials_manager.h>
-#include <botan/filters.h>
-#include <botan/init.h>
+	uint addCert(const QByteArray & pem);
+	bool addPrivateKey(const QByteArray & privateKey);
 
-#define TRY \
-	try
-#define CATCH \
-	catch (std::exception & e) { \
-		logWarn("Botan exception: %1", e.what()); \
-	} catch (...) { \
-		logWarn("unknown Botan exception"); \
-	}
+private:
+	class Impl;
+	Impl * impl_;
+};
 
-using namespace Botan;
+}}	// namespace

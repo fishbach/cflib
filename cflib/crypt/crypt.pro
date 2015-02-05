@@ -22,8 +22,9 @@ QT = core
 TARGET = cflib_crypt
 
 HEADERS = \
-	util.h \
 	impl/botanhelper.h \
+	tlscredentials.h \
+	util.h \
 
 OTHER_FILES = \
 	patch_botan.sh \
