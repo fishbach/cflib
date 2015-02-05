@@ -63,6 +63,9 @@ HEADERS="\
 	cert/x509/x509cert \
 	cert/x509/x509path \
 	cert/x509/x509self \
+	checksum/adler32/adler32 \
+	checksum/crc24/crc24 \
+	checksum/crc32/crc32 \
 	codec/base64/base64 \
 	codec/hex/hex \
 	codec/pem/pem \
@@ -83,12 +86,29 @@ HEADERS="\
 	filters/pipe \
 	filters/secqueue \
 	filters/transform_filter \
+	hash/comb4p/comb4p \
+	hash/gost_3411/gost_3411 \
+	hash/has160/has160 \
 	hash/hash \
+	hash/keccak/keccak \
+	hash/md2/md2 \
+	hash/md4/md4 \
+	hash/md5/md5 \
 	hash/mdx_hash/mdx_hash \
+	hash/par_hash/par_hash \
+	hash/rmd128/rmd128 \
+	hash/rmd160/rmd160 \
 	hash/sha1/sha160 \
 	hash/sha2_32/sha2_32 \
 	hash/sha2_64/sha2_64 \
+	hash/skein/skein_512 \
+	hash/tiger/tiger \
+	hash/whirlpool/whrlpool \
 	kdf/kdf \
+	kdf/kdf1/kdf1 \
+	kdf/kdf2/kdf2 \
+	kdf/prf_tls/prf_tls \
+	kdf/prf_x942/prf_x942 \
 	libstate/global_state \
 	libstate/init \
 	libstate/libstate \
@@ -228,6 +248,9 @@ SOURCES="\
 	engine/core_engine/lookup_stream \
 	filters/algo_filt \
 	filters/pipe_rw \
+	hash/tiger/tig_tab \
+	hash/whirlpool/whirlpool \
+	hash/whirlpool/whrl_tab \
 	libstate/entropy_srcs \
 	math/bigint/big_code \
 	math/bigint/big_ops2 \

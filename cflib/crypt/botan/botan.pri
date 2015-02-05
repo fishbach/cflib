@@ -60,6 +60,9 @@ HEADERS += \
 	botan/x509cert.h \
 	botan/x509path.h \
 	botan/x509self.h \
+	botan/adler32.h \
+	botan/crc24.h \
+	botan/crc32.h \
 	botan/base64.h \
 	botan/hex.h \
 	botan/pem.h \
@@ -80,12 +83,29 @@ HEADERS += \
 	botan/pipe.h \
 	botan/secqueue.h \
 	botan/transform_filter.h \
+	botan/comb4p.h \
+	botan/gost_3411.h \
+	botan/has160.h \
 	botan/hash.h \
+	botan/keccak.h \
+	botan/md2.h \
+	botan/md4.h \
+	botan/md5.h \
 	botan/mdx_hash.h \
+	botan/par_hash.h \
+	botan/rmd128.h \
+	botan/rmd160.h \
 	botan/sha160.h \
 	botan/sha2_32.h \
 	botan/sha2_64.h \
+	botan/skein_512.h \
+	botan/tiger.h \
+	botan/whrlpool.h \
 	botan/kdf.h \
+	botan/kdf1.h \
+	botan/kdf2.h \
+	botan/prf_tls.h \
+	botan/prf_x942.h \
 	botan/global_state.h \
 	botan/init.h \
 	botan/libstate.h \
@@ -108,11 +128,17 @@ HEADERS += \
 	botan/pbkdf.h \
 	botan/pbkdf2.h \
 	botan/eme.h \
+	botan/oaep.h \
+	botan/eme_pkcs.h \
 	botan/emsa.h \
 	botan/emsa1.h \
 	botan/emsa1_bsi.h \
 	botan/emsa_pkcs1.h \
+	botan/pssr.h \
+	botan/emsa_raw.h \
 	botan/emsa_x931.h \
+	botan/hash_id.h \
+	botan/mgf1.h \
 	botan/blinding.h \
 	botan/curve25519.h \
 	botan/dh.h \
@@ -164,18 +190,12 @@ HEADERS += \
 	botan/exceptn.h \
 	botan/get_byte.h \
 	botan/http_util.h \
-	botan/mgf1.h \
-	botan/eme_pkcs.h \
 	botan/loadstor.h \
-	botan/emsa_raw.h \
 	botan/mem_ops.h \
-	botan/hash_id.h \
 	botan/mul128.h \
 	botan/parsing.h \
-	botan/oaep.h \
 	botan/rotate.h \
 	botan/types.h \
-	botan/pssr.h \
 	botan/internal/algo_cache.h \
 	botan/internal/camellia_sbox.h \
 	botan/internal/cast_sboxes.h \
@@ -223,6 +243,9 @@ SOURCES += \
 	botan/internal/lookup_stream.cpp \
 	botan/internal/algo_filt.cpp \
 	botan/internal/pipe_rw.cpp \
+	botan/internal/tig_tab.cpp \
+	botan/internal/whirlpool.cpp \
+	botan/internal/whrl_tab.cpp \
 	botan/internal/entropy_srcs.cpp \
 	botan/internal/big_code.cpp \
 	botan/internal/big_ops2.cpp \
