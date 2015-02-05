@@ -21,7 +21,7 @@
 
 using namespace cflib::crypt;
 
-class Crypt_Test: public QObject
+class Util_test: public QObject
 {
 	Q_OBJECT
 private slots:
@@ -86,5 +86,5 @@ private slots:
 	}
 
 };
-#include "crypt_test.moc"
-ADD_TEST(Crypt_Test)
+#include "util_test.moc"
+ADD_TEST(Util_test)

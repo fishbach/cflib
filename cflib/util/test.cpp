@@ -50,6 +50,7 @@ QStringList allTests()
 	foreach (QObject * obj, sortedTestObjects()) {
 		retval << obj->metaObject()->className();
 	}
+	qSort(retval);
 	return retval;
 }
 
@@ -60,13 +61,30 @@ using namespace cflib::util;
 int main(int argc, char *argv[])
 {
 	QCoreApplication a(argc, argv);
+	QStringList args = a.arguments();
+	QString runOnly;
+	if (args.size() > 1 && !args[1].startsWith('-')) {
+		runOnly = args[1].toLower();
+		bool found = false;
+		foreach (const QString & t, allTests()) if (t.toLower() == runOnly) { found = true; break; }
+		if (!found) {
+			QTextStream err(stderr);
+			err << "Class \"" << args[1] << "\" not found!" << endl
+				<< "Existing classes:" << endl;
+			foreach (const QString & t, allTests()) err << "  " << t << endl;
+			return 1;
+		}
+		args.removeAt(1);
+	}
+
 	QTextStream out(stdout);
 	int retval = 0;
 	bool first = true;
 	foreach (QObject * obj, sortedTestObjects()) {
+		if (!runOnly.isEmpty() && QString(obj->metaObject()->className()).toLower() != runOnly) continue;
 		if (first) first = false;
 		else       out << endl;
-		retval += QTest::qExec(obj, argc, argv);
+		retval += QTest::qExec(obj, args);
 	}
 
 	return retval;

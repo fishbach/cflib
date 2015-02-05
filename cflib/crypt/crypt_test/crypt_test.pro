@@ -22,7 +22,8 @@ QT = core
 TARGET = crypt_test
 
 SOURCES = \
-	crypt_test.cpp \
+	tls_test.cpp \
+	util_test.cpp \
 
 serializeGen()
 useLibs(cflib_crypt cflib_util)
