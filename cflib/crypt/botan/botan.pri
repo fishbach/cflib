@@ -19,8 +19,33 @@ HEADERS += \
 	botan/der_enc.h \
 	botan/oids.h \
 	botan/x509_dn.h \
+	botan/aes.h \
 	botan/block_cipher.h \
 	botan/blowfish.h \
+	botan/camellia.h \
+	botan/cascade.h \
+	botan/cast128.h \
+	botan/cast256.h \
+	botan/des.h \
+	botan/desx.h \
+	botan/gost_28147.h \
+	botan/idea.h \
+	botan/kasumi.h \
+	botan/lion.h \
+	botan/mars.h \
+	botan/misty1.h \
+	botan/noekeon.h \
+	botan/rc2.h \
+	botan/rc5.h \
+	botan/rc6.h \
+	botan/safer_sk.h \
+	botan/seed.h \
+	botan/serpent.h \
+	botan/tea.h \
+	botan/threefish.h \
+	botan/threefish.h \
+	botan/twofish.h \
+	botan/xtea.h \
 	botan/cert_status.h \
 	botan/certstor.h \
 	botan/crl_ent.h \
@@ -84,23 +109,36 @@ HEADERS += \
 	botan/pbkdf2.h \
 	botan/eme.h \
 	botan/emsa.h \
+	botan/emsa1.h \
+	botan/emsa1_bsi.h \
+	botan/emsa_pkcs1.h \
+	botan/emsa_x931.h \
 	botan/blinding.h \
+	botan/curve25519.h \
 	botan/dh.h \
 	botan/dl_algo.h \
 	botan/dl_group.h \
+	botan/dsa.h \
 	botan/ec_group.h \
 	botan/ecc_key.h \
 	botan/ecdh.h \
+	botan/ecdsa.h \
+	botan/elgamal.h \
+	botan/gost_3410.h \
 	botan/if_algo.h \
 	botan/keypair.h \
+	botan/nr.h \
 	botan/pk_keys.h \
 	botan/pk_ops.h \
 	botan/pkcs8.h \
 	botan/pubkey.h \
+	botan/rfc6979.h \
 	botan/rsa.h \
+	botan/rw.h \
 	botan/workfactor.h \
 	botan/x509_key.h \
 	botan/auto_rng.h \
+	botan/hmac_drbg.h \
 	botan/hmac_rng.h \
 	botan/rng.h \
 	botan/stream_cipher.h \
@@ -126,13 +164,22 @@ HEADERS += \
 	botan/exceptn.h \
 	botan/get_byte.h \
 	botan/http_util.h \
+	botan/mgf1.h \
+	botan/eme_pkcs.h \
 	botan/loadstor.h \
+	botan/emsa_raw.h \
 	botan/mem_ops.h \
+	botan/hash_id.h \
 	botan/mul128.h \
 	botan/parsing.h \
+	botan/oaep.h \
 	botan/rotate.h \
 	botan/types.h \
+	botan/pssr.h \
 	botan/internal/algo_cache.h \
+	botan/internal/camellia_sbox.h \
+	botan/internal/cast_sboxes.h \
+	botan/internal/serpent_sbox.h \
 	botan/internal/core_engine.h \
 	botan/internal/hres_timer.h \
 	botan/internal/rdrand.h \
@@ -162,6 +209,9 @@ SOURCES += \
 	botan/internal/prov_weight.cpp \
 	botan/internal/default.cpp \
 	botan/internal/blfs_tab.cpp \
+	botan/internal/des_tab.cpp \
+	botan/internal/seed_tab.cpp \
+	botan/internal/two_tab.cpp \
 	botan/internal/x509opt.cpp \
 	botan/internal/core_modes.cpp \
 	botan/internal/def_pk_ops.cpp \
@@ -194,6 +244,7 @@ SOURCES += \
 	botan/internal/primes.cpp \
 	botan/internal/ressol.cpp \
 	botan/internal/get_pk_pad.cpp \
+	botan/internal/donna.cpp \
 	botan/internal/msg_cert_req.cpp \
 	botan/internal/msg_cert_verify.cpp \
 	botan/internal/msg_certificate.cpp \

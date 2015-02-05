@@ -22,8 +22,33 @@ HEADERS="\
 	asn1/der_enc \
 	asn1/oid_lookup/oids \
 	asn1/x509_dn \
+	block/aes/aes \
 	block/block_cipher \
 	block/blowfish/blowfish \
+	block/camellia/camellia \
+	block/cascade/cascade \
+	block/cast/cast128 \
+	block/cast/cast256 \
+	block/des/des \
+	block/des/desx \
+	block/gost_28147/gost_28147 \
+	block/idea/idea \
+	block/kasumi/kasumi \
+	block/lion/lion \
+	block/mars/mars \
+	block/misty1/misty1 \
+	block/noekeon/noekeon \
+	block/rc2/rc2 \
+	block/rc5/rc5 \
+	block/rc6/rc6 \
+	block/safer/safer_sk \
+	block/seed/seed \
+	block/serpent/serpent \
+	block/tea/tea \
+	block/threefish/threefish \
+	block/threefish/threefish \
+	block/twofish/twofish \
+	block/xtea/xtea \
 	cert/x509/cert_status \
 	cert/x509/certstor \
 	cert/x509/crl_ent \
@@ -86,24 +111,43 @@ HEADERS="\
 	pbkdf/pbkdf \
 	pbkdf/pbkdf2/pbkdf2 \
 	pk_pad/eme \
+	pk_pad/eme_oaep/oaep \
+	pk_pad/eme_pkcs1/eme_pkcs \
 	pk_pad/emsa \
+	pk_pad/emsa1/emsa1 \
+	pk_pad/emsa1_bsi/emsa1_bsi \
+	pk_pad/emsa_pkcs1/emsa_pkcs1 \
+	pk_pad/emsa_pssr/pssr \
+	pk_pad/emsa_raw/emsa_raw \
+	pk_pad/emsa_x931/emsa_x931 \
+	pk_pad/hash_id/hash_id \
+	pk_pad/mgf1/mgf1 \
 	pubkey/blinding \
+	pubkey/curve25519/curve25519 \
 	pubkey/dh/dh \
 	pubkey/dl_algo/dl_algo \
 	pubkey/dl_group/dl_group \
+	pubkey/dsa/dsa \
 	pubkey/ec_group/ec_group \
 	pubkey/ecc_key/ecc_key \
 	pubkey/ecdh/ecdh \
+	pubkey/ecdsa/ecdsa \
+	pubkey/elgamal/elgamal \
+	pubkey/gost_3410/gost_3410 \
 	pubkey/if_algo/if_algo \
 	pubkey/keypair/keypair \
+	pubkey/nr/nr \
 	pubkey/pk_keys \
 	pubkey/pk_ops \
 	pubkey/pkcs8 \
 	pubkey/pubkey \
+	pubkey/rfc6979/rfc6979 \
 	pubkey/rsa/rsa \
+	pubkey/rw/rw \
 	pubkey/workfactor \
 	pubkey/x509_key \
 	rng/auto_rng/auto_rng \
+	rng/hmac_drbg/hmac_drbg\
 	rng/hmac_rng/hmac_rng \
 	rng/rng \
 	stream/stream_cipher \
@@ -138,6 +182,9 @@ HEADERS="\
 "
 INTERNAL_HEADERS="\
 	algo_factory/algo_cache \
+	block/camellia/camellia_sbox \
+	block/cast/cast_sboxes \
+	block/serpent/serpent_sbox \
 	engine/core_engine/core_engine \
 	entropy/hres_timer/hres_timer \
 	entropy/rdrand/rdrand \
@@ -167,6 +214,9 @@ SOURCES="\
 	algo_factory/prov_weight \
 	asn1/oid_lookup/default \
 	block/blowfish/blfs_tab \
+	block/des/des_tab \
+	block/seed/seed_tab \
+	block/twofish/two_tab \
 	cert/x509/x509opt \
 	engine/core_engine/core_modes \
 	engine/core_engine/def_pk_ops \
@@ -199,6 +249,7 @@ SOURCES="\
 	math/numbertheory/primes \
 	math/numbertheory/ressol \
 	pk_pad/get_pk_pad \
+	pubkey/curve25519/donna \
 	tls/msg_cert_req \
 	tls/msg_cert_verify \
 	tls/msg_certificate \
