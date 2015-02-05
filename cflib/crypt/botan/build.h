@@ -107,11 +107,20 @@
 * Module availability definitions
 */
 #define BOTAN_HAS_ADLER32
+#define BOTAN_HAS_AEAD_CCM
+#define BOTAN_HAS_AEAD_CHACHA20_POLY1305
+#define BOTAN_HAS_AEAD_EAX
+#define BOTAN_HAS_AEAD_GCM
+#define BOTAN_HAS_AEAD_OCB
+#define BOTAN_HAS_AEAD_SIV
 #define BOTAN_HAS_AES
+#define BOTAN_HAS_ANSI_X919_MAC
 #define BOTAN_HAS_BLOWFISH
 #define BOTAN_HAS_CAMELLIA
 #define BOTAN_HAS_CASCADE
 #define BOTAN_HAS_CAST
+#define BOTAN_HAS_CBC_MAC
+#define BOTAN_HAS_CMAC
 #define BOTAN_HAS_CODEC_FILTERS
 #define BOTAN_HAS_COMB4P
 #define BOTAN_HAS_CRC24
@@ -152,6 +161,7 @@
 #define BOTAN_HAS_NOEKEON
 #define BOTAN_HAS_NYBERG_RUEPPEL
 #define BOTAN_HAS_PARALLEL_HASH
+#define BOTAN_HAS_POLY1305
 #define BOTAN_HAS_RC2
 #define BOTAN_HAS_RC5
 #define BOTAN_HAS_RC6
@@ -165,6 +175,7 @@
 #define BOTAN_HAS_SHA1
 #define BOTAN_HAS_SHA2_32
 #define BOTAN_HAS_SHA2_64
+#define BOTAN_HAS_SIPHASH
 #define BOTAN_HAS_SKEIN_512
 #define BOTAN_HAS_TEA
 #define BOTAN_HAS_THREEFISH_512
@@ -178,9 +189,9 @@
 #define BOTAN_HAS_X942_PRF
 #define BOTAN_HAS_XTEA
 
+
 /*
 * Local configuration options (if any) follow
 */
-
 
 #endif

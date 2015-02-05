@@ -113,8 +113,13 @@ HEADERS="\
 	libstate/init \
 	libstate/libstate \
 	libstate/lookup \
+	mac/cbc_mac/cbc_mac \
+	mac/cmac/cmac \
 	mac/hmac/hmac \
 	mac/mac \
+	mac/poly1305/poly1305 \
+	mac/siphash/siphash \
+	mac/x919_mac/x919_mac \
 	math/bigint/bigint \
 	math/bigint/divide \
 	math/ec_gfp/curve_gfp \
@@ -124,6 +129,12 @@ HEADERS="\
 	math/numbertheory/pow_mod \
 	math/numbertheory/reducer \
 	modes/aead/aead \
+	modes/aead/ccm/ccm \
+	modes/aead/chacha20poly1305/chacha20poly1305 \
+	modes/aead/eax/eax \
+	modes/aead/gcm/gcm \
+	modes/aead/ocb/ocb \
+	modes/aead/siv/siv \
 	modes/cbc/cbc \
 	modes/cipher_mode \
 	modes/mode_pad/mode_pad \
@@ -170,6 +181,8 @@ HEADERS="\
 	rng/hmac_drbg/hmac_drbg\
 	rng/hmac_rng/hmac_rng \
 	rng/rng \
+	stream/chacha/chacha \
+	stream/ctr/ctr \
 	stream/stream_cipher \
 	tls/tls_alert \
 	tls/tls_channel \
@@ -209,6 +222,7 @@ INTERNAL_HEADERS="\
 	entropy/hres_timer/hres_timer \
 	entropy/rdrand/rdrand \
 	filters/out_buf \
+	mac/poly1305/poly1305_donna \
 	math/ec_gfp/curve_nistp \
 	math/mp/mp_core \
 	math/mp/mp_generic/mp_asmi \

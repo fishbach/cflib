@@ -110,8 +110,13 @@ HEADERS += \
 	botan/init.h \
 	botan/libstate.h \
 	botan/lookup.h \
+	botan/cbc_mac.h \
+	botan/cmac.h \
 	botan/hmac.h \
 	botan/mac.h \
+	botan/poly1305.h \
+	botan/siphash.h \
+	botan/x919_mac.h \
 	botan/bigint.h \
 	botan/divide.h \
 	botan/curve_gfp.h \
@@ -121,6 +126,12 @@ HEADERS += \
 	botan/pow_mod.h \
 	botan/reducer.h \
 	botan/aead.h \
+	botan/ccm.h \
+	botan/chacha20poly1305.h \
+	botan/eax.h \
+	botan/gcm.h \
+	botan/ocb.h \
+	botan/siv.h \
 	botan/cbc.h \
 	botan/cipher_mode.h \
 	botan/mode_pad.h \
@@ -167,6 +178,8 @@ HEADERS += \
 	botan/hmac_drbg.h \
 	botan/hmac_rng.h \
 	botan/rng.h \
+	botan/chacha.h \
+	botan/ctr.h \
 	botan/stream_cipher.h \
 	botan/tls_alert.h \
 	botan/tls_channel.h \
@@ -204,6 +217,7 @@ HEADERS += \
 	botan/internal/hres_timer.h \
 	botan/internal/rdrand.h \
 	botan/internal/out_buf.h \
+	botan/internal/poly1305_donna.h \
 	botan/internal/curve_nistp.h \
 	botan/internal/mp_core.h \
 	botan/internal/mp_asmi.h \
