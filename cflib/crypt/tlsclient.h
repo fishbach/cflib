@@ -18,27 +18,27 @@
 
 #pragma once
 
-#include <memory>
+#include <QtCore>
 
-using std::addressof;
+namespace cflib { namespace crypt {
 
-#include <cflib/util/log.h>
+class TLSCredentials;
+class TLSSessions;
 
-#include <botan/auto_rng.h>
-#include <botan/bcrypt.h>
-#include <botan/filters.h>
-#include <botan/init.h>
-#include <botan/pkcs8.h>
-#include <botan/tls_client.h>
-#include <botan/tls_server.h>
+class TLSClient
+{
+	Q_DISABLE_COPY(TLSClient)
+public:
+	TLSClient(TLSSessions & sessions, TLSCredentials & credentials);
+	~TLSClient();
 
-#define TRY \
-	try
-#define CATCH \
-	catch (std::exception & e) { \
-		logWarn("Botan exception: %1", e.what()); \
-	} catch (...) { \
-		logWarn("unknown Botan exception"); \
-	}
+	QByteArray initialEncryptedForServer();
+	bool fromServer(const QByteArray & encrypted, QByteArray & plain, QByteArray & sendBack);
+	bool toServer(const QByteArray & plain, QByteArray & encrypted);
 
-using namespace Botan;
+private:
+	class Impl;
+	Impl * impl_;
+};
+
+}}	// namespace

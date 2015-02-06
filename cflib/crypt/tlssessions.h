@@ -38,6 +38,7 @@ private:
 	class Impl;
 	Impl * impl_;
 
+	friend class TLSClient;
 	friend class TLSServer;
 	Botan::TLS::Session_Manager & session_Manager();
 	Botan::RandomNumberGenerator & rng();
