@@ -24,6 +24,7 @@ TARGET = cflib_crypt
 HEADERS = \
 	impl/botanhelper.h \
 	tlscredentials.h \
+	tlsserver.h \
 	util.h \
 
 OTHER_FILES = \
