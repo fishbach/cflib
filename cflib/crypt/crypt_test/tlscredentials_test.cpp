@@ -146,31 +146,56 @@ private slots:
 	void test_addCerts()
 	{
 		TLSCredentials creds;
+
 		QCOMPARE((int)creds.addCerts(QByteArray()), 0);
 		QCOMPARE((int)creds.addCerts(cert3 + cert1), 2);
 		QCOMPARE((int)creds.addCerts(cert1), 0);
 		QCOMPARE((int)creds.addCerts(cert2), 1);
+
 		const QList<TLSCertInfo> infos = creds.getCertInfos();
 		QCOMPARE(infos.size(), 3);
 		QCOMPARE(infos[0].subjectName.constData(), "registration.summercourse.ec");
 		QCOMPARE(infos[0].issuerName .constData(), "RapidSSL CA"                 );
+		QVERIFY(!infos[0].isCA);
+		QVERIFY(!infos[0].isTrusted);
 		QCOMPARE(infos[1].subjectName.constData(), "RapidSSL CA"                 );
 		QCOMPARE(infos[1].issuerName .constData(), "GeoTrust Global CA"          );
+		QVERIFY( infos[1].isCA);
+		QVERIFY(!infos[1].isTrusted);
 		QCOMPARE(infos[2].subjectName.constData(), "GeoTrust Global CA"          );
 		QCOMPARE(infos[2].issuerName .constData(), "GeoTrust Global CA"          );
+		QVERIFY( infos[2].isCA);
+		QVERIFY(!infos[2].isTrusted);
+	}
+
+	void test_addCerts_trusted()
+	{
+		TLSCredentials creds;
+
+		QCOMPARE((int)creds.addCerts(cert2 + cert1), 2);
+		QCOMPARE((int)creds.addCerts(cert3, true), 1);
+
+		const QList<TLSCertInfo> infos = creds.getCertInfos();
+		QCOMPARE(infos.size(), 3);
+		QCOMPARE(infos[0].subjectName.constData(), "registration.summercourse.ec");
+		QVERIFY(!infos[0].isTrusted);
+		QCOMPARE(infos[1].subjectName.constData(), "RapidSSL CA"                 );
+		QVERIFY(!infos[1].isTrusted);
+		QCOMPARE(infos[2].subjectName.constData(), "GeoTrust Global CA"          );
+		QVERIFY( infos[2].isTrusted);
 	}
 
 	void test_setPrivateKey()
 	{
 		TLSCredentials creds;
+
 		QVERIFY(!creds.setPrivateKey(QByteArray()));
 		QVERIFY(!creds.setPrivateKey(cert1PrivateKey));
+
 		QCOMPARE((int)creds.addCerts(cert2), 1);
 		QVERIFY(!creds.setPrivateKey(cert1PrivateKey));
+
 		QCOMPARE((int)creds.addCerts(cert1), 1);
-		const QList<TLSCertInfo> infos = creds.getCertInfos();
-		QCOMPARE(infos.size(), 2);
-		QCOMPARE(infos[0].subjectName.constData(), "registration.summercourse.ec");
 		QVERIFY(creds.setPrivateKey(cert1PrivateKey));
 	}
 

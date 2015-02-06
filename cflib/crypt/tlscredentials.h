@@ -28,6 +28,10 @@ struct TLSCertInfo
 {
 	QByteArray subjectName;
 	QByteArray issuerName;
+	bool isCA;
+	bool isTrusted;
+
+	TLSCertInfo() : isCA(false), isTrusted(false) {}
 };
 
 class TLSCredentials
@@ -37,7 +41,7 @@ public:
 	TLSCredentials();
 	~TLSCredentials();
 
-	uint addCerts(const QByteArray & certs);
+	uint addCerts(const QByteArray & certs, bool isTrustedCA = false);
 	QList<TLSCertInfo> getCertInfos() const;
 
 	// fitting certificate must exist

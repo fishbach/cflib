@@ -56,6 +56,13 @@ public:
 		}
 	}
 
+	std::vector<Certificate_Store *> trusted_certificate_authorities(const std::string &, const std::string &)
+	{
+		std::vector<Certificate_Store *> rv(1);
+		rv[0] = &trustedCAs;
+		return rv;
+	}
+
 	virtual std::vector<X509_Certificate> cert_chain(const std::vector<std::string> &,
 		const std::string &, const std::string &)
 	{
@@ -69,6 +76,7 @@ public:
 
 public:
 	std::vector<X509_Certificate> certs;
+	Certificate_Store_In_Memory trustedCAs;
 	Private_Key * privateKey;
 };
 
@@ -82,7 +90,7 @@ TLSCredentials::~TLSCredentials()
 	delete impl_;
 }
 
-uint TLSCredentials::addCerts(const QByteArray & certs)
+uint TLSCredentials::addCerts(const QByteArray & certs, bool isTrustedCA)
 {
 	uint rv = 0;
 	try {
@@ -93,6 +101,7 @@ uint TLSCredentials::addCerts(const QByteArray & certs)
 			foreach (const X509_Certificate & c, impl_->certs) if (c == crt) { exists = true; break; }
 			if (exists) continue;
 			impl_->certs.push_back(crt);
+			if (isTrustedCA) impl_->trustedCAs.add_certificate(crt);
 			++rv;
 		}
 	} catch (...) {}
@@ -125,11 +134,19 @@ bool TLSCredentials::setPrivateKey(const QByteArray & privateKey)
 QList<TLSCertInfo> TLSCredentials::getCertInfos() const
 {
 	QList<TLSCertInfo> rv;
+	std::vector<Certificate_Store *> trusted = impl_->trusted_certificate_authorities("", "");
 	foreach (const X509_Certificate & crt, impl_->certs) {
 		TLSCertInfo info;
 		TRY {
 			info.subjectName = fromStdVector(crt.subject_dn().get_attribute("X520.CommonName"));
 			info.issuerName  = fromStdVector(crt.issuer_dn ().get_attribute("X520.CommonName"));
+			info.isCA        = crt.is_CA_cert();
+			for (std::vector<Certificate_Store *>::const_iterator it = trusted.begin() ; it != trusted.end() ; ++it) {
+				if ((*it)->find_cert(crt.subject_dn(), crt.subject_key_id())) {
+					info.isTrusted = true;
+					break;
+				}
+			}
 		} CATCH
 		rv << info;
 	}
