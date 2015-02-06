@@ -36,12 +36,13 @@ public:
 		incomingPlainPtr(0),
 		isReady(false),
 		hasError(false),
+		policy(),
 		client(
 			std::bind(&Impl::socket_output_fn, this, std::placeholders::_1, std::placeholders::_2),
 			std::bind(&Impl::data_cb, this, std::placeholders::_1, std::placeholders::_2),
 			std::bind(&Impl::alert_cb, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3),
 			std::bind(&Impl::handshake_cb, this, std::placeholders::_1),
-			session_manager, creds, TLS::Policy(),
+			session_manager, creds, policy,
 			rng)
 	{
 	}
@@ -83,6 +84,7 @@ public:
 	QByteArray outgoingPlainTmpBuf;
 	bool isReady;
 	bool hasError;
+	const TLS::Policy policy;
 	TLS::Client client;
 };
 

@@ -16,6 +16,7 @@
  * along with cflib. If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <cflib/crypt/tlsclient.h>
 #include <cflib/crypt/tlscredentials.h>
 #include <cflib/crypt/tlsserver.h>
 #include <cflib/crypt/tlssessions.h>
@@ -163,8 +164,23 @@ private slots:
 		TLSSessions serverSessions;
 		TLSServer server(serverSessions, *serverCreds_);
 
+		TLSSessions clientSessions;
+		TLSClient client(clientSessions, *clientCreds_);
 
-		QVERIFY(true);
+		QByteArray enc1;
+		QByteArray enc2;
+		QByteArray plain;
+
+		enc1 = server.initialEncryptedForClient();
+		QVERIFY(enc1.isEmpty());
+		enc1 = client.initialEncryptedForServer();
+		QVERIFY(!enc1.isEmpty());
+		QVERIFY(server.fromClient(enc1, plain, enc2));
+		QVERIFY(plain.isEmpty());
+		QVERIFY(!enc2.isEmpty());
+		enc1.clear();
+		QVERIFY(client.fromServer(enc2, plain, enc1));
+		QVERIFY(enc1.isEmpty());
 	}
 
 private:
