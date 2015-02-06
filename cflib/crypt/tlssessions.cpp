@@ -49,4 +49,9 @@ Botan::TLS::Session_Manager & TLSSessions::session_Manager()
 	return impl_->mgr;
 }
 
+RandomNumberGenerator & TLSSessions::rng()
+{
+	return impl_->rng;
+}
+
 }}	// namespace

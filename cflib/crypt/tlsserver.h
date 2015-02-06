@@ -29,8 +29,12 @@ class TLSServer
 {
 	Q_DISABLE_COPY(TLSServer)
 public:
-	TLSServer(TLSCredentials & credentials, TLSSessions & sessions);
+	TLSServer(TLSSessions & sessions, TLSCredentials & credentials);
 	~TLSServer();
+
+	QByteArray initialDataForClient();
+	bool fromClient(const QByteArray & encoded, QByteArray & plain, QByteArray & sendBack);
+	bool toClient(const QByteArray & plain, QByteArray & encoded);
 
 private:
 	class Impl;

@@ -20,7 +20,10 @@
 
 #include <QtCore>
 
-namespace Botan { namespace TLS { class Session_Manager; }}
+namespace Botan {
+namespace TLS { class Session_Manager; }
+class RandomNumberGenerator;
+}
 
 namespace cflib { namespace crypt {
 
@@ -37,6 +40,7 @@ private:
 
 	friend class TLSServer;
 	Botan::TLS::Session_Manager & session_Manager();
+	Botan::RandomNumberGenerator & rng();
 };
 
 }}	// namespace

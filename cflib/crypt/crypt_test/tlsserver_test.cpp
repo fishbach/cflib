@@ -161,7 +161,7 @@ private slots:
 	void test_tls()
 	{
 		TLSSessions serverSessions;
-		TLSServer server(*serverCreds_, serverSessions);
+		TLSServer server(serverSessions, *serverCreds_);
 
 
 		QVERIFY(true);

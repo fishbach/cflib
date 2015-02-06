@@ -26,11 +26,10 @@ using std::addressof;
 
 #include <botan/auto_rng.h>
 #include <botan/bcrypt.h>
-#include <botan/credentials_manager.h>
 #include <botan/filters.h>
 #include <botan/init.h>
 #include <botan/pkcs8.h>
-#include <botan/tls_session_manager.h>
+#include <botan/tls_server.h>
 
 #define TRY \
 	try
