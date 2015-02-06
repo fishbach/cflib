@@ -20,7 +20,15 @@
 
 #include <QtCore>
 
+namespace Botan { class Credentials_Manager; }
+
 namespace cflib { namespace crypt {
+
+struct TLSCertInfo
+{
+	QByteArray subjectName;
+	QByteArray issuerName;
+};
 
 class TLSCredentials
 {
@@ -29,12 +37,16 @@ public:
 	TLSCredentials();
 	~TLSCredentials();
 
-	uint addCert(const QByteArray & cert);
+	uint addCerts(const QByteArray & certs);
+	QList<TLSCertInfo> getCertInfos() const;
+
+	// fitting certificate must exist
 	bool setPrivateKey(const QByteArray & privateKey);
 
 private:
 	class Impl;
 	Impl * impl_;
+	Botan::Credentials_Manager * credentials_Manager();
 };
 
 }}	// namespace

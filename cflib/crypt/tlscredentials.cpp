@@ -24,13 +24,51 @@ USE_LOG(LogCat::Crypt)
 
 namespace cflib { namespace crypt {
 
+namespace {
+
+QByteArray fromStdVector(const std::vector<std::string> & vec)
+{
+	if (vec.size() == 0) return QByteArray();
+	return QByteArray::fromStdString(vec[0]);
+}
+
+}
+
 class TLSCredentials::Impl : public Credentials_Manager
 {
 public:
 	Impl() : privateKey(0) {}
 
+	void sortCerts()
+	{
+		for (uint i = 0 ; i < certs.size() ; ) {
+			bool again = false;
+			for (uint j = i + 1 ; j < certs.size() ; ++j) {
+				if (certs[j].authority_key_id() == certs[i].subject_key_id()) {
+					// loop!?!
+					if (certs[i].authority_key_id() == certs[j].subject_key_id()) return;
+					std::swap(certs[i], certs[j]);
+					again = true;
+					break;
+				}
+			}
+			if (!again) ++i;
+		}
+	}
+
+	virtual std::vector<X509_Certificate> cert_chain(const std::vector<std::string> &,
+		const std::string &, const std::string &)
+	{
+		return certs;
+	}
+
+	virtual Private_Key * private_key_for(const X509_Certificate &, const std::string &, const std::string &)
+	{
+		return privateKey;
+	}
+
 public:
-	QList<X509_Certificate> certs;
+	std::vector<X509_Certificate> certs;
 	Private_Key * privateKey;
 };
 
@@ -44,31 +82,63 @@ TLSCredentials::~TLSCredentials()
 	delete impl_;
 }
 
-uint TLSCredentials::addCert(const QByteArray & cert)
+uint TLSCredentials::addCerts(const QByteArray & certs)
 {
 	uint rv = 0;
 	try {
-		DataSource_Memory ds((const byte *)cert.constData(), cert.size());
+		DataSource_Memory ds((const byte *)certs.constData(), certs.size());
 		forever {
-			impl_->certs << X509_Certificate(ds);
-			QTextStream(stdout) << QString::fromStdString(impl_->certs.last().to_string()) << endl << "===" << endl;
+			X509_Certificate crt(ds);
+			bool exists = false;
+			foreach (const X509_Certificate & c, impl_->certs) if (c == crt) { exists = true; break; }
+			if (exists) continue;
+			impl_->certs.push_back(crt);
 			++rv;
 		}
 	} catch (...) {}
+	impl_->sortCerts();
 	return rv;
 }
 
 bool TLSCredentials::setPrivateKey(const QByteArray & privateKey)
 {
-	delete impl_->privateKey;
-	impl_->privateKey = 0;
-	try {
+	if (impl_->privateKey) {
+		delete impl_->privateKey;
+		impl_->privateKey = 0;
+	}
+	if (impl_->certs.size() == 0) return false;
+	TRY {
 		DataSource_Memory ds((const byte *)privateKey.constData(), privateKey.size());
 		AutoSeeded_RNG rng;
 		impl_->privateKey = PKCS8::load_key(ds, rng);
+		std::unique_ptr<Public_Key> certPubKey(impl_->certs[0].subject_public_key());
+		if (impl_->privateKey->x509_subject_public_key() != certPubKey->x509_subject_public_key()) {
+			delete impl_->privateKey;
+			impl_->privateKey = 0;
+			return false;
+		}
 		return true;
-	} catch (...) {}
+	} CATCH
 	return false;
+}
+
+QList<TLSCertInfo> TLSCredentials::getCertInfos() const
+{
+	QList<TLSCertInfo> rv;
+	foreach (const X509_Certificate & crt, impl_->certs) {
+		TLSCertInfo info;
+		TRY {
+			info.subjectName = fromStdVector(crt.subject_dn().get_attribute("X520.CommonName"));
+			info.issuerName  = fromStdVector(crt.issuer_dn ().get_attribute("X520.CommonName"));
+		} CATCH
+		rv << info;
+	}
+	return rv;
+}
+
+Credentials_Manager * TLSCredentials::credentials_Manager()
+{
+	return impl_;
 }
 
 }}	// namespace

@@ -32,6 +32,7 @@ test()
 
 # botan
 CONFIG += exceptions
+INCLUDEPATH += ..
 unix {
 	DEFINES += \
 		BOTAN_HAS_ENTROPY_SRC_DEV_RANDOM \
