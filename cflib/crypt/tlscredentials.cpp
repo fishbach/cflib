@@ -27,7 +27,11 @@ namespace cflib { namespace crypt {
 class TLSCredentials::Impl : public Credentials_Manager
 {
 public:
+	Impl() : privateKey(0) {}
+
+public:
 	QList<X509_Certificate> certs;
+	Private_Key * privateKey;
 };
 
 TLSCredentials::TLSCredentials() :
@@ -40,22 +44,30 @@ TLSCredentials::~TLSCredentials()
 	delete impl_;
 }
 
-uint TLSCredentials::addCert(const QByteArray & pem)
+uint TLSCredentials::addCert(const QByteArray & cert)
 {
 	uint rv = 0;
-	TRY {
-		DataSource_Memory ds((const byte *)pem.constData(), pem.size());
+	try {
+		DataSource_Memory ds((const byte *)cert.constData(), cert.size());
 		forever {
 			impl_->certs << X509_Certificate(ds);
 			QTextStream(stdout) << QString::fromStdString(impl_->certs.last().to_string()) << endl << "===" << endl;
 			++rv;
 		}
-	} CATCH
+	} catch (...) {}
 	return rv;
 }
 
-bool TLSCredentials::addPrivateKey(const QByteArray & /*privateKey*/)
+bool TLSCredentials::setPrivateKey(const QByteArray & privateKey)
 {
+	delete impl_->privateKey;
+	impl_->privateKey = 0;
+	try {
+		DataSource_Memory ds((const byte *)privateKey.constData(), privateKey.size());
+		AutoSeeded_RNG rng;
+		impl_->privateKey = PKCS8::load_key(ds, rng);
+		return true;
+	} catch (...) {}
 	return false;
 }
 

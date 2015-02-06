@@ -29,6 +29,7 @@ using std::addressof;
 #include <botan/credentials_manager.h>
 #include <botan/filters.h>
 #include <botan/init.h>
+#include <botan/pkcs8.h>
 
 #define TRY \
 	try

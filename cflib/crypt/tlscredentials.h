@@ -29,8 +29,8 @@ public:
 	TLSCredentials();
 	~TLSCredentials();
 
-	uint addCert(const QByteArray & pem);
-	bool addPrivateKey(const QByteArray & privateKey);
+	uint addCert(const QByteArray & cert);
+	bool setPrivateKey(const QByteArray & privateKey);
 
 private:
 	class Impl;
