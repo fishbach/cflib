@@ -28,30 +28,32 @@ USE_LOG(LogCat::Crypt)
 
 namespace cflib { namespace crypt {
 
-class TLSServer::Impl : public TLS::Server
+class TLSServer::Impl
 {
 public:
 	Impl(TLS::Session_Manager & session_manager, Credentials_Manager & creds, RandomNumberGenerator & rng) :
-		Server(
+		outgoingEncryptedPtr(&outgoingEncrypteedTmpBuf),
+		incomingPlainPtr(0),
+		isReady(false),
+		hasError(false),
+		server(
 			std::bind(&Impl::socket_output_fn, this, std::placeholders::_1, std::placeholders::_2),
 			std::bind(&Impl::data_cb, this, std::placeholders::_1, std::placeholders::_2),
 			std::bind(&Impl::alert_cb, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3),
 			std::bind(&Impl::handshake_cb, this, std::placeholders::_1),
 			session_manager, creds, TLS::Policy(),
-			rng),
-		isReady(false),
-		hasError(false)
+			rng)
 	{
 	}
 
 	void socket_output_fn(const byte buf[], size_t size)
 	{
-		toClient.append((const char *)buf, size);
+		outgoingEncryptedPtr->append((const char *)buf, size);
 	}
 
 	void data_cb(const byte buf[], size_t size)
 	{
-		incomingPlain.append((const char *)buf, size);
+		incomingPlainPtr->append((const char *)buf, size);
 	}
 
 	void alert_cb(TLS::Alert alert, const byte[], size_t)
@@ -63,10 +65,10 @@ public:
 	bool handshake_cb(const TLS::Session &)
 	{
 		isReady = true;
-		if (!outgoingPlain.isEmpty()) {
+		if (!outgoingPlainTmpBuf.isEmpty()) {
 			TRY {
-				send((const byte *)outgoingPlain.constData(), outgoingPlain.size());
-				outgoingPlain.clear();
+				server.send((const byte *)outgoingPlainTmpBuf.constData(), outgoingPlainTmpBuf.size());
+				outgoingPlainTmpBuf.clear();
 				return true;
 			} CATCH
 			hasError = true;
@@ -75,11 +77,13 @@ public:
 	}
 
 public:
-	QByteArray toClient;
-	QByteArray incomingPlain;
-	QByteArray outgoingPlain;
+	QByteArray * outgoingEncryptedPtr;
+	QByteArray * incomingPlainPtr;
+	QByteArray outgoingEncrypteedTmpBuf;
+	QByteArray outgoingPlainTmpBuf;
 	bool isReady;
 	bool hasError;
+	TLS::Server server;
 };
 
 TLSServer::TLSServer(TLSSessions & sessions, TLSCredentials & credentials) :
@@ -95,42 +99,33 @@ TLSServer::~TLSServer()
 	delete impl_;
 }
 
-QByteArray TLSServer::initialDataForClient()
+QByteArray TLSServer::initialEncryptedForClient()
 {
-	QByteArray rv = impl_->toClient;
-	impl_->toClient.clear();
+	QByteArray rv = impl_->outgoingEncrypteedTmpBuf;
+	impl_->outgoingEncrypteedTmpBuf.clear();
 	return rv;
 }
 
-bool TLSServer::fromClient(const QByteArray & encoded, QByteArray & plain, QByteArray & sendBack)
+bool TLSServer::fromClient(const QByteArray & encrypted, QByteArray & plain, QByteArray & sendBack)
 {
 	if (impl_->hasError) return false;
+	impl_->outgoingEncryptedPtr = &sendBack;
+	impl_->incomingPlainPtr     = &plain;
 	TRY {
-		impl_->received_data((const byte *)encoded.constData(), encoded.size());
-		if (!impl_->incomingPlain.isEmpty()) {
-			plain.append(impl_->incomingPlain);
-			impl_->incomingPlain.clear();
-		}
-		if (!impl_->toClient.isEmpty()) {
-			sendBack.append(impl_->toClient);
-			impl_->toClient.clear();
-		}
+		impl_->server.received_data((const byte *)encrypted.constData(), encrypted.size());
 		return !impl_->hasError;
 	} CATCH
 	impl_->hasError = true;
 	return false;
 }
 
-bool TLSServer::toClient(const QByteArray & plain, QByteArray & encoded)
+bool TLSServer::toClient(const QByteArray & plain, QByteArray & encrypted)
 {
 	if (impl_->hasError) return false;
+	impl_->outgoingEncryptedPtr = &encrypted;
 	TRY {
-		if (impl_->isReady) impl_->send((const byte *)plain.constData(), plain.size());
-		else                impl_->outgoingPlain.append(plain);
-		if (!impl_->toClient.isEmpty()) {
-			encoded.append(impl_->toClient);
-			impl_->toClient.clear();
-		}
+		if (impl_->isReady) impl_->server.send((const byte *)plain.constData(), plain.size());
+		else                impl_->outgoingPlainTmpBuf.append(plain);
 		return !impl_->hasError;
 	} CATCH
 	impl_->hasError = true;

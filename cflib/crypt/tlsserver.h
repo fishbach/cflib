@@ -32,9 +32,9 @@ public:
 	TLSServer(TLSSessions & sessions, TLSCredentials & credentials);
 	~TLSServer();
 
-	QByteArray initialDataForClient();
-	bool fromClient(const QByteArray & encoded, QByteArray & plain, QByteArray & sendBack);
-	bool toClient(const QByteArray & plain, QByteArray & encoded);
+	QByteArray initialEncryptedForClient();
+	bool fromClient(const QByteArray & encrypted, QByteArray & plain, QByteArray & sendBack);
+	bool toClient(const QByteArray & plain, QByteArray & encrypted);
 
 private:
 	class Impl;
