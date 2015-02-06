@@ -25,6 +25,7 @@ HEADERS = \
 	impl/botanhelper.h \
 	tlscredentials.h \
 	tlsserver.h \
+	tlssessions.h \
 	util.h \
 
 OTHER_FILES = \

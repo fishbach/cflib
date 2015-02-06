@@ -18,6 +18,10 @@
 
 #include "tlsserver.h"
 
+#include <cflib/crypt/impl/botanhelper.h>
+
+USE_LOG(LogCat::Crypt)
+
 namespace cflib { namespace crypt {
 
 class TLSServer::Impl
@@ -26,7 +30,7 @@ public:
 
 };
 
-TLSServer::TLSServer() :
+TLSServer::TLSServer(TLSCredentials & credentials, TLSSessions & sessions) :
 	impl_(new Impl)
 {
 }
@@ -35,7 +39,5 @@ TLSServer::~TLSServer()
 {
 	delete impl_;
 }
-
-
 
 }}	// namespace

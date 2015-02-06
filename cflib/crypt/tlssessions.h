@@ -18,27 +18,25 @@
 
 #pragma once
 
-#include <memory>
+#include <QtCore>
 
-using std::addressof;
+namespace Botan { namespace TLS { class Session_Manager; }}
 
-#include <cflib/util/log.h>
+namespace cflib { namespace crypt {
 
-#include <botan/auto_rng.h>
-#include <botan/bcrypt.h>
-#include <botan/credentials_manager.h>
-#include <botan/filters.h>
-#include <botan/init.h>
-#include <botan/pkcs8.h>
-#include <botan/tls_session_manager.h>
+class TLSSessions
+{
+	Q_DISABLE_COPY(TLSSessions)
+public:
+	TLSSessions();
+	~TLSSessions();
 
-#define TRY \
-	try
-#define CATCH \
-	catch (std::exception & e) { \
-		logWarn("Botan exception: %1", e.what()); \
-	} catch (...) { \
-		logWarn("unknown Botan exception"); \
-	}
+private:
+	class Impl;
+	Impl * impl_;
 
-using namespace Botan;
+	friend class TLSServer;
+	Botan::TLS::Session_Manager & session_Manager();
+};
+
+}}	// namespace

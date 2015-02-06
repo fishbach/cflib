@@ -16,29 +16,37 @@
  * along with cflib. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#pragma once
+#include "tlssessions.h"
 
-#include <memory>
+#include <cflib/crypt/impl/botanhelper.h>
 
-using std::addressof;
+USE_LOG(LogCat::Crypt)
 
-#include <cflib/util/log.h>
+namespace cflib { namespace crypt {
 
-#include <botan/auto_rng.h>
-#include <botan/bcrypt.h>
-#include <botan/credentials_manager.h>
-#include <botan/filters.h>
-#include <botan/init.h>
-#include <botan/pkcs8.h>
-#include <botan/tls_session_manager.h>
+class TLSSessions::Impl
+{
+public:
+	Impl() : mgr(rng) {}
 
-#define TRY \
-	try
-#define CATCH \
-	catch (std::exception & e) { \
-		logWarn("Botan exception: %1", e.what()); \
-	} catch (...) { \
-		logWarn("unknown Botan exception"); \
-	}
+public:
+	AutoSeeded_RNG rng;
+	TLS::Session_Manager_In_Memory mgr;
+};
 
-using namespace Botan;
+TLSSessions::TLSSessions() :
+	impl_(new Impl)
+{
+}
+
+TLSSessions::~TLSSessions()
+{
+	delete impl_;
+}
+
+Botan::TLS::Session_Manager & TLSSessions::session_Manager()
+{
+	return impl_->mgr;
+}
+
+}}	// namespace

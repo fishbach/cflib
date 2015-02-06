@@ -50,7 +50,9 @@ public:
 private:
 	class Impl;
 	Impl * impl_;
-	Botan::Credentials_Manager * credentials_Manager();
+
+	friend class TLSServer;
+	Botan::Credentials_Manager & credentials_Manager();
 };
 
 }}	// namespace

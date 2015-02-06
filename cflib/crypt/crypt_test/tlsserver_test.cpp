@@ -18,6 +18,7 @@
 
 #include <cflib/crypt/tlscredentials.h>
 #include <cflib/crypt/tlsserver.h>
+#include <cflib/crypt/tlssessions.h>
 #include <cflib/crypt/util.h>
 #include <cflib/util/test.h>
 
@@ -159,7 +160,8 @@ private slots:
 
 	void test_tls()
 	{
-		TLSServer server;
+		TLSSessions serverSessions;
+		TLSServer server(*serverCreds_, serverSessions);
 
 
 		QVERIFY(true);

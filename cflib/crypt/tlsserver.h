@@ -22,11 +22,14 @@
 
 namespace cflib { namespace crypt {
 
+class TLSCredentials;
+class TLSSessions;
+
 class TLSServer
 {
 	Q_DISABLE_COPY(TLSServer)
 public:
-	TLSServer();
+	TLSServer(TLSCredentials & credentials, TLSSessions & sessions);
 	~TLSServer();
 
 private:

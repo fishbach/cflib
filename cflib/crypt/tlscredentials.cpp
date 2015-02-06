@@ -97,9 +97,11 @@ uint TLSCredentials::addCerts(const QByteArray & certs, bool isTrustedCA)
 		DataSource_Memory ds((const byte *)certs.constData(), certs.size());
 		forever {
 			X509_Certificate crt(ds);
+
 			bool exists = false;
 			foreach (const X509_Certificate & c, impl_->certs) if (c == crt) { exists = true; break; }
 			if (exists) continue;
+
 			impl_->certs.push_back(crt);
 			if (isTrustedCA) impl_->trustedCAs.add_certificate(crt);
 			++rv;
@@ -115,17 +117,22 @@ bool TLSCredentials::setPrivateKey(const QByteArray & privateKey)
 		delete impl_->privateKey;
 		impl_->privateKey = 0;
 	}
+
 	if (impl_->certs.size() == 0) return false;
+
 	TRY {
 		DataSource_Memory ds((const byte *)privateKey.constData(), privateKey.size());
 		AutoSeeded_RNG rng;
 		impl_->privateKey = PKCS8::load_key(ds, rng);
+
+		// check if first cert matches private key
 		std::unique_ptr<Public_Key> certPubKey(impl_->certs[0].subject_public_key());
 		if (impl_->privateKey->x509_subject_public_key() != certPubKey->x509_subject_public_key()) {
 			delete impl_->privateKey;
 			impl_->privateKey = 0;
 			return false;
 		}
+
 		return true;
 	} CATCH
 	return false;
@@ -153,9 +160,9 @@ QList<TLSCertInfo> TLSCredentials::getCertInfos() const
 	return rv;
 }
 
-Credentials_Manager * TLSCredentials::credentials_Manager()
+Botan::Credentials_Manager & TLSCredentials::credentials_Manager()
 {
-	return impl_;
+	return *impl_;
 }
 
 }}	// namespace
