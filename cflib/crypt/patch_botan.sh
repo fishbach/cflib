@@ -357,3 +357,5 @@ cp "$BOTAN_SRC/src/lib/pubkey/ec_group/named.cpp" botan/internal/ec_named.cpp
 	echo -e "\tbotan/internal/ec_named.cpp \\"
 	echo
 ) > botan/botan.pri
+
+patch -p3 < botan.patch

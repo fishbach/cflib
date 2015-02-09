@@ -1,0 +1,52 @@
+diff --git a/cflib/crypt/botan/internal/def_pk_ops.cpp b/cflib/crypt/botan/internal/def_pk_ops.cpp
+index f941245..30fa9a2 100644
+--- a/cflib/crypt/botan/internal/def_pk_ops.cpp
++++ b/cflib/crypt/botan/internal/def_pk_ops.cpp
+@@ -140,7 +140,7 @@ Core_Engine::get_signature_op(const Private_Key& key, const std::string& emsa, R
+    }
+ 
+ PK_Ops::Verification*
+-Core_Engine::get_verify_op(const Public_Key& key, const std::string& emsa, RandomNumberGenerator&) const
++Core_Engine::get_verify_op(const Public_Key& key, const std::string& /*emsa*/, RandomNumberGenerator&) const
+    {
+ #if defined(BOTAN_HAS_RSA)
+    if(const RSA_PublicKey* s = dynamic_cast<const RSA_PublicKey*>(&key))
+diff --git a/cflib/crypt/botan/internal/tls_handshake_state.cpp b/cflib/crypt/botan/internal/tls_handshake_state.cpp
+index 1110870..85b6fb1 100644
+--- a/cflib/crypt/botan/internal/tls_handshake_state.cpp
++++ b/cflib/crypt/botan/internal/tls_handshake_state.cpp
+@@ -369,7 +369,7 @@ std::pair<std::string, Signature_Format>
+ Handshake_State::understand_sig_format(const Public_Key& key,
+                                        std::string hash_algo,
+                                        std::string sig_algo,
+-                                       bool for_client_auth) const
++                                       bool /*for_client_auth*/) const
+    {
+    const std::string algo_name = key.algo_name();
+ 
+diff --git a/cflib/crypt/botan/internal/tls_record.cpp b/cflib/crypt/botan/internal/tls_record.cpp
+index 3edeab7..bc9acc5 100644
+--- a/cflib/crypt/botan/internal/tls_record.cpp
++++ b/cflib/crypt/botan/internal/tls_record.cpp
+@@ -305,7 +305,7 @@ size_t fill_buffer_to(secure_vector<byte>& readbuf,
+ *
+ * @fixme This should run in constant time
+ */
+-size_t tls_padding_check(size_t block_size,
++size_t tls_padding_check(size_t /*block_size*/,
+                          const byte record[],
+                          size_t record_len)
+    {
+diff --git a/cflib/crypt/botan/poly1305.cpp b/cflib/crypt/botan/poly1305.cpp
+index 8000ebb..2e6028f 100644
+--- a/cflib/crypt/botan/poly1305.cpp
++++ b/cflib/crypt/botan/poly1305.cpp
+@@ -17,7 +17,7 @@ void Poly1305::clear()
+    m_buf_pos = 0;
+    }
+ 
+-void Poly1305::key_schedule(const byte key[], size_t key_len)
++void Poly1305::key_schedule(const byte key[], size_t /*key_len*/)
+    {
+    m_buf_pos = 0;
+    m_buf.resize(16);
