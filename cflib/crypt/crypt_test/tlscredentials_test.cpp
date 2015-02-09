@@ -151,6 +151,7 @@ private slots:
 		QCOMPARE((int)creds.addCerts(cert3 + cert1), 2);
 		QCOMPARE((int)creds.addCerts(cert1), 0);
 		QCOMPARE((int)creds.addCerts(cert2), 1);
+		QVERIFY(creds.addPrivateKey(cert1PrivateKey));
 
 		const QList<TLSCertInfo> infos = creds.getCertInfos();
 		QCOMPARE(infos.size(), 3);
@@ -174,6 +175,7 @@ private slots:
 
 		QCOMPARE((int)creds.addCerts(cert2 + cert1), 2);
 		QCOMPARE((int)creds.addCerts(cert3, true), 1);
+		QVERIFY(creds.addPrivateKey(cert1PrivateKey));
 
 		const QList<TLSCertInfo> infos = creds.getCertInfos();
 		QCOMPARE(infos.size(), 3);
@@ -189,14 +191,14 @@ private slots:
 	{
 		TLSCredentials creds;
 
-		QVERIFY(!creds.setPrivateKey(QByteArray()));
-		QVERIFY(!creds.setPrivateKey(cert1PrivateKey));
+		QVERIFY(!creds.addPrivateKey(QByteArray()));
+		QVERIFY(!creds.addPrivateKey(cert1PrivateKey));
 
 		QCOMPARE((int)creds.addCerts(cert2), 1);
-		QVERIFY(!creds.setPrivateKey(cert1PrivateKey));
+		QVERIFY(!creds.addPrivateKey(cert1PrivateKey));
 
 		QCOMPARE((int)creds.addCerts(cert1), 1);
-		QVERIFY(creds.setPrivateKey(cert1PrivateKey));
+		QVERIFY(creds.addPrivateKey(cert1PrivateKey));
 	}
 
 };

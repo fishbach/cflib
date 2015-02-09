@@ -44,8 +44,8 @@ public:
 	uint addCerts(const QByteArray & certs, bool isTrustedCA = false);
 	QList<TLSCertInfo> getCertInfos() const;
 
-	// fitting certificate must exist
-	bool setPrivateKey(const QByteArray & privateKey);
+	// fitting certificate chain must exist
+	bool addPrivateKey(const QByteArray & privateKey);
 
 private:
 	class Impl;

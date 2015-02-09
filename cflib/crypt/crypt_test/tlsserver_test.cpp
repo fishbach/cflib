@@ -150,7 +150,7 @@ private slots:
 	{
 		TLSCredentials serverCreds;
 		QCOMPARE((int)serverCreds.addCerts(cert1 + cert2 + cert3), 3);
-		QVERIFY(serverCreds.setPrivateKey(cert1PrivateKey));
+		QVERIFY(serverCreds.addPrivateKey(cert1PrivateKey));
 		TLSSessions serverSessions;
 		TLSServer server(serverSessions, serverCreds);
 
@@ -214,7 +214,7 @@ private slots:
 	{
 		TLSCredentials serverCreds;
 		QCOMPARE((int)serverCreds.addCerts(cert1 + cert2 + cert3), 3);
-		QVERIFY(serverCreds.setPrivateKey(cert1PrivateKey));
+		QVERIFY(serverCreds.addPrivateKey(cert1PrivateKey));
 		TLSSessions serverSessions;
 		TLSServer server(serverSessions, serverCreds);
 
@@ -245,7 +245,7 @@ private slots:
 	{
 		TLSCredentials serverCreds;
 		QCOMPARE((int)serverCreds.addCerts(cert1 + cert2 + cert3), 3);
-		QVERIFY(serverCreds.setPrivateKey(cert1PrivateKey));
+		QVERIFY(serverCreds.addPrivateKey(cert1PrivateKey));
 		TLSSessions serverSessions;
 		TLSServer server(serverSessions, serverCreds);
 
@@ -309,7 +309,7 @@ private slots:
 	{
 		TLSCredentials serverCreds;
 		QCOMPARE((int)serverCreds.addCerts(cert1 + cert2 + cert3), 3);
-		QVERIFY(serverCreds.setPrivateKey(cert1PrivateKey));
+		QVERIFY(serverCreds.addPrivateKey(cert1PrivateKey));
 		TLSSessions serverSessions;
 		TLSServer server(serverSessions, serverCreds);
 

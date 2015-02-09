@@ -37,23 +37,9 @@ QByteArray fromStdVector(const std::vector<std::string> & vec)
 class TLSCredentials::Impl : public Credentials_Manager
 {
 public:
-	Impl() : privateKey(0) {}
-
-	void sortCerts()
+	~Impl()
 	{
-		for (uint i = 0 ; i < certs.size() ; ) {
-			bool again = false;
-			for (uint j = i + 1 ; j < certs.size() ; ++j) {
-				if (certs[j].authority_key_id() == certs[i].subject_key_id()) {
-					// loop!?!
-					if (certs[i].authority_key_id() == certs[j].subject_key_id()) return;
-					std::swap(certs[i], certs[j]);
-					again = true;
-					break;
-				}
-			}
-			if (!again) ++i;
-		}
+		foreach (const CertsPrivKey & ck, chains) delete ck.privateKey;
 	}
 
 	std::vector<Certificate_Store *> trusted_certificate_authorities(const std::string &, const std::string &)
@@ -66,25 +52,32 @@ public:
 	virtual std::vector<X509_Certificate> cert_chain(const std::vector<std::string> & cert_key_types,
 		const std::string & type, const std::string & context)
 	{
-		if (!privateKey || certs.size() == 0 ||
-			std::find(cert_key_types.begin(), cert_key_types.end(), privateKey->algo_name()) == cert_key_types.end() ||
-			type != "tls-server" ||
-			(context != "" && !certs[0].matches_dns_name(context)))
-		{
-			return std::vector<X509_Certificate>();
+		if (type != "tls-server") return std::vector<X509_Certificate>();
+		foreach (const CertsPrivKey & ck, chains) {
+			if (context != "" && !ck.certs[0].matches_dns_name(context)) continue;
+			foreach (const std::string & kt, cert_key_types) {
+				if (kt == ck.privateKey->algo_name()) return ck.certs;
+			}
 		}
-		return certs;
+		return std::vector<X509_Certificate>();
 	}
 
-	virtual Private_Key * private_key_for(const X509_Certificate &, const std::string &, const std::string &)
+	virtual Private_Key * private_key_for(const X509_Certificate & cert, const std::string &, const std::string &)
 	{
-		return privateKey;
+		foreach (const CertsPrivKey & ck, chains) if (ck.certs[0] == cert) return ck.privateKey;
+		return 0;
 	}
 
 public:
-	std::vector<X509_Certificate> certs;
+	struct CertsPrivKey {
+		std::vector<X509_Certificate> certs;
+		Private_Key * privateKey;
+
+		CertsPrivKey() : privateKey(0) {}
+	};
+	QList<CertsPrivKey> chains;
+	QList<X509_Certificate> allCerts;
 	Certificate_Store_In_Memory trustedCAs;
-	Private_Key * privateKey;
 };
 
 TLSCredentials::TLSCredentials() :
@@ -104,41 +97,56 @@ uint TLSCredentials::addCerts(const QByteArray & certs, bool isTrustedCA)
 		DataSource_Memory ds((const byte *)certs.constData(), certs.size());
 		forever {
 			X509_Certificate crt(ds);
-
-			bool exists = false;
-			foreach (const X509_Certificate & c, impl_->certs) if (c == crt) { exists = true; break; }
-			if (exists) continue;
-
-			impl_->certs.push_back(crt);
+			if (impl_->allCerts.contains(crt)) continue;
+			impl_->allCerts << crt;
 			if (isTrustedCA) impl_->trustedCAs.add_certificate(crt);
 			++rv;
 		}
 	} catch (...) {}
-	impl_->sortCerts();
 	return rv;
 }
 
-bool TLSCredentials::setPrivateKey(const QByteArray & privateKey)
+bool TLSCredentials::addPrivateKey(const QByteArray & privateKey)
 {
-	if (impl_->privateKey) {
-		delete impl_->privateKey;
-		impl_->privateKey = 0;
-	}
-
-	if (impl_->certs.size() == 0) return false;
-
 	TRY {
 		DataSource_Memory ds((const byte *)privateKey.constData(), privateKey.size());
 		AutoSeeded_RNG rng;
-		impl_->privateKey = PKCS8::load_key(ds, rng);
+		std::unique_ptr<Private_Key> pk(PKCS8::load_key(ds, rng));
+		if (!pk) return false;
+		const std::vector<byte> pubKey = pk->x509_subject_public_key();
 
-		// check if first cert matches private key
-		std::unique_ptr<Public_Key> certPubKey(impl_->certs[0].subject_public_key());
-		if (impl_->privateKey->x509_subject_public_key() != certPubKey->x509_subject_public_key()) {
-			delete impl_->privateKey;
-			impl_->privateKey = 0;
-			return false;
+		// Does key exist?
+		foreach (const Impl::CertsPrivKey & ck, impl_->chains) {
+			if (pubKey == ck.privateKey->x509_subject_public_key()) return false;
 		}
+
+		// search cert
+		std::vector<X509_Certificate> certs;
+		foreach (const X509_Certificate & crt, impl_->allCerts) {
+			std::unique_ptr<Public_Key> certPubKey(crt.subject_public_key());
+			if (pubKey == certPubKey->x509_subject_public_key()) {
+				certs.push_back(crt);
+				break;
+			}
+		}
+		if (certs.size() == 0) return false;
+
+		// build chain
+		again:
+		const std::vector<byte> authorityKeyId = certs[certs.size() - 1].authority_key_id();
+		foreach (const X509_Certificate & crt, impl_->allCerts) {
+			if (crt.subject_key_id() == authorityKeyId &&
+				std::find(certs.begin(), certs.end(), crt) == certs.end())
+			{
+				certs.push_back(crt);
+				goto again;
+			}
+		}
+
+		Impl::CertsPrivKey ck;
+		ck.certs = certs;
+		ck.privateKey = pk.release();
+		impl_->chains << ck;
 
 		return true;
 	} CATCH
@@ -149,20 +157,22 @@ QList<TLSCertInfo> TLSCredentials::getCertInfos() const
 {
 	QList<TLSCertInfo> rv;
 	std::vector<Certificate_Store *> trusted = impl_->trusted_certificate_authorities("", "");
-	foreach (const X509_Certificate & crt, impl_->certs) {
-		TLSCertInfo info;
-		TRY {
-			info.subjectName = fromStdVector(crt.subject_dn().get_attribute("X520.CommonName"));
-			info.issuerName  = fromStdVector(crt.issuer_dn ().get_attribute("X520.CommonName"));
-			info.isCA        = crt.is_CA_cert();
-			for (std::vector<Certificate_Store *>::const_iterator it = trusted.begin() ; it != trusted.end() ; ++it) {
-				if ((*it)->find_cert(crt.subject_dn(), crt.subject_key_id())) {
-					info.isTrusted = true;
-					break;
+	foreach (const Impl::CertsPrivKey & ck, impl_->chains) {
+		foreach (const X509_Certificate & crt, ck.certs) {
+			TRY {
+				TLSCertInfo info;
+				info.subjectName = fromStdVector(crt.subject_dn().get_attribute("X520.CommonName"));
+				info.issuerName  = fromStdVector(crt.issuer_dn ().get_attribute("X520.CommonName"));
+				info.isCA        = crt.is_CA_cert();
+				foreach (Certificate_Store * cs, trusted) {
+					if (cs->find_cert(crt.subject_dn(), crt.subject_key_id())) {
+						info.isTrusted = true;
+						break;
+					}
 				}
-			}
-		} CATCH
-		rv << info;
+				rv << info;
+			} CATCH
+		}
 	}
 	return rv;
 }
