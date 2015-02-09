@@ -31,7 +31,9 @@ namespace cflib { namespace crypt {
 class TLSClient::Impl
 {
 public:
-	Impl(TLS::Session_Manager & session_manager, Credentials_Manager & creds, RandomNumberGenerator & rng) :
+	Impl(TLS::Session_Manager & session_manager, Credentials_Manager & creds, const QByteArray & hostname,
+		RandomNumberGenerator & rng)
+	:
 		outgoingEncryptedPtr(&outgoingEncrypteedTmpBuf),
 		incomingPlainPtr(0),
 		isReady(false),
@@ -43,7 +45,7 @@ public:
 			std::bind(&Impl::alert_cb, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3),
 			std::bind(&Impl::handshake_cb, this, std::placeholders::_1),
 			session_manager, creds, policy,
-			rng)
+			rng, hostname.isEmpty() ? std::string() : hostname.toStdString())
 	{
 	}
 
@@ -88,11 +90,11 @@ public:
 	TLS::Client client;
 };
 
-TLSClient::TLSClient(TLSSessions & sessions, TLSCredentials & credentials) :
+TLSClient::TLSClient(TLSSessions & sessions, TLSCredentials & credentials, const QByteArray & hostname) :
 	impl_(0)
 {
 	TRY {
-		impl_ = new Impl(sessions.session_Manager(), credentials.credentials_Manager(), sessions.rng());
+		impl_ = new Impl(sessions.session_Manager(), credentials.credentials_Manager(), hostname, sessions.rng());
 	} CATCH
 }
 

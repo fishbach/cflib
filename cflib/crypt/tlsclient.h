@@ -29,7 +29,7 @@ class TLSClient
 {
 	Q_DISABLE_COPY(TLSClient)
 public:
-	TLSClient(TLSSessions & sessions, TLSCredentials & credentials);
+	TLSClient(TLSSessions & sessions, TLSCredentials & credentials, const QByteArray & hostname = QByteArray());
 	~TLSClient();
 
 	QByteArray initialEncryptedForServer();
