@@ -25,5 +25,5 @@ SOURCES = \
 	util_test.cpp \
 
 serializeGen()
-useLibs(cflib_util cflib_libev)
+useLibs(cflib_util)
 test()
