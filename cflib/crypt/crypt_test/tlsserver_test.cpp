@@ -171,10 +171,13 @@ private slots:
 		QByteArray enc2;
 		QByteArray plain;
 
+		// client starts handshake
 		enc1 = server.initialEncryptedForClient();
 		QVERIFY(enc1.isEmpty());
 		enc1 = client.initialEncryptedForServer();
 		QVERIFY(!enc1.isEmpty());
+
+		// first handshake req -> reply
 		QVERIFY(server.fromClient(enc1, plain, enc2));
 		QVERIFY(plain.isEmpty());
 		QVERIFY(!enc2.isEmpty());
@@ -182,6 +185,37 @@ private slots:
 		QVERIFY(client.fromServer(enc2, plain, enc1));
 		QVERIFY(plain.isEmpty());
 		QVERIFY(!enc1.isEmpty());
+
+		// second handshake req -> reply
+		enc2.clear();
+		QVERIFY(server.fromClient(enc1, plain, enc2));
+		QVERIFY(plain.isEmpty());
+		QVERIFY(!enc2.isEmpty());
+		enc1.clear();
+		QVERIFY(client.fromServer(enc2, plain, enc1));
+		QVERIFY(plain.isEmpty());
+		QVERIFY(enc1.isEmpty());
+
+		// send plain to server
+		QByteArray msg = "hello dear server";
+		client.toServer(msg, enc1);
+		QVERIFY(!enc1.isEmpty());
+		QVERIFY(enc1 != msg);
+		enc2.clear();
+		QVERIFY(server.fromClient(enc1, plain, enc2));
+		QCOMPARE(plain, msg);
+		QVERIFY(enc2.isEmpty());
+
+		// send plain to client
+		msg = "hello dear client";
+		server.toClient(msg, enc2);
+		QVERIFY(!enc2.isEmpty());
+		QVERIFY(enc2 != msg);
+		plain.clear();
+		enc1.clear();
+		QVERIFY(client.fromServer(enc2, plain, enc1));
+		QCOMPARE(plain, msg);
+		QVERIFY(enc1.isEmpty());
 	}
 
 private:
