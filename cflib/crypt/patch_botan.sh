@@ -212,6 +212,14 @@ HEADERS="\
 	utils/parsing \
 	utils/rotate \
 	utils/types \
+	pbkdf/pbkdf1/pbkdf1 \
+	stream/ofb/ofb \
+	modes/cfb/cfb \
+	stream/rc4/rc4 \
+	stream/salsa20/salsa20 \
+	modes/ecb/ecb \
+	modes/xts/xts \
+	filters/aead_filt/aead_filt \
 "
 INTERNAL_HEADERS="\
 	algo_factory/algo_cache \

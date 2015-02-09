@@ -209,6 +209,14 @@ HEADERS += \
 	botan/parsing.h \
 	botan/rotate.h \
 	botan/types.h \
+	botan/pbkdf1.h \
+	botan/ofb.h \
+	botan/cfb.h \
+	botan/rc4.h \
+	botan/salsa20.h \
+	botan/ecb.h \
+	botan/xts.h \
+	botan/aead_filt.h \
 	botan/internal/algo_cache.h \
 	botan/internal/camellia_sbox.h \
 	botan/internal/cast_sboxes.h \
