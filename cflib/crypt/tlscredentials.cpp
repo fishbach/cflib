@@ -63,9 +63,16 @@ public:
 		return rv;
 	}
 
-	virtual std::vector<X509_Certificate> cert_chain(const std::vector<std::string> &,
-		const std::string &, const std::string &)
+	virtual std::vector<X509_Certificate> cert_chain(const std::vector<std::string> & cert_key_types,
+		const std::string & type, const std::string & context)
 	{
+		if (!privateKey || certs.size() == 0 ||
+			std::find(cert_key_types.begin(), cert_key_types.end(), privateKey->algo_name()) == cert_key_types.end() ||
+			type != "tls-server" ||
+			(context != "" && !certs[0].matches_dns_name(context)))
+		{
+			return std::vector<X509_Certificate>();
+		}
 		return certs;
 	}
 

@@ -180,7 +180,8 @@ private slots:
 		QVERIFY(!enc2.isEmpty());
 		enc1.clear();
 		QVERIFY(client.fromServer(enc2, plain, enc1));
-		QVERIFY(enc1.isEmpty());
+		QVERIFY(plain.isEmpty());
+		QVERIFY(!enc1.isEmpty());
 	}
 
 private:

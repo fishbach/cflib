@@ -78,10 +78,10 @@ public:
 	}
 
 public:
-	QByteArray * outgoingEncryptedPtr;
-	QByteArray * incomingPlainPtr;
 	QByteArray outgoingEncrypteedTmpBuf;
 	QByteArray outgoingPlainTmpBuf;
+	QByteArray * outgoingEncryptedPtr;
+	QByteArray * incomingPlainPtr;
 	bool isReady;
 	bool hasError;
 	const TLS::Policy policy;
