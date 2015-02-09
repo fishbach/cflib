@@ -22,7 +22,6 @@ QT = core
 TARGET = crypt_test
 
 SOURCES = \
-	tls_test.cpp \
 	tlscredentials_test.cpp \
 	tlsserver_test.cpp \
 	util_test.cpp \
@@ -30,19 +29,3 @@ SOURCES = \
 serializeGen()
 useLibs(cflib_crypt cflib_util)
 test()
-
-# botan
-CONFIG += exceptions
-INCLUDEPATH += ..
-unix {
-	DEFINES += \
-		BOTAN_HAS_ENTROPY_SRC_DEV_RANDOM \
-		BOTAN_HAS_ENTROPY_SRC_EGD \
-		BOTAN_HAS_ENTROPY_SRC_PROC_WALKER \
-		BOTAN_HAS_ENTROPY_SRC_UNIX_PROCESS_RUNNER \
-}
-win32 {
-	DEFINES += \
-		BOTAN_HAS_ENTROPY_SRC_CAPI \
-		BOTAN_HAS_ENTROPY_SRC_WIN32 \
-}

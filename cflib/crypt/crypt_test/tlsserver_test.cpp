@@ -144,28 +144,20 @@ private slots:
 	void initTestCase()
 	{
 		QVERIFY(initCrypto());
-
-		serverCreds_ = new TLSCredentials;
-		QCOMPARE((int)serverCreds_->addCerts(cert1 + cert2 + cert3), 3);
-		QVERIFY(serverCreds_->setPrivateKey(cert1PrivateKey));
-
-		clientCreds_ = new TLSCredentials;
-		QCOMPARE((int)clientCreds_->addCerts(cert3, true), 1);
-	}
-
-	void cleanupTestCase()
-	{
-		delete serverCreds_;
-		delete clientCreds_;
 	}
 
 	void test_tls()
 	{
+		TLSCredentials serverCreds;
+		QCOMPARE((int)serverCreds.addCerts(cert1 + cert2 + cert3), 3);
+		QVERIFY(serverCreds.setPrivateKey(cert1PrivateKey));
 		TLSSessions serverSessions;
-		TLSServer server(serverSessions, *serverCreds_);
+		TLSServer server(serverSessions, serverCreds);
 
+		TLSCredentials clientCreds;
+		QCOMPARE((int)clientCreds.addCerts(cert3, true), 1);
 		TLSSessions clientSessions;
-		TLSClient client(clientSessions, *clientCreds_);
+		TLSClient client(clientSessions, clientCreds);
 
 		QByteArray enc1;
 		QByteArray enc2;
@@ -218,9 +210,37 @@ private slots:
 		QVERIFY(enc1.isEmpty());
 	}
 
-private:
-	TLSCredentials * serverCreds_;
-	TLSCredentials * clientCreds_;
+	void test_missingCA()
+	{
+		TLSCredentials serverCreds;
+		QCOMPARE((int)serverCreds.addCerts(cert1 + cert2 + cert3), 3);
+		QVERIFY(serverCreds.setPrivateKey(cert1PrivateKey));
+		TLSSessions serverSessions;
+		TLSServer server(serverSessions, serverCreds);
+
+		TLSCredentials clientCreds;
+		TLSSessions clientSessions;
+		TLSClient client(clientSessions, clientCreds);
+
+		QByteArray enc1;
+		QByteArray enc2;
+		QByteArray plain;
+
+		// client starts handshake
+		enc1 = server.initialEncryptedForClient();
+		QVERIFY(enc1.isEmpty());
+		enc1 = client.initialEncryptedForServer();
+		QVERIFY(!enc1.isEmpty());
+
+		// first handshake req -> reply
+		QVERIFY(server.fromClient(enc1, plain, enc2));
+		QVERIFY(plain.isEmpty());
+		QVERIFY(!enc2.isEmpty());
+		enc1.clear();
+		QVERIFY(!client.fromServer(enc2, plain, enc1));
+		QVERIFY(plain.isEmpty());
+	}
+
 };
 #include "tlsserver_test.moc"
 ADD_TEST(TLSServer_test)
