@@ -24,6 +24,7 @@ struct ev_io;
 struct ev_loop;
 
 namespace cflib { namespace crypt { class TLSCredentials; }}
+namespace cflib { namespace crypt { class TLSStream;      }}
 
 namespace cflib { namespace util {
 
@@ -44,6 +45,8 @@ public:
 	bool isRunning() const;
 
 	const TCPConnInitializer * openConnection(const QByteArray & destIP, quint16 destPort);
+	const TCPConnInitializer * openConnection(const QByteArray & destIP, quint16 destPort,
+		crypt::TLSCredentials & credentials);
 
 	static TCPServer * instance() { return instance_; }
 
@@ -100,6 +103,7 @@ private:
 	QByteArray readBuf_;
 	QByteArray writeBuf_;
 	bool closeAfterWriting_;
+	crypt::TLSStream * tlsStream_;
 
 	friend class TCPServer;
 };

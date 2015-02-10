@@ -18,26 +18,19 @@
 
 #pragma once
 
-#include <cflib/crypt/tlsstream.h>
+#include <QtCore>
 
 namespace cflib { namespace crypt {
 
-class TLSCredentials;
-class TLSSessions;
-
-class TLSServer : public TLSStream
+class TLSStream
 {
+	Q_DISABLE_COPY(TLSStream)
 public:
-	TLSServer(TLSSessions & sessions, TLSCredentials & credentials);
-	~TLSServer();
-
-	virtual QByteArray initialSend() { return QByteArray(); }
-	virtual bool received(const QByteArray & encrypted, QByteArray & plain, QByteArray & sendBack);
-	virtual bool send(const QByteArray & plain, QByteArray & encrypted);
-
-private:
-	class Impl;
-	Impl * impl_;
+	TLSStream() {}
+	virtual ~TLSStream() {}
+	virtual QByteArray initialSend() = 0;
+	virtual bool received(const QByteArray & encrypted, QByteArray & plain, QByteArray & sendBack) = 0;
+	virtual bool send(const QByteArray & plain, QByteArray & encrypted) = 0;
 };
 
 }}	// namespace

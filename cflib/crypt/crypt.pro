@@ -27,6 +27,7 @@ HEADERS = \
 	tlscredentials.h \
 	tlsserver.h \
 	tlssessions.h \
+	tlsstream.h \
 	util.h \
 
 OTHER_FILES = \

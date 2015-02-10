@@ -18,23 +18,22 @@
 
 #pragma once
 
-#include <QtCore>
+#include <cflib/crypt/tlsstream.h>
 
 namespace cflib { namespace crypt {
 
 class TLSCredentials;
 class TLSSessions;
 
-class TLSClient
+class TLSClient : public TLSStream
 {
-	Q_DISABLE_COPY(TLSClient)
 public:
 	TLSClient(TLSSessions & sessions, TLSCredentials & credentials, const QByteArray & hostname = QByteArray());
 	~TLSClient();
 
-	QByteArray initialEncryptedForServer();
-	bool fromServer(const QByteArray & encrypted, QByteArray & plain, QByteArray & sendBack);
-	bool toServer(const QByteArray & plain, QByteArray & encrypted);
+	virtual QByteArray initialSend();
+	virtual bool received(const QByteArray & encrypted, QByteArray & plain, QByteArray & sendBack);
+	virtual bool send(const QByteArray & plain, QByteArray & encrypted);
 
 private:
 	class Impl;

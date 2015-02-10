@@ -18,6 +18,7 @@
 
 #include "tcpserver.h"
 
+#include <cflib/crypt/tlsclient.h>
 #include <cflib/crypt/tlsserver.h>
 #include <cflib/crypt/tlssessions.h>
 #include <cflib/libev/libev.h>
@@ -72,13 +73,17 @@ inline bool setNonBlocking(int fd)
 class TCPConnInitializer
 {
 public:
-	TCPConnInitializer(TCPServer::Impl & impl, const int socket, const char * peerIP, const quint16 peerPort) :
-		impl(impl), socket(socket), peerIP(peerIP), peerPort(peerPort) {}
+	TCPConnInitializer(TCPServer::Impl & impl, const int socket, const char * peerIP, const quint16 peerPort,
+		TLSStream * tlsStream)
+	:
+		impl(impl), socket(socket), peerIP(peerIP), peerPort(peerPort), tlsStream(tlsStream)
+	{}
 
 	TCPServer::Impl & impl;
 	const int socket;
 	const QByteArray peerIP;
 	const quint16 peerPort;
+	TLSStream * tlsStream;
 };
 
 class TCPServer::Impl : public util::ThreadVerify
@@ -198,6 +203,38 @@ public:
 		}
 	}
 
+	const TCPConnInitializer * openConnection(const QByteArray & destIP, quint16 destPort,
+		crypt::TLSCredentials * credentials)
+	{
+		// create socket
+		int sock = socket(AF_INET, SOCK_STREAM, 0);
+		if (sock < 0) return 0;
+
+		if (!setNonBlocking(sock)) {
+			close(sock);
+			return 0;
+		}
+
+		// bind to address and port
+		struct sockaddr_in destAddr;
+		destAddr.sin_family = AF_INET;
+		if (inet_pton(AF_INET, destIP.constData(), &destAddr.sin_addr) == 0) {
+			close(sock);
+			return 0;
+		}
+		destAddr.sin_port = htons(destPort);
+		if (connect(sock, (struct sockaddr *)&destAddr, sizeof(destAddr)) < 0 && errno != EINPROGRESS) {
+			logDebug("connect failed with errno: %1", errno);
+			close(sock);
+			return 0;
+		}
+
+		const TCPConnInitializer * ci = new TCPConnInitializer(*this, sock, destIP, destPort,
+			credentials ? new TLSClient(*sessions_, *credentials) : 0);
+		logDebug("opened connection %1 to %2:%3", sock, ci->peerIP, ci->peerPort);
+		return ci;
+	}
+
 private:
 	static void readable(ev_loop *, ev_io * w, int)
 	{
@@ -214,7 +251,8 @@ private:
 
 			char ipAddr[16];
 			const TCPConnInitializer * ci = new TCPConnInitializer(*impl,
-				newSock, inet_ntop(AF_INET, &cliAddr.sin_addr, ipAddr, sizeof(ipAddr)), ntohs(cliAddr.sin_port));
+				newSock, inet_ntop(AF_INET, &cliAddr.sin_addr, ipAddr, sizeof(ipAddr)), ntohs(cliAddr.sin_port),
+				impl->credentials_ ? new TLSServer(*(impl->sessions_), *(impl->credentials_)) : 0);
 			logDebug("new connection (%1) from %2:%3", newSock, ci->peerIP, ci->peerPort);
 			impl->parent_.newConnection(ci);
 		}
@@ -305,32 +343,13 @@ bool TCPServer::isRunning() const
 
 const TCPConnInitializer * TCPServer::openConnection(const QByteArray & destIP, quint16 destPort)
 {
-	// create socket
-	int sock = socket(AF_INET, SOCK_STREAM, 0);
-	if (sock < 0) return 0;
+	return impl_->openConnection(destIP, destPort, 0);
+}
 
-	if (!setNonBlocking(sock)) {
-		close(sock);
-		return 0;
-	}
-
-	// bind to address and port
-	struct sockaddr_in destAddr;
-	destAddr.sin_family = AF_INET;
-	if (inet_pton(AF_INET, destIP.constData(), &destAddr.sin_addr) == 0) {
-		close(sock);
-		return 0;
-	}
-	destAddr.sin_port = htons(destPort);
-	if (connect(sock, (struct sockaddr *)&destAddr, sizeof(destAddr)) < 0 && errno != EINPROGRESS) {
-		logDebug("connect failed with errno: %1", errno);
-		close(sock);
-		return 0;
-	}
-
-	const TCPConnInitializer * ci = new TCPConnInitializer(*impl_, sock, destIP, destPort);
-	logDebug("opened connection %1 to %2:%3", sock, ci->peerIP, ci->peerPort);
-	return ci;
+const TCPConnInitializer * TCPServer::openConnection(const QByteArray & destIP, quint16 destPort,
+	TLSCredentials & credentials)
+{
+	return impl_->openConnection(destIP, destPort, &credentials);
 }
 
 TCPConn::TCPConn(const TCPConnInitializer * init) :
@@ -338,13 +357,19 @@ TCPConn::TCPConn(const TCPConnInitializer * init) :
 	readWatcher_(new ev_io),
 	writeWatcher_(new ev_io),
 	readBuf_(0x10000, '\0'),
-	closeAfterWriting_(false)
+	closeAfterWriting_(false),
+	tlsStream_(init->tlsStream)
 {
 	delete init;
 	ev_io_init(readWatcher_, &TCPConn::readable, socket_, EV_READ);
 	readWatcher_->data = this;
 	ev_io_init(writeWatcher_, &TCPConn::writeable, socket_, EV_WRITE);
 	writeWatcher_->data = this;
+
+	if (tlsStream_) {
+		const QByteArray data = tlsStream_->initialSend();
+		if (!data.isEmpty()) impl_.writeToSocket(this, data);
+	}
 }
 
 TCPConn::~TCPConn()
@@ -352,6 +377,7 @@ TCPConn::~TCPConn()
 	impl_.closeSocket(this);
 	delete readWatcher_;
 	delete writeWatcher_;
+	delete tlsStream_;
 }
 
 QByteArray TCPConn::read()
@@ -368,22 +394,32 @@ QByteArray TCPConn::read()
 
 		if (count == 0) {
 			impl_.closeSocket(this);
-			return retval;
+			break;
 		}
 
 		if (count < 0) {
 			if (errno != EAGAIN && errno != EWOULDBLOCK) {
 				logDebug("read on fd %1 failed (errno: %2)", socket_, errno);
 				impl_.closeSocket(this);
-				return retval;
+				break;
 			}
 		} else {
 			retval.append(readBuf_.constData(), count);
 		}
 
 		logTrace("read %1 bytes", retval.size());
-		return retval;
+		break;
 	}
+
+	if (tlsStream_ && !retval.isEmpty()) {
+		QByteArray plain;
+		QByteArray sendBack;
+		if (!tlsStream_->received(retval, plain, sendBack)) impl_.closeNicely(this);
+		if (!sendBack.isEmpty()) impl_.writeToSocket(this, sendBack);
+		return plain;
+	}
+
+	return retval;
 }
 
 void TCPConn::startWatcher()
@@ -393,7 +429,13 @@ void TCPConn::startWatcher()
 
 void TCPConn::write(const QByteArray & data)
 {
-	impl_.writeToSocket(this, data);
+	if (tlsStream_) {
+		QByteArray enc;
+		if (!tlsStream_->send(data, enc)) impl_.closeNicely(this);
+		impl_.writeToSocket(this, enc);
+	} else {
+		impl_.writeToSocket(this, data);
+	}
 }
 
 void TCPConn::closeNicely()
@@ -408,8 +450,9 @@ void TCPConn::abortConnection()
 
 const TCPConnInitializer * TCPConn::detachFromSocket()
 {
-	const TCPConnInitializer * rv = new TCPConnInitializer(impl_, socket_, peerIP_, peerPort_);
+	const TCPConnInitializer * rv = new TCPConnInitializer(impl_, socket_, peerIP_, peerPort_, tlsStream_);
 	socket_ = -1;
+	tlsStream_ = 0;
 	return rv;
 }
 

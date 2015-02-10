@@ -93,7 +93,7 @@ TLSServer::~TLSServer()
 	delete impl_;
 }
 
-bool TLSServer::fromClient(const QByteArray & encrypted, QByteArray & plain, QByteArray & sendBack)
+bool TLSServer::received(const QByteArray & encrypted, QByteArray & plain, QByteArray & sendBack)
 {
 	if (impl_->hasError) return false;
 	impl_->outgoingEncryptedPtr = &sendBack;
@@ -111,7 +111,7 @@ bool TLSServer::fromClient(const QByteArray & encrypted, QByteArray & plain, QBy
 	return false;
 }
 
-bool TLSServer::toClient(const QByteArray & plain, QByteArray & encrypted)
+bool TLSServer::send(const QByteArray & plain, QByteArray & encrypted)
 {
 	if (impl_->hasError) return false;
 	impl_->outgoingEncryptedPtr = &encrypted;

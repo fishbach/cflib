@@ -94,14 +94,14 @@ TLSClient::~TLSClient()
 	delete impl_;
 }
 
-QByteArray TLSClient::initialEncryptedForServer()
+QByteArray TLSClient::initialSend()
 {
 	QByteArray rv = impl_->outgoingEncrypteedTmpBuf;
 	impl_->outgoingEncrypteedTmpBuf.clear();
 	return rv;
 }
 
-bool TLSClient::fromServer(const QByteArray & encrypted, QByteArray & plain, QByteArray & sendBack)
+bool TLSClient::received(const QByteArray & encrypted, QByteArray & plain, QByteArray & sendBack)
 {
 	if (impl_->hasError) return false;
 	impl_->outgoingEncryptedPtr = &sendBack;
@@ -119,7 +119,7 @@ bool TLSClient::fromServer(const QByteArray & encrypted, QByteArray & plain, QBy
 	return false;
 }
 
-bool TLSClient::toServer(const QByteArray & plain, QByteArray & encrypted)
+bool TLSClient::send(const QByteArray & plain, QByteArray & encrypted)
 {
 	if (impl_->hasError) return false;
 	impl_->outgoingEncryptedPtr = &encrypted;
