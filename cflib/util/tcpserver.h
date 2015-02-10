@@ -23,6 +23,8 @@
 struct ev_io;
 struct ev_loop;
 
+namespace cflib { namespace crypt { class TLSCredentials; }}
+
 namespace cflib { namespace util {
 
 class TCPConnInitializer;
@@ -32,6 +34,7 @@ class TCPServer
 	Q_DISABLE_COPY(TCPServer)
 public:
 	TCPServer();
+	TCPServer(crypt::TLSCredentials & credentials);
 	virtual ~TCPServer();
 
 	static int openListenSocket(quint16 port, const QByteArray & ip = "127.0.0.1");

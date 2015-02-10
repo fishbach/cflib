@@ -124,7 +124,7 @@ define([
 	api.initWebSocket = function() {
 		if (webSock) webSock.close();
 		var loc = window.location;
-		webSock = new WebSocket((loc.protocol == 'https' ? 'wss://' : 'ws://') + loc.host + '/ws');
+		webSock = new WebSocket((loc.protocol == 'https:' ? 'wss://' : 'ws://') + loc.host + '/ws');
 		webSock.binaryType = 'arraybuffer';
 		webSock.onmessage = function(e) { api.ev.newMessage.fire(e.data); };
 		webSock.onopen = function() {

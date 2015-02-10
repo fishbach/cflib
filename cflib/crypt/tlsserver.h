@@ -32,7 +32,6 @@ public:
 	TLSServer(TLSSessions & sessions, TLSCredentials & credentials);
 	~TLSServer();
 
-	QByteArray initialEncryptedForClient();
 	bool fromClient(const QByteArray & encrypted, QByteArray & plain, QByteArray & sendBack);
 	bool toClient(const QByteArray & plain, QByteArray & encrypted);
 

@@ -31,8 +31,8 @@ namespace cflib { namespace crypt {
 class TLSServer::Impl
 {
 public:
-	Impl(TLS::Session_Manager & session_manager, Credentials_Manager & creds, RandomNumberGenerator & rng) :
-		outgoingEncryptedPtr(&outgoingEncrypteedTmpBuf),
+	Impl(TLS::Session_Manager & session_manager, Credentials_Manager & creds) :
+		outgoingEncryptedPtr(0),
 		incomingPlainPtr(0),
 		isReady(false),
 		hasError(false),
@@ -66,25 +66,17 @@ public:
 	bool handshake_cb(const TLS::Session &)
 	{
 		isReady = true;
-		if (!outgoingPlainTmpBuf.isEmpty()) {
-			TRY {
-				server.send((const byte *)outgoingPlainTmpBuf.constData(), outgoingPlainTmpBuf.size());
-				outgoingPlainTmpBuf.clear();
-				return true;
-			} CATCH
-			hasError = true;
-		}
 		return true;
 	}
 
 public:
-	QByteArray outgoingEncrypteedTmpBuf;
 	QByteArray outgoingPlainTmpBuf;
 	QByteArray * outgoingEncryptedPtr;
 	QByteArray * incomingPlainPtr;
 	bool isReady;
 	bool hasError;
 	const TLS::Policy policy;
+	AutoSeeded_RNG rng;
 	TLS::Server server;
 };
 
@@ -92,20 +84,13 @@ TLSServer::TLSServer(TLSSessions & sessions, TLSCredentials & credentials) :
 	impl_(0)
 {
 	TRY {
-		impl_ = new Impl(sessions.session_Manager(), credentials.credentials_Manager(), sessions.rng());
+		impl_ = new Impl(sessions.session_Manager(), credentials.credentials_Manager());
 	} CATCH
 }
 
 TLSServer::~TLSServer()
 {
 	delete impl_;
-}
-
-QByteArray TLSServer::initialEncryptedForClient()
-{
-	QByteArray rv = impl_->outgoingEncrypteedTmpBuf;
-	impl_->outgoingEncrypteedTmpBuf.clear();
-	return rv;
 }
 
 bool TLSServer::fromClient(const QByteArray & encrypted, QByteArray & plain, QByteArray & sendBack)
@@ -115,6 +100,11 @@ bool TLSServer::fromClient(const QByteArray & encrypted, QByteArray & plain, QBy
 	impl_->incomingPlainPtr     = &plain;
 	TRY {
 		impl_->server.received_data((const byte *)encrypted.constData(), encrypted.size());
+		QByteArray & tmpBuf = impl_->outgoingPlainTmpBuf;
+		if (!tmpBuf.isEmpty() && impl_->isReady && !impl_->hasError) {
+			impl_->server.send((const byte *)tmpBuf.constData(), tmpBuf.size());
+			tmpBuf.clear();
+		}
 		return !impl_->hasError;
 	} CATCH
 	impl_->hasError = true;

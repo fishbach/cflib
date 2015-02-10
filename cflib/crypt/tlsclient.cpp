@@ -31,9 +31,7 @@ namespace cflib { namespace crypt {
 class TLSClient::Impl
 {
 public:
-	Impl(TLS::Session_Manager & session_manager, Credentials_Manager & creds, const QByteArray & hostname,
-		RandomNumberGenerator & rng)
-	:
+	Impl(TLS::Session_Manager & session_manager, Credentials_Manager & creds, const QByteArray & hostname) :
 		outgoingEncryptedPtr(&outgoingEncrypteedTmpBuf),
 		incomingPlainPtr(0),
 		isReady(false),
@@ -68,14 +66,6 @@ public:
 	bool handshake_cb(const TLS::Session &)
 	{
 		isReady = true;
-		if (!outgoingPlainTmpBuf.isEmpty()) {
-			TRY {
-				client.send((const byte *)outgoingPlainTmpBuf.constData(), outgoingPlainTmpBuf.size());
-				outgoingPlainTmpBuf.clear();
-				return true;
-			} CATCH
-			hasError = true;
-		}
 		return true;
 	}
 
@@ -87,6 +77,7 @@ public:
 	bool isReady;
 	bool hasError;
 	const TLS::Policy policy;
+	AutoSeeded_RNG rng;
 	TLS::Client client;
 };
 
@@ -94,7 +85,7 @@ TLSClient::TLSClient(TLSSessions & sessions, TLSCredentials & credentials, const
 	impl_(0)
 {
 	TRY {
-		impl_ = new Impl(sessions.session_Manager(), credentials.credentials_Manager(), hostname, sessions.rng());
+		impl_ = new Impl(sessions.session_Manager(), credentials.credentials_Manager(), hostname);
 	} CATCH
 }
 
@@ -117,6 +108,11 @@ bool TLSClient::fromServer(const QByteArray & encrypted, QByteArray & plain, QBy
 	impl_->incomingPlainPtr     = &plain;
 	TRY {
 		impl_->client.received_data((const byte *)encrypted.constData(), encrypted.size());
+		QByteArray & tmpBuf = impl_->outgoingPlainTmpBuf;
+		if (!tmpBuf.isEmpty() && impl_->isReady && !impl_->hasError) {
+			impl_->client.send((const byte *)tmpBuf.constData(), tmpBuf.size());
+			tmpBuf.clear();
+		}
 		return !impl_->hasError;
 	} CATCH
 	impl_->hasError = true;

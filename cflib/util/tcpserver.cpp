@@ -18,6 +18,8 @@
 
 #include "tcpserver.h"
 
+#include <cflib/crypt/tlsserver.h>
+#include <cflib/crypt/tlssessions.h>
 #include <cflib/libev/libev.h>
 #include <cflib/util/log.h>
 #include <cflib/util/threadverify.h>
@@ -42,6 +44,8 @@
 	#define SHUT_RDWR SD_BOTH
 	#define close closesocket
 #endif
+
+using namespace cflib::crypt;
 
 USE_LOG(LogCat::Network)
 
@@ -80,17 +84,20 @@ public:
 class TCPServer::Impl : public util::ThreadVerify
 {
 public:
-	Impl(TCPServer & parent) :
+	Impl(TCPServer & parent, TLSCredentials * credentials) :
 		ThreadVerify("TCPServer", ThreadVerify::Net),
 		parent_(parent),
 		listenSock_(-1),
-		readWatcher_(new ev_io)
+		readWatcher_(new ev_io),
+		sessions_(credentials ? new TLSSessions : 0),
+		credentials_(credentials)
 	{
 	}
 
 	~Impl()
 	{
 		stopVerifyThread();
+		delete sessions_;
 		delete readWatcher_;
 	}
 
@@ -217,12 +224,20 @@ private:
 	TCPServer & parent_;
 	int listenSock_;
 	ev_io * readWatcher_;
+	TLSSessions * sessions_;
+	TLSCredentials * credentials_;
 };
 
 TCPServer * TCPServer::instance_ = 0;
 
 TCPServer::TCPServer() :
-	impl_(new Impl(*this))
+	impl_(new Impl(*this, 0))
+{
+	if (!instance_) instance_ = this;
+}
+
+TCPServer::TCPServer(TLSCredentials & credentials) :
+	impl_(new Impl(*this, &credentials))
 {
 	if (!instance_) instance_ = this;
 }

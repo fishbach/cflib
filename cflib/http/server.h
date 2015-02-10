@@ -20,6 +20,8 @@
 
 #include <QtCore>
 
+namespace cflib { namespace crypt { class TLSCredentials; }}
+
 namespace cflib { namespace http {
 
 class RequestHandler;
@@ -29,6 +31,7 @@ class Server
 	Q_DISABLE_COPY(Server)
 public:
 	Server(uint threadCount = 2);
+	Server(crypt::TLSCredentials & credentials, uint threadCount = 2);
 	~Server();
 
 	bool start(int listenSocket);
