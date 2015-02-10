@@ -22,7 +22,7 @@
 
 namespace cflib { namespace crypt { class TLSCredentials; }}
 
-namespace cflib { namespace http {
+namespace cflib { namespace net {
 
 class RequestHandler;
 

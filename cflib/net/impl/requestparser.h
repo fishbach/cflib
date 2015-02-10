@@ -18,20 +18,20 @@
 
 #pragma once
 
-#include <cflib/util/tcpserver.h>
+#include <cflib/net/tcpserver.h>
 #include <cflib/util/threadverify.h>
 
-namespace cflib { namespace http {
+namespace cflib { namespace net {
 
 class PassThroughHandler;
 class RequestHandler;
 
 namespace impl {
 
-class RequestParser : public util::ThreadVerify, public util::TCPConn
+class RequestParser : public util::ThreadVerify, public TCPConn
 {
 public:
-	RequestParser(const util::TCPConnInitializer * init,
+	RequestParser(const TCPConnInitializer * init,
 		const QList<RequestHandler *> & handlers, util::ThreadVerify * tv);
 	~RequestParser();
 
@@ -40,7 +40,7 @@ public:
 	void detachRequest();
 	void setPassThroughHandler(PassThroughHandler * hdl);
 	QByteArray readPassThrough(bool & isLast);
-	const util::TCPConnInitializer * detachFromSocket();
+	const TCPConnInitializer * detachFromSocket();
 
 protected:
 	virtual void newBytesAvailable();

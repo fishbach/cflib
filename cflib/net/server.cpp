@@ -18,15 +18,15 @@
 
 #include "server.h"
 
-#include <cflib/http/impl/requestparser.h>
+#include <cflib/net/impl/requestparser.h>
+#include <cflib/net/tcpserver.h>
 #include <cflib/util/log.h>
-#include <cflib/util/tcpserver.h>
 
 USE_LOG(LogCat::Http)
 
-namespace cflib { namespace http {
+namespace cflib { namespace net {
 
-class Server::Impl : public util::ThreadVerify, public util::TCPServer
+class Server::Impl : public util::ThreadVerify, public TCPServer
 {
 public:
 	Impl(uint threadCount) :
@@ -36,7 +36,7 @@ public:
 
 	Impl(crypt::TLSCredentials & credentials, uint threadCount) :
 		util::ThreadVerify("HTTP-Server", util::ThreadVerify::Worker, threadCount),
-		util::TCPServer(credentials)
+		TCPServer(credentials)
 	{
 	}
 
@@ -51,7 +51,7 @@ public:
 	}
 
 protected:
-	virtual void newConnection(const util::TCPConnInitializer * init)
+	virtual void newConnection(const TCPConnInitializer * init)
     {
 		new impl::RequestParser(init, handlers_, this);
     }

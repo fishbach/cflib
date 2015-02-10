@@ -18,10 +18,10 @@
 
 #pragma once
 
-#include <cflib/http/jsservice.h>
+#include <cflib/net/jsservice.h>
 #include <cflib/util/log.h>
 
-namespace cflib { namespace http {
+namespace cflib { namespace net {
 
 class LogService : public JSService
 {

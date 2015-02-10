@@ -18,12 +18,12 @@
 
 #pragma once
 
-#include <cflib/http/request.h>
+#include <cflib/net/request.h>
 #include <cflib/serialize/serialize.h>
 #include <cflib/serialize/serializejs.h>
 #include <cflib/util/threadverify.h>
 
-namespace cflib { namespace http {
+namespace cflib { namespace net {
 
 class Replier;
 

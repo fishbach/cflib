@@ -18,13 +18,13 @@
 
 #include "fileserver.h"
 
-#include <cflib/http/request.h>
+#include <cflib/net/request.h>
 #include <cflib/util/log.h>
 #include <cflib/util/util.h>
 
 USE_LOG(LogCat::Http)
 
-namespace cflib { namespace http {
+namespace cflib { namespace net {
 
 namespace {
 

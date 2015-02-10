@@ -18,11 +18,11 @@
 
 #pragma once
 
-#include <cflib/http/request.h>
-#include <cflib/http/requesthandler.h>
+#include <cflib/net/request.h>
+#include <cflib/net/requesthandler.h>
 #include <cflib/util/threadverify.h>
 
-namespace cflib { namespace http {
+namespace cflib { namespace net {
 
 class ApiServer;
 

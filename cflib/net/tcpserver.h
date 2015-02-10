@@ -26,7 +26,7 @@ struct ev_loop;
 namespace cflib { namespace crypt { class TLSCredentials; }}
 namespace cflib { namespace crypt { class TLSStream;      }}
 
-namespace cflib { namespace util {
+namespace cflib { namespace net {
 
 class TCPConnInitializer;
 

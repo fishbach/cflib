@@ -18,16 +18,16 @@
 
 #include "forwardserver.h"
 
-#include <cflib/http/request.h>
+#include <cflib/net/request.h>
+#include <cflib/net/tcpserver.h>
 #include <cflib/util/log.h>
-#include <cflib/util/tcpserver.h>
 #include <cflib/util/util.h>
 
 using namespace cflib::util;
 
 USE_LOG(LogCat::Http)
 
-namespace cflib { namespace http {
+namespace cflib { namespace net {
 
 namespace {
 

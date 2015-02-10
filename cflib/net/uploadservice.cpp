@@ -23,7 +23,7 @@
 
 USE_LOG(LogCat::Http)
 
-namespace cflib { namespace http {
+namespace cflib { namespace net {
 
 UploadService::UploadService(const QString & threadName, uint threadCount) :
 	ThreadVerify(threadName, util::ThreadVerify::Worker, threadCount)

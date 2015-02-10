@@ -18,7 +18,7 @@
 
 #pragma once
 
-namespace cflib { namespace http {
+namespace cflib { namespace net {
 
 class Request;
 

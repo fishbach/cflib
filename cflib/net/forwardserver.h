@@ -18,11 +18,11 @@
 
 #pragma once
 
-#include <cflib/http/requesthandler.h>
+#include <cflib/net/requesthandler.h>
 
 #include <QtCore>
 
-namespace cflib { namespace http {
+namespace cflib { namespace net {
 
 class ForwardServer : public RequestHandler
 {

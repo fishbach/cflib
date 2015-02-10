@@ -18,10 +18,10 @@
 
 #pragma once
 
-#include <cflib/http/requesthandler.h>
+#include <cflib/net/requesthandler.h>
 #include <cflib/util/threadverify.h>
 
-namespace cflib { namespace http {
+namespace cflib { namespace net {
 
 class FileServer : public RequestHandler, public util::ThreadVerify
 {

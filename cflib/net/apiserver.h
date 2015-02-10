@@ -18,13 +18,13 @@
 
 #pragma once
 
-#include <cflib/http/requesthandler.h>
+#include <cflib/net/requesthandler.h>
 #include <cflib/serialize/serializetypeinfo.h>
 #include <cflib/util/threadverify.h>
 
 namespace cflib { namespace util { class EVTimer; }}
 
-namespace cflib { namespace http {
+namespace cflib { namespace net {
 
 class JSService;
 class UploadService;

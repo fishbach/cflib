@@ -19,9 +19,9 @@
 #include "apiserver.h"
 
 #include <cflib/crypt/util.h>
-#include <cflib/http/jsservice.h>
-#include <cflib/http/request.h>
-#include <cflib/http/uploadservice.h>
+#include <cflib/net/jsservice.h>
+#include <cflib/net/request.h>
+#include <cflib/net/uploadservice.h>
 #include <cflib/util/evtimer.h>
 #include <cflib/util/log.h>
 #include <cflib/util/util.h>
@@ -30,7 +30,7 @@ USE_LOG(LogCat::Http)
 
 using namespace cflib::serialize;
 
-namespace cflib { namespace http {
+namespace cflib { namespace net {
 
 namespace {
 

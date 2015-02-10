@@ -18,13 +18,13 @@
 
 #include "requestparser.h"
 
-#include <cflib/http/request.h>
+#include <cflib/net/request.h>
 #include <cflib/util/log.h>
 #include <cflib/util/util.h>
 
 USE_LOG(LogCat::Http)
 
-namespace cflib { namespace http { namespace impl {
+namespace cflib { namespace net { namespace impl {
 
 namespace {
 
@@ -32,11 +32,11 @@ QAtomicInt connCount;
 
 }
 
-RequestParser::RequestParser(const util::TCPConnInitializer * init,
+RequestParser::RequestParser(const TCPConnInitializer * init,
 	const QList<RequestHandler *> & handlers, util::ThreadVerify * tv)
 :
 	util::ThreadVerify(tv),
-	util::TCPConn(init),
+	TCPConn(init),
 	handlers_(handlers),
 	id_(connCount.fetchAndAddRelaxed(1) + 1),
 	contentLength_(-1),
@@ -113,7 +113,7 @@ QByteArray RequestParser::readPassThrough(bool & isLast)
 	return retval;
 }
 
-const util::TCPConnInitializer * RequestParser::detachFromSocket()
+const TCPConnInitializer * RequestParser::detachFromSocket()
 {
 	logFunctionTrace
 	detached_ = true;

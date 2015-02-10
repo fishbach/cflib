@@ -19,20 +19,20 @@
 #include "websocketservice.h"
 
 #include <cflib/crypt/util.h>
-#include <cflib/http/apiserver.h>
-#include <cflib/http/request.h>
+#include <cflib/net/apiserver.h>
+#include <cflib/net/request.h>
+#include <cflib/net/tcpserver.h>
 #include <cflib/util/log.h>
-#include <cflib/util/tcpserver.h>
 #include <cflib/util/util.h>
 
 USE_LOG(LogCat::Http)
 
-namespace cflib { namespace http {
+namespace cflib { namespace net {
 
-class WebSocketService::WSConnHandler : public util::ThreadVerify, public util::TCPConn
+class WebSocketService::WSConnHandler : public util::ThreadVerify, public TCPConn
 {
 public:
-	WSConnHandler(WebSocketService * service, const util::TCPConnInitializer * connInit) :
+	WSConnHandler(WebSocketService * service, const TCPConnInitializer * connInit) :
 		ThreadVerify(service),
 		TCPConn(connInit),
 		service_(*service),
@@ -281,7 +281,7 @@ void WebSocketService::handleRequest(const Request & request)
 		return;
 	}
 
-	const util::TCPConnInitializer * connInit = request.detachFromSocket();
+	const TCPConnInitializer * connInit = request.detachFromSocket();
 	if (!connInit) {
 		logWarn("could not detach from socket");
 		return;

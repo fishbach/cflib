@@ -19,7 +19,7 @@ include(../../include.pri)
 
 QT = core
 
-TARGET = cflib_http
+TARGET = cflib_net
 
 HEADERS = \
 	apiserver.h \
@@ -31,6 +31,7 @@ HEADERS = \
 	request.h \
 	requesthandler.h \
 	server.h \
+	tcpserver.h \
 	uploadservice.h \
 	websocketservice.h \
 

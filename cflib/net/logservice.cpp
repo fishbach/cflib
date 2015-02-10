@@ -20,7 +20,7 @@
 
 USE_LOG(LogCat::Http)
 
-namespace cflib { namespace http {
+namespace cflib { namespace net {
 
 LogService::LogService() :
 	JSService(serializeTypeInfo().typeName)

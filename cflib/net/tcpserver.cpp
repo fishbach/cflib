@@ -47,10 +47,11 @@
 #endif
 
 using namespace cflib::crypt;
+using namespace cflib::util;
 
 USE_LOG(LogCat::Network)
 
-namespace cflib { namespace util {
+namespace cflib { namespace net {
 
 namespace {
 

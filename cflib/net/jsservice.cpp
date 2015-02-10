@@ -18,7 +18,7 @@
 
 #include "jsservice.h"
 
-namespace cflib { namespace http {
+namespace cflib { namespace net {
 
 JSService::JSService(const QString & threadName, uint threadCount) :
 	util::ThreadVerify(threadName, util::ThreadVerify::Worker, threadCount),

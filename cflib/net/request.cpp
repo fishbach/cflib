@@ -18,14 +18,14 @@
 
 #include "request.h"
 
-#include <cflib/http/requesthandler.h>
-#include <cflib/http/impl/requestparser.h>
+#include <cflib/net/requesthandler.h>
+#include <cflib/net/impl/requestparser.h>
 #include <cflib/util/log.h>
 #include <cflib/util/util.h>
 
 USE_LOG(LogCat::Http)
 
-namespace cflib { namespace http {
+namespace cflib { namespace net {
 
 class Request::Shared
 {
@@ -297,7 +297,7 @@ void Request::abort() const
 	if (d->parser) d->parser->abortConnection();
 }
 
-const util::TCPConnInitializer * Request::detachFromSocket() const
+const TCPConnInitializer * Request::detachFromSocket() const
 {
 	if (!d->parser) return 0;
 	d->replySent = true;

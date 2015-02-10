@@ -20,12 +20,11 @@
 
 #include <QtCore>
 
-namespace cflib { namespace util { class TCPConnInitializer; } }
-
-namespace cflib { namespace http {
+namespace cflib { namespace net {
 
 class PassThroughHandler;
 class RequestHandler;
+class TCPConnInitializer;
 namespace impl { class RequestParser; }
 
 class Request
@@ -70,7 +69,7 @@ public:
 	void startWatcher() const;
 	void abort() const;
 
-	const util::TCPConnInitializer * detachFromSocket() const;
+	const TCPConnInitializer * detachFromSocket() const;
 
 private:
 	void callNextHandler() const;
