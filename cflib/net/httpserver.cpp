@@ -16,7 +16,7 @@
  * along with cflib. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "server.h"
+#include "httpserver.h"
 
 #include <cflib/net/impl/requestparser.h>
 #include <cflib/net/tcpserver.h>
@@ -26,7 +26,7 @@ USE_LOG(LogCat::Http)
 
 namespace cflib { namespace net {
 
-class Server::Impl : public util::ThreadVerify, public TCPServer
+class HttpServer::Impl : public util::ThreadVerify, public TCPServer
 {
 public:
 	Impl(uint threadCount) :
@@ -60,42 +60,42 @@ private:
 	QList<RequestHandler *> handlers_;
 };
 
-Server::Server(uint threadCount) :
+HttpServer::HttpServer(uint threadCount) :
 	impl_(new Impl(threadCount))
 {
 }
 
-Server::Server(crypt::TLSCredentials & credentials, uint threadCount) :
+HttpServer::HttpServer(crypt::TLSCredentials & credentials, uint threadCount) :
 	impl_(new Impl(credentials, threadCount))
 {
 }
 
-Server::~Server()
+HttpServer::~HttpServer()
 {
 	delete impl_;
 }
 
-bool Server::start(int listenSocket)
+bool HttpServer::start(int listenSocket)
 {
 	return impl_->start(listenSocket);
 }
 
-bool Server::start(quint16 port, const QByteArray & address)
+bool HttpServer::start(quint16 port, const QByteArray & address)
 {
 	return impl_->start(port, address);
 }
 
-bool Server::stop()
+bool HttpServer::stop()
 {
 	return impl_->stop();
 }
 
-bool Server::isRunning() const
+bool HttpServer::isRunning() const
 {
 	return impl_->isRunning();
 }
 
-void Server::registerHandler(RequestHandler * handler)
+void HttpServer::registerHandler(RequestHandler * handler)
 {
 	impl_->registerHandler(handler);
 }

@@ -26,13 +26,13 @@ namespace cflib { namespace net {
 
 class RequestHandler;
 
-class Server
+class HttpServer
 {
-	Q_DISABLE_COPY(Server)
+	Q_DISABLE_COPY(HttpServer)
 public:
-	Server(uint threadCount = 2);
-	Server(crypt::TLSCredentials & credentials, uint threadCount = 2);
-	~Server();
+	HttpServer(uint threadCount = 2);
+	HttpServer(crypt::TLSCredentials & credentials, uint threadCount = 2);
+	~HttpServer();
 
 	bool start(int listenSocket);
 	bool start(quint16 port, const QByteArray & address = "127.0.0.1");

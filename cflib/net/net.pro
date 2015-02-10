@@ -25,12 +25,12 @@ HEADERS = \
 	apiserver.h \
 	fileserver.h \
 	forwardserver.h \
+	httpserver.h \
 	impl/requestparser.h \
 	jsservice.h \
 	logservice.h \
 	request.h \
 	requesthandler.h \
-	server.h \
 	tcpserver.h \
 	uploadservice.h \
 	websocketservice.h \
