@@ -11,6 +11,19 @@ index f941245..30fa9a2 100644
     {
  #if defined(BOTAN_HAS_RSA)
     if(const RSA_PublicKey* s = dynamic_cast<const RSA_PublicKey*>(&key))
+diff --git a/cflib/crypt/botan/internal/tls_handshake_io.h b/cflib/crypt/botan/internal/tls_handshake_io.h
+index 34873c3..dc02f62 100644
+--- a/cflib/crypt/botan/internal/tls_handshake_io.h
++++ b/cflib/crypt/botan/internal/tls_handshake_io.h
+@@ -165,7 +165,7 @@ class Datagram_Handshake_IO : public Handshake_IO
+          Message_Info(u16bit e, Handshake_Type mt, const std::vector<byte>& msg) :
+             epoch(e), msg_type(mt), msg_bits(msg) {}
+ 
+-         Message_Info(const Message_Info& other) = default;
++         Message_Info(const Message_Info& /*other*/) = default;
+ 
+          Message_Info() : epoch(0xFFFF), msg_type(HANDSHAKE_NONE) {}
+ 
 diff --git a/cflib/crypt/botan/internal/tls_handshake_state.cpp b/cflib/crypt/botan/internal/tls_handshake_state.cpp
 index 1110870..85b6fb1 100644
 --- a/cflib/crypt/botan/internal/tls_handshake_state.cpp
