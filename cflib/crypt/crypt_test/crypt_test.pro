@@ -21,6 +21,9 @@ QT = core
 
 TARGET = crypt_test
 
+HEADERS = \
+	certs.h \
+
 SOURCES = \
 	tlscredentials_test.cpp \
 	tlsserver_test.cpp \
