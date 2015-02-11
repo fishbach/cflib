@@ -39,7 +39,25 @@ protected:
 	virtual void handleRequest(const Request & request);
 
 private:
-	class Entry;
+	struct Entry
+	{
+		bool isRedirect;
+		bool isDefault;
+		bool invert;
+		QRegularExpression test;
+		QByteArray destUrl;
+		QByteArray ip;
+		quint16 port;
+
+		Entry(bool invert, const QRegularExpression & test, const QByteArray & destUrl) :
+			isRedirect(true), isDefault(false), invert(invert), test(test), destUrl(destUrl), port(0) {}
+		Entry(bool invert, const QRegularExpression & test, const QByteArray & ip, quint16 port) :
+			isRedirect(false), isDefault(false), invert(invert), test(test), ip(ip), port(port) {}
+		Entry(const QByteArray & destUrl) :
+			isRedirect(true), isDefault(true), invert(false), destUrl(destUrl), port(0) {}
+		Entry(const QByteArray & ip, quint16 port) :
+			isRedirect(false), isDefault(true), invert(false), ip(ip), port(port) {}
+	};
 	QList<Entry> entries_;
 };
 
