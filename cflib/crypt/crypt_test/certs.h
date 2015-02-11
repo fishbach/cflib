@@ -36,7 +36,7 @@ openssl genrsa -out ca_key.pem 2048
 openssl req -new -key ca_key.pem -out ca_csr.pem
 openssl ca -keyfile rootca_key.pem -cert rootca_crt.pem -extensions v3_ca -in ca_csr.pem -out ca_crt.pem -days 3650
 openssl genrsa -out server_key.pem 2048
-openssl req -new -key server_key.pem -out server_csr.pem
+openssl req -new -sha256 -key server_key.pem -out server_csr.pem
 openssl ca -policy policy_anything -keyfile ca_key.pem -cert ca_crt.pem -in server_csr.pem -out server_crt.pem -days 3650
 openssl pkcs8 -v2 des3 -topk8 -in server_key.pem
 

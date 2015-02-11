@@ -236,6 +236,8 @@ public:
 		return ci;
 	}
 
+	inline TCPServer & tcpServer() { return parent_; }
+
 private:
 	static void readable(ev_loop *, ev_io * w, int)
 	{
@@ -267,18 +269,14 @@ private:
 	TLSCredentials * credentials_;
 };
 
-TCPServer * TCPServer::instance_ = 0;
-
 TCPServer::TCPServer() :
 	impl_(new Impl(*this, 0))
 {
-	if (!instance_) instance_ = this;
 }
 
 TCPServer::TCPServer(TLSCredentials & credentials) :
 	impl_(new Impl(*this, &credentials))
 {
-	if (!instance_) instance_ = this;
 }
 
 TCPServer::~TCPServer()
@@ -463,6 +461,11 @@ void TCPConn::setNoDelay(bool noDelay)
 	setsockopt(socket_, IPPROTO_TCP, TCP_NODELAY, (char *)&on, sizeof(on));
 }
 
+TCPServer & TCPConn::server() const
+{
+	return impl_.tcpServer();
+}
+
 void TCPConn::readable(ev_loop * loop, ev_io * w, int)
 {
 	ev_io_stop(loop, w);
@@ -479,7 +482,7 @@ void TCPConn::writeable(ev_loop * loop, ev_io * w, int)
 	ssize_t count = ::send(fd, buf.constData(), buf.size(), 0);
 	logTrace("wrote %1 / %2 bytes", (qint64)count, buf.size());
 	if (count < buf.size()) {
-		if (count < 0 && errno != EAGAIN && errno != EWOULDBLOCK) {
+		if (count < 0 && errno != EAGAIN && errno != EWOULDBLOCK && errno != ENOTCONN) {
 			logDebug("write on fd %1 failed (errno: %2)", fd, errno);
 			buf.clear();
 			conn->impl_.closeSocket(conn);

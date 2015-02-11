@@ -305,6 +305,12 @@ const TCPConnInitializer * Request::detachFromSocket() const
 	return d->parser->detachFromSocket();
 }
 
+TCPServer * Request::tcpServer() const
+{
+	if (!d->parser) return 0;
+	return &d->parser->server();
+}
+
 void Request::callNextHandler() const
 {
 	d->handlers.takeFirst()->handleRequest(*this);

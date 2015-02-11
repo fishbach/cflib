@@ -24,11 +24,11 @@ TARGET = cflib_net
 HEADERS = \
 	apiserver.h \
 	fileserver.h \
-	forwardserver.h \
 	httpserver.h \
 	impl/requestparser.h \
 	jsservice.h \
 	logservice.h \
+	redirectserver.h \
 	request.h \
 	requesthandler.h \
 	tcpserver.h \

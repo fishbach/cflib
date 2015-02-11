@@ -16,7 +16,7 @@
  * along with cflib. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "forwardserver.h"
+#include "redirectserver.h"
 
 #include <cflib/net/request.h>
 #include <cflib/net/tcpserver.h>
@@ -136,22 +136,85 @@ void TCPReader::closed()
 
 }
 
-void ForwardServer::handleRequest(const Request & request)
+class RedirectServer::Entry
 {
-	const QByteArray hostname = request.getHeaderFields().value("host");
-	if (okHosts_.contains(hostname)) return;
+public:
+	bool isRedirect;
+	bool isDefault;
+	bool invert;
+	QRegularExpression test;
+	QByteArray destUrl;
+	QByteArray ip;
+	quint16 port;
 
-	TCPServer * tcpServ = TCPServer::instance();
-	if (tcpServ && forwardPort_ > 0) {
-		const TCPConnInitializer * ci = tcpServ->openConnection(forwardIP_, forwardPort_);
+	Entry(bool invert, const QRegularExpression & test, const QByteArray & destUrl) :
+		isRedirect(true), isDefault(false), invert(invert), test(test), destUrl(destUrl), port(0) {}
+	Entry(bool invert, const QRegularExpression & test, const QByteArray & ip, quint16 port) :
+		isRedirect(false), isDefault(false), invert(invert), test(test), ip(ip), port(port) {}
+	Entry(const QByteArray & destUrl) :
+		isRedirect(true), isDefault(true), invert(false), destUrl(destUrl), port(0) {}
+	Entry(const QByteArray & ip, quint16 port) :
+		isRedirect(false), isDefault(true), invert(false), ip(ip), port(port) {}
+};
+
+void RedirectServer::addRedirectIf(const QRegularExpression & test, const QByteArray & destUrl)
+{
+	entries_ << Entry(false, test, destUrl);
+}
+
+void RedirectServer::addRedirectIfNot(const QRegularExpression & test, const QByteArray & destUrl)
+{
+	entries_ << Entry(true, test, destUrl);
+}
+
+void RedirectServer::addDefaultRedirect(const QByteArray & destUrl)
+{
+	entries_ << Entry(destUrl);
+}
+
+void RedirectServer::addForwardIf(const QRegularExpression & test, const QByteArray & ip, quint16 port)
+{
+	entries_ << Entry(false, test, ip, port);
+}
+
+void RedirectServer::addForwardIfNot(const QRegularExpression & test, const QByteArray & ip, quint16 port)
+{
+	entries_ << Entry(true, test, ip, port);
+}
+
+void RedirectServer::addDefaultForward(const QByteArray & ip, quint16 port)
+{
+	entries_ << Entry(ip, port);
+}
+
+void RedirectServer::handleRequest(const cflib::net::Request & request)
+{
+	const QString url = request.getUrl().toString();
+	QListIterator<Entry> it(entries_);
+	while (it.hasNext()) {
+		const Entry & entry = it.next();
+
+		if (!entry.isDefault && entry.test.match(url).hasMatch() == entry.invert) continue;
+
+		if (entry.isRedirect) {
+			request.sendRedirect(entry.destUrl);
+			return;
+		}
+
+		TCPServer * tcpServ = request.tcpServer();
+		if (!tcpServ) {
+			logWarn("cannot forward request");
+			return;
+		}
+
+		const TCPConnInitializer * ci = tcpServ->openConnection(entry.ip, entry.port);
 		if (!ci) {
-			logInfo("cannot open connection to %1:%2", forwardIP_, forwardPort_);
+			logInfo("cannot open connection to %1:%2", entry.ip, entry.port);
 			request.sendNotFound();
 			return;
 		}
 		new TCPForwarder(ci, request);
-	} else {
-		logWarn("cannot forward request");
+		return;
 	}
 }
 

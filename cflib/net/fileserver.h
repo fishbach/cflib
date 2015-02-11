@@ -30,7 +30,7 @@ public:
 	~FileServer();
 
 	void exportTo(const QString & dest) const;
-	void set404Redirect(const QRegularExpression & re, const QString & dest);
+	void add404File(const QRegularExpression & re, const QString & dest);
 
 protected:
 	virtual void handleRequest(const Request & request);

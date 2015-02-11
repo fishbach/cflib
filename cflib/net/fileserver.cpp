@@ -125,7 +125,7 @@ void FileServer::exportTo(const QString & dest) const
 	exportDir(path_, "/", dest);
 }
 
-void FileServer::set404Redirect(const QRegularExpression & re, const QString & dest)
+void FileServer::add404File(const QRegularExpression & re, const QString & dest)
 {
 	redirects404_ << qMakePair(re, dest);
 }

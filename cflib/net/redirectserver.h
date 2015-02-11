@@ -24,21 +24,23 @@
 
 namespace cflib { namespace net {
 
-class ForwardServer : public RequestHandler
+class RedirectServer : public RequestHandler
 {
 public:
-	ForwardServer() : forwardPort_(0) {}
+	void addRedirectIf     (const QRegularExpression & test, const QByteArray & destUrl);
+	void addRedirectIfNot  (const QRegularExpression & test, const QByteArray & destUrl);
+	void addDefaultRedirect(const QByteArray & destUrl);
 
-	void addHostOk(const QByteArray & hostname) { okHosts_ << hostname; }
-	void setForward(const QByteArray & ip, quint16 port) { forwardIP_ = ip; forwardPort_ = port; }
+	void addForwardIf      (const QRegularExpression & test, const QByteArray & ip, quint16 port);
+	void addForwardIfNot   (const QRegularExpression & test, const QByteArray & ip, quint16 port);
+	void addDefaultForward (const QByteArray & ip, quint16 port);
 
 protected:
 	virtual void handleRequest(const Request & request);
 
 private:
-	QSet<QByteArray> okHosts_;
-	QByteArray forwardIP_;
-	quint16 forwardPort_;
+	class Entry;
+	QList<Entry> entries_;
 };
 
 }}	// namespace

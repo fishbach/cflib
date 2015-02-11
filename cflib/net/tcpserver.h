@@ -48,15 +48,12 @@ public:
 	const TCPConnInitializer * openConnection(const QByteArray & destIP, quint16 destPort,
 		crypt::TLSCredentials & credentials);
 
-	static TCPServer * instance() { return instance_; }
-
 protected:
 	virtual void newConnection(const TCPConnInitializer * init) = 0;
 
 private:
 	class Impl;
 	Impl * impl_;
-	static TCPServer * instance_;
 	friend class TCPConn;
 	friend class TCPConnInitializer;
 };
@@ -84,6 +81,8 @@ public:
 	const TCPConnInitializer * detachFromSocket();
 
 	void setNoDelay(bool noDelay);
+
+	TCPServer & server() const;
 
 protected:
 	virtual void newBytesAvailable() = 0;
