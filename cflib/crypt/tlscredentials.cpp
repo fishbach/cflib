@@ -106,12 +106,12 @@ uint TLSCredentials::addCerts(const QByteArray & certs, bool isTrustedCA)
 	return rv;
 }
 
-bool TLSCredentials::addPrivateKey(const QByteArray & privateKey)
+bool TLSCredentials::addPrivateKey(const QByteArray & privateKey, const QByteArray & password)
 {
 	TRY {
 		DataSource_Memory ds((const byte *)privateKey.constData(), privateKey.size());
 		AutoSeeded_RNG rng;
-		std::unique_ptr<Private_Key> pk(PKCS8::load_key(ds, rng));
+		std::unique_ptr<Private_Key> pk(PKCS8::load_key(ds, rng, password.toStdString()));
 		if (!pk) return false;
 		const std::vector<byte> pubKey = pk->x509_subject_public_key();
 
