@@ -340,6 +340,7 @@ fmonty(limb *x2, limb *z2, /* output 2Q */
 static void
 swap_conditional(limb a[5], limb b[5], limb iswap) {
   unsigned i;
+  #pragma warning(suppress:4146)
   const limb swap = -iswap;
 
   for (i = 0; i < 5; ++i) {

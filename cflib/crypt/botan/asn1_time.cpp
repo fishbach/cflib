@@ -232,6 +232,7 @@ std::string X509_Time::readable_string() const
 
    std::string output(24, 0);
 
+   #pragma warning(disable:4996)
    std::sprintf(&output[0], "%04d/%02d/%02d %02d:%02d:%02d UTC",
                 year, month, day, hour, minute, second);
 

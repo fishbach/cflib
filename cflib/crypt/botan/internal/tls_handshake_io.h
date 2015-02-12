@@ -165,7 +165,7 @@ class Datagram_Handshake_IO : public Handshake_IO
          Message_Info(u16bit e, Handshake_Type mt, const std::vector<byte>& msg) :
             epoch(e), msg_type(mt), msg_bits(msg) {}
 
-         Message_Info(const Message_Info& other) = default;
+         Message_Info(const Message_Info& /*other*/) = default;
 
          Message_Info() : epoch(0xFFFF), msg_type(HANDSHAKE_NONE) {}
 

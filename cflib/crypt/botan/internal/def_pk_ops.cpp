@@ -140,7 +140,7 @@ Core_Engine::get_signature_op(const Private_Key& key, const std::string& emsa, R
    }
 
 PK_Ops::Verification*
-Core_Engine::get_verify_op(const Public_Key& key, const std::string& emsa, RandomNumberGenerator&) const
+Core_Engine::get_verify_op(const Public_Key& key, const std::string& /*emsa*/, RandomNumberGenerator&) const
    {
 #if defined(BOTAN_HAS_RSA)
    if(const RSA_PublicKey* s = dynamic_cast<const RSA_PublicKey*>(&key))

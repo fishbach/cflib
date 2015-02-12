@@ -1,3 +1,15 @@
+diff --git a/cflib/crypt/botan/asn1_time.cpp b/cflib/crypt/botan/asn1_time.cpp
+index b79e8a9..c934479 100644
+--- a/cflib/crypt/botan/asn1_time.cpp
++++ b/cflib/crypt/botan/asn1_time.cpp
+@@ -232,6 +232,7 @@ std::string X509_Time::readable_string() const
+ 
+    std::string output(24, 0);
+ 
++   #pragma warning(disable:4996)
+    std::sprintf(&output[0], "%04d/%02d/%02d %02d:%02d:%02d UTC",
+                 year, month, day, hour, minute, second);
+ 
 diff --git a/cflib/crypt/botan/internal/def_pk_ops.cpp b/cflib/crypt/botan/internal/def_pk_ops.cpp
 index f941245..30fa9a2 100644
 --- a/cflib/crypt/botan/internal/def_pk_ops.cpp
@@ -11,6 +23,31 @@ index f941245..30fa9a2 100644
     {
  #if defined(BOTAN_HAS_RSA)
     if(const RSA_PublicKey* s = dynamic_cast<const RSA_PublicKey*>(&key))
+diff --git a/cflib/crypt/botan/internal/donna.cpp b/cflib/crypt/botan/internal/donna.cpp
+index 29d40ce..3b94f84 100644
+--- a/cflib/crypt/botan/internal/donna.cpp
++++ b/cflib/crypt/botan/internal/donna.cpp
+@@ -340,6 +340,7 @@ fmonty(limb *x2, limb *z2, /* output 2Q */
+ static void
+ swap_conditional(limb a[5], limb b[5], limb iswap) {
+   unsigned i;
++  #pragma warning(suppress:4146)
+   const limb swap = -iswap;
+ 
+   for (i = 0; i < 5; ++i) {
+diff --git a/cflib/crypt/botan/internal/msg_client_kex.cpp b/cflib/crypt/botan/internal/msg_client_kex.cpp
+index c8dc2aa..b9e2cac 100644
+--- a/cflib/crypt/botan/internal/msg_client_kex.cpp
++++ b/cflib/crypt/botan/internal/msg_client_kex.cpp
+@@ -383,7 +383,7 @@ Client_Key_Exchange::Client_Key_Exchange(const std::vector<byte>& contents,
+             else
+                m_pre_master = shared_secret;
+             }
+-         catch(std::exception &e)
++         catch(std::exception &/*e*/)
+             {
+             /*
+             * Something failed in the DH computation. To avoid possible
 diff --git a/cflib/crypt/botan/internal/tls_handshake_io.h b/cflib/crypt/botan/internal/tls_handshake_io.h
 index 34873c3..dc02f62 100644
 --- a/cflib/crypt/botan/internal/tls_handshake_io.h
@@ -63,3 +100,29 @@ index 8000ebb..2e6028f 100644
     {
     m_buf_pos = 0;
     m_buf.resize(16);
+diff --git a/cflib/crypt/botan/x509_obj.cpp b/cflib/crypt/botan/x509_obj.cpp
+index 746fc73..63adccc 100644
+--- a/cflib/crypt/botan/x509_obj.cpp
++++ b/cflib/crypt/botan/x509_obj.cpp
+@@ -199,7 +199,7 @@ bool X509_Object::check_signature(const Public_Key& pub_key) const
+ 
+       return verifier.verify_message(tbs_data(), signature());
+       }
+-   catch(std::exception& e)
++   catch(std::exception& /*e*/)
+       {
+       return false;
+       }
+diff --git a/cflib/crypt/botan/x509path.cpp b/cflib/crypt/botan/x509path.cpp
+index 111c4c3..1d55b1d 100644
+--- a/cflib/crypt/botan/x509path.cpp
++++ b/cflib/crypt/botan/x509path.cpp
+@@ -163,7 +163,7 @@ check_chain(const std::vector<X509_Certificate>& cert_path,
+             else if(ocsp_status == Certificate_Status_Code::OCSP_RESPONSE_GOOD)
+                continue;
+             }
+-         catch(std::exception& e)
++         catch(std::exception& /*e*/)
+             {
+             //std::cout << "OCSP error: " << e.what() << "\n";
+             }
