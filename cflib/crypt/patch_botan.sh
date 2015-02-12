@@ -10,6 +10,7 @@ HEADERS="\
 	algo_base/symkey \
 	algo_base/transform \
 	algo_factory/algo_factory \
+	alloc/locking_allocator/locking_allocator \
 	alloc/secmem \
 	asn1/alg_id \
 	asn1/asn1_alt_name \

@@ -7,6 +7,7 @@ HEADERS += \
 	botan/symkey.h \
 	botan/transform.h \
 	botan/algo_factory.h \
+	botan/locking_allocator.h \
 	botan/secmem.h \
 	botan/alg_id.h \
 	botan/asn1_alt_name.h \
