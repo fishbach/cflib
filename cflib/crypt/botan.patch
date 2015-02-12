@@ -1,12 +1,14 @@
 diff --git a/cflib/crypt/botan/asn1_time.cpp b/cflib/crypt/botan/asn1_time.cpp
-index b79e8a9..c934479 100644
+index b79e8a9..63b4b96 100644
 --- a/cflib/crypt/botan/asn1_time.cpp
 +++ b/cflib/crypt/botan/asn1_time.cpp
-@@ -232,6 +232,7 @@ std::string X509_Time::readable_string() const
+@@ -232,6 +232,9 @@ std::string X509_Time::readable_string() const
  
     std::string output(24, 0);
  
++   #if defined(_MSC_VER)
 +   #pragma warning(disable:4996)
++   #endif
     std::sprintf(&output[0], "%04d/%02d/%02d %02d:%02d:%02d UTC",
                  year, month, day, hour, minute, second);
  
@@ -24,14 +26,16 @@ index f941245..30fa9a2 100644
  #if defined(BOTAN_HAS_RSA)
     if(const RSA_PublicKey* s = dynamic_cast<const RSA_PublicKey*>(&key))
 diff --git a/cflib/crypt/botan/internal/donna.cpp b/cflib/crypt/botan/internal/donna.cpp
-index 29d40ce..3b94f84 100644
+index 29d40ce..611cd48 100644
 --- a/cflib/crypt/botan/internal/donna.cpp
 +++ b/cflib/crypt/botan/internal/donna.cpp
-@@ -340,6 +340,7 @@ fmonty(limb *x2, limb *z2, /* output 2Q */
+@@ -340,6 +340,9 @@ fmonty(limb *x2, limb *z2, /* output 2Q */
  static void
  swap_conditional(limb a[5], limb b[5], limb iswap) {
    unsigned i;
++  #if defined(_MSC_VER)
 +  #pragma warning(suppress:4146)
++  #endif
    const limb swap = -iswap;
  
    for (i = 0; i < 5; ++i) {
