@@ -305,7 +305,7 @@ size_t fill_buffer_to(secure_vector<byte>& readbuf,
 *
 * @fixme This should run in constant time
 */
-size_t tls_padding_check(size_t /*block_size*/,
+size_t tls_padding_check(size_t block_size,
                          const byte record[],
                          size_t record_len)
    {

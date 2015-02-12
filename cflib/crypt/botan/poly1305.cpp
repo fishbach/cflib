@@ -17,7 +17,7 @@ void Poly1305::clear()
    m_buf_pos = 0;
    }
 
-void Poly1305::key_schedule(const byte key[], size_t /*key_len*/)
+void Poly1305::key_schedule(const byte key[], size_t key_len)
    {
    m_buf_pos = 0;
    m_buf.resize(16);
