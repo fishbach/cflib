@@ -112,10 +112,15 @@ bool TLSCredentials::addPrivateKey(const QByteArray & privateKey, const QByteArr
 		DataSource_Memory ds((const byte *)privateKey.constData(), privateKey.size());
 		AutoSeeded_RNG rng;
 		std::unique_ptr<Private_Key> pk(PKCS8::load_key(ds, rng, password.toStdString()));
+
+		// destroy data in parameters
+		for (int i = 0 ; i < privateKey.size() ; ++i) *((char *)privateKey.constData()) = 0;
+		for (int i = 0 ; i < password.size()   ; ++i) *((char *)password  .constData()) = 0;
+
 		if (!pk) return false;
-		const std::vector<byte> pubKey = pk->x509_subject_public_key();
 
 		// Does key exist?
+		const std::vector<byte> pubKey = pk->x509_subject_public_key();
 		foreach (const Impl::CertsPrivKey & ck, impl_->chains) {
 			if (pubKey == ck.privateKey->x509_subject_public_key()) return false;
 		}

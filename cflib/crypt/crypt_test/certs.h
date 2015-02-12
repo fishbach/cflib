@@ -133,4 +133,11 @@ const QByteArray cert1PrivateKey(
 	"muI=\r\n"
 	"-----END ENCRYPTED PRIVATE KEY-----\r\n");
 
+QByteArray detach(const QByteArray & ba)
+{
+	QByteArray rv(ba);
+	rv.detach();
+	return rv;
+}
+
 }

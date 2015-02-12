@@ -51,7 +51,7 @@ void signalHandler(int sig)
 
 }
 
-UnixSignal::UnixSignal()
+UnixSignal::UnixSignal(bool quitQCoreApplication)
 {
 	logFunctionTrace
 
@@ -65,6 +65,8 @@ UnixSignal::UnixSignal()
 	oldSigH1  = ::signal(1,  signalHandler);
 	oldSigH2  = ::signal(2,  signalHandler);
 	oldSigH15 = ::signal(15, signalHandler);
+
+	if (quitQCoreApplication) connect(this, SIGNAL(catchedSignal(int)), QCoreApplication::instance(), SLOT(quit()));
 #endif
 }
 

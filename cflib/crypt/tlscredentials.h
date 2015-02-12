@@ -45,6 +45,7 @@ public:
 	QList<TLSCertInfo> getCertInfos() const;
 
 	// fitting certificate chain must exist
+	// destroys data in parameters
 	bool addPrivateKey(const QByteArray & privateKey, const QByteArray & password = QByteArray());
 
 private:

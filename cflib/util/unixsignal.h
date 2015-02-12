@@ -27,7 +27,7 @@ class UnixSignal : public QObject
 {
 	Q_OBJECT
 public:
-	UnixSignal();
+	UnixSignal(bool quitQCoreApplication = false);
 	~UnixSignal();
 
 signals:
