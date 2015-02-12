@@ -61,7 +61,7 @@ private:
 	qint64 contentLength_;
 	QHash<QByteArray, QByteArray> headerFields_;
 	QByteArray method_;
-	QUrl url_;
+	QByteArray uri_;
 	QByteArray body_;
 
 	int requestCount_;

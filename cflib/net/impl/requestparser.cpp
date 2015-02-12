@@ -191,7 +191,7 @@ void RequestParser::parseRequest()
 
 		// notify handlers
 		++attachedRequests_;
-		Request(id_, ++requestCount_, header_, headerFields_, method_, url_, body_,
+		Request(id_, ++requestCount_, header_, headerFields_, method_, uri_, body_,
 			handlers_, passThrough_, this).callNextHandler();
 		if (detached_) return;
 
@@ -200,7 +200,7 @@ void RequestParser::parseRequest()
 		contentLength_ = passThrough_ ? (size - body_.size()) : -1;
 		headerFields_.clear();
 		method_.clear();
-		url_.clear();
+		uri_.clear();
 		body_.clear();
 
 	} while (!header_.isEmpty());
@@ -235,19 +235,6 @@ bool RequestParser::parseHeader()
 				logWarn("could not understand Content-Length: %1", value);
 				return false;
 			}
-		} else if (key == "host") {
-			const int p = value.indexOf(':');
-			if (p != -1) {
-				bool ok;
-				quint16 port = value.mid(p + 1).toUShort(&ok);
-				if (!ok) {
-					logWarn("funny port in header field: %1", value.mid(p + 1));
-					return false;
-				}
-				url_.setPort(port);
-				value = value.left(p);
-			}
-			url_.setHost(value);
 		}
 	}
 
@@ -273,25 +260,16 @@ bool RequestParser::handleRequestLine(const QByteArray & line)
 		return false;
 	}
 
+	uri_ = parts[1].trimmed();
+	if (uri_.isEmpty()) {
+		logWarn("no URI on connection %1: %2", id_);
+		return false;
+	}
+
 	QByteArray proto = parts[2].trimmed();
 	if (!proto.startsWith("HTTP/")) {
 		logWarn("unknown protocol on connection %1: %2", id_, proto);
 		return false;
-	}
-
-	QByteArray uri = parts[1].trimmed();
-	if (uri.isEmpty()) {
-		logWarn("no URI on connection %1: %2", id_);
-		return false;
-	}
-	url_.setScheme("http");
-
-	int pos = uri.indexOf('?');
-	if (pos == -1) {
-		url_.setPath(uri);
-	} else {
-		url_.setPath(uri.left(pos));
-		url_.setQuery(uri.mid(pos + 1));
 	}
 
 	return true;

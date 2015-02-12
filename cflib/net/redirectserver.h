@@ -27,9 +27,13 @@ namespace cflib { namespace net {
 class RedirectServer : public RequestHandler
 {
 public:
+	typedef std::function<QByteArray (const QString &, const QRegularExpressionMatch &)> DestUrlFunc;
+
 	void addRedirectIf     (const QRegularExpression & test, const QByteArray & destUrl);
+	void addRedirectIf     (const QRegularExpression & test, DestUrlFunc destUrlFunc);
 	void addRedirectIfNot  (const QRegularExpression & test, const QByteArray & destUrl);
 	void addDefaultRedirect(const QByteArray & destUrl);
+	void addDefaultRedirect(DestUrlFunc destUrlFunc);
 
 	void addForwardIf      (const QRegularExpression & test, const QByteArray & ip, quint16 port);
 	void addForwardIfNot   (const QRegularExpression & test, const QByteArray & ip, quint16 port);
@@ -46,17 +50,22 @@ private:
 		bool invert;
 		QRegularExpression test;
 		QByteArray destUrl;
+		DestUrlFunc destUrlFunc;
 		QByteArray ip;
 		quint16 port;
 
 		Entry(bool invert, const QRegularExpression & test, const QByteArray & destUrl) :
-			isRedirect(true), isDefault(false), invert(invert), test(test), destUrl(destUrl), port(0) {}
+			isRedirect(true), isDefault(false), invert(invert), test(test), destUrl(destUrl), destUrlFunc(0), port(0) {}
+		Entry(bool invert, const QRegularExpression & test, DestUrlFunc destUrlFunc) :
+			isRedirect(true), isDefault(false), invert(invert), test(test), destUrlFunc(destUrlFunc), port(0) {}
 		Entry(bool invert, const QRegularExpression & test, const QByteArray & ip, quint16 port) :
-			isRedirect(false), isDefault(false), invert(invert), test(test), ip(ip), port(port) {}
+			isRedirect(false), isDefault(false), invert(invert), test(test), destUrlFunc(0), ip(ip), port(port) {}
 		Entry(const QByteArray & destUrl) :
-			isRedirect(true), isDefault(true), invert(false), destUrl(destUrl), port(0) {}
+			isRedirect(true), isDefault(true), invert(false), destUrl(destUrl), destUrlFunc(0), port(0) {}
+		Entry(DestUrlFunc destUrlFunc) :
+			isRedirect(true), isDefault(true), invert(false), destUrlFunc(destUrlFunc), port(0) {}
 		Entry(const QByteArray & ip, quint16 port) :
-			isRedirect(false), isDefault(true), invert(false), ip(ip), port(port) {}
+			isRedirect(false), isDefault(true), invert(false), destUrlFunc(0), ip(ip), port(port) {}
 	};
 	QList<Entry> entries_;
 };

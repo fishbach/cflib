@@ -38,7 +38,7 @@ public:
 	Request();
 	Request(int connId, int requestId,
 		const QByteArray & header,
-		const KeyVal & headerFields, const QByteArray & method, const QUrl & url,
+		const KeyVal & headerFields, const QByteArray & method, const QByteArray & uri,
 		const QByteArray & body, const QList<RequestHandler *> & handlers, bool passThrough,
 		impl::RequestParser * parser);
 
@@ -50,11 +50,13 @@ public:
 	Id getId() const;
 	bool replySent() const;
 
-	QByteArray getHeader() const;
+	QByteArray getRawHeader() const;
+	QByteArray getHeader(const QByteArray & name) const;
+	QByteArray getHostname() const;
 	KeyVal getHeaderFields() const;
 	bool isGET() const;
 	bool isPOST() const { return !isGET(); }
-	QUrl getUrl() const;
+	QByteArray getUri() const;
 	QByteArray getBody() const;
 	QByteArray getRemoteIP() const;
 

@@ -265,7 +265,7 @@ void ApiServer::getClientId(const QByteArray & clIdData, uint & clId)
 
 void ApiServer::handleRequest(const Request & request)
 {
-	QString path = request.getUrl().path();
+	QByteArray path = request.getUri();
 	if (path.startsWith("/api/")) {
 		path.remove(0, 5);
 		if      (path.startsWith("rmi/"))                            doRMI(request, path.mid(4));
@@ -608,7 +608,7 @@ void ApiServer::doRMI(const Request & request, const QString & path)
 		return;
 	}
 
-	logInfo("RMI call from IP %1: %2", request.getRemoteIP(), request.getUrl());
+	logInfo("RMI call from IP %1: %2", request.getRemoteIP(), request.getUri());
 
 	bool ok = false;
 	QByteArray clIdData;

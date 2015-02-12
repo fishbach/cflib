@@ -271,7 +271,7 @@ void WebSocketService::handleRequest(const Request & request)
 {
 	logFunctionTrace
 
-	QString path = request.getUrl().path();
+	QString path = request.getUri();
 	if (path != path_ || !request.isGET()) return;
 
 	const Request::KeyVal headers = request.getHeaderFields();

@@ -32,7 +32,7 @@ class Request::Shared
 public:
 	Shared(int connId, int requestId,
 		const QByteArray & header,
-		const KeyVal & headerFields, const QByteArray & method, const QUrl & url,
+		const KeyVal & headerFields, const QByteArray & method, const QByteArray & uri,
 		const QByteArray & body, const QList<RequestHandler *> & handlers, bool passThrough,
 		impl::RequestParser * parser)
 	:
@@ -40,7 +40,7 @@ public:
 		connId(connId),
 		requestId(requestId),
 		header(header),
-		headerFields(headerFields), method(method), url(url), body(body),
+		headerFields(headerFields), method(method), uri(uri), body(body),
 		handlers(handlers),
 		parser(parser),
 		replySent(parser == 0),
@@ -79,7 +79,7 @@ public:
 	QByteArray header;
 	KeyVal headerFields;
 	QByteArray method;
-	QUrl url;
+	QByteArray uri;
 	QByteArray body;
 	QList<RequestHandler *> handlers;
 	impl::RequestParser * parser;
@@ -147,17 +147,17 @@ public:
 };
 
 Request::Request() :
-	d(new Shared(0, 0, QByteArray(), KeyVal(), QByteArray(), QUrl(), QByteArray(), QList<RequestHandler *>(), false, 0))
+	d(new Shared(0, 0, QByteArray(), KeyVal(), QByteArray(), QByteArray(), QByteArray(), QList<RequestHandler *>(), false, 0))
 {
 }
 
 Request::Request(int connId, int requestId,
 	const QByteArray & header,
-	const KeyVal & headerFields, const QByteArray & method, const QUrl & url,
+	const KeyVal & headerFields, const QByteArray & method, const QByteArray & uri,
 	const QByteArray & body, const QList<RequestHandler *> & handlers, bool passThrough,
 	impl::RequestParser * parser)
 :
-	d(new Shared(connId, requestId, header, headerFields, method, url, body, handlers, passThrough, parser))
+	d(new Shared(connId, requestId, header, headerFields, method, uri, body, handlers, passThrough, parser))
 {
 }
 
@@ -196,9 +196,19 @@ bool Request::replySent() const
 	return d->replySent;
 }
 
-QByteArray Request::getHeader() const
+QByteArray Request::getRawHeader() const
 {
 	return d->header;
+}
+
+QByteArray Request::getHeader(const QByteArray & name) const
+{
+	return d->headerFields.value(name);
+}
+
+QByteArray Request::getHostname() const
+{
+	return d->headerFields.value("host");
 }
 
 Request::KeyVal Request::getHeaderFields() const
@@ -211,9 +221,9 @@ bool Request::isGET() const
 	return d->method == "GET";
 }
 
-QUrl Request::getUrl() const
+QByteArray Request::getUri() const
 {
-	return d->url;
+	return d->uri;
 }
 
 QByteArray Request::getBody() const

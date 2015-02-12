@@ -69,7 +69,7 @@ public:
 	{
 		logFunctionTrace
 
-		QByteArray requestData = request.getHeader();
+		QByteArray requestData = request.getRawHeader();
 		requestData += "\r\n\r\n";
 		requestData += request.getBody();
 		write(requestData);
@@ -141,6 +141,11 @@ void RedirectServer::addRedirectIf(const QRegularExpression & test, const QByteA
 	entries_ << Entry(false, test, destUrl);
 }
 
+void RedirectServer::addRedirectIf(const QRegularExpression & test, DestUrlFunc destUrlFunc)
+{
+	entries_ << Entry(false, test, destUrlFunc);
+}
+
 void RedirectServer::addRedirectIfNot(const QRegularExpression & test, const QByteArray & destUrl)
 {
 	entries_ << Entry(true, test, destUrl);
@@ -149,6 +154,11 @@ void RedirectServer::addRedirectIfNot(const QRegularExpression & test, const QBy
 void RedirectServer::addDefaultRedirect(const QByteArray & destUrl)
 {
 	entries_ << Entry(destUrl);
+}
+
+void RedirectServer::addDefaultRedirect(DestUrlFunc destUrlFunc)
+{
+	entries_ << Entry(destUrlFunc);
 }
 
 void RedirectServer::addForwardIf(const QRegularExpression & test, const QByteArray & ip, quint16 port)
@@ -168,15 +178,17 @@ void RedirectServer::addDefaultForward(const QByteArray & ip, quint16 port)
 
 void RedirectServer::handleRequest(const cflib::net::Request & request)
 {
-	const QString url = request.getUrl().toString();
+	QString url = request.getHostname();
+	url += request.getUri();
 	QListIterator<Entry> it(entries_);
 	while (it.hasNext()) {
 		const Entry & entry = it.next();
 
-		if (!entry.isDefault && entry.test.match(url).hasMatch() == entry.invert) continue;
+		const QRegularExpressionMatch match = entry.test.match(url);
+		if (!entry.isDefault && match.hasMatch() == entry.invert) continue;
 
 		if (entry.isRedirect) {
-			request.sendRedirect(entry.destUrl);
+			request.sendRedirect(entry.destUrlFunc ? entry.destUrlFunc(url, match) : entry.destUrl);
 			return;
 		}
 

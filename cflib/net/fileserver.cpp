@@ -135,7 +135,7 @@ void FileServer::handleRequest(const Request & request)
 	if (!verifyThreadCall(&FileServer::handleRequest, request)) return;
 
 	// check path for valid chars
-	QString path = request.getUrl().path();
+	QString path = request.getUri();
 	if (!pathRE_.match(path).hasMatch()) {
 		logInfo("invalid path: %1", path);
 		return;
@@ -161,7 +161,7 @@ void FileServer::handleRequest(const Request & request)
 	// check for redirects
 	if (!fi.isReadable()) {
 		bool wasRedirect = false;
-		const QString origPath = request.getUrl().path();
+		const QString origPath = request.getUri();
 		foreach (const Redirect & rd, redirects404_) {
 			if (rd.first.match(origPath).hasMatch()) {
 				isPart = false;
