@@ -248,6 +248,7 @@ INTERNAL_HEADERS="\
 	tls/tls_seq_numbers \
 	tls/tls_session_key \
 	utils/bit_ops \
+	utils/donna128 \
 	utils/rounding \
 	utils/stl_util \
 	utils/xor_buf \

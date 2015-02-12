@@ -24,49 +24,49 @@ namespace {
 
 const X509_Certificate*
 find_issuing_cert(const X509_Certificate& cert,
-                  Certificate_Store& end_certs,
-                  const std::vector<Certificate_Store*>& certstores)
+				  Certificate_Store& end_certs,
+				  const std::vector<Certificate_Store*>& certstores)
    {
    const X509_DN issuer_dn = cert.issuer_dn();
    const std::vector<byte> auth_key_id = cert.authority_key_id();
 
    if(const X509_Certificate* c = end_certs.find_cert(issuer_dn, auth_key_id))
-      return c;
+	  return c;
 
    for(size_t i = 0; i != certstores.size(); ++i)
-      {
-      if(const X509_Certificate* c = certstores[i]->find_cert(issuer_dn, auth_key_id))
-         return c;
-      }
+	  {
+	  if(const X509_Certificate* c = certstores[i]->find_cert(issuer_dn, auth_key_id))
+		 return c;
+	  }
 
    return nullptr;
    }
 
 const X509_CRL* find_crls_for(const X509_Certificate& cert,
-                              const std::vector<Certificate_Store*>& certstores)
+							  const std::vector<Certificate_Store*>& certstores)
    {
    for(size_t i = 0; i != certstores.size(); ++i)
-      {
-      if(const X509_CRL* crl = certstores[i]->find_crl_for(cert))
-         return crl;
-      }
+	  {
+	  if(const X509_CRL* crl = certstores[i]->find_crl_for(cert))
+		 return crl;
+	  }
 
 #if 0
    const std::string crl_url = cert.crl_distribution_point();
    if(crl_url != "")
-      {
-      std::cout << "Downloading CRL " << crl_url << "\n";
-      auto http = HTTP::GET_sync(crl_url);
+	  {
+	  std::cout << "Downloading CRL " << crl_url << "\n";
+	  auto http = HTTP::GET_sync(crl_url);
 
-      std::cout << http.status_message() << "\n";
+	  std::cout << http.status_message() << "\n";
 
-      http.throw_unless_ok();
-      // check the mime type
+	  http.throw_unless_ok();
+	  // check the mime type
 
-      std::unique_ptr<X509_CRL> crl(new X509_CRL(http.body()));
+	  std::unique_ptr<X509_CRL> crl(new X509_CRL(http.body()));
 
-      return crl.release();
-      }
+	  return crl.release();
+	  }
 #endif
 
    return nullptr;
@@ -74,8 +74,8 @@ const X509_CRL* find_crls_for(const X509_Certificate& cert,
 
 std::vector<std::set<Certificate_Status_Code>>
 check_chain(const std::vector<X509_Certificate>& cert_path,
-            const Path_Validation_Restrictions& restrictions,
-            const std::vector<Certificate_Store*>& certstores)
+			const Path_Validation_Restrictions& restrictions,
+			const std::vector<Certificate_Store*>& certstores)
    {
    const std::set<std::string>& trusted_hashes = restrictions.trusted_hashes();
 
@@ -88,116 +88,116 @@ check_chain(const std::vector<X509_Certificate>& cert_path,
    std::vector<std::set<Certificate_Status_Code>> cert_status(cert_path.size());
 
    for(size_t i = 0; i != cert_path.size(); ++i)
-      {
-      std::set<Certificate_Status_Code>& status = cert_status.at(i);
+	  {
+	  std::set<Certificate_Status_Code>& status = cert_status.at(i);
 
-      const bool at_self_signed_root = (i == cert_path.size() - 1);
+	  const bool at_self_signed_root = (i == cert_path.size() - 1);
 
-      const X509_Certificate& subject = cert_path[i];
+	  const X509_Certificate& subject = cert_path[i];
 
-      const X509_Certificate& issuer = cert_path[at_self_signed_root ? (i) : (i + 1)];
+	  const X509_Certificate& issuer = cert_path[at_self_signed_root ? (i) : (i + 1)];
 
-      if(i == 0 || restrictions.ocsp_all_intermediates())
-         {
-         // certstore[0] is treated as trusted for OCSP (FIXME)
-         if(certstores.size() > 1)
-            ocsp_responses.push_back(
-               std::async(std::launch::async,
-                          OCSP::online_check, issuer, subject, certstores[0]));
-         }
+	  if(i == 0 || restrictions.ocsp_all_intermediates())
+		 {
+		 // certstore[0] is treated as trusted for OCSP (FIXME)
+		 if(certstores.size() > 1)
+			ocsp_responses.push_back(
+			   std::async(std::launch::async,
+						  OCSP::online_check, issuer, subject, certstores[0]));
+		 }
 
-      // Check all certs for valid time range
-      if(current_time < X509_Time(subject.start_time()))
-         status.insert(Certificate_Status_Code::CERT_NOT_YET_VALID);
+	  // Check all certs for valid time range
+	  if(current_time < X509_Time(subject.start_time()))
+		 status.insert(Certificate_Status_Code::CERT_NOT_YET_VALID);
 
-      if(current_time > X509_Time(subject.end_time()))
-         status.insert(Certificate_Status_Code::CERT_HAS_EXPIRED);
+	  if(current_time > X509_Time(subject.end_time()))
+		 status.insert(Certificate_Status_Code::CERT_HAS_EXPIRED);
 
-      // Check issuer constraints
+	  // Check issuer constraints
 
-      // Don't require CA bit set on self-signed end entity cert
-      if(!issuer.is_CA_cert() && !self_signed_ee_cert)
-         status.insert(Certificate_Status_Code::CA_CERT_NOT_FOR_CERT_ISSUER);
+	  // Don't require CA bit set on self-signed end entity cert
+	  if(!issuer.is_CA_cert() && !self_signed_ee_cert)
+		 status.insert(Certificate_Status_Code::CA_CERT_NOT_FOR_CERT_ISSUER);
 
-      if(issuer.path_limit() < i)
-         status.insert(Certificate_Status_Code::CERT_CHAIN_TOO_LONG);
+	  if(issuer.path_limit() < i)
+		 status.insert(Certificate_Status_Code::CERT_CHAIN_TOO_LONG);
 
-      std::unique_ptr<Public_Key> issuer_key(issuer.subject_public_key());
+	  std::unique_ptr<Public_Key> issuer_key(issuer.subject_public_key());
 
-      if(subject.check_signature(*issuer_key) == false)
-         status.insert(Certificate_Status_Code::SIGNATURE_ERROR);
+	  if(subject.check_signature(*issuer_key) == false)
+		 status.insert(Certificate_Status_Code::SIGNATURE_ERROR);
 
-      if(issuer_key->estimated_strength() < restrictions.minimum_key_strength())
-         status.insert(Certificate_Status_Code::SIGNATURE_METHOD_TOO_WEAK);
+	  if(issuer_key->estimated_strength() < restrictions.minimum_key_strength())
+		 status.insert(Certificate_Status_Code::SIGNATURE_METHOD_TOO_WEAK);
 
-      // Allow untrusted hashes on self-signed roots
-      if(!trusted_hashes.empty() && !at_self_signed_root)
-         {
-         if(!trusted_hashes.count(subject.hash_used_for_signature()))
-            status.insert(Certificate_Status_Code::UNTRUSTED_HASH);
-         }
-      }
+	  // Allow untrusted hashes on self-signed roots
+	  if(!trusted_hashes.empty() && !at_self_signed_root)
+		 {
+		 if(!trusted_hashes.count(subject.hash_used_for_signature()))
+			status.insert(Certificate_Status_Code::UNTRUSTED_HASH);
+		 }
+	  }
 
    for(size_t i = 0; i != cert_path.size() - 1; ++i)
-      {
-      std::set<Certificate_Status_Code>& status = cert_status.at(i);
+	  {
+	  std::set<Certificate_Status_Code>& status = cert_status.at(i);
 
-      const X509_Certificate& subject = cert_path.at(i);
-      const X509_Certificate& ca = cert_path.at(i+1);
+	  const X509_Certificate& subject = cert_path.at(i);
+	  const X509_Certificate& ca = cert_path.at(i+1);
 
-      if(i < ocsp_responses.size())
-         {
-         try
-            {
-            OCSP::Response ocsp = ocsp_responses[i].get();
+	  if(i < ocsp_responses.size())
+		 {
+		 try
+			{
+			OCSP::Response ocsp = ocsp_responses[i].get();
 
-            auto ocsp_status = ocsp.status_for(ca, subject);
+			auto ocsp_status = ocsp.status_for(ca, subject);
 
-            status.insert(ocsp_status);
+			status.insert(ocsp_status);
 
-            //std::cout << "OCSP status: " << Path_Validation_Result::status_string(ocsp_status) << "\n";
+			//std::cout << "OCSP status: " << Path_Validation_Result::status_string(ocsp_status) << "\n";
 
-            // Either way we have a definitive answer, no need to check CRLs
-            if(ocsp_status == Certificate_Status_Code::CERT_IS_REVOKED)
-               return cert_status;
-            else if(ocsp_status == Certificate_Status_Code::OCSP_RESPONSE_GOOD)
-               continue;
-            }
-         catch(std::exception& e)
-            {
-            //std::cout << "OCSP error: " << e.what() << "\n";
-            }
-         }
+			// Either way we have a definitive answer, no need to check CRLs
+			if(ocsp_status == Certificate_Status_Code::CERT_IS_REVOKED)
+			   return cert_status;
+			else if(ocsp_status == Certificate_Status_Code::OCSP_RESPONSE_GOOD)
+			   continue;
+			}
+		 catch(std::exception& /*e*/)
+			{
+			//std::cout << "OCSP error: " << e.what() << "\n";
+			}
+		 }
 
-      const X509_CRL* crl_p = find_crls_for(subject, certstores);
+	  const X509_CRL* crl_p = find_crls_for(subject, certstores);
 
-      if(!crl_p)
-         {
-         if(restrictions.require_revocation_information())
-            status.insert(Certificate_Status_Code::NO_REVOCATION_DATA);
-         continue;
-         }
+	  if(!crl_p)
+		 {
+		 if(restrictions.require_revocation_information())
+			status.insert(Certificate_Status_Code::NO_REVOCATION_DATA);
+		 continue;
+		 }
 
-      const X509_CRL& crl = *crl_p;
+	  const X509_CRL& crl = *crl_p;
 
-      if(!ca.allowed_usage(CRL_SIGN))
-         status.insert(Certificate_Status_Code::CA_CERT_NOT_FOR_CRL_ISSUER);
+	  if(!ca.allowed_usage(CRL_SIGN))
+		 status.insert(Certificate_Status_Code::CA_CERT_NOT_FOR_CRL_ISSUER);
 
-      if(current_time < X509_Time(crl.this_update()))
-         status.insert(Certificate_Status_Code::CRL_NOT_YET_VALID);
+	  if(current_time < X509_Time(crl.this_update()))
+		 status.insert(Certificate_Status_Code::CRL_NOT_YET_VALID);
 
-      if(current_time > X509_Time(crl.next_update()))
-         status.insert(Certificate_Status_Code::CRL_HAS_EXPIRED);
+	  if(current_time > X509_Time(crl.next_update()))
+		 status.insert(Certificate_Status_Code::CRL_HAS_EXPIRED);
 
-      if(crl.check_signature(ca.subject_public_key()) == false)
-         status.insert(Certificate_Status_Code::CRL_BAD_SIGNATURE);
+	  if(crl.check_signature(ca.subject_public_key()) == false)
+		 status.insert(Certificate_Status_Code::CRL_BAD_SIGNATURE);
 
-      if(crl.is_revoked(subject))
-         status.insert(Certificate_Status_Code::CERT_IS_REVOKED);
-      }
+	  if(crl.is_revoked(subject))
+		 status.insert(Certificate_Status_Code::CERT_IS_REVOKED);
+	  }
 
    if(self_signed_ee_cert)
-      cert_status.back().insert(Certificate_Status_Code::CANNOT_ESTABLISH_TRUST);
+	  cert_status.back().insert(Certificate_Status_Code::CANNOT_ESTABLISH_TRUST);
 
    return cert_status;
    }
@@ -210,7 +210,7 @@ Path_Validation_Result x509_path_validate(
    const std::vector<Certificate_Store*>& certstores)
    {
    if(end_certs.empty())
-      throw std::invalid_argument("x509_path_validate called with no subjects");
+	  throw std::invalid_argument("x509_path_validate called with no subjects");
 
    std::vector<X509_Certificate> cert_path;
    cert_path.push_back(end_certs[0]);
@@ -219,16 +219,16 @@ Path_Validation_Result x509_path_validate(
 
    // iterate until we reach a root or cannot find the issuer
    while(!cert_path.back().is_self_signed())
-      {
-      const X509_Certificate* cert = find_issuing_cert(cert_path.back(), extra, certstores);
-      if(!cert)
-         return Path_Validation_Result(Certificate_Status_Code::CERT_ISSUER_NOT_FOUND);
+	  {
+	  const X509_Certificate* cert = find_issuing_cert(cert_path.back(), extra, certstores);
+	  if(!cert)
+		 return Path_Validation_Result(Certificate_Status_Code::CERT_ISSUER_NOT_FOUND);
 
-      cert_path.push_back(*cert);
-      }
+	  cert_path.push_back(*cert);
+	  }
 
    return Path_Validation_Result(check_chain(cert_path, restrictions, certstores),
-                                 std::move(cert_path));
+								 std::move(cert_path));
    }
 
 Path_Validation_Result x509_path_validate(
@@ -267,14 +267,14 @@ Path_Validation_Result x509_path_validate(
    }
 
 Path_Validation_Restrictions::Path_Validation_Restrictions(bool require_rev,
-                                                           size_t key_strength,
-                                                           bool ocsp_all) :
+														   size_t key_strength,
+														   bool ocsp_all) :
    m_require_revocation_information(require_rev),
    m_ocsp_all_intermediates(ocsp_all),
    m_minimum_key_strength(key_strength)
    {
    if(key_strength <= 80)
-      m_trusted_hashes.insert("SHA-160");
+	  m_trusted_hashes.insert("SHA-160");
 
    m_trusted_hashes.insert("SHA-224");
    m_trusted_hashes.insert("SHA-256");
@@ -283,22 +283,22 @@ Path_Validation_Restrictions::Path_Validation_Restrictions(bool require_rev,
    }
 
 Path_Validation_Result::Path_Validation_Result(std::vector<std::set<Certificate_Status_Code>> status,
-                                               std::vector<X509_Certificate>&& cert_chain) :
+											   std::vector<X509_Certificate>&& cert_chain) :
    m_overall(Certificate_Status_Code::VERIFIED),
    m_all_status(status),
    m_cert_path(cert_chain)
    {
    // take the "worst" error as overall
    for(const auto& s : m_all_status)
-      {
-      if(!s.empty())
-         {
-         auto worst = *s.rbegin();
-         // Leave OCSP confirmations on cert-level status only
-         if(worst != Certificate_Status_Code::OCSP_RESPONSE_GOOD)
-            m_overall = worst;
-         }
-      }
+	  {
+	  if(!s.empty())
+		 {
+		 auto worst = *s.rbegin();
+		 // Leave OCSP confirmations on cert-level status only
+		 if(worst != Certificate_Status_Code::OCSP_RESPONSE_GOOD)
+			m_overall = worst;
+		 }
+	  }
    }
 
 const X509_Certificate& Path_Validation_Result::trust_root() const
@@ -310,15 +310,15 @@ std::set<std::string> Path_Validation_Result::trusted_hashes() const
    {
    std::set<std::string> hashes;
    for(size_t i = 0; i != m_cert_path.size(); ++i)
-      hashes.insert(m_cert_path[i].hash_used_for_signature());
+	  hashes.insert(m_cert_path[i].hash_used_for_signature());
    return hashes;
    }
 
 bool Path_Validation_Result::successful_validation() const
    {
    if(result() == Certificate_Status_Code::VERIFIED ||
-      result() == Certificate_Status_Code::OCSP_RESPONSE_GOOD)
-      return true;
+	  result() == Certificate_Status_Code::OCSP_RESPONSE_GOOD)
+	  return true;
    return false;
    }
 
@@ -330,60 +330,60 @@ std::string Path_Validation_Result::result_string() const
 const char* Path_Validation_Result::status_string(Certificate_Status_Code code)
    {
    switch(code)
-      {
-      case Certificate_Status_Code::VERIFIED:
-         return "Verified";
-      case Certificate_Status_Code::OCSP_RESPONSE_GOOD:
-         return "OCSP response good";
-      case Certificate_Status_Code::NO_REVOCATION_DATA:
-         return "No revocation data";
-      case Certificate_Status_Code::SIGNATURE_METHOD_TOO_WEAK:
-         return "Signature method too weak";
-      case Certificate_Status_Code::UNTRUSTED_HASH:
-         return "Untrusted hash";
+	  {
+	  case Certificate_Status_Code::VERIFIED:
+		 return "Verified";
+	  case Certificate_Status_Code::OCSP_RESPONSE_GOOD:
+		 return "OCSP response good";
+	  case Certificate_Status_Code::NO_REVOCATION_DATA:
+		 return "No revocation data";
+	  case Certificate_Status_Code::SIGNATURE_METHOD_TOO_WEAK:
+		 return "Signature method too weak";
+	  case Certificate_Status_Code::UNTRUSTED_HASH:
+		 return "Untrusted hash";
 
-      case Certificate_Status_Code::CERT_NOT_YET_VALID:
-         return "Certificate is not yet valid";
-      case Certificate_Status_Code::CERT_HAS_EXPIRED:
-         return "Certificate has expired";
-      case Certificate_Status_Code::OCSP_NOT_YET_VALID:
-         return "OCSP is not yet valid";
-      case Certificate_Status_Code::OCSP_HAS_EXPIRED:
-         return "OCSP has expired";
-      case Certificate_Status_Code::CRL_NOT_YET_VALID:
-         return "CRL is not yet valid";
-      case Certificate_Status_Code::CRL_HAS_EXPIRED:
-         return "CRL has expired";
+	  case Certificate_Status_Code::CERT_NOT_YET_VALID:
+		 return "Certificate is not yet valid";
+	  case Certificate_Status_Code::CERT_HAS_EXPIRED:
+		 return "Certificate has expired";
+	  case Certificate_Status_Code::OCSP_NOT_YET_VALID:
+		 return "OCSP is not yet valid";
+	  case Certificate_Status_Code::OCSP_HAS_EXPIRED:
+		 return "OCSP has expired";
+	  case Certificate_Status_Code::CRL_NOT_YET_VALID:
+		 return "CRL is not yet valid";
+	  case Certificate_Status_Code::CRL_HAS_EXPIRED:
+		 return "CRL has expired";
 
-      case Certificate_Status_Code::CERT_ISSUER_NOT_FOUND:
-         return "Certificate issuer not found";
-      case Certificate_Status_Code::CANNOT_ESTABLISH_TRUST:
-         return "Cannot establish trust";
+	  case Certificate_Status_Code::CERT_ISSUER_NOT_FOUND:
+		 return "Certificate issuer not found";
+	  case Certificate_Status_Code::CANNOT_ESTABLISH_TRUST:
+		 return "Cannot establish trust";
 
-      case Certificate_Status_Code::POLICY_ERROR:
-         return "Policy error";
-      case Certificate_Status_Code::INVALID_USAGE:
-         return "Invalid usage";
-      case Certificate_Status_Code::CERT_CHAIN_TOO_LONG:
-         return "Certificate chain too long";
-      case Certificate_Status_Code::CA_CERT_NOT_FOR_CERT_ISSUER:
-         return "CA certificate not allowed to issue certs";
-      case Certificate_Status_Code::CA_CERT_NOT_FOR_CRL_ISSUER:
-         return "CA certificate not allowed to issue CRLs";
-      case Certificate_Status_Code::OCSP_CERT_NOT_LISTED:
-         return "OCSP cert not listed";
-      case Certificate_Status_Code::OCSP_BAD_STATUS:
-         return "OCSP bad status";
+	  case Certificate_Status_Code::POLICY_ERROR:
+		 return "Policy error";
+	  case Certificate_Status_Code::INVALID_USAGE:
+		 return "Invalid usage";
+	  case Certificate_Status_Code::CERT_CHAIN_TOO_LONG:
+		 return "Certificate chain too long";
+	  case Certificate_Status_Code::CA_CERT_NOT_FOR_CERT_ISSUER:
+		 return "CA certificate not allowed to issue certs";
+	  case Certificate_Status_Code::CA_CERT_NOT_FOR_CRL_ISSUER:
+		 return "CA certificate not allowed to issue CRLs";
+	  case Certificate_Status_Code::OCSP_CERT_NOT_LISTED:
+		 return "OCSP cert not listed";
+	  case Certificate_Status_Code::OCSP_BAD_STATUS:
+		 return "OCSP bad status";
 
-      case Certificate_Status_Code::CERT_IS_REVOKED:
-         return "Certificate is revoked";
-      case Certificate_Status_Code::CRL_BAD_SIGNATURE:
-         return "CRL bad signature";
-      case Certificate_Status_Code::SIGNATURE_ERROR:
-         return "Signature error";
-      default:
-         return "Unknown error";
-      }
+	  case Certificate_Status_Code::CERT_IS_REVOKED:
+		 return "Certificate is revoked";
+	  case Certificate_Status_Code::CRL_BAD_SIGNATURE:
+		 return "CRL bad signature";
+	  case Certificate_Status_Code::SIGNATURE_ERROR:
+		 return "Signature error";
+	  default:
+		 return "Unknown error";
+	  }
    }
 
 }

@@ -21,6 +21,7 @@
 #include <cflib/net/requesthandler.h>
 
 #include <QtCore>
+#include <functional>
 
 namespace cflib { namespace net {
 
@@ -57,17 +58,17 @@ private:
 		quint16 port;
 
 		Entry(bool invert, const QRegularExpression & test, const QByteArray & destUrl) :
-			isRedirect(true), isDefault(false), invert(invert), test(test), destUrl(destUrl), destUrlFunc(0), port(0) {}
+			isRedirect(true), isDefault(false), invert(invert), test(test), destUrl(destUrl), port(0) {}
 		Entry(bool invert, const QRegularExpression & test, DestUrlFunc destUrlFunc) :
 			isRedirect(true), isDefault(false), invert(invert), test(test), destUrlFunc(destUrlFunc), port(0) {}
 		Entry(bool invert, const QRegularExpression & test, const QByteArray & ip, quint16 port) :
-			isRedirect(false), isDefault(false), invert(invert), test(test), destUrlFunc(0), ip(ip), port(port) {}
+			isRedirect(false), isDefault(false), invert(invert), test(test), ip(ip), port(port) {}
 		Entry(const QByteArray & destUrl) :
-			isRedirect(true), isDefault(true), invert(false), destUrl(destUrl), destUrlFunc(0), port(0) {}
+			isRedirect(true), isDefault(true), invert(false), destUrl(destUrl), port(0) {}
 		Entry(DestUrlFunc destUrlFunc) :
 			isRedirect(true), isDefault(true), invert(false), destUrlFunc(destUrlFunc), port(0) {}
 		Entry(const QByteArray & ip, quint16 port) :
-			isRedirect(false), isDefault(true), invert(false), destUrlFunc(0), ip(ip), port(port) {}
+			isRedirect(false), isDefault(true), invert(false), ip(ip), port(port) {}
 	};
 	QList<Entry> entries_;
 };

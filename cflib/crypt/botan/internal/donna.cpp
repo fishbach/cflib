@@ -53,7 +53,7 @@ inline u64bit carry_shift(const uint128_t a, size_t shift)
    }
 
 inline u64bit combine_lower(const uint128_t a, size_t s1,
-                            const uint128_t b, size_t s2)
+							const uint128_t b, size_t s2)
    {
    return static_cast<u64bit>((a >> s1) | (b << s2));
    }
@@ -151,7 +151,7 @@ fmul(felem output, const felem in2, const felem in) {
   t[2] += uint128_t(r4) * s3 + uint128_t(r3) * s4;
   t[3] += uint128_t(r4) * s4;
 
-                  r0 = t[0] & 0x7ffffffffffff; c = carry_shift(t[0], 51);
+				  r0 = t[0] & 0x7ffffffffffff; c = carry_shift(t[0], 51);
   t[1] += c;      r1 = t[1] & 0x7ffffffffffff; c = carry_shift(t[1], 51);
   t[2] += c;      r2 = t[2] & 0x7ffffffffffff; c = carry_shift(t[2], 51);
   t[3] += c;      r3 = t[3] & 0x7ffffffffffff; c = carry_shift(t[3], 51);
@@ -179,26 +179,26 @@ static inline void fsquare_times(felem output, const felem in, limb count) {
   r4 = in[4];
 
   do {
-    d0 = r0 * 2;
-    d1 = r1 * 2;
-    d2 = r2 * 2 * 19;
-    d419 = r4 * 19;
-    d4 = d419 * 2;
+	d0 = r0 * 2;
+	d1 = r1 * 2;
+	d2 = r2 * 2 * 19;
+	d419 = r4 * 19;
+	d4 = d419 * 2;
 
-    t[0] = uint128_t(r0) * r0 + uint128_t(d4) * r1 + uint128_t(d2) * (r3     );
-    t[1] = uint128_t(d0) * r1 + uint128_t(d4) * r2 + uint128_t(r3) * (r3 * 19);
-    t[2] = uint128_t(d0) * r2 + uint128_t(r1) * r1 + uint128_t(d4) * (r3     );
-    t[3] = uint128_t(d0) * r3 + uint128_t(d1) * r2 + uint128_t(r4) * (d419   );
-    t[4] = uint128_t(d0) * r4 + uint128_t(d1) * r3 + uint128_t(r2) * (r2     );
+	t[0] = uint128_t(r0) * r0 + uint128_t(d4) * r1 + uint128_t(d2) * (r3     );
+	t[1] = uint128_t(d0) * r1 + uint128_t(d4) * r2 + uint128_t(r3) * (r3 * 19);
+	t[2] = uint128_t(d0) * r2 + uint128_t(r1) * r1 + uint128_t(d4) * (r3     );
+	t[3] = uint128_t(d0) * r3 + uint128_t(d1) * r2 + uint128_t(r4) * (d419   );
+	t[4] = uint128_t(d0) * r4 + uint128_t(d1) * r3 + uint128_t(r2) * (r2     );
 
-                    r0 = t[0] & 0x7ffffffffffff; c = carry_shift(t[0], 51);
-    t[1] += c;      r1 = t[1] & 0x7ffffffffffff; c = carry_shift(t[1], 51);
-    t[2] += c;      r2 = t[2] & 0x7ffffffffffff; c = carry_shift(t[2], 51);
-    t[3] += c;      r3 = t[3] & 0x7ffffffffffff; c = carry_shift(t[3], 51);
-    t[4] += c;      r4 = t[4] & 0x7ffffffffffff; c = carry_shift(t[4], 51);
-    r0 +=   c * 19; c = r0 >> 51; r0 = r0 & 0x7ffffffffffff;
-    r1 +=   c;      c = r1 >> 51; r1 = r1 & 0x7ffffffffffff;
-    r2 +=   c;
+					r0 = t[0] & 0x7ffffffffffff; c = carry_shift(t[0], 51);
+	t[1] += c;      r1 = t[1] & 0x7ffffffffffff; c = carry_shift(t[1], 51);
+	t[2] += c;      r2 = t[2] & 0x7ffffffffffff; c = carry_shift(t[2], 51);
+	t[3] += c;      r3 = t[3] & 0x7ffffffffffff; c = carry_shift(t[3], 51);
+	t[4] += c;      r4 = t[4] & 0x7ffffffffffff; c = carry_shift(t[4], 51);
+	r0 +=   c * 19; c = r0 >> 51; r0 = r0 & 0x7ffffffffffff;
+	r1 +=   c;      c = r1 >> 51; r1 = r1 & 0x7ffffffffffff;
+	r2 +=   c;
   } while(--count);
 
   output[0] = r0;
@@ -298,12 +298,12 @@ fcontract(u8 *output, const felem input) {
  */
 static void
 fmonty(limb *x2, limb *z2, /* output 2Q */
-       limb *x3, limb *z3, /* output Q + Q' */
-       limb *x, limb *z,   /* input Q */
-       limb *xprime, limb *zprime, /* input Q' */
-       const limb *qmqp /* input Q - Q' */) {
+	   limb *x3, limb *z3, /* output Q + Q' */
+	   limb *x, limb *z,   /* input Q */
+	   limb *xprime, limb *zprime, /* input Q' */
+	   const limb *qmqp /* input Q - Q' */) {
   limb origx[5], origxprime[5], zzz[5], xx[5], zz[5], xxprime[5],
-        zzprime[5], zzzprime[5];
+		zzprime[5], zzzprime[5];
 
   memcpy(origx, x, 5 * sizeof(limb));
   fsum(x, z);
@@ -340,12 +340,13 @@ fmonty(limb *x2, limb *z2, /* output 2Q */
 static void
 swap_conditional(limb a[5], limb b[5], limb iswap) {
   unsigned i;
+  #pragma warning(suppress:4146)
   const limb swap = -iswap;
 
   for (i = 0; i < 5; ++i) {
-    const limb x = swap & (a[i] ^ b[i]);
-    a[i] ^= x;
-    b[i] ^= x;
+	const limb x = swap & (a[i] ^ b[i]);
+	a[i] ^= x;
+	b[i] ^= x;
   }
 }
 
@@ -367,35 +368,35 @@ cmult(limb *resultx, limb *resultz, const u8 *n, const limb *q) {
   memcpy(nqpqx, q, sizeof(limb) * 5);
 
   for (i = 0; i < 32; ++i) {
-    u8 byte = n[31 - i];
-    for (j = 0; j < 8; ++j) {
-      const limb bit = byte >> 7;
+	u8 byte = n[31 - i];
+	for (j = 0; j < 8; ++j) {
+	  const limb bit = byte >> 7;
 
-      swap_conditional(nqx, nqpqx, bit);
-      swap_conditional(nqz, nqpqz, bit);
-      fmonty(nqx2, nqz2,
-             nqpqx2, nqpqz2,
-             nqx, nqz,
-             nqpqx, nqpqz,
-             q);
-      swap_conditional(nqx2, nqpqx2, bit);
-      swap_conditional(nqz2, nqpqz2, bit);
+	  swap_conditional(nqx, nqpqx, bit);
+	  swap_conditional(nqz, nqpqz, bit);
+	  fmonty(nqx2, nqz2,
+			 nqpqx2, nqpqz2,
+			 nqx, nqz,
+			 nqpqx, nqpqz,
+			 q);
+	  swap_conditional(nqx2, nqpqx2, bit);
+	  swap_conditional(nqz2, nqpqz2, bit);
 
-      t = nqx;
-      nqx = nqx2;
-      nqx2 = t;
-      t = nqz;
-      nqz = nqz2;
-      nqz2 = t;
-      t = nqpqx;
-      nqpqx = nqpqx2;
-      nqpqx2 = t;
-      t = nqpqz;
-      nqpqz = nqpqz2;
-      nqpqz2 = t;
+	  t = nqx;
+	  nqx = nqx2;
+	  nqx2 = t;
+	  t = nqz;
+	  nqz = nqz2;
+	  nqz2 = t;
+	  t = nqpqx;
+	  nqpqx = nqpqx2;
+	  nqpqx2 = t;
+	  t = nqpqz;
+	  nqpqz = nqpqz2;
+	  nqpqz2 = t;
 
-      byte <<= 1;
-    }
+	  byte <<= 1;
+	}
   }
 
   memcpy(resultx, nqx, sizeof(limb) * 5);
