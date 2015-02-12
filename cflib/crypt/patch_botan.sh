@@ -10,7 +10,6 @@ HEADERS="\
 	algo_base/symkey \
 	algo_base/transform \
 	algo_factory/algo_factory \
-	alloc/locking_allocator/locking_allocator \
 	alloc/secmem \
 	asn1/alg_id \
 	asn1/asn1_alt_name \
@@ -338,6 +337,8 @@ for S in $SOURCES $PLATFORM_SOURCES ; do
 	cp "$BOTAN_SRC/src/lib/$S.cpp" botan/internal
 done
 
+cp "$BOTAN_SRC/src/lib/alloc/locking_allocator/locking_allocator.h" botan/locking_allocator.h
+cp "$BOTAN_SRC/src/lib/alloc/locking_allocator/locking_allocator.cpp" botan/locking_allocator.cpp
 cp "$BOTAN_SRC/src/lib/pubkey/dl_group/named.cpp" botan/internal/dl_named.cpp
 cp "$BOTAN_SRC/src/lib/pubkey/ec_group/named.cpp" botan/internal/ec_named.cpp
 

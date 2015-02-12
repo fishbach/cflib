@@ -46,6 +46,7 @@ unix {
 		botan/internal/es_egd.h \
 		botan/internal/proc_walk.h \
 		botan/internal/unix_procs.h \
+		botan/locking_allocator.h \
 
 	SOURCES += \
 		botan/internal/unix_proc_sources.cpp \
@@ -61,6 +62,7 @@ unix {
 		BOTAN_HAS_ENTROPY_SRC_EGD \
 		BOTAN_HAS_ENTROPY_SRC_PROC_WALKER \
 		BOTAN_HAS_ENTROPY_SRC_UNIX_PROCESS_RUNNER \
+		BOTAN_HAS_LOCKING_ALLOCATOR \
 		BOTAN_TARGET_OS_HAS_GMTIME_R \
 }
 win32 {

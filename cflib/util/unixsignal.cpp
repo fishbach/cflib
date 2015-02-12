@@ -67,6 +67,8 @@ UnixSignal::UnixSignal(bool quitQCoreApplication)
 	oldSigH15 = ::signal(15, signalHandler);
 
 	if (quitQCoreApplication) connect(this, SIGNAL(catchedSignal(int)), QCoreApplication::instance(), SLOT(quit()));
+#else
+	Q_UNUSED(quitQCoreApplication)
 #endif
 }
 
