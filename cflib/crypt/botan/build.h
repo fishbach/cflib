@@ -157,7 +157,6 @@
 #define BOTAN_HAS_KDF2
 #define BOTAN_HAS_KECCAK
 #define BOTAN_HAS_LION
-#define BOTAN_HAS_LOCKING_ALLOCATOR
 #define BOTAN_HAS_MARS
 #define BOTAN_HAS_MD2
 #define BOTAN_HAS_MD4
@@ -202,6 +201,7 @@
 #define BOTAN_HAS_WHIRLPOOL
 #define BOTAN_HAS_X942_PRF
 #define BOTAN_HAS_XTEA
+
 
 /*
 * Local configuration options (if any) follow

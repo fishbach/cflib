@@ -7,7 +7,6 @@ HEADERS += \
 	botan/symkey.h \
 	botan/transform.h \
 	botan/algo_factory.h \
-	botan/locking_allocator.h \
 	botan/secmem.h \
 	botan/alg_id.h \
 	botan/asn1_alt_name.h \
@@ -72,7 +71,6 @@ HEADERS += \
 	botan/credentials_manager.h \
 	botan/engine.h \
 	botan/entropy_src.h \
-	botan/aead_filt.h \
 	botan/basefilt.h \
 	botan/buf_filt.h \
 	botan/b64_filt.h \
@@ -135,14 +133,10 @@ HEADERS += \
 	botan/ocb.h \
 	botan/siv.h \
 	botan/cbc.h \
-	botan/cfb.h \
 	botan/cipher_mode.h \
-	botan/ecb.h \
 	botan/mode_pad.h \
-	botan/xts.h \
 	botan/bcrypt.h \
 	botan/pbkdf.h \
-	botan/pbkdf1.h \
 	botan/pbkdf2.h \
 	botan/eme.h \
 	botan/oaep.h \
@@ -186,9 +180,6 @@ HEADERS += \
 	botan/rng.h \
 	botan/chacha.h \
 	botan/ctr.h \
-	botan/ofb.h \
-	botan/rc4.h \
-	botan/salsa20.h \
 	botan/stream_cipher.h \
 	botan/tls_alert.h \
 	botan/tls_channel.h \
@@ -218,6 +209,14 @@ HEADERS += \
 	botan/parsing.h \
 	botan/rotate.h \
 	botan/types.h \
+	botan/pbkdf1.h \
+	botan/ofb.h \
+	botan/cfb.h \
+	botan/rc4.h \
+	botan/salsa20.h \
+	botan/ecb.h \
+	botan/xts.h \
+	botan/aead_filt.h \
 	botan/internal/algo_cache.h \
 	botan/internal/camellia_sbox.h \
 	botan/internal/cast_sboxes.h \
