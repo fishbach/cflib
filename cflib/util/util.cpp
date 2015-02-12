@@ -358,6 +358,7 @@ bool setProcessOwner(int uid, int gid)
 	Q_UNUSED(uid) Q_UNUSED(gid)
 	return false;
 #else
+	QCoreApplication::setSetuidAllowed(true);
 	return setgid(gid) != -1 && setuid(uid) != -1;
 #endif
 }
