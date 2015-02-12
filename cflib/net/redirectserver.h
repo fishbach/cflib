@@ -29,9 +29,11 @@ class RedirectServer : public RequestHandler
 public:
 	typedef std::function<QByteArray (const QString &, const QRegularExpressionMatch &)> DestUrlFunc;
 
+	void addRedirectIf     (const QRegularExpression & test, const char * destUrl);
 	void addRedirectIf     (const QRegularExpression & test, const QByteArray & destUrl);
 	void addRedirectIf     (const QRegularExpression & test, DestUrlFunc destUrlFunc);
 	void addRedirectIfNot  (const QRegularExpression & test, const QByteArray & destUrl);
+	void addDefaultRedirect(const char * destUrl);
 	void addDefaultRedirect(const QByteArray & destUrl);
 	void addDefaultRedirect(DestUrlFunc destUrlFunc);
 

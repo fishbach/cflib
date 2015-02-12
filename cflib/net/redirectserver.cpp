@@ -136,6 +136,11 @@ void TCPReader::closed()
 
 }
 
+void RedirectServer::addRedirectIf(const QRegularExpression & test, const char * destUrl)
+{
+	entries_ << Entry(false, test, QByteArray(destUrl));
+}
+
 void RedirectServer::addRedirectIf(const QRegularExpression & test, const QByteArray & destUrl)
 {
 	entries_ << Entry(false, test, destUrl);
@@ -149,6 +154,11 @@ void RedirectServer::addRedirectIf(const QRegularExpression & test, DestUrlFunc 
 void RedirectServer::addRedirectIfNot(const QRegularExpression & test, const QByteArray & destUrl)
 {
 	entries_ << Entry(true, test, destUrl);
+}
+
+void RedirectServer::addDefaultRedirect(const char * destUrl)
+{
+	entries_ << Entry(QByteArray(destUrl));
 }
 
 void RedirectServer::addDefaultRedirect(const QByteArray & destUrl)
