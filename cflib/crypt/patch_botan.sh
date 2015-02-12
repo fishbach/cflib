@@ -74,6 +74,7 @@ HEADERS="\
 	credentials/credentials_manager \
 	engine/engine \
 	entropy/entropy_src \
+	filters/aead_filt/aead_filt \
 	filters/basefilt \
 	filters/buf_filt \
 	filters/codec_filt/b64_filt \
@@ -136,10 +137,14 @@ HEADERS="\
 	modes/aead/ocb/ocb \
 	modes/aead/siv/siv \
 	modes/cbc/cbc \
+	modes/cfb/cfb \
 	modes/cipher_mode \
+	modes/ecb/ecb \
 	modes/mode_pad/mode_pad \
+	modes/xts/xts \
 	passhash/bcrypt/bcrypt \
 	pbkdf/pbkdf \
+	pbkdf/pbkdf1/pbkdf1 \
 	pbkdf/pbkdf2/pbkdf2 \
 	pk_pad/eme \
 	pk_pad/eme_oaep/oaep \
@@ -183,6 +188,9 @@ HEADERS="\
 	rng/rng \
 	stream/chacha/chacha \
 	stream/ctr/ctr \
+	stream/ofb/ofb \
+	stream/rc4/rc4 \
+	stream/salsa20/salsa20 \
 	stream/stream_cipher \
 	tls/tls_alert \
 	tls/tls_channel \
@@ -212,14 +220,6 @@ HEADERS="\
 	utils/parsing \
 	utils/rotate \
 	utils/types \
-	pbkdf/pbkdf1/pbkdf1 \
-	stream/ofb/ofb \
-	modes/cfb/cfb \
-	stream/rc4/rc4 \
-	stream/salsa20/salsa20 \
-	modes/ecb/ecb \
-	modes/xts/xts \
-	filters/aead_filt/aead_filt \
 "
 INTERNAL_HEADERS="\
 	algo_factory/algo_cache \
