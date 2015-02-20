@@ -56,7 +56,8 @@ namespace LogCat { enum {
 	Http    = 1 <<  7,
 	Crypt   = 1 <<  8,
 	User    = 1 <<  9,
-	JS      = 1 << 10
+	JS      = 1 << 10,
+	Compute = 1 << 11
 }; }
 
 namespace cflib { namespace util {
