@@ -104,7 +104,11 @@ defineTest(lib) {
 	defined(1, var) {
 		DESTDIR = $$1
 	} else {
-		DESTDIR = $${CFLIB_DIR}/lib
+		isInCFLib() {
+			DESTDIR = $${CFLIB_DIR}/lib
+		} else {
+			DESTDIR = lib
+		}
 	}
 	TEMPLATE = lib
 	export(TEMPLATE)
