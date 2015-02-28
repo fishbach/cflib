@@ -40,7 +40,7 @@ public:
 
 	static int openListenSocket(quint16 port, const QByteArray & ip = "127.0.0.1");
 	bool start(int listenSocket);
-	bool start(quint16 port, const QByteArray & ip = "127.0.0.1");
+	bool start(quint16 port, const QByteArray & ip);
 	bool stop();
 	bool isRunning() const;
 
