@@ -109,7 +109,7 @@ FileServer::FileServer(const QString & path, bool parseHtml, uint threadCount) :
 	ThreadVerify("FileServer", Worker, threadCount),
 	path_(path),
 	parseHtml_(parseHtml),
-	pathRE_("^/([_\\-\\w][._\\-\\w]*(/[_\\-\\w][._\\-\\w]*)*/?)?$"),
+	pathRE_("^(/(?:[_\\-\\w][._\\-\\w]*(?:/[_\\-\\w][._\\-\\w]*)*/?)?)(?:\\?.*)?$"),
 	endingRE_("\\.(\\w+)$"),
 	elementRE_("<!\\s*(\\$|inc |if |else|end)(.*?)!>")
 {
@@ -136,9 +136,12 @@ void FileServer::handleRequest(const Request & request)
 
 	// check path for valid chars
 	QString path = request.getUri();
-	if (!pathRE_.match(path).hasMatch()) {
+	QRegularExpressionMatch reMatch = pathRE_.match(path);
+	if (!reMatch.hasMatch()) {
 		logInfo("invalid path: %1", path);
 		return;
+	} else {
+		path = reMatch.captured(1);
 	}
 
 	logFunctionTraceParam("FileServer::handleRequest(%1)", path);
