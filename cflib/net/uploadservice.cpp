@@ -61,6 +61,7 @@ void UploadRequestHandler::handleClientId(uint)
 
 void UploadRequestHandler::requestEnd()
 {
+	logFunctionTrace
 	request_.sendText(
 		"<html><body onload=\"location.href='" + request_.getHeaderFields().value("referer") + "'\"></body></html>"
 	);
