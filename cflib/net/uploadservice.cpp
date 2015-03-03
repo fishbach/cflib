@@ -55,8 +55,9 @@ void UploadRequestHandler::morePassThroughData()
 	parseMoreData();
 }
 
-void UploadRequestHandler::handleClientId(uint)
+bool UploadRequestHandler::handleClientId(uint)
 {
+	return true;
 }
 
 void UploadRequestHandler::requestEnd()
@@ -148,8 +149,17 @@ void UploadRequestHandler::parseMoreData()
 				if (name_ == "clientId") {
 					uint clId = 0;
 					emit getClientId(data, clId);
-					handleClientId(clId);
-				} else handleData(data, true);	// finish
+					if (!handleClientId(clId)) {
+						deleteNext(this);
+						return;
+					}
+				} else {
+					// finish
+					if (!handleData(data, true)) {
+						deleteNext(this);
+						return;
+					}
+				}
 				buffer_.remove(0, pos + boundary_.size() + 2);	// \r\n
 				state_ = 2;
 			} else if (isLast) {
@@ -160,7 +170,10 @@ void UploadRequestHandler::parseMoreData()
 				break;	// we wait for more data
 			} else {
 				// pass intermediate data on
-				handleData(buffer_, false);
+				if (!handleData(buffer_, false)) {
+					deleteNext(this);
+					return;
+				}
 				buffer_.clear();
 				break;
 			}

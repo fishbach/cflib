@@ -52,8 +52,8 @@ signals:
 	void getClientId(const QByteArray & clIdData, uint & clId);
 
 protected:
-	virtual void handleClientId(uint clId);
-	virtual void handleData(const QByteArray & data, bool isLast) = 0;
+	virtual bool handleClientId(uint clId);
+	virtual bool handleData(const QByteArray & data, bool isLast) = 0;
 	virtual void requestEnd();
 
 	const Request request_;
