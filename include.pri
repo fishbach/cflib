@@ -73,11 +73,13 @@ defineTest(setBuildPaths) {
 	CONFIG *= c++11 stl_off exceptions_off
 	export(CONFIG)
 
-	QMAKE_CXXFLAGS_WARN_ON += -Wno-unknown-pragmas
 	equals(QMAKE_CXX, "clang++") {
 		QMAKE_CXXFLAGS_WARN_ON += -Wno-shift-count-overflow
-		export(QMAKE_CXXFLAGS_WARN_ON)
 	}
+	equals(QMAKE_CXX, "g++") {
+		QMAKE_CXXFLAGS_WARN_ON += -Wno-unknown-pragmas
+	}
+	export(QMAKE_CXXFLAGS_WARN_ON)
 
 	win32 {
 		DEFINES += _WIN32_WINNT=0x0600
