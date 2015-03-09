@@ -130,9 +130,7 @@ public:
 	{
 		sendReply(
 			"HTTP/1.1 404 Not Found\r\n"
-			"Date: " << cflib::util::dateTimeForHTTP(QDateTime::currentDateTime()) << "\r\n"
-			"Server: cflib/0.1\r\n"
-			"Connection: keep-alive\r\n"
+			<< defaultHeaders() <<
 			"Content-Type: text/html; charset=utf-8\r\n",
 
 			"<html>\r\n"
@@ -142,6 +140,14 @@ public:
 			"</body>\r\n"
 			"</html>\r\n",
 			false);
+	}
+
+	inline QByteArray defaultHeaders()
+	{
+		return
+			"Date: " << cflib::util::dateTimeForHTTP(QDateTime::currentDateTime()) << "\r\n"
+			"Server: cflib/0.1\r\n"
+			"Connection: keep-alive\r\n";
 	}
 
 };
@@ -244,29 +250,25 @@ void Request::sendNotFound() const
 void Request::sendRedirect(const QByteArray & url) const
 {
 	d->sendReply(
-			"HTTP/1.1 307 Temporary Redirect\r\n"
-			"Location: " << url << "\r\n"
-			"Date: " << cflib::util::dateTimeForHTTP(QDateTime::currentDateTime()) << "\r\n"
-			"Server: cflib/0.1\r\n"
-			"Connection: keep-alive\r\n"
-			"Content-Type: text/html; charset=utf-8\r\n",
+		"HTTP/1.1 307 Temporary Redirect\r\n"
+		"Location: " << url << "\r\n"
+		<< d->defaultHeaders() <<
+		"Content-Type: text/html; charset=utf-8\r\n",
 
-			"<html>\r\n"
-			"<head><title>307 - Temporary Redirect</title></head>\r\n"
-			"<body>\r\n"
-			"<h1>307 - Temporary Redirect</h1>\r\n"
-			"</body>\r\n"
-			"</html>\r\n",
-			false);
+		"<html>\r\n"
+		"<head><title>307 - Temporary Redirect</title></head>\r\n"
+		"<body>\r\n"
+		"<h1>307 - Temporary Redirect</h1>\r\n"
+		"</body>\r\n"
+		"</html>\r\n",
+		false);
 }
 
 void Request::sendReply(const QByteArray & reply, const QByteArray & contentType, bool compression) const
 {
 	d->sendReply(
 		"HTTP/1.1 200 OK\r\n"
-		"Date: " << cflib::util::dateTimeForHTTP(QDateTime::currentDateTime()) << "\r\n"
-		"Server: cflib/0.1\r\n"
-		"Connection: keep-alive\r\n"
+		<< d->defaultHeaders() <<
 		"Content-Type: " << contentType << "\r\n",
 		reply, compression);
 }
@@ -276,9 +278,19 @@ void Request::sendText(const QString & reply, const QByteArray & contentType, bo
 	sendReply(reply.toUtf8(), contentType + "; charset=utf-8", compression);
 }
 
+void Request::sendRaw(const QByteArray & header, const QByteArray & body, bool compression) const
+{
+	d->sendReply(header, body, compression);
+}
+
 void Request::addHeaderLine(const QByteArray & line) const
 {
 	d->sendHeaderLines << line;
+}
+
+QByteArray Request::defaultHeaders() const
+{
+	return d->defaultHeaders();
 }
 
 bool Request::isPassThrough() const

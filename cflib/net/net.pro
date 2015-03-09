@@ -24,6 +24,7 @@ TARGET = cflib_net
 HEADERS = \
 	apiserver.h \
 	fileserver.h \
+	httpauth.h \
 	httpserver.h \
 	impl/requestparser.h \
 	jsservice.h \

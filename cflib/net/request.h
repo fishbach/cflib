@@ -64,7 +64,9 @@ public:
 	void sendRedirect(const QByteArray & url) const;
 	void sendReply(const QByteArray & reply, const QByteArray & contentType, bool compression = true) const;
 	void sendText(const QString & reply, const QByteArray & contentType = "text/html", bool compression = true) const;
+	void sendRaw(const QByteArray & header, const QByteArray & body, bool compression) const;
 	void addHeaderLine(const QByteArray & line) const;
+	QByteArray defaultHeaders() const;
 
 	bool isPassThrough() const;
 	void setPassThroughHandler(PassThroughHandler * hdl) const;
