@@ -28,19 +28,26 @@ namespace cflib { namespace net {
 class RedirectServer : public RequestHandler
 {
 public:
-	typedef std::function<QByteArray (const QString &, const QRegularExpressionMatch &)> DestUrlFunc;
+	typedef QPair<QByteArray /*ip*/, quint16 /*port*/> DestHost;
+	typedef std::function<QByteArray (const Request &                                 )> DestUrlFunc;
+	typedef std::function<QByteArray (const Request &, const QRegularExpressionMatch &)> DestUrlReFunc;
+	typedef std::function<DestHost   (const Request &                                 )> DestHostFunc;
+	typedef std::function<DestHost   (const Request &, const QRegularExpressionMatch &)> DestHostReFunc;
 
-	void addRedirectIf     (const QRegularExpression & test, const char * destUrl);
+public:
+	void addValid          (const QRegularExpression & test);
+
 	void addRedirectIf     (const QRegularExpression & test, const QByteArray & destUrl);
-	void addRedirectIf     (const QRegularExpression & test, DestUrlFunc destUrlFunc);
+	void addRedirectIf     (const QRegularExpression & test, DestUrlReFunc destUrlReFunc);
 	void addRedirectIfNot  (const QRegularExpression & test, const QByteArray & destUrl);
-	void addDefaultRedirect(const char * destUrl);
 	void addDefaultRedirect(const QByteArray & destUrl);
 	void addDefaultRedirect(DestUrlFunc destUrlFunc);
 
 	void addForwardIf      (const QRegularExpression & test, const QByteArray & ip, quint16 port);
+	void addForwardIf      (const QRegularExpression & test, DestHostReFunc destHostReFunc);
 	void addForwardIfNot   (const QRegularExpression & test, const QByteArray & ip, quint16 port);
 	void addDefaultForward (const QByteArray & ip, quint16 port);
+	void addDefaultForward (DestHostFunc destHostFunc);
 
 protected:
 	virtual void handleRequest(const Request & request);
@@ -48,27 +55,38 @@ protected:
 private:
 	struct Entry
 	{
+		bool isValid;
 		bool isRedirect;
 		bool isDefault;
 		bool invert;
 		QRegularExpression test;
 		QByteArray destUrl;
 		DestUrlFunc destUrlFunc;
-		QByteArray ip;
-		quint16 port;
+		DestUrlReFunc destUrlReFunc;
+		DestHost destHost;
+		DestHostFunc destHostFunc;
+		DestHostReFunc destHostReFunc;
+
+		Entry(const QRegularExpression & test) :
+			isValid(true), isRedirect(false), isDefault(false), invert(false), test(test) {}
 
 		Entry(bool invert, const QRegularExpression & test, const QByteArray & destUrl) :
-			isRedirect(true), isDefault(false), invert(invert), test(test), destUrl(destUrl), port(0) {}
-		Entry(bool invert, const QRegularExpression & test, DestUrlFunc destUrlFunc) :
-			isRedirect(true), isDefault(false), invert(invert), test(test), destUrlFunc(destUrlFunc), port(0) {}
-		Entry(bool invert, const QRegularExpression & test, const QByteArray & ip, quint16 port) :
-			isRedirect(false), isDefault(false), invert(invert), test(test), ip(ip), port(port) {}
+			isValid(false), isRedirect(true), isDefault(false), invert(invert), test(test), destUrl(destUrl) {}
+		Entry(bool invert, const QRegularExpression & test, DestUrlReFunc destUrlReFunc) :
+			isValid(false), isRedirect(true), isDefault(false), invert(invert), test(test), destUrlReFunc(destUrlReFunc) {}
 		Entry(const QByteArray & destUrl) :
-			isRedirect(true), isDefault(true), invert(false), destUrl(destUrl), port(0) {}
+			isValid(false), isRedirect(true), isDefault(true), invert(false), destUrl(destUrl) {}
 		Entry(DestUrlFunc destUrlFunc) :
-			isRedirect(true), isDefault(true), invert(false), destUrlFunc(destUrlFunc), port(0) {}
-		Entry(const QByteArray & ip, quint16 port) :
-			isRedirect(false), isDefault(true), invert(false), ip(ip), port(port) {}
+			isValid(false), isRedirect(true), isDefault(true), invert(false), destUrlFunc(destUrlFunc) {}
+
+		Entry(bool invert, const QRegularExpression & test, const DestHost & destHost) :
+			isValid(false), isRedirect(false), isDefault(false), invert(invert), test(test), destHost(destHost) {}
+		Entry(bool invert, const QRegularExpression & test, DestHostReFunc destHostReFunc) :
+			isValid(false), isRedirect(false), isDefault(false), invert(invert), test(test), destHostReFunc(destHostReFunc) {}
+		Entry(const DestHost & destHost) :
+			isValid(false), isRedirect(false), isDefault(true), invert(false), destHost(destHost) {}
+		Entry(DestHostFunc destHostFunc) :
+			isValid(false), isRedirect(false), isDefault(true), invert(false), destHostFunc(destHostFunc) {}
 	};
 	QList<Entry> entries_;
 };

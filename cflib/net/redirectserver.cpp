@@ -136,9 +136,9 @@ void TCPReader::closed()
 
 }
 
-void RedirectServer::addRedirectIf(const QRegularExpression & test, const char * destUrl)
+void RedirectServer::addValid(const QRegularExpression & test)
 {
-	entries_ << Entry(false, test, QByteArray(destUrl));
+	entries_ << Entry(test);
 }
 
 void RedirectServer::addRedirectIf(const QRegularExpression & test, const QByteArray & destUrl)
@@ -146,19 +146,14 @@ void RedirectServer::addRedirectIf(const QRegularExpression & test, const QByteA
 	entries_ << Entry(false, test, destUrl);
 }
 
-void RedirectServer::addRedirectIf(const QRegularExpression & test, DestUrlFunc destUrlFunc)
+void RedirectServer::addRedirectIf(const QRegularExpression & test, DestUrlReFunc destUrlReFunc)
 {
-	entries_ << Entry(false, test, destUrlFunc);
+	entries_ << Entry(false, test, destUrlReFunc);
 }
 
 void RedirectServer::addRedirectIfNot(const QRegularExpression & test, const QByteArray & destUrl)
 {
 	entries_ << Entry(true, test, destUrl);
-}
-
-void RedirectServer::addDefaultRedirect(const char * destUrl)
-{
-	entries_ << Entry(QByteArray(destUrl));
 }
 
 void RedirectServer::addDefaultRedirect(const QByteArray & destUrl)
@@ -173,17 +168,27 @@ void RedirectServer::addDefaultRedirect(DestUrlFunc destUrlFunc)
 
 void RedirectServer::addForwardIf(const QRegularExpression & test, const QByteArray & ip, quint16 port)
 {
-	entries_ << Entry(false, test, ip, port);
+	entries_ << Entry(false, test, qMakePair(ip, port));
+}
+
+void RedirectServer::addForwardIf(const QRegularExpression & test, DestHostReFunc destHostReFunc)
+{
+	entries_ << Entry(false, test, destHostReFunc);
 }
 
 void RedirectServer::addForwardIfNot(const QRegularExpression & test, const QByteArray & ip, quint16 port)
 {
-	entries_ << Entry(true, test, ip, port);
+	entries_ << Entry(true, test, qMakePair(ip, port));
 }
 
 void RedirectServer::addDefaultForward(const QByteArray & ip, quint16 port)
 {
-	entries_ << Entry(ip, port);
+	entries_ << Entry(qMakePair(ip, port));
+}
+
+void RedirectServer::addDefaultForward(DestHostFunc destHostFunc)
+{
+	entries_ << Entry(destHostFunc);
 }
 
 void RedirectServer::handleRequest(const cflib::net::Request & request)
@@ -194,11 +199,19 @@ void RedirectServer::handleRequest(const cflib::net::Request & request)
 	while (it.hasNext()) {
 		const Entry & entry = it.next();
 
-		const QRegularExpressionMatch match = entry.test.match(url);
-		if (!entry.isDefault && match.hasMatch() == entry.invert) continue;
+		QRegularExpressionMatch match;
+		if (!entry.isDefault) {
+			match = entry.test.match(url);
+			if (match.hasMatch() == entry.invert) continue;
+			if (entry.isValid) return;
+		}
 
 		if (entry.isRedirect) {
-			request.sendRedirect(entry.destUrlFunc ? entry.destUrlFunc(url, match) : entry.destUrl);
+			if (entry.isDefault) {
+				request.sendRedirect(entry.destUrlFunc ? entry.destUrlFunc(request) : entry.destUrl);
+			} else {
+				request.sendRedirect(entry.destUrlReFunc ? entry.destUrlReFunc(request, match) : entry.destUrl);
+			}
 			return;
 		}
 
@@ -208,9 +221,15 @@ void RedirectServer::handleRequest(const cflib::net::Request & request)
 			return;
 		}
 
-		const TCPConnInitializer * ci = tcpServ->openConnection(entry.ip, entry.port);
+		DestHost destHost;
+		if (entry.isDefault) {
+			destHost = entry.destHostFunc ? entry.destHostFunc(request) : entry.destHost;
+		} else {
+			destHost = entry.destHostReFunc ? entry.destHostReFunc(request, match) : entry.destHost;
+		}
+		const TCPConnInitializer * ci = tcpServ->openConnection(destHost.first, destHost.second);
 		if (!ci) {
-			logInfo("cannot open connection to %1:%2", entry.ip, entry.port);
+			logInfo("cannot open connection to %1:%2", destHost.first, destHost.second);
 			request.sendNotFound();
 			return;
 		}
