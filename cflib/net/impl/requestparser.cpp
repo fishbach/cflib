@@ -166,7 +166,7 @@ void RequestParser::parseRequest()
 			if (pos == -1) break;
 
 			body_ = header_.mid(pos + 4);
-			header_.resize(pos + 2);
+			header_.resize(pos);
 
 			if (!parseHeader()) {
 				abortConnection();
@@ -214,10 +214,12 @@ bool RequestParser::parseHeader()
 	bool isFirst = true;
 	int start = 0;
 	int end = header_.indexOf("\r\n", 0);
-	while (end > 0) {
+	if (end < 0) end = header_.size();
+	while (start < end) {
 		const QByteArray line = header_.mid(start, end - start);
 		start = end + 2;
 		end = header_.indexOf("\r\n", start);
+		if (end < 0) end = header_.size();
 
 		if (isFirst) {
 			isFirst = false;
