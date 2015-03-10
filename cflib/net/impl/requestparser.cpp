@@ -40,6 +40,7 @@ RequestParser::RequestParser(const TCPConnInitializer * init,
 	handlers_(handlers),
 	id_(connCount.fetchAndAddRelaxed(1) + 1),
 	contentLength_(-1),
+	method_(Request::NONE),
 	requestCount_(0), nextReplyId_(1),
 	attachedRequests_(1),
 	socketClosed_(false),
@@ -165,7 +166,7 @@ void RequestParser::parseRequest()
 			if (pos == -1) break;
 
 			body_ = header_.mid(pos + 4);
-			header_.resize(pos);
+			header_.resize(pos + 2);
 
 			if (!parseHeader()) {
 				abortConnection();
@@ -174,7 +175,7 @@ void RequestParser::parseRequest()
 		}
 
 		// body ok?
-		const qint64 size = method_ == "GET" ? 0 : contentLength_;
+		const qint64 size = method_ == Request::POST ? contentLength_ : 0;
 
 		if (body_.size() < size) {
 			// small requests we hold in memory
@@ -191,7 +192,7 @@ void RequestParser::parseRequest()
 
 		// notify handlers
 		++attachedRequests_;
-		Request(id_, ++requestCount_, header_, headerFields_, method_, uri_, body_,
+		Request(id_, ++requestCount_, header_, headerFields_, (Request::Method)method_, uri_, body_,
 			handlers_, passThrough_, this).callNextHandler();
 		if (detached_) return;
 
@@ -199,7 +200,7 @@ void RequestParser::parseRequest()
 		header_ = nextHeader;
 		contentLength_ = passThrough_ ? (size - body_.size()) : -1;
 		headerFields_.clear();
-		method_.clear();
+		method_ = Request::NONE;
 		uri_.clear();
 		body_.clear();
 
@@ -211,7 +212,13 @@ void RequestParser::parseRequest()
 bool RequestParser::parseHeader()
 {
 	bool isFirst = true;
-	foreach (const QByteArray & line, header_.split('\n')) {
+	int start = 0;
+	int end = header_.indexOf("\r\n", 0);
+	while (end > 0) {
+		const QByteArray line = header_.mid(start, end - start);
+		start = end + 2;
+		end = header_.indexOf("\r\n", start);
+
 		if (isFirst) {
 			isFirst = false;
 			if (!handleRequestLine(line)) return false;
@@ -223,8 +230,8 @@ bool RequestParser::parseHeader()
 			logWarn("funny line in header: %1", line);
 			return false;
 		}
-		QByteArray key   = line.left(pos).trimmed().toLower();
-		QByteArray value = line.mid(pos + 1).trimmed();
+		QByteArray key   = line.left(pos).toLower();
+		QByteArray value = line.mid(pos + (line[pos + 1] == ' ' ? 2 : 1));
 
 		headerFields_[key] = value;
 
@@ -238,7 +245,7 @@ bool RequestParser::parseHeader()
 		}
 	}
 
-	if (contentLength_ == -1 && method_ != "GET") {
+	if (contentLength_ == -1 && method_ == Request::POST) {
 		logWarn("Content-Length field not found in header");
 		return false;
 	}
@@ -249,24 +256,27 @@ bool RequestParser::parseHeader()
 bool RequestParser::handleRequestLine(const QByteArray & line)
 {
 	QList<QByteArray> parts = line.split(' ');
-	if (parts.size() < 3) {
+	if (parts.size() != 3) {
 		logWarn("unknown request on connection %1: %2", id_, line);
 		return false;
 	}
 
-	method_ = parts[0].trimmed();
-	if (method_ != "GET" && method_ != "POST") {
-		logWarn("unknown method on connection %1: %2", id_, method_);
+	const QByteArray & method = parts[0];
+	if      (method == "GET" ) method_ = Request::GET;
+	else if (method == "POST") method_ = Request::POST;
+	else if (method == "HEAD") method_ = Request::HEAD;
+	else {
+		logWarn("unknown method on connection %1: %2", id_, method);
 		return false;
 	}
 
-	uri_ = parts[1].trimmed();
+	uri_ = parts[1];
 	if (uri_.isEmpty()) {
 		logWarn("no URI on connection %1: %2", id_);
 		return false;
 	}
 
-	QByteArray proto = parts[2].trimmed();
+	const QByteArray & proto = parts[2];
 	if (!proto.startsWith("HTTP/")) {
 		logWarn("unknown protocol on connection %1: %2", id_, proto);
 		return false;

@@ -183,8 +183,9 @@ void FileServer::handleRequest(const Request & request)
 
 	// parse html files
 	if (fullPath.endsWith(".html")) {
-		if (parseHtml_) request.sendText(parseHtml(fullPath, isPart, path));
-		else            request.sendText(cflib::util::readFile(fullPath));
+		if (request.isHEAD()) request.sendText("");
+		else if (parseHtml_)  request.sendText(parseHtml(fullPath, isPart, path));
+		else                  request.sendText(cflib::util::readFile(fullPath));
 		return;
 	}
 
@@ -204,7 +205,8 @@ void FileServer::handleRequest(const Request & request)
 		else if (ending == "css" )  { compression = true;  contentType = "text/css; charset=utf-8"; }
 		else if (ending == "data" ) { compression = true;  contentType = "application/octet-stream"; }
 	}
-	request.sendReply(cflib::util::readFile(fullPath), contentType, compression);
+	if (request.isHEAD()) request.sendReply("", contentType);
+	else                  request.sendReply(cflib::util::readFile(fullPath), contentType, compression);
 }
 
 QString FileServer::parseHtml(const QString & fullPath, bool isPart, const QString & path,

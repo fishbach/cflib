@@ -142,7 +142,7 @@ public:
 		SyncedThreadCall<bool> stc(this);
 		if (!stc.verify(&Impl::stop)) return stc.retval();
 
-		if (isRunning()) {
+		if (!isRunning()) {
 			logWarn("server not running");
 			return false;
 		}

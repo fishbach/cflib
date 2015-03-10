@@ -32,7 +32,7 @@ class Request::Shared
 public:
 	Shared(int connId, int requestId,
 		const QByteArray & header,
-		const KeyVal & headerFields, const QByteArray & method, const QByteArray & uri,
+		const Request::KeyVal & headerFields, Request::Method method, const QByteArray & uri,
 		const QByteArray & body, const QList<RequestHandler *> & handlers, bool passThrough,
 		impl::RequestParser * parser)
 	:
@@ -77,8 +77,8 @@ public:
 	int requestId;
 	QByteArray id;
 	QByteArray header;
-	KeyVal headerFields;
-	QByteArray method;
+	Request::KeyVal headerFields;
+	Request::Method method;
 	QByteArray uri;
 	QByteArray body;
 	QList<RequestHandler *> handlers;
@@ -111,7 +111,9 @@ public:
 		replySent = true;
 
 		// compression
-		if (compression && body.size() > 256 && getRequestField("Accept-Encoding").indexOf("gzip") != -1) {
+		if (compression && method != Request::HEAD && body.size() > 256 &&
+			getRequestField("Accept-Encoding").indexOf("gzip") != -1)
+		{
 			header += "Content-Encoding: gzip\r\n";
 			cflib::util::gzip(body, 1);
 		}
@@ -120,8 +122,9 @@ public:
 		while (it.hasNext()) header << it.next() << "\r\n";
 		header
 			<< "Content-Length: " << QByteArray::number(body.size()) << "\r\n"
-			<< "\r\n"
-			<< body;
+			<< "\r\n";
+
+		if (method != Request::HEAD) header += body;
 
 		parser->sendReply(requestId, header);
 	}
@@ -153,13 +156,13 @@ public:
 };
 
 Request::Request() :
-	d(new Shared(0, 0, QByteArray(), KeyVal(), QByteArray(), QByteArray(), QByteArray(), QList<RequestHandler *>(), false, 0))
+	d(new Shared(0, 0, QByteArray(), KeyVal(), NONE, QByteArray(), QByteArray(), QList<RequestHandler *>(), false, 0))
 {
 }
 
 Request::Request(int connId, int requestId,
 	const QByteArray & header,
-	const KeyVal & headerFields, const QByteArray & method, const QByteArray & uri,
+	const KeyVal & headerFields, Method method, const QByteArray & uri,
 	const QByteArray & body, const QList<RequestHandler *> & handlers, bool passThrough,
 	impl::RequestParser * parser)
 :
@@ -222,9 +225,9 @@ Request::KeyVal Request::getHeaderFields() const
 	return d->headerFields;
 }
 
-bool Request::isGET() const
+Request::Method Request::getMethod() const
 {
-	return d->method == "GET";
+	return d->method;
 }
 
 QByteArray Request::getUri() const

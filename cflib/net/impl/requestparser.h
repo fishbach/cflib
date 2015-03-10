@@ -60,7 +60,7 @@ private:
 
 	qint64 contentLength_;
 	QHash<QByteArray, QByteArray> headerFields_;
-	QByteArray method_;
+	int method_;
 	QByteArray uri_;
 	QByteArray body_;
 

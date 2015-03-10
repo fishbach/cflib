@@ -33,12 +33,18 @@ class Request
 public:
 	typedef QPair<int, int> Id;
 	typedef QHash<QByteArray, QByteArray> KeyVal;
+	enum Method {
+		NONE = 0,
+		GET,
+		POST,
+		HEAD
+	};
 
 public:
 	Request();
 	Request(int connId, int requestId,
 		const QByteArray & header,
-		const KeyVal & headerFields, const QByteArray & method, const QByteArray & uri,
+		const KeyVal & headerFields, Method method, const QByteArray & uri,
 		const QByteArray & body, const QList<RequestHandler *> & handlers, bool passThrough,
 		impl::RequestParser * parser);
 
@@ -54,8 +60,10 @@ public:
 	QByteArray getHeader(const QByteArray & name) const;
 	QByteArray getHostname() const;
 	KeyVal getHeaderFields() const;
-	bool isGET() const;
-	bool isPOST() const { return !isGET(); }
+	Method getMethod() const;
+	inline bool isGET()  const { return getMethod() == GET; }
+	inline bool isPOST() const { return getMethod() == POST; }
+	inline bool isHEAD() const { return getMethod() == HEAD; }
 	QByteArray getUri() const;
 	QByteArray getBody() const;
 	QByteArray getRemoteIP() const;
