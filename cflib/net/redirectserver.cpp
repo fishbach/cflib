@@ -141,6 +141,11 @@ void RedirectServer::addValid(const QRegularExpression & test)
 	entries_ << Entry(test);
 }
 
+void RedirectServer::addRedirectIf(const QRegularExpression & test, const char * destUrl)
+{
+	entries_ << Entry(false, test, QByteArray(destUrl));
+}
+
 void RedirectServer::addRedirectIf(const QRegularExpression & test, const QByteArray & destUrl)
 {
 	entries_ << Entry(false, test, destUrl);
@@ -151,9 +156,19 @@ void RedirectServer::addRedirectIf(const QRegularExpression & test, DestUrlReFun
 	entries_ << Entry(false, test, destUrlReFunc);
 }
 
+void RedirectServer::addRedirectIfNot(const QRegularExpression & test, const char * destUrl)
+{
+	entries_ << Entry(true, test, QByteArray(destUrl));
+}
+
 void RedirectServer::addRedirectIfNot(const QRegularExpression & test, const QByteArray & destUrl)
 {
 	entries_ << Entry(true, test, destUrl);
+}
+
+void RedirectServer::addDefaultRedirect(const char * destUrl)
+{
+	entries_ << Entry(QByteArray(destUrl));
 }
 
 void RedirectServer::addDefaultRedirect(const QByteArray & destUrl)

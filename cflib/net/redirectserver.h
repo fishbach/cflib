@@ -37,9 +37,12 @@ public:
 public:
 	void addValid          (const QRegularExpression & test);
 
+	void addRedirectIf     (const QRegularExpression & test, const char * destUrl);
 	void addRedirectIf     (const QRegularExpression & test, const QByteArray & destUrl);
 	void addRedirectIf     (const QRegularExpression & test, DestUrlReFunc destUrlReFunc);
+	void addRedirectIfNot  (const QRegularExpression & test, const char * destUrl);
 	void addRedirectIfNot  (const QRegularExpression & test, const QByteArray & destUrl);
+	void addDefaultRedirect(const char * destUrl);
 	void addDefaultRedirect(const QByteArray & destUrl);
 	void addDefaultRedirect(DestUrlFunc destUrlFunc);
 
