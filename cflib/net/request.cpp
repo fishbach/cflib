@@ -120,11 +120,14 @@ public:
 
 		QListIterator<QByteArray> it(sendHeaderLines);
 		while (it.hasNext()) header << it.next() << "\r\n";
-		header
-			<< "Content-Length: " << QByteArray::number(body.size()) << "\r\n"
-			<< "\r\n";
-
-		if (method != Request::HEAD) header += body;
+		if (method != Request::HEAD) {
+			header
+				<< "Content-Length: " << QByteArray::number(body.size()) << "\r\n"
+				<< "\r\n"
+				<< body;
+		} else {
+			header += "\r\n";
+		}
 
 		parser->sendReply(requestId, header);
 	}
