@@ -33,41 +33,14 @@ HEADERS = \
 OTHER_FILES = \
 	patch_botan.sh \
 
-# botan
-include(botan/botan.pri)
-win32 {
-	HEADERS += \
-		botan/internal/es_capi.h \
-		botan/internal/es_win32.h \
-}
-unix {
-	HEADERS += \
-		botan/internal/dev_random.h \
-		botan/internal/es_egd.h \
-		botan/internal/proc_walk.h \
-		botan/internal/unix_procs.h \
-		botan/locking_allocator.h \
-
-	SOURCES += \
-		botan/internal/unix_proc_sources.cpp \
-}
-
 lib()
 
 # botan
 CONFIG += exceptions
-unix {
-	DEFINES += \
-		BOTAN_HAS_ENTROPY_SRC_DEV_RANDOM \
-		BOTAN_HAS_ENTROPY_SRC_EGD \
-		BOTAN_HAS_ENTROPY_SRC_PROC_WALKER \
-		BOTAN_HAS_ENTROPY_SRC_UNIX_PROCESS_RUNNER \
-		BOTAN_HAS_LOCKING_ALLOCATOR \
-		BOTAN_TARGET_OS_HAS_GMTIME_R \
+macx {
+	BOTAN_OS = macosx
+	SOURCES += botan/$$BOTAN_OS/botan_all_rdrand.cpp
 }
-win32 {
-	DEFINES += \
-		BOTAN_HAS_ENTROPY_SRC_CAPI \
-		BOTAN_HAS_ENTROPY_SRC_WIN32 \
-		BOTAN_TARGET_OS_HAS_GMTIME_S \
-}
+INCLUDEPATH += botan/$$BOTAN_OS
+HEADERS += botan/$$BOTAN_OS/botan_all.h botan/$$BOTAN_OS/botan_all_internal.h
+SOURCES += botan/$$BOTAN_OS/botan_all.cpp
