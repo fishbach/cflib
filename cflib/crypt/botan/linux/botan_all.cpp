@@ -3338,6 +3338,28 @@ std::ostream& operator<<(std::ostream& out, const X509_DN& dn)
 
 }
 /*
+* (C) 2015 Jack Lloyd
+*
+* Botan is released under the Simplified BSD License (see license.txt)
+*/
+
+
+namespace Botan {
+
+//static
+void LibraryInitializer::initialize(const std::string&)
+   {
+   // none needed currently
+   }
+
+//static
+void LibraryInitializer::deinitialize()
+   {
+   // none needed currently
+   }
+
+}
+/*
 * Algorithm Retrieval
 * (C) 1999-2007,2015 Jack Lloyd
 *
@@ -8067,7 +8089,7 @@ BOTAN_REGISTER_NAMED_T(MessageAuthenticationCode, "CMAC", CMAC, CMAC::make);
 */
 secure_vector<byte> CMAC::poly_double(const secure_vector<byte>& in)
    {
-   const bool top_carry = (in[0] & 0x80);
+   const bool top_carry = static_cast<bool>(in[0] & 0x80);
 
    secure_vector<byte> out = in;
 
@@ -9943,7 +9965,7 @@ fmonty(limb *x2, limb *z2, /* output 2Q */
 static void
 swap_conditional(limb a[5], limb b[5], limb iswap) {
   unsigned i;
-  const limb swap = -iswap;
+  const limb swap = static_cast<limb>(-iswap);
 
   for (i = 0; i < 5; ++i) {
     const limb x = swap & (a[i] ^ b[i]);
@@ -12966,8 +12988,10 @@ inline u32bit get_u32bit(const BigInt& x, size_t i)
 * Treating this MPI as a sequence of 32-bit words in big-endian
 * order, set word i to the value x
 */
-inline void set_u32bit(BigInt& x, size_t i, u32bit v)
+template<typename T>
+inline void set_u32bit(BigInt& x, size_t i, T v_in)
    {
+   const u32bit v = static_cast<u32bit>(v_in);
 #if (BOTAN_MP_WORD_BITS == 32)
    x.set_word_at(i, v);
 #elif (BOTAN_MP_WORD_BITS == 64)
@@ -16322,61 +16346,25 @@ inline int write_str_output(char out[], size_t* out_len, const std::string& str)
 
 extern "C" {
 
-struct botan_rng_struct : public botan_struct<Botan::RandomNumberGenerator, 0x4901F9C1>
-   {
-   using botan_struct::botan_struct;
-   };
-
-struct botan_hash_struct : public botan_struct<Botan::HashFunction, 0x1F0A4F84>
-   {
-   using botan_struct::botan_struct;
-   };
-
-struct botan_mac_struct : public botan_struct<Botan::MessageAuthenticationCode, 0xA06E8FC1>
-   {
-   using botan_struct::botan_struct;
-   };
+#define BOTAN_FFI_DECLARE_STRUCT(NAME, TYPE, MAGIC) \
+   struct NAME : public botan_struct<TYPE, MAGIC> { explicit NAME(TYPE* x) : botan_struct(x) {} }
 
 struct botan_cipher_struct : public botan_struct<Botan::Cipher_Mode, 0xB4A2BF9C>
    {
-   using botan_struct::botan_struct;
+   explicit botan_cipher_struct(Botan::Cipher_Mode* x) : botan_struct(x) {}
    Botan::secure_vector<uint8_t> m_buf;
    };
 
-struct botan_pubkey_struct : public botan_struct<Botan::Public_Key, 0x2C286519>
-   {
-   using botan_struct::botan_struct;
-   };
-
-struct botan_privkey_struct : public botan_struct<Botan::Private_Key, 0x7F96385E>
-   {
-   using botan_struct::botan_struct;
-   };
-
-struct botan_pk_op_encrypt_struct : public botan_struct<Botan::PK_Encryptor, 0x891F3FC3>
-   {
-   using botan_struct::botan_struct;
-   };
-
-struct botan_pk_op_decrypt_struct : public botan_struct<Botan::PK_Decryptor, 0x912F3C37>
-   {
-   using botan_struct::botan_struct;
-   };
-
-struct botan_pk_op_sign_struct : public botan_struct<Botan::PK_Signer, 0x1AF0C39F>
-   {
-   using botan_struct::botan_struct;
-   };
-
-struct botan_pk_op_verify_struct : public botan_struct<Botan::PK_Verifier, 0x2B91F936>
-   {
-   using botan_struct::botan_struct;
-   };
-
-struct botan_pk_op_ka_struct : public botan_struct<Botan::PK_Key_Agreement, 0x2939CAB1>
-   {
-   using botan_struct::botan_struct;
-   };
+BOTAN_FFI_DECLARE_STRUCT(botan_rng_struct, Botan::RandomNumberGenerator, 0x4901F9C1);
+BOTAN_FFI_DECLARE_STRUCT(botan_hash_struct, Botan::HashFunction, 0x1F0A4F84);
+BOTAN_FFI_DECLARE_STRUCT(botan_mac_struct, Botan::MessageAuthenticationCode, 0xA06E8FC1);
+BOTAN_FFI_DECLARE_STRUCT(botan_pubkey_struct, Botan::Public_Key, 0x2C286519);
+BOTAN_FFI_DECLARE_STRUCT(botan_privkey_struct, Botan::Private_Key, 0x7F96385E);
+BOTAN_FFI_DECLARE_STRUCT(botan_pk_op_encrypt_struct, Botan::PK_Encryptor, 0x891F3FC3);
+BOTAN_FFI_DECLARE_STRUCT(botan_pk_op_decrypt_struct, Botan::PK_Decryptor, 0x912F3C37);
+BOTAN_FFI_DECLARE_STRUCT(botan_pk_op_sign_struct, Botan::PK_Signer, 0x1AF0C39F);
+BOTAN_FFI_DECLARE_STRUCT(botan_pk_op_verify_struct, Botan::PK_Verifier, 0x2B91F936);
+BOTAN_FFI_DECLARE_STRUCT(botan_pk_op_ka_struct, Botan::PK_Key_Agreement, 0x2939CAB1);
 
 /*
 * Versioning
@@ -16760,6 +16748,11 @@ int botan_cipher_get_default_nonce_length(botan_cipher_t cipher, size_t* nl)
    return BOTAN_FFI_DO(Botan::Cipher_Mode, cipher, { *nl = cipher.default_nonce_length(); });
    }
 
+int botan_cipher_get_update_granularity(botan_cipher_t cipher, size_t* ug)
+   {
+   return BOTAN_FFI_DO(Botan::Cipher_Mode, cipher, { *ug = cipher.update_granularity(); });
+   }
+
 int botan_cipher_get_tag_length(botan_cipher_t cipher, size_t* tl)
    {
    return BOTAN_FFI_DO(Botan::Cipher_Mode, cipher, { *tl = cipher.tag_size(); });
@@ -16981,7 +16974,7 @@ int botan_privkey_load(botan_privkey_t* key, botan_rng_t rng_obj,
       Botan::RandomNumberGenerator& rng = safe_get(rng_obj);
 
       std::unique_ptr<Botan::PKCS8_PrivateKey> pkcs8;
-      pkcs8.reset(Botan::PKCS8::load_key(src, rng, password));
+      pkcs8.reset(Botan::PKCS8::load_key(src, rng, static_cast<std::string>(password)));
 
       if(pkcs8)
          {
@@ -49898,7 +49891,11 @@ list_all_readable_files_in_or_under(const std::string& dir_path)
          }
       }
 #else
+#if defined(_MSC_VER)
+  #pragma message ( "No filesystem access enabled" )
+#else
   #warning "No filesystem access enabled"
+#endif
 #endif
 
    std::sort(paths.begin(), paths.end());
@@ -55055,7 +55052,7 @@ void poly_double_128(byte out[], const byte in[])
    u64bit X0 = load_le<u64bit>(in, 0);
    u64bit X1 = load_le<u64bit>(in, 1);
 
-   const bool carry = (X1 >> 63);
+   const bool carry = static_cast<bool>(X1 >> 63);
 
    X1 = (X1 << 1) | (X0 >> 63);
    X0 = (X0 << 1);
@@ -55069,7 +55066,7 @@ void poly_double_128(byte out[], const byte in[])
 void poly_double_64(byte out[], const byte in[])
    {
    u64bit X = load_le<u64bit>(in, 0);
-   const bool carry = (X >> 63);
+   const bool carry = static_cast<bool>(X >> 63);
    X <<= 1;
    if(carry)
       X ^= 0x1B;

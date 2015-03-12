@@ -31,8 +31,8 @@
 #include <vector>
 
 /*
-* This file was automatically generated Thu Mar 12 11:50:47 2015 UTC by
-* fishbach@cadvitecdev running './configure.py'
+* This file was automatically generated Thu Mar 12 12:54:25 2015 UTC by
+* fishbach@cadvitecdev running './configure.py --gen-amalgamation'
 *
 * Target
 *  - Compiler: g++ -m64 -pthread -fstack-protector -O2 -momit-leaf-frame-pointer
@@ -43,11 +43,11 @@
 #define BOTAN_VERSION_MAJOR 1
 #define BOTAN_VERSION_MINOR 11
 #define BOTAN_VERSION_PATCH 15
-#define BOTAN_VERSION_DATESTAMP 20150308
+#define BOTAN_VERSION_DATESTAMP 0
 
-#define BOTAN_VERSION_RELEASE_TYPE "released"
+#define BOTAN_VERSION_RELEASE_TYPE "unreleased"
 
-#define BOTAN_VERSION_VC_REVISION "mtn:89d930531d07db67637637ab60a1e9d8ac71c3e5"
+#define BOTAN_VERSION_VC_REVISION "git:1bf1490726d859596ac95c78c9a7763b8d420b2d"
 
 #define BOTAN_DISTRIBUTION_INFO "unspecified"
 
@@ -332,7 +332,6 @@ otherwise does a byte at a time write via a volatile pointer.
 #define BOTAN_HAS_SERPENT_SIMD 20131128
 #define BOTAN_HAS_SHA1 20131128
 #define BOTAN_HAS_SHA1_SSE2 20131128
-#define BOTAN_HAS_SHA1_X86_64 20131128
 #define BOTAN_HAS_SHA2_32 20131128
 #define BOTAN_HAS_SHA2_64 20131128
 #define BOTAN_HAS_SIMD_32 20131128
@@ -8690,7 +8689,7 @@ namespace std {
 
 template<> inline
 void swap<Botan::CurveGFp>(Botan::CurveGFp& curve1,
-                           Botan::CurveGFp& curve2) noexcept
+                           Botan::CurveGFp& curve2) BOTAN_NOEXCEPT
    {
    curve1.swap(curve2);
    }
@@ -11580,6 +11579,7 @@ BOTAN_DLL int botan_cipher_init(botan_cipher_t* cipher, const char* name, uint32
 BOTAN_DLL int botan_cipher_valid_nonce_length(botan_cipher_t cipher, size_t nl);
 BOTAN_DLL int botan_cipher_get_tag_length(botan_cipher_t cipher, size_t* tag_size);
 BOTAN_DLL int botan_cipher_get_default_nonce_length(botan_cipher_t cipher, size_t* nl);
+BOTAN_DLL int botan_cipher_get_update_granularity(botan_cipher_t cipher, size_t* ug);
 
 BOTAN_DLL int botan_cipher_set_key(botan_cipher_t cipher,
                                    const uint8_t* key, size_t key_len);
@@ -13462,10 +13462,11 @@ namespace Botan {
 class BOTAN_DLL LibraryInitializer
    {
    public:
-      LibraryInitializer(const std::string& = "") {}
-      ~LibraryInitializer() {}
-      static void initialize(const std::string& = "") {}
-      static void deinitialize() {}
+      LibraryInitializer(const std::string& s = "") { initialize(s); }
+      ~LibraryInitializer() { deinitialize(); }
+
+      static void initialize(const std::string& = "");
+      static void deinitialize();
    };
 
 }
@@ -15208,6 +15209,9 @@ class BOTAN_DLL Parallel : public HashFunction
       * @param hashes a set of hashes to compute in parallel
       */
       Parallel(const std::vector<HashFunction*>& hashes);
+
+      Parallel(const Parallel&) = delete;
+      Parallel& operator=(const Parallel&) = delete;
 
       static Parallel* make(const Spec& spec);
    private:
