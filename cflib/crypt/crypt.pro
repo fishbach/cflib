@@ -37,8 +37,12 @@ lib()
 
 # botan
 CONFIG += exceptions
-macx {
-	BOTAN_OS = macosx
+osx {
+	BOTAN_OS = osx
+	SOURCES += botan/$$BOTAN_OS/botan_all_rdrand.cpp
+}
+linux {
+	BOTAN_OS = linux
 	SOURCES += botan/$$BOTAN_OS/botan_all_rdrand.cpp
 }
 INCLUDEPATH += botan/$$BOTAN_OS

@@ -172,7 +172,7 @@ defineTest(app) {
 		export(QMAKE_POST_LINK)
 	}
 
-	macx:console {
+	osx:console {
 		CONFIG -= app_bundle
 		export(CONFIG)
 	}
