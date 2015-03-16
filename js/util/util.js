@@ -314,5 +314,70 @@ define([
 		return rv;
 	};
 
+	util.initWaitingLayer = function($waitingLayer) {
+
+		function showWaiting()
+		{
+			$waitingLayer.modal({
+				show: true,
+				keyboard: false,
+				backdrop: 'static'
+			});
+			$waitingLayer.data('bs.modal').$backdrop.css('z-index', '1055');
+		}
+
+		var waitingTimeout = null;
+		var $backdrop = null;
+		var keepWaiting = false;
+
+		api.ev.loading.bind(function(isLoading) {
+
+			if (isLoading == 'on') {
+				keepWaiting = true;
+				if ($backdrop) {
+					if (waitingTimeout) {
+						clearTimeout(waitingTimeout);
+						waitingTimeout = null;
+						showWaiting();
+					}
+					return;
+				}
+				isLoading = true;
+			} else if (isLoading == 'off') {
+				keepWaiting = false;
+				isLoading = false;
+			} else if (keepWaiting) return;
+
+			if (isLoading && !$backdrop) {
+				$backdrop = $('<div style="position:fixed;top:0;right:0;bottom:0;left:0;z-index:1060;background-color:#000;filter:alpha(opacity=0);opacity:0" />').appendTo(document.body);
+				$(':focus').blur();
+				$(document).on('keydown.loading', function(e) {
+					// IE 11 Bug:
+					// It catches key events even from foreign iFrames.
+					// This is ie a problem with the iFrame of Credit Card 3D Secure.
+					if ($('iframe').length === 0) e.preventDefault();
+				});
+				if (keepWaiting) {
+					showWaiting();
+				} else {
+					waitingTimeout = setTimeout(function() {
+						waitingTimeout = null;
+						showWaiting();
+					}, 500);
+				}
+			} else if (!isLoading && $backdrop) {
+				if (waitingTimeout) {
+					clearTimeout(waitingTimeout);
+					waitingTimeout = null;
+				} else {
+					$waitingLayer.modal('hide');
+				}
+				$(document).off('keydown.loading');
+				$backdrop.remove();
+				$backdrop = null;
+			}
+		});
+	};
+
 	return util;
 });
