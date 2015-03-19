@@ -271,8 +271,7 @@ void WebSocketService::handleRequest(const Request & request)
 {
 	logFunctionTrace
 
-	QString path = request.getUri();
-	if (path != path_ || !request.isGET()) return;
+	if (request.getUri() != path_ || !request.isGET()) return;
 
 	const Request::KeyVal headers = request.getHeaderFields();
 	const QByteArray wsKey = headers["sec-websocket-key"];

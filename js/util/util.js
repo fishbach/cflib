@@ -243,6 +243,12 @@ define([
 		);
 	};
 
+	util.addFullscreenEventListener = function(cb) {
+		if      ('onfullscreenchange'       in document) document.addEventListener('fullscreenchange',       cb, false);
+		else if ('onmozfullscreenchange'    in document) document.addEventListener('mozfullscreenchange',    cb, false);
+		else if ('onwebkitfullscreenchange' in document) document.addEventListener('webkitfullscreenchange', cb, false);
+	};
+
 	util.setPointerLock = function(el) {
 		if (!el) el = document.documentElement;
 		if      (el.requestPointerLock      ) el.requestPointerLock();
@@ -256,12 +262,6 @@ define([
 			document.mozPointerLockElement    ||
 			document.webkitPointerLockElement
 		);
-	};
-
-	util.unsetPointerLock = function(el) {
-		if      (document.exitPointerLock      ) document.exitPointerLock();
-		else if (document.mozExitPointerLock   ) document.mozExitPointerLock();
-		else if (document.webkitExitPointerLock) document.webkitExitPointerLock();
 	};
 
 	util.addPointerLockEventListener = function(cb) {
@@ -314,18 +314,7 @@ define([
 		return rv;
 	};
 
-	util.initWaitingLayer = function($waitingLayer) {
-
-		function showWaiting()
-		{
-			$waitingLayer.modal({
-				show: true,
-				keyboard: false,
-				backdrop: 'static'
-			});
-			$waitingLayer.data('bs.modal').$backdrop.css('z-index', '1055');
-		}
-
+	util.initWaitingLayer = function(showWaitingFunc, hideWaitingFunc) {
 		var waitingTimeout = null;
 		var $backdrop = null;
 		var keepWaiting = false;
@@ -338,7 +327,7 @@ define([
 					if (waitingTimeout) {
 						clearTimeout(waitingTimeout);
 						waitingTimeout = null;
-						showWaiting();
+						showWaitingFunc();
 					}
 					return;
 				}
@@ -358,11 +347,11 @@ define([
 					if ($('iframe').length === 0) e.preventDefault();
 				});
 				if (keepWaiting) {
-					showWaiting();
+					showWaitingFunc();
 				} else {
 					waitingTimeout = setTimeout(function() {
 						waitingTimeout = null;
-						showWaiting();
+						showWaitingFunc();
 					}, 500);
 				}
 			} else if (!isLoading && $backdrop) {
@@ -370,7 +359,7 @@ define([
 					clearTimeout(waitingTimeout);
 					waitingTimeout = null;
 				} else {
-					$waitingLayer.modal('hide');
+					hideWaitingFunc();
 				}
 				$(document).off('keydown.loading');
 				$backdrop.remove();
