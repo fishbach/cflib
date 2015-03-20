@@ -368,5 +368,11 @@ define([
 		});
 	};
 
+	util.preloadImage = function(src, callback, context) {
+		var img = new Image();
+		$(img).load(function() { img = null; if (callback) callback.call(context); });
+		img.src = src;
+	};
+
 	return util;
 });
