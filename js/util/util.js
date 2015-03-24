@@ -369,9 +369,17 @@ define([
 	};
 
 	util.preloadImage = function(src, callback, context) {
-		var img = new Image();
-		$(img).load(function() { img = null; if (callback) callback.call(context); });
-		img.src = src;
+		if (!$.isArray(src)) src = [src];
+		var count = src.length;
+		$.each(src, function(i, src) {
+			var img = new Image();
+			$(img).load(function() {
+				img = null;
+				--count;
+				if (callback && count === 0) callback.call(context);
+			});
+			img.src = src;
+		});
 	};
 
 	return util;
