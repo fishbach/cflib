@@ -387,7 +387,7 @@ define([
 		var sh = $(window).height();
 
 		// window pos
-		var wy = eh >= 48 ? y - 24 : y - eh / 2;
+		var wy = eh >= 44 ? y - 22 : y - eh / 2;
 		if (wy < 5) wy = 5;
 		else if (wy > sh - eh - 5) wy = sh - eh - 5;
 
