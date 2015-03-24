@@ -25,6 +25,7 @@ define([
 	ZeroClipboard.config( { swfPath: '/swf/cflib/ZeroClipboard.swf' } );
 
 	var timeDiff = 0;
+	var popupZIndex = 1010;
 
 	function logToServer(category, str)
 	{
@@ -338,7 +339,7 @@ define([
 			} else if (keepWaiting) return;
 
 			if (isLoading && !$backdrop) {
-				$backdrop = $('<div style="position:fixed;top:0;right:0;bottom:0;left:0;z-index:1060;background-color:#000;filter:alpha(opacity=0);opacity:0" />').appendTo(document.body);
+				$backdrop = util.createBackdrop(false);
 				$(':focus').blur();
 				$(document).on('keydown.loading', function(e) {
 					// IE 11 Bug:
@@ -364,8 +365,80 @@ define([
 				$(document).off('keydown.loading');
 				$backdrop.remove();
 				$backdrop = null;
+				--popupZIndex;
 			}
 		});
+	};
+
+	util.createBackdrop = function(darken) {
+		return $(
+			'<div style="position:fixed;top:0;right:0;bottom:0;left:0;z-index:' +
+			(++popupZIndex) + ';background-color:#000;opacity:' + (darken ? '0.5' : '0') + '" />'
+		).appendTo(document.body);
+	};
+
+	util.showPopup = function($el, x, y, w, darken) {
+		var $backdrop = util.createBackdrop(darken);
+		var $arrow    = $('div', $el).eq(0);
+
+		var ew = $el.width() + 26;
+		var eh = $el.height();
+		var sw = $(window).width();
+		var sh = $(window).height();
+
+		// window pos
+		var wy = eh >= 48 ? y - 24 : y - eh / 2;
+		if (wy < 5) wy = 5;
+		else if (wy > sh - eh - 5) wy = sh - eh - 5;
+
+		// arrow pos
+		var ay = y - wy;
+		if (ay < 8) ay = 8;
+		else if (ay > eh - 8) ay = eh - 8;
+		$arrow.css('top', ay + 'px');
+
+		var wx;
+		if (x + w > sw - ew - 5) {
+			wx = x - ew + 5;
+			$arrow.toggleClass('arrowLeft', false).toggleClass('arrowRight', true );
+		} else {
+			wx = x + w - 5;
+			$arrow.toggleClass('arrowLeft', true ).toggleClass('arrowRight', false);
+		}
+
+		var rv = {
+			close: function() {
+				$el.css('display', 'none');
+				$backdrop.off().remove();
+				$el.off();
+				$arrow.off();
+				$('.popupContent', $el).off();
+				popupZIndex -= 2;
+			}
+		};
+
+		var noEv = function(e) {
+			e.preventDefault();
+			e.stopPropagation();
+		};
+		var closeEv = function(e) {
+			noEv(e);
+			rv.close();
+		};
+		$backdrop.click(closeEv);
+		$el.click(closeEv);
+		$arrow.click(noEv);
+		$('.popupContent', $el).click(noEv);
+
+		$(':focus').blur();
+		$el.css({
+			'z-index' : ++popupZIndex,
+			display   : 'block',
+			top       : wy + 'px',
+			left      : wx + 'px'
+		});
+
+		return rv;
 	};
 
 	util.preloadImage = function(src, callback, context) {
