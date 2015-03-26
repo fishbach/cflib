@@ -50,6 +50,11 @@ define([
 	}
 
 	var base64Chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
+	var Popup = function() {};
+	Popup.prototype.onClose = function(callback, context) {
+		this.closeFunc     = callback;
+		this.closeContext  = context;
+	};
 
 	// ========================================================================
 
@@ -222,7 +227,7 @@ define([
 	};
 
 	util.toHex = function(n, len) {
-		var rv = n.toString(16);
+		var rv = n.toString(16).toUpperCase();
 		if (len) while (rv.length < len) rv = '0' + rv;
 		return rv;
 	};
@@ -383,8 +388,8 @@ define([
 
 		var ew = $el.width() + 26;
 		var eh = $el.height();
-		var sw = $(window).width();
-		var sh = $(window).height();
+		var sw = $(document).width();
+		var sh = $(document).height();
 
 		// window pos
 		var wy = eh >= 44 ? y - 22 : y - eh / 2;
@@ -406,15 +411,16 @@ define([
 			$arrow.toggleClass('arrowLeft', true ).toggleClass('arrowRight', false);
 		}
 
-		var rv = {
-			close: function() {
-				$el.css('display', 'none');
-				$backdrop.off().remove();
-				$el.off();
-				$arrow.off();
-				$('.popupContent', $el).off();
-				popupZIndex -= 2;
-			}
+		var rv = new Popup();
+		rv.close = function() {
+			$el.css('display', 'none');
+			$backdrop.off().remove();
+			$el.off();
+			$arrow.off();
+			$('.popupContent', $el).off();
+			popupZIndex -= 2;
+			rv.close = function() {};
+			if (rv.closeFunc) rv.closeFunc.call(rv.closeContext);
 		};
 
 		var noEv = function(e) {
