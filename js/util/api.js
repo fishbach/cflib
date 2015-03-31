@@ -227,9 +227,18 @@ define([
 		return null;
 	};
 
-	api.resetStorage = function() {
+	api.resetStorage = function(keepItems) {
+		var keep = [];
+		if (keepItems) {
+			if (!$.isArray(keepItems)) keepItems = [keepItems];
+			$.each(keepItems, function(i, name) {
+				var val = Storage.get(name);
+				if (val) keep.push([name, val]);
+			});
+		}
 		Storage.clear();
 		Storage.set('clId', clId, true);
+		$.each(keep, function(i, keyVal) { Storage.set(keyVal[0], keyVal[1], true); });
 	};
 
 	return api;

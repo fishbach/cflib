@@ -201,6 +201,7 @@ void FileServer::handleRequest(const Request & request)
 		else if (ending == "png" )  { compression = false; contentType = "image/png"; }
 		else if (ending == "jpg" )  { compression = false; contentType = "image/jpeg"; }
 		else if (ending == "jpeg")  { compression = false; contentType = "image/jpeg"; }
+		else if (ending == "svg" )  { compression = true;  contentType = "image/svg+xml"; }
 		else if (ending == "js"  )  { compression = true;  contentType = "application/javascript; charset=utf-8"; }
 		else if (ending == "css" )  { compression = true;  contentType = "text/css; charset=utf-8"; }
 		else if (ending == "data" ) { compression = true;  contentType = "application/octet-stream"; }

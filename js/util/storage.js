@@ -91,7 +91,7 @@ define(function() {
 	};
 
 	storage.set = function(name, val, permanent) {
-		if (needCookie)     setCookie(name, val, permanent ? 1 : null);
+		if (needCookie)     setCookie(name, val, permanent ? 28 : null);
 		else if (permanent) window.localStorage.setItem(name, val);
 		else                window.sessionStorage.setItem(name, val);
 	};
