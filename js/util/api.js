@@ -22,11 +22,12 @@ define([
 	'cflib/util/ev'
 ], function(Ajax, Storage, EV) {
 
-	var requestActive = false;
+	var requestActive   = false;
 	var waitingRequests = [];
-	var clId = null;
-	var webSock = null;
-	var webSockBuf = [];
+	var clId            = null;
+	var webSock         = null;
+	var webSockBuf      = [];
+	var isFirst         = true;
 
 	function getClId()
 	{
@@ -45,7 +46,6 @@ define([
 
 	function doRMI(service, params, callback, context)
 	{
-
 		var ajaxCallback = function(status, content, xhr) {
 			if (status != 200) {
 				requestActive = false;
@@ -59,8 +59,9 @@ define([
 			if (content.charAt(0) != '[') {
 				setClId(content.substr(0, 40));
 				content = content.substr(40);
-				api.ev.secureTokenLost.fire();
+				if (!isFirst) api.ev.secureTokenLost.fire();
 			}
+			isFirst = false;
 
 			/*jshint evil: true */
 			var data = eval(content);
