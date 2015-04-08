@@ -38,9 +38,10 @@ define(function() {
 	var ajax = new Ajax();
 
 	if (createXHR() === null) {
-		ajax.request = function(method, url, callback, content, headers, contentType, responseType) {
+		ajax.request = function(method, url, callback, content, headers, contentType, responseType, progress) {
 			callback();
 		};
+//	needed for CORS (Cross-origin resource sharing)
 //	} else if (createXHR().withCredentials === undefined && typeof XDomainRequest !== "undefined") {
 //		ajax.request = function(method, url, callback, content, headers, contentType) {
 //			var xhr = new XDomainRequest();
@@ -57,7 +58,7 @@ define(function() {
 //			}
 //		};
 	} else {
-		ajax.request = function(method, url, callback, content, headers, contentType, responseType) {
+		ajax.request = function(method, url, callback, content, headers, contentType, responseType, progress) {
 			var xhr = createXHR();
 			xhr.open(method, url, true);
 			if (headers) {
@@ -72,6 +73,7 @@ define(function() {
 				xhr.onreadystatechange = nop;
 				callback(xhr.status, responseType ? xhr.response : xhr.responseText, xhr);
 			};
+			if (progress) xhr.addEventListener('progress', progress, false);
 			try { xhr.send(content); } catch (e) {
 				callback();
 			}
