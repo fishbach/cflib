@@ -40,7 +40,7 @@ void JSService::processServiceJSRequest(const QByteArray & requestData, const Re
 	clId_           = clId;
 	requestPtr_     = &request;
 	prependDataPtr_ = &prependData;
-	preCallInit(request, clId);
+	preCallInit();
 	QByteArray reply = processServiceJSCall(requestData);
 	clId_           = 0;
 	requestPtr_     = 0;

@@ -42,7 +42,8 @@ public:
 
 protected:
 	uint clientId() const { return clId_; }
-	virtual void preCallInit(const Request & request, uint clId) { Q_UNUSED(request) Q_UNUSED(clId) }
+	const Request & request() const { return *requestPtr_; }
+	virtual void preCallInit() {}
 	Replier delayReply();
 	QByteArray getRemoteIP() const;
 
