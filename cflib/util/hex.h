@@ -37,4 +37,15 @@ inline quint8 fromHex(char c)
 	return (quint8)c;
 }
 
+inline QByteArray uint64ToHex(quint64 n)
+{
+	QByteArray rv(16, '0');
+	uint p = 16;
+	while (n > 0) {
+		rv[--p] = toHex(n & 0xFF);
+		n >>= 8;
+	}
+	return rv;
+}
+
 }}	// namespace
