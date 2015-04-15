@@ -63,8 +63,7 @@ define([
 
 	util.simplifyStr = function(str) {
 		return (str
-			.replace(/^\s+/, '')
-			.replace(/\s+$/, '')
+			.replace(/^\s+|\s+$/g, '')
 			.replace(/\s+/g, ' '));
 	};
 
@@ -126,7 +125,7 @@ define([
 	};
 
 	util.validInputChars = function(str) {
-		str = str.replace(/^\s+|\s+$/g, '').replace(/\s+/, ' ');
+		str = util.simplifyStr(str);
 		if (/[{}\[\]<>;"\\]/.test(str)) return null;
 		return str;
 	};
@@ -307,13 +306,13 @@ define([
 			var pos = i % 3;
 			val |= uint8Array[i] << (16 - 8 * pos);
 			if (pos == 2 || i == inLen - 1) {
-				rv += base64Chars[val >> 18];
-				rv += base64Chars[(val >> 12) & 63];
+				rv += base64Chars.charAt(val >> 18);
+				rv += base64Chars.charAt((val >> 12) & 63);
 				if (pos === 0) rv += '==';
 				else {
-					rv += base64Chars[(val >> 6) & 63];
+					rv += base64Chars.charAt((val >> 6) & 63);
 					if (pos == 1) rv += '=';
-					else          rv += base64Chars[val & 63];
+					else          rv += base64Chars.charAt(val & 63);
 				}
 				val = 0;
 			}
