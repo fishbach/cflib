@@ -38,7 +38,7 @@ define(function() {
 	var ajax = new Ajax();
 
 	if (createXHR() === null) {
-		ajax.request = function(method, url, callback, content, headers, contentType, responseType, progress) {
+		ajax.request = function(method, url, callback, content, headers, contentType, responseType, progressDown, progressUp) {
 			callback();
 		};
 //	needed for CORS (Cross-origin resource sharing)
@@ -58,7 +58,7 @@ define(function() {
 //			}
 //		};
 	} else {
-		ajax.request = function(method, url, callback, content, headers, contentType, responseType, progress) {
+		ajax.request = function(method, url, callback, content, headers, contentType, responseType, progressDown, progressUp) {
 			var xhr = createXHR();
 			xhr.open(method, url, true);
 			if (headers) {
@@ -73,7 +73,8 @@ define(function() {
 				xhr.onreadystatechange = nop;
 				callback(xhr.status, responseType ? xhr.response : xhr.responseText, xhr);
 			};
-			if (progress) xhr.addEventListener('progress', progress, false);
+			if (progressDown) xhr.addEventListener('progress', progressDown, false);
+			if (progressUp) xhr.upload.addEventListener('progress', progressUp, false);
 			try { xhr.send(content); } catch (e) {
 				callback();
 			}
