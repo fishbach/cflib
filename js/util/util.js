@@ -223,7 +223,7 @@ define([
 
 	util.getArrayBuffer = function(url, callback, scope, progress) {
 		ajax.request('GET', url,
-			function(status, buf, xhr) { callback.call(scope, buf); }, null, null, null, 'arraybuffer', progress);
+			function(status, buf, xhr) { callback.call(scope, status == 200 ? buf : null); }, null, null, null, 'arraybuffer', progress);
 	};
 
 	util.toHex = function(n, len) {
