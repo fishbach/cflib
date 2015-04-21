@@ -1,5 +1,5 @@
 /*
-* Botan 1.11.15 Amalgamation
+* Botan 1.11.16 Amalgamation
 * (C) 1999-2013,2014,2015 Jack Lloyd and others
 *
 * Botan is released under the Simplified BSD License (see license.txt)
@@ -31,8 +31,8 @@
 #include <vector>
 
 /*
-* This file was automatically generated Thu Mar 12 11:37:17 2015 UTC by
-* fishbach@fishmac.fritz.box running './configure.py --cc=clang'
+* This file was automatically generated Tue Apr 21 16:41:59 2015 UTC by
+* fishbach@fishmac.fritz.box running './configure.py --gen-amalgamation'
 *
 * Target
 *  - Compiler: clang++ -m64 -pthread -O3
@@ -42,12 +42,12 @@
 
 #define BOTAN_VERSION_MAJOR 1
 #define BOTAN_VERSION_MINOR 11
-#define BOTAN_VERSION_PATCH 15
-#define BOTAN_VERSION_DATESTAMP 20150308
+#define BOTAN_VERSION_PATCH 16
+#define BOTAN_VERSION_DATESTAMP 20150330
 
 #define BOTAN_VERSION_RELEASE_TYPE "released"
 
-#define BOTAN_VERSION_VC_REVISION "mtn:89d930531d07db67637637ab60a1e9d8ac71c3e5"
+#define BOTAN_VERSION_VC_REVISION "mtn:9213197e64a06ce822a9bfc914d9d1c9e79b8434"
 
 #define BOTAN_DISTRIBUTION_INFO "unspecified"
 
@@ -63,7 +63,11 @@
 /* How much to allocate for a buffer of no particular size */
 #define BOTAN_DEFAULT_BUFFER_SIZE 1024
 
-/* Maximum size to allocate out of the mlock pool */
+/* Minimum and maximum sizes to allocate out of the mlock pool (bytes)
+   Default min is 16 as smaller values are easily bruteforceable and thus
+   likely not cryptographic keys.
+*/
+#define BOTAN_MLOCK_ALLOCATOR_MIN_ALLOCATION 16
 #define BOTAN_MLOCK_ALLOCATOR_MAX_ALLOCATION 128
 
 /* Multiplier on a block cipher's native parallelism */
@@ -73,8 +77,8 @@
 #define BOTAN_MP_WORD_BITS 64
 
 /*
-If enabled uses memset via volatile function pointer to zero memory,
-otherwise does a byte at a time write via a volatile pointer.
+* If enabled uses memset via volatile function pointer to zero memory,
+* otherwise does a byte at a time write via a volatile pointer.
 */
 #define BOTAN_USE_VOLATILE_MEMSET_FOR_ZERO 1
 
@@ -90,11 +94,13 @@ otherwise does a byte at a time write via a volatile pointer.
 #define BOTAN_PRIVATE_KEY_STRONG_CHECKS_ON_GENERATE 1
 
 /*
-* RNGs will automatically poll the system for additional
-* seed material after producing this many bytes of output.
+* RNGs will automatically poll the system for additional seed material
+* after producing this many bytes of output.
 */
 #define BOTAN_RNG_MAX_OUTPUT_BEFORE_RESEED 512
 #define BOTAN_RNG_RESEED_POLL_BITS 128
+#define BOTAN_RNG_AUTO_RESEED_TIMEOUT std::chrono::milliseconds(10)
+#define BOTAN_RNG_RESEED_DEFAULT_TIMEOUT std::chrono::milliseconds(100)
 
 /* Should we use GCC-style inline assembler? */
 #if !defined(BOTAN_USE_GCC_INLINE_ASM) && defined(__GNUG__)
@@ -245,6 +251,7 @@ otherwise does a byte at a time write via a volatile pointer.
 #define BOTAN_HAS_ELGAMAL 20131128
 #define BOTAN_HAS_EME_OAEP 20140118
 #define BOTAN_HAS_EME_PKCS1v15 20131128
+#define BOTAN_HAS_EME_RAW 20150313
 #define BOTAN_HAS_EMSA1 20131128
 #define BOTAN_HAS_EMSA1_BSI 20131128
 #define BOTAN_HAS_EMSA_PKCS1 20140118
@@ -344,7 +351,7 @@ otherwise does a byte at a time write via a volatile pointer.
 #define BOTAN_HAS_THREEFISH_512_AVX2 20131224
 #define BOTAN_HAS_THRESHOLD_SECRET_SHARING 20131128
 #define BOTAN_HAS_TIGER 20131128
-#define BOTAN_HAS_TLS 20131128
+#define BOTAN_HAS_TLS 20150319
 #define BOTAN_HAS_TLS_SESSION_MANAGER_SQL_DB 20141219
 #define BOTAN_HAS_TLS_V10_PRF 20131128
 #define BOTAN_HAS_TLS_V12_PRF 20131128
@@ -2639,31 +2646,25 @@ class BOTAN_DLL Entropy_Accumulator
    public:
       /**
       * Initialize an Entropy_Accumulator
-      * @param goal is how many bits we would like to collect
+      *
+      * @param accum will be called with poll results, first params the data and
+      * length, the second a best estimate of min-entropy for the entire buffer;
+      * out of an abundance of caution this will be zero for many sources.
+      * accum should return true if it wants the polling to stop, though it may
+      * still be called again a few more times, and should be careful to return
+      * true then as well.
       */
       Entropy_Accumulator(std::function<bool (const byte[], size_t, double)> accum) :
-         m_accum_fn(accum), m_done(false) {}
+         m_accum_fn(accum) {}
 
       virtual ~Entropy_Accumulator() {}
-
-      /**
-      * Get a cached I/O buffer (purely for minimizing allocation
-      * overhead to polls)
-      *
-      * @param size requested size for the I/O buffer
-      * @return cached I/O buffer for repeated polls
-      */
-      secure_vector<byte>& get_io_buffer(size_t size)
-         {
-         m_io_buffer.clear();
-         m_io_buffer.resize(size);
-         return m_io_buffer;
-         }
 
       /**
       * @return if our polling goal has been achieved
       */
       bool polling_goal_achieved() const { return m_done; }
+
+      bool polling_finished() const { return m_done; }
 
       /**
       * Add entropy to the accumulator
@@ -2675,7 +2676,7 @@ class BOTAN_DLL Entropy_Accumulator
       void add(const void* bytes, size_t length, double entropy_bits_per_byte)
          {
          m_done = m_accum_fn(reinterpret_cast<const byte*>(bytes),
-                             length, entropy_bits_per_byte * length);
+                             length, entropy_bits_per_byte * length) || m_done;
          }
 
       /**
@@ -2691,8 +2692,7 @@ class BOTAN_DLL Entropy_Accumulator
          }
    private:
       std::function<bool (const byte[], size_t, double)> m_accum_fn;
-      bool m_done;
-      secure_vector<byte> m_io_buffer;
+      bool m_done = false;
    };
 
 /**
@@ -4495,6 +4495,8 @@ class BOTAN_DLL BigInt
      * @result a secure_vector<byte> containing the encoded BigInt
      */
      static secure_vector<byte> encode_1363(const BigInt& n, size_t bytes);
+
+     static void encode_1363(byte out[], size_t bytes, const BigInt& n);
 
    private:
       secure_vector<word> m_reg;
@@ -7811,7 +7813,7 @@ class BOTAN_DLL Comb4P : public HashFunction
          }
 
       static Comb4P* make(const Spec& spec);
-      
+
       HashFunction* clone() const
          {
          return new Comb4P(m_hash1->clone(), m_hash2->clone());
@@ -8657,7 +8659,7 @@ namespace std {
 
 template<> inline
 void swap<Botan::CurveGFp>(Botan::CurveGFp& curve1,
-                           Botan::CurveGFp& curve2) noexcept
+                           Botan::CurveGFp& curve2) BOTAN_NOEXCEPT
    {
    curve1.swap(curve2);
    }
@@ -9438,10 +9440,14 @@ void BOTAN_DLL divide(const BigInt& x,
 
 namespace Botan {
 
+class EME;
+class KDF;
+class EMSA;
+
 namespace PK_Ops {
 
 template<typename Key>
-struct PK_Spec
+class PK_Spec
    {
    public:
       PK_Spec(const Key& key, const std::string& pad) :
@@ -9458,6 +9464,9 @@ struct PK_Spec
       const std::string m_pad;
    };
 
+typedef PK_Spec<Public_Key> PK_Spec_Public_Key;
+typedef PK_Spec<Private_Key> PK_Spec_Private_Key;
+
 /**
 * Public key encryption interface
 */
@@ -9468,7 +9477,7 @@ class BOTAN_DLL Encryption
 
       virtual secure_vector<byte> encrypt(const byte msg[], size_t msg_len, RandomNumberGenerator& rng) = 0;
 
-      typedef PK_Spec<Public_Key> Spec;
+      typedef PK_Spec_Public_Key Spec;
 
       virtual ~Encryption() {}
    };
@@ -9479,51 +9488,13 @@ class BOTAN_DLL Encryption
 class BOTAN_DLL Decryption
    {
    public:
+      typedef PK_Spec_Private_Key Spec;
+
       virtual size_t max_input_bits() const = 0;
 
       virtual secure_vector<byte> decrypt(const byte msg[],  size_t msg_len) = 0;
 
-      typedef PK_Spec<Private_Key> Spec;
-
       virtual ~Decryption() {}
-   };
-
-/**
-* Public key signature creation interface
-*/
-class BOTAN_DLL Signature
-   {
-   public:
-      /**
-      * Find out the number of message parts supported by this scheme.
-      * @return number of message parts
-      */
-      virtual size_t message_parts() const { return 1; }
-
-      /**
-      * Find out the message part size supported by this scheme/key.
-      * @return size of the message parts
-      */
-      virtual size_t message_part_size() const { return 0; }
-
-      /**
-      * Get the maximum message size in bits supported by this public key.
-      * @return maximum message in bits
-      */
-      virtual size_t max_input_bits() const = 0;
-
-      /*
-      * Perform a signature operation
-      * @param msg the message
-      * @param msg_len the length of msg in bytes
-      * @param rng a random number generator
-      */
-      virtual secure_vector<byte> sign(const byte msg[], size_t msg_len,
-                                      RandomNumberGenerator& rng) = 0;
-
-      typedef PK_Spec<Private_Key> Spec;
-
-      virtual ~Signature() {}
    };
 
 /**
@@ -9532,6 +9503,21 @@ class BOTAN_DLL Signature
 class BOTAN_DLL Verification
    {
    public:
+      typedef PK_Spec_Public_Key Spec;
+
+      /*
+      * Add more data to the message currently being signed
+      * @param msg the message
+      * @param msg_len the length of msg in bytes
+      */
+      virtual void update(const byte msg[], size_t msg_len) = 0;
+
+      /*
+      * Perform a signature operation
+      * @param rng a random number generator
+      */
+      virtual bool is_valid_signature(const byte sig[], size_t sig_len) = 0;
+
       /**
       * Get the maximum message size in bits supported by this public key.
       * @return maximum message in bits
@@ -9550,59 +9536,56 @@ class BOTAN_DLL Verification
       */
       virtual size_t message_part_size() const { return 0; }
 
-      /**
-      * @return boolean specifying if this key type supports message
-      * recovery and thus if you need to call verify() or verify_mr()
-      */
-      virtual bool with_recovery() const = 0;
-
-      /*
-      * Perform a signature check operation
-      * @param msg the message
-      * @param msg_len the length of msg in bytes
-      * @param sig the signature
-      * @param sig_len the length of sig in bytes
-      * @returns if signature is a valid one for message
-      */
-      virtual bool verify(const byte[], size_t,
-                          const byte[], size_t)
-         {
-         throw Invalid_State("Message recovery required");
-         }
-
-      /*
-      * Perform a signature operation (with message recovery)
-      * Only call this if with_recovery() returns true
-      * @param msg the message
-      * @param msg_len the length of msg in bytes
-      * @returns recovered message
-      */
-      virtual secure_vector<byte> verify_mr(const byte[],
-                                           size_t)
-         {
-         throw Invalid_State("Message recovery not supported");
-         }
-
-      typedef PK_Spec<Public_Key> Spec;
-
       virtual ~Verification() {}
    };
 
 /**
-* A generic key agreement Operation (eg DH or ECDH)
+* Public key signature creation interface
+*/
+class BOTAN_DLL Signature
+   {
+   public:
+      typedef PK_Spec_Private_Key Spec;
+
+      /**
+      * Find out the number of message parts supported by this scheme.
+      * @return number of message parts
+      */
+      virtual size_t message_parts() const { return 1; }
+
+      /**
+      * Find out the message part size supported by this scheme/key.
+      * @return size of the message parts
+      */
+      virtual size_t message_part_size() const { return 0; }
+
+      /*
+      * Add more data to the message currently being signed
+      * @param msg the message
+      * @param msg_len the length of msg in bytes
+      */
+      virtual void update(const byte msg[], size_t msg_len) = 0;
+
+      /*
+      * Perform a signature operation
+      * @param rng a random number generator
+      */
+      virtual secure_vector<byte> sign(RandomNumberGenerator& rng) = 0;
+
+      virtual ~Signature() {}
+   };
+
+/**
+* A generic key agreement operation (eg DH or ECDH)
 */
 class BOTAN_DLL Key_Agreement
    {
    public:
-      /*
-      * Perform a key agreement operation
-      * @param w the other key value
-      * @param w_len the length of w in bytes
-      * @returns the agreed key
-      */
-      virtual secure_vector<byte> agree(const byte w[], size_t w_len) = 0;
+      typedef PK_Spec_Private_Key Spec;
 
-      typedef PK_Spec<Private_Key> Spec;
+      virtual secure_vector<byte> agree(size_t key_len,
+                                        const byte other_key[], size_t other_key_len,
+                                        const byte salt[], size_t salt_len) = 0;
 
       virtual ~Key_Agreement() {}
    };
@@ -9892,14 +9875,6 @@ namespace Botan {
 enum Signature_Format { IEEE_1363, DER_SEQUENCE };
 
 /**
-* Enum marking if protection against fault attacks should be used
-*/
-enum Fault_Protection {
-   ENABLE_FAULT_PROTECTION,
-   DISABLE_FAULT_PROTECTION
-};
-
-/**
 * Public Key Encryptor
 */
 class BOTAN_DLL PK_Encryptor
@@ -9947,7 +9922,7 @@ class BOTAN_DLL PK_Encryptor
 
    private:
       virtual std::vector<byte> enc(const byte[], size_t,
-                                     RandomNumberGenerator&) const = 0;
+                                    RandomNumberGenerator&) const = 0;
    };
 
 /**
@@ -10004,7 +9979,11 @@ class BOTAN_DLL PK_Signer
       * @return signature
       */
       std::vector<byte> sign_message(const byte in[], size_t length,
-                                      RandomNumberGenerator& rng);
+                                     RandomNumberGenerator& rng)
+         {
+         this->update(in, length);
+         return this->signature(rng);
+         }
 
       /**
       * Sign a message.
@@ -10059,19 +10038,12 @@ class BOTAN_DLL PK_Signer
       * @param emsa the EMSA to use
       * An example would be "EMSA1(SHA-224)".
       * @param format the signature format to use
-      * @param prot says if fault protection should be enabled
       */
       PK_Signer(const Private_Key& key,
                 const std::string& emsa,
-                Signature_Format format = IEEE_1363,
-                Fault_Protection prot = ENABLE_FAULT_PROTECTION);
+                Signature_Format format = IEEE_1363);
    private:
-      bool self_test_signature(const std::vector<byte>& msg,
-                               const std::vector<byte>& sig) const;
-
       std::unique_ptr<PK_Ops::Signature> m_op;
-      std::unique_ptr<PK_Ops::Verification> m_verify_op;
-      std::unique_ptr<EMSA> m_emsa;
       Signature_Format m_sig_format;
    };
 
@@ -10167,11 +10139,7 @@ class BOTAN_DLL PK_Verifier
                   const std::string& emsa,
                   Signature_Format format = IEEE_1363);
    private:
-      bool validate_signature(const secure_vector<byte>& msg,
-                              const byte sig[], size_t sig_len);
-
       std::unique_ptr<PK_Ops::Verification> m_op;
-      std::unique_ptr<EMSA> m_emsa;
       Signature_Format m_sig_format;
    };
 
@@ -10252,7 +10220,6 @@ class BOTAN_DLL PK_Key_Agreement
       PK_Key_Agreement(const Private_Key& key, const std::string& kdf);
    private:
       std::unique_ptr<PK_Ops::Key_Agreement> m_op;
-      std::unique_ptr<KDF> m_kdf;
    };
 
 /**
@@ -10275,7 +10242,6 @@ class BOTAN_DLL PK_Encryptor_EME : public PK_Encryptor
                              RandomNumberGenerator& rng) const;
 
       std::unique_ptr<PK_Ops::Encryption> m_op;
-      std::unique_ptr<EME> m_eme;
    };
 
 /**
@@ -10295,7 +10261,6 @@ class BOTAN_DLL PK_Decryptor_EME : public PK_Decryptor
       secure_vector<byte> dec(const byte[], size_t) const;
 
       std::unique_ptr<PK_Ops::Decryption> m_op;
-      std::unique_ptr<EME> m_eme;
    };
 
 }
@@ -11295,6 +11260,24 @@ class BOTAN_DLL EME_PKCS1v15 : public EME
 
 namespace Botan {
 
+class BOTAN_DLL EME_Raw : public EME
+   {
+   public:
+      size_t maximum_input_size(size_t i) const;
+
+      EME_Raw() {}
+   private:
+      secure_vector<byte> pad(const byte[], size_t, size_t,
+                             RandomNumberGenerator&) const;
+
+      secure_vector<byte> unpad(const byte[], size_t, size_t) const;
+   };
+
+}
+
+
+namespace Botan {
+
 /**
 * EMSA1 from IEEE 1363
 * Essentially, sign the hash directly
@@ -11547,6 +11530,7 @@ BOTAN_DLL int botan_cipher_init(botan_cipher_t* cipher, const char* name, uint32
 BOTAN_DLL int botan_cipher_valid_nonce_length(botan_cipher_t cipher, size_t nl);
 BOTAN_DLL int botan_cipher_get_tag_length(botan_cipher_t cipher, size_t* tag_size);
 BOTAN_DLL int botan_cipher_get_default_nonce_length(botan_cipher_t cipher, size_t* nl);
+BOTAN_DLL int botan_cipher_get_update_granularity(botan_cipher_t cipher, size_t* ug);
 
 BOTAN_DLL int botan_cipher_set_key(botan_cipher_t cipher,
                                    const uint8_t* key, size_t key_len);
@@ -13131,7 +13115,7 @@ class BOTAN_DLL HMAC_DRBG : public RandomNumberGenerator
       * @param underlying_rng RNG used generating inputs (eg HMAC_RNG)
       */
       HMAC_DRBG(MessageAuthenticationCode* mac,
-                RandomNumberGenerator* underlying_rng);
+                RandomNumberGenerator* underlying_rng = nullptr);
 
    private:
       void update(const byte input[], size_t input_len);
@@ -13161,13 +13145,16 @@ namespace Botan {
 class BOTAN_DLL HMAC_RNG : public RandomNumberGenerator
    {
    public:
-      void randomize(byte buf[], size_t len);
-      bool is_seeded() const;
-      void clear();
-      std::string name() const;
+      void randomize(byte buf[], size_t len) override;
+      bool is_seeded() const override;
+      void clear() override;
+      std::string name() const override;
 
-      void reseed(size_t poll_bits);
-      void add_entropy(const byte[], size_t);
+      void reseed(size_t poll_bits) override;
+
+      void reseed_with_timeout(size_t poll_bits, std::chrono::milliseconds ms);
+
+      void add_entropy(const byte[], size_t) override;
 
       /**
       * @param extractor a MAC used for extracting the entropy
@@ -13178,6 +13165,13 @@ class BOTAN_DLL HMAC_RNG : public RandomNumberGenerator
    private:
       std::unique_ptr<MessageAuthenticationCode> m_extractor;
       std::unique_ptr<MessageAuthenticationCode> m_prf;
+
+      enum HMAC_PRF_Label {
+         Running,
+         Reseed,
+         ExtractorSeed,
+      };
+      void new_K_value(byte label);
 
       size_t m_collected_entropy_estimate = 0;
       size_t m_output_since_reseed = 0;
@@ -13429,10 +13423,11 @@ namespace Botan {
 class BOTAN_DLL LibraryInitializer
    {
    public:
-      LibraryInitializer(const std::string& = "") {}
-      ~LibraryInitializer() {}
-      static void initialize(const std::string& = "") {}
-      static void deinitialize() {}
+      LibraryInitializer(const std::string& s = "") { initialize(s); }
+      ~LibraryInitializer() { deinitialize(); }
+
+      static void initialize(const std::string& = "");
+      static void deinitialize();
    };
 
 }
@@ -15176,6 +15171,9 @@ class BOTAN_DLL Parallel : public HashFunction
       */
       Parallel(const std::vector<HashFunction*>& hashes);
 
+      Parallel(const Parallel&) = delete;
+      Parallel& operator=(const Parallel&) = delete;
+
       static Parallel* make(const Spec& spec);
    private:
       Parallel() {}
@@ -15946,6 +15944,27 @@ secure_vector<byte> BOTAN_DLL rfc3394_keyunwrap(const secure_vector<byte>& key,
 
 
 namespace Botan {
+
+class RandomNumberGenerator;
+
+class BOTAN_DLL RFC6979_Nonce_Generator
+   {
+   public:
+      /**
+      * Note: keeps persistent reference to order
+      */
+      RFC6979_Nonce_Generator(const std::string& hash,
+                              const BigInt& order,
+                              const BigInt& x);
+
+      const BigInt& nonce_for(const BigInt& m);
+   private:
+      const BigInt& m_order;
+      BigInt m_k;
+      size_t m_qlen, m_rlen;
+      std::unique_ptr<RandomNumberGenerator> m_hmac_drbg;
+      secure_vector<byte> m_rng_in, m_rng_out;
+   };
 
 /**
 * @param x the secret (EC)DSA key
@@ -17061,6 +17080,8 @@ class BOTAN_DLL Alert
          BAD_CERTIFICATE_HASH_VALUE      = 114,
          UNKNOWN_PSK_IDENTITY            = 115,
 
+         NO_APPLICATION_PROTOCOL         = 120, // RFC 7301
+
          // pseudo alert values
          NULL_ALERT                      = 256,
          HEARTBEAT_PAYLOAD               = 257
@@ -17766,8 +17787,6 @@ enum Handshake_Type {
 
    CERTIFICATE_URL      = 21,
    CERTIFICATE_STATUS   = 22,
-
-   NEXT_PROTOCOL        = 67,
 
    HANDSHAKE_CCS        = 254, // Not a wire value
    HANDSHAKE_NONE       = 255  // Null value
@@ -18478,21 +18497,12 @@ class BOTAN_DLL Client : public Channel
       * @param offer_version specifies which version we will offer
       *        to the TLS server.
       *
-      * @param next_protocol allows the client to specify what the next
-      *        protocol will be. For more information read
-      *        http://technotes.googlecode.com/git/nextprotoneg.html.
-      *
-      *        If the function is not empty, NPN will be negotiated
-      *        and if the server supports NPN the function will be
-      *        called with the list of protocols the server advertised;
-      *        the client should return the protocol it would like to use.
+      * @param next_protocols specifies protocols to advertise with ALPN
       *
       * @param reserved_io_buffer_size This many bytes of memory will
       *        be preallocated for the read and write buffers. Smaller
       *        values just mean reallocations and copies are more likely.
       */
-
-      typedef std::function<std::string (std::vector<std::string>)> next_protocol_fn;
 
       Client(output_fn out,
              data_cb app_data_cb,
@@ -18504,9 +18514,11 @@ class BOTAN_DLL Client : public Channel
              RandomNumberGenerator& rng,
              const Server_Information& server_info = Server_Information(),
              const Protocol_Version offer_version = Protocol_Version::latest_tls_version(),
-             next_protocol_fn next_protocol =  next_protocol_fn(),
+             const std::vector<std::string>& next_protocols = {},
              size_t reserved_io_buffer_size = 16*1024
          );
+
+      const std::string& application_protocol() const { return m_application_protocol; }
    private:
       std::vector<X509_Certificate>
          get_peer_cert_chain(const Handshake_State& state) const override;
@@ -18518,7 +18530,7 @@ class BOTAN_DLL Client : public Channel
                              bool force_full_renegotiation,
                              Protocol_Version version,
                              const std::string& srp_identifier = "",
-                             next_protocol_fn next_protocol = next_protocol_fn());
+                             const std::vector<std::string>& next_protocols = {});
 
       void process_handshake_msg(const Handshake_State* active_state,
                                  Handshake_State& pending_state,
@@ -18530,6 +18542,7 @@ class BOTAN_DLL Client : public Channel
       const Policy& m_policy;
       Credentials_Manager& m_creds;
       const Server_Information m_info;
+      std::string m_application_protocol;
    };
 
 }
@@ -18547,6 +18560,8 @@ namespace TLS {
 class BOTAN_DLL Server : public Channel
    {
    public:
+      typedef std::function<std::string (std::vector<std::string>)> next_protocol_fn;
+
       /**
       * Server initialization
       */
@@ -18558,7 +18573,7 @@ class BOTAN_DLL Server : public Channel
              Credentials_Manager& creds,
              const Policy& policy,
              RandomNumberGenerator& rng,
-             const std::vector<std::string>& protocols = std::vector<std::string>(),
+             next_protocol_fn next_proto = next_protocol_fn(),
              bool is_datagram = false,
              size_t reserved_io_buffer_size = 16*1024
          );
@@ -18588,7 +18603,7 @@ class BOTAN_DLL Server : public Channel
       const Policy& m_policy;
       Credentials_Manager& m_creds;
 
-      std::vector<std::string> m_possible_protocols;
+      next_protocol_fn m_choose_next_protocol;
       std::string m_next_protocol;
    };
 
@@ -18617,17 +18632,15 @@ class BOTAN_DLL Blocking_Client
       typedef std::function<size_t (byte[], size_t)> read_fn;
       typedef std::function<void (const byte[], size_t)> write_fn;
 
-      typedef Client::next_protocol_fn next_protocol_fn;
-
-       Blocking_Client(read_fn reader,
-                       write_fn writer,
-                       Session_Manager& session_manager,
-                       Credentials_Manager& creds,
-                       const Policy& policy,
-                       RandomNumberGenerator& rng,
-                       const Server_Information& server_info = Server_Information(),
-                       const Protocol_Version offer_version = Protocol_Version::latest_tls_version(),
-                       next_protocol_fn npn = next_protocol_fn());
+      Blocking_Client(read_fn reader,
+                      write_fn writer,
+                      Session_Manager& session_manager,
+                      Credentials_Manager& creds,
+                      const Policy& policy,
+                      RandomNumberGenerator& rng,
+                      const Server_Information& server_info = Server_Information(),
+                      const Protocol_Version offer_version = Protocol_Version::latest_tls_version(),
+                      const std::vector<std::string>& next_protos = {});
 
       /**
       * Completes full handshake then returns

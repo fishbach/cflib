@@ -1,5 +1,5 @@
 /*
-* Botan 1.11.15 Amalgamation
+* Botan 1.11.16 Amalgamation
 * (C) 1999-2013,2014,2015 Jack Lloyd and others
 *
 * Botan is released under the Simplified BSD License (see license.txt)
@@ -3338,6 +3338,28 @@ std::ostream& operator<<(std::ostream& out, const X509_DN& dn)
 
 }
 /*
+* (C) 2015 Jack Lloyd
+*
+* Botan is released under the Simplified BSD License (see license.txt)
+*/
+
+
+namespace Botan {
+
+//static
+void LibraryInitializer::initialize(const std::string&)
+   {
+   // none needed currently
+   }
+
+//static
+void LibraryInitializer::deinitialize()
+   {
+   // none needed currently
+   }
+
+}
+/*
 * Algorithm Retrieval
 * (C) 1999-2007,2015 Jack Lloyd
 *
@@ -4420,15 +4442,20 @@ secure_vector<byte> BigInt::encode_locked(const BigInt& n, Base base)
 */
 secure_vector<byte> BigInt::encode_1363(const BigInt& n, size_t bytes)
    {
+   secure_vector<byte> output(bytes);
+   BigInt::encode_1363(&output[0], output.size(), n);
+   return output;
+   }
+
+//static
+void BigInt::encode_1363(byte output[], size_t bytes, const BigInt& n)
+   {
    const size_t n_bytes = n.bytes();
    if(n_bytes > bytes)
       throw Encoding_Error("encode_1363: n is too large to encode properly");
 
    const size_t leading_0s = bytes - n_bytes;
-
-   secure_vector<byte> output(bytes);
    encode(&output[leading_0s], n, Binary);
-   return output;
    }
 
 /*
@@ -8067,7 +8094,7 @@ BOTAN_REGISTER_NAMED_T(MessageAuthenticationCode, "CMAC", CMAC, CMAC::make);
 */
 secure_vector<byte> CMAC::poly_double(const secure_vector<byte>& in)
    {
-   const bool top_carry = (in[0] & 0x80);
+   const bool top_carry = static_cast<bool>(in[0] & 0x80);
 
    secure_vector<byte> out = in;
 
@@ -9601,15 +9628,16 @@ namespace {
 /**
 * Curve25519 operation
 */
-class Curve25519_KA_Operation : public PK_Ops::Key_Agreement
+class Curve25519_KA_Operation : public PK_Ops::Key_Agreement_with_KDF
    {
    public:
       typedef Curve25519_PrivateKey Key_Type;
 
-      Curve25519_KA_Operation(const Curve25519_PrivateKey& key, const std::string&) :
+      Curve25519_KA_Operation(const Curve25519_PrivateKey& key, const std::string& kdf) :
+         PK_Ops::Key_Agreement_with_KDF(kdf),
          m_key(key) {}
 
-      secure_vector<byte> agree(const byte w[], size_t w_len)
+      secure_vector<byte> raw_agree(const byte w[], size_t w_len)
          {
          return m_key.agree(w, w_len);
          }
@@ -9943,7 +9971,7 @@ fmonty(limb *x2, limb *z2, /* output 2Q */
 static void
 swap_conditional(limb a[5], limb b[5], limb iswap) {
   unsigned i;
-  const limb swap = -iswap;
+  const limb swap = static_cast<limb>(-iswap);
 
   for (i = 0; i < 5; ++i) {
     const limb x = swap & (a[i] ^ b[i]);
@@ -11299,15 +11327,15 @@ void Device_EntropySource::poll(Entropy_Accumulator& accum)
    if(::select(max_fd + 1, &read_set, nullptr, nullptr, &timeout) < 0)
       return;
 
-   secure_vector<byte>& io_buffer = accum.get_io_buffer(READ_ATTEMPT);
+   m_buf.resize(READ_ATTEMPT);
 
    for(size_t i = 0; i != m_devices.size(); ++i)
       {
       if(FD_ISSET(m_devices[i], &read_set))
          {
-         const ssize_t got = ::read(m_devices[i], &io_buffer[0], io_buffer.size());
+         const ssize_t got = ::read(m_devices[i], &m_buf[0], m_buf.size());
          if(got > 0)
-            accum.add(&io_buffer[0], got, ENTROPY_BITS_PER_BYTE);
+            accum.add(&m_buf[0], got, ENTROPY_BITS_PER_BYTE);
          }
       }
    }
@@ -11392,13 +11420,13 @@ namespace {
 /**
 * DH operation
 */
-class DH_KA_Operation : public PK_Ops::Key_Agreement
+class DH_KA_Operation : public PK_Ops::Key_Agreement_with_KDF
    {
    public:
       typedef DH_PrivateKey Key_Type;
-      DH_KA_Operation(const DH_PrivateKey& key, const std::string&);
+      DH_KA_Operation(const DH_PrivateKey& key, const std::string& kdf);
 
-      secure_vector<byte> agree(const byte w[], size_t w_len);
+      secure_vector<byte> raw_agree(const byte w[], size_t w_len);
    private:
       const BigInt& m_p;
 
@@ -11406,7 +11434,8 @@ class DH_KA_Operation : public PK_Ops::Key_Agreement
       Blinder m_blinder;
    };
 
-DH_KA_Operation::DH_KA_Operation(const DH_PrivateKey& dh, const std::string&) :
+DH_KA_Operation::DH_KA_Operation(const DH_PrivateKey& dh, const std::string& kdf) :
+   PK_Ops::Key_Agreement_with_KDF(kdf),
    m_p(dh.group_p()),
    m_powermod_x_p(dh.get_x(), m_p),
    m_blinder(m_p,
@@ -11415,7 +11444,7 @@ DH_KA_Operation::DH_KA_Operation(const DH_PrivateKey& dh, const std::string&) :
    {
    }
 
-secure_vector<byte> DH_KA_Operation::agree(const byte w[], size_t w_len)
+secure_vector<byte> DH_KA_Operation::raw_agree(const byte w[], size_t w_len)
    {
    BigInt input = BigInt::decode(w, w_len);
 
@@ -12400,11 +12429,12 @@ namespace {
 /**
 * Object that can create a DSA signature
 */
-class DSA_Signature_Operation : public PK_Ops::Signature
+class DSA_Signature_Operation : public PK_Ops::Signature_with_EMSA
    {
    public:
       typedef DSA_PrivateKey Key_Type;
       DSA_Signature_Operation(const DSA_PrivateKey& dsa, const std::string& emsa) :
+         PK_Ops::Signature_with_EMSA(emsa),
          q(dsa.group_q()),
          x(dsa.get_x()),
          powermod_g_p(dsa.group_g(), dsa.group_p()),
@@ -12417,8 +12447,8 @@ class DSA_Signature_Operation : public PK_Ops::Signature
       size_t message_part_size() const override { return q.bytes(); }
       size_t max_input_bits() const override { return q.bits(); }
 
-      secure_vector<byte> sign(const byte msg[], size_t msg_len,
-                              RandomNumberGenerator& rng) override;
+      secure_vector<byte> raw_sign(const byte msg[], size_t msg_len,
+                                   RandomNumberGenerator& rng) override;
    private:
       const BigInt& q;
       const BigInt& x;
@@ -12428,8 +12458,8 @@ class DSA_Signature_Operation : public PK_Ops::Signature
    };
 
 secure_vector<byte>
-DSA_Signature_Operation::sign(const byte msg[], size_t msg_len,
-                              RandomNumberGenerator&)
+DSA_Signature_Operation::raw_sign(const byte msg[], size_t msg_len,
+                                  RandomNumberGenerator&)
    {
    BigInt i(msg, msg_len);
 
@@ -12458,12 +12488,13 @@ DSA_Signature_Operation::sign(const byte msg[], size_t msg_len,
 /**
 * Object that can verify a DSA signature
 */
-class DSA_Verification_Operation : public PK_Ops::Verification
+class DSA_Verification_Operation : public PK_Ops::Verification_with_EMSA
    {
    public:
       typedef DSA_PublicKey Key_Type;
       DSA_Verification_Operation(const DSA_PublicKey& dsa,
-                                 const std::string&) :
+                                 const std::string& emsa) :
+         PK_Ops::Verification_with_EMSA(emsa),
          q(dsa.group_q()), y(dsa.get_y())
          {
          powermod_g_p = Fixed_Base_Power_Mod(dsa.group_g(), dsa.group_p());
@@ -12966,8 +12997,10 @@ inline u32bit get_u32bit(const BigInt& x, size_t i)
 * Treating this MPI as a sequence of 32-bit words in big-endian
 * order, set word i to the value x
 */
-inline void set_u32bit(BigInt& x, size_t i, u32bit v)
+template<typename T>
+inline void set_u32bit(BigInt& x, size_t i, T v_in)
    {
+   const u32bit v = static_cast<u32bit>(v_in);
 #if (BOTAN_MP_WORD_BITS == 32)
    x.set_word_at(i, v);
 #elif (BOTAN_MP_WORD_BITS == 64)
@@ -14736,37 +14769,31 @@ namespace {
 /**
 * ECDH operation
 */
-class ECDH_KA_Operation : public PK_Ops::Key_Agreement
+class ECDH_KA_Operation : public PK_Ops::Key_Agreement_with_KDF
    {
    public:
       typedef ECDH_PrivateKey Key_Type;
 
-      ECDH_KA_Operation(const ECDH_PrivateKey& key, const std::string&) :
+      ECDH_KA_Operation(const ECDH_PrivateKey& key, const std::string& kdf) :
+         PK_Ops::Key_Agreement_with_KDF(kdf),
          curve(key.domain().get_curve()),
          cofactor(key.domain().get_cofactor())
          {
          l_times_priv = inverse_mod(cofactor, key.domain().get_order()) * key.private_value();
          }
 
-      secure_vector<byte> agree(const byte w[], size_t w_len);
+      secure_vector<byte> raw_agree(const byte w[], size_t w_len)
+         {
+         PointGFp point = OS2ECP(w, w_len, curve);
+         PointGFp S = (cofactor * point) * l_times_priv;
+         BOTAN_ASSERT(S.on_the_curve(), "ECDH agreed value was on the curve");
+         return BigInt::encode_1363(S.get_affine_x(), curve.get_p().bytes());
+         }
    private:
       const CurveGFp& curve;
       const BigInt& cofactor;
       BigInt l_times_priv;
    };
-
-secure_vector<byte> ECDH_KA_Operation::agree(const byte w[], size_t w_len)
-   {
-   PointGFp point = OS2ECP(w, w_len, curve);
-
-   PointGFp S = (cofactor * point) * l_times_priv;
-
-   BOTAN_ASSERT(S.on_the_curve(),
-                "ECDH agreed value was on the curve");
-
-   return BigInt::encode_1363(S.get_affine_x(),
-                              curve.get_p().bytes());
-   }
 
 }
 
@@ -14802,13 +14829,14 @@ namespace {
 /**
 * ECDSA signature operation
 */
-class ECDSA_Signature_Operation : public PK_Ops::Signature
+class ECDSA_Signature_Operation : public PK_Ops::Signature_with_EMSA
    {
    public:
       typedef ECDSA_PrivateKey Key_Type;
 
       ECDSA_Signature_Operation(const ECDSA_PrivateKey& ecdsa,
                                 const std::string& emsa) :
+         PK_Ops::Signature_with_EMSA(emsa),
          base_point(ecdsa.domain().get_base_point()),
          order(ecdsa.domain().get_order()),
          x(ecdsa.private_value()),
@@ -14817,12 +14845,12 @@ class ECDSA_Signature_Operation : public PK_Ops::Signature
          {
          }
 
-      secure_vector<byte> sign(const byte msg[], size_t msg_len,
-                              RandomNumberGenerator& rng);
+      secure_vector<byte> raw_sign(const byte msg[], size_t msg_len,
+                                   RandomNumberGenerator& rng) override;
 
-      size_t message_parts() const { return 2; }
-      size_t message_part_size() const { return order.bytes(); }
-      size_t max_input_bits() const { return order.bits(); }
+      size_t message_parts() const override { return 2; }
+      size_t message_part_size() const override { return order.bytes(); }
+      size_t max_input_bits() const override { return order.bits(); }
 
    private:
       const PointGFp& base_point;
@@ -14833,8 +14861,8 @@ class ECDSA_Signature_Operation : public PK_Ops::Signature
    };
 
 secure_vector<byte>
-ECDSA_Signature_Operation::sign(const byte msg[], size_t msg_len,
-                                RandomNumberGenerator&)
+ECDSA_Signature_Operation::raw_sign(const byte msg[], size_t msg_len,
+                                    RandomNumberGenerator&)
    {
    const BigInt m(msg, msg_len);
 
@@ -14857,36 +14885,41 @@ ECDSA_Signature_Operation::sign(const byte msg[], size_t msg_len,
 /**
 * ECDSA verification operation
 */
-class ECDSA_Verification_Operation : public PK_Ops::Verification
+class ECDSA_Verification_Operation : public PK_Ops::Verification_with_EMSA
    {
    public:
       typedef ECDSA_PublicKey Key_Type;
       ECDSA_Verification_Operation(const ECDSA_PublicKey& ecdsa,
-                                   const std::string&) :
-         base_point(ecdsa.domain().get_base_point()),
-         public_point(ecdsa.public_point()),
-         order(ecdsa.domain().get_order())
+                                   const std::string& emsa) :
+         PK_Ops::Verification_with_EMSA(emsa),
+         m_base_point(ecdsa.domain().get_base_point()),
+         m_public_point(ecdsa.public_point()),
+         m_order(ecdsa.domain().get_order()),
+         m_mod_order(m_order)
          {
+         //m_public_point.precompute_multiples();
          }
 
-      size_t message_parts() const { return 2; }
-      size_t message_part_size() const { return order.bytes(); }
-      size_t max_input_bits() const { return order.bits(); }
+      size_t message_parts() const override { return 2; }
+      size_t message_part_size() const override { return m_order.bytes(); }
+      size_t max_input_bits() const override { return m_order.bits(); }
 
-      bool with_recovery() const { return false; }
+      bool with_recovery() const override { return false; }
 
       bool verify(const byte msg[], size_t msg_len,
-                  const byte sig[], size_t sig_len);
+                  const byte sig[], size_t sig_len) override;
    private:
-      const PointGFp& base_point;
-      const PointGFp& public_point;
-      const BigInt& order;
+      const PointGFp& m_base_point;
+      const PointGFp& m_public_point;
+      const BigInt& m_order;
+      // FIXME: should be offered by curve
+      Modular_Reducer m_mod_order;
    };
 
 bool ECDSA_Verification_Operation::verify(const byte msg[], size_t msg_len,
                                           const byte sig[], size_t sig_len)
    {
-   if(sig_len != order.bytes()*2)
+   if(sig_len != m_order.bytes()*2)
       return false;
 
    BigInt e(msg, msg_len);
@@ -14894,18 +14927,20 @@ bool ECDSA_Verification_Operation::verify(const byte msg[], size_t msg_len,
    BigInt r(sig, sig_len / 2);
    BigInt s(sig + sig_len / 2, sig_len / 2);
 
-   if(r <= 0 || r >= order || s <= 0 || s >= order)
+   if(r <= 0 || r >= m_order || s <= 0 || s >= m_order)
       return false;
 
-   BigInt w = inverse_mod(s, order);
+   BigInt w = inverse_mod(s, m_order);
 
-   PointGFp R = w * multi_exponentiate(base_point, e,
-                                       public_point, r);
+   const BigInt u1 = m_mod_order.reduce(e * w);
+   const BigInt u2 = m_mod_order.reduce(r * w);
+   const PointGFp R = multi_exponentiate(m_base_point, u1, m_public_point, u2);
 
    if(R.is_zero())
       return false;
 
-   return (R.get_affine_x() % order == r);
+   const BigInt v = m_mod_order.reduce(R.get_affine_x());
+   return (v == r);
    }
 
 BOTAN_REGISTER_PK_SIGNATURE_OP("ECDSA", ECDSA_Signature_Operation);
@@ -15048,15 +15083,15 @@ void EGD_EntropySource::poll(Entropy_Accumulator& accum)
 
    std::lock_guard<std::mutex> lock(m_mutex);
 
-   secure_vector<byte>& io_buffer = accum.get_io_buffer(READ_ATTEMPT);
+   m_buf.resize(READ_ATTEMPT);
 
    for(size_t i = 0; i != sockets.size(); ++i)
       {
-      size_t got = sockets[i].read(&io_buffer[0], io_buffer.size());
+      size_t got = sockets[i].read(&m_buf[0], m_buf.size());
 
       if(got)
          {
-         accum.add(&io_buffer[0], got, 6);
+         accum.add(&m_buf[0], got, 6);
          break;
          }
       }
@@ -15132,17 +15167,17 @@ namespace {
 /**
 * ElGamal encryption operation
 */
-class ElGamal_Encryption_Operation : public PK_Ops::Encryption
+class ElGamal_Encryption_Operation : public PK_Ops::Encryption_with_EME
    {
    public:
       typedef ElGamal_PublicKey Key_Type;
 
-      size_t max_input_bits() const { return mod_p.get_modulus().bits() - 1; }
+      size_t max_raw_input_bits() const override { return mod_p.get_modulus().bits() - 1; }
 
-      ElGamal_Encryption_Operation(const ElGamal_PublicKey& key, const std::string&);
+      ElGamal_Encryption_Operation(const ElGamal_PublicKey& key, const std::string& eme);
 
-      secure_vector<byte> encrypt(const byte msg[], size_t msg_len,
-                                 RandomNumberGenerator& rng);
+      secure_vector<byte> raw_encrypt(const byte msg[], size_t msg_len,
+                                      RandomNumberGenerator& rng) override;
 
    private:
       Fixed_Base_Power_Mod powermod_g_p, powermod_y_p;
@@ -15150,7 +15185,8 @@ class ElGamal_Encryption_Operation : public PK_Ops::Encryption
    };
 
 ElGamal_Encryption_Operation::ElGamal_Encryption_Operation(const ElGamal_PublicKey& key,
-                                                           const std::string&)
+                                                           const std::string& eme) :
+   PK_Ops::Encryption_with_EME(eme)
    {
    const BigInt& p = key.group_p();
 
@@ -15160,8 +15196,8 @@ ElGamal_Encryption_Operation::ElGamal_Encryption_Operation(const ElGamal_PublicK
    }
 
 secure_vector<byte>
-ElGamal_Encryption_Operation::encrypt(const byte msg[], size_t msg_len,
-                                      RandomNumberGenerator& rng)
+ElGamal_Encryption_Operation::raw_encrypt(const byte msg[], size_t msg_len,
+                                          RandomNumberGenerator& rng)
    {
    const BigInt& p = mod_p.get_modulus();
 
@@ -15184,16 +15220,16 @@ ElGamal_Encryption_Operation::encrypt(const byte msg[], size_t msg_len,
 /**
 * ElGamal decryption operation
 */
-class ElGamal_Decryption_Operation : public PK_Ops::Decryption
+class ElGamal_Decryption_Operation : public PK_Ops::Decryption_with_EME
    {
    public:
       typedef ElGamal_PrivateKey Key_Type;
 
-      size_t max_input_bits() const { return mod_p.get_modulus().bits() - 1; }
+      size_t max_raw_input_bits() const { return mod_p.get_modulus().bits() - 1; }
 
-      ElGamal_Decryption_Operation(const ElGamal_PrivateKey& key, const std::string& emsa);
+      ElGamal_Decryption_Operation(const ElGamal_PrivateKey& key, const std::string& eme);
 
-      secure_vector<byte> decrypt(const byte msg[], size_t msg_len);
+      secure_vector<byte> raw_decrypt(const byte msg[], size_t msg_len) override;
    private:
       Fixed_Exponent_Power_Mod powermod_x_p;
       Modular_Reducer mod_p;
@@ -15201,7 +15237,8 @@ class ElGamal_Decryption_Operation : public PK_Ops::Decryption
    };
 
 ElGamal_Decryption_Operation::ElGamal_Decryption_Operation(const ElGamal_PrivateKey& key,
-                                                           const std::string&)
+                                                           const std::string& eme) :
+   PK_Ops::Decryption_with_EME(eme)
    {
    const BigInt& p = key.group_p();
 
@@ -15214,7 +15251,7 @@ ElGamal_Decryption_Operation::ElGamal_Decryption_Operation(const ElGamal_Private
    }
 
 secure_vector<byte>
-ElGamal_Decryption_Operation::decrypt(const byte msg[], size_t msg_len)
+ElGamal_Decryption_Operation::raw_decrypt(const byte msg[], size_t msg_len)
    {
    const BigInt& p = mod_p.get_modulus();
 
@@ -15461,6 +15498,37 @@ size_t EME_PKCS1v15::maximum_input_size(size_t keybits) const
       return 0;
    }
 
+}
+/*
+* (C) 2015 Jack Lloyd
+*
+* Botan is released under the Simplified BSD License (see license.txt)
+*/
+
+
+namespace Botan {
+
+BOTAN_REGISTER_EME_NAMED_NOARGS(EME_Raw, "Raw");
+
+secure_vector<byte> EME_Raw::pad(const byte in[], size_t in_length,
+                                 size_t key_bits,
+                                 RandomNumberGenerator&) const
+   {
+   if(in_length > 0 && (8*(in_length - 1) + high_bit(in[0]) > key_bits))
+      throw Invalid_Argument("EME_Raw: Input is too large");
+   return secure_vector<byte>(in, in + in_length);
+   }
+
+secure_vector<byte> EME_Raw::unpad(const byte in[], size_t in_length,
+                                   size_t) const
+   {
+   return secure_vector<byte>(in, in + in_length);
+   }
+
+size_t EME_Raw::maximum_input_size(size_t keybits) const
+   {
+   return keybits / 8;
+   }
 }
 /*
 * EMSA1
@@ -16100,8 +16168,7 @@ std::vector<std::unique_ptr<EntropySource>> get_default_entropy_sources()
 #endif
 
 #if defined(BOTAN_HAS_ENTROPY_SRC_PROC_WALKER)
-   sources.push_back(std::unique_ptr<EntropySource>(
-      new ProcWalking_EntropySource("/proc")));
+   sources.push_back(std::unique_ptr<EntropySource>(new ProcWalking_EntropySource("/proc")));
 #endif
 
 #if defined(BOTAN_HAS_ENTROPY_SRC_WIN32)
@@ -16113,8 +16180,7 @@ std::vector<std::unique_ptr<EntropySource>> get_default_entropy_sources()
 #endif
 
 #if defined(BOTAN_HAS_ENTROPY_SRC_UNIX_PROCESS_RUNNER)
-   sources.push_back(std::unique_ptr<EntropySource>(
-      new Unix_EntropySource(
+   sources.push_back(std::unique_ptr<EntropySource>(new Unix_EntropySource(
          { "/bin", "/sbin", "/usr/bin", "/usr/sbin" }
       )));
 #endif
@@ -16136,11 +16202,11 @@ void EntropySource::poll_available_sources(class Entropy_Accumulator& accum)
    static std::vector<std::unique_ptr<EntropySource>> g_sources(get_default_entropy_sources());
 
    if(g_sources.empty())
-      throw std::runtime_error("No entropy sources enabled at build time, poll failed");
+      throw std::runtime_error("No entropy sources enabled at build time, RNG poll failed");
 
    size_t poll_attempt = 0;
 
-   while(!accum.polling_goal_achieved() && poll_attempt < 16)
+   while(!accum.polling_finished() && poll_attempt < 16)
       {
       const size_t src_idx = poll_attempt % g_sources.size();
       g_sources[src_idx]->poll(accum);
@@ -16322,61 +16388,25 @@ inline int write_str_output(char out[], size_t* out_len, const std::string& str)
 
 extern "C" {
 
-struct botan_rng_struct : public botan_struct<Botan::RandomNumberGenerator, 0x4901F9C1>
-   {
-   using botan_struct::botan_struct;
-   };
-
-struct botan_hash_struct : public botan_struct<Botan::HashFunction, 0x1F0A4F84>
-   {
-   using botan_struct::botan_struct;
-   };
-
-struct botan_mac_struct : public botan_struct<Botan::MessageAuthenticationCode, 0xA06E8FC1>
-   {
-   using botan_struct::botan_struct;
-   };
+#define BOTAN_FFI_DECLARE_STRUCT(NAME, TYPE, MAGIC) \
+   struct NAME : public botan_struct<TYPE, MAGIC> { explicit NAME(TYPE* x) : botan_struct(x) {} }
 
 struct botan_cipher_struct : public botan_struct<Botan::Cipher_Mode, 0xB4A2BF9C>
    {
-   using botan_struct::botan_struct;
+   explicit botan_cipher_struct(Botan::Cipher_Mode* x) : botan_struct(x) {}
    Botan::secure_vector<uint8_t> m_buf;
    };
 
-struct botan_pubkey_struct : public botan_struct<Botan::Public_Key, 0x2C286519>
-   {
-   using botan_struct::botan_struct;
-   };
-
-struct botan_privkey_struct : public botan_struct<Botan::Private_Key, 0x7F96385E>
-   {
-   using botan_struct::botan_struct;
-   };
-
-struct botan_pk_op_encrypt_struct : public botan_struct<Botan::PK_Encryptor, 0x891F3FC3>
-   {
-   using botan_struct::botan_struct;
-   };
-
-struct botan_pk_op_decrypt_struct : public botan_struct<Botan::PK_Decryptor, 0x912F3C37>
-   {
-   using botan_struct::botan_struct;
-   };
-
-struct botan_pk_op_sign_struct : public botan_struct<Botan::PK_Signer, 0x1AF0C39F>
-   {
-   using botan_struct::botan_struct;
-   };
-
-struct botan_pk_op_verify_struct : public botan_struct<Botan::PK_Verifier, 0x2B91F936>
-   {
-   using botan_struct::botan_struct;
-   };
-
-struct botan_pk_op_ka_struct : public botan_struct<Botan::PK_Key_Agreement, 0x2939CAB1>
-   {
-   using botan_struct::botan_struct;
-   };
+BOTAN_FFI_DECLARE_STRUCT(botan_rng_struct, Botan::RandomNumberGenerator, 0x4901F9C1);
+BOTAN_FFI_DECLARE_STRUCT(botan_hash_struct, Botan::HashFunction, 0x1F0A4F84);
+BOTAN_FFI_DECLARE_STRUCT(botan_mac_struct, Botan::MessageAuthenticationCode, 0xA06E8FC1);
+BOTAN_FFI_DECLARE_STRUCT(botan_pubkey_struct, Botan::Public_Key, 0x2C286519);
+BOTAN_FFI_DECLARE_STRUCT(botan_privkey_struct, Botan::Private_Key, 0x7F96385E);
+BOTAN_FFI_DECLARE_STRUCT(botan_pk_op_encrypt_struct, Botan::PK_Encryptor, 0x891F3FC3);
+BOTAN_FFI_DECLARE_STRUCT(botan_pk_op_decrypt_struct, Botan::PK_Decryptor, 0x912F3C37);
+BOTAN_FFI_DECLARE_STRUCT(botan_pk_op_sign_struct, Botan::PK_Signer, 0x1AF0C39F);
+BOTAN_FFI_DECLARE_STRUCT(botan_pk_op_verify_struct, Botan::PK_Verifier, 0x2B91F936);
+BOTAN_FFI_DECLARE_STRUCT(botan_pk_op_ka_struct, Botan::PK_Key_Agreement, 0x2939CAB1);
 
 /*
 * Versioning
@@ -16760,6 +16790,11 @@ int botan_cipher_get_default_nonce_length(botan_cipher_t cipher, size_t* nl)
    return BOTAN_FFI_DO(Botan::Cipher_Mode, cipher, { *nl = cipher.default_nonce_length(); });
    }
 
+int botan_cipher_get_update_granularity(botan_cipher_t cipher, size_t* ug)
+   {
+   return BOTAN_FFI_DO(Botan::Cipher_Mode, cipher, { *ug = cipher.update_granularity(); });
+   }
+
 int botan_cipher_get_tag_length(botan_cipher_t cipher, size_t* tl)
    {
    return BOTAN_FFI_DO(Botan::Cipher_Mode, cipher, { *tl = cipher.tag_size(); });
@@ -16981,7 +17016,7 @@ int botan_privkey_load(botan_privkey_t* key, botan_rng_t rng_obj,
       Botan::RandomNumberGenerator& rng = safe_get(rng_obj);
 
       std::unique_ptr<Botan::PKCS8_PrivateKey> pkcs8;
-      pkcs8.reset(Botan::PKCS8::load_key(src, rng, password));
+      pkcs8.reset(Botan::PKCS8::load_key(src, rng, static_cast<std::string>(password)));
 
       if(pkcs8)
          {
@@ -19539,7 +19574,7 @@ std::string GCM_Mode::name() const
 
 size_t GCM_Mode::update_granularity() const
    {
-   return 4096; // CTR-BE's internal block size
+   return BS;
    }
 
 Key_Length_Specification GCM_Mode::key_spec() const
@@ -19914,21 +19949,23 @@ BigInt decode_le(const byte msg[], size_t msg_len)
 /**
 * GOST-34.10 signature operation
 */
-class GOST_3410_Signature_Operation : public PK_Ops::Signature
+class GOST_3410_Signature_Operation : public PK_Ops::Signature_with_EMSA
    {
    public:
       typedef GOST_3410_PrivateKey Key_Type;
-      GOST_3410_Signature_Operation(const GOST_3410_PrivateKey& gost_3410, const std::string&):
+      GOST_3410_Signature_Operation(const GOST_3410_PrivateKey& gost_3410,
+                                    const std::string& emsa) :
+         PK_Ops::Signature_with_EMSA(emsa),
          base_point(gost_3410.domain().get_base_point()),
          order(gost_3410.domain().get_order()),
          x(gost_3410.private_value()) {}
 
-      size_t message_parts() const { return 2; }
-      size_t message_part_size() const { return order.bytes(); }
-      size_t max_input_bits() const { return order.bits(); }
+      size_t message_parts() const override { return 2; }
+      size_t message_part_size() const override { return order.bytes(); }
+      size_t max_input_bits() const override { return order.bits(); }
 
-      secure_vector<byte> sign(const byte msg[], size_t msg_len,
-                              RandomNumberGenerator& rng);
+      secure_vector<byte> raw_sign(const byte msg[], size_t msg_len,
+                                   RandomNumberGenerator& rng) override;
 
    private:
       const PointGFp& base_point;
@@ -19937,8 +19974,8 @@ class GOST_3410_Signature_Operation : public PK_Ops::Signature
    };
 
 secure_vector<byte>
-GOST_3410_Signature_Operation::sign(const byte msg[], size_t msg_len,
-                                    RandomNumberGenerator& rng)
+GOST_3410_Signature_Operation::raw_sign(const byte msg[], size_t msg_len,
+                                        RandomNumberGenerator& rng)
    {
    BigInt k;
    do
@@ -19970,21 +20007,23 @@ GOST_3410_Signature_Operation::sign(const byte msg[], size_t msg_len,
 /**
 * GOST-34.10 verification operation
 */
-class GOST_3410_Verification_Operation : public PK_Ops::Verification
+class GOST_3410_Verification_Operation : public PK_Ops::Verification_with_EMSA
    {
    public:
       typedef GOST_3410_PublicKey Key_Type;
 
-      GOST_3410_Verification_Operation(const GOST_3410_PublicKey& gost, const std::string&) :
+      GOST_3410_Verification_Operation(const GOST_3410_PublicKey& gost,
+                                       const std::string& emsa) :
+         PK_Ops::Verification_with_EMSA(emsa),
          base_point(gost.domain().get_base_point()),
          public_point(gost.public_point()),
          order(gost.domain().get_order()) {}
 
-      size_t message_parts() const { return 2; }
-      size_t message_part_size() const { return order.bytes(); }
-      size_t max_input_bits() const { return order.bits(); }
+      size_t message_parts() const override { return 2; }
+      size_t message_part_size() const override { return order.bytes(); }
+      size_t max_input_bits() const override { return order.bits(); }
 
-      bool with_recovery() const { return false; }
+      bool with_recovery() const override { return false; }
 
       bool verify(const byte msg[], size_t msg_len,
                   const byte sig[], size_t sig_len);
@@ -20921,7 +20960,7 @@ HMAC::HMAC(HashFunction* hash) : m_hash(hash)
 }
 /*
 * HMAC_DRBG
-* (C) 2014 Jack Lloyd
+* (C) 2014,2015 Jack Lloyd
 *
 * Botan is released under the Simplified BSD License (see license.txt)
 */
@@ -20936,7 +20975,7 @@ HMAC_DRBG::HMAC_DRBG(MessageAuthenticationCode* mac,
    m_V(m_mac->output_length(), 0x01),
    m_reseed_counter(0)
    {
-   m_mac->set_key(secure_vector<byte>(m_mac->output_length(), 0x00));
+   m_mac->set_key(std::vector<byte>(m_mac->output_length(), 0x00));
    }
 
 void HMAC_DRBG::randomize(byte out[], size_t length)
@@ -21013,9 +21052,11 @@ bool HMAC_DRBG::is_seeded() const
 
 void HMAC_DRBG::clear()
    {
-   zeroise(m_V);
+   m_reseed_counter = 0;
+   for(size_t i = 0; i != m_V.size(); ++i)
+      m_V[i] = 0x01;
 
-   m_mac->clear();
+   m_mac->set_key(std::vector<byte>(m_mac->output_length(), 0x00));
 
    if(m_prng)
       m_prng->clear();
@@ -21029,35 +21070,13 @@ std::string HMAC_DRBG::name() const
 }
 /*
 * HMAC_RNG
-* (C) 2008-2009,2013,2015 Jack Lloyd
+* (C) 2008,2009,2013,2015 Jack Lloyd
 *
 * Botan is released under the Simplified BSD License (see license.txt)
 */
 
 
 namespace Botan {
-
-namespace {
-
-void hmac_prf(MessageAuthenticationCode& prf,
-              secure_vector<byte>& K,
-              u32bit& counter,
-              const std::string& label)
-   {
-   typedef std::chrono::high_resolution_clock clock;
-
-   auto timestamp = clock::now().time_since_epoch().count();
-
-   prf.update(K);
-   prf.update(label);
-   prf.update_be(timestamp);
-   prf.update_be(counter);
-   prf.final(&K[0]);
-
-   ++counter;
-   }
-
-}
 
 /*
 * HMAC_RNG Constructor
@@ -21068,12 +21087,23 @@ HMAC_RNG::HMAC_RNG(MessageAuthenticationCode* extractor,
    {
    if(!m_prf->valid_keylength(m_extractor->output_length()) ||
       !m_extractor->valid_keylength(m_prf->output_length()))
+      {
       throw Invalid_Argument("HMAC_RNG: Bad algo combination " +
                              m_extractor->name() + " and " +
                              m_prf->name());
+      }
+
+   this->clear();
+   }
+
+void HMAC_RNG::clear()
+   {
+   m_collected_entropy_estimate = 0;
+   m_counter = 0;
 
    // First PRF inputs are all zero, as specified in section 2
    m_K.resize(m_prf->output_length());
+   zeroise(m_K);
 
    /*
    Normally we want to feedback PRF outputs to the extractor function
@@ -21088,8 +21118,8 @@ HMAC_RNG::HMAC_RNG(MessageAuthenticationCode* extractor,
    The PRF key will not be used to generate outputs until after reseed
    sets m_seeded to true.
    */
-   secure_vector<byte> prf_key(m_extractor->output_length());
-   m_prf->set_key(prf_key);
+   std::vector<byte> prf_zero_key(m_extractor->output_length());
+   m_prf->set_key(&prf_zero_key[0], prf_zero_key.size());
 
    /*
    Use PRF("Botan HMAC_RNG XTS") as the intitial XTS key.
@@ -21098,9 +21128,20 @@ HMAC_RNG::HMAC_RNG(MessageAuthenticationCode* extractor,
    after this one are generated using the PRF.
 
    If I understand the E-t-E paper correctly (specifically Section 4),
-   using this fixed extractor key is safe to do.
+   using this fixed initial extractor key is safe to do.
    */
-   m_extractor->set_key(prf->process("Botan HMAC_RNG XTS"));
+   m_extractor->set_key(m_prf->process("Botan HMAC_RNG XTS"));
+   }
+
+void HMAC_RNG::new_K_value(byte label)
+   {
+   typedef std::chrono::high_resolution_clock clock;
+
+   m_prf->update(m_K);
+   m_prf->update_be(clock::now().time_since_epoch().count());
+   m_prf->update_be(m_counter++);
+   m_prf->update(label);
+   m_prf->final(&m_K[0]);
    }
 
 /*
@@ -21120,14 +21161,14 @@ void HMAC_RNG::randomize(byte out[], size_t length)
    m_output_since_reseed += length;
 
    if(m_output_since_reseed >= BOTAN_RNG_MAX_OUTPUT_BEFORE_RESEED)
-      reseed(BOTAN_RNG_RESEED_POLL_BITS);
+      reseed_with_timeout(BOTAN_RNG_RESEED_POLL_BITS, BOTAN_RNG_AUTO_RESEED_TIMEOUT);
 
    /*
     HMAC KDF as described in E-t-E, using a CTXinfo of "rng"
    */
    while(length)
       {
-      hmac_prf(*m_prf, m_K, m_counter, "rng");
+      new_K_value(Running);
 
       const size_t copied = std::min<size_t>(length, max_per_prf_iter);
 
@@ -21142,6 +21183,11 @@ void HMAC_RNG::randomize(byte out[], size_t length)
 */
 void HMAC_RNG::reseed(size_t poll_bits)
    {
+   reseed_with_timeout(poll_bits, BOTAN_RNG_RESEED_DEFAULT_TIMEOUT);
+   }
+
+void HMAC_RNG::reseed_with_timeout(size_t poll_bits, std::chrono::milliseconds timeout)
+   {
    /*
    Using the terminology of E-t-E, XTR is the MAC function (normally
    HMAC) seeded with XTS (below) and we form SKM, the key material, by
@@ -21152,12 +21198,15 @@ void HMAC_RNG::reseed(size_t poll_bits)
 
    double bits_collected = 0;
 
+   typedef std::chrono::high_resolution_clock clock;
+   auto deadline = clock::now() + timeout;
+
    Entropy_Accumulator accum(
       [&](const byte in[], size_t in_len, double entropy_estimate)
       {
       m_extractor->update(in, in_len);
       bits_collected += entropy_estimate;
-      return (bits_collected >= poll_bits);
+      return (bits_collected >= poll_bits || clock::now() > deadline);
       });
 
    EntropySource::poll_available_sources(accum);
@@ -21168,15 +21217,8 @@ void HMAC_RNG::reseed(size_t poll_bits)
    * bad one (collecting little) would be unsafe. Do this by
    * generating new PRF outputs using the previous key and feeding
    * them into the extractor function.
-   *
-   * Cycle the RNG once (CTXinfo="rng"), then generate a new PRF
-   * output using the CTXinfo "reseed". Provide these values as input
-   * to the extractor function.
    */
-   hmac_prf(*m_prf, m_K, m_counter, "rng");
-   m_extractor->update(m_K); // K is the CTXinfo=rng PRF output
-
-   hmac_prf(*m_prf, m_K, m_counter, "reseed");
+   new_K_value(Reseed);
    m_extractor->update(m_K); // K is the CTXinfo=reseed PRF output
 
    /* Now derive the new PRK using everything that has been fed into
@@ -21184,7 +21226,7 @@ void HMAC_RNG::reseed(size_t poll_bits)
    m_prf->set_key(m_extractor->final());
 
    // Now generate a new PRF output to use as the XTS extractor salt
-   hmac_prf(*m_prf, m_K, m_counter, "xts");
+   new_K_value(ExtractorSeed);
    m_extractor->set_key(m_K);
 
    // Reset state
@@ -21209,19 +21251,7 @@ bool HMAC_RNG::is_seeded() const
 void HMAC_RNG::add_entropy(const byte input[], size_t length)
    {
    m_extractor->update(input, length);
-   reseed(BOTAN_RNG_RESEED_POLL_BITS);
-   }
-
-/*
-* Clear memory of sensitive data
-*/
-void HMAC_RNG::clear()
-   {
-   m_collected_entropy_estimate = 0;
-   m_extractor->clear();
-   m_prf->clear();
-   zeroise(m_K);
-   m_counter = 0;
+   reseed_with_timeout(BOTAN_RNG_RESEED_POLL_BITS, BOTAN_RNG_AUTO_RESEED_TIMEOUT);
    }
 
 /*
@@ -29155,11 +29185,12 @@ namespace {
 /**
 * Nyberg-Rueppel signature operation
 */
-class NR_Signature_Operation : public PK_Ops::Signature
+class NR_Signature_Operation : public PK_Ops::Signature_with_EMSA
    {
    public:
       typedef NR_PrivateKey Key_Type;
-      NR_Signature_Operation(const NR_PrivateKey& nr, const std::string&) :
+      NR_Signature_Operation(const NR_PrivateKey& nr, const std::string& emsa) :
+         PK_Ops::Signature_with_EMSA(emsa),
          q(nr.group_q()),
          x(nr.get_x()),
          powermod_g_p(nr.group_g(), nr.group_p()),
@@ -29167,12 +29198,12 @@ class NR_Signature_Operation : public PK_Ops::Signature
          {
          }
 
-      size_t message_parts() const { return 2; }
-      size_t message_part_size() const { return q.bytes(); }
-      size_t max_input_bits() const { return (q.bits() - 1); }
+      size_t message_parts() const override { return 2; }
+      size_t message_part_size() const override { return q.bytes(); }
+      size_t max_input_bits() const override { return (q.bits() - 1); }
 
-      secure_vector<byte> sign(const byte msg[], size_t msg_len,
-                              RandomNumberGenerator& rng);
+      secure_vector<byte> raw_sign(const byte msg[], size_t msg_len,
+                                   RandomNumberGenerator& rng) override;
    private:
       const BigInt& q;
       const BigInt& x;
@@ -29181,8 +29212,8 @@ class NR_Signature_Operation : public PK_Ops::Signature
    };
 
 secure_vector<byte>
-NR_Signature_Operation::sign(const byte msg[], size_t msg_len,
-                             RandomNumberGenerator& rng)
+NR_Signature_Operation::raw_sign(const byte msg[], size_t msg_len,
+                                 RandomNumberGenerator& rng)
    {
    rng.add_entropy(msg, msg_len);
 
@@ -29214,11 +29245,12 @@ NR_Signature_Operation::sign(const byte msg[], size_t msg_len,
 /**
 * Nyberg-Rueppel verification operation
 */
-class NR_Verification_Operation : public PK_Ops::Verification
+class NR_Verification_Operation : public PK_Ops::Verification_with_EMSA
    {
    public:
       typedef NR_PublicKey Key_Type;
-      NR_Verification_Operation(const NR_PublicKey& nr, const std::string&) :
+      NR_Verification_Operation(const NR_PublicKey& nr, const std::string& emsa) :
+         PK_Ops::Verification_with_EMSA(emsa),
          q(nr.group_q()), y(nr.get_y())
          {
          powermod_g_p = Fixed_Base_Power_Mod(nr.group_g(), nr.group_p());
@@ -29227,13 +29259,13 @@ class NR_Verification_Operation : public PK_Ops::Verification
          mod_q = Modular_Reducer(nr.group_q());
          }
 
-      size_t message_parts() const { return 2; }
-      size_t message_part_size() const { return q.bytes(); }
-      size_t max_input_bits() const { return (q.bits() - 1); }
+      size_t message_parts() const override { return 2; }
+      size_t message_part_size() const override { return q.bytes(); }
+      size_t max_input_bits() const override { return (q.bits() - 1); }
 
-      bool with_recovery() const { return true; }
+      bool with_recovery() const override { return true; }
 
-      secure_vector<byte> verify_mr(const byte msg[], size_t msg_len);
+      secure_vector<byte> verify_mr(const byte msg[], size_t msg_len) override;
    private:
       const BigInt& q;
       const BigInt& y;
@@ -29317,7 +29349,7 @@ bool generate_dsa_primes(RandomNumberGenerator& rng,
          "Generating a DSA parameter set with a " + std::to_string(qbits) +
          "long q requires a seed at least as many bits long");
 
-   std::unique_ptr<HashFunction> hash(get_hash("SHA-" + std::to_string(qbits)));
+   std::unique_ptr<HashFunction> hash(make_hash_function("SHA-" + std::to_string(qbits)));
 
    const size_t HASH_SIZE = hash->output_length();
 
@@ -32319,21 +32351,16 @@ const size_t WORK_FACTOR_SCALE = 10000;
 
 MessageAuthenticationCode* get_pbkdf_prf(byte alg_id)
    {
-   try
-      {
-      if(alg_id == 0)
-         return get_mac("HMAC(SHA-1)");
-      else if(alg_id == 1)
-         return get_mac("HMAC(SHA-256)");
-      else if(alg_id == 2)
-         return get_mac("CMAC(Blowfish)");
-      else if(alg_id == 3)
-         return get_mac("HMAC(SHA-384)");
-      else if(alg_id == 4)
-         return get_mac("HMAC(SHA-512)");
-      }
-   catch(Algorithm_Not_Found) {}
-
+   if(alg_id == 0)
+      return get_mac("HMAC(SHA-1)");
+   else if(alg_id == 1)
+      return get_mac("HMAC(SHA-256)");
+   else if(alg_id == 2)
+      return get_mac("CMAC(Blowfish)");
+   else if(alg_id == 3)
+      return get_mac("HMAC(SHA-384)");
+   else if(alg_id == 4)
+      return get_mac("HMAC(SHA-512)");
    return nullptr;
    }
 
@@ -33544,7 +33571,7 @@ void ProcWalking_EntropySource::poll(Entropy_Accumulator& accum)
    if(!m_dir)
       m_dir.reset(new Directory_Walker(m_path));
 
-   secure_vector<byte>& io_buffer = accum.get_io_buffer(4096);
+   m_buf.resize(4096);
 
    for(size_t i = 0; i != MAX_FILES_READ_PER_POLL; ++i)
       {
@@ -33557,13 +33584,13 @@ void ProcWalking_EntropySource::poll(Entropy_Accumulator& accum)
          break;
          }
 
-      ssize_t got = ::read(fd, &io_buffer[0], io_buffer.size());
+      ssize_t got = ::read(fd, &m_buf[0], m_buf.size());
       ::close(fd);
 
       if(got > 0)
-         accum.add(&io_buffer[0], got, ENTROPY_ESTIMATE);
+         accum.add(&m_buf[0], got, ENTROPY_ESTIMATE);
 
-      if(accum.polling_goal_achieved())
+      if(accum.polling_finished())
          break;
       }
    }
@@ -33837,6 +33864,133 @@ void Private_Key::gen_check(RandomNumberGenerator& rng) const
 
 }
 /*
+* PK Operation Types
+* (C) 2010,2015 Jack Lloyd
+*
+* Botan is released under the Simplified BSD License (see license.txt)
+*/
+
+
+namespace Botan {
+
+PK_Ops::Encryption_with_EME::Encryption_with_EME(const std::string& eme)
+   {
+   m_eme.reset(get_eme(eme));
+   if(!m_eme.get())
+      throw Algorithm_Not_Found(eme);
+   }
+
+PK_Ops::Encryption_with_EME::~Encryption_with_EME() {}
+
+size_t PK_Ops::Encryption_with_EME::max_input_bits() const
+   {
+   return m_eme->maximum_input_size(max_raw_input_bits());
+   }
+
+secure_vector<byte> PK_Ops::Encryption_with_EME::encrypt(const byte msg[], size_t msg_len,
+                                                         RandomNumberGenerator& rng)
+   {
+   const size_t max_raw = max_raw_input_bits();
+
+   const std::vector<byte> encoded = unlock(m_eme->encode(msg, msg_len, max_raw, rng));
+
+   if(8*(encoded.size() - 1) + high_bit(encoded[0]) > max_raw)
+      throw std::runtime_error("Input is too large to encrypt with this key");
+
+   return raw_encrypt(&encoded[0], encoded.size(), rng);
+   }
+
+PK_Ops::Decryption_with_EME::Decryption_with_EME(const std::string& eme)
+   {
+   m_eme.reset(get_eme(eme));
+   if(!m_eme.get())
+      throw Algorithm_Not_Found(eme);
+   }
+
+PK_Ops::Decryption_with_EME::~Decryption_with_EME() {}
+
+size_t PK_Ops::Decryption_with_EME::max_input_bits() const
+   {
+   return m_eme->maximum_input_size(max_raw_input_bits());
+   }
+
+secure_vector<byte> PK_Ops::Decryption_with_EME::decrypt(const byte msg[], size_t length)
+   {
+   return m_eme->decode(raw_decrypt(msg, length), max_raw_input_bits());
+   }
+
+PK_Ops::Key_Agreement_with_KDF::Key_Agreement_with_KDF(const std::string& kdf)
+   {
+   if(kdf != "Raw")
+      m_kdf.reset(get_kdf(kdf));
+   }
+
+PK_Ops::Key_Agreement_with_KDF::~Key_Agreement_with_KDF() {}
+
+secure_vector<byte> PK_Ops::Key_Agreement_with_KDF::agree(size_t key_len,
+                                                          const byte w[], size_t w_len,
+                                                          const byte salt[], size_t salt_len)
+   {
+   secure_vector<byte> z = raw_agree(w, w_len);
+   if(m_kdf)
+      return m_kdf->derive_key(key_len, z, salt, salt_len);
+   return z;
+  }
+
+PK_Ops::Signature_with_EMSA::Signature_with_EMSA(const std::string& emsa)
+   {
+   m_emsa.reset(get_emsa(emsa));
+   if(!m_emsa)
+      throw Algorithm_Not_Found(emsa);
+   }
+
+PK_Ops::Signature_with_EMSA::~Signature_with_EMSA() {}
+
+void PK_Ops::Signature_with_EMSA::update(const byte msg[], size_t msg_len)
+   {
+   m_emsa->update(msg, msg_len);
+   }
+
+secure_vector<byte> PK_Ops::Signature_with_EMSA::sign(RandomNumberGenerator& rng)
+   {
+   const secure_vector<byte> msg = m_emsa->raw_data();
+   const auto padded = m_emsa->encoding_of(msg, this->max_input_bits(), rng);
+   return raw_sign(&padded[0], padded.size(), rng);
+   }
+
+PK_Ops::Verification_with_EMSA::Verification_with_EMSA(const std::string& emsa)
+   {
+   m_emsa.reset(get_emsa(emsa));
+   if(!m_emsa)
+      throw Algorithm_Not_Found(emsa);
+   }
+
+PK_Ops::Verification_with_EMSA::~Verification_with_EMSA() {}
+
+void PK_Ops::Verification_with_EMSA::update(const byte msg[], size_t msg_len)
+   {
+   m_emsa->update(msg, msg_len);
+   }
+
+bool PK_Ops::Verification_with_EMSA::is_valid_signature(const byte sig[], size_t sig_len)
+   {
+   const secure_vector<byte> msg = m_emsa->raw_data();
+
+   if(with_recovery())
+      {
+      secure_vector<byte> output_of_key = verify_mr(sig, sig_len);
+      return m_emsa->verify(output_of_key, msg, max_input_bits());
+      }
+   else
+      {
+      Null_RNG rng;
+      secure_vector<byte> encoded = m_emsa->encoding_of(msg, max_input_bits(), rng);
+      return verify(&encoded[0], encoded.size(), sig, sig_len);
+      }
+   }
+
+}
+/*
 * PKCS #8
 * (C) 1999-2010,2014 Jack Lloyd
 *
@@ -34081,236 +34235,143 @@ Private_Key* copy_key(const Private_Key& key,
 
 }
 /*
-* Public Key Base
-* (C) 1999-2010 Jack Lloyd
+* (C) 1999-2010,2015 Jack Lloyd
 *
 * Botan is released under the Simplified BSD License (see license.txt)
 */
 
-
-#if defined(BOTAN_HAS_SYSTEM_RNG)
-#else
-#endif
 
 namespace Botan {
 
 namespace {
 
 template<typename T, typename Key>
-T* get_pk_op(const Key& key, const std::string& pad)
+T* get_pk_op(const std::string& what, const Key& key, const std::string& pad)
    {
-   return Algo_Registry<T>::global_registry().make(typename T::Spec(key, pad));
+   T* p = Algo_Registry<T>::global_registry().make(typename T::Spec(key, pad));
+   if(!p)
+      throw Lookup_Error(what + " with " + key.algo_name() + "/" + pad + " not supported");
+   return p;
    }
 
 }
 
-/*
-* PK_Encryptor_EME Constructor
-*/
-PK_Encryptor_EME::PK_Encryptor_EME(const Public_Key& key,
-                                   const std::string& eme_name)
+PK_Encryptor_EME::PK_Encryptor_EME(const Public_Key& key, const std::string& eme)
    {
-   m_op.reset(get_pk_op<PK_Ops::Encryption>(key, eme_name));
-
-   if(!m_op)
-      throw Lookup_Error("Encryption with " + key.algo_name() + " not supported");
-
-   m_eme.reset(get_eme(eme_name));
+   m_op.reset(get_pk_op<PK_Ops::Encryption>("Encryption", key, eme));
    }
 
-/*
-* Encrypt a message
-*/
 std::vector<byte>
-PK_Encryptor_EME::enc(const byte in[],
-                      size_t length,
-                      RandomNumberGenerator& rng) const
+PK_Encryptor_EME::enc(const byte in[], size_t length, RandomNumberGenerator& rng) const
    {
-   if(m_eme)
-      {
-      secure_vector<byte> encoded =
-         m_eme->encode(in, length, m_op->max_input_bits(), rng);
-
-      if(8*(encoded.size() - 1) + high_bit(encoded[0]) > m_op->max_input_bits())
-         throw Invalid_Argument("PK_Encryptor_EME: Input is too large");
-
-      return unlock(m_op->encrypt(&encoded[0], encoded.size(), rng));
-      }
-   else
-      {
-      if(8*(length - 1) + high_bit(in[0]) > m_op->max_input_bits())
-         throw Invalid_Argument("PK_Encryptor_EME: Input is too large");
-
-      return unlock(m_op->encrypt(&in[0], length, rng));
-      }
+   return unlock(m_op->encrypt(in, length, rng));
    }
 
-/*
-* Return the max size, in bytes, of a message
-*/
 size_t PK_Encryptor_EME::maximum_input_size() const
    {
-   if(!m_eme)
-      return (m_op->max_input_bits() / 8);
-   else
-      return m_eme->maximum_input_size(m_op->max_input_bits());
+   return m_op->max_input_bits() / 8;
    }
 
-/*
-* PK_Decryptor_EME Constructor
-*/
-PK_Decryptor_EME::PK_Decryptor_EME(const Private_Key& key,
-                                   const std::string& eme_name)
+PK_Decryptor_EME::PK_Decryptor_EME(const Private_Key& key, const std::string& eme)
    {
-   m_op.reset(get_pk_op<PK_Ops::Decryption>(key, eme_name));
-   m_eme.reset(get_eme(eme_name));
+   m_op.reset(get_pk_op<PK_Ops::Decryption>("Decryption", key, eme));
    }
 
-/*
-* Decrypt a message
-*/
-secure_vector<byte> PK_Decryptor_EME::dec(const byte msg[],
-                                          size_t length) const
+secure_vector<byte> PK_Decryptor_EME::dec(const byte msg[], size_t length) const
    {
-   try {
-      const secure_vector<byte> decrypted = m_op->decrypt(msg, length);
-      if(m_eme)
-         return m_eme->decode(decrypted, m_op->max_input_bits());
-      else
-         return decrypted;
-      }
-   catch(Invalid_Argument)
+   return m_op->decrypt(msg, length);
+   }
+
+PK_Key_Agreement::PK_Key_Agreement(const Private_Key& key, const std::string& kdf)
+   {
+   m_op.reset(get_pk_op<PK_Ops::Key_Agreement>("Key agreement", key, kdf));
+   }
+
+SymmetricKey PK_Key_Agreement::derive_key(size_t key_len,
+                                          const byte in[], size_t in_len,
+                                          const byte salt[],
+                                          size_t salt_len) const
+   {
+   return m_op->agree(key_len, in, in_len, salt, salt_len);
+   }
+
+namespace {
+
+std::vector<byte> der_encode_signature(const std::vector<byte>& sig, size_t parts)
+   {
+   if(sig.size() % parts)
+      throw Encoding_Error("PK_Signer: strange signature size found");
+   const size_t SIZE_OF_PART = sig.size() / parts;
+
+   std::vector<BigInt> sig_parts(parts);
+   for(size_t j = 0; j != sig_parts.size(); ++j)
+      sig_parts[j].binary_decode(&sig[SIZE_OF_PART*j], SIZE_OF_PART);
+
+   return DER_Encoder()
+      .start_cons(SEQUENCE)
+      .encode_list(sig_parts)
+      .end_cons()
+      .get_contents_unlocked();
+   }
+
+std::vector<byte> der_decode_signature(const byte sig[], size_t len,
+                                       size_t part_size, size_t parts)
+   {
+   std::vector<byte> real_sig;
+   BER_Decoder decoder(sig, len);
+   BER_Decoder ber_sig = decoder.start_cons(SEQUENCE);
+
+   size_t count = 0;
+   while(ber_sig.more_items())
       {
-      throw Decoding_Error("PK_Decryptor_EME: Input is invalid");
+      BigInt sig_part;
+      ber_sig.decode(sig_part);
+      real_sig += BigInt::encode_1363(sig_part, part_size);
+      ++count;
       }
+
+   if(count != parts)
+      throw Decoding_Error("PK_Verifier: signature size invalid");
+   return real_sig;
    }
 
-/*
-* PK_Signer Constructor
-*/
+}
+
 PK_Signer::PK_Signer(const Private_Key& key,
-                     const std::string& emsa_name,
-                     Signature_Format format,
-                     Fault_Protection prot)
+                     const std::string& emsa,
+                     Signature_Format format)
    {
-   m_op.reset(get_pk_op<PK_Ops::Signature>(key, emsa_name));
-
-   if(prot == ENABLE_FAULT_PROTECTION)
-      m_verify_op.reset(get_pk_op<PK_Ops::Verification>(key, emsa_name));
-
-   if(!m_op || (prot == ENABLE_FAULT_PROTECTION && !m_verify_op))
-      throw Lookup_Error("Signing with " + key.algo_name() + " not supported");
-
-   m_emsa.reset(get_emsa(emsa_name));
+   m_op.reset(get_pk_op<PK_Ops::Signature>("Signing", key, emsa));
    m_sig_format = format;
    }
 
-/*
-* Sign a message
-*/
-std::vector<byte> PK_Signer::sign_message(const byte msg[], size_t length,
-                                           RandomNumberGenerator& rng)
-   {
-   update(msg, length);
-   return signature(rng);
-   }
-
-/*
-* Add more to the message to be signed
-*/
 void PK_Signer::update(const byte in[], size_t length)
    {
-   m_emsa->update(in, length);
+   m_op->update(in, length);
    }
 
-/*
-* Check the signature we just created, to help prevent fault attacks
-*/
-bool PK_Signer::self_test_signature(const std::vector<byte>& msg,
-                                    const std::vector<byte>& sig) const
-   {
-   if(!m_verify_op)
-      return true; // checking disabled, assume ok
-
-   if(m_verify_op->with_recovery())
-      {
-      std::vector<byte> recovered =
-         unlock(m_verify_op->verify_mr(&sig[0], sig.size()));
-
-      if(msg.size() > recovered.size())
-         {
-         size_t extra_0s = msg.size() - recovered.size();
-
-         for(size_t i = 0; i != extra_0s; ++i)
-            if(msg[i] != 0)
-               return false;
-
-         return same_mem(&msg[extra_0s], &recovered[0], recovered.size());
-         }
-
-      return (recovered == msg);
-      }
-   else
-      return m_verify_op->verify(&msg[0], msg.size(),
-                               &sig[0], sig.size());
-   }
-
-/*
-* Create a signature
-*/
 std::vector<byte> PK_Signer::signature(RandomNumberGenerator& rng)
    {
-   std::vector<byte> encoded = unlock(m_emsa->encoding_of(m_emsa->raw_data(),
-                                                 m_op->max_input_bits(),
-                                                        rng));
+   const std::vector<byte> plain_sig = unlock(m_op->sign(rng));
+   const size_t parts = m_op->message_parts();
 
-   std::vector<byte> plain_sig = unlock(m_op->sign(&encoded[0], encoded.size(), rng));
-
-   BOTAN_ASSERT(self_test_signature(encoded, plain_sig), "Signature was consistent");
-
-   if(m_op->message_parts() == 1 || m_sig_format == IEEE_1363)
+   if(parts == 1 || m_sig_format == IEEE_1363)
       return plain_sig;
-
-   if(m_sig_format == DER_SEQUENCE)
-      {
-      if(plain_sig.size() % m_op->message_parts())
-         throw Encoding_Error("PK_Signer: strange signature size found");
-      const size_t SIZE_OF_PART = plain_sig.size() / m_op->message_parts();
-
-      std::vector<BigInt> sig_parts(m_op->message_parts());
-      for(size_t j = 0; j != sig_parts.size(); ++j)
-         sig_parts[j].binary_decode(&plain_sig[SIZE_OF_PART*j], SIZE_OF_PART);
-
-      return DER_Encoder()
-         .start_cons(SEQUENCE)
-            .encode_list(sig_parts)
-         .end_cons()
-      .get_contents_unlocked();
-      }
+   else if(m_sig_format == DER_SEQUENCE)
+      return der_encode_signature(plain_sig, parts);
    else
       throw Encoding_Error("PK_Signer: Unknown signature format " +
                            std::to_string(m_sig_format));
    }
 
-/*
-* PK_Verifier Constructor
-*/
 PK_Verifier::PK_Verifier(const Public_Key& key,
                          const std::string& emsa_name,
                          Signature_Format format)
    {
-   m_op.reset(get_pk_op<PK_Ops::Verification>(key, emsa_name));
-
-   if(!m_op)
-      throw Lookup_Error("Verification with " + key.algo_name() + " not supported");
-
-   m_emsa.reset(get_emsa(emsa_name));
+   m_op.reset(get_pk_op<PK_Ops::Verification>("Verification", key, emsa_name));
    m_sig_format = format;
    }
 
-/*
-* Set the signature format
-*/
 void PK_Verifier::set_input_format(Signature_Format format)
    {
    if(m_op->message_parts() == 1 && format != IEEE_1363)
@@ -34318,9 +34379,6 @@ void PK_Verifier::set_input_format(Signature_Format format)
    m_sig_format = format;
    }
 
-/*
-* Verify a message
-*/
 bool PK_Verifier::verify_message(const byte msg[], size_t msg_length,
                                  const byte sig[], size_t sig_length)
    {
@@ -34328,96 +34386,31 @@ bool PK_Verifier::verify_message(const byte msg[], size_t msg_length,
    return check_signature(sig, sig_length);
    }
 
-/*
-* Append to the message
-*/
 void PK_Verifier::update(const byte in[], size_t length)
    {
-   m_emsa->update(in, length);
+   m_op->update(in, length);
    }
 
-/*
-* Check a signature
-*/
 bool PK_Verifier::check_signature(const byte sig[], size_t length)
    {
    try {
       if(m_sig_format == IEEE_1363)
-         return validate_signature(m_emsa->raw_data(), sig, length);
+         {
+         return m_op->is_valid_signature(sig, length);
+         }
       else if(m_sig_format == DER_SEQUENCE)
          {
-         BER_Decoder decoder(sig, length);
-         BER_Decoder ber_sig = decoder.start_cons(SEQUENCE);
+         std::vector<byte> real_sig = der_decode_signature(sig, length,
+                                                           m_op->message_part_size(),
+                                                           m_op->message_parts());
 
-         size_t count = 0;
-         std::vector<byte> real_sig;
-         while(ber_sig.more_items())
-            {
-            BigInt sig_part;
-            ber_sig.decode(sig_part);
-            real_sig += BigInt::encode_1363(sig_part, m_op->message_part_size());
-            ++count;
-            }
-
-         if(count != m_op->message_parts())
-            throw Decoding_Error("PK_Verifier: signature size invalid");
-
-         return validate_signature(m_emsa->raw_data(),
-                                   &real_sig[0], real_sig.size());
+         return m_op->is_valid_signature(&real_sig[0], real_sig.size());
          }
       else
          throw Decoding_Error("PK_Verifier: Unknown signature format " +
                               std::to_string(m_sig_format));
       }
    catch(Invalid_Argument) { return false; }
-   }
-
-/*
-* Verify a signature
-*/
-bool PK_Verifier::validate_signature(const secure_vector<byte>& msg,
-                                     const byte sig[], size_t sig_len)
-   {
-   if(m_op->with_recovery())
-      {
-      secure_vector<byte> output_of_key = m_op->verify_mr(sig, sig_len);
-      return m_emsa->verify(output_of_key, msg, m_op->max_input_bits());
-      }
-   else
-      {
-      Null_RNG rng;
-
-      secure_vector<byte> encoded =
-         m_emsa->encoding_of(msg, m_op->max_input_bits(), rng);
-
-      return m_op->verify(&encoded[0], encoded.size(), sig, sig_len);
-      }
-   }
-
-/*
-* PK_Key_Agreement Constructor
-*/
-PK_Key_Agreement::PK_Key_Agreement(const Private_Key& key,
-                                   const std::string& kdf_name)
-   {
-   m_op.reset(get_pk_op<PK_Ops::Key_Agreement>(key, kdf_name));
-
-   if(!m_op)
-      throw Lookup_Error("Key agreement with " + key.algo_name() + " not supported");
-
-   m_kdf.reset(get_kdf(kdf_name));
-   }
-
-SymmetricKey PK_Key_Agreement::derive_key(size_t key_len, const byte in[],
-                                          size_t in_len, const byte params[],
-                                          size_t params_len) const
-   {
-   secure_vector<byte> z = m_op->agree(in, in_len);
-
-   if(!m_kdf)
-      return z;
-
-   return m_kdf->derive_key(key_len, z, params, params_len);
    }
 
 }
@@ -35254,7 +35247,7 @@ secure_vector<byte> rfc3394_keyunwrap(const secure_vector<byte>& key,
 }
 /*
 * RFC 6979 Deterministic Nonce Generator
-* (C) 2014 Jack Lloyd
+* (C) 2014,2015 Jack Lloyd
 *
 * Botan is released under the Simplified BSD License (see license.txt)
 */
@@ -35275,32 +35268,43 @@ std::string hash_for_deterministic_signature(const std::string& emsa)
    return "SHA-512"; // safe default if nothing we understand
    }
 
+RFC6979_Nonce_Generator::RFC6979_Nonce_Generator(const std::string& hash,
+                                                 const BigInt& order,
+                                                 const BigInt& x) :
+   m_order(order),
+   m_qlen(m_order.bits()),
+   m_rlen(m_qlen / 8 + (m_qlen % 8 ? 1 : 0)),
+   m_hmac_drbg(new HMAC_DRBG(make_message_auth("HMAC(" + hash + ")").release())),
+   m_rng_in(m_rlen * 2),
+   m_rng_out(m_rlen)
+   {
+   BigInt::encode_1363(&m_rng_in[0], m_rlen, x);
+   }
+
+const BigInt& RFC6979_Nonce_Generator::nonce_for(const BigInt& m)
+   {
+   BigInt::encode_1363(&m_rng_in[m_rlen], m_rlen, m);
+   m_hmac_drbg->clear();
+   m_hmac_drbg->add_entropy(&m_rng_in[0], m_rng_in.size());
+
+   do
+      {
+      m_hmac_drbg->randomize(&m_rng_out[0], m_rng_out.size());
+      m_k.binary_decode(&m_rng_out[0], m_rng_out.size());
+      m_k >>= (8*m_rlen - m_qlen);
+      }
+   while(m_k == 0 || m_k >= m_order);
+
+   return m_k;
+   }
+
 BigInt generate_rfc6979_nonce(const BigInt& x,
                               const BigInt& q,
                               const BigInt& h,
                               const std::string& hash)
    {
-   HMAC_DRBG rng(make_message_auth("HMAC(" + hash + ")").release(), nullptr);
-
-   const size_t qlen = q.bits();
-   const size_t rlen = qlen / 8 + (qlen % 8 ? 1 : 0);
-
-   secure_vector<byte> input = BigInt::encode_1363(x, rlen);
-
-   input += BigInt::encode_1363(h, rlen);
-
-   rng.add_entropy(&input[0], input.size());
-
-   BigInt k;
-
-   secure_vector<byte> kbits(rlen);
-
-   while(k == 0 || k >= q)
-      {
-      rng.randomize(&kbits[0], kbits.size());
-      k = BigInt::decode(kbits) >> (8*rlen - qlen);
-      }
-
+   RFC6979_Nonce_Generator gen(hash, q, x);
+   BigInt k = gen.nonce_for(h);
    return k;
    }
 
@@ -35816,7 +35820,7 @@ class RSA_Private_Operation
       Blinder m_blinder;
    };
 
-class RSA_Signature_Operation : public PK_Ops::Signature,
+class RSA_Signature_Operation : public PK_Ops::Signature_with_EMSA,
                                 private RSA_Private_Operation
    {
    public:
@@ -35824,38 +35828,37 @@ class RSA_Signature_Operation : public PK_Ops::Signature,
 
       size_t max_input_bits() const override { return get_max_input_bits(); };
 
-      RSA_Signature_Operation(const RSA_PrivateKey& rsa, const std::string&) :
+      RSA_Signature_Operation(const RSA_PrivateKey& rsa, const std::string& emsa) :
+         PK_Ops::Signature_with_EMSA(emsa),
          RSA_Private_Operation(rsa)
          {
          }
 
-      secure_vector<byte> sign(const byte msg[], size_t msg_len,
-                              RandomNumberGenerator&) override
+      secure_vector<byte> raw_sign(const byte msg[], size_t msg_len,
+                                   RandomNumberGenerator&) override
          {
-         /* We don't check signatures against powermod_e_n here because
-         PK_Signer checks verification consistency for all signature
-         algorithms.
-         */
          const BigInt m(msg, msg_len);
          const BigInt x = blinded_private_op(m);
+         BOTAN_ASSERT(m == m_powermod_e_n(x), "RSA sign consistency check");
          return BigInt::encode_1363(x, n.bytes());
          }
    };
 
-class RSA_Decryption_Operation : public PK_Ops::Decryption,
+class RSA_Decryption_Operation : public PK_Ops::Decryption_with_EME,
                                  private RSA_Private_Operation
    {
    public:
       typedef RSA_PrivateKey Key_Type;
 
-      size_t max_input_bits() const override { return get_max_input_bits(); };
+      size_t max_raw_input_bits() const override { return get_max_input_bits(); };
 
-      RSA_Decryption_Operation(const RSA_PrivateKey& rsa, const std::string&) :
+      RSA_Decryption_Operation(const RSA_PrivateKey& rsa, const std::string& eme) :
+         PK_Ops::Decryption_with_EME(eme),
          RSA_Private_Operation(rsa)
          {
          }
 
-      secure_vector<byte> decrypt(const byte msg[], size_t msg_len) override
+      secure_vector<byte> raw_decrypt(const byte msg[], size_t msg_len) override
          {
          const BigInt m(msg, msg_len);
          const BigInt x = blinded_private_op(m);
@@ -35863,7 +35866,6 @@ class RSA_Decryption_Operation : public PK_Ops::Decryption,
          return BigInt::encode_locked(x);
          }
    };
-
 
 /**
 * RSA public (encrypt/verify) operation
@@ -35889,28 +35891,29 @@ class RSA_Public_Operation
       Fixed_Exponent_Power_Mod powermod_e_n;
    };
 
-class RSA_Encryption_Operation : public PK_Ops::Encryption,
+class RSA_Encryption_Operation : public PK_Ops::Encryption_with_EME,
                                  private RSA_Public_Operation
    {
    public:
       typedef RSA_PublicKey Key_Type;
 
-      RSA_Encryption_Operation(const RSA_PublicKey& rsa, const std::string&) :
+      RSA_Encryption_Operation(const RSA_PublicKey& rsa, const std::string& eme) :
+         PK_Ops::Encryption_with_EME(eme),
          RSA_Public_Operation(rsa)
          {
          }
 
-      size_t max_input_bits() const override { return get_max_input_bits(); };
+      size_t max_raw_input_bits() const override { return get_max_input_bits(); };
 
-      secure_vector<byte> encrypt(const byte msg[], size_t msg_len,
-                                  RandomNumberGenerator&)
+      secure_vector<byte> raw_encrypt(const byte msg[], size_t msg_len,
+                                      RandomNumberGenerator&) override
          {
          BigInt m(msg, msg_len);
          return BigInt::encode_1363(public_op(m), n.bytes());
          }
    };
 
-class RSA_Verify_Operation : public PK_Ops::Verification,
+class RSA_Verify_Operation : public PK_Ops::Verification_with_EMSA,
                              private RSA_Public_Operation
    {
    public:
@@ -35918,7 +35921,8 @@ class RSA_Verify_Operation : public PK_Ops::Verification,
 
       size_t max_input_bits() const override { return get_max_input_bits(); };
 
-      RSA_Verify_Operation(const RSA_PublicKey& rsa, const std::string&) :
+      RSA_Verify_Operation(const RSA_PublicKey& rsa, const std::string& emsa) :
+         PK_Ops::Verification_with_EMSA(emsa),
          RSA_Public_Operation(rsa)
          {
          }
@@ -36001,13 +36005,14 @@ namespace {
 /**
 * Rabin-Williams Signature Operation
 */
-class RW_Signature_Operation : public PK_Ops::Signature
+class RW_Signature_Operation : public PK_Ops::Signature_with_EMSA
    {
    public:
       typedef RW_PrivateKey Key_Type;
 
       RW_Signature_Operation(const RW_PrivateKey& rw,
-                             const std::string&) :
+                             const std::string& emsa) :
+         PK_Ops::Signature_with_EMSA(emsa),
          n(rw.get_n()),
          e(rw.get_e()),
          q(rw.get_q()),
@@ -36021,10 +36026,10 @@ class RW_Signature_Operation : public PK_Ops::Signature
          {
          }
 
-      size_t max_input_bits() const { return (n.bits() - 1); }
+      size_t max_input_bits() const override { return (n.bits() - 1); }
 
-      secure_vector<byte> sign(const byte msg[], size_t msg_len,
-                              RandomNumberGenerator& rng);
+      secure_vector<byte> raw_sign(const byte msg[], size_t msg_len,
+                                   RandomNumberGenerator& rng) override;
    private:
       const BigInt& n;
       const BigInt& e;
@@ -36037,8 +36042,8 @@ class RW_Signature_Operation : public PK_Ops::Signature
    };
 
 secure_vector<byte>
-RW_Signature_Operation::sign(const byte msg[], size_t msg_len,
-                             RandomNumberGenerator&)
+RW_Signature_Operation::raw_sign(const byte msg[], size_t msg_len,
+                                 RandomNumberGenerator&)
    {
    BigInt i(msg, msg_len);
 
@@ -36064,12 +36069,13 @@ RW_Signature_Operation::sign(const byte msg[], size_t msg_len,
 /**
 * Rabin-Williams Verification Operation
 */
-class RW_Verification_Operation : public PK_Ops::Verification
+class RW_Verification_Operation : public PK_Ops::Verification_with_EMSA
    {
    public:
       typedef RW_PublicKey Key_Type;
 
-      RW_Verification_Operation(const RW_PublicKey& rw, const std::string&) :
+      RW_Verification_Operation(const RW_PublicKey& rw, const std::string& emsa) :
+         PK_Ops::Verification_with_EMSA(emsa),
          n(rw.get_n()), powermod_e_n(rw.get_e(), rw.get_n())
          {}
 
@@ -40583,7 +40589,7 @@ Client_Hello::Client_Hello(Handshake_IO& io,
                            const Policy& policy,
                            RandomNumberGenerator& rng,
                            const std::vector<byte>& reneg_info,
-                           bool next_protocol,
+                           const std::vector<std::string>& next_protocols,
                            const std::string& hostname,
                            const std::string& srp_identifier) :
    m_version(version),
@@ -40607,8 +40613,8 @@ Client_Hello::Client_Hello(Handshake_IO& io,
    if(m_version.is_datagram_protocol())
      m_extensions.add(new SRTP_Protection_Profiles(policy.srtp_profiles()));
 
-   if(reneg_info.empty() && next_protocol)
-      m_extensions.add(new Next_Protocol_Notification());
+   if(reneg_info.empty() && !next_protocols.empty())
+      m_extensions.add(new Application_Layer_Protocol_Notification(next_protocols));
 
    BOTAN_ASSERT(policy.acceptable_protocol_version(version),
                 "Our policy accepts the version we are offering");
@@ -40628,7 +40634,7 @@ Client_Hello::Client_Hello(Handshake_IO& io,
                            RandomNumberGenerator& rng,
                            const std::vector<byte>& reneg_info,
                            const Session& session,
-                           bool next_protocol) :
+                           const std::vector<std::string>& next_protocols) :
    m_version(session.version()),
    m_session_id(session.session_id()),
    m_random(make_hello_random(rng, policy)),
@@ -40657,8 +40663,8 @@ Client_Hello::Client_Hello(Handshake_IO& io,
       m_extensions.add(new Signature_Algorithms(policy.allowed_signature_hashes(),
                                                 policy.allowed_signature_methods()));
 
-   if(reneg_info.empty() && next_protocol)
-      m_extensions.add(new Next_Protocol_Notification());
+   if(reneg_info.empty() && !next_protocols.empty())
+      m_extensions.add(new Application_Layer_Protocol_Notification(next_protocols));
 
    hash.update(io.send(*this));
    }
@@ -41307,57 +41313,6 @@ std::vector<byte> Hello_Verify_Request::serialize() const
 }
 
 }
-/*
-* Next Protocol Negotiation
-* (C) 2012 Jack Lloyd
-*
-* Botan is released under the Simplified BSD License (see license.txt)
-*/
-
-
-namespace Botan {
-
-namespace TLS {
-
-Next_Protocol::Next_Protocol(Handshake_IO& io,
-                             Handshake_Hash& hash,
-                             const std::string& protocol) :
-   m_protocol(protocol)
-   {
-   hash.update(io.send(*this));
-   }
-
-Next_Protocol::Next_Protocol(const std::vector<byte>& buf)
-   {
-   TLS_Data_Reader reader("NextProtocol", buf);
-
-   m_protocol = reader.get_string(1, 0, 255);
-
-   reader.get_range_vector<byte>(1, 0, 255); // padding, ignored
-   }
-
-std::vector<byte> Next_Protocol::serialize() const
-   {
-   std::vector<byte> buf;
-
-   append_tls_length_value(buf,
-                           reinterpret_cast<const byte*>(m_protocol.data()),
-                           m_protocol.size(),
-                           1);
-
-   const byte padding_len = 32 - ((m_protocol.size() + 2) % 32);
-
-   buf.push_back(padding_len);
-
-   for(size_t i = 0; i != padding_len; ++i)
-      buf.push_back(0);
-
-   return buf;
-   }
-
-}
-
-}
 ;/*
 * TLS Server Hello and Server Hello Done
 * (C) 2004-2011,2015 Jack Lloyd
@@ -41382,7 +41337,7 @@ Server_Hello::Server_Hello(Handshake_IO& io,
                            u16bit ciphersuite,
                            byte compression,
                            bool offer_session_ticket,
-                           const std::vector<std::string>& next_protocols) :
+                           const std::string next_protocol) :
    m_version(new_session_version),
    m_session_id(new_session_id),
    m_random(make_hello_random(rng, policy)),
@@ -41401,8 +41356,8 @@ Server_Hello::Server_Hello(Handshake_IO& io,
    if(policy.negotiate_heartbeat_support() && client_hello.supports_heartbeats())
       m_extensions.add(new Heartbeat_Support_Indicator(true));
 
-   if(client_hello.next_protocol_notification())
-      m_extensions.add(new Next_Protocol_Notification(next_protocols));
+   if(next_protocol != "" && client_hello.supports_alpn())
+      m_extensions.add(new Application_Layer_Protocol_Notification(next_protocol));
 
    if(m_version.is_datagram_protocol())
       {
@@ -41437,7 +41392,7 @@ Server_Hello::Server_Hello(Handshake_IO& io,
                            const Client_Hello& client_hello,
                            Session& resumed_session,
                            bool offer_session_ticket,
-                           const std::vector<std::string>& next_protocols) :
+                           const std::string& next_protocol) :
    m_version(resumed_session.version()),
    m_session_id(client_hello.session_id()),
    m_random(make_hello_random(rng, policy)),
@@ -41456,8 +41411,8 @@ Server_Hello::Server_Hello(Handshake_IO& io,
    if(policy.negotiate_heartbeat_support() && client_hello.supports_heartbeats())
       m_extensions.add(new Heartbeat_Support_Indicator(true));
 
-   if(client_hello.next_protocol_notification())
-      m_extensions.add(new Next_Protocol_Notification(next_protocols));
+   if(next_protocol != "" && client_hello.supports_alpn())
+      m_extensions.add(new Application_Layer_Protocol_Notification(next_protocol));
 
    hash.update(io.send(*this));
    }
@@ -41965,6 +41920,8 @@ std::string Alert::type_string() const
          return "bad_certificate_hash_value";
       case UNKNOWN_PSK_IDENTITY:
          return "unknown_psk_identity";
+      case NO_APPLICATION_PROTOCOL:
+         return "no_application_protocol";
 
       case NULL_ALERT:
          return "none";
@@ -42007,7 +41964,7 @@ Blocking_Client::Blocking_Client(read_fn reader,
                                  RandomNumberGenerator& rng,
                                  const Server_Information& server_info,
                                  const Protocol_Version offer_version,
-                                 next_protocol_fn npn) :
+                                 const std::vector<std::string>& next) :
    m_read(reader),
    m_channel(writer,
              std::bind(&Blocking_Client::data_cb, this, _1, _2),
@@ -42019,7 +41976,7 @@ Blocking_Client::Blocking_Client(read_fn reader,
              rng,
              server_info,
              offer_version,
-             npn)
+             next)
    {
    }
 
@@ -43088,9 +43045,6 @@ class Client_Handshake_State : public Handshake_State
       secure_vector<byte> resume_master_secret;
 
       std::unique_ptr<Public_Key> server_public_key;
-
-      // Used by client using NPN
-      Client::next_protocol_fn client_npn_cb;
    };
 
 }
@@ -43108,7 +43062,7 @@ Client::Client(output_fn output_fn,
                RandomNumberGenerator& rng,
                const Server_Information& info,
                const Protocol_Version offer_version,
-               next_protocol_fn npn,
+               const std::vector<std::string>& next_protos,
                size_t io_buf_sz) :
    Channel(output_fn, proc_cb, alert_cb, handshake_cb, session_manager, rng,
            offer_version.is_datagram_protocol(), io_buf_sz),
@@ -43119,7 +43073,7 @@ Client::Client(output_fn output_fn,
    const std::string srp_identifier = m_creds.srp_identifier("tls-client", m_info.hostname());
 
    Handshake_State& state = create_handshake_state(offer_version);
-   send_client_hello(state, false, offer_version, srp_identifier, npn);
+   send_client_hello(state, false, offer_version, srp_identifier, next_protos);
    }
 
 Handshake_State* Client::new_handshake_state(Handshake_IO* io)
@@ -43141,26 +43095,20 @@ Client::get_peer_cert_chain(const Handshake_State& state) const
 void Client::initiate_handshake(Handshake_State& state,
                                 bool force_full_renegotiation)
    {
-   send_client_hello(state,
-                     force_full_renegotiation,
-                     state.version());
+   send_client_hello(state, force_full_renegotiation, state.version());
    }
 
 void Client::send_client_hello(Handshake_State& state_base,
                                bool force_full_renegotiation,
                                Protocol_Version version,
                                const std::string& srp_identifier,
-                               next_protocol_fn next_protocol)
+                               const std::vector<std::string>& next_protocols)
    {
    Client_Handshake_State& state = dynamic_cast<Client_Handshake_State&>(state_base);
 
    if(state.version().is_datagram_protocol())
       state.set_expected_next(HELLO_VERIFY_REQUEST); // optional
    state.set_expected_next(SERVER_HELLO);
-
-   state.client_npn_cb = next_protocol;
-
-   const bool send_npn_request = static_cast<bool>(next_protocol);
 
    if(!force_full_renegotiation && !m_info.empty())
       {
@@ -43176,7 +43124,7 @@ void Client::send_client_hello(Handshake_State& state_base,
                rng(),
                secure_renegotiation_data_for_client_hello(),
                session_info,
-               send_npn_request));
+               next_protocols));
 
             state.resume_master_secret = session_info.master_secret();
             }
@@ -43192,7 +43140,7 @@ void Client::send_client_hello(Handshake_State& state_base,
          m_policy,
          rng(),
          secure_renegotiation_data_for_client_hello(),
-         send_npn_request,
+         next_protocols,
          m_info.hostname(),
          srp_identifier));
       }
@@ -43299,6 +43247,7 @@ void Client::process_handshake_msg(const Handshake_State* active_state,
          }
 
       state.set_version(state.server_hello()->version());
+      m_application_protocol = state.server_hello()->next_protocol();
 
       secure_renegotiation_check(state.server_hello());
 
@@ -43441,20 +43390,15 @@ void Client::process_handshake_msg(const Handshake_State* active_state,
    else if(type == CERTIFICATE_REQUEST)
       {
       state.set_expected_next(SERVER_HELLO_DONE);
-      state.cert_req(
-         new Certificate_Req(contents, state.version())
-         );
+      state.cert_req(new Certificate_Req(contents, state.version()));
       }
    else if(type == SERVER_HELLO_DONE)
       {
-      state.server_hello_done(
-         new Server_Hello_Done(contents)
-         );
+      state.server_hello_done(new Server_Hello_Done(contents));
 
       if(state.received_handshake_msg(CERTIFICATE_REQUEST))
          {
-         const std::vector<std::string>& types =
-            state.cert_req()->acceptable_cert_types();
+         const auto& types = state.cert_req()->acceptable_cert_types();
 
          std::vector<X509_Certificate> client_certs =
             m_creds.cert_chain(types,
@@ -43501,19 +43445,7 @@ void Client::process_handshake_msg(const Handshake_State* active_state,
 
       change_cipher_spec_writer(CLIENT);
 
-      if(state.server_hello()->next_protocol_notification())
-         {
-         const std::string protocol = state.client_npn_cb(
-            state.server_hello()->next_protocols());
-
-         state.next_protocol(
-            new Next_Protocol(state.handshake_io(), state.hash(), protocol)
-            );
-         }
-
-      state.client_finished(
-         new Finished(state.handshake_io(), state, CLIENT)
-         );
+      state.client_finished(new Finished(state.handshake_io(), state, CLIENT));
 
       if(state.server_hello()->supports_session_ticket())
          state.set_expected_next(NEW_SESSION_TICKET);
@@ -43545,22 +43477,8 @@ void Client::process_handshake_msg(const Handshake_State* active_state,
       if(!state.client_finished()) // session resume case
          {
          state.handshake_io().send(Change_Cipher_Spec());
-
          change_cipher_spec_writer(CLIENT);
-
-         if(state.server_hello()->next_protocol_notification())
-            {
-            const std::string protocol = state.client_npn_cb(
-                  state.server_hello()->next_protocols());
-
-            state.next_protocol(
-               new Next_Protocol(state.handshake_io(), state.hash(), protocol)
-               );
-            }
-
-         state.client_finished(
-            new Finished(state.handshake_io(), state, CLIENT)
-            );
+         state.client_finished(new Finished(state.handshake_io(), state, CLIENT));
          }
 
       std::vector<byte> session_id = state.server_hello()->session_id();
@@ -43645,8 +43563,8 @@ Extension* make_extension(TLS_Data_Reader& reader,
         case TLSEXT_USE_SRTP:
           return new SRTP_Protection_Profiles(reader, size);
 
-      case TLSEXT_NEXT_PROTOCOL:
-         return new Next_Protocol_Notification(reader, size);
+      case TLSEXT_ALPN:
+         return new Application_Layer_Protocol_Notification(reader, size);
 
       case TLSEXT_HEARTBEAT_SUPPORT:
          return new Heartbeat_Support_Indicator(reader, size);
@@ -43861,20 +43779,25 @@ Maximum_Fragment_Length::Maximum_Fragment_Length(TLS_Data_Reader& reader,
       }
    }
 
-Next_Protocol_Notification::Next_Protocol_Notification(TLS_Data_Reader& reader,
-                                                       u16bit extension_size)
+Application_Layer_Protocol_Notification::Application_Layer_Protocol_Notification(TLS_Data_Reader& reader,
+                                                                                 u16bit extension_size)
    {
    if(extension_size == 0)
       return; // empty extension
 
-   size_t bytes_remaining = extension_size;
+   const u16bit name_bytes = reader.get_u16bit();
+
+   size_t bytes_remaining = extension_size - 2;
+
+   if(name_bytes != bytes_remaining)
+      throw Decoding_Error("Bad encoding of ALPN extension, bad length field");
 
    while(bytes_remaining)
       {
       const std::string p = reader.get_string(1, 0, 255);
 
       if(bytes_remaining < p.size() + 1)
-         throw Decoding_Error("Bad encoding for next protocol extension");
+         throw Decoding_Error("Bad encoding of ALPN, length field too long");
 
       bytes_remaining -= (p.size() + 1);
 
@@ -43882,20 +43805,32 @@ Next_Protocol_Notification::Next_Protocol_Notification(TLS_Data_Reader& reader,
       }
    }
 
-std::vector<byte> Next_Protocol_Notification::serialize() const
+const std::string& Application_Layer_Protocol_Notification::single_protocol() const
    {
-   std::vector<byte> buf;
+   if(m_protocols.size() != 1)
+      throw TLS_Exception(Alert::HANDSHAKE_FAILURE,
+                          "Server sent " + std::to_string(m_protocols.size()) +
+                          " protocols in ALPN extension response");
+   return m_protocols[0];
+   }
 
-   for(size_t i = 0; i != m_protocols.size(); ++i)
+std::vector<byte> Application_Layer_Protocol_Notification::serialize() const
+   {
+   std::vector<byte> buf(2);
+
+   for(auto&& p: m_protocols)
       {
-      const std::string p = m_protocols[i];
-
+      if(p.length() >= 256)
+         throw TLS_Exception(Alert::INTERNAL_ERROR, "ALPN name too long");
       if(p != "")
          append_tls_length_value(buf,
                                  reinterpret_cast<const byte*>(p.data()),
                                  p.size(),
                                  1);
       }
+
+   buf[0] = get_byte<u16bit>(0, buf.size()-2);
+   buf[1] = get_byte<u16bit>(1, buf.size()-2);
 
    return buf;
    }
@@ -44723,17 +44658,14 @@ u32bit bitmask_for_handshake_type(Handshake_Type type)
       case CLIENT_KEX:
          return (1 << 11);
 
-      case NEXT_PROTOCOL:
+      case NEW_SESSION_TICKET:
          return (1 << 12);
 
-      case NEW_SESSION_TICKET:
+      case HANDSHAKE_CCS:
          return (1 << 13);
 
-      case HANDSHAKE_CCS:
-         return (1 << 14);
-
       case FINISHED:
-         return (1 << 15);
+         return (1 << 14);
 
       // allow explicitly disabling new handshakes
       case HANDSHAKE_NONE:
@@ -44820,12 +44752,6 @@ void Handshake_State::client_verify(Certificate_Verify* client_verify)
    {
    m_client_verify.reset(client_verify);
    note_message(*m_client_verify);
-   }
-
-void Handshake_State::next_protocol(Next_Protocol* next_protocol)
-   {
-   m_next_protocol.reset(next_protocol);
-   note_message(*m_next_protocol);
    }
 
 void Handshake_State::new_session_ticket(New_Session_Ticket* new_session_ticket)
@@ -46403,14 +46329,14 @@ Server::Server(output_fn output,
                Credentials_Manager& creds,
                const Policy& policy,
                RandomNumberGenerator& rng,
-               const std::vector<std::string>& next_protocols,
+               next_protocol_fn next_proto,
                bool is_datagram,
                size_t io_buf_sz) :
    Channel(output, data_cb, alert_cb, handshake_cb,
            session_manager, rng, is_datagram, io_buf_sz),
    m_policy(policy),
    m_creds(creds),
-   m_possible_protocols(next_protocols)
+   m_choose_next_protocol(next_proto)
    {
    }
 
@@ -46539,10 +46465,6 @@ void Server::process_handshake_msg(const Handshake_State* active_state,
                                 "Client signalled fallback SCSV, possible attack");
          }
 
-      if(!initial_handshake && state.client_hello()->next_protocol_notification())
-         throw TLS_Exception(Alert::HANDSHAKE_FAILURE,
-                             "Client included NPN extension for renegotiation");
-
       secure_renegotiation_check(state.client_hello());
 
       state.set_version(negotiated_version);
@@ -46565,6 +46487,10 @@ void Server::process_handshake_msg(const Handshake_State* active_state,
          }
       catch(...) {}
 
+      m_next_protocol = "";
+      if(state.client_hello()->supports_alpn())
+         m_next_protocol = m_choose_next_protocol(state.client_hello()->next_protocols());
+
       if(resuming)
          {
          // Only offer a resuming client a new ticket if they didn't send one this time,
@@ -46584,7 +46510,7 @@ void Server::process_handshake_msg(const Handshake_State* active_state,
                *state.client_hello(),
                session_info,
                offer_new_session_ticket,
-               m_possible_protocols
+               m_next_protocol
             ));
 
          secure_renegotiation_check(state.server_hello());
@@ -46631,10 +46557,7 @@ void Server::process_handshake_msg(const Handshake_State* active_state,
 
          change_cipher_spec_writer(SERVER);
 
-         state.server_finished(
-            new Finished(state.handshake_io(), state, SERVER)
-            );
-
+         state.server_finished(new Finished(state.handshake_io(), state, SERVER));
          state.set_expected_next(HANDSHAKE_CCS);
          }
       else // new session
@@ -46672,7 +46595,7 @@ void Server::process_handshake_msg(const Handshake_State* active_state,
                choose_ciphersuite(m_policy, state.version(), m_creds, cert_chains, state.client_hello()),
                choose_compression(m_policy, state.client_hello()->compression_methods()),
                have_session_ticket_key,
-               m_possible_protocols)
+               m_next_protocol)
             );
 
          secure_renegotiation_check(state.server_hello());
@@ -46685,11 +46608,9 @@ void Server::process_handshake_msg(const Handshake_State* active_state,
             BOTAN_ASSERT(!cert_chains[sig_algo].empty(),
                          "Attempting to send empty certificate chain");
 
-            state.server_certs(
-               new Certificate(state.handshake_io(),
-                               state.hash(),
-                               cert_chains[sig_algo])
-               );
+            state.server_certs(new Certificate(state.handshake_io(),
+                                               state.hash(),
+                                               cert_chains[sig_algo]));
             }
 
          Private_Key* private_key = nullptr;
@@ -46729,12 +46650,8 @@ void Server::process_handshake_msg(const Handshake_State* active_state,
          if(!client_auth_CAs.empty() && state.ciphersuite().sig_algo() != "")
             {
             state.cert_req(
-               new Certificate_Req(state.handshake_io(),
-                                   state.hash(),
-                                   m_policy,
-                                   client_auth_CAs,
-                                   state.version())
-               );
+               new Certificate_Req(state.handshake_io(), state.hash(),
+                                   m_policy, client_auth_CAs, state.version()));
 
             state.set_expected_next(CERTIFICATE);
             }
@@ -46746,9 +46663,7 @@ void Server::process_handshake_msg(const Handshake_State* active_state,
          */
          state.set_expected_next(CLIENT_KEX);
 
-         state.server_hello_done(
-            new Server_Hello_Done(state.handshake_io(), state.hash())
-            );
+         state.server_hello_done(new Server_Hello_Done(state.handshake_io(), state.hash()));
          }
       }
    else if(type == CERTIFICATE)
@@ -46805,21 +46720,8 @@ void Server::process_handshake_msg(const Handshake_State* active_state,
       }
    else if(type == HANDSHAKE_CCS)
       {
-      if(state.server_hello()->next_protocol_notification())
-         state.set_expected_next(NEXT_PROTOCOL);
-      else
-         state.set_expected_next(FINISHED);
-
-      change_cipher_spec_reader(SERVER);
-      }
-   else if(type == NEXT_PROTOCOL)
-      {
       state.set_expected_next(FINISHED);
-
-      state.next_protocol(new Next_Protocol(contents));
-
-      // should this be a callback?
-      m_next_protocol = state.next_protocol()->protocol();
+      change_cipher_spec_reader(SERVER);
       }
    else if(type == FINISHED)
       {
@@ -46885,9 +46787,7 @@ void Server::process_handshake_msg(const Handshake_State* active_state,
 
          change_cipher_spec_writer(SERVER);
 
-         state.server_finished(
-            new Finished(state.handshake_io(), state, SERVER)
-            );
+         state.server_finished(new Finished(state.handshake_io(), state, SERVER));
          }
 
       activate_session();
@@ -48821,21 +48721,12 @@ Unix_EntropySource::Unix_EntropySource(const std::vector<std::string>& trusted_p
 
 void UnixProcessInfo_EntropySource::poll(Entropy_Accumulator& accum)
    {
-   static std::atomic<int> last_pid;
-
-   int pid = ::getpid();
-
-   accum.add(pid, 0.0);
-
-   if(pid != last_pid)
-      {
-      last_pid = pid;
-      accum.add(::getppid(), 0.0);
-      accum.add(::getuid(),  0.0);
-      accum.add(::getgid(),  0.0);
-      accum.add(::getsid(0),  0.0);
-      accum.add(::getpgrp(), 0.0);
-      }
+   accum.add(::getpid(), 0.0);
+   accum.add(::getppid(), 0.0);
+   accum.add(::getuid(),  0.0);
+   accum.add(::getgid(),  0.0);
+   accum.add(::getsid(0),  0.0);
+   accum.add(::getpgrp(), 0.0);
 
    struct ::rusage usage;
    ::getrusage(RUSAGE_SELF, &usage);
@@ -48966,9 +48857,9 @@ void Unix_EntropySource::poll(Entropy_Accumulator& accum)
    const size_t MS_WAIT_TIME = 32;
    const double ENTROPY_ESTIMATE = 1.0 / 1024;
 
-   secure_vector<byte>& io_buffer = accum.get_io_buffer(4*1024); // page
+   m_buf.resize(4096);
 
-   while(!accum.polling_goal_achieved())
+   while(!accum.polling_finished())
       {
       while(m_procs.size() < m_concurrent)
          m_procs.emplace_back(Unix_Process(next_source()));
@@ -49006,9 +48897,9 @@ void Unix_EntropySource::poll(Entropy_Accumulator& accum)
 
          if(FD_ISSET(fd, &read_set))
             {
-            const ssize_t got = ::read(fd, &io_buffer[0], io_buffer.size());
+            const ssize_t got = ::read(fd, &m_buf[0], m_buf.size());
             if(got > 0)
-               accum.add(&io_buffer[0], got, ENTROPY_ESTIMATE);
+               accum.add(&m_buf[0], got, ENTROPY_ESTIMATE);
             else
                proc.spawn(next_source());
             }
@@ -49601,7 +49492,11 @@ list_all_readable_files_in_or_under(const std::string& dir_path)
          }
       }
 #else
+#if defined(_MSC_VER)
+  #pragma message ( "No filesystem access enabled" )
+#else
   #warning "No filesystem access enabled"
+#endif
 #endif
 
    std::sort(paths.begin(), paths.end());
@@ -54758,7 +54653,7 @@ void poly_double_128(byte out[], const byte in[])
    u64bit X0 = load_le<u64bit>(in, 0);
    u64bit X1 = load_le<u64bit>(in, 1);
 
-   const bool carry = (X1 >> 63);
+   const bool carry = static_cast<bool>(X1 >> 63);
 
    X1 = (X1 << 1) | (X0 >> 63);
    X0 = (X0 << 1);
@@ -54772,7 +54667,7 @@ void poly_double_128(byte out[], const byte in[])
 void poly_double_64(byte out[], const byte in[])
    {
    u64bit X = load_le<u64bit>(in, 0);
-   const bool carry = (X >> 63);
+   const bool carry = static_cast<bool>(X >> 63);
    X <<= 1;
    if(carry)
       X ^= 0x1B;
