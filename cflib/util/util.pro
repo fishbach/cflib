@@ -38,4 +38,7 @@ HEADERS = \
 	unixsignal.h \
 	util.h \
 
+OTHER_FILES = \
+	impl/generate_templates.pl \
+
 lib()
