@@ -19,7 +19,7 @@
 
 use strict; use warnings; use utf8;
 
-my $maxParams = 4;
+my $maxParams = 6;
 
 sub verifyThreadCall
 {
