@@ -78,7 +78,7 @@ ev_loop * ThreadVerify::libEVLoop() const
 	return th->loop();
 }
 
-void ThreadVerify::execCall(const Functor * func)
+void ThreadVerify::execCall(const Functor * func) const
 {
 	if (!verifyThread_->isActive()) {
 		logWarn("execCall for already terminated thread %1", verifyThread_->threadName);

@@ -161,6 +161,30 @@ private:
 	QSemaphore * sem_;
 };
 
+template<typename C, typename P1, typename P2>
+class Functor2C : public Functor
+{
+	typedef void (C::*F)(P1, P2) const;
+	typedef typename RemoveConstRef<P1>::Type A1;
+	typedef typename RemoveConstRef<P2>::Type A2;
+public:
+	Functor2C(const C * o, F f, P1 a1, P2 a2, QSemaphore * sem = 0) :
+		o_(o), f_(f), a1_(a1), a2_(a2), sem_(sem) {}
+
+	virtual void operator()() const
+	{
+		(o_->*f_)(a1_, a2_);
+		if (sem_) sem_->release();
+	}
+
+private:
+	const C * o_;
+	F f_;
+	A1 a1_;
+	A2 a2_;
+	QSemaphore * sem_;
+};
+
 template<typename C, typename R, typename P1, typename P2>
 class RFunctor2 : public Functor
 {

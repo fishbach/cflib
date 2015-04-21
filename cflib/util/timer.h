@@ -20,9 +20,6 @@
 
 #include <cflib/util/functor.h>
 
-struct ev_loop;
-struct ev_timer;
-
 namespace cflib { namespace util {
 
 class Timer

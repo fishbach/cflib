@@ -256,11 +256,11 @@ void ApiServer::exportTo(const QString & dest) const
 	exportClass(classInfos_, "", dest);
 }
 
-void ApiServer::getClientId(const QByteArray & clIdData, uint & clId)
+void ApiServer::getClientId(const QByteArray & clIdData, uint & clId) const
 {
 	if (!verifySyncedThreadCall(&ApiServer::getClientId, clIdData, clId)) return;
 
-	clId = clientIds_[clIdData].first;
+	clId = clientIds_.value(clIdData).first;
 }
 
 void ApiServer::handleRequest(const Request & request)

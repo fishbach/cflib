@@ -53,7 +53,7 @@ public:
 	void exportTo(const QString & dest) const;
 
 public slots:
-	void getClientId(const QByteArray & clIdData, uint & clId);
+	void getClientId(const QByteArray & clIdData, uint & clId) const;
 
 protected:
 	virtual void handleRequest(const Request & request);

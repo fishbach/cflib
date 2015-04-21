@@ -25,28 +25,24 @@ namespace cflib { namespace net {
 
 class ApiServer;
 
-class WebSocketService : public QObject, public RequestHandler, public util::ThreadVerify
+class WebSocketService : public RequestHandler
 {
-	Q_OBJECT
 public:
-	WebSocketService(const QString & path);
-	~WebSocketService();
+	WebSocketService(const ApiServer & apiServer, const QString & path);
 
 	void send(uint clientId, const QByteArray & data, bool isBinary);
 	void sendAll(const QByteArray & data, bool isBinary);
 	void close(uint clientId);
 
-signals:
-	void newClient(uint clientId, bool & abort);
-	void newMsg(uint clientId, const QByteArray & data, bool isBinary);
-	void closed(uint clientId);
-
-	void getClientId(const QByteArray & clIdData, uint & clId);
-
 protected:
+	virtual void newMsg(uint clientId, const QByteArray & data, bool isBinary) = 0;
+	virtual bool newClient(uint clientId);
+	virtual void closed(uint clientId);
+
 	virtual void handleRequest(const Request & request);
 
 private:
+	const ApiServer & apiServer_;
 	const QString path_;
 	class WSConnHandler;
 	QMultiHash<uint, WSConnHandler *> clients_;

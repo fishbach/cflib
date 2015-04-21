@@ -29,11 +29,10 @@ USE_LOG(LogCat::Http)
 
 namespace cflib { namespace net {
 
-class WebSocketService::WSConnHandler : public util::ThreadVerify, public TCPConn
+class WebSocketService::WSConnHandler : public TCPConn
 {
 public:
 	WSConnHandler(WebSocketService * service, const TCPConnInitializer * connInit) :
-		ThreadVerify(service),
 		TCPConn(connInit),
 		service_(*service),
 		clientId_(0),
@@ -87,8 +86,6 @@ public:
 protected:
 	virtual void newBytesAvailable()
 	{
-		if (!verifyThreadCall(&WSConnHandler::newBytesAvailable)) return;
-
 		buf_ += read();
 		handleData();
 		startWatcher();
@@ -96,17 +93,15 @@ protected:
 
 	virtual void closed()
 	{
-		if (!verifyThreadCall(&WSConnHandler::closed)) return;
-
 		logFunctionTrace
 		service_.all_.remove(this);
 		if (clientId_ == 0) {
-			if (!abort_) emit service_.closed(0);
+			if (!abort_) service_.closed(0);
 		} else {
 			service_.clients_.remove(clientId_, this);
-			if (!service_.clients_.contains(clientId_) && !abort_) emit service_.closed(clientId_);
+			if (!service_.clients_.contains(clientId_) && !abort_) service_.closed(clientId_);
 		}
-		deleteNext(this);
+		util::deleteNext(this);
 	}
 
 private:
@@ -116,7 +111,7 @@ private:
 		isFirstMsg_ = false;
 
 		if (!data.startsWith("CFLIB_clientId#")) {
-			emit service_.newClient(0, abort_);
+			abort_ = !service_.newClient(0);
 			if (abort_) {
 				abortConnection();
 				return true;
@@ -125,7 +120,7 @@ private:
 			return false;
 		}
 
-		emit service_.getClientId(data.mid(15), clientId_);
+		service_.apiServer_.getClientId(data.mid(15), clientId_);
 		if (clientId_ == 0) {
 			logInfo("unknown client id: %1", data);
 			abort_ = true;
@@ -134,7 +129,7 @@ private:
 		}
 
 		if (!service_.clients_.contains(clientId_)) {
-			emit service_.newClient(clientId_, abort_);
+			abort_ = !service_.newClient(clientId_);
 			if (abort_) {
 				abortConnection();
 				return true;
@@ -190,7 +185,7 @@ private:
 			if (opcode == 0x0) {
 				fragmentBuf_.append((const char *)data, len);
 				if (fin) {
-					if (!idMsg(fragmentBuf_)) emit service_.newMsg(clientId_, fragmentBuf_, isBinary_);
+					if (!idMsg(fragmentBuf_)) service_.newMsg(clientId_, fragmentBuf_, isBinary_);
 					fragmentBuf_.clear();
 				}
 			} else if (opcode == 0x1 || opcode == 0x2) {
@@ -199,7 +194,7 @@ private:
 					fragmentBuf_.append((const char *)data, len);
 				} else {
 					QByteArray payload((const char *)data, len);
-					if (!idMsg(payload)) emit service_.newMsg(clientId_, payload, opcode == 2);
+					if (!idMsg(payload)) service_.newMsg(clientId_, payload, opcode == 2);
 				}
 			} else if (opcode == 0x8) {	// close
 				logDebug("received close frame");
@@ -235,36 +230,34 @@ private:
 
 // ============================================================================
 
-WebSocketService::WebSocketService(const QString & path) :
-	ThreadVerify("WebSocketService", util::ThreadVerify::Worker, 1),
+WebSocketService::WebSocketService(const ApiServer & apiServer, const QString & path) :
+	apiServer_(apiServer),
 	path_(path)
 {
 }
 
-WebSocketService::~WebSocketService()
-{
-	stopVerifyThread();
-}
-
 void WebSocketService::send(uint clientId, const QByteArray & data, bool isBinary)
 {
-	if (!verifyThreadCall(&WebSocketService::send, clientId, data, isBinary)) return;
-
 	foreach (WSConnHandler * wsHdl, clients_.values(clientId)) wsHdl->send(data, isBinary);
 }
 
 void WebSocketService::sendAll(const QByteArray & data, bool isBinary)
 {
-	if (!verifyThreadCall(&WebSocketService::sendAll, data, isBinary)) return;
-
 	foreach (WSConnHandler * wsHdl, all_) wsHdl->send(data, isBinary);
 }
 
 void WebSocketService::close(uint clientId)
 {
-	if (!verifySyncedThreadCall(&WebSocketService::close, clientId)) return;
-
 	foreach (WSConnHandler * wsHdl, clients_.values(clientId)) wsHdl->close();
+}
+
+bool WebSocketService::newClient(uint)
+{
+	return true;
+}
+
+void WebSocketService::closed(uint)
+{
 }
 
 void WebSocketService::handleRequest(const Request & request)

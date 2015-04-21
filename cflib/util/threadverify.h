@@ -40,7 +40,7 @@ public:
 	QObject * threadObject() const;
 	void stopVerifyThread();
 	ev_loop * libEVLoop() const;
-	void execCall(const Functor * func);
+	void execCall(const Functor * func) const;
 
 protected:
 	virtual void deleteThreadData() {}
@@ -101,6 +101,16 @@ protected:
 		if (verifyThread_->isOwnThread()) return true;
 		QSemaphore sem;
 		execCall(new Functor2<C, P1, P2>((C *)this, f, a1, a2, &sem));
+		sem.acquire();
+		return false;
+	}
+
+	template<typename C, typename P1, typename P2, typename A1, typename A2>
+	bool verifySyncedThreadCall(void (C::*f)(P1, P2) const, A1 & a1, A2 & a2) const
+	{
+		if (verifyThread_->isOwnThread()) return true;
+		QSemaphore sem;
+		execCall(new Functor2C<C, P1, P2>((const C *)this, f, a1, a2, &sem));
 		sem.acquire();
 		return false;
 	}
