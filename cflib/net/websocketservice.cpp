@@ -99,7 +99,10 @@ protected:
 			if (!abort_) service_.closed(0);
 		} else {
 			service_.clients_.remove(clientId_, this);
-			if (!service_.clients_.contains(clientId_) && !abort_) service_.closed(clientId_);
+			if (!service_.clients_.contains(clientId_) && !abort_) {
+				service_.apiServer_.blockExpiration(clientId_, false);
+				service_.closed(clientId_);
+			}
 		}
 		util::deleteNext(this);
 	}
@@ -134,6 +137,7 @@ private:
 				abortConnection();
 				return true;
 			}
+			service_.apiServer_.blockExpiration(clientId_, true);
 		}
 
 		service_.all_ << this;
@@ -230,7 +234,7 @@ private:
 
 // ============================================================================
 
-WebSocketService::WebSocketService(const ApiServer & apiServer, const QString & path) :
+WebSocketService::WebSocketService(ApiServer & apiServer, const QString & path) :
 	apiServer_(apiServer),
 	path_(path)
 {
@@ -249,6 +253,11 @@ void WebSocketService::sendAll(const QByteArray & data, bool isBinary)
 void WebSocketService::close(uint clientId)
 {
 	foreach (WSConnHandler * wsHdl, clients_.values(clientId)) wsHdl->close();
+}
+
+bool WebSocketService::isConnected(uint clientId) const
+{
+	return clients_.contains(clientId);
 }
 
 bool WebSocketService::newClient(uint)

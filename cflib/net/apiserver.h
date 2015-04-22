@@ -52,6 +52,8 @@ public:
 
 	void exportTo(const QString & dest) const;
 
+	void blockExpiration(uint clId, bool noExpiration);
+
 public slots:
 	void getClientId(const QByteArray & clIdData, uint & clId) const;
 
@@ -78,6 +80,7 @@ private:
 	ClassInfoEl classInfos_;
 	typedef QPair<uint, QDateTime> ClientIdTimestamp;
 	QMap<QByteArray, ClientIdTimestamp> clientIds_;
+	QSet<uint> noExpire_;
 	uint lastId_;
 	const QRegularExpression containerRE_;
 	util::EVTimer * expireTimer_;

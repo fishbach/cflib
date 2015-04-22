@@ -256,6 +256,14 @@ void ApiServer::exportTo(const QString & dest) const
 	exportClass(classInfos_, "", dest);
 }
 
+void ApiServer::blockExpiration(uint clId, bool noExpiration)
+{
+	if (!verifyThreadCall(&ApiServer::blockExpiration, clId, noExpiration)) return;
+
+	if (noExpiration) noExpire_ << clId;
+	else              noExpire_.remove(clId);
+}
+
 void ApiServer::getClientId(const QByteArray & clIdData, uint & clId) const
 {
 	if (!verifySyncedThreadCall(&ApiServer::getClientId, clIdData, clId)) return;
@@ -643,10 +651,8 @@ void ApiServer::checkExpire()
 	while (it.hasNext()) {
 		it.next();
 		const ClientIdTimestamp & el = it.value();
-		if (el.second.secsTo(now) > 24 * 60 * 60) {	// 1 day
-			foreach (JSService * srv, services_.values()) {
-				srv->clientExpired(el.first);
-			}
+		if (!noExpire_.contains(el.first) && el.second.secsTo(now) > 24 * 60 * 60) {	// 1 day
+			foreach (JSService * srv, services_.values()) srv->clientExpired(el.first);
 			it.remove();
 		}
 	}
