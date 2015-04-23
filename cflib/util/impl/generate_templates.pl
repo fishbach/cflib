@@ -83,7 +83,7 @@ sub verify
 	print
 <<"EOF"
 		template<typename C$typesP$typesA>
-		bool verify(R (C::*f)($tempP2)$const1$paramD)$const1
+		bool verify(R (C::*f)($tempP2)$const1$paramD)
 		{
 			if (tv_->verifyThread_->isOwnThread()) return true;
 			QSemaphore sem;
@@ -106,7 +106,7 @@ sub genVerify
 	}
 	print
 <<"EOF"
-	template<class R>
+	template<typename R>
 	class SyncedThreadCall
 	{
 	public:

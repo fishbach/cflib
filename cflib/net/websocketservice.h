@@ -25,19 +25,20 @@ namespace cflib { namespace net {
 
 class ApiServer;
 
-class WebSocketService : public RequestHandler
+class WebSocketService : public RequestHandler, public util::ThreadVerify
 {
 public:
 	WebSocketService(ApiServer & apiServer, const QString & path);
+	~WebSocketService();
 
-protected:
 	void send(uint clientId, const QByteArray & data, bool isBinary);
 	void sendAll(const QByteArray & data, bool isBinary);
 	void close(uint clientId);
 	bool isConnected(uint clientId) const;
 
+protected:
 	virtual void newMsg(uint clientId, const QByteArray & data, bool isBinary) = 0;
-	virtual bool newClient(uint clientId);
+	virtual bool newClient(uint clientId);	// abort if return value is false
 	virtual void closed(uint clientId);
 
 	virtual void handleRequest(const Request & request);

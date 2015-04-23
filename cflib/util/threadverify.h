@@ -313,7 +313,7 @@ protected:
 
 	// ------------------------------------------------------------------------
 
-	template<class R>
+	template<typename R>
 	class SyncedThreadCall
 	{
 	public:
@@ -331,7 +331,7 @@ protected:
 		}
 
 		template<typename C>
-		bool verify(R (C::*f)() const) const
+		bool verify(R (C::*f)() const)
 		{
 			if (tv_->verifyThread_->isOwnThread()) return true;
 			QSemaphore sem;
@@ -351,7 +351,7 @@ protected:
 		}
 
 		template<typename C, typename P1, typename A1>
-		bool verify(R (C::*f)(P1) const, A1 & a1) const
+		bool verify(R (C::*f)(P1) const, A1 & a1)
 		{
 			if (tv_->verifyThread_->isOwnThread()) return true;
 			QSemaphore sem;
@@ -371,7 +371,7 @@ protected:
 		}
 
 		template<typename C, typename P1, typename P2, typename A1, typename A2>
-		bool verify(R (C::*f)(P1, P2) const, A1 & a1, A2 & a2) const
+		bool verify(R (C::*f)(P1, P2) const, A1 & a1, A2 & a2)
 		{
 			if (tv_->verifyThread_->isOwnThread()) return true;
 			QSemaphore sem;
@@ -391,7 +391,7 @@ protected:
 		}
 
 		template<typename C, typename P1, typename P2, typename P3, typename A1, typename A2, typename A3>
-		bool verify(R (C::*f)(P1, P2, P3) const, A1 & a1, A2 & a2, A3 & a3) const
+		bool verify(R (C::*f)(P1, P2, P3) const, A1 & a1, A2 & a2, A3 & a3)
 		{
 			if (tv_->verifyThread_->isOwnThread()) return true;
 			QSemaphore sem;
@@ -411,7 +411,7 @@ protected:
 		}
 
 		template<typename C, typename P1, typename P2, typename P3, typename P4, typename A1, typename A2, typename A3, typename A4>
-		bool verify(R (C::*f)(P1, P2, P3, P4) const, A1 & a1, A2 & a2, A3 & a3, A4 & a4) const
+		bool verify(R (C::*f)(P1, P2, P3, P4) const, A1 & a1, A2 & a2, A3 & a3, A4 & a4)
 		{
 			if (tv_->verifyThread_->isOwnThread()) return true;
 			QSemaphore sem;
@@ -431,7 +431,7 @@ protected:
 		}
 
 		template<typename C, typename P1, typename P2, typename P3, typename P4, typename P5, typename A1, typename A2, typename A3, typename A4, typename A5>
-		bool verify(R (C::*f)(P1, P2, P3, P4, P5) const, A1 & a1, A2 & a2, A3 & a3, A4 & a4, A5 & a5) const
+		bool verify(R (C::*f)(P1, P2, P3, P4, P5) const, A1 & a1, A2 & a2, A3 & a3, A4 & a4, A5 & a5)
 		{
 			if (tv_->verifyThread_->isOwnThread()) return true;
 			QSemaphore sem;
@@ -451,7 +451,7 @@ protected:
 		}
 
 		template<typename C, typename P1, typename P2, typename P3, typename P4, typename P5, typename P6, typename A1, typename A2, typename A3, typename A4, typename A5, typename A6>
-		bool verify(R (C::*f)(P1, P2, P3, P4, P5, P6) const, A1 & a1, A2 & a2, A3 & a3, A4 & a4, A5 & a5, A6 & a6) const
+		bool verify(R (C::*f)(P1, P2, P3, P4, P5, P6) const, A1 & a1, A2 & a2, A3 & a3, A4 & a4, A5 & a5, A6 & a6)
 		{
 			if (tv_->verifyThread_->isOwnThread()) return true;
 			QSemaphore sem;
