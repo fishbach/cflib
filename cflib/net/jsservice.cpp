@@ -22,13 +22,13 @@ namespace cflib { namespace net {
 
 JSService::JSService(const QString & threadName, uint threadCount, LoopType loopType) :
 	util::ThreadVerify(threadName, loopType, threadCount),
-	clId_(0), delayedReply_(false), requestPtr_(0), prependDataPtr_(0)
+	api_(0), clId_(0), delayedReply_(false), requestPtr_(0), prependDataPtr_(0)
 {
 }
 
 JSService::JSService(util::ThreadVerify * other) :
 	util::ThreadVerify(other),
-	clId_(0), delayedReply_(false), requestPtr_(0), prependDataPtr_(0)
+	api_(0), clId_(0), delayedReply_(false), requestPtr_(0), prependDataPtr_(0)
 {
 }
 

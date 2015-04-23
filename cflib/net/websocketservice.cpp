@@ -64,13 +64,13 @@ public:
 			frame += len & 0xFF;
 		} else {
 			frame += 127;
-			frame += (char)0;	// len >> 56;
-			frame += (char)0;	// len >> 48;
-			frame += (char)0;	// len >> 40;
-			frame += (char)0;	// len >> 32;
-			frame += len >> 24;
-			frame += len >> 16;
-			frame += len >>  8;
+			frame += (char)0;	// (len >> 56) & 0xFF;
+			frame += (char)0;	// (len >> 48) & 0xFF;
+			frame += (char)0;	// (len >> 40) & 0xFF;
+			frame += (char)0;	// (len >> 32) & 0xFF;
+			frame += (len >> 24) & 0xFF;
+			frame += (len >> 16) & 0xFF;
+			frame += (len >>  8) & 0xFF;
 			frame += len & 0xFF;
 		}
 		frame += data;

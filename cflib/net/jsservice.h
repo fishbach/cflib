@@ -25,6 +25,7 @@
 
 namespace cflib { namespace net {
 
+class ApiServer;
 class Replier;
 
 class JSService : public util::ThreadVerify
@@ -41,6 +42,7 @@ public:
 	virtual void clientExpired(uint clId) { Q_UNUSED(clId) }
 
 protected:
+	ApiServer & api() const { return *api_; }
 	uint clientId() const { return clId_; }
 	const Request & request() const { return *requestPtr_; }
 	virtual void preCallInit() {}
@@ -48,10 +50,12 @@ protected:
 	QByteArray getRemoteIP() const;
 
 private:
+	ApiServer * api_;
 	uint clId_;
 	bool delayedReply_;
 	const Request * requestPtr_;
 	const QByteArray * prependDataPtr_;
+	friend class ApiServer;
 };
 
 class Replier : public cflib::serialize::JSSerializer

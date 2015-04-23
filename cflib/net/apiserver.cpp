@@ -227,6 +227,7 @@ void ApiServer::deleteThreadData()
 
 void ApiServer::registerService(JSService * service)
 {
+	service->api_ = this;
 	SerializeTypeInfo servInfo = service->getServiceInfo();
 	services_[servInfo.typeName.toLower()] = service;
 	foreach (const SerializeTypeInfo & ti, getFunctionClassInfos(servInfo)) {
@@ -260,6 +261,7 @@ void ApiServer::blockExpiration(uint clId, bool noExpiration)
 {
 	if (!verifyThreadCall(&ApiServer::blockExpiration, clId, noExpiration)) return;
 
+	logDebug("blockExpiration(%1, %2)", clId, noExpiration);
 	if (noExpiration) noExpire_ << clId;
 	else              noExpire_.remove(clId);
 }
@@ -269,6 +271,25 @@ void ApiServer::getClientId(const QByteArray & clIdData, uint & clId) const
 	if (!verifySyncedThreadCall(&ApiServer::getClientId, clIdData, clId)) return;
 
 	clId = clientIds_.value(clIdData).first;
+}
+
+void ApiServer::getLastAccess(uint clId, QDateTime & timestamp) const
+{
+	if (!verifySyncedThreadCall(&ApiServer::getLastAccess, clId, timestamp)) return;
+
+	if (noExpire_.contains(clId)) {
+		timestamp = QDateTime::currentDateTime();
+		return;
+	}
+	timestamp = QDateTime();
+	QMapIterator<QByteArray, ClientIdTimestamp> it(clientIds_);
+	while (it.hasNext()) {
+		const ClientIdTimestamp & val = it.next().value();
+		if (val.first == clId) {
+			timestamp = val.second;
+			return;
+		}
+	}
 }
 
 void ApiServer::handleRequest(const Request & request)

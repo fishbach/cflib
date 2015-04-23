@@ -52,10 +52,10 @@ public:
 
 	void exportTo(const QString & dest) const;
 
-	void blockExpiration(uint clId, bool noExpiration);
-
 public slots:
+	void blockExpiration(uint clId, bool noExpiration);
 	void getClientId(const QByteArray & clIdData, uint & clId) const;
+	void getLastAccess(uint clId, QDateTime & timestamp) const;
 
 protected:
 	virtual void handleRequest(const Request & request);
