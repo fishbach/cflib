@@ -68,13 +68,13 @@ void Mailer::initThreadData()
 	logFunctionTrace
 
 	process_ = new QProcess;
-	connect(
-		process_, SIGNAL(finished(int, QProcess::ExitStatus)),
-		this,     SLOT  (finished(int, QProcess::ExitStatus)),
+	connect<void (QProcess::*)(int, QProcess::ExitStatus)>(
+		process_, &QProcess::finished,
+		this,       &Mailer::finished,
 	Qt::DirectConnection);
-	connect(
-		process_, SIGNAL(error(QProcess::ProcessError)),
-		this,     SLOT  (error(QProcess::ProcessError)),
+	connect<void (QProcess::*)(QProcess::ProcessError)>(
+		process_, &QProcess::error,
+		this,       &Mailer::error,
 	Qt::DirectConnection);
 }
 

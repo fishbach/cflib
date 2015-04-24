@@ -40,11 +40,9 @@ UploadRequestHandler::UploadRequestHandler(UploadService * uploadHandler, const 
 	request_(request),
 	state_(1)
 {
-	connect(
+	directConnect(
 		this,          &UploadRequestHandler::getClientId,
-		uploadHandler,        &UploadService::getClientId,
-		Qt::DirectConnection
-	);
+		uploadHandler,        &UploadService::getClientId);
 	init();
 }
 

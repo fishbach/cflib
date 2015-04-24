@@ -44,13 +44,46 @@ define(function() {
 		}
 	}
 
+	function doFire()
+	{
+		var ls = this.listener;
+		var keys = []; for (var k in ls) keys.push(k);
+		var len = keys.length;
+		if (!this.enabled || len === 0) return;
+
+		var args = Array.prototype.slice.call(arguments);	// make real array from arguments
+		args.push(this.source);
+
+		var i, l;
+		if (logOn) {
+			console.log(ind() + 'fire ', this.name, '(', this.id, ') of ', this.source);
+			for (i = 0 ; i < len ; ++i) {
+				l = ls[keys[i]];
+				if (l) {
+					console.log(ind() + 'deliver to ', l[1], ' with arguments ', args);
+					l[0].apply(l[1], args);
+					--indent;
+				}
+			}
+			--indent;
+		} else {
+			for (i = 0 ; i < len ; ++i) {
+				l = ls[keys[i]];
+				if (l) l[0].apply(l[1], args);
+			}
+		}
+	}
+
 	// ========================================================================
 
-	var EV = function(source, name) {
+	var EV = function(source, name, throttle) {
 		this.id = ++uniqueId;
 		this.listenerId = 0;
 		this.source = source;
 		this.name = name;
+		this.throttle = throttle === true ? 50 : throttle;
+		this.throttleLast = new Date().getTime();
+		this.throttleParams = null;
 		this.enabled = true;
 		this.listener = {};
 	};
@@ -66,32 +99,25 @@ define(function() {
 		// While an event is in process, it may happen that the listeners of that event change.
 		// In this case newly added or removed listeners will not be called.
 		fire: function() {
-			var ls = this.listener;
-			var keys = []; for (var k in ls) keys.push(k);
-			var len = keys.length;
-			if (!this.enabled || len === 0) return;
-
-			var args = Array.prototype.slice.call(arguments);	// make real array from arguments
-			args.push(this.source);
-
-			var i, l;
-			if (logOn) {
-				console.log(ind() + 'fire ', this.name, '(', this.id, ') of ', this.source);
-				for (i = 0 ; i < len ; ++i) {
-					l = ls[keys[i]];
-					if (l) {
-						console.log(ind() + 'deliver to ', l[1], ' with arguments ', args);
-						l[0].apply(l[1], args);
-						--indent;
-					}
-				}
-				--indent;
-			} else {
-				for (i = 0 ; i < len ; ++i) {
-					l = ls[keys[i]];
-					if (l) l[0].apply(l[1], args);
-				}
+			if (!this.throttle) return doFire.apply(this, arguments);
+			if (this.throttleParams) {
+				this.throttleParams = arguments;
+				return;
 			}
+			var now = new Date().getTime();
+			if (now - this.throttleLast >= this.throttle) {
+				this.throttleLast = now;
+				doFire.apply(this, arguments);
+				return;
+			}
+			var ev = this;
+			this.throttleParams = arguments;
+			setTimeout(function() {
+				var p = ev.throttleParams;
+				ev.throttleLast = new Date().getTime();
+				ev.throttleParams = null;
+				doFire.apply(ev, p);
+			}, this.throttle - now + this.throttleLast);
 		},
 
 		forward: function(ev) {
