@@ -61,6 +61,16 @@ define([
 	var Util = function() {};
 	var util = new Util();
 
+	util.makeHash = function(array) {
+		var rv = {};
+		var i = array.length;
+		while (i--) {
+			var e = array[i];
+			rv[e[0]] = e[1];
+		}
+		return rv;
+	};
+
 	util.simplifyStr = function(str) {
 		return (str
 			.replace(/^\s+|\s+$/g, '')
@@ -187,6 +197,10 @@ define([
 			var cb = scope ? function() { finishCb.call(scope); } : finishCb;
 			$('html, body').animate({ scrollTop : 0 }, time, cb);
 		}
+	};
+
+	util.scrollToBottom = function($el) {
+		$el.scrollTop($el.prop('scrollHeight'));
 	};
 
 	util.dateIsValid = function(date) {
