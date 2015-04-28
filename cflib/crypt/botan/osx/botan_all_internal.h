@@ -1269,13 +1269,6 @@ const u32bit CAST_SBOX4[256] = {
 
 namespace Botan {
 
-void gcm_multiply_clmul(byte x[16], const byte H[16]);
-
-}
-
-
-namespace Botan {
-
 McEliece_PrivateKey generate_mceliece_key(RandomNumberGenerator &rng,
                                           u32bit ext_deg,
                                           u32bit code_length,
@@ -1568,7 +1561,6 @@ class Device_EntropySource : public EntropySource
    private:
       typedef int fd_type;
 
-      secure_vector<byte> m_buf;
       std::vector<fd_type> m_devices;
    };
 
@@ -1723,7 +1715,6 @@ class EGD_EntropySource : public EntropySource
 
       std::mutex m_mutex;
       std::vector<EGD_Socket> sockets;
-      secure_vector<byte> m_buf;
    };
 
 }
@@ -2434,141 +2425,6 @@ Private_Key* make_private_key(const AlgorithmIdentifier& alg_id,
 
 namespace Botan {
 
-namespace PK_Ops {
-
-class Encryption_with_EME : public Encryption
-   {
-   public:
-      size_t max_input_bits() const override;
-
-      secure_vector<byte> encrypt(const byte msg[], size_t msg_len,
-                                  RandomNumberGenerator& rng) override;
-
-      ~Encryption_with_EME();
-   protected:
-      Encryption_with_EME(const std::string& eme);
-   private:
-      virtual size_t max_raw_input_bits() const = 0;
-
-      virtual secure_vector<byte> raw_encrypt(const byte msg[], size_t len,
-                                              RandomNumberGenerator& rng) = 0;
-      std::unique_ptr<EME> m_eme;
-   };
-
-class Decryption_with_EME : public Decryption
-   {
-   public:
-      size_t max_input_bits() const override;
-
-      secure_vector<byte> decrypt(const byte msg[], size_t msg_len) override;
-
-      ~Decryption_with_EME();
-   protected:
-      Decryption_with_EME(const std::string& eme);
-   private:
-      virtual size_t max_raw_input_bits() const = 0;
-      virtual secure_vector<byte> raw_decrypt(const byte msg[], size_t len) = 0;
-      std::unique_ptr<EME> m_eme;
-   };
-
-class Verification_with_EMSA : public Verification
-   {
-   public:
-      void update(const byte msg[], size_t msg_len) override;
-      bool is_valid_signature(const byte sig[], size_t sig_len) override;
-
-      bool do_check(const secure_vector<byte>& msg,
-                    const byte sig[], size_t sig_len);
-
-   protected:
-
-      Verification_with_EMSA(const std::string& emsa);
-      ~Verification_with_EMSA();
-
-      /**
-      * @return boolean specifying if this key type supports message
-      * recovery and thus if you need to call verify() or verify_mr()
-      */
-      virtual bool with_recovery() const = 0;
-
-      /*
-      * Perform a signature check operation
-      * @param msg the message
-      * @param msg_len the length of msg in bytes
-      * @param sig the signature
-      * @param sig_len the length of sig in bytes
-      * @returns if signature is a valid one for message
-      */
-      virtual bool verify(const byte[], size_t,
-                          const byte[], size_t)
-         {
-         throw Invalid_State("Message recovery required");
-         }
-
-      /*
-      * Perform a signature operation (with message recovery)
-      * Only call this if with_recovery() returns true
-      * @param msg the message
-      * @param msg_len the length of msg in bytes
-      * @returns recovered message
-      */
-      virtual secure_vector<byte> verify_mr(const byte[], size_t)
-         {
-         throw Invalid_State("Message recovery not supported");
-         }
-
-   private:
-      std::unique_ptr<EMSA> m_emsa;
-   };
-
-class Signature_with_EMSA : public Signature
-   {
-   public:
-      void update(const byte msg[], size_t msg_len) override;
-
-      secure_vector<byte> sign(RandomNumberGenerator& rng) override;
-   protected:
-      Signature_with_EMSA(const std::string& emsa);
-      ~Signature_with_EMSA();
-   private:
-
-      /**
-      * Get the maximum message size in bits supported by this public key.
-      * @return maximum message in bits
-      */
-      virtual size_t max_input_bits() const = 0;
-
-      bool self_test_signature(const std::vector<byte>& msg,
-                               const std::vector<byte>& sig) const;
-
-      virtual secure_vector<byte> raw_sign(const byte msg[], size_t msg_len,
-                                           RandomNumberGenerator& rng) = 0;
-
-      std::unique_ptr<EMSA> m_emsa;
-   };
-
-class Key_Agreement_with_KDF : public Key_Agreement
-   {
-   public:
-      secure_vector<byte> agree(size_t key_len,
-                                const byte other_key[], size_t other_key_len,
-                                const byte salt[], size_t salt_len) override;
-
-   protected:
-      Key_Agreement_with_KDF(const std::string& kdf);
-      ~Key_Agreement_with_KDF();
-   private:
-      virtual secure_vector<byte> raw_agree(const byte w[], size_t w_len) = 0;
-      std::unique_ptr<KDF> m_kdf;
-   };
-
-}
-
-}
-
-
-namespace Botan {
-
 template<typename OP, typename T>
 OP* make_pk_op(const typename T::Spec& spec)
    {
@@ -2641,7 +2497,6 @@ class ProcWalking_EntropySource : public EntropySource
       const std::string m_path;
       std::mutex m_mutex;
       std::unique_ptr<File_Descriptor_Source> m_dir;
-      secure_vector<byte> m_buf;
    };
 
 }
@@ -3429,9 +3284,10 @@ enum Handshake_Extension_Type {
    TLSEXT_SIGNATURE_ALGORITHMS   = 13,
    TLSEXT_USE_SRTP               = 14,
    TLSEXT_HEARTBEAT_SUPPORT      = 15,
-   TLSEXT_ALPN                   = 16,
 
    TLSEXT_SESSION_TICKET         = 35,
+
+   TLSEXT_NEXT_PROTOCOL          = 13172,
 
    TLSEXT_SAFE_RENEGOTIATION     = 65281,
 };
@@ -3574,37 +3430,41 @@ class Maximum_Fragment_Length : public Extension
    };
 
 /**
-* ALPN (RFC 7301)
+* Next Protocol Negotiation
+* http://technotes.googlecode.com/git/nextprotoneg.html
+*
+* This implementation requires the semantics defined in the Google
+* spec (implemented in Chromium); the internet draft leaves the format
+* unspecified.
 */
-class Application_Layer_Protocol_Notification : public Extension
+class Next_Protocol_Notification : public Extension
    {
    public:
-      static Handshake_Extension_Type static_type() { return TLSEXT_ALPN; }
+      static Handshake_Extension_Type static_type()
+         { return TLSEXT_NEXT_PROTOCOL; }
 
       Handshake_Extension_Type type() const { return static_type(); }
 
-      const std::vector<std::string>& protocols() const { return m_protocols; }
-
-      const std::string& single_protocol() const;
-
-      /**
-      * Single protocol, used by server
-      */
-      Application_Layer_Protocol_Notification(const std::string& protocol) :
-         m_protocols(1, protocol) {}
+      const std::vector<std::string>& protocols() const
+         { return m_protocols; }
 
       /**
-      * List of protocols, used by client
+      * Empty extension, used by client
       */
-      Application_Layer_Protocol_Notification(const std::vector<std::string>& protocols) :
+      Next_Protocol_Notification() {}
+
+      /**
+      * List of protocols, used by server
+      */
+      Next_Protocol_Notification(const std::vector<std::string>& protocols) :
          m_protocols(protocols) {}
 
-      Application_Layer_Protocol_Notification(TLS_Data_Reader& reader,
-                                              u16bit extension_size);
+      Next_Protocol_Notification(TLS_Data_Reader& reader,
+                                 u16bit extension_size);
 
       std::vector<byte> serialize() const;
 
-      bool empty() const { return m_protocols.empty(); }
+      bool empty() const { return false; }
    private:
       std::vector<std::string> m_protocols;
    };
@@ -4088,6 +3948,7 @@ class Server_Hello_Done;
 class Certificate;
 class Client_Key_Exchange;
 class Certificate_Verify;
+class Next_Protocol;
 class New_Session_Ticket;
 class Finished;
 
@@ -4162,6 +4023,7 @@ class Handshake_State
       void client_certs(Certificate* client_certs);
       void client_kex(Client_Key_Exchange* client_kex);
       void client_verify(Certificate_Verify* client_verify);
+      void next_protocol(Next_Protocol* next_protocol);
       void new_session_ticket(New_Session_Ticket* new_session_ticket);
       void server_finished(Finished* server_finished);
       void client_finished(Finished* client_finished);
@@ -4192,6 +4054,9 @@ class Handshake_State
 
       const Certificate_Verify* client_verify() const
          { return m_client_verify.get(); }
+
+      const Next_Protocol* next_protocol() const
+         { return m_next_protocol.get(); }
 
       const New_Session_Ticket* new_session_ticket() const
          { return m_new_session_ticket.get(); }
@@ -4242,6 +4107,7 @@ class Handshake_State
       std::unique_ptr<Certificate> m_client_certs;
       std::unique_ptr<Client_Key_Exchange> m_client_kex;
       std::unique_ptr<Certificate_Verify> m_client_verify;
+      std::unique_ptr<Next_Protocol> m_next_protocol;
       std::unique_ptr<New_Session_Ticket> m_new_session_ticket;
       std::unique_ptr<Finished> m_server_finished;
       std::unique_ptr<Finished> m_client_finished;
@@ -4379,6 +4245,11 @@ class Client_Hello : public Handshake_Message
          return std::vector<byte>();
          }
 
+      bool next_protocol_notification() const
+         {
+         return m_extensions.has<Next_Protocol_Notification>();
+         }
+
       size_t fragment_size() const
          {
          if(Maximum_Fragment_Length* frag = m_extensions.get<Maximum_Fragment_Length>())
@@ -4396,18 +4267,6 @@ class Client_Hello : public Handshake_Message
          if(Session_Ticket* ticket = m_extensions.get<Session_Ticket>())
             return ticket->contents();
          return std::vector<byte>();
-         }
-
-      bool supports_alpn() const
-         {
-         return m_extensions.has<Application_Layer_Protocol_Notification>();
-         }
-
-      std::vector<std::string> next_protocols() const
-         {
-         if(auto alpn = m_extensions.get<Application_Layer_Protocol_Notification>())
-            return alpn->protocols();
-         return std::vector<std::string>();
          }
 
       bool supports_heartbeats() const
@@ -4440,7 +4299,7 @@ class Client_Hello : public Handshake_Message
                    const Policy& policy,
                    RandomNumberGenerator& rng,
                    const std::vector<byte>& reneg_info,
-                   const std::vector<std::string>& next_protocols,
+                   bool next_protocol = false,
                    const std::string& hostname = "",
                    const std::string& srp_identifier = "");
 
@@ -4450,7 +4309,7 @@ class Client_Hello : public Handshake_Message
                    RandomNumberGenerator& rng,
                    const std::vector<byte>& reneg_info,
                    const Session& resumed_session,
-                   const std::vector<std::string>& next_protocols);
+                   bool next_protocol = false);
 
       Client_Hello(const std::vector<byte>& buf);
 
@@ -4497,6 +4356,18 @@ class Server_Hello : public Handshake_Message
          return std::vector<byte>();
          }
 
+      bool next_protocol_notification() const
+         {
+         return m_extensions.has<Next_Protocol_Notification>();
+         }
+
+      std::vector<std::string> next_protocols() const
+         {
+         if(Next_Protocol_Notification* npn = m_extensions.get<Next_Protocol_Notification>())
+            return npn->protocols();
+         return std::vector<std::string>();
+         }
+
       size_t fragment_size() const
          {
          if(Maximum_Fragment_Length* frag = m_extensions.get<Maximum_Fragment_Length>())
@@ -4516,14 +4387,14 @@ class Server_Hello : public Handshake_Message
 
       bool peer_can_send_heartbeats() const
          {
-         if(auto hb = m_extensions.get<Heartbeat_Support_Indicator>())
+         if(Heartbeat_Support_Indicator* hb = m_extensions.get<Heartbeat_Support_Indicator>())
             return hb->peer_allowed_to_send();
          return false;
          }
 
       u16bit srtp_profile() const
          {
-         if(auto srtp = m_extensions.get<SRTP_Protection_Profiles>())
+         if(SRTP_Protection_Profiles* srtp = m_extensions.get<SRTP_Protection_Profiles>())
             {
             auto prof = srtp->profiles();
             if(prof.size() != 1 || prof[0] == 0)
@@ -4532,13 +4403,6 @@ class Server_Hello : public Handshake_Message
             }
 
          return 0;
-         }
-
-      std::string next_protocol() const
-         {
-         if(auto alpn = m_extensions.get<Application_Layer_Protocol_Notification>())
-            return alpn->single_protocol();
-         return "";
          }
 
       std::set<Handshake_Extension_Type> extension_types() const
@@ -4555,7 +4419,7 @@ class Server_Hello : public Handshake_Message
                    u16bit ciphersuite,
                    byte compression,
                    bool offer_session_ticket,
-                   const std::string next_protocol);
+                   const std::vector<std::string>& next_protocols);
 
       Server_Hello(Handshake_IO& io,
                    Handshake_Hash& hash,
@@ -4565,7 +4429,7 @@ class Server_Hello : public Handshake_Message
                    const Client_Hello& client_hello,
                    Session& resumed_session,
                    bool offer_session_ticket,
-                   const std::string& next_protocol);
+                   const std::vector<std::string>& next_protocols);
 
       Server_Hello(const std::vector<byte>& buf);
    private:
@@ -4797,6 +4661,27 @@ class Server_Hello_Done : public Handshake_Message
       Server_Hello_Done(const std::vector<byte>& buf);
    private:
       std::vector<byte> serialize() const override;
+   };
+
+/**
+* Next Protocol Message
+*/
+class Next_Protocol : public Handshake_Message
+   {
+   public:
+      Handshake_Type type() const override { return NEXT_PROTOCOL; }
+
+      std::string protocol() const { return m_protocol; }
+
+      Next_Protocol(Handshake_IO& io,
+                    Handshake_Hash& hash,
+                    const std::string& protocol);
+
+      Next_Protocol(const std::vector<byte>& buf);
+   private:
+      std::vector<byte> serialize() const override;
+
+      std::string m_protocol;
    };
 
 /**
@@ -5359,7 +5244,6 @@ class Unix_EntropySource : public EntropySource
       size_t m_sources_idx = 0;
 
       std::vector<Unix_Process> m_procs;
-      secure_vector<byte> m_buf;
    };
 
 class UnixProcessInfo_EntropySource : public EntropySource
