@@ -30,51 +30,40 @@ class ThreadFifo
 {
 	Q_DISABLE_COPY(ThreadFifo)
 public:
-	ThreadFifo(int size) : buffer_(new El[size]), max_(size) {}
+	ThreadFifo(int size) : buffer_(new T[size]), max_(size) {}
 	~ThreadFifo() { delete[] buffer_; }
 
 	inline bool put(T data) {
-		int c = count_.fetchAndAddAcquire(1);
+		int c = writeCount_.fetchAndAddAcquire(1);
 		if (c >= max_) {
-			count_.fetchAndSubRelease(1);
-			QTextStream(stdout) << "full" << endl;
-			return false;
+			writeCount_.fetchAndSubRelaxed(1);
+			return T();
 		}
 		int o = writer_.load();
 		while (!writer_.testAndSetRelease(o, (o + 1) % max_)) o = writer_.load();
-		El * el = buffer_ + o;
-		while (!el->filled.testAndSetAcquire(0, 1));
-		el->data = data;
-		el->filled.storeRelease(2);
+		buffer_[o] = data;
+		readCount_.fetchAndAddRelease(1);
 		return true;
 	}
 
 	inline T take() {
-		int c = count_.fetchAndSubAcquire(1);
+		int c = readCount_.fetchAndSubAcquire(1);
 		if (c <= 0) {
-			count_.fetchAndAddRelease(1);
-			QTextStream(stdout) << "empty" << endl;
+			readCount_.fetchAndAddRelaxed(1);
 			return T();
 		}
 		int o = reader_.load();
 		while (!reader_.testAndSetRelease(o, (o + 1) % max_)) o = reader_.load();
-		El * el = buffer_ + o;
-		while (!el->filled.testAndSetAcquire(2, 3));
-		T rv = el->data;
-		el->data = T();
-		el->filled.storeRelease(0);
+		T rv = buffer_[o];
+		writeCount_.fetchAndSubRelease(1);
 		return rv;
 	}
 
 private:
-	struct El {
-		QAtomicInt filled;
-		T data;
-		El() : data() {}
-	};
-	El * buffer_;
+	T * buffer_;
 	const int max_;
-	QAtomicInt count_;
+	QAtomicInt readCount_;
+	QAtomicInt writeCount_;
 	QAtomicInt reader_;
 	QAtomicInt writer_;
 };

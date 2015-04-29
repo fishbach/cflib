@@ -48,13 +48,11 @@ protected:
 			if (rnd1() < 2) {
 				max -= count;
 				if (max > 0) {
-//					QTextStream(stdout) << "add c: " << count << " max: " << max << endl;
 					for (int j = 0 ; j < max ; ++j) ok_ = ok_ && fifo_.put(1);
 					count += max;
 				}
 			} else if (count > 0) {
 				if (max > count) max = count;
-//				QTextStream(stdout) << "del c: " << count << " max: " << max << endl;
 				for (int j = 0 ; j < max ; ++j) ok_ = ok_ && fifo_.take() == 1;
 				count -= max;
 			}
