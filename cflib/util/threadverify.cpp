@@ -84,10 +84,7 @@ void ThreadVerify::execCall(const Functor * func) const
 		logWarn("execCall for already terminated thread %1", verifyThread_->threadName);
 		return;
 	}
-	while (!verifyThread_->doCall(func)) {
-		logWarn("Call queue of destination thread full! Waiting ...");
-		QThread::msleep(1000);
-	}
+	while (!verifyThread_->doCall(func)) QThread::msleep(1000);
 }
 
 void ThreadVerify::shutdownThread()

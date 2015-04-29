@@ -114,7 +114,7 @@ private:
 	class Worker : public ThreadHolderLibEV
 	{
 	public:
-		Worker(const QString & threadName, ThreadFifo<const Functor> & externalCalls);
+		Worker(const QString & threadName, ThreadFifo<const Functor *> & externalCalls);
 
 		virtual bool doCall(const Functor *) { return false; }
 		virtual void stopLoop();
@@ -123,11 +123,11 @@ private:
 		virtual void wokeUp();
 
 	private:
-		ThreadFifo<const Functor> & externalCalls_;
+		ThreadFifo<const Functor *> & externalCalls_;
 		bool stopLoop_;
 	};
 
-	ThreadFifo<const Functor> externalCalls_;
+	ThreadFifo<const Functor *> externalCalls_;
 	QList<Worker *> workers_;
 	bool stopLoop_;
 };

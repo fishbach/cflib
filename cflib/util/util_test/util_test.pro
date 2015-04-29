@@ -22,6 +22,7 @@ QT = core
 TARGET = util_test
 
 SOURCES = \
+	threadfifo_test.cpp \
 	util_test.cpp \
 
 serializeGen()

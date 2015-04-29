@@ -132,7 +132,11 @@ ThreadHolderWorkerPool::~ThreadHolderWorkerPool()
 
 bool ThreadHolderWorkerPool::doCall(const Functor * func)
 {
-	if (!externalCalls_.put(func)) return false;
+	if (!externalCalls_.put(func)) {
+		const impl::ThreadHolder * thread = dynamic_cast<const impl::ThreadHolder *>(QThread::currentThread());
+		logWarn("queue of thread %1 full (called by %2)", threadName, thread ? thread->threadName : "?");
+		return false;
+	}
 	wakeUp();
 	foreach (Worker * w, workers_) w->wakeUp();
 	return true;
@@ -172,7 +176,7 @@ void ThreadHolderWorkerPool::run()
 	foreach (Worker * w, workers_) w->wait();
 }
 
-ThreadHolderWorkerPool::Worker::Worker(const QString & threadName, ThreadFifo<const Functor> & externalCalls)
+ThreadHolderWorkerPool::Worker::Worker(const QString & threadName, ThreadFifo<const Functor *> & externalCalls)
 :
 	ThreadHolderLibEV(threadName, true),
 	externalCalls_(externalCalls),

@@ -30,33 +30,38 @@ class ThreadFifo
 {
 	Q_DISABLE_COPY(ThreadFifo)
 public:
-	ThreadFifo(int size) : buffer_(size), max_(size) {}
+	ThreadFifo(int size) : buffer_(new El[size]), max_(size) {}
+	~ThreadFifo() { delete[] buffer_; }
 
-	inline bool put(T * data) {
-		int o, n;
-		El * el;
-		do {
-			o = writer_;
-			n = (o + 1) % max_;
-			el = (El *)&buffer_[o];
-			if (n == reader_ || el->filled.loadAcquire() == 1) return false;
-		} while (!writer_.testAndSetOrdered(o, n));
+	inline bool put(T data) {
+		int c = count_.fetchAndAddAcquire(1);
+		if (c >= max_) {
+			count_.fetchAndSubRelease(1);
+			QTextStream(stdout) << "full" << endl;
+			return false;
+		}
+		int o = writer_.load();
+		while (!writer_.testAndSetRelease(o, (o + 1) % max_)) o = writer_.load();
+		El * el = buffer_ + o;
+		while (!el->filled.testAndSetAcquire(0, 1));
 		el->data = data;
-		el->filled.storeRelease(1);
+		el->filled.storeRelease(2);
 		return true;
 	}
 
-	inline T * take() {
-		int o, n;
-		El * el;
-		do {
-			o = reader_;
-			n = (o + 1) % max_;
-			el = (El *)&buffer_[o];
-			if (o == writer_ || el->filled.loadAcquire() == 0) return 0;
-		} while (!reader_.testAndSetOrdered(o, n));
-		T * rv = el->data;
-		el->data = 0;
+	inline T take() {
+		int c = count_.fetchAndSubAcquire(1);
+		if (c <= 0) {
+			count_.fetchAndAddRelease(1);
+			QTextStream(stdout) << "empty" << endl;
+			return T();
+		}
+		int o = reader_.load();
+		while (!reader_.testAndSetRelease(o, (o + 1) % max_)) o = reader_.load();
+		El * el = buffer_ + o;
+		while (!el->filled.testAndSetAcquire(2, 3));
+		T rv = el->data;
+		el->data = T();
 		el->filled.storeRelease(0);
 		return rv;
 	}
@@ -64,11 +69,12 @@ public:
 private:
 	struct El {
 		QAtomicInt filled;
-		T * data;
-		El() : filled(0), data(0) {}
+		T data;
+		El() : data() {}
 	};
-	const QVector<El> buffer_;	// const for performance (no Qt ref counting)
+	El * buffer_;
 	const int max_;
+	QAtomicInt count_;
 	QAtomicInt reader_;
 	QAtomicInt writer_;
 };

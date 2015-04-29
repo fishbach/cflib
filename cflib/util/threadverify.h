@@ -477,7 +477,7 @@ private:
 
 inline ev_loop * libEVLoopOfThread()
 {
-	const util::impl::ThreadHolderLibEV * thread = dynamic_cast<const impl::ThreadHolderLibEV *>(QThread::currentThread());
+	const impl::ThreadHolderLibEV * thread = dynamic_cast<const impl::ThreadHolderLibEV *>(QThread::currentThread());
 	if (!thread) return 0;
 	return thread->loop();
 }
