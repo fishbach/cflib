@@ -146,6 +146,13 @@ define([
 		return r;
 	};
 
+	util.addThousandsSep = function(i) {
+		var r = '' + i;
+		var p = r.length - 3;
+		while (p > 0) { r = r.substr(0, p) + '.' + r.substr(p); p -= 3; }
+		return r;
+	};
+
 	util.formatWeekDay = function(date) {
 		switch (date.getUTCDay()) {
 			case 0: return 'Sun';

@@ -34,26 +34,26 @@ public:
 	~ThreadFifo() { delete[] buffer_; }
 
 	inline bool put(T data) {
-		int c = writeCount_.fetchAndAddAcquire(1);
-		if (c >= max_) {
-			writeCount_.fetchAndSubRelaxed(1);
-			return T();
+		forever {
+			int c = writeCount_.load();
+			if (c >= max_) return false;
+			if (writeCount_.testAndSetAcquire(c, c + 1)) break;
 		}
 		int o = writer_.load();
-		while (!writer_.testAndSetRelease(o, (o + 1) % max_)) o = writer_.load();
+		while (!writer_.testAndSetOrdered(o, (o + 1) % max_)) o = writer_.load();
 		buffer_[o] = data;
 		readCount_.fetchAndAddRelease(1);
 		return true;
 	}
 
 	inline T take() {
-		int c = readCount_.fetchAndSubAcquire(1);
-		if (c <= 0) {
-			readCount_.fetchAndAddRelaxed(1);
-			return T();
+		forever {
+			int c = readCount_.load();
+			if (c <= 0) return T();
+			if (readCount_.testAndSetAcquire(c, c - 1)) break;
 		}
 		int o = reader_.load();
-		while (!reader_.testAndSetRelease(o, (o + 1) % max_)) o = reader_.load();
+		while (!reader_.testAndSetOrdered(o, (o + 1) % max_)) o = reader_.load();
 		T rv = buffer_[o];
 		writeCount_.fetchAndSubRelease(1);
 		return rv;

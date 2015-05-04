@@ -39,12 +39,12 @@ protected:
 	virtual void run()
 	{
 		std::uniform_int_distribution<int> dist1(0, 3);
-		std::uniform_int_distribution<int> dist2(0, 127);
+		std::uniform_int_distribution<int> dist2(0, 128);
 		auto rnd1 = std::bind(dist1, rnd_);
 		auto rnd2 = std::bind(dist2, rnd_);
 		int count = 0;
 		for (int i = 0 ; i < 100000 ; ++i) {
-			int max = rnd1() == 0 ? 127 : rnd2();
+			int max = rnd1() == 0 ? 128 : rnd2();
 			if (rnd1() < 2) {
 				max -= count;
 				if (max > 0) {
