@@ -35,18 +35,29 @@ public:
 
 	inline bool put(T data) {
 		forever {
+			int c = writeCount_.load();
+			if (c >= max_) return false;
+			if (writeCount_.testAndSetAcquire(c, c + 1)) break;
+		}
+		forever {
 			int o = writer_.load();
 			El * el = buffer_ + o;
 			if (el->state.testAndSetAcquire(0, 1)) {
 				writer_.testAndSetAcquire(o, (o + 1) % max_);
 				el->data = data;
 				el->state.fetchAndStoreRelease(2);
+				readCount_.fetchAndAddRelease(1);
 				return true;
-			} else if (el->state.loadAcquire() > 1 && writer_.load() == o) return false;
+			}
 		}
 	}
 
 	inline T take() {
+		forever {
+			int c = readCount_.load();
+			if (c <= 0) return T();
+			if (readCount_.testAndSetAcquire(c, c - 1)) break;
+		}
 		forever {
 			int o = reader_.load();
 			El * el = buffer_ + o;
@@ -55,8 +66,9 @@ public:
 				T rv = el->data;
 				el->data = T();
 				el->state.fetchAndStoreRelease(0);
+				writeCount_.fetchAndSubRelease(1);
 				return rv;
-			} else if (el->state.loadAcquire() < 2 && reader_.load() == o) return T();
+			}
 		}
 	}
 
@@ -67,6 +79,8 @@ private:
 	};
 	El * buffer_;
 	const int max_;
+	QAtomicInt readCount_;
+	QAtomicInt writeCount_;
 	QAtomicInt reader_;
 	QAtomicInt writer_;
 };
