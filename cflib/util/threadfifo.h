@@ -30,57 +30,73 @@ class ThreadFifo
 {
 	Q_DISABLE_COPY(ThreadFifo)
 public:
-	ThreadFifo(int size) : buffer_(new El[size]), max_(size) {}
+	ThreadFifo(int size) : buffer_(new El[size]), max_(size), count_(1) {
+		buffer_[0].filled = 1;
+	}
 	~ThreadFifo() { delete[] buffer_; }
 
 	inline bool put(T data) {
+		// test for full
 		forever {
-			int c = writeCount_.load();
-			if (c >= max_) return false;
-			if (writeCount_.testAndSetAcquire(c, c + 1)) break;
+			int c = count_.load();
+			if (c == max_) { QTextStream(stdout) << "full" << endl; return false; }
+			if (count_.testAndSetAcquire(c, c + 1)) break;
 		}
+
+		// search free block
+		int w = writer_.load();
+		int i = w;
+		El * el;
+		do {
+			i = (i + 1) % max_;
+			el = buffer_ + i;
+		} while (!el->filled.testAndSetAcquire(0, 1));
+		el->data = data;
+
+		// insert new block
 		forever {
-			int o = writer_.load();
-			El * el = buffer_ + o;
-			if (el->state.testAndSetAcquire(0, 1)) {
-				writer_.testAndSetAcquire(o, (o + 1) % max_);
-				el->data = data;
-				el->state.fetchAndStoreRelease(2);
-				readCount_.fetchAndAddRelease(1);
-				return true;
-			}
+			el = buffer_ + w;
+			if (el->next.testAndSetOrdered(-1, i)) break;
+//			int n = el->next.load();
+//			w = writer_.testAndSetRelease(w, n) ? n : writer_.load();
+			w = writer_.load();
 		}
+		writer_.testAndSetRelease(w, i);
+
+		return true;
 	}
 
 	inline T take() {
+		T rv;
+		El * el;
+		int r, n;
 		forever {
-			int c = readCount_.load();
-			if (c <= 0) return T();
-			if (readCount_.testAndSetAcquire(c, c - 1)) break;
+			r = reader_.load();
+			el = buffer_ + r;
+			n = el->next.load();
+			if (n == -1) { QTextStream(stdout) << "empty " << (int)count_ << endl; return T(); }
+			rv = buffer_[n].data;
+			if (reader_.testAndSetOrdered(r, n)) break;
 		}
-		forever {
-			int o = reader_.load();
-			El * el = buffer_ + o;
-			if (el->state.testAndSetAcquire(2, 3)) {
-				reader_.testAndSetAcquire(o, (o + 1) % max_);
-				T rv = el->data;
-				el->data = T();
-				el->state.fetchAndStoreRelease(0);
-				writeCount_.fetchAndSubRelease(1);
-				return rv;
-			}
-		}
+
+//		writer_.testAndSetAcquire(r, n);
+		el->next.fetchAndStoreOrdered(-1);
+		el->filled.fetchAndStoreRelease(0);
+		count_.fetchAndSubRelease(1);
+
+		return rv;
 	}
 
 private:
 	struct El {
-		QAtomicInt state;
+		QAtomicInt filled;
+		QAtomicInt next;
 		T data;
+		El() : next(-1) {}
 	};
 	El * buffer_;
 	const int max_;
-	QAtomicInt readCount_;
-	QAtomicInt writeCount_;
+	QAtomicInt count_;
 	QAtomicInt reader_;
 	QAtomicInt writer_;
 };

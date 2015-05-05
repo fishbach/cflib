@@ -75,7 +75,7 @@ private slots:
 
 	void basic_test()
 	{
-		ThreadFifo<int> fifo(1023);
+		ThreadFifo<int> fifo(1024);
 		for (int i =    1 ; i <= 1023 ; ++i) QVERIFY(fifo.put(i));
 		QVERIFY(!fifo.put(1024));
 		for (int i =    1 ; i <= 1023 ; ++i) QCOMPARE(fifo.take(), i);
