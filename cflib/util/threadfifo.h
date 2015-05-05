@@ -30,7 +30,7 @@ class ThreadFifo
 {
 	Q_DISABLE_COPY(ThreadFifo)
 public:
-	ThreadFifo(int size) : buffer_(new T[size]), max_(size) {}
+	ThreadFifo(int size) : buffer_(new El[size]), max_(size) {}
 	~ThreadFifo() { delete[] buffer_; }
 
 	inline bool put(T data) {
@@ -41,7 +41,10 @@ public:
 		}
 		int o = writer_.load();
 		while (!writer_.testAndSetOrdered(o, (o + 1) % max_)) o = writer_.load();
-		buffer_[o] = data;
+		El * el = buffer_ + o;
+		while (el->filled.loadAcquire() != 0);
+		el->data = data;
+		el->filled.fetchAndStoreRelease(1);
 		readCount_.fetchAndAddRelease(1);
 		return true;
 	}
@@ -54,13 +57,21 @@ public:
 		}
 		int o = reader_.load();
 		while (!reader_.testAndSetOrdered(o, (o + 1) % max_)) o = reader_.load();
-		T rv = buffer_[o];
+		El * el = buffer_ + o;
+		while (el->filled.loadAcquire() != 1);
+		T rv = el->data;
+		el->data = T();
+		el->filled.fetchAndStoreRelease(0);
 		writeCount_.fetchAndSubRelease(1);
 		return rv;
 	}
 
 private:
-	T * buffer_;
+	struct El {
+		QAtomicInt filled;
+		T data;
+	};
+	El * buffer_;
 	const int max_;
 	QAtomicInt readCount_;
 	QAtomicInt writeCount_;

@@ -43,7 +43,8 @@ protected:
 		auto rnd1 = std::bind(dist1, rnd_);
 		auto rnd2 = std::bind(dist2, rnd_);
 		int count = 0;
-		for (int i = 0 ; i < 100000 ; ++i) {
+		for (int i = 0 ; i < 100000 && ok_; ++i) {
+			QTextStream(stdout) << "THREAD " << i << endl;
 			int max = rnd1() == 0 ? 128 : rnd2();
 			if (rnd1() < 2) {
 				max -= count;
