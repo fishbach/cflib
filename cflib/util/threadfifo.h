@@ -30,71 +30,36 @@ class ThreadFifo
 {
 	Q_DISABLE_COPY(ThreadFifo)
 public:
-	ThreadFifo(int size) : buffer_(new El[size]), max_(size) {}
+	ThreadFifo(int size) : buffer_(new T[size]), max_(size), count_(0), reader_(0), writer_(0) {}
 	~ThreadFifo() { delete[] buffer_; }
 
 	inline bool put(T data) {
-		// test if full
-		forever {
-			int c = writeCount_.load();
-			if (c == max_) return false;
-			if (writeCount_.testAndSetAcquire(c, c + 1)) break;
-		}
-
-		// search free block
-		int w = writer_.load();
-		while (!writer_.testAndSetAcquire(w, (w + 1) % max_)) w = writer_.load();
-		El * el;
-		forever {
-			el = buffer_ + w;
-			if (el->state.testAndSetAcquire(0, 1)) break;
-			w = (w + 1) % max_;
-		}
-
-		// store
-		el->data = data;
-		el->state.storeRelease(2);
-		readCount_.fetchAndAddRelease(1);
+		while (!sl_.testAndSetAcquire(0, 1));
+		if (count_ == max_) { sl_.storeRelease(0); return false; }
+		++count_;
+		buffer_[writer_] = data;
+		writer_ = (writer_ + 1) % max_;
+		sl_.storeRelease(0);
 		return true;
 	}
 
 	inline T take() {
-		// test for empty
-		forever {
-			int c = readCount_.load();
-			if (c == 0) return T();
-			if (readCount_.testAndSetAcquire(c, c - 1)) break;
-		}
-
-		// search filled block
-		int r = reader_.load();
-		while (!reader_.testAndSetAcquire(r, (r + 1) % max_)) r = reader_.load();
-		El * el;
-		forever {
-			el = buffer_ + r;
-			if (el->state.testAndSetAcquire(2, 3)) break;
-			r = (r + 1) % max_;
-		}
-
-		// load
-		T rv = el->data;
-		el->data = T();
-		el->state.storeRelease(0);
-		writeCount_.fetchAndSubRelease(1);
+		while (!sl_.testAndSetAcquire(0, 1));
+		if (count_ == 0) { sl_.storeRelease(0); return T(); }
+		--count_;
+		T rv = buffer_[reader_];
+		reader_ = (reader_ + 1) % max_;
+		sl_.storeRelease(0);
 		return rv;
 	}
 
 private:
-	struct El {
-		QAtomicInt state;
-		T data;
-	};
-	El * buffer_;
+	T * buffer_;
+	QAtomicInt sl_;
 	const int max_;
-	QAtomicInt readCount_;
-	QAtomicInt writeCount_;
-	QAtomicInt reader_;
-	QAtomicInt writer_;
+	int count_;
+	int reader_;
+	int writer_;
 };
 
 }}	// namespace
