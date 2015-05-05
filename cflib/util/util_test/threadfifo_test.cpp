@@ -43,8 +43,7 @@ protected:
 		auto rnd1 = std::bind(dist1, rnd_);
 		auto rnd2 = std::bind(dist2, rnd_);
 		int count = 0;
-		for (int i = 0 ; i < 100000 && ok_; ++i) {
-//			QTextStream(stdout) << "THREAD " << i << endl;
+		for (int i = 0 ; i < 50000 && ok_; ++i) {
 			int max = rnd1() == 0 ? 127 : rnd2();
 			if (rnd1() < 2) {
 				max -= count;
@@ -75,7 +74,7 @@ private slots:
 
 	void basic_test()
 	{
-		ThreadFifo<int> fifo(1024);
+		ThreadFifo<int> fifo(1023);
 		for (int i =    1 ; i <= 1023 ; ++i) QVERIFY(fifo.put(i));
 		QVERIFY(!fifo.put(1024));
 		for (int i =    1 ; i <= 1023 ; ++i) QCOMPARE(fifo.take(), i);
