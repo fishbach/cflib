@@ -30,34 +30,45 @@ class ThreadFifo
 {
 	Q_DISABLE_COPY(ThreadFifo)
 public:
-	ThreadFifo(int size) : buffer_(new T[size]), max_(size), count_(0), reader_(0), writer_(0) {}
+	ThreadFifo(int size) : buffer_(new El[size]), max_(size) {}
 	~ThreadFifo() { delete[] buffer_; }
 
 	inline bool put(T data) {
-		QMutexLocker lock(&mutex_);
-		if (count_ == max_) return false;
-		++count_;
-		buffer_[writer_] = data;
-		writer_ = (writer_ + 1) % max_;
-		return true;
+		forever {
+			int o = writer_.load();
+			El * el = buffer_ + o;
+			if (el->state.testAndSetAcquire(0, 1)) {
+				writer_.testAndSetAcquire(o, (o + 1) % max_);
+				el->data = data;
+				el->state.fetchAndStoreRelease(2);
+				return true;
+			} else if (el->state.loadAcquire() > 1 && writer_.load() == o) return false;
+		}
 	}
 
 	inline T take() {
-		QMutexLocker lock(&mutex_);
-		if (count_ == 0) return T();
-		--count_;
-		T rv = buffer_[reader_];
-		reader_ = (reader_ + 1) % max_;
-		return rv;
+		forever {
+			int o = reader_.load();
+			El * el = buffer_ + o;
+			if (el->state.testAndSetAcquire(2, 3)) {
+				reader_.testAndSetAcquire(o, (o + 1) % max_);
+				T rv = el->data;
+				el->data = T();
+				el->state.fetchAndStoreRelease(0);
+				return rv;
+			} else if (el->state.loadAcquire() < 2 && reader_.load() == o) return T();
+		}
 	}
 
 private:
-	T * buffer_;
-	QMutex mutex_;
+	struct El {
+		QAtomicInt state;
+		T data;
+	};
+	El * buffer_;
 	const int max_;
-	int count_;
-	int reader_;
-	int writer_;
+	QAtomicInt reader_;
+	QAtomicInt writer_;
 };
 
 }}	// namespace
