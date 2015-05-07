@@ -439,6 +439,7 @@ define([
 			$el.off();
 			$arrow.off();
 			$('.popupContent', $el).off();
+			$(document).off('.cflibUtilShowPopup' + popupZIndex);
 			popupZIndex -= 2;
 			rv.close = function() {};
 			if (rv.closeFunc) rv.closeFunc.call(rv.closeContext);
@@ -463,6 +464,10 @@ define([
 			display   : 'block',
 			top       : wy + 'px',
 			left      : wx + 'px'
+		});
+
+		$(document).on('keydown.cflibUtilShowPopup' + popupZIndex, function(e) {
+			if (e.keyCode == 27) rv.close();
 		});
 
 		return rv;
