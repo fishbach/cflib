@@ -57,9 +57,9 @@ private:
 	T * buffer_;
 	QAtomicInt sl_;
 	const int max_;
-	int count_;
-	int reader_;
-	int writer_;
+	volatile int count_;
+	volatile int reader_;
+	volatile int writer_;
 };
 
 }}	// namespace
