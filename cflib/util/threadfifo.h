@@ -30,7 +30,7 @@ class ThreadFifo
 {
 	Q_DISABLE_COPY(ThreadFifo)
 public:
-	ThreadFifo(int size) : buffer_(new T[size]), max_(size), count_(0), reader_(0), writer_(0) {}
+	ThreadFifo(int size) : max_(size), buffer_(new T[size]), count_(0), reader_(0), writer_(0) {}
 	~ThreadFifo() { delete[] buffer_; }
 
 	inline bool put(T data) {
@@ -54,12 +54,12 @@ public:
 	}
 
 private:
-	T * buffer_;
-	QAtomicInt sl_;
 	const int max_;
+	volatile T * buffer_;
 	volatile int count_;
 	volatile int reader_;
 	volatile int writer_;
+	QAtomicInt sl_;
 };
 
 }}	// namespace
