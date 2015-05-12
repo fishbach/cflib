@@ -25,17 +25,21 @@ namespace cflib { namespace serialize {
 class TriBool
 {
 public:
-	TriBool() : state(0) {}
-	TriBool(bool state) : state(state ? 1 : 2) {}
+	TriBool() : state_(0) {}
+	TriBool(bool state) : state_(state ? 1 : 2) {}
 
-	operator bool() const { return state == 1; }
-	bool isNull() const { return state == 0; }
+	operator bool() const { return state_ == 1; }
+	bool isNull() const   { return state_ == 0; }
+	bool isFalse() const  { return state_ == 2; }
 
-	quint8 toInt() const { return state; }
-	static TriBool fromInt(quint8 state) { TriBool b; b.state = state; return b; }
+	bool operator==(const TriBool & rhs) const { return state_ == rhs.state_; }
+	bool operator!=(const TriBool & rhs) const { return !operator==(rhs); }
+
+	quint8 toInt() const { return state_; }
+	static TriBool fromInt(quint8 state) { TriBool b; b.state_ = state; return b; }
 
 private:
-	quint8 state;
+	quint8 state_;
 };
 
 namespace impl {
