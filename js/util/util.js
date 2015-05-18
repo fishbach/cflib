@@ -71,10 +71,17 @@ define([
 		return rv;
 	};
 
-	util.simplifyStr = function(str) {
-		return (str
+	util.simplifyStr = function(str, keepNewlines) {
+		if (!keepNewlines) return (str
 			.replace(/^\s+|\s+$/g, '')
 			.replace(/\s+/g, ' '));
+		var rv = '';
+		var lines = str.split('\n');
+		for (var i = 0, len = lines.length ; i < len ; ++i) {
+			if (i > 0) rv += '\n';
+			rv += util.simplifyStr(lines[i]);
+		}
+		return rv;
 	};
 
 	util.getInputStr = function(el) {
@@ -134,8 +141,8 @@ define([
 		return false;
 	};
 
-	util.validInputChars = function(str) {
-		str = util.simplifyStr(str);
+	util.validInputChars = function(str, keepNewlines) {
+		str = util.simplifyStr(str, keepNewlines);
 		if (/[{}\[\]<>;"\\]/.test(str)) return null;
 		return str;
 	};
