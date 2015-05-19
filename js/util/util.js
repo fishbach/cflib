@@ -460,7 +460,7 @@ define([
 			noEv(e);
 			rv.close();
 		};
-		$backdrop.click(closeEv);
+		$backdrop.mousedown(closeEv);
 		$el.click(closeEv);
 		$arrow.click(noEv);
 		$('.popupContent', $el).click(noEv);
