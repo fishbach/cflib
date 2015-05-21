@@ -93,7 +93,7 @@ inline void logFormat(QByteArray & dest, const QString & str)   { dest += str.to
 // Qt classes
 inline void logFormat(QByteArray & dest, const QTime     & ti) { dest += ti.toString().toLatin1(); }
 inline void logFormat(QByteArray & dest, const QDateTime & dt) {
-	dest += dt.toString("dd.MM.yyyy hh:mm:ss.zzz").toLatin1();
+	dest += dt.toString("dd.MM.yyyy HH:mm:ss.zzz").toLatin1();
 	if (dt.timeSpec() == Qt::UTC) dest += " UTC";
 	else                          dest += " Local";
 }
