@@ -35,6 +35,7 @@ inline QString & operator<<(QString & lhs, char rhs) { return lhs += rhs; }
 
 namespace cflib { namespace util {
 
+QByteArray weekDay(const QDate & date);
 QByteArray dateTimeForHTTP(const QDateTime & dateTime);
 void gzip(QByteArray & data, int compressionLevel = -1);
 

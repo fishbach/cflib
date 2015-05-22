@@ -25,22 +25,26 @@
 
 namespace cflib { namespace util {
 
+QByteArray weekDay(const QDate & date)
+{
+	switch (date.dayOfWeek()) {
+		case  1: return "Mon";
+		case  2: return "Tue";
+		case  3: return "Wed";
+		case  4: return "Thu";
+		case  5: return "Fri";
+		case  6: return "Sat";
+		case  7: return "Sun";
+		default: return "";
+	}
+}
+
 QByteArray dateTimeForHTTP(const QDateTime & dateTime)
 {
 	// see RFC 2822 section 3.3.
 
-	QDateTime utc = dateTime.toUTC();
-	QByteArray retval;
-	switch (utc.date().dayOfWeek()) {
-		case  1: retval = "Mon"; break;
-		case  2: retval = "Tue"; break;
-		case  3: retval = "Wed"; break;
-		case  4: retval = "Thu"; break;
-		case  5: retval = "Fri"; break;
-		case  6: retval = "Sat"; break;
-		case  7: retval = "Sun"; break;
-		default: retval = "";
-	}
+	const QDateTime utc = dateTime.toUTC();
+	QByteArray retval = weekDay(utc.date());
 	retval += ", ";
 	retval += utc.toString("dd ___ yyyy hh:mm:ss").toLatin1();
 	switch (utc.date().month()) {
