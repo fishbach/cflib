@@ -452,16 +452,14 @@ define([
 			if (rv.closeFunc) rv.closeFunc.call(rv.closeContext);
 		};
 
-		var noEv = function(e) {
+		var closeEv = function(e) {
 			e.preventDefault();
 			e.stopPropagation();
-		};
-		var closeEv = function(e) {
-			noEv(e);
 			rv.close();
 		};
 		$backdrop.mousedown(closeEv);
 		$el.click(closeEv);
+		var noEv = function(e) { e.stopPropagation(); };
 		$arrow.click(noEv);
 		$('.popupContent', $el).click(noEv);
 
