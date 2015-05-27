@@ -224,6 +224,10 @@ define([
 		);
 	};
 
+	util.numberIsValid = function(n) {
+		return (!isNaN(parseFloat(n)) && isFinite(n));
+	};
+
 	util.setRefTime = function(date) {
 		timeDiff = date.getTime() - new Date().getTime();
 	};
