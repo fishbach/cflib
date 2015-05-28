@@ -26,6 +26,7 @@ define([
 
 	var timeDiff = 0;
 	var popupZIndex = 1010;
+	var openPopups = [];
 
 	function logToServer(category, str)
 	{
@@ -445,6 +446,9 @@ define([
 
 		var rv = new Popup();
 		rv.close = function() {
+			var i = openPopups.length;
+			while (i--) if (openPopups[i] == rv) { openPopups.splice(i, 1); break; }
+
 			$el.css('display', 'none');
 			$backdrop.off().remove();
 			$el.off();
@@ -479,7 +483,12 @@ define([
 			if (e.keyCode == 27) rv.close();
 		});
 
+		openPopups.push(rv);
 		return rv;
+	};
+
+	util.closeAllPopups = function() {
+		while (openPopups.length > 0) openPopups[openPopups.length - 1].close();
 	};
 
 	util.preloadImage = function(src, callback, context) {
