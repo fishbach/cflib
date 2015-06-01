@@ -42,7 +42,11 @@ osx {
 	SOURCES += botan/$$BOTAN_OS/botan_all_rdrand.cpp
 }
 linux {
-	BOTAN_OS = linux
+	contains(QMAKE_HOST.arch, x86_64): {
+		BOTAN_OS = linux
+	} else {
+		BOTAN_OS = linux32
+	}
 	SOURCES += botan/$$BOTAN_OS/botan_all_rdrand.cpp
 }
 INCLUDEPATH += botan/$$BOTAN_OS
