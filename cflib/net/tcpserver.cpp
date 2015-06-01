@@ -207,8 +207,11 @@ public:
 	const TCPConnInitializer * openConnection(const QByteArray & destIP, quint16 destPort,
 		crypt::TLSCredentials * credentials)
 	{
+		// IPv6
+		const bool isIPv6 = destIP.indexOf('.') == -1;
+
 		// create socket
-		int sock = socket(AF_INET, SOCK_STREAM, 0);
+		int sock = socket(isIPv6 ? AF_INET6 : AF_INET, SOCK_STREAM, 0);
 		if (sock < 0) return 0;
 
 		if (!setNonBlocking(sock)) {
@@ -217,17 +220,32 @@ public:
 		}
 
 		// bind to address and port
-		struct sockaddr_in destAddr;
-		destAddr.sin_family = AF_INET;
-		if (inet_pton(AF_INET, destIP.constData(), &destAddr.sin_addr) == 0) {
-			close(sock);
-			return 0;
-		}
-		destAddr.sin_port = htons(destPort);
-		if (connect(sock, (struct sockaddr *)&destAddr, sizeof(destAddr)) < 0 && errno != EINPROGRESS) {
-			logDebug("connect failed with errno: %1", errno);
-			close(sock);
-			return 0;
+		if (isIPv6) {
+			struct sockaddr_in6 destAddr;
+			destAddr.sin6_family = AF_INET6;
+			if (inet_pton(AF_INET6, destIP.constData(), &destAddr.sin6_addr) == 0) {
+				close(sock);
+				return 0;
+			}
+			destAddr.sin6_port = htons(destPort);
+			if (connect(sock, (struct sockaddr *)&destAddr, sizeof(destAddr)) < 0 && errno != EINPROGRESS) {
+				logDebug("connect failed with errno: %1", errno);
+				close(sock);
+				return 0;
+			}
+		} else {
+			struct sockaddr_in destAddr;
+			destAddr.sin_family = AF_INET;
+			if (inet_pton(AF_INET, destIP.constData(), &destAddr.sin_addr) == 0) {
+				close(sock);
+				return 0;
+			}
+			destAddr.sin_port = htons(destPort);
+			if (connect(sock, (struct sockaddr *)&destAddr, sizeof(destAddr)) < 0 && errno != EINPROGRESS) {
+				logDebug("connect failed with errno: %1", errno);
+				close(sock);
+				return 0;
+			}
 		}
 
 		const TCPConnInitializer * ci = new TCPConnInitializer(*this, sock, destIP, destPort,
