@@ -57,7 +57,7 @@ int findClosingBrace(const QString & in, int startPos, char brOpen, char brClose
 
 bool HeaderParser::getVariables(const QString & in, int start, int end, Class & cl)
 {
-	static const QRegExp varRE("(?:^|\n)\\s*([:\\w]+(?:\\s*<[^;]+>)?)\\s+(\\w+)\\s*;|SERIALIZE_SKIP");
+	static const QRegExp varRE("(?:^|\n)\\s*([:\\w]+(?:\\s*<[^>]+>)?)\\s+(\\w+)\\s*;|SERIALIZE_SKIP");
 
 	int pos = varRE.indexIn(in, start, QRegExp::CaretAtOffset);
 	while (pos != -1 && pos < end) {
@@ -72,7 +72,7 @@ bool HeaderParser::getVariables(const QString & in, int start, int end, Class & 
 
 bool HeaderParser::getParameters(const QString & in, int start, int end, Variables & vars)
 {
-	static const QRegExp varRE("(?:^|,)\\s*(const\\s+)?([:\\w]+(?:\\s*<[^;]+>)?)(\\s*&)?(?:\\s+(\\w+))?");
+	static const QRegExp varRE("(?:^|,)\\s*(const\\s+)?([:\\w]+(?:\\s*<[^>]+>)?)(\\s*&)?(?:\\s+(\\w+))?");
 
 	int pos = varRE.indexIn(in, start, QRegExp::CaretAtOffset);
 	while (pos != -1 && pos < end) {
@@ -88,7 +88,7 @@ bool HeaderParser::getParameters(const QString & in, int start, int end, Variabl
 
 bool HeaderParser::getFunctions(const QString & in, int start, int end, Class & cl)
 {
-	static const QRegExp funcRE("(?:^|;)\\s*([:\\w]+(?:\\s*<[^;]+>)?)\\s+(\\w+)\\s*\\(");
+	static const QRegExp funcRE("(?:^|;)\\s*([:\\w]+(?:\\s*<[^>]+>)?)\\s+(\\w+)\\s*\\(");
 
 	int pos = funcRE.indexIn(in, start, QRegExp::CaretAtOffset);
 	while (pos != -1 && pos < end) {
