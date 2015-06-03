@@ -98,6 +98,7 @@ public:
 		sessions_(credentials ? new TLSSessions : 0),
 		credentials_(credentials)
 	{
+		setThreadPrio(QThread::HighestPriority);
 	}
 
 	~Impl()

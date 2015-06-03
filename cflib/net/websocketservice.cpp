@@ -244,6 +244,7 @@ WebSocketService::WebSocketService(ApiServer & apiServer, const QString & path) 
 	apiServer_(apiServer),
 	path_(path)
 {
+	setThreadPrio(QThread::HighPriority);
 }
 
 void WebSocketService::send(uint clientId, const QByteArray & data, bool isBinary)

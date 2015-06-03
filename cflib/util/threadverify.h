@@ -41,6 +41,7 @@ public:
 	void stopVerifyThread();
 	ev_loop * libEVLoop() const;
 	void execCall(const Functor * func) const;
+	void setThreadPrio(QThread::Priority prio);
 
 protected:
 	virtual void deleteThreadData() {}
