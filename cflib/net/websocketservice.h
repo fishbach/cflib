@@ -29,7 +29,6 @@ class WebSocketService : public RequestHandler, public util::ThreadVerify
 {
 public:
 	WebSocketService(ApiServer & apiServer, const QString & path);
-	~WebSocketService();
 
 	void send(uint clientId, const QByteArray & data, bool isBinary);
 	void sendAll(const QByteArray & data, bool isBinary);

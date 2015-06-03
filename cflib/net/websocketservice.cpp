@@ -246,11 +246,6 @@ WebSocketService::WebSocketService(ApiServer & apiServer, const QString & path) 
 {
 }
 
-WebSocketService::~WebSocketService()
-{
-	stopVerifyThread();
-}
-
 void WebSocketService::send(uint clientId, const QByteArray & data, bool isBinary)
 {
 	if (!verifyThreadCall(&WebSocketService::send, clientId, data, isBinary)) return;
