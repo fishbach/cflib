@@ -249,30 +249,21 @@ WebSocketService::WebSocketService(ApiServer & apiServer, const QString & path) 
 
 void WebSocketService::send(uint clientId, const QByteArray & data, bool isBinary)
 {
-	if (!verifyThreadCall(&WebSocketService::send, clientId, data, isBinary)) return;
-
 	foreach (WSConnHandler * wsHdl, clients_.values(clientId)) wsHdl->send(data, isBinary);
 }
 
 void WebSocketService::sendAll(const QByteArray & data, bool isBinary)
 {
-	if (!verifyThreadCall(&WebSocketService::sendAll, data, isBinary)) return;
-
 	foreach (WSConnHandler * wsHdl, all_) wsHdl->send(data, isBinary);
 }
 
 void WebSocketService::close(uint clientId)
 {
-	if (!verifyThreadCall(&WebSocketService::close, clientId)) return;
-
 	foreach (WSConnHandler * wsHdl, clients_.values(clientId)) wsHdl->close();
 }
 
 bool WebSocketService::isConnected(uint clientId) const
 {
-	SyncedThreadCall<bool> stc(this);
-	if (!stc.verify(&WebSocketService::isConnected, clientId)) return stc.retval();
-
 	return clients_.contains(clientId);
 }
 
