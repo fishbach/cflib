@@ -79,6 +79,7 @@ public:
 	const TLS::Policy policy;
 	AutoSeeded_RNG rng;
 	TLS::Client client;
+	QAtomicInt sl_;
 };
 
 TLSClient::TLSClient(TLSSessions & sessions, TLSCredentials & credentials, const QByteArray & hostname) :
@@ -96,14 +97,17 @@ TLSClient::~TLSClient()
 
 QByteArray TLSClient::initialSend()
 {
-	QByteArray rv = impl_->outgoingEncrypteedTmpBuf;
+	while (!impl_->sl_.testAndSetAcquire(0, 1));
+	const QByteArray rv = impl_->outgoingEncrypteedTmpBuf;
 	impl_->outgoingEncrypteedTmpBuf.clear();
+	impl_->sl_.storeRelease(0);
 	return rv;
 }
 
 bool TLSClient::received(const QByteArray & encrypted, QByteArray & plain, QByteArray & sendBack)
 {
-	if (impl_->hasError) return false;
+	while (!impl_->sl_.testAndSetAcquire(0, 1));
+	if (impl_->hasError) { impl_->sl_.storeRelease(0); return false; }
 	impl_->outgoingEncryptedPtr = &sendBack;
 	impl_->incomingPlainPtr     = &plain;
 	TRY {
@@ -113,22 +117,29 @@ bool TLSClient::received(const QByteArray & encrypted, QByteArray & plain, QByte
 			impl_->client.send((const byte *)tmpBuf.constData(), tmpBuf.size());
 			tmpBuf.clear();
 		}
-		return !impl_->hasError;
+		const bool rv = !impl_->hasError;
+		impl_->sl_.storeRelease(0);
+		return rv;
 	} CATCH
 	impl_->hasError = true;
+	impl_->sl_.storeRelease(0);
 	return false;
 }
 
 bool TLSClient::send(const QByteArray & plain, QByteArray & encrypted)
 {
-	if (impl_->hasError) return false;
+	while (!impl_->sl_.testAndSetAcquire(0, 1));
+	if (impl_->hasError) { impl_->sl_.storeRelease(0); return false; }
 	impl_->outgoingEncryptedPtr = &encrypted;
 	TRY {
 		if (impl_->isReady) impl_->client.send((const byte *)plain.constData(), plain.size());
 		else                impl_->outgoingPlainTmpBuf.append(plain);
-		return !impl_->hasError;
+		const bool rv = !impl_->hasError;
+		impl_->sl_.storeRelease(0);
+		return rv;
 	} CATCH
 	impl_->hasError = true;
+	impl_->sl_.storeRelease(0);
 	return false;
 }
 

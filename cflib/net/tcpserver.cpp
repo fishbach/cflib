@@ -499,7 +499,7 @@ void TCPConn::writeable(ev_loop * loop, ev_io * w, int)
 	if (buf.isEmpty() || fd == -1) return;
 
 	ssize_t count = ::send(fd, buf.constData(), buf.size(), 0);
-	logTrace("wrote %1 / %2 bytes", (qint64)count, buf.size());
+	logTrace("wrote %1 / %2 bytes on %3", (qint64)count, buf.size(), fd);
 	if (count < buf.size()) {
 		if (count < 0 && errno != EAGAIN && errno != EWOULDBLOCK && errno != ENOTCONN) {
 			logDebug("write on fd %1 failed (errno: %2)", fd, errno);
