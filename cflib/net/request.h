@@ -61,6 +61,7 @@ public:
 	QByteArray getHostname() const;
 	KeyVal getHeaderFields() const;
 	Method getMethod() const;
+	QByteArray getMethodName() const;
 	inline bool isGET()  const { return getMethod() == GET; }
 	inline bool isPOST() const { return getMethod() == POST; }
 	inline bool isHEAD() const { return getMethod() == HEAD; }

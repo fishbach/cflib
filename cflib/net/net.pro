@@ -32,6 +32,7 @@ HEADERS = \
 	redirectserver.h \
 	request.h \
 	requesthandler.h \
+	requestlog.h \
 	tcpserver.h \
 	uploadservice.h \
 	websocketservice.h \

@@ -233,6 +233,16 @@ Request::Method Request::getMethod() const
 	return d->method;
 }
 
+QByteArray Request::getMethodName() const
+{
+	switch (d->method) {
+		case NONE: return "-";
+		case GET:  return "GET";
+		case POST: return "POST";
+		case HEAD: return "HEAD";
+	}
+}
+
 QByteArray Request::getUri() const
 {
 	return d->uri;
