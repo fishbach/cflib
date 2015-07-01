@@ -24,6 +24,9 @@ class Request;
 
 class RequestHandler
 {
+public:
+	virtual ~RequestHandler() {}
+
 protected:
 	virtual void handleRequest(const Request & request) = 0;
 	friend class Request;
