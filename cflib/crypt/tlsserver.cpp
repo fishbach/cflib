@@ -73,8 +73,8 @@ public:
 	QByteArray outgoingPlainTmpBuf;
 	QByteArray * outgoingEncryptedPtr;
 	QByteArray * incomingPlainPtr;
-	bool isReady;
-	bool hasError;
+	volatile bool isReady;
+	volatile bool hasError;
 	const TLS::Policy policy;
 	AutoSeeded_RNG rng;
 	TLS::Server server;

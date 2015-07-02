@@ -449,9 +449,8 @@ define([
 			var i = openPopups.length;
 			while (i--) if (openPopups[i] == rv) { openPopups.splice(i, 1); break; }
 
-			$el.css('display', 'none');
+			$el.off().css('display', 'none');
 			$backdrop.off().remove();
-			$el.off();
 			$arrow.off();
 			$('.popupContent', $el).off();
 			$(document).off('.cflibUtilShowPopup' + popupZIndex);
