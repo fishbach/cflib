@@ -75,9 +75,9 @@ class TCPConnInitializer
 {
 public:
 	TCPConnInitializer(TCPServer::Impl & impl, const int socket, const char * peerIP, const quint16 peerPort,
-		TLSStream * tlsStream)
+		TLSStream * tlsStream, uint tlsThreadId)
 	:
-		impl(impl), socket(socket), peerIP(peerIP), peerPort(peerPort), tlsStream(tlsStream)
+		impl(impl), socket(socket), peerIP(peerIP), peerPort(peerPort), tlsStream(tlsStream), tlsThreadId(tlsThreadId)
 	{}
 
 	TCPServer::Impl & impl;
@@ -85,24 +85,52 @@ public:
 	const QByteArray peerIP;
 	const quint16 peerPort;
 	TLSStream * tlsStream;
+	const uint tlsThreadId;
+};
+
+class TLSThread : public util::ThreadVerify
+{
+public:
+	TLSThread(TCPServer::Impl & impl, uint no, uint total) :
+		ThreadVerify(QString("TLSThread %1/%2").arg(no).arg(total), ThreadVerify::Worker),
+		impl_(impl)
+	{
+	}
+
+	~TLSThread()
+	{
+		stopVerifyThread();
+	}
+
+	void write(TCPConn * conn, const QByteArray & data);
+	void read(TCPConn * conn);
+
+private:
+	TCPServer::Impl & impl_;
 };
 
 class TCPServer::Impl : public util::ThreadVerify
 {
 public:
-	Impl(TCPServer & parent, TLSCredentials * credentials) :
+	Impl(TCPServer & parent, TLSCredentials * credentials, uint tlsThreadCount) :
 		ThreadVerify("TCPServer", ThreadVerify::Net),
 		parent_(parent),
 		listenSock_(-1),
 		readWatcher_(new ev_io),
 		sessions_(credentials ? new TLSSessions : 0),
-		credentials_(credentials)
+		credentials_(credentials),
+		tlsConnId_(0)
 	{
 		setThreadPrio(QThread::HighestPriority);
+		if (credentials) {
+			if (tlsThreadCount == 0) logCritical("thread count cannot be 0 for worker thread TLSThread");
+			for (uint i = 1 ; i <= tlsThreadCount ; ++i) tlsThreads_.append(new TLSThread(*this, i, tlsThreadCount));
+		}
 	}
 
 	~Impl()
 	{
+		foreach (TLSThread * th, tlsThreads_) delete th;
 		stopVerifyThread();
 		delete sessions_;
 		delete readWatcher_;
@@ -249,13 +277,27 @@ public:
 			}
 		}
 
-		const TCPConnInitializer * ci = new TCPConnInitializer(*this, sock, destIP, destPort,
-			credentials ? new TLSClient(*sessions_, *credentials) : 0);
+		const TCPConnInitializer * ci = credentials ?
+				new TCPConnInitializer(*this, sock, destIP, destPort,
+					new TLSClient(*sessions_, *credentials), ++tlsConnId_ % tlsThreads_.size())
+			:
+				new TCPConnInitializer(*this, sock, destIP, destPort, 0, 0);
+
 		logDebug("opened connection %1 to %2:%3", sock, ci->peerIP, ci->peerPort);
 		return ci;
 	}
 
 	inline TCPServer & tcpServer() { return parent_; }
+
+	inline void tlsWrite(TCPConn * conn, const QByteArray & data)
+	{
+		tlsThreads_[conn->tlsThreadId_]->write(conn, data);
+	}
+
+	inline void tlsRead(TCPConn * conn)
+	{
+		tlsThreads_[conn->tlsThreadId_]->read(conn);
+	}
 
 private:
 	static void readable(ev_loop *, ev_io * w, int)
@@ -272,9 +314,15 @@ private:
 			setNonBlocking(newSock);
 
 			char ipAddr[16];
-			const TCPConnInitializer * ci = new TCPConnInitializer(*impl,
-				newSock, inet_ntop(AF_INET, &cliAddr.sin_addr, ipAddr, sizeof(ipAddr)), ntohs(cliAddr.sin_port),
-				impl->credentials_ ? new TLSServer(*(impl->sessions_), *(impl->credentials_)) : 0);
+			const TCPConnInitializer * ci = impl->credentials_ ?
+					new TCPConnInitializer(*impl,
+						newSock, inet_ntop(AF_INET, &cliAddr.sin_addr, ipAddr, sizeof(ipAddr)), ntohs(cliAddr.sin_port),
+						new TLSServer(*(impl->sessions_), *(impl->credentials_)),
+						++impl->tlsConnId_ % impl->tlsThreads_.size())
+				:
+					new TCPConnInitializer(*impl,
+						newSock, inet_ntop(AF_INET, &cliAddr.sin_addr, ipAddr, sizeof(ipAddr)), ntohs(cliAddr.sin_port),
+						0, 0);
 			logDebug("new connection (%1) from %2:%3", newSock, ci->peerIP, ci->peerPort);
 			impl->parent_.newConnection(ci);
 		}
@@ -286,15 +334,39 @@ private:
 	ev_io * readWatcher_;
 	TLSSessions * sessions_;
 	TLSCredentials * credentials_;
+	QVector<TLSThread *> tlsThreads_;
+	uint tlsConnId_;
 };
 
+void TLSThread::write(TCPConn * conn, const QByteArray & data)
+{
+	if (!verifyThreadCall(&TLSThread::write, conn, data)) return;
+
+	QByteArray enc;
+	if (!conn->tlsStream_->send(data, enc)) impl_.closeNicely(conn);
+	impl_.writeToSocket(conn, enc);
+}
+
+void TLSThread::read(TCPConn * conn)
+{
+	if (!verifyThreadCall(&TLSThread::read, conn)) return;
+
+	const QByteArray incoming = conn->read();
+	if (!incoming.isEmpty()) {
+		QByteArray sendBack;
+		if (!conn->tlsStream_->received(incoming, conn->tlsPlain_, sendBack)) impl_.closeNicely(conn);
+		if (!sendBack.isEmpty()) impl_.writeToSocket(conn, sendBack);
+	}
+	conn->newBytesAvailable();
+}
+
 TCPServer::TCPServer() :
-	impl_(new Impl(*this, 0))
+	impl_(new Impl(*this, 0, 0))
 {
 }
 
-TCPServer::TCPServer(TLSCredentials & credentials) :
-	impl_(new Impl(*this, &credentials))
+TCPServer::TCPServer(TLSCredentials & credentials, uint tlsThreadCount) :
+	impl_(new Impl(*this, &credentials, tlsThreadCount))
 {
 }
 
@@ -376,7 +448,8 @@ TCPConn::TCPConn(const TCPConnInitializer * init) :
 	writeWatcher_(new ev_io),
 	readBuf_(0x10000, '\0'),
 	closeAfterWriting_(false),
-	tlsStream_(init->tlsStream)
+	tlsStream_(init->tlsStream),
+	tlsThreadId_(init->tlsThreadId)
 {
 	delete init;
 	ev_io_init(readWatcher_, &TCPConn::readable, socket_, EV_READ);
@@ -401,8 +474,14 @@ TCPConn::~TCPConn()
 QByteArray TCPConn::read()
 {
 	QByteArray retval;
-	if (socket_ == -1) return retval;
 
+	if (tlsStream_) {
+		retval = tlsPlain_;
+		tlsPlain_.clear();
+		return retval;
+	}
+
+	if (socket_ == -1) return retval;
 	forever {
 		ssize_t count = ::recv(socket_, (char *)readBuf_.constData(), readBuf_.size(), 0);
 		if (count == readBuf_.size() && retval.size() < 0x100000) {	// 1 mb
@@ -429,14 +508,6 @@ QByteArray TCPConn::read()
 		break;
 	}
 
-	if (tlsStream_ && !retval.isEmpty()) {
-		QByteArray plain;
-		QByteArray sendBack;
-		if (!tlsStream_->received(retval, plain, sendBack)) impl_.closeNicely(this);
-		if (!sendBack.isEmpty()) impl_.writeToSocket(this, sendBack);
-		return plain;
-	}
-
 	return retval;
 }
 
@@ -447,13 +518,8 @@ void TCPConn::startWatcher()
 
 void TCPConn::write(const QByteArray & data)
 {
-	if (tlsStream_) {
-		QByteArray enc;
-		if (!tlsStream_->send(data, enc)) impl_.closeNicely(this);
-		impl_.writeToSocket(this, enc);
-	} else {
-		impl_.writeToSocket(this, data);
-	}
+	if (tlsStream_) impl_.tlsWrite(this, data);
+	else            impl_.writeToSocket(this, data);
 }
 
 void TCPConn::closeNicely()
@@ -468,7 +534,7 @@ void TCPConn::abortConnection()
 
 const TCPConnInitializer * TCPConn::detachFromSocket()
 {
-	const TCPConnInitializer * rv = new TCPConnInitializer(impl_, socket_, peerIP_, peerPort_, tlsStream_);
+	const TCPConnInitializer * rv = new TCPConnInitializer(impl_, socket_, peerIP_, peerPort_, tlsStream_, tlsThreadId_);
 	socket_ = -1;
 	tlsStream_ = 0;
 	return rv;
@@ -488,7 +554,9 @@ TCPServer & TCPConn::server() const
 void TCPConn::readable(ev_loop * loop, ev_io * w, int)
 {
 	ev_io_stop(loop, w);
-	((TCPConn *)w->data)->newBytesAvailable();
+	TCPConn * conn = (TCPConn *)w->data;
+	if (!conn->tlsStream_) conn->newBytesAvailable();
+	else                   conn->impl_.tlsRead(conn);
 }
 
 void TCPConn::writeable(ev_loop * loop, ev_io * w, int)
@@ -499,7 +567,7 @@ void TCPConn::writeable(ev_loop * loop, ev_io * w, int)
 	if (buf.isEmpty() || fd == -1) return;
 
 	ssize_t count = ::send(fd, buf.constData(), buf.size(), 0);
-	logTrace("wrote %1 / %2 bytes on %3", (qint64)count, buf.size(), fd);
+	logTrace("wrote %1 / %2 bytes", (qint64)count, buf.size());
 	if (count < buf.size()) {
 		if (count < 0 && errno != EAGAIN && errno != EWOULDBLOCK && errno != ENOTCONN) {
 			logDebug("write on fd %1 failed (errno: %2)", fd, errno);

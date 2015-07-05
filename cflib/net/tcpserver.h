@@ -35,7 +35,7 @@ class TCPServer
 	Q_DISABLE_COPY(TCPServer)
 public:
 	TCPServer();
-	TCPServer(crypt::TLSCredentials & credentials);
+	TCPServer(crypt::TLSCredentials & credentials, uint tlsThreadCount = 4);
 	virtual ~TCPServer();
 
 	static int openListenSocket(quint16 port, const QByteArray & ip = "127.0.0.1");
@@ -56,6 +56,7 @@ private:
 	Impl * impl_;
 	friend class TCPConn;
 	friend class TCPConnInitializer;
+	friend class TLSThread;
 };
 
 class TCPConn
@@ -103,8 +104,11 @@ private:
 	QByteArray writeBuf_;
 	bool closeAfterWriting_;
 	crypt::TLSStream * tlsStream_;
+	const uint tlsThreadId_;
+	QByteArray tlsPlain_;
 
 	friend class TCPServer;
+	friend class TLSThread;
 };
 
 }}	// namespace
