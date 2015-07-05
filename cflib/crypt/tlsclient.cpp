@@ -74,12 +74,11 @@ public:
 	QByteArray outgoingPlainTmpBuf;
 	QByteArray * outgoingEncryptedPtr;
 	QByteArray * incomingPlainPtr;
-	volatile bool isReady;
-	volatile bool hasError;
+	bool isReady;
+	bool hasError;
 	const TLS::Policy policy;
 	AutoSeeded_RNG rng;
 	TLS::Client client;
-	QAtomicInt sl_;
 };
 
 TLSClient::TLSClient(TLSSessions & sessions, TLSCredentials & credentials, const QByteArray & hostname) :
@@ -97,17 +96,14 @@ TLSClient::~TLSClient()
 
 QByteArray TLSClient::initialSend()
 {
-	while (!impl_->sl_.testAndSetAcquire(0, 1));
-	const QByteArray rv = impl_->outgoingEncrypteedTmpBuf;
+	QByteArray rv = impl_->outgoingEncrypteedTmpBuf;
 	impl_->outgoingEncrypteedTmpBuf.clear();
-	impl_->sl_.storeRelease(0);
 	return rv;
 }
 
 bool TLSClient::received(const QByteArray & encrypted, QByteArray & plain, QByteArray & sendBack)
 {
-	while (!impl_->sl_.testAndSetAcquire(0, 1));
-	if (impl_->hasError) { impl_->sl_.storeRelease(0); return false; }
+	if (impl_->hasError) return false;
 	impl_->outgoingEncryptedPtr = &sendBack;
 	impl_->incomingPlainPtr     = &plain;
 	TRY {
@@ -117,29 +113,22 @@ bool TLSClient::received(const QByteArray & encrypted, QByteArray & plain, QByte
 			impl_->client.send((const byte *)tmpBuf.constData(), tmpBuf.size());
 			tmpBuf.clear();
 		}
-		const bool rv = !impl_->hasError;
-		impl_->sl_.storeRelease(0);
-		return rv;
+		return !impl_->hasError;
 	} CATCH
 	impl_->hasError = true;
-	impl_->sl_.storeRelease(0);
 	return false;
 }
 
 bool TLSClient::send(const QByteArray & plain, QByteArray & encrypted)
 {
-	while (!impl_->sl_.testAndSetAcquire(0, 1));
-	if (impl_->hasError) { impl_->sl_.storeRelease(0); return false; }
+	if (impl_->hasError) return false;
 	impl_->outgoingEncryptedPtr = &encrypted;
 	TRY {
 		if (impl_->isReady) impl_->client.send((const byte *)plain.constData(), plain.size());
 		else                impl_->outgoingPlainTmpBuf.append(plain);
-		const bool rv = !impl_->hasError;
-		impl_->sl_.storeRelease(0);
-		return rv;
+		return !impl_->hasError;
 	} CATCH
 	impl_->hasError = true;
-	impl_->sl_.storeRelease(0);
 	return false;
 }
 
