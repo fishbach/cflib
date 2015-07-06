@@ -351,7 +351,7 @@ void TLSThread::read(TCPConn * conn)
 {
 	if (!verifyThreadCall(&TLSThread::read, conn)) return;
 
-	const QByteArray incoming = conn->read();
+	const QByteArray incoming = conn->readImpl();
 	if (!incoming.isEmpty()) {
 		QByteArray sendBack;
 		if (!conn->tlsStream_->received(incoming, conn->tlsPlain_, sendBack)) impl_.closeNicely(conn);
@@ -473,15 +473,20 @@ TCPConn::~TCPConn()
 
 QByteArray TCPConn::read()
 {
-	QByteArray retval;
-
 	if (tlsStream_) {
-		retval = tlsPlain_;
+		const QByteArray retval = tlsPlain_;
 		tlsPlain_.clear();
 		return retval;
+	} else {
+		return readImpl();
 	}
+}
 
+QByteArray TCPConn::readImpl()
+{
+	QByteArray retval;
 	if (socket_ == -1) return retval;
+
 	forever {
 		ssize_t count = ::recv(socket_, (char *)readBuf_.constData(), readBuf_.size(), 0);
 		if (count == readBuf_.size() && retval.size() < 0x100000) {	// 1 mb

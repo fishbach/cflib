@@ -92,6 +92,7 @@ protected:
 private:
 	static void readable (ev_loop * loop, ev_io * w, int revents);
 	static void writeable(ev_loop * loop, ev_io * w, int revents);
+	QByteArray readImpl();
 
 private:
 	TCPServer::Impl & impl_;
