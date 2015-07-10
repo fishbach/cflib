@@ -241,6 +241,7 @@ QByteArray Request::getMethodName() const
 		case POST: return "POST";
 		case HEAD: return "HEAD";
 	}
+	return QByteArray();
 }
 
 QByteArray Request::getUri() const
