@@ -197,35 +197,37 @@ void Log::writeLog(const char * filename, int lineNo, LogCategory category, cons
 	*(pos++) = ' ';
 
 	// get thread info
-	QMutexLocker lock(&mutex);
-	ThreadInfo & info = threadInfos[threadId()];
-	if (info.threadId == 0) info.threadId = threadInfos.size();
+	{
+		QMutexLocker lock(&mutex);
+		ThreadInfo & info = threadInfos[threadId()];
+		if (info.threadId == 0) info.threadId = threadInfos.size();
 
-	// thread id
-	writeInt(pos, info.threadId, 2); pos += 2;
-	*(pos++) = ' ';
+		// thread id
+		writeInt(pos, info.threadId, 2); pos += 2;
+		*(pos++) = ' ';
 
-	// indent for log function trace
-	if (indent < 0) {
-		info.indent += indent;
-		if (info.indent > 0) line += QByteArray(info.indent, ' ');
-		line += "}\n";
-	} else {
-		if (info.indent > 0) line += QByteArray(info.indent, ' ');
-		if (indent > 0) {
-			line += msg;
-			line += " {\n";
+		// indent for log function trace
+		if (indent < 0) {
 			info.indent += indent;
+			if (info.indent > 0) line += QByteArray(info.indent, ' ');
+			line += "}\n";
 		} else {
-			// write message
-			writeMsg(line, msg);
-			line += '\n';
+			if (info.indent > 0) line += QByteArray(info.indent, ' ');
+			if (indent > 0) {
+				line += msg;
+				line += " {\n";
+				info.indent += indent;
+			} else {
+				// write message
+				writeMsg(line, msg);
+				line += '\n';
+			}
 		}
-	}
 
-	// write to file
-	file.write(line);
-	file.flush();
+		// write to file
+		file.write(line);
+		file.flush();
+	}
 
 	// log level callback
 	if (logLevelCallback && (category & 0x0F) >= logLevelTrigger) logLevelCallback(line);

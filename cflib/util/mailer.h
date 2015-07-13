@@ -53,11 +53,11 @@ protected:
 private slots:
 	void finished(int exitCode, QProcess::ExitStatus exitStatus);
 	void error(QProcess::ProcessError error);
+	void startProcess();
 
 private:
 	void initThreadData();
 	void doSend(const Mail & mail);
-	void startProcess();
 
 private:
 	static Mailer * instance_;

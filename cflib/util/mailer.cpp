@@ -90,45 +90,41 @@ void Mailer::deleteThreadData()
 
 void Mailer::finished(int exitCode, QProcess::ExitStatus exitStatus)
 {
-	logFunctionTrace
-
-	Mail mail = queue_.takeFirst();
-
-	// check status
-	if (exitCode == 0 && exitStatus == QProcess::NormalExit) {
-		logInfo("email to %1 sent", mail.to);
-	} else {
-		logWarn("could not send email to %1", mail.to);
-	}
-
-	// check output
 	QByteArray output;
 	output += process_->readAllStandardOutput();
 	output += process_->readAllStandardError();
-	if (!output.isEmpty()) logWarn("%1", output);
+
+	// check status
+	if (exitCode == 0 && exitStatus == QProcess::NormalExit) {
+		if (!output.isEmpty()) logWarn("got output while sending email to %1: %2", queue_.first().to, output);
+		else                   logInfo("email to %1 sent", queue_.first().to);
+	} else {
+		logWarn("could not send email to %1 (exitCode: %2, exitStatus: %3, output: %4)",
+			queue_.first().to, exitCode, (int)exitStatus, output);
+	}
 
 	// more mails?
-	if (!queue_.isEmpty()) startProcess();
+	queue_.removeFirst();
+	if (!queue_.isEmpty()) QTimer::singleShot(0, this, &Mailer::startProcess);
 }
 
 void Mailer::error(QProcess::ProcessError error)
 {
-	logFunctionTrace
 	logWarn("Mailer process error: %1", (int)error);
 }
 
 void Mailer::doSend(const Mail & mail)
 {
+	logFunctionTraceParam("new mail to: %1", mail.to);
 	if (!verifyThreadCall(&Mailer::doSend, mail)) return;
 
 	if (sendmailPath_.isNull()) {
 		logWarn("mailer not active, mail to %1 dropped", mail.to);
 		return;
 	}
-	queue_ << mail;
-	logInfo("queued new mail to %1 (queue size now: %2)", mail.to, queue_.size());
 
-	if (process_->state() == QProcess::NotRunning) startProcess();
+	queue_ << mail;
+	if (queue_.size() == 1) startProcess();
 }
 
 namespace {
