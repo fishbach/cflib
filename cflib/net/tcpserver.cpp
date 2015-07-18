@@ -374,7 +374,7 @@ void TLSThread::read(TCPConn * conn)
 
 void TLSThread::closeSocket(TCPConn * conn)
 {
-	if (!verifyThreadCall(&TLSThread::closeSocket, conn)) return;
+	if (!verifySyncedThreadCall(&TLSThread::closeSocket, conn)) return;
 
 	impl_.closeSocket(conn);
 }
