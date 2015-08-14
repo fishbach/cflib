@@ -36,19 +36,26 @@ OTHER_FILES = \
 lib()
 
 # botan
-CONFIG += exceptions
-osx {
-	BOTAN_OS = osx
-	SOURCES += botan/$$BOTAN_OS/botan_all_rdrand.cpp
+!defined(BOTAN_LIB, var) {
+	BOTAN_VERSION = 1.11.19
+	BOTAN_LIB     = $${CFLIB_DIR}/../Botan-$${BOTAN_VERSION}/libbotan-1.11.a
+	BOTAN_INCLUDE = $${CFLIB_DIR}/../Botan-$${BOTAN_VERSION}/build/include
 }
-linux {
-	contains(QMAKE_HOST.arch, x86_64): {
-		BOTAN_OS = linux
-	} else {
-		BOTAN_OS = linux32
-	}
-	SOURCES += botan/$$BOTAN_OS/botan_all_rdrand.cpp
+!exists($$BOTAN_LIB) {
+	warning(Botan library not found here: $$BOTAN_LIB)
+	message("TODO: ... or adjust variables BOTAN_LIB and BOTAN_INCLUDE in config.pri")
+	message(cd $${CFLIB_DIR}/..)
+	message(wget http://botan.randombit.net/releases/Botan-$${BOTAN_VERSION}.tgz)
+	message(tar zxvf Botan-$${BOTAN_VERSION}.tgz)
+	message(cd Botan-$${BOTAN_VERSION})
+	message(./configure.py)
+	message(make)
 }
-INCLUDEPATH += botan/$$BOTAN_OS
-HEADERS += botan/$$BOTAN_OS/botan_all.h botan/$$BOTAN_OS/botan_all_internal.h
-SOURCES += botan/$$BOTAN_OS/botan_all.cpp
+
+# add botan object files
+exists(botan):system(chmod u+w botan ; rm -rf botan)
+system(mkdir botan ; cd botan ; ar x $$BOTAN_LIB ; chmod u-w .)
+OBJECTS += $$getFiles(botan)
+
+INCLUDEPATH += $$BOTAN_INCLUDE
+CONFIG      += exceptions

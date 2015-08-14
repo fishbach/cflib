@@ -255,20 +255,30 @@ defineTest(createGitVersionHeader) {
 	export(QMAKE_EXTRA_COMPILERS)
 }
 
-# addOtherFiles(path, [!,] regex)
-defineTest(addOtherFiles) {
+# getFiles(path, [!,] regex)
+defineReplace(getFiles) {
 	defined(3, var) {
 		win32 {
-			OTHER_FILES += $$system($${CFLIB_DIR}/bin/filefinder.exe \"$$1\" \"$$2\" \"$$3\")
+			FILES += $$system($${CFLIB_DIR}/bin/filefinder.exe \"$$1\" \"$$2\" \"$$3\")
 		} else {
-			OTHER_FILES += $$system($${CFLIB_DIR}/bin/filefinder \"$$1\" \"$$2\" \"$$3\")
+			FILES += $$system($${CFLIB_DIR}/bin/filefinder \"$$1\" \"$$2\" \"$$3\")
 		}
 	} else {
 		win32 {
-			OTHER_FILES += $$system($${CFLIB_DIR}/bin/filefinder.exe \"$$1\" \"$$2\")
+			FILES += $$system($${CFLIB_DIR}/bin/filefinder.exe \"$$1\" \"$$2\")
 		} else {
-			OTHER_FILES += $$system($${CFLIB_DIR}/bin/filefinder \"$$1\" \"$$2\")
+			FILES += $$system($${CFLIB_DIR}/bin/filefinder \"$$1\" \"$$2\")
 		}
+	}
+	return($$FILES)
+}
+
+# addOtherFiles(path, [!,] regex)
+defineTest(addOtherFiles) {
+	defined(3, var) {
+		OTHER_FILES += $$getFiles($$1, $$2, $$3)
+	} else {
+		OTHER_FILES += $$getFiles($$1, $$2)
 	}
 	export(OTHER_FILES)
 }

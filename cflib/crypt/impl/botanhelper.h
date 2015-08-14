@@ -24,7 +24,13 @@ using std::addressof;
 
 #include <cflib/util/log.h>
 
-#include <botan_all.h>
+#include <botan/auto_rng.h>
+#include <botan/bcrypt.h>
+#include <botan/filters.h>
+#include <botan/init.h>
+#include <botan/pkcs8.h>
+#include <botan/tls_client.h>
+#include <botan/tls_server.h>
 
 #define TRY \
 	try
