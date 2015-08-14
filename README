@@ -2,7 +2,5 @@ build:
 
 Qt min Version 5.2.1 - http://download.qt-project.org/archive/qt/5.2/5.2.1/
 
-qmake cflib/util/filefinder/filefinder.pro
-make -j 4
 qmake -r
 make -j 4

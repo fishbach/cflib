@@ -18,7 +18,7 @@
 include(../../../include.pri)
 
 QT = core
-CONFIG += console
+CONFIG += console no_pch
 
 TARGET = filefinder
 

@@ -15,6 +15,8 @@
 # You should have received a copy of the GNU General Public License
 # along with cflib. If not, see <http://www.gnu.org/licenses/>.
 
+system(cd cflib/util/filefinder ; qmake ; make)
+
 include(include.pri)
 
 addSubdir(cflib/crypt)
