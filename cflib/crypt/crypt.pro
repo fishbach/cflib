@@ -23,6 +23,7 @@ TARGET = cflib_crypt
 
 HEADERS = \
 	impl/botanhelper.h \
+	impl/tls12policy.h \
 	tlsclient.h \
 	tlscredentials.h \
 	tlsserver.h \
@@ -36,29 +37,27 @@ OTHER_FILES = \
 lib()
 
 # botan
-!defined(BOTAN_LIB, var) {
-	BOTAN_VERSION = 1.11.19
-	BOTAN_LIB     = $${CFLIB_DIR}/../Botan-$${BOTAN_VERSION}/libbotan-1.11.a
-	BOTAN_INCLUDE = $${CFLIB_DIR}/../Botan-$${BOTAN_VERSION}/build/include
+BOTAN_MINOR_VERSION = 19
+!defined(BOTAN_DIR, var) {
+	BOTAN_DIR = $${CFLIB_DIR}/../Botan-1.11.$${BOTAN_MINOR_VERSION}
 }
-!exists($$BOTAN_LIB) {
+!exists($$BOTAN_DIR/build/obj/lib/botan_all.o) {
 	warning("=======================================================================")
-	warning(Botan library not found here: $$BOTAN_LIB)
-	message("TODO: ... or adjust variables BOTAN_LIB and BOTAN_INCLUDE in config.pri")
+	warning(Botan library not found here: $$BOTAN_DIR)
+	message("TODO: ... or adjust variable BOTAN_DIR in config.pri")
 	message("-----------------------------------------------------------------------")
 	message(cd $${CFLIB_DIR}/..)
-	message(wget http://botan.randombit.net/releases/Botan-$${BOTAN_VERSION}.tgz)
-	message(tar zxvf Botan-$${BOTAN_VERSION}.tgz)
-	message(cd Botan-$${BOTAN_VERSION})
+	message(wget http://botan.randombit.net/releases/Botan-1.11.$${BOTAN_MINOR_VERSION}.tgz)
+	message(tar zxvf Botan-1.11.$${BOTAN_MINOR_VERSION}.tgz)
+	message(cd Botan-1.11.$${BOTAN_MINOR_VERSION})
 	message(./configure.py --disable-shared --via-amalgamation)
-	message(make)
+	message(make -j 2 libbotan-1.11.a)
+	message(chmod a-w build/obj/lib)
 	warning("=======================================================================")
 }
 
 # add botan object files
-exists(botan):system(chmod u+w botan ; rm -rf botan)
-system(mkdir botan ; cd botan ; ar x $$BOTAN_LIB ; chmod u-w .)
-OBJECTS += $$getFiles(botan)
+OBJECTS += $$getFiles($$BOTAN_DIR/build/obj/lib)
 
-INCLUDEPATH += $$BOTAN_INCLUDE
+INCLUDEPATH += $${BOTAN_DIR}/build/include
 CONFIG      += exceptions

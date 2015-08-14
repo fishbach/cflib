@@ -19,6 +19,7 @@
 #include "tlsserver.h"
 
 #include <cflib/crypt/impl/botanhelper.h>
+#include <cflib/crypt/impl/tls12policy.h>
 #include <cflib/crypt/tlscredentials.h>
 #include <cflib/crypt/tlssessions.h>
 
@@ -43,7 +44,8 @@ public:
 			std::bind(&Impl::alert_cb, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3),
 			std::bind(&Impl::handshake_cb, this, std::placeholders::_1),
 			session_manager, creds, policy,
-			rng)
+			rng,
+			[&](std::vector<std::string>) { return ""; })
 	{
 	}
 
@@ -75,7 +77,7 @@ public:
 	QByteArray * incomingPlainPtr;
 	bool isReady;
 	bool hasError;
-	const TLS::Policy policy;
+	const TLS::TLS12Policy policy;
 	AutoSeeded_RNG rng;
 	TLS::Server server;
 };

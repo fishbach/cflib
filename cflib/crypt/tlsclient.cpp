@@ -19,6 +19,7 @@
 #include "tlsclient.h"
 
 #include <cflib/crypt/impl/botanhelper.h>
+#include <cflib/crypt/impl/tls12policy.h>
 #include <cflib/crypt/tlscredentials.h>
 #include <cflib/crypt/tlssessions.h>
 
@@ -76,7 +77,7 @@ public:
 	QByteArray * incomingPlainPtr;
 	bool isReady;
 	bool hasError;
-	const TLS::Policy policy;
+	const TLS::TLS12Policy policy;
 	AutoSeeded_RNG rng;
 	TLS::Client client;
 };
