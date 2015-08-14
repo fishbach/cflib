@@ -26,11 +26,6 @@ class Util_test : public QObject
 	Q_OBJECT
 private slots:
 
-	void initTestCase()
-	{
-		QVERIFY(initCrypto());
-	}
-
 	void test_random()
 	{
 		QCOMPARE(random( 0).size(),  0);

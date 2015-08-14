@@ -32,11 +32,6 @@ class TLSServer_test : public QObject
 	Q_OBJECT
 private slots:
 
-	void initTestCase()
-	{
-		QVERIFY(initCrypto());
-	}
-
 	void test_tls()
 	{
 		TLSCredentials serverCreds;

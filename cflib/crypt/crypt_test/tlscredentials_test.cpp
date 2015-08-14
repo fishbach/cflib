@@ -29,11 +29,6 @@ class TLSCredentials_test : public QObject
 	Q_OBJECT
 private slots:
 
-	void initTestCase()
-	{
-		QVERIFY(initCrypto());
-	}
-
 	void test_addCerts()
 	{
 		TLSCredentials creds;

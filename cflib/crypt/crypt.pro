@@ -42,14 +42,17 @@ lib()
 	BOTAN_INCLUDE = $${CFLIB_DIR}/../Botan-$${BOTAN_VERSION}/build/include
 }
 !exists($$BOTAN_LIB) {
+	warning("=======================================================================")
 	warning(Botan library not found here: $$BOTAN_LIB)
 	message("TODO: ... or adjust variables BOTAN_LIB and BOTAN_INCLUDE in config.pri")
+	message("-----------------------------------------------------------------------")
 	message(cd $${CFLIB_DIR}/..)
 	message(wget http://botan.randombit.net/releases/Botan-$${BOTAN_VERSION}.tgz)
 	message(tar zxvf Botan-$${BOTAN_VERSION}.tgz)
 	message(cd Botan-$${BOTAN_VERSION})
-	message(./configure.py)
+	message(./configure.py --disable-shared --via-amalgamation)
 	message(make)
+	warning("=======================================================================")
 }
 
 # add botan object files

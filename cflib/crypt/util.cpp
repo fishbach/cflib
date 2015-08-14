@@ -22,39 +22,7 @@
 
 USE_LOG(LogCat::Crypt)
 
-namespace {
-
-struct BotanInit
-{
-	BotanInit() : init_(0)
-	{
-		// Logging is not yet initialized. So we can only write to stderr.
-		try {
-			init_ = new LibraryInitializer("thread_safe=true");
-		} catch(std::exception & e) {
-			QTextStream(stderr) << "Botan exception: " << e.what() << endl;
-		} catch (...) {
-			QTextStream(stderr) << "unknown Botan exception" << endl;
-		}
-	}
-	~BotanInit()
-	{
-		delete init_;
-	}
-	bool ok() const { return init_ != 0; }
-private:
-	LibraryInitializer * init_;
-};
-Q_GLOBAL_STATIC(BotanInit, initBotan)
-
-}
-
 namespace cflib { namespace crypt {
-
-bool initCrypto()
-{
-	return initBotan()->ok();
-}
 
 QByteArray random(uint size)
 {

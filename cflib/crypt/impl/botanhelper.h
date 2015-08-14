@@ -18,10 +18,6 @@
 
 #pragma once
 
-#include <memory>
-
-using std::addressof;
-
 #include <cflib/util/log.h>
 
 #include <botan/auto_rng.h>
