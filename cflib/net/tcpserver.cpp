@@ -253,6 +253,7 @@ public:
 		// bind to address and port
 		if (isIPv6) {
 			struct sockaddr_in6 destAddr;
+			memset(&destAddr, 0, sizeof(destAddr));
 			destAddr.sin6_family = AF_INET6;
 			if (inet_pton(AF_INET6, destIP.constData(), &destAddr.sin6_addr) == 0) {
 				close(sock);
@@ -266,6 +267,7 @@ public:
 			}
 		} else {
 			struct sockaddr_in destAddr;
+			memset(&destAddr, 0, sizeof(destAddr));
 			destAddr.sin_family = AF_INET;
 			if (inet_pton(AF_INET, destIP.constData(), &destAddr.sin_addr) == 0) {
 				close(sock);
