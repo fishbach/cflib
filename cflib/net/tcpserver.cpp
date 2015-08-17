@@ -104,8 +104,8 @@ public:
 
 	void write(TCPConn * conn, const QByteArray & data);
 	void read(TCPConn * conn);
-	void closeSocket(TCPConn * conn);
 	void closeNicely(TCPConn * conn);
+	void ensureQueueEmpty();
 
 private:
 	TCPServer::Impl & impl_;
@@ -303,9 +303,9 @@ public:
 		tlsThreads_[conn->tlsThreadId_]->read(conn);
 	}
 
-	inline void tlsCloseSocket(TCPConn * conn)
+	inline void tlsEnsureQueueEmpty(TCPConn * conn)
 	{
-		tlsThreads_[conn->tlsThreadId_]->closeSocket(conn);
+		tlsThreads_[conn->tlsThreadId_]->ensureQueueEmpty();
 	}
 
 	inline void tlsCloseNicely(TCPConn * conn)
@@ -374,18 +374,16 @@ void TLSThread::read(TCPConn * conn)
 	conn->newBytesAvailable();
 }
 
-void TLSThread::closeSocket(TCPConn * conn)
-{
-	if (!verifySyncedThreadCall(&TLSThread::closeSocket, conn)) return;
-
-	impl_.closeSocket(conn);
-}
-
 void TLSThread::closeNicely(TCPConn * conn)
 {
 	if (!verifyThreadCall(&TLSThread::closeNicely, conn)) return;
 
 	impl_.closeNicely(conn);
+}
+
+void TLSThread::ensureQueueEmpty()
+{
+	verifySyncedThreadCall(&TLSThread::ensureQueueEmpty);
 }
 
 TCPServer::TCPServer() :
@@ -563,8 +561,8 @@ void TCPConn::closeNicely()
 
 void TCPConn::abortConnection()
 {
-	if (tlsStream_) impl_.tlsCloseSocket(this);
-	else            impl_.closeSocket(this);
+	if (tlsStream_) impl_.tlsEnsureQueueEmpty(this);
+	impl_.closeSocket(this);
 }
 
 const TCPConnInitializer * TCPConn::detachFromSocket()
