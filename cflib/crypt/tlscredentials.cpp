@@ -42,7 +42,7 @@ public:
 		foreach (const CertsPrivKey & ck, chains) delete ck.privateKey;
 	}
 
-	std::vector<Certificate_Store *> trusted_certificate_authorities(const std::string &, const std::string &)
+	virtual std::vector<Certificate_Store *> trusted_certificate_authorities(const std::string &, const std::string &)
 	{
 		std::vector<Certificate_Store *> rv(1);
 		rv[0] = &trustedCAs;

@@ -41,10 +41,13 @@ public:
 	TLSCredentials();
 	~TLSCredentials();
 
+	// certificates can be added in arbitrary order
 	uint addCerts(const QByteArray & certs, bool isTrustedCA = false);
 	QList<TLSCertInfo> getCertInfos() const;
 
-	// fitting certificate chain must exist
+	// private key must be in PKCS8 format
+	// fitting certificate must exist
+	// builds a certificate chain of added certificates
 	// destroys data in parameters
 	bool addPrivateKey(const QByteArray & privateKey, const QByteArray & password = QByteArray());
 

@@ -28,7 +28,7 @@ class TLSSessions;
 class TLSServer : public TLSStream
 {
 public:
-	TLSServer(TLSSessions & sessions, TLSCredentials & credentials);
+	TLSServer(TLSSessions & sessions, TLSCredentials & credentials, bool highSecurity = false);
 	~TLSServer();
 
 	virtual QByteArray initialSend() { return QByteArray(); }

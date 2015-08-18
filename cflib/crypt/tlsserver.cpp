@@ -32,18 +32,18 @@ namespace cflib { namespace crypt {
 class TLSServer::Impl
 {
 public:
-	Impl(TLS::Session_Manager & session_manager, Credentials_Manager & creds) :
+	Impl(TLS::Session_Manager & session_manager, Credentials_Manager & creds, bool highSecurity) :
 		outgoingEncryptedPtr(0),
 		incomingPlainPtr(0),
 		isReady(false),
 		hasError(false),
-		policy(),
+		policy(highSecurity ? (TLS::Policy *)new TLS::Strict_Policy : (TLS::Policy *)new TLS::TLS12Policy),
 		server(
 			std::bind(&Impl::socket_output_fn, this, std::placeholders::_1, std::placeholders::_2),
 			std::bind(&Impl::data_cb, this, std::placeholders::_1, std::placeholders::_2),
 			std::bind(&Impl::alert_cb, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3),
 			std::bind(&Impl::handshake_cb, this, std::placeholders::_1),
-			session_manager, creds, policy,
+			session_manager, creds, *policy,
 			rng,
 			[&](std::vector<std::string>) { return ""; })
 	{
@@ -77,16 +77,16 @@ public:
 	QByteArray * incomingPlainPtr;
 	bool isReady;
 	bool hasError;
-	const TLS::TLS12Policy policy;
+	std::unique_ptr<TLS::Policy> policy;
 	AutoSeeded_RNG rng;
 	TLS::Server server;
 };
 
-TLSServer::TLSServer(TLSSessions & sessions, TLSCredentials & credentials) :
+TLSServer::TLSServer(TLSSessions & sessions, TLSCredentials & credentials, bool highSecurity) :
 	impl_(0)
 {
 	TRY {
-		impl_ = new Impl(sessions.session_Manager(), credentials.credentials_Manager());
+		impl_ = new Impl(sessions.session_Manager(), credentials.credentials_Manager(), highSecurity);
 	} CATCH
 }
 

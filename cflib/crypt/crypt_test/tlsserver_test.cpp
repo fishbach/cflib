@@ -274,6 +274,130 @@ private slots:
 		QVERIFY(plain.isEmpty());
 	}
 
+	void test_tls_highSecurity_client()
+	{
+		TLSCredentials serverCreds;
+		QCOMPARE((int)serverCreds.addCerts(cert1 + cert2 + cert3), 3);
+		QVERIFY(serverCreds.addPrivateKey(detach(cert1PrivateKey), "SuperSecure123"));
+		TLSSessions serverSessions;
+		TLSServer server(serverSessions, serverCreds);
+
+		TLSCredentials clientCreds;
+		QCOMPARE((int)clientCreds.addCerts(cert3, true), 1);
+		TLSSessions clientSessions;
+		TLSClient client(clientSessions, clientCreds, QByteArray(), true);
+
+		QByteArray enc1;
+		QByteArray enc2;
+		QByteArray plain;
+
+		// client starts handshake
+		enc1 = client.initialSend();
+		QVERIFY(!enc1.isEmpty());
+
+		// first handshake req -> reply
+		QVERIFY(server.received(enc1, plain, enc2));
+		QVERIFY(plain.isEmpty());
+		QVERIFY(!enc2.isEmpty());
+		enc1.clear();
+		QVERIFY(client.received(enc2, plain, enc1));
+		QVERIFY(plain.isEmpty());
+		QVERIFY(!enc1.isEmpty());
+
+		// second handshake req -> reply
+		enc2.clear();
+		QVERIFY(server.received(enc1, plain, enc2));
+		QVERIFY(plain.isEmpty());
+		QVERIFY(!enc2.isEmpty());
+		enc1.clear();
+		QVERIFY(client.received(enc2, plain, enc1));
+		QVERIFY(plain.isEmpty());
+		QVERIFY(enc1.isEmpty());
+
+		// send plain to server
+		QByteArray msg = "hello dear server";
+		client.send(msg, enc1);
+		QVERIFY(!enc1.isEmpty());
+		QVERIFY(enc1.indexOf(msg) == -1);
+		enc2.clear();
+		QVERIFY(server.received(enc1, plain, enc2));
+		QCOMPARE(plain, msg);
+		QVERIFY(enc2.isEmpty());
+
+		// send plain to client
+		msg = "hello dear client";
+		server.send(msg, enc2);
+		QVERIFY(!enc2.isEmpty());
+		QVERIFY(enc2.indexOf(msg) == -1);
+		plain.clear();
+		enc1.clear();
+		QVERIFY(client.received(enc2, plain, enc1));
+		QCOMPARE(plain, msg);
+		QVERIFY(enc1.isEmpty());
+	}
+
+	void test_tls_highSecurity_server()
+	{
+		TLSCredentials serverCreds;
+		QCOMPARE((int)serverCreds.addCerts(cert1 + cert2 + cert3), 3);
+		QVERIFY(serverCreds.addPrivateKey(detach(cert1PrivateKey), "SuperSecure123"));
+		TLSSessions serverSessions;
+		TLSServer server(serverSessions, serverCreds, true);
+
+		TLSCredentials clientCreds;
+		QCOMPARE((int)clientCreds.addCerts(cert3, true), 1);
+		TLSSessions clientSessions;
+		TLSClient client(clientSessions, clientCreds);
+
+		QByteArray enc1;
+		QByteArray enc2;
+		QByteArray plain;
+
+		// client starts handshake
+		enc1 = client.initialSend();
+		QVERIFY(!enc1.isEmpty());
+
+		// first handshake req -> reply
+		QVERIFY(server.received(enc1, plain, enc2));
+		QVERIFY(plain.isEmpty());
+		QVERIFY(!enc2.isEmpty());
+		enc1.clear();
+		QVERIFY(client.received(enc2, plain, enc1));
+		QVERIFY(plain.isEmpty());
+		QVERIFY(!enc1.isEmpty());
+
+		// second handshake req -> reply
+		enc2.clear();
+		QVERIFY(server.received(enc1, plain, enc2));
+		QVERIFY(plain.isEmpty());
+		QVERIFY(!enc2.isEmpty());
+		enc1.clear();
+		QVERIFY(client.received(enc2, plain, enc1));
+		QVERIFY(plain.isEmpty());
+		QVERIFY(enc1.isEmpty());
+
+		// send plain to server
+		QByteArray msg = "hello dear server";
+		client.send(msg, enc1);
+		QVERIFY(!enc1.isEmpty());
+		QVERIFY(enc1.indexOf(msg) == -1);
+		enc2.clear();
+		QVERIFY(server.received(enc1, plain, enc2));
+		QCOMPARE(plain, msg);
+		QVERIFY(enc2.isEmpty());
+
+		// send plain to client
+		msg = "hello dear client";
+		server.send(msg, enc2);
+		QVERIFY(!enc2.isEmpty());
+		QVERIFY(enc2.indexOf(msg) == -1);
+		plain.clear();
+		enc1.clear();
+		QVERIFY(client.received(enc2, plain, enc1));
+		QCOMPARE(plain, msg);
+		QVERIFY(enc1.isEmpty());
+	}
+
 };
 #include "tlsserver_test.moc"
 ADD_TEST(TLSServer_test)

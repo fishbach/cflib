@@ -28,7 +28,8 @@ class TLSSessions;
 class TLSClient : public TLSStream
 {
 public:
-	TLSClient(TLSSessions & sessions, TLSCredentials & credentials, const QByteArray & hostname = QByteArray());
+	TLSClient(TLSSessions & sessions, TLSCredentials & credentials, const QByteArray & hostname = QByteArray(),
+		bool highSecurity = false);
 	~TLSClient();
 
 	virtual QByteArray initialSend();
