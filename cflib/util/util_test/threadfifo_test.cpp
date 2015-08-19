@@ -19,6 +19,7 @@
 #include <cflib/util/test.h>
 #include <cflib/util/threadfifo.h>
 
+#include <functional>
 #include <random>
 
 using namespace cflib::util;
