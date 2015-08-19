@@ -89,6 +89,7 @@ define([
 		error:           new EV(api, "error"),		// int status, string msg
 		loading:         new EV(api, "loading"),	// bool isLoading
 		secureTokenLost: new EV(api, "secureTokenLost"),
+		wsReady:         new EV(api, "wsReady"),
 		newMessage:      new EV(api, "newMessage")	// (string / arraybuffer) data
 	};
 
@@ -134,6 +135,7 @@ define([
 				for (var i = 0, len = webSockBuf.length ; i < len ; ++i) webSock.send(webSockBuf[i]);
 				webSockBuf = [];
 			}
+			api.ev.wsReady.fire();
 		};
 	};
 
