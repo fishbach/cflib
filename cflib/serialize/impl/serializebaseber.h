@@ -88,7 +88,7 @@ public:
 
 			// check tag and deserialize
 			if (tag == tag_) {
-				if (valueLen == 0 && lengthSize == 1) {
+				if (valueLen == 0 && lengthSize == 2) {
 					cl = T();	// default construct
 				} else {
 					deserializeBER(cl, readPos_ + tagLen + lengthSize, valueLen, *this); // *this is needed for C++ ADL

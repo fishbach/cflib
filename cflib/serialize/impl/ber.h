@@ -204,20 +204,20 @@ inline void writeNull(QByteArray & data, quint64 tag, quint8 tagLen)
 	if (!isZeroTag(tag, tagLen)) return;
 
 	const int oldSize = data.size();
-	data.resize(oldSize + tagLen + 1);
-	quint8 * pos = (quint8 *)data.constData() + oldSize;
-	writeTag(pos, tag, tagLen);
-	pos[tagLen] = 0;
-}
-
-inline void writeZero(QByteArray & data, quint64 tag, quint8 tagLen)
-{
-	const int oldSize = data.size();
 	data.resize(oldSize + tagLen + 2);
 	quint8 * pos = (quint8 *)data.constData() + oldSize;
 	writeTag(pos, tag, tagLen);
 	pos[tagLen] = 0x81;
 	pos[tagLen + 1] = 0;
+}
+
+inline void writeZero(QByteArray & data, quint64 tag, quint8 tagLen)
+{
+	const int oldSize = data.size();
+	data.resize(oldSize + tagLen + 1);
+	quint8 * pos = (quint8 *)data.constData() + oldSize;
+	writeTag(pos, tag, tagLen);
+	pos[tagLen] = 0;
 }
 
 class TLWriter

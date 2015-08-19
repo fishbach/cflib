@@ -75,13 +75,13 @@ bool checkDeserNull(T val, const char * hex)
 template <typename T>
 bool checkSerDeser(T val, const char * hex)
 {
-	return checkSer(val, hex) & checkDeser(val, hex);
+	return checkSer(val, hex) && checkDeser(val, hex);
 }
 
 template <typename T>
 bool checkSerDeserNull(T val, const char * hex)
 {
-	return checkSer(val, hex) & checkDeser(val, hex) & checkDeserNull(val, hex);
+	return checkSer(val, hex) && checkDeser(val, hex) && checkDeserNull(val, hex);
 }
 
 bool testBigTag(int tagNr, const char * hex)
@@ -167,28 +167,28 @@ private slots:
 
 	void nullInList()
 	{
-		QVERIFY(checkSerDeser<QList<bool   > >(QList<bool   >() << false, "e102c000"));
-		QVERIFY(checkSerDeser<QList<quint8 > >(QList<quint8 >() << 0,     "e102c000"));
-		QVERIFY(checkSerDeser<QList< qint8 > >(QList< qint8 >() << 0,     "e102c000"));
-		QVERIFY(checkSerDeser<QList<quint16> >(QList<quint16>() << 0,     "e102c000"));
-		QVERIFY(checkSerDeser<QList<quint64> >(QList<quint64>() << 0,     "e102c000"));
+		QVERIFY(checkSerDeser<QList<bool   > >(QList<bool   >() << false, "e103c08100"));
+		QVERIFY(checkSerDeser<QList<quint8 > >(QList<quint8 >() << 0,     "e103c08100"));
+		QVERIFY(checkSerDeser<QList< qint8 > >(QList< qint8 >() << 0,     "e103c08100"));
+		QVERIFY(checkSerDeser<QList<quint16> >(QList<quint16>() << 0,     "e103c08100"));
+		QVERIFY(checkSerDeser<QList<quint64> >(QList<quint64>() << 0,     "e103c08100"));
 
-		QVERIFY(checkSer<QList<const char *>    >(QList<const char *>() << 0,            "e102c000"));
-		QVERIFY(checkSerDeser<QList<QByteArray> >(QList<QByteArray  >() << QByteArray(), "e102c000"));
-		QVERIFY(checkSerDeser<QList<QByteArray> >(QList<QByteArray  >() << QByteArray(), "e102c000"));
-		QVERIFY(checkSerDeser<QList<QString>    >(QList<QString     >() << QString(),    "e102c000"));
-		QVERIFY(checkSerDeser<QList<QChar>      >(QList<QChar       >() << QChar(),      "e102c000"));
+		QVERIFY(checkSer<QList<const char *>    >(QList<const char *>() << 0,            "e103c08100"));
+		QVERIFY(checkSerDeser<QList<QByteArray> >(QList<QByteArray  >() << QByteArray(), "e103c08100"));
+		QVERIFY(checkSerDeser<QList<QByteArray> >(QList<QByteArray  >() << QByteArray(), "e103c08100"));
+		QVERIFY(checkSerDeser<QList<QString>    >(QList<QString     >() << QString(),    "e103c08100"));
+		QVERIFY(checkSerDeser<QList<QChar>      >(QList<QChar       >() << QChar(),      "e103c08100"));
 	}
 
 	void string()
 	{
 		QVERIFY(checkSer<const char *>(0,    ""));
-		QVERIFY(checkSer<const char *>("",   "c18100"));
+		QVERIFY(checkSer<const char *>("",   "c100"));
 		QVERIFY(checkSer<const char *>("X",  "c10158"));
 		QVERIFY(checkSer<const char *>("XY", "c1025859"));
 
 		QVERIFY(checkSerDeserNull<QByteArray>(QByteArray(),     ""));
-		QVERIFY(checkSerDeserNull<QByteArray>(QByteArray(""),   "c18100"));
+		QVERIFY(checkSerDeserNull<QByteArray>(QByteArray(""),   "c100"));
 		QVERIFY(checkSerDeserNull<QByteArray>(QByteArray("X"),  "c10158"));
 		QVERIFY(checkSerDeserNull<QByteArray>(QByteArray("XY"), "c1025859"));
 		QVERIFY(checkSerDeserNull<QByteArray>(QByteArray::fromHex("003132"), "c103 003132"));
@@ -196,7 +196,7 @@ private slots:
 		QVERIFY(checkSerDeserNull<QByteArray>(QByteArray::fromHex("313200"), "c103 313200"));
 
 		QVERIFY(checkSerDeserNull<QString>(QString(),     ""));
-		QVERIFY(checkSerDeserNull<QString>(QString(""),   "c18100"));
+		QVERIFY(checkSerDeserNull<QString>(QString(""),   "c100"));
 		QVERIFY(checkSerDeserNull<QString>(QString("X"),  "c10158"));
 		QVERIFY(checkSerDeserNull<QString>(QString("XY"), "c1025859"));
 		QVERIFY(checkSerDeserNull<QString>(QString("XäÄöÖüÜßY"), "c1 10 58 c3a4 c384 c3b6 c396 c3bc c39c c39f 59"));
@@ -273,9 +273,9 @@ private slots:
 		QVERIFY(checkSerDeser<QList<quint8 > >(QList<quint8 >() << 0x42, "e103c00142"));
 		QVERIFY(checkSerDeser<QList<quint8 > >(QList<quint8 >() << 0x42 << 0x43, "e106c00142c00143"));
 		QVERIFY(checkSerDeser<QStringList    >(QStringList() << QString("XY") << QString() << "" << "A",
-			"e10c c0025859 c000 c08100 c00141"));
+			"e10c c0025859 c08100 c000 c00141"));
 
-		BERDeserializer ser(QByteArray::fromHex("e105 c000 c08100"));
+		BERDeserializer ser(QByteArray::fromHex("e105 c08100 c000"));
 		QStringList list; ser >> list;
 		QVERIFY(list[0].isNull());
 		QVERIFY(!list[1].isNull());

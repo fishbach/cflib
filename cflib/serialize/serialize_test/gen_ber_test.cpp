@@ -77,8 +77,8 @@ private slots:
 		BERSerializer ser;
 		ser << gt4;
 		QCOMPARE(ser.data(), QByteArray::fromHex(
-			"E116"
-			"E107 C0024142 C08100"
+			"E115"
+			"E106 C0024142 C000"
 			"C20107"
 			"E306 C0010D C00111"
 			"E400"
@@ -88,8 +88,8 @@ private slots:
 	void template_deser()
 	{
 		BERDeserializer ser(QByteArray::fromHex(
-			"E114"
-			"E107 C0024142 C08100"
+			"E113"
+			"E106 C0024142 C000"
 			"C20107"
 			"E306 C0010D C00111"
 		));
