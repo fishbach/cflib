@@ -206,8 +206,8 @@ defineTest(serializeGen) {
 
 	serializeGen.input        = SERIALIZE_HEADERS
 	win32 {
-		serializeGen.commands = $${CFLIB_DIR}/bin/ser.exe serialize ${QMAKE_FILE_NAME} ${QMAKE_FILE_OUT}
-		serializeGen.depends  = $${CFLIB_DIR}/bin/ser.exe
+		serializeGen.commands = $$shell_path($${CFLIB_DIR}/bin/ser.exe) serialize ${QMAKE_FILE_NAME} ${QMAKE_FILE_OUT}
+		serializeGen.depends  = $$shell_path($${CFLIB_DIR}/bin/ser.exe)
 	} else {
 		serializeGen.commands = $${CFLIB_DIR}/bin/ser serialize ${QMAKE_FILE_NAME} ${QMAKE_FILE_OUT}
 		serializeGen.depends  = $${CFLIB_DIR}/bin/ser
@@ -227,16 +227,16 @@ defineTest(serializeGen) {
 # createGitVersionHeader(header.h)
 defineTest(createGitVersionHeader) {
 	win32 {
-		GIT_DIR = $$system($${CFLIB_DIR}/bin/gitversion.exe depend $$_PRO_FILE_PWD_)
+		GIT_DIR = $$system(\"$${CFLIB_DIR}/bin/gitversion.exe\" depend \"$$_PRO_FILE_PWD_\")
 	} else {
-		GIT_DIR = $$system($${CFLIB_DIR}/bin/gitversion depend $$_PRO_FILE_PWD_)
+		GIT_DIR = $$system(\"$${CFLIB_DIR}/bin/gitversion\" depend \"$$_PRO_FILE_PWD_\")
 	}
 	export(GIT_DIR)
 
 	gitVersion.input = GIT_DIR
 	win32 {
-		gitVersion.commands = $${CFLIB_DIR}/bin/gitversion.exe create $$_PRO_FILE_PWD_ $$1
-		gitVersion.depends  = $${CFLIB_DIR}/bin/gitversion.exe
+		gitVersion.commands = $$shell_path($${CFLIB_DIR}/bin/gitversion.exe) create $$_PRO_FILE_PWD_ $$1
+		gitVersion.depends  = $$shell_path($${CFLIB_DIR}/bin/gitversion.exe)
 	} else {
 		gitVersion.commands = $${CFLIB_DIR}/bin/gitversion create $$_PRO_FILE_PWD_ $$1
 		gitVersion.depends  = $${CFLIB_DIR}/bin/gitversion
@@ -259,15 +259,15 @@ defineTest(createGitVersionHeader) {
 defineReplace(getFiles) {
 	defined(3, var) {
 		win32 {
-			FILES += $$system($${CFLIB_DIR}/bin/filefinder.exe \"$$1\" \"$$2\" \"$$3\")
+			FILES = $$system(\"$${CFLIB_DIR}/bin/filefinder.exe\" \"$$1\" \"$$2\" \"$$3\")
 		} else {
-			FILES += $$system($${CFLIB_DIR}/bin/filefinder \"$$1\" \"$$2\" \"$$3\")
+			FILES = $$system(\"$${CFLIB_DIR}/bin/filefinder\" \"$$1\" \"$$2\" \"$$3\")
 		}
 	} else {
 		win32 {
-			FILES += $$system($${CFLIB_DIR}/bin/filefinder.exe \"$$1\" \"$$2\")
+			FILES = $$system(\"$${CFLIB_DIR}/bin/filefinder.exe\" \"$$1\" \"$$2\")
 		} else {
-			FILES += $$system($${CFLIB_DIR}/bin/filefinder \"$$1\" \"$$2\")
+			FILES = $$system(\"$${CFLIB_DIR}/bin/filefinder\" \"$$1\" \"$$2\")
 		}
 	}
 	return($$FILES)

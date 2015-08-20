@@ -50,10 +50,7 @@ int findFiles(const QString & path, bool inv, const QString & regex)
 	QMutableStringListIterator it(files);
 	while (it.hasNext()) if ((re.indexIn(it.next()) == -1) != inv) it.remove();
 	files.sort();
-	QTextStream out(stdout);
-	foreach (const QString & file, files) {
-		out << file << endl;
-	}
+	QTextStream(stdout) << "\"" << files.join("\" \"") << "\"" << endl;
 	return 0;
 }
 

@@ -15,7 +15,11 @@
 # You should have received a copy of the GNU General Public License
 # along with cflib. If not, see <http://www.gnu.org/licenses/>.
 
-system(cd cflib/util/filefinder ; qmake ; make)
+win32 {
+	system(cd cflib\util\filefinder & qmake & nmake)
+} else {
+	system(cd cflib/util/filefinder ; qmake ; make)
+}
 
 include(include.pri)
 
