@@ -52,12 +52,12 @@ public:
 
 	void socket_output_fn(const byte buf[], size_t size)
 	{
-		outgoingEncryptedPtr->append((const char *)buf, size);
+		outgoingEncryptedPtr->append((const char *)buf, (int)size);
 	}
 
 	void data_cb(const byte buf[], size_t size)
 	{
-		incomingPlainPtr->append((const char *)buf, size);
+		incomingPlainPtr->append((const char *)buf, (int)size);
 	}
 
 	void alert_cb(TLS::Alert alert, const byte[], size_t)

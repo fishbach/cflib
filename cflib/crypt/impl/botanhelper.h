@@ -20,6 +20,11 @@
 
 #include <cflib/util/log.h>
 
+#ifdef Q_OS_WIN32
+	#pragma warning( push )
+	#pragma warning( disable : 4267 )
+#endif
+
 #include <botan/auto_rng.h>
 #include <botan/bcrypt.h>
 #include <botan/filters.h>
@@ -27,6 +32,10 @@
 #include <botan/pkcs8.h>
 #include <botan/tls_client.h>
 #include <botan/tls_server.h>
+
+#ifdef Q_OS_WIN32
+	#pragma warning( pop )
+#endif
 
 #define TRY \
 	try

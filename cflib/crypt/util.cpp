@@ -74,7 +74,7 @@ QByteArray hashPassword(const QString & password)
 	TRY {
 		AutoSeeded_RNG rng;
 		std::string hash = generate_bcrypt(password.toStdString(), rng);
-		return QByteArray(hash.c_str(), hash.length());
+		return QByteArray(hash.c_str(), (int)hash.length());
 	} CATCH
 	return QByteArray();
 }
@@ -93,7 +93,7 @@ QByteArray sha1(const QByteArray & data)
 		Pipe pipe(new Hash_Filter("SHA-1"));
 		pipe.process_msg((const byte *)data.constData(), data.size());
 		std::string hash = pipe.read_all_as_string();
-		return QByteArray(hash.c_str(), hash.length());
+		return QByteArray(hash.c_str(), (int)hash.length());
 	} CATCH
 	return QByteArray();
 }

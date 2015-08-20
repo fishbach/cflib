@@ -41,18 +41,24 @@ BOTAN_MINOR_VERSION = 19
 !defined(BOTAN_DIR, var) {
 	BOTAN_DIR = $${CFLIB_DIR}/../Botan-1.11.$${BOTAN_MINOR_VERSION}
 }
-!exists($$BOTAN_DIR/build/obj/lib/botan_all.o) {
+!exists($$BOTAN_DIR/build/obj/lib/botan_all.*) {
 	warning("=======================================================================")
 	warning(Botan library not found here: $$BOTAN_DIR)
 	message("TODO: ... or adjust variable BOTAN_DIR in config.pri")
 	message("-----------------------------------------------------------------------")
-	message(cd $${CFLIB_DIR}/..)
+	message(cd $$shell_path($${CFLIB_DIR}/..))
 	message(wget http://botan.randombit.net/releases/Botan-1.11.$${BOTAN_MINOR_VERSION}.tgz)
 	message(tar zxvf Botan-1.11.$${BOTAN_MINOR_VERSION}.tgz)
 	message(cd Botan-1.11.$${BOTAN_MINOR_VERSION})
-	message(./configure.py --disable-shared --via-amalgamation)
-	message(make -j 2 libbotan-1.11.a)
-	message(chmod a-w build/obj/lib)
+	!win32 {
+		message(./configure.py --disable-shared --via-amalgamation)
+		message(make -j 2 libbotan-1.11.a)
+		message(chmod a-w build/obj/lib)
+	} else {
+		message(python.exe configure.py --disable-shared --via-amalgamation)
+		message(nmake botan.lib)
+		message(attrib +r built\obj\lib\*)
+	}
 	warning("=======================================================================")
 }
 

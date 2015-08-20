@@ -18,13 +18,23 @@
 
 #include <cflib/crypt/util.h>
 
-#include <unistd.h>
+#ifdef Q_OS_WIN32
+	#include <stdio.h>
+#else
+	#include <unistd.h>
+#endif
 
 int main(int argc, char *argv[])
 {
 	QCoreApplication app(argc, argv);
 
-	char * pwd = getpass("Password: ");
+	#ifdef Q_OS_WIN32
+		char pwd[256];
+		printf("Password: ");
+		gets_s(pwd, 256);
+	#else
+		char * pwd = getpass("Password: ");
+	#endif
 	QTextStream(stdout) << cflib::crypt::hashPassword(pwd) << endl;
 
 	return 0;
