@@ -4,8 +4,9 @@ require([
 	'cflib/util/api',
 	'cflib/util/storage',
 	'cflib/util/url',
-	'cflib/util/util'
-], function(api, Storage, url, util) { $(function() {
+	'cflib/util/util',
+	'services/infoservice'
+], function(api, Storage, url, util, infoService) { $(function() {
 
 window.onerror = function() {
 	util.logInfo("JS exception: " + Array.prototype.join.call(arguments, ', '));
@@ -23,6 +24,8 @@ api.ev.secureTokenLost.bind(function() {
 	location.href = location.href;
 });
 
-console.log('init ...');
+infoService.test(function(val) {
+	$('#msg').html(val);
+});
 
 }); }); });

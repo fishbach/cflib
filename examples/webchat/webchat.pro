@@ -23,8 +23,10 @@ CONFIG += console
 TARGET = webchat
 
 HEADERS = \
+	infoservice.h \
 
 SOURCES = \
+	infoservice.cpp \
 	main.cpp \
 
 addOtherFiles(htdocs, !, (^htdocs/img/)|/\.)

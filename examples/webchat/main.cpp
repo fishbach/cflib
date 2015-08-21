@@ -16,6 +16,8 @@
  * along with cflib. If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <infoservice.h>
+
 #include <cflib/net/apiserver.h>
 #include <cflib/net/fileserver.h>
 #include <cflib/net/httpserver.h>
@@ -40,11 +42,13 @@ int main(int argc, char *argv[])
 	logInfo("webchat started");
 
 	RequestLog requestLog;
-	FileServer fs("htdocs");
-	ApiServer  api;
-	LogService logService; api.registerService(&logService);
 
-	// start http server
+	ApiServer  api;
+	InfoService infoService; api.registerService(&infoService);
+	LogService  logService;  api.registerService(&logService);
+
+	FileServer fs("htdocs");
+
 	HttpServer serv;
 	serv.registerHandler(&requestLog);
 	serv.registerHandler(&api);
