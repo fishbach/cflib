@@ -213,10 +213,12 @@ public:
 
 		logDebug("socket %1 closed", conn->socket_);
 
+		const bool wasWatching = ev_is_active(conn->readWatcher_);
 		ev_io_stop(libEVLoop(), conn->writeWatcher_);
 		ev_io_stop(libEVLoop(), conn->readWatcher_);
 		close(conn->socket_);
 		conn->socket_ = -1;
+		if (wasWatching) execCall(new Functor0<TCPConn>(conn, &TCPConn::closed));
 	}
 
 	void closeNicely(TCPConn * conn)
