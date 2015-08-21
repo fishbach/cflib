@@ -34,7 +34,7 @@ CONFIG(debug, debug|release) {
 
 # isInCFLib()
 defineTest(isInCFLib) {
-	IS_IN_CFLIB = $$relative_path($$CFLIB_DIR, $$PWD)
+	IS_IN_CFLIB = $$relative_path($$CFLIB_DIR/cflib, $$PWD)
 	IS_IN_CFLIB = $$replace(IS_IN_CFLIB, "../", "")
 	equals(IS_IN_CFLIB, "") {
 		return(true)
