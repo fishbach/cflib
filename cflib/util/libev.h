@@ -16,6 +16,15 @@
  * along with cflib. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "libev.h"
+#pragma once
 
-#include "ev.c"
+#include <QtGlobal>
+
+#define EV_COMPAT3 0
+#define EV_MULTIPLICITY 1
+#define EV_STANDALONE 1
+#ifdef Q_OS_BSD4
+	#define EV_USE_KQUEUE 1
+#endif
+
+#include "libev/ev.h"

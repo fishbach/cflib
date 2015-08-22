@@ -18,7 +18,7 @@
 
 #include "timer.h"
 
-#include <cflib/libev/libev.h>
+#include <cflib/util/libev.h>
 #include <cflib/util/threadverify.h>
 
 namespace cflib { namespace util {

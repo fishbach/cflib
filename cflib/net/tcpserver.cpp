@@ -21,7 +21,7 @@
 #include <cflib/crypt/tlsclient.h>
 #include <cflib/crypt/tlsserver.h>
 #include <cflib/crypt/tlssessions.h>
-#include <cflib/libev/libev.h>
+#include <cflib/util/libev.h>
 #include <cflib/util/log.h>
 #include <cflib/util/threadverify.h>
 

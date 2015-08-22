@@ -24,5 +24,5 @@ TARGET = net_test
 SOURCES = \
 	tcp_test.cpp \
 
-useLibs(cflib_net cflib_crypt cflib_util cflib_libev)
+useLibs(cflib_net cflib_crypt cflib_util)
 test()

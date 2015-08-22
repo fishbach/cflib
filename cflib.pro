@@ -29,8 +29,7 @@ addSubdir(cflib/crypt/pwhash, cflib/crypt cflib/util)
 addSubdir(cflib/dao, cflib/serialize/ser)
 addSubdir(cflib/db)
 addSubdir(cflib/net, cflib/serialize/ser)
-addSubdir(cflib/net/net_test, cflib_net cflib_crypt cflib_util cflib_libev)
-addSubdir(cflib/libev)
+addSubdir(cflib/net/net_test, cflib_net cflib_crypt cflib_util)
 addSubdir(cflib/serialize)
 addSubdir(cflib/serialize/ser)
 addSubdir(cflib/serialize/serialize_test, cflib/serialize/ser cflib/serialize cflib/util)
@@ -38,7 +37,7 @@ addSubdir(cflib/util)
 addSubdir(cflib/util/util_test, cflib/util)
 addSubdir(cflib/util/filefinder)
 addSubdir(cflib/util/gitversion)
-addSubdir(examples/webchat, cflib_net cflib_crypt cflib/serialize/ser cflib_serialize cflib_util cflib_libev)
+addSubdir(examples/webchat, cflib_net cflib_crypt cflib/serialize/ser cflib_serialize cflib_util)
 
 OTHER_FILES = \
 	README \

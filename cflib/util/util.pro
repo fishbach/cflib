@@ -28,6 +28,7 @@ HEADERS = \
 	hex.h \
 	impl/logformat.h \
 	impl/threadverifyimpl.h \
+	libev.h \
 	log.h \
 	mailer.h \
 	test.h \

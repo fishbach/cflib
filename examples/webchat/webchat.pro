@@ -32,5 +32,5 @@ SOURCES = \
 addOtherFiles(htdocs, !, (^htdocs/img/)|/\.)
 
 serializeGen()
-useLibs(cflib_net cflib_crypt cflib_serialize cflib_util cflib_libev)
+useLibs(cflib_net cflib_crypt cflib_serialize cflib_util)
 app()
