@@ -35,6 +35,25 @@ private slots:
 		QCOMPARE(flatten("\t _ \r\n_"), QString("_"));
 	}
 
+	void test_QByteArray()
+	{
+		QByteArray ba;
+		QVERIFY(ba.isNull());
+		QCOMPARE(ba.capacity(), 0);
+		ba.reserve(997);
+		QCOMPARE(ba.capacity(), 997);
+		ba.resize(123);
+		QCOMPARE(ba.size(), 123);
+		QCOMPARE(ba.capacity(), 997);
+		ba.resize(0);
+		QVERIFY(!ba.isNull());
+		QCOMPARE(ba.size(), 0);
+		QCOMPARE(ba.capacity(), 997);
+		ba.clear();
+		QVERIFY(ba.isNull());
+		QCOMPARE(ba.capacity(), 0);
+	}
+
 };
 #include "util_test.moc"
 ADD_TEST(Util_Test)

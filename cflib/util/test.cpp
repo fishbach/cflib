@@ -18,6 +18,8 @@
 
 #include "test.h"
 
+#include <cflib/util/log.h>
+
 namespace cflib { namespace util {
 
 namespace {
@@ -76,6 +78,8 @@ int main(int argc, char *argv[])
 		}
 		args.removeAt(1);
 	}
+
+	Log::start("test.log");
 
 	QTextStream out(stdout);
 	int retval = 0;

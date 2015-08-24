@@ -46,9 +46,14 @@ public:
 	const TCPConnInitializer * openConnection(const QByteArray & destIP, quint16 destPort);
 	const TCPConnInitializer * openConnection(const QByteArray & destIP, quint16 destPort,
 		crypt::TLSCredentials & credentials);
+	const TCPConnInitializer * openConnection(const QByteArray & destIP, quint16 destPort,
+		const QByteArray & sourceIP, quint16 sourcePort);
+	const TCPConnInitializer * openConnection(const QByteArray & destIP, quint16 destPort,
+		const QByteArray & sourceIP, quint16 sourcePort,
+		crypt::TLSCredentials & credentials);
 
 protected:
-	virtual void newConnection(const TCPConnInitializer * init) = 0;
+	virtual void newConnection(const TCPConnInitializer * init);
 
 private:
 	class Impl;
@@ -72,6 +77,7 @@ public:
 
 public:
 	TCPConn(const TCPConnInitializer * init, uint readBufferSize = 0x100000 /* 1mb */);
+	virtual ~TCPConn();
 
 	// returns all available bytes
 	QByteArray read();
@@ -81,6 +87,9 @@ public:
 	void write(const QByteArray & data, bool notifyFinished = false);
 
 	// closes the socket
+	// on TCP level:
+	// - WriteClosed sends FIN to peer
+	// - ReadClosed does not inform the sender in any way (!)
 	void close(CloseType type = ReadWriteClosed);
 
 	// has to be called repeatedly to get informed via function newBytesAvailable
@@ -102,7 +111,6 @@ public:
 	TCPServer & server() const;
 
 protected:
-	virtual ~TCPConn();
 	virtual void newBytesAvailable() = 0;
 	virtual void closed(CloseType type) = 0;
 	virtual void writeFinished() {}
@@ -119,6 +127,7 @@ private:
 	ev_io * readWatcher_;
 	ev_io * writeWatcher_;
 	QByteArray readBuf_;
+	QByteArray readData_;
 	QByteArray writeBuf_;
 	bool closeAfterWriting_;
 	bool notifyWrite_;

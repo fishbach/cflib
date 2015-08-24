@@ -207,12 +207,20 @@ public:
 		const TCPConn::CloseType oldCt = ct;
 		ct = (TCPConn::CloseType)(ct | type);
 		if (oldCt == ct) return;
-		logDebug("socket %1 closed (%2 => %3)", conn->socket_, (int)oldCt, (int)ct);
 
 		// calc changes
 		const TCPConn::CloseType changed = (TCPConn::CloseType)(oldCt ^ ct);
-		const bool readClosed  = changed & TCPConn::ReadClosed;
-		const bool writeClosed = changed & TCPConn::WriteClosed;
+		bool readClosed  = changed & TCPConn::ReadClosed;
+		bool writeClosed = changed & TCPConn::WriteClosed;
+
+		if (ct != TCPConn::HardClosed && writeClosed && !conn->writeBuf_.isEmpty()) {
+			ct = (TCPConn::CloseType)(ct & ~TCPConn::WriteClosed);
+			writeClosed = false;
+			conn->closeAfterWriting_ = true;
+			if (oldCt == ct) return;
+		}
+
+		logDebug("socket %1 closed (%2 => %3)", conn->socket_, (int)oldCt, (int)ct);
 
 		// stop watcher
 		bool wasWatching = false;
@@ -230,16 +238,19 @@ public:
 		if (ct == TCPConn::HardClosed) {
 			close(conn->socket_);
 			conn->socket_ = -1;
+			conn->readBuf_.clear();
 		} else {
-			if (writeClosed && !conn->writeBuf_.isEmpty()) {
-				conn->closeAfterWriting_ = true;
+			if (readClosed) {
+				conn->readBuf_.clear();
+				shutdown(conn->socket_, writeClosed ? SHUT_RDWR : SHUT_RD);
 			} else {
-				shutdown(conn->socket_, readClosed && writeClosed ? SHUT_RDWR : (readClosed ? SHUT_RD : SHUT_WR));
+				shutdown(conn->socket_, SHUT_WR);
 			}
 		}
 	}
 
 	const TCPConnInitializer * openConnection(const QByteArray & destIP, quint16 destPort,
+		const QByteArray & sourceIP, quint16 sourcePort,
 		crypt::TLSCredentials * credentials)
 	{
 		// IPv6
@@ -254,7 +265,37 @@ public:
 			return 0;
 		}
 
-		// bind to address and port
+		// bind source address and port
+		if (!sourceIP.isEmpty()) {
+			{ int on = 1; setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, (const char *)&on, sizeof(on)); }
+			if (isIPv6) {
+				struct sockaddr_in6 sourceAddr;
+				sourceAddr.sin6_family = AF_INET6;
+				if (inet_pton(AF_INET6, sourceIP.constData(), &sourceAddr.sin6_addr) == 0) {
+					close(sock);
+					return 0;
+				}
+				sourceAddr.sin6_port = htons(sourcePort);
+				if (bind(sock, (struct sockaddr *)&sourceAddr, sizeof(sourceAddr)) < 0) {
+					close(sock);
+					return 0;
+				}
+			} else {
+				struct sockaddr_in sourceAddr;
+				sourceAddr.sin_family = AF_INET;
+				if (inet_pton(AF_INET, sourceIP.constData(), &sourceAddr.sin_addr) == 0) {
+					close(sock);
+					return 0;
+				}
+				sourceAddr.sin_port = htons(sourcePort);
+				if (bind(sock, (struct sockaddr *)&sourceAddr, sizeof(sourceAddr)) < 0) {
+					close(sock);
+					return 0;
+				}
+			}
+		}
+
+		// bind destination address and port
 		if (isIPv6) {
 			struct sockaddr_in6 destAddr;
 			memset(&destAddr, 0, sizeof(destAddr));
@@ -332,10 +373,12 @@ public:
 	{
 		TCPConn * conn = (TCPConn *)w->data;
 
-		const ssize_t count = ::recv(conn->socket_, (char *)conn->readBuf_.constData(), conn->readBuf_.size(), 0);
+		char * data = (char *)conn->readBuf_.constData();
+		const ssize_t count = ::recv(conn->socket_, data, conn->readBuf_.size(), 0);
 		if (count > 0) {
 			logTrace("read %1 raw bytes", (int)count);
 			ev_io_stop(loop, w);
+			conn->readData_.append(data, (int)count);
 			if (!conn->tlsStream_) conn->newBytesAvailable();
 			else                   conn->impl_.tlsThreads_[conn->tlsThreadId_]->read(conn);
 			return;
@@ -368,7 +411,8 @@ public:
 		}
 
 		if (conn->closeType_ & TCPConn::WriteClosed) {
-			if (notifyFinished) execCall(new Functor1<TCPConn, TCPConn::CloseType>(conn, &TCPConn::closed, conn->closeType_));
+			conn->writeBuf_.clear();
+			execCall(new Functor1<TCPConn, TCPConn::CloseType>(conn, &TCPConn::closed, conn->closeType_));
 			return;
 		}
 
@@ -389,7 +433,9 @@ public:
 			if (count < 0 && errno != EAGAIN && errno != EWOULDBLOCK && errno != ENOTCONN) {
 				logDebug("write on fd %1 failed (errno: %2)", fd, errno);
 				buf.clear();
+				if (ev_is_active(w)) ev_io_stop(loop, w);
 				conn->impl_.closeConn(conn, errno == EPIPE ? TCPConn::WriteClosed : TCPConn::HardClosed);
+				conn->impl_.execCall(new Functor1<TCPConn, TCPConn::CloseType>(conn, &TCPConn::closed, conn->closeType_));
 				return;
 			}
 			if (count > 0) buf.remove(0, count);
@@ -397,15 +443,11 @@ public:
 		} else {
 			buf.clear();
 			if (ev_is_active(w)) ev_io_stop(loop, w);
-			if (conn->closeAfterWriting_ && conn->closeType_ != TCPConn::HardClosed)
-				shutdown(conn->socket_, conn->closeType_ & TCPConn::ReadClosed ? SHUT_RDWR : SHUT_WR);
+			if (conn->closeAfterWriting_ && !(conn->closeType_ & TCPConn::WriteClosed))
+				conn->impl_.closeConn(conn, TCPConn::WriteClosed);
 			if (conn->notifyWrite_) {
 				conn->notifyWrite_ = false;
-				if (conn->closeType_ & TCPConn::WriteClosed) {
-					conn->impl_.execCall(new Functor1<TCPConn, TCPConn::CloseType>(conn, &TCPConn::closed, conn->closeType_));
-				} else {
-					conn->impl_.execCall(new Functor0<TCPConn>(conn, &TCPConn::writeFinished));
-				}
+				conn->impl_.execCall(new Functor0<TCPConn>(conn, &TCPConn::writeFinished));
 			}
 		}
 	}
@@ -455,9 +497,9 @@ void TLSThread::read(TCPConn * conn)
 
 	QByteArray sendBack;
 	QByteArray plain;
-	if (!conn->tlsStream_->received(conn->readBuf_, plain, sendBack)) impl_.closeConn(conn, TCPConn::ReadWriteClosed);
+	if (!conn->tlsStream_->received(conn->readData_, plain, sendBack)) impl_.closeConn(conn, TCPConn::ReadWriteClosed);
 	if (!sendBack.isEmpty()) impl_.writeToSocket(conn, sendBack, false);
-	conn->readBuf_ = plain;
+	conn->readData_ = plain;
 	conn->newBytesAvailable();
 }
 
@@ -555,13 +597,30 @@ bool TCPServer::isRunning() const
 
 const TCPConnInitializer * TCPServer::openConnection(const QByteArray & destIP, quint16 destPort)
 {
-	return impl_->openConnection(destIP, destPort, 0);
+	return impl_->openConnection(destIP, destPort, QByteArray(), 0, 0);
 }
 
 const TCPConnInitializer * TCPServer::openConnection(const QByteArray & destIP, quint16 destPort,
 	TLSCredentials & credentials)
 {
-	return impl_->openConnection(destIP, destPort, &credentials);
+	return impl_->openConnection(destIP, destPort, QByteArray(), 0, &credentials);
+}
+
+const TCPConnInitializer * TCPServer::openConnection(const QByteArray & destIP, quint16 destPort,
+	const QByteArray & sourceIP, quint16 sourcePort)
+{
+	return impl_->openConnection(destIP, destPort, sourceIP, sourcePort, 0);
+}
+
+const TCPConnInitializer * TCPServer::openConnection(const QByteArray & destIP, quint16 destPort,
+	const QByteArray & sourceIP, quint16 sourcePort,
+	TLSCredentials & credentials)
+{
+	return impl_->openConnection(destIP, destPort, sourceIP, sourcePort, &credentials);
+}
+
+void TCPServer::newConnection(const TCPConnInitializer *)
+{
 }
 
 TCPConn::TCPConn(const TCPConnInitializer * init, uint readBufferSize) :
@@ -599,8 +658,8 @@ void TCPConn::destroy()
 
 QByteArray TCPConn::read()
 {
-	const QByteArray retval = readBuf_;
-	readBuf_.clear();
+	const QByteArray retval = readData_;
+	readData_.resize(0);
 	return retval;
 }
 

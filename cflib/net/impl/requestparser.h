@@ -33,6 +33,7 @@ class RequestParser : public util::ThreadVerify, public TCPConn
 public:
 	RequestParser(const TCPConnInitializer * init,
 		const QList<RequestHandler *> & handlers, util::ThreadVerify * tv);
+	~RequestParser();
 
 	void sendReply(int id, const QByteArray & reply);
 
@@ -42,7 +43,6 @@ public:
 	const TCPConnInitializer * detachFromSocket();
 
 protected:
-	~RequestParser();
 	virtual void newBytesAvailable();
 	virtual void closed(CloseType type);
 
