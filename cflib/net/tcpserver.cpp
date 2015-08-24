@@ -499,8 +499,13 @@ void TLSThread::read(TCPConn * conn)
 	QByteArray plain;
 	if (!conn->tlsStream_->received(conn->readData_, plain, sendBack)) impl_.closeConn(conn, TCPConn::ReadWriteClosed);
 	if (!sendBack.isEmpty()) impl_.writeToSocket(conn, sendBack, false);
-	conn->readData_ = plain;
-	conn->newBytesAvailable();
+	if (plain.isEmpty()) {
+		conn->readData_.resize(0);
+		impl_.startReadWatcher(conn);
+	} else {
+		conn->readData_ = plain;
+		conn->newBytesAvailable();
+	}
 }
 
 void TLSThread::write(TCPConn * conn, const QByteArray & data, bool notifyFinished)

@@ -16,9 +16,12 @@
  * along with cflib. If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <cflib/crypt/crypt_test/certs.h>
+#include <cflib/crypt/tlscredentials.h>
 #include <cflib/net/tcpserver.h>
 #include <cflib/util/test.h>
 
+using namespace cflib::crypt;
 using namespace cflib::net;
 
 namespace {
@@ -76,6 +79,10 @@ protected:
 
 class Server : public TCPServer
 {
+public:
+	Server() : TCPServer() {}
+	Server(TLSCredentials & credentials) : TCPServer(credentials) {}
+
 public:
 	QList<TCPConn *> conns;
 
@@ -235,6 +242,50 @@ private slots:
 		msgSem.acquire(1);
 		QCOMPARE(msgs.size(), 1);
 		QVERIFY(msgs.contains("cli deleted"));
+		msgs.clear();
+	}
+
+	void test_encryption()
+	{
+		TLSCredentials serverCreds;
+		QCOMPARE((int)serverCreds.addCerts(cert1 + cert2 + cert3), 3);
+		QVERIFY(serverCreds.addPrivateKey(detach(cert1PrivateKey), "SuperSecure123"));
+
+		TLSCredentials clientCreds;
+		QCOMPARE((int)clientCreds.addCerts(cert3, true), 1);
+
+		Server serv(serverCreds);
+		serv.start(12301, "127.0.0.1");
+		TCPServer cli(clientCreds);
+		const TCPConnInitializer * init = cli.openConnection("127.0.0.1", 12301, clientCreds);
+		QVERIFY(init != 0);
+		ClientConn * conn = new ClientConn(init);
+
+		msgSem.acquire(2);
+		QCOMPARE(msgs.size(), 2);
+		QVERIFY(msgs.contains("cli new: 127.0.0.1:12301"));
+		QVERIFY(msgs.contains("srv new: 127.0.0.1"));
+		msgs.clear();
+
+		conn->write("ping 1", true);
+		msgSem.acquire(3);
+		QCOMPARE(msgs.size(), 3);
+		QVERIFY(msgs.contains("cli writeFinished"));
+		QVERIFY(msgs.contains("srv read: ping 1"));
+		QVERIFY(msgs.contains("cli read: pong 1"));
+		msgs.clear();
+
+		conn->destroy();
+		msgSem.acquire(2);
+		QCOMPARE(msgs.size(), 2);
+		QVERIFY(msgs.contains("cli deleted"));
+		QVERIFY(msgs.contains("srv closed: 1"));
+		msgs.clear();
+
+		foreach (TCPConn * sc, serv.conns) sc->destroy();
+		msgSem.acquire(1);
+		QCOMPARE(msgs.size(), 1);
+		QVERIFY(msgs.contains("srv deleted"));
 		msgs.clear();
 	}
 
