@@ -50,7 +50,7 @@ RequestParser::RequestParser(const TCPConnInitializer * init,
 {
 	// thread TCPServer (1/1)
 	logCustom(LogCat::Network | LogCat::Debug)("new connection %1", id_);
-	startWatcher();
+	startReadWatcher();
 }
 
 RequestParser::~RequestParser()
@@ -80,7 +80,7 @@ void RequestParser::sendReply(int id, const QByteArray & reply)
 
 void RequestParser::detachRequest()
 {
-	if (--attachedRequests_ == 0) deleteNext(this);
+	if (--attachedRequests_ == 0) execCall(new util::Functor0<RequestParser>(this, &RequestParser::destroy));
 }
 
 void RequestParser::setPassThroughHandler(PassThroughHandler * hdl)
@@ -106,7 +106,7 @@ QByteArray RequestParser::readPassThrough(bool & isLast)
 			execCall(new util::Functor0<RequestParser>(this, &RequestParser::parseRequest));
 		} else {
 			contentLength_ = -1;
-			startWatcher();
+			startReadWatcher();
 		}
 	} else {
 		contentLength_ -= retval.size();
@@ -133,7 +133,7 @@ void RequestParser::newBytesAvailable()
 
 	QByteArray newBytes = read();
 	if (newBytes.isEmpty()) {
-		startWatcher();
+		startReadWatcher();
 		return;
 	}
 	logCustom(LogCat::Network | LogCat::Trace)("received %1 bytes on connection %2", newBytes.size(), id_);
@@ -144,9 +144,9 @@ void RequestParser::newBytesAvailable()
 	parseRequest();
 }
 
-void RequestParser::closed()
+void RequestParser::closed(CloseType type)
 {
-	if (!verifyThreadCall(&RequestParser::closed)) return;
+	if (!verifyThreadCall(&RequestParser::closed, type)) return;
 
 	socketClosed_ = true;
 	logCustom(LogCat::Network | LogCat::Debug)("connection %1 closed", id_);
@@ -169,7 +169,7 @@ void RequestParser::parseRequest()
 			header_.resize(pos);
 
 			if (!parseHeader()) {
-				abortConnection();
+				close(HardClosed);
 				break;
 			}
 		}
@@ -206,7 +206,7 @@ void RequestParser::parseRequest()
 
 	} while (!header_.isEmpty());
 
-	if (!passThrough_) startWatcher();
+	if (!passThrough_) startReadWatcher();
 }
 
 bool RequestParser::parseHeader()
@@ -300,7 +300,7 @@ void RequestParser::writeReply(const QByteArray & reply)
 	if (passThrough_) {
 		logCustom(LogCat::Network | LogCat::Debug)("Not all bytes from pass through read! Closing connection %1 of request %2",
 			id_, nextReplyId_);
-		closeNicely();
+		close(ReadWriteClosed);
 	}
 	++nextReplyId_;
 }

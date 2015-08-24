@@ -102,10 +102,10 @@ public:
 		stopVerifyThread();
 	}
 
-	void write(TCPConn * conn, const QByteArray & data);
 	void read(TCPConn * conn);
-	void closeNicely(TCPConn * conn);
-	void ensureQueueEmpty();
+	void write(TCPConn * conn, const QByteArray & data, bool notifyFinished);
+	void closeConn(TCPConn * conn, TCPConn::CloseType type);
+	void destroy(TCPConn * conn);
 
 private:
 	TCPServer::Impl & impl_;
@@ -160,7 +160,7 @@ public:
 		listenSock_ = listenSocket;
 
 		// watching for incoming activity
-		ev_io_init(readWatcher_, &Impl::readable, listenSock_, EV_READ);
+		ev_io_init(readWatcher_, &Impl::listenSocketReadable, listenSock_, EV_READ);
 		readWatcher_->data = this;
 		ev_io_start(libEVLoop(), readWatcher_);
 
@@ -186,54 +186,56 @@ public:
 		return true;
 	}
 
-	void startWatcher(TCPConn * conn)
+	void startReadWatcher(TCPConn * conn)
 	{
-		if (!verifyThreadCall(&Impl::startWatcher, conn)) return;
+		if (!verifyThreadCall(&Impl::startReadWatcher, conn)) return;
 
-		if (conn->socket_ == -1) {
-			execCall(new Functor0<TCPConn>(conn, &TCPConn::closed));
+		const TCPConn::CloseType ct = conn->closeType_;
+		if (ct & TCPConn::ReadClosed) {
+			execCall(new Functor1<TCPConn, TCPConn::CloseType>(conn, &TCPConn::closed, ct));
 			return;
 		}
 		ev_io_start(libEVLoop(), conn->readWatcher_);
 	}
 
-	void writeToSocket(TCPConn * conn, const QByteArray & data)
+	void closeConn(TCPConn * conn, TCPConn::CloseType type)
 	{
-		if (!verifyThreadCall(&Impl::writeToSocket, conn, data)) return;
+		if (!verifyThreadCall(&Impl::closeConn, conn, type)) return;
 
-		conn->writeBuf_ += data;
-		TCPConn::writeable(libEVLoop(), conn->writeWatcher_, 0);
-	}
+		// update state
+		TCPConn::CloseType & ct = conn->closeType_;
+		const TCPConn::CloseType oldCt = ct;
+		ct = (TCPConn::CloseType)(ct | type);
+		if (oldCt == ct) return;
+		logDebug("socket %1 closed (%2 => %3)", conn->socket_, (int)oldCt, (int)ct);
 
-	void closeSocket(TCPConn * conn)
-	{
-		if (!verifySyncedThreadCall(&Impl::closeSocket, conn)) return;
+		// calc changes
+		const TCPConn::CloseType changed = (TCPConn::CloseType)(oldCt ^ ct);
+		const bool readClosed  = changed & TCPConn::ReadClosed;
+		const bool writeClosed = changed & TCPConn::WriteClosed;
 
-		if (conn->socket_ == -1) return;
+		// stop watcher
+		bool wasWatching = false;
+		if (readClosed && ev_is_active(conn->readWatcher_)) {
+			ev_io_stop(libEVLoop(), conn->readWatcher_);
+			wasWatching = true;
+		}
+		if (writeClosed && ev_is_active(conn->writeWatcher_)) {
+			ev_io_stop(libEVLoop(), conn->writeWatcher_);
+			wasWatching = true;
+		}
+		if (wasWatching) execCall(new Functor1<TCPConn, TCPConn::CloseType>(conn, &TCPConn::closed, ct));
 
-		logDebug("socket %1 closed", conn->socket_);
-
-		const bool wasWatching = ev_is_active(conn->readWatcher_);
-		ev_io_stop(libEVLoop(), conn->writeWatcher_);
-		ev_io_stop(libEVLoop(), conn->readWatcher_);
-		close(conn->socket_);
-		conn->socket_ = -1;
-		if (wasWatching) execCall(new Functor0<TCPConn>(conn, &TCPConn::closed));
-	}
-
-	void closeNicely(TCPConn * conn)
-	{
-		if (!verifyThreadCall(&Impl::closeNicely, conn)) return;
-
-		if (conn->socket_ == -1) return;
-
-		logDebug("closing socket %1 nicely", conn->socket_);
-
-		if (conn->writeBuf_.isEmpty()) {
-			shutdown(conn->socket_, SHUT_RDWR);
+		// close socket
+		if (ct == TCPConn::HardClosed) {
+			close(conn->socket_);
+			conn->socket_ = -1;
 		} else {
-			conn->closeAfterWriting_ = true;
-			shutdown(conn->socket_, SHUT_RD);
+			if (writeClosed && !conn->writeBuf_.isEmpty()) {
+				conn->closeAfterWriting_ = true;
+			} else {
+				shutdown(conn->socket_, readClosed && writeClosed ? SHUT_RDWR : (readClosed ? SHUT_RD : SHUT_WR));
+			}
 		}
 	}
 
@@ -293,30 +295,123 @@ public:
 		return ci;
 	}
 
+	void destroy(TCPConn * conn)
+	{
+		if (!verifyThreadCall(&Impl::destroy, conn)) return;
+
+		if (conn->closeType_ != TCPConn::HardClosed) {
+			conn->closeType_ = TCPConn::HardClosed;
+			ev_io_stop(libEVLoop(), conn->readWatcher_);
+			ev_io_stop(libEVLoop(), conn->writeWatcher_);
+			close(conn->socket_);
+		}
+
+		if (conn->tlsStream_) tlsThreads_[conn->tlsThreadId_]->destroy(conn);
+		else                  delete conn;
+	}
+
+	void deleteConn(TCPConn * conn)
+	{
+		if (!verifyThreadCall(&Impl::deleteConn, conn)) return;
+		delete conn;
+	}
+
 	inline TCPServer & tcpServer() { return parent_; }
 
-	inline void tlsWrite(TCPConn * conn, const QByteArray & data)
+	inline void tlsWrite(TCPConn * conn, const QByteArray & data, bool notifyFinished) const
 	{
-		tlsThreads_[conn->tlsThreadId_]->write(conn, data);
+		tlsThreads_[conn->tlsThreadId_]->write(conn, data, notifyFinished);
 	}
 
-	inline void tlsRead(TCPConn * conn)
+	inline void tlsCloseConn(TCPConn * conn, TCPConn::CloseType type) const
 	{
-		tlsThreads_[conn->tlsThreadId_]->read(conn);
+		tlsThreads_[conn->tlsThreadId_]->closeConn(conn, type);
 	}
 
-	inline void tlsEnsureQueueEmpty(TCPConn * conn)
+	static void readable(ev_loop * loop, ev_io * w, int /*revents*/)
 	{
-		tlsThreads_[conn->tlsThreadId_]->ensureQueueEmpty();
+		TCPConn * conn = (TCPConn *)w->data;
+
+		const ssize_t count = ::recv(conn->socket_, (char *)conn->readBuf_.constData(), conn->readBuf_.size(), 0);
+		if (count > 0) {
+			logTrace("read %1 raw bytes", (int)count);
+			ev_io_stop(loop, w);
+			if (!conn->tlsStream_) conn->newBytesAvailable();
+			else                   conn->impl_.tlsThreads_[conn->tlsThreadId_]->read(conn);
+			return;
+		}
+
+		if (count == 0) {
+			logDebug("read channel closed on fd %1", conn->socket_);
+			conn->impl_.closeConn(conn, TCPConn::ReadClosed);
+			return;
+		}
+
+		if (errno == EAGAIN || errno == EWOULDBLOCK) {
+			logDebug("nothing to read on fd %1 (errno: %2)", conn->socket_, errno);
+			return;
+		}
+
+		logInfo("read on fd %1 failed (errno: %2)", conn->socket_, errno);
+		conn->impl_.closeConn(conn, TCPConn::HardClosed);
 	}
 
-	inline void tlsCloseNicely(TCPConn * conn)
+	void writeToSocket(TCPConn * conn, const QByteArray & data, bool notifyFinished)
 	{
-		tlsThreads_[conn->tlsThreadId_]->closeNicely(conn);
+		if (!verifyThreadCall(&Impl::writeToSocket, conn, data, notifyFinished)) return;
+
+		conn->writeBuf_ += data;
+
+		if (conn->writeBuf_.isEmpty()) {
+			if (notifyFinished) execCall(new Functor0<TCPConn>(conn, &TCPConn::writeFinished));
+			return;
+		}
+
+		if (conn->closeType_ & TCPConn::WriteClosed) {
+			if (notifyFinished) execCall(new Functor1<TCPConn, TCPConn::CloseType>(conn, &TCPConn::closed, conn->closeType_));
+			return;
+		}
+
+		if (notifyFinished) conn->notifyWrite_ = true;
+		if (!ev_is_active(conn->writeWatcher_)) writeable(libEVLoop(), conn->writeWatcher_, 0);
+	}
+
+	static void writeable(ev_loop * loop, ev_io * w, int /*revents*/)
+	{
+		TCPConn * conn = (TCPConn *)w->data;
+
+		QByteArray & buf = conn->writeBuf_;
+		const int fd = conn->socket_;
+
+		ssize_t count = ::send(fd, buf.constData(), buf.size(), 0);
+		logTrace("wrote %1 / %2 bytes", (qint64)count, buf.size());
+		if (count < buf.size()) {
+			if (count < 0 && errno != EAGAIN && errno != EWOULDBLOCK && errno != ENOTCONN) {
+				logDebug("write on fd %1 failed (errno: %2)", fd, errno);
+				buf.clear();
+				conn->impl_.closeConn(conn, errno == EPIPE ? TCPConn::WriteClosed : TCPConn::HardClosed);
+				return;
+			}
+			if (count > 0) buf.remove(0, count);
+			if (!ev_is_active(w)) ev_io_start(loop, w);
+		} else {
+			buf.clear();
+			if (ev_is_active(w)) ev_io_stop(loop, w);
+			if (conn->closeAfterWriting_ && conn->closeType_ != TCPConn::HardClosed)
+				shutdown(conn->socket_, conn->closeType_ & TCPConn::ReadClosed ? SHUT_RDWR : SHUT_WR);
+			if (conn->notifyWrite_) {
+				conn->notifyWrite_ = false;
+				if (conn->closeType_ & TCPConn::WriteClosed) {
+					conn->impl_.execCall(new Functor1<TCPConn, TCPConn::CloseType>(conn, &TCPConn::closed, conn->closeType_));
+				} else {
+					conn->impl_.execCall(new Functor0<TCPConn>(conn, &TCPConn::writeFinished));
+				}
+			}
+		}
 	}
 
 private:
-	static void readable(ev_loop *, ev_io * w, int)
+	static void listenSocketReadable(ev_loop *, ev_io * w, int)
 	{
 		logFunctionTrace
 
@@ -354,38 +449,37 @@ private:
 	uint tlsConnId_;
 };
 
-void TLSThread::write(TCPConn * conn, const QByteArray & data)
-{
-	if (!verifyThreadCall(&TLSThread::write, conn, data)) return;
-
-	QByteArray enc;
-	if (!conn->tlsStream_->send(data, enc)) impl_.closeNicely(conn);
-	impl_.writeToSocket(conn, enc);
-}
-
 void TLSThread::read(TCPConn * conn)
 {
 	if (!verifyThreadCall(&TLSThread::read, conn)) return;
 
-	const QByteArray incoming = conn->readImpl();
-	if (!incoming.isEmpty()) {
-		QByteArray sendBack;
-		if (!conn->tlsStream_->received(incoming, conn->tlsPlain_, sendBack)) impl_.closeNicely(conn);
-		if (!sendBack.isEmpty()) impl_.writeToSocket(conn, sendBack);
-	}
+	QByteArray sendBack;
+	QByteArray plain;
+	if (!conn->tlsStream_->received(conn->readBuf_, plain, sendBack)) impl_.closeConn(conn, TCPConn::ReadWriteClosed);
+	if (!sendBack.isEmpty()) impl_.writeToSocket(conn, sendBack, false);
+	conn->readBuf_ = plain;
 	conn->newBytesAvailable();
 }
 
-void TLSThread::closeNicely(TCPConn * conn)
+void TLSThread::write(TCPConn * conn, const QByteArray & data, bool notifyFinished)
 {
-	if (!verifyThreadCall(&TLSThread::closeNicely, conn)) return;
+	if (!verifyThreadCall(&TLSThread::write, conn, data, notifyFinished)) return;
 
-	impl_.closeNicely(conn);
+	QByteArray enc;
+	if (!conn->tlsStream_->send(data, enc)) impl_.closeConn(conn, TCPConn::ReadWriteClosed);
+	impl_.writeToSocket(conn, enc, notifyFinished);
 }
 
-void TLSThread::ensureQueueEmpty()
+void TLSThread::closeConn(TCPConn * conn, TCPConn::CloseType type)
 {
-	verifySyncedThreadCall(&TLSThread::ensureQueueEmpty);
+	if (!verifyThreadCall(&TLSThread::closeConn, conn, type)) return;
+	impl_.closeConn(conn, type);
+}
+
+void TLSThread::destroy(TCPConn * conn)
+{
+	if (!verifyThreadCall(&TLSThread::destroy, conn)) return;
+	impl_.deleteConn(conn);
 }
 
 TCPServer::TCPServer() :
@@ -470,107 +564,68 @@ const TCPConnInitializer * TCPServer::openConnection(const QByteArray & destIP, 
 	return impl_->openConnection(destIP, destPort, &credentials);
 }
 
-TCPConn::TCPConn(const TCPConnInitializer * init) :
-	impl_(init->impl), socket_(init->socket), peerIP_(init->peerIP), peerPort_(init->peerPort),
+TCPConn::TCPConn(const TCPConnInitializer * init, uint readBufferSize) :
+	impl_(init->impl),
+	socket_(init->socket), peerIP_(init->peerIP), peerPort_(init->peerPort),
 	readWatcher_(new ev_io),
 	writeWatcher_(new ev_io),
-	readBuf_(0x10000, '\0'),
-	closeAfterWriting_(false),
-	tlsStream_(init->tlsStream),
-	tlsThreadId_(init->tlsThreadId)
+	readBuf_(readBufferSize, '\0'),
+	closeAfterWriting_(false), notifyWrite_(false), closeType_(NotClosed),
+	tlsStream_(init->tlsStream), tlsThreadId_(init->tlsThreadId)
 {
 	delete init;
-	ev_io_init(readWatcher_, &TCPConn::readable, socket_, EV_READ);
+	ev_io_init(readWatcher_, &TCPServer::Impl::readable, socket_, EV_READ);
 	readWatcher_->data = this;
-	ev_io_init(writeWatcher_, &TCPConn::writeable, socket_, EV_WRITE);
+	ev_io_init(writeWatcher_, &TCPServer::Impl::writeable, socket_, EV_WRITE);
 	writeWatcher_->data = this;
 
 	if (tlsStream_) {
 		const QByteArray data = tlsStream_->initialSend();
-		if (!data.isEmpty()) impl_.writeToSocket(this, data);
+		if (!data.isEmpty()) impl_.writeToSocket(this, data, false);
 	}
 }
 
 TCPConn::~TCPConn()
 {
-	abortConnection();
 	delete readWatcher_;
 	delete writeWatcher_;
 	delete tlsStream_;
 }
 
-QByteArray TCPConn::read()
+void TCPConn::destroy()
 {
-	if (tlsStream_) {
-		const QByteArray retval = tlsPlain_;
-		tlsPlain_.clear();
-		return retval;
-	} else {
-		return readImpl();
-	}
+	impl_.destroy(this);
 }
 
-QByteArray TCPConn::readImpl()
+QByteArray TCPConn::read()
 {
-	QByteArray retval;
-	if (socket_ == -1) return retval;
-
-	forever {
-		ssize_t count = ::recv(socket_, (char *)readBuf_.constData(), readBuf_.size(), 0);
-		if (count == readBuf_.size() && retval.size() < 0x100000) {	// 1 mb
-			retval.append(readBuf_.constData(), count);
-			continue;
-		}
-
-		if (count == 0) {
-			impl_.closeSocket(this);
-			break;
-		}
-
-		if (count < 0) {
-			if (errno != EAGAIN && errno != EWOULDBLOCK) {
-				logDebug("read on fd %1 failed (errno: %2)", socket_, errno);
-				impl_.closeSocket(this);
-				break;
-			}
-		} else {
-			retval.append(readBuf_.constData(), count);
-		}
-
-		logTrace("read %1 bytes", retval.size());
-		break;
-	}
-
+	const QByteArray retval = readBuf_;
+	readBuf_.clear();
 	return retval;
 }
 
-void TCPConn::startWatcher()
+void TCPConn::startReadWatcher()
 {
-	impl_.startWatcher(this);
+	impl_.startReadWatcher(this);
 }
 
-void TCPConn::write(const QByteArray & data)
+void TCPConn::write(const QByteArray & data, bool notifyFinished)
 {
-	if (tlsStream_) impl_.tlsWrite(this, data);
-	else            impl_.writeToSocket(this, data);
+	if (tlsStream_) impl_.tlsWrite(this, data, notifyFinished);
+	else            impl_.writeToSocket(this, data, notifyFinished);
 }
 
-void TCPConn::closeNicely()
+void TCPConn::close(CloseType type)
 {
-	if (tlsStream_) impl_.tlsCloseNicely(this);
-	else            impl_.closeNicely(this);
-}
-
-void TCPConn::abortConnection()
-{
-	if (tlsStream_) impl_.tlsEnsureQueueEmpty(this);
-	impl_.closeSocket(this);
+	if (tlsStream_) impl_.tlsCloseConn(this, type);
+	else            impl_.closeConn(this, type);
 }
 
 const TCPConnInitializer * TCPConn::detachFromSocket()
 {
 	const TCPConnInitializer * rv = new TCPConnInitializer(impl_, socket_, peerIP_, peerPort_, tlsStream_, tlsThreadId_);
 	socket_ = -1;
+	closeType_ = HardClosed;
 	tlsStream_ = 0;
 	return rv;
 }
@@ -584,39 +639,6 @@ void TCPConn::setNoDelay(bool noDelay)
 TCPServer & TCPConn::server() const
 {
 	return impl_.tcpServer();
-}
-
-void TCPConn::readable(ev_loop * loop, ev_io * w, int)
-{
-	ev_io_stop(loop, w);
-	TCPConn * conn = (TCPConn *)w->data;
-	if (!conn->tlsStream_) conn->newBytesAvailable();
-	else                   conn->impl_.tlsRead(conn);
-}
-
-void TCPConn::writeable(ev_loop * loop, ev_io * w, int)
-{
-	TCPConn * conn = (TCPConn *)w->data;
-	QByteArray & buf = conn->writeBuf_;
-	const int fd = conn->socket_;
-	if (buf.isEmpty() || fd == -1) return;
-
-	ssize_t count = ::send(fd, buf.constData(), buf.size(), 0);
-	logTrace("wrote %1 / %2 bytes", (qint64)count, buf.size());
-	if (count < buf.size()) {
-		if (count < 0 && errno != EAGAIN && errno != EWOULDBLOCK && errno != ENOTCONN) {
-			logDebug("write on fd %1 failed (errno: %2)", fd, errno);
-			buf.clear();
-			conn->impl_.closeSocket(conn);
-			return;
-		}
-		if (count > 0) buf.remove(0, count);
-		if (!ev_is_active(w)) ev_io_start(loop, w);
-	} else {
-		buf.clear();
-		if (ev_is_active(w)) ev_io_stop(loop, w);
-		if (conn->closeAfterWriting_) shutdown(conn->socket_, SHUT_WR);
-	}
 }
 
 }}	// namespace

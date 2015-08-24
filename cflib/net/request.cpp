@@ -328,12 +328,12 @@ QByteArray Request::readPassThrough(bool & isLast) const
 
 void Request::startWatcher() const
 {
-	if (d->parser) d->parser->startWatcher();
+	if (d->parser) d->parser->startReadWatcher();
 }
 
 void Request::abort() const
 {
-	if (d->parser) d->parser->abortConnection();
+	if (d->parser) d->parser->close(TCPConn::HardClosed);
 }
 
 const TCPConnInitializer * Request::detachFromSocket() const

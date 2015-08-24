@@ -43,7 +43,7 @@ public:
 	{
 		logFunctionTrace
 		setNoDelay(true);
-		startWatcher();
+		startReadWatcher();
 	}
 
 	~WSConnHandler()
@@ -81,7 +81,7 @@ public:
 	void close()
 	{
 		abort_ = true;
-		closeNicely();
+//		closeNicely();
 	}
 
 protected:
@@ -91,12 +91,12 @@ protected:
 
 		buf_ += read();
 		handleData();
-		startWatcher();
+//		startWatcher();
 	}
 
-	virtual void closed()
+	virtual void closed(CloseType type)
 	{
-		if (!verifyThreadCall(&WSConnHandler::closed)) return;
+		if (!verifyThreadCall(&WSConnHandler::closed, type)) return;
 
 		logFunctionTrace
 		service_.all_.remove(this);
@@ -121,7 +121,7 @@ private:
 		if (!data.startsWith("CFLIB_clientId#")) {
 			abort_ = !service_.newClient(0);
 			if (abort_) {
-				abortConnection();
+//				abortConnection();
 				return true;
 			}
 			service_.all_ << this;
@@ -132,14 +132,14 @@ private:
 		if (clientId_ == 0) {
 			logInfo("unknown client id: %1", data);
 			abort_ = true;
-			abortConnection();
+//			abortConnection();
 			return true;
 		}
 
 		if (!service_.clients_.contains(clientId_)) {
 			abort_ = !service_.newClient(clientId_);
 			if (abort_) {
-				abortConnection();
+//				abortConnection();
 				return true;
 			}
 			service_.apiServer_.blockExpiration(clientId_, true);
@@ -162,7 +162,7 @@ private:
 			// clients must send masked data
 			if (!mask) {
 				logWarn("no mask in frame: %1", buf_);
-				abortConnection();
+//				abortConnection();
 				return;
 			}
 
@@ -207,7 +207,7 @@ private:
 				}
 			} else if (opcode == 0x8) {	// close
 				logDebug("received close frame");
-				closeNicely();
+//				closeNicely();
 			} else if (opcode == 0x9) {	// ping
 				// send pong
 				quint8 * orig = (quint8 *)buf_.constData();

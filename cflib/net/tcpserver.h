@@ -21,7 +21,6 @@
 #include <QtCore>
 
 struct ev_io;
-struct ev_loop;
 
 namespace cflib { namespace crypt { class TLSCredentials; }}
 namespace cflib { namespace crypt { class TLSStream;      }}
@@ -63,50 +62,71 @@ class TCPConn
 {
 	Q_DISABLE_COPY(TCPConn)
 public:
-	TCPConn(const TCPConnInitializer * init);
-	virtual ~TCPConn();
+	enum CloseType {
+		NotClosed       = 0,
+		ReadClosed      = 1,
+		WriteClosed     = 2,
+		ReadWriteClosed = 3,
+		HardClosed      = 7
+	};
 
+public:
+	TCPConn(const TCPConnInitializer * init, uint readBufferSize = 0x100000 /* 1mb */);
+
+	// returns all available bytes
 	QByteArray read();
-	void write(const QByteArray & data);
 
-	void closeNicely();
-	void abortConnection();
+	// buffers any amount of bytes passed
+	// if notifyFinished == true, function writeFinished will be called when all bytes got written.
+	void write(const QByteArray & data, bool notifyFinished = false);
 
-	void startWatcher();
+	// closes the socket
+	void close(CloseType type = ReadWriteClosed);
 
-	bool isClosed() const { return socket_ == -1; }
+	// has to be called repeatedly to get informed via function newBytesAvailable
+	void startReadWatcher();
+
+	CloseType isClosed() const { return closeType_; }
 
 	QByteArray peerIP() const { return peerIP_; }
 	quint16 peerPort() const { return peerPort_; }
 
 	const TCPConnInitializer * detachFromSocket();
 
+	// sets TCP_NODELAY flag on socket
 	void setNoDelay(bool noDelay);
+
+	// deletes all ressources and this
+	void destroy();
 
 	TCPServer & server() const;
 
 protected:
+	virtual ~TCPConn();
 	virtual void newBytesAvailable() = 0;
-	virtual void closed() = 0;
-
-private:
-	static void readable (ev_loop * loop, ev_io * w, int revents);
-	static void writeable(ev_loop * loop, ev_io * w, int revents);
-	QByteArray readImpl();
+	virtual void closed(CloseType type) = 0;
+	virtual void writeFinished() {}
 
 private:
 	TCPServer::Impl & impl_;
+
+	// connection
 	int socket_;
 	const QByteArray peerIP_;
 	const quint16 peerPort_;
+
+	// state
 	ev_io * readWatcher_;
 	ev_io * writeWatcher_;
 	QByteArray readBuf_;
 	QByteArray writeBuf_;
 	bool closeAfterWriting_;
+	bool notifyWrite_;
+	CloseType closeType_;
+
+	// TLS handling
 	crypt::TLSStream * tlsStream_;
 	const uint tlsThreadId_;
-	QByteArray tlsPlain_;
 
 	friend class TCPServer;
 	friend class TLSThread;

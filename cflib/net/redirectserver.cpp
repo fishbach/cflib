@@ -39,7 +39,7 @@ public:
 	TCPReader(const TCPConnInitializer * init, TCPForwarder * forwarder) :
 		TCPConn(init), forwarder_(forwarder)
 	{
-		startWatcher();
+		startReadWatcher();
 	}
 
 	~TCPReader()
@@ -54,7 +54,7 @@ public:
 
 protected:
 	virtual void newBytesAvailable();
-	virtual void closed();
+	virtual void closed(CloseType type);
 
 private:
 	TCPForwarder * forwarder_;
@@ -79,7 +79,7 @@ public:
 			deleteNext(this);
 		} else {
 			reader_ = new TCPReader(oldInit, this);
-			startWatcher();
+			startReadWatcher();
 		}
 	}
 
@@ -99,15 +99,15 @@ protected:
 		logFunctionTrace
 		const QByteArray data = read();
 		if (reader_) reader_->write(data);
-		startWatcher();
+		startReadWatcher();
 	}
 
-	virtual void closed()
+	virtual void closed(CloseType type)
 	{
 		logFunctionTrace
 		if (reader_) {
 			reader_->detach();
-			reader_->closeNicely();
+			reader_->close(ReadWriteClosed);
 		}
 		deleteNext(this);
 	}
@@ -121,15 +121,15 @@ void TCPReader::newBytesAvailable()
 	logFunctionTrace
 	const QByteArray data = read();
 	if (forwarder_) forwarder_->write(data);
-	startWatcher();
+	startReadWatcher();
 }
 
-void TCPReader::closed()
+void TCPReader::closed(CloseType type)
 {
 	logFunctionTrace
 	if (forwarder_) {
 		forwarder_->detach();
-		forwarder_->closeNicely();
+		forwarder_->close(ReadWriteClosed);
 	}
 	deleteNext(this);
 }
