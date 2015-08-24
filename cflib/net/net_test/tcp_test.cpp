@@ -44,6 +44,11 @@ public:
 		startReadWatcher();
 	}
 
+	~ServerConn()
+	{
+		msg("srv deleted");
+	}
+
 protected:
 	virtual void newBytesAvailable()
 	{
@@ -71,10 +76,13 @@ protected:
 
 class Server : public TCPServer
 {
+public:
+	QList<TCPConn *> conns;
+
 protected:
 	virtual void newConnection(const TCPConnInitializer * init)
 	{
-		new ServerConn(init);
+		conns << new ServerConn(init);
 	}
 };
 
@@ -86,6 +94,11 @@ public:
 	{
 		msg(QString("cli new: %1:%2").arg(QString::fromLatin1(peerIP())).arg(peerPort()));
 		startReadWatcher();
+	}
+
+	~ClientConn()
+	{
+		msg("cli deleted");
 	}
 
 protected:
@@ -151,6 +164,14 @@ private slots:
 		QVERIFY(msgs.contains("srv closed: 1"));
 		QVERIFY(msgs.contains("cli closed: 2"));
 		msgs.clear();
+
+		conn->destroy();
+		foreach (TCPConn * sc, serv.conns) sc->destroy();
+		msgSem.acquire(2);
+		QCOMPARE(msgs.size(), 2);
+		QVERIFY(msgs.contains("cli deleted"));
+		QVERIFY(msgs.contains("srv deleted"));
+		msgs.clear();
 	}
 
 	void test_readerClose()
@@ -182,8 +203,42 @@ private slots:
 		QVERIFY(msgs.contains("cli closed: 1"));
 		msgs.clear();
 
-//		forever { msgSem.acquire(); QTextStream(stdout) << msgs.join("|") << endl; }
+		conn->destroy();
+		foreach (TCPConn * sc, serv.conns) sc->destroy();
+		msgSem.acquire(2);
+		QCOMPARE(msgs.size(), 2);
+		QVERIFY(msgs.contains("cli deleted"));
+		QVERIFY(msgs.contains("srv deleted"));
+		msgs.clear();
 	}
+
+	void test_connectionRefused()
+	{
+		TCPServer cli;
+		const TCPConnInitializer * init = cli.openConnection("127.0.0.1", 12301);
+		QVERIFY(init != 0);
+		ClientConn * conn = new ClientConn(init);
+
+		msgSem.acquire(2);
+		QCOMPARE(msgs.size(), 2);
+		QVERIFY(msgs.contains("cli new: 127.0.0.1:12301"));
+		QVERIFY(msgs.contains("cli closed: 7"));
+		msgs.clear();
+
+		conn->write("no msg");
+		msgSem.acquire(1);
+		QCOMPARE(msgs.size(), 1);
+		QVERIFY(msgs.contains("cli closed: 7"));
+		msgs.clear();
+
+		conn->destroy();
+		msgSem.acquire(1);
+		QCOMPARE(msgs.size(), 1);
+		QVERIFY(msgs.contains("cli deleted"));
+		msgs.clear();
+	}
+
+//	forever { msgSem.acquire(); QTextStream(stdout) << msgs.join("|") << endl; }
 
 };
 #include "tcp_test.moc"
