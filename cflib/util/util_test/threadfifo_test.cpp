@@ -44,7 +44,7 @@ protected:
 		auto rnd1 = std::bind(dist1, rnd_);
 		auto rnd2 = std::bind(dist2, rnd_);
 		int count = 0;
-		for (int i = 0 ; i < 100000 && ok_; ++i) {
+		for (int i = 0 ; i < 10000 && ok_; ++i) {
 			int max = rnd1() == 0 ? 127 : rnd2();
 			if (rnd1() < 2) {
 				max -= count;
