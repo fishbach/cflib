@@ -30,11 +30,13 @@ class HttpServer
 {
 	Q_DISABLE_COPY(HttpServer)
 public:
-	HttpServer(uint threadCount = 2);
+	HttpServer(uint threadCount = 2, uint tlsThreadCount = 4);
 	~HttpServer();
 
+	bool start(const QByteArray & address, quint16 port);
+	bool start(const QByteArray & address, quint16 port, crypt::TLSCredentials & credentials);
 	bool start(int listenSocket);
-	bool start(quint16 port, const QByteArray & address);
+	bool start(int listenSocket, crypt::TLSCredentials & credentials);
 	bool stop();
 	bool isRunning() const;
 

@@ -29,8 +29,9 @@ namespace cflib { namespace net {
 class HttpServer::Impl : public util::ThreadVerify, public TCPManager
 {
 public:
-	Impl(uint threadCount) :
-		util::ThreadVerify("HTTP-Server", util::ThreadVerify::Worker, threadCount)
+	Impl(uint threadCount, uint tlsThreadCount) :
+		util::ThreadVerify("HTTP-Server", util::ThreadVerify::Worker, threadCount),
+		TCPManager(tlsThreadCount)
 	{
 	}
 
@@ -54,8 +55,8 @@ private:
 	QList<RequestHandler *> handlers_;
 };
 
-HttpServer::HttpServer(uint threadCount) :
-	impl_(new Impl(threadCount))
+HttpServer::HttpServer(uint threadCount, uint tlsThreadCount) :
+	impl_(new Impl(threadCount, tlsThreadCount))
 {
 }
 
@@ -64,14 +65,24 @@ HttpServer::~HttpServer()
 	delete impl_;
 }
 
+bool HttpServer::start(const QByteArray & address, quint16 port)
+{
+	return impl_->start(address, port);
+}
+
+bool HttpServer::start(const QByteArray & address, quint16 port, crypt::TLSCredentials & credentials)
+{
+	return impl_->start(address, port, credentials);
+}
+
 bool HttpServer::start(int listenSocket)
 {
 	return impl_->start(listenSocket);
 }
 
-bool HttpServer::start(quint16 port, const QByteArray & address)
+bool HttpServer::start(int listenSocket, crypt::TLSCredentials & credentials)
 {
-	return impl_->start(address, port);
+	return impl_->start(listenSocket, credentials);
 }
 
 bool HttpServer::stop()

@@ -53,7 +53,7 @@ int main(int argc, char *argv[])
 	serv.registerHandler(&requestLog);
 	serv.registerHandler(&api);
 	serv.registerHandler(&fs);
-	serv.start(8080, "127.0.0.1");
+	serv.start("127.0.0.1", 8080);
 
 	int retval = a.exec();
 	logInfo("terminating softly with retval: %1", retval);
