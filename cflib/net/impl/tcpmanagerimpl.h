@@ -67,6 +67,7 @@ private:
 private:
 	TCPManager & parent_;
 	int listenSock_;
+	bool isIPv6Sock_;
 	ev_io * readWatcher_;
 	crypt::TLSSessions * sessions_;
 	crypt::TLSCredentials * credentials_;

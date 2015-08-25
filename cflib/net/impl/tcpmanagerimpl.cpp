@@ -96,6 +96,7 @@ TCPManager::Impl::Impl(TCPManager & parent, TLSCredentials * credentials, uint t
 	ThreadVerify("TCPServer", ThreadVerify::Net),
 	parent_(parent),
 	listenSock_(-1),
+	isIPv6Sock_(false),
 	readWatcher_(new ev_io),
 	sessions_(credentials ? new TLSSessions : 0),
 	credentials_(credentials),
@@ -132,7 +133,16 @@ bool TCPManager::Impl::start(int listenSocket)
 		logWarn("server already running");
 		return false;
 	}
+
+	struct sockaddr address;
+	socklen_t len = sizeof(address);
+	if (getsockname(listenSocket, &address, &len) < 0) {
+		logWarn("invalid socket %1 (errno: %2)", listenSocket, errno);
+		return false;
+	}
+
 	listenSock_ = listenSocket;
+	isIPv6Sock_ = address.sa_family == AF_INET6;
 
 	// watching for incoming activity
 	ev_io_init(readWatcher_, &Impl::listenSocketReadable, listenSock_, EV_READ);
@@ -426,22 +436,32 @@ void TCPManager::Impl::listenSocketReadable(ev_loop *, ev_io * w, int)
 
 	Impl * impl = (Impl *)w->data;
 	forever {
-		struct sockaddr_in cliAddr;
-		socklen_t len = sizeof(cliAddr);
-		int newSock = accept(impl->listenSock_, (struct sockaddr *)&cliAddr, &len);
-		if (newSock < 0) break;
+		int newSock;
+		char ip[40];
+		quint16 port;
+		if (impl->isIPv6Sock_) {
+			struct sockaddr_in6 cliAddr;
+			socklen_t len = sizeof(cliAddr);
+			newSock = accept(impl->listenSock_, (struct sockaddr *)&cliAddr, &len);
+			if (newSock < 0) break;
+			inet_ntop(AF_INET6, &cliAddr.sin6_addr, ip, sizeof(ip));
+			port = ntohs(cliAddr.sin6_port);
+		} else {
+			struct sockaddr_in cliAddr;
+			socklen_t len = sizeof(cliAddr);
+			newSock = accept(impl->listenSock_, (struct sockaddr *)&cliAddr, &len);
+			if (newSock < 0) break;
+			inet_ntop(AF_INET, &cliAddr.sin_addr, ip, sizeof(ip));
+			port = ntohs(cliAddr.sin_port);
+		}
 
 		setNonBlocking(newSock);
 
-		char ipAddr[16];
 		const TCPConnInitializer * ci = impl->credentials_ ?
-			new TCPConnInitializer(impl->parent_,
-				newSock, inet_ntop(AF_INET, &cliAddr.sin_addr, ipAddr, sizeof(ipAddr)), ntohs(cliAddr.sin_port),
+			new TCPConnInitializer(impl->parent_, newSock, ip, port,
 				new TLSServer(*(impl->sessions_), *(impl->credentials_)),
 				++impl->tlsConnId_ % impl->tlsThreads_.size()) :
-			new TCPConnInitializer(impl->parent_,
-				newSock, inet_ntop(AF_INET, &cliAddr.sin_addr, ipAddr, sizeof(ipAddr)), ntohs(cliAddr.sin_port),
-				0, 0);
+			new TCPConnInitializer(impl->parent_, newSock, ip, port, 0, 0);
 		logDebug("new connection (%1) from %2:%3", newSock, ci->peerIP, ci->peerPort);
 		impl->parent_.newConnection(ci);
 	}

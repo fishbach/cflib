@@ -290,6 +290,43 @@ private slots:
 		msgs.clear();
 	}
 
+	void test_IPv6()
+	{
+		Server serv;
+		serv.start("::1", 12301);
+		TCPManager cli;
+		const TCPConnInitializer * init = cli.openConnection("::1", 12301);
+		QVERIFY(init != 0);
+		ClientConn * conn = new ClientConn(init);
+
+		msgSem.acquire(2);
+		QCOMPARE(msgs.size(), 2);
+		QVERIFY(msgs.contains("cli new: ::1:12301"));
+		QVERIFY(msgs.contains("srv new: ::1"));
+		msgs.clear();
+
+		conn->write("ping 1", true);
+		msgSem.acquire(3);
+		QCOMPARE(msgs.size(), 3);
+		QVERIFY(msgs.contains("cli writeFinished"));
+		QVERIFY(msgs.contains("srv read: ping 1"));
+		QVERIFY(msgs.contains("cli read: pong 1"));
+		msgs.clear();
+
+		conn->destroy();
+		msgSem.acquire(2);
+		QCOMPARE(msgs.size(), 2);
+		QVERIFY(msgs.contains("cli deleted"));
+		QVERIFY(msgs.contains("srv closed: 1"));
+		msgs.clear();
+
+		foreach (TCPConn * sc, serv.conns) sc->destroy();
+		msgSem.acquire(1);
+		QCOMPARE(msgs.size(), 1);
+		QVERIFY(msgs.contains("srv deleted"));
+		msgs.clear();
+	}
+
 //	forever { msgSem.acquire(); QTextStream(stdout) << msgs.join("|") << endl; }
 
 };
