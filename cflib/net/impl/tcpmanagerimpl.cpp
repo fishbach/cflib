@@ -28,6 +28,7 @@
 
 #include <errno.h>
 #include <fcntl.h>
+#include <functional>
 #include <sys/types.h>
 
 #ifndef Q_OS_WIN
@@ -68,6 +69,25 @@ inline bool setNonBlocking(int fd)
 	}
 #endif
 	return true;
+}
+
+inline bool callWithSockaddr(const QByteArray & ip, quint16 port, std::function<bool (const struct sockaddr *, socklen_t)> func)
+{
+	if (ip.indexOf('.') == -1) {
+		struct sockaddr_in6 addr;
+		memset(&addr, 0, sizeof(addr));
+		addr.sin6_family = AF_INET6;
+		if (inet_pton(AF_INET6, ip.constData(), &addr.sin6_addr) == 0) return false;
+		addr.sin6_port = htons(port);
+		return func((struct sockaddr *)&addr, sizeof(addr));
+	} else {
+		struct sockaddr_in addr;
+		memset(&addr, 0, sizeof(addr));
+		addr.sin_family = AF_INET;
+		if (inet_pton(AF_INET, ip.constData(), &addr.sin_addr) == 0) return false;
+		addr.sin_port = htons(port);
+		return func((struct sockaddr *)&addr, sizeof(addr));
+	}
 }
 
 }
@@ -146,11 +166,8 @@ const TCPConnInitializer * TCPManager::Impl::openConnection(
 	const QByteArray & sourceIP, quint16 sourcePort,
 	TLSCredentials * credentials)
 {
-	// IPv6
-	const bool isIPv6 = destIP.indexOf('.') == -1;
-
 	// create socket
-	int sock = socket(isIPv6 ? AF_INET6 : AF_INET, SOCK_STREAM, 0);
+	int sock = socket(destIP.indexOf('.') == -1 ? AF_INET6 : AF_INET, SOCK_STREAM, 0);
 	if (sock < 0) return 0;
 
 	if (!setNonBlocking(sock)) {
@@ -161,68 +178,28 @@ const TCPConnInitializer * TCPManager::Impl::openConnection(
 	// bind source address and port
 	if (!sourceIP.isEmpty()) {
 		{ int on = 1; setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, (const char *)&on, sizeof(on)); }
-		if (isIPv6) {
-			struct sockaddr_in6 sourceAddr;
-			sourceAddr.sin6_family = AF_INET6;
-			if (inet_pton(AF_INET6, sourceIP.constData(), &sourceAddr.sin6_addr) == 0) {
-				close(sock);
-				return 0;
-			}
-			sourceAddr.sin6_port = htons(sourcePort);
-			if (bind(sock, (struct sockaddr *)&sourceAddr, sizeof(sourceAddr)) < 0) {
-				close(sock);
-				return 0;
-			}
-		} else {
-			struct sockaddr_in sourceAddr;
-			sourceAddr.sin_family = AF_INET;
-			if (inet_pton(AF_INET, sourceIP.constData(), &sourceAddr.sin_addr) == 0) {
-				close(sock);
-				return 0;
-			}
-			sourceAddr.sin_port = htons(sourcePort);
-			if (bind(sock, (struct sockaddr *)&sourceAddr, sizeof(sourceAddr)) < 0) {
-				close(sock);
-				return 0;
-			}
+		if (!callWithSockaddr(sourceIP, sourcePort, [sock](const struct sockaddr * addr, socklen_t addrlen) {
+			return bind(sock, addr, addrlen) >= 0; }))
+		{
+			logInfo("cannot bind source %1:%2 (errno: %3)", sourceIP, sourcePort, errno);
+			close(sock);
+			return 0;
 		}
 	}
 
 	// bind destination address and port
-	if (isIPv6) {
-		struct sockaddr_in6 destAddr;
-		memset(&destAddr, 0, sizeof(destAddr));
-		destAddr.sin6_family = AF_INET6;
-		if (inet_pton(AF_INET6, destIP.constData(), &destAddr.sin6_addr) == 0) {
-			close(sock);
-			return 0;
-		}
-		destAddr.sin6_port = htons(destPort);
-		if (connect(sock, (struct sockaddr *)&destAddr, sizeof(destAddr)) < 0 && errno != EINPROGRESS) {
-			logDebug("connect failed with errno: %1", errno);
-			close(sock);
-			return 0;
-		}
-	} else {
-		struct sockaddr_in destAddr;
-		memset(&destAddr, 0, sizeof(destAddr));
-		destAddr.sin_family = AF_INET;
-		if (inet_pton(AF_INET, destIP.constData(), &destAddr.sin_addr) == 0) {
-			close(sock);
-			return 0;
-		}
-		destAddr.sin_port = htons(destPort);
-		if (connect(sock, (struct sockaddr *)&destAddr, sizeof(destAddr)) < 0 && errno != EINPROGRESS) {
-			logDebug("connect failed with errno: %1", errno);
-			close(sock);
-			return 0;
-		}
+	if (!callWithSockaddr(destIP, destPort, [sock](const struct sockaddr * addr, socklen_t addrlen) {
+		return connect(sock, addr, addrlen) >= 0 || errno == EINPROGRESS; }))
+	{
+		logInfo("cannot connect source %1:%2 (errno: %3)", destIP, destPort, errno);
+		close(sock);
+		return 0;
 	}
 
 	const TCPConnInitializer * ci = credentials ?
-			new TCPConnInitializer(parent_, sock, destIP, destPort,
-				new TLSClient(*sessions_, *credentials), ++tlsConnId_ % tlsThreads_.size()) :
-			new TCPConnInitializer(parent_, sock, destIP, destPort, 0, 0);
+		new TCPConnInitializer(parent_, sock, destIP, destPort,
+			new TLSClient(*sessions_, *credentials), ++tlsConnId_ % tlsThreads_.size()) :
+		new TCPConnInitializer(parent_, sock, destIP, destPort, 0, 0);
 
 	logDebug("opened connection %1 to %2:%3", sock, ci->peerIP, ci->peerPort);
 	return ci;
@@ -352,7 +329,7 @@ void TCPManager::Impl::setNoDelay(int socket, bool noDelay)
 int TCPManager::Impl::openListenSocket(const QByteArray & ip, quint16 port)
 {
 	// create socket
-	int rv = socket(AF_INET, SOCK_STREAM, 0);
+	int rv = socket(ip.indexOf('.') == -1 ? AF_INET6 : AF_INET, SOCK_STREAM, 0);
 	if (rv < 0) return -1;
 
 	if (!setNonBlocking(rv)) {
@@ -362,14 +339,10 @@ int TCPManager::Impl::openListenSocket(const QByteArray & ip, quint16 port)
 	{ int on = 1; setsockopt(rv, SOL_SOCKET, SO_REUSEADDR, (const char *)&on, sizeof(on)); }
 
 	// bind to address and port
-	struct sockaddr_in servAddr;
-	servAddr.sin_family = AF_INET;
-	if (inet_pton(AF_INET, ip.constData(), &servAddr.sin_addr) == 0) {
-		close(rv);
-		return -1;
-	}
-	servAddr.sin_port = htons(port);
-	if (bind(rv, (struct sockaddr *)&servAddr, sizeof(servAddr)) < 0) {
+	if (!callWithSockaddr(ip, port, [rv](const struct sockaddr * addr, socklen_t addrlen) {
+		return bind(rv, addr, addrlen) >= 0; }))
+	{
+		logInfo("cannot bind to %1:%2 (errno: %3)", ip, port, errno);
 		close(rv);
 		return -1;
 	}
