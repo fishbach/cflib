@@ -22,20 +22,24 @@ QT = core
 TARGET = cflib_net
 
 HEADERS = \
-	apiserver.h \
 	fileserver.h \
 	httpauth.h \
 	httpserver.h \
-	impl/requestparser.h \
 	jsservice.h \
 	logservice.h \
 	redirectserver.h \
 	request.h \
 	requesthandler.h \
 	requestlog.h \
-	tcpserver.h \
+	tcpconn.h \
+	tcpmanager.h \
 	uploadservice.h \
 	websocketservice.h \
+	apiserver.h \
+	impl/requestparser.h \
+	impl/tcpconninitializer.h \
+	impl/tcpmanagerimpl.h \
+	impl/tlsthread.h \
 
 serializeGen()
 lib()

@@ -22,46 +22,12 @@
 
 struct ev_io;
 
-namespace cflib { namespace crypt { class TLSCredentials; }}
-namespace cflib { namespace crypt { class TLSStream;      }}
+namespace cflib { namespace crypt { class TLSStream; }}
 
 namespace cflib { namespace net {
 
 class TCPConnInitializer;
-
-class TCPServer
-{
-	Q_DISABLE_COPY(TCPServer)
-public:
-	TCPServer();
-	TCPServer(crypt::TLSCredentials & credentials, uint tlsThreadCount = 4);
-	virtual ~TCPServer();
-
-	static int openListenSocket(quint16 port, const QByteArray & ip = "127.0.0.1");
-	bool start(int listenSocket);
-	bool start(quint16 port, const QByteArray & ip);
-	bool stop();
-	bool isRunning() const;
-
-	const TCPConnInitializer * openConnection(const QByteArray & destIP, quint16 destPort);
-	const TCPConnInitializer * openConnection(const QByteArray & destIP, quint16 destPort,
-		crypt::TLSCredentials & credentials);
-	const TCPConnInitializer * openConnection(const QByteArray & destIP, quint16 destPort,
-		const QByteArray & sourceIP, quint16 sourcePort);
-	const TCPConnInitializer * openConnection(const QByteArray & destIP, quint16 destPort,
-		const QByteArray & sourceIP, quint16 sourcePort,
-		crypt::TLSCredentials & credentials);
-
-protected:
-	virtual void newConnection(const TCPConnInitializer * init);
-
-private:
-	class Impl;
-	Impl * impl_;
-	friend class TCPConn;
-	friend class TCPConnInitializer;
-	friend class TLSThread;
-};
+class TCPManager;
 
 class TCPConn
 {
@@ -108,7 +74,7 @@ public:
 	// deletes all ressources and this
 	void destroy();
 
-	TCPServer & server() const;
+	TCPManager & manager() const { return mgr_; }
 
 protected:
 	virtual void newBytesAvailable() = 0;
@@ -116,7 +82,7 @@ protected:
 	virtual void writeFinished() {}
 
 private:
-	TCPServer::Impl & impl_;
+	TCPManager & mgr_;
 
 	// connection
 	int socket_;
@@ -137,7 +103,7 @@ private:
 	crypt::TLSStream * tlsStream_;
 	const uint tlsThreadId_;
 
-	friend class TCPServer;
+	friend class TCPManager;
 	friend class TLSThread;
 };
 

@@ -18,7 +18,8 @@
 
 #include <cflib/crypt/crypt_test/certs.h>
 #include <cflib/crypt/tlscredentials.h>
-#include <cflib/net/tcpserver.h>
+#include <cflib/net/tcpconn.h>
+#include <cflib/net/tcpmanager.h>
 #include <cflib/util/test.h>
 
 using namespace cflib::crypt;
@@ -77,11 +78,11 @@ protected:
 	}
 };
 
-class Server : public TCPServer
+class Server : public TCPManager
 {
 public:
-	Server() : TCPServer() {}
-	Server(TLSCredentials & credentials) : TCPServer(credentials) {}
+	Server() : TCPManager() {}
+	Server(TLSCredentials & credentials) : TCPManager(credentials) {}
 
 public:
 	QList<TCPConn *> conns;
@@ -136,8 +137,8 @@ private slots:
 	void test_writerClose()
 	{
 		Server serv;
-		serv.start(12301, "127.0.0.1");
-		TCPServer cli;
+		serv.start("127.0.0.1", 12301);
+		TCPManager cli;
 		const TCPConnInitializer * init = cli.openConnection("127.0.0.1", 12301);
 		QVERIFY(init != 0);
 		ClientConn * conn = new ClientConn(init);
@@ -184,8 +185,8 @@ private slots:
 	void test_readerClose()
 	{
 		Server serv;
-		serv.start(12301, "127.0.0.1");
-		TCPServer cli;
+		serv.start("127.0.0.1", 12301);
+		TCPManager cli;
 		const TCPConnInitializer * init = cli.openConnection("127.0.0.1", 12301);
 		QVERIFY(init != 0);
 		ClientConn * conn = new ClientConn(init);
@@ -221,7 +222,7 @@ private slots:
 
 	void test_connectionRefused()
 	{
-		TCPServer cli;
+		TCPManager cli;
 		const TCPConnInitializer * init = cli.openConnection("127.0.0.1", 12301);
 		QVERIFY(init != 0);
 		ClientConn * conn = new ClientConn(init);
@@ -255,8 +256,8 @@ private slots:
 		QCOMPARE((int)clientCreds.addCerts(cert3, true), 1);
 
 		Server serv(serverCreds);
-		serv.start(12301, "127.0.0.1");
-		TCPServer cli(clientCreds);
+		serv.start("127.0.0.1", 12301);
+		TCPManager cli(clientCreds);
 		const TCPConnInitializer * init = cli.openConnection("127.0.0.1", 12301, clientCreds);
 		QVERIFY(init != 0);
 		ClientConn * conn = new ClientConn(init);

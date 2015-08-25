@@ -19,7 +19,8 @@
 #include "redirectserver.h"
 
 #include <cflib/net/request.h>
-#include <cflib/net/tcpserver.h>
+#include <cflib/net/tcpconn.h>
+#include <cflib/net/tcpmanager.h>
 #include <cflib/util/log.h>
 #include <cflib/util/util.h>
 
@@ -230,8 +231,8 @@ void RedirectServer::handleRequest(const cflib::net::Request & request)
 			return;
 		}
 
-		TCPServer * tcpServ = request.tcpServer();
-		if (!tcpServ) {
+		TCPManager * tcpManager = request.tcpManager();
+		if (!tcpManager) {
 			logWarn("cannot forward request");
 			return;
 		}
@@ -242,7 +243,7 @@ void RedirectServer::handleRequest(const cflib::net::Request & request)
 		} else {
 			destHost = entry.destHostReFunc ? entry.destHostReFunc(request, match) : entry.destHost;
 		}
-		const TCPConnInitializer * ci = tcpServ->openConnection(destHost.first, destHost.second);
+		const TCPConnInitializer * ci = tcpManager->openConnection(destHost.first, destHost.second);
 		if (!ci) {
 			logInfo("cannot open connection to %1:%2", destHost.first, destHost.second);
 			request.sendNotFound();

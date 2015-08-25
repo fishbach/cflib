@@ -19,14 +19,14 @@
 #include "httpserver.h"
 
 #include <cflib/net/impl/requestparser.h>
-#include <cflib/net/tcpserver.h>
+#include <cflib/net/tcpmanager.h>
 #include <cflib/util/log.h>
 
 USE_LOG(LogCat::Http)
 
 namespace cflib { namespace net {
 
-class HttpServer::Impl : public util::ThreadVerify, public TCPServer
+class HttpServer::Impl : public util::ThreadVerify, public TCPManager
 {
 public:
 	Impl(uint threadCount) :
@@ -36,7 +36,7 @@ public:
 
 	Impl(crypt::TLSCredentials & credentials, uint threadCount) :
 		util::ThreadVerify("HTTP-Server", util::ThreadVerify::Worker, threadCount),
-		TCPServer(credentials)
+		TCPManager(credentials)
 	{
 	}
 
@@ -82,7 +82,7 @@ bool HttpServer::start(int listenSocket)
 
 bool HttpServer::start(quint16 port, const QByteArray & address)
 {
-	return impl_->start(port, address);
+	return impl_->start(address, port);
 }
 
 bool HttpServer::stop()

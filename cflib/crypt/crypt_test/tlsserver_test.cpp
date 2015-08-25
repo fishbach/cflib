@@ -50,8 +50,10 @@ private slots:
 		QByteArray plain;
 
 		// client starts handshake
+		QVERIFY(server.initialSend().isEmpty());
 		enc1 = client.initialSend();
 		QVERIFY(!enc1.isEmpty());
+		QVERIFY(client.initialSend().isEmpty());
 
 		// first handshake req -> reply
 		QVERIFY(server.received(enc1, plain, enc2));

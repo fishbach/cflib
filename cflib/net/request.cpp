@@ -344,10 +344,10 @@ const TCPConnInitializer * Request::detachFromSocket() const
 	return d->parser->detachFromSocket();
 }
 
-TCPServer * Request::tcpServer() const
+TCPManager * Request::tcpManager() const
 {
 	if (!d->parser) return 0;
-	return &d->parser->server();
+	return &d->parser->manager();
 }
 
 void Request::callNextHandler() const

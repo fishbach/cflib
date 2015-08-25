@@ -18,7 +18,7 @@
 
 #pragma once
 
-#include <cflib/net/tcpserver.h>
+#include <cflib/net/tcpconn.h>
 #include <cflib/util/threadverify.h>
 
 namespace cflib { namespace net {
