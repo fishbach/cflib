@@ -34,12 +34,6 @@ public:
 	{
 	}
 
-	Impl(crypt::TLSCredentials & credentials, uint threadCount) :
-		util::ThreadVerify("HTTP-Server", util::ThreadVerify::Worker, threadCount),
-		TCPManager(credentials)
-	{
-	}
-
 	~Impl()
 	{
 		stopVerifyThread();
@@ -62,11 +56,6 @@ private:
 
 HttpServer::HttpServer(uint threadCount) :
 	impl_(new Impl(threadCount))
-{
-}
-
-HttpServer::HttpServer(crypt::TLSCredentials & credentials, uint threadCount) :
-	impl_(new Impl(credentials, threadCount))
 {
 }
 

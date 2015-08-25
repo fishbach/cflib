@@ -48,7 +48,7 @@ RequestParser::RequestParser(const TCPConnInitializer * init,
 	passThrough_(false),
 	passThroughHandler_(0)
 {
-	// thread TCPServer (1/1)
+	// thread TCPManager (1/1)
 	logCustom(LogCat::Network | LogCat::Debug)("new connection %1", id_);
 	startReadWatcher();
 }

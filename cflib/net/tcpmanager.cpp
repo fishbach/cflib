@@ -22,13 +22,8 @@
 
 namespace cflib { namespace net {
 
-TCPManager::TCPManager() :
-	impl_(new Impl(*this, 0, 0))
-{
-}
-
-TCPManager::TCPManager(crypt::TLSCredentials & credentials, uint tlsThreadCount) :
-	impl_(new Impl(*this, &credentials, tlsThreadCount))
+TCPManager::TCPManager(uint tlsThreadCount) :
+	impl_(new Impl(*this, tlsThreadCount))
 {
 }
 
@@ -78,7 +73,12 @@ int TCPManager::openListenSocket(const QByteArray & ip, quint16 port)
 
 bool TCPManager::start(int listenSocket)
 {
-	return impl_->start(listenSocket);
+	return impl_->start(listenSocket, 0);
+}
+
+bool TCPManager::start(int listenSocket, crypt::TLSCredentials & credentials)
+{
+	return impl_->start(listenSocket, &credentials);
 }
 
 void TCPManager::newConnection(const TCPConnInitializer *)

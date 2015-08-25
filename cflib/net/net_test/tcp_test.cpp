@@ -81,10 +81,6 @@ protected:
 class Server : public TCPManager
 {
 public:
-	Server() : TCPManager() {}
-	Server(TLSCredentials & credentials) : TCPManager(credentials) {}
-
-public:
 	QList<TCPConn *> conns;
 
 protected:
@@ -255,9 +251,9 @@ private slots:
 		TLSCredentials clientCreds;
 		QCOMPARE((int)clientCreds.addCerts(cert3, true), 1);
 
-		Server serv(serverCreds);
-		serv.start("127.0.0.1", 12301);
-		TCPManager cli(clientCreds);
+		Server serv;
+		serv.start("127.0.0.1", 12301, serverCreds);
+		TCPManager cli;
 		const TCPConnInitializer * init = cli.openConnection("127.0.0.1", 12301, clientCreds);
 		QVERIFY(init != 0);
 		ClientConn * conn = new ClientConn(init);

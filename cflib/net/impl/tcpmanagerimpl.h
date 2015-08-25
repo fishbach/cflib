@@ -23,7 +23,6 @@
 #include <cflib/util/threadverify.h>
 
 namespace cflib { namespace crypt { class TLSCredentials; }}
-namespace cflib { namespace crypt { class TLSSessions; }}
 
 namespace cflib { namespace net {
 
@@ -32,11 +31,11 @@ class TLSThread;
 class TCPManager::Impl : public util::ThreadVerify
 {
 public:
-	Impl(TCPManager & parent, crypt::TLSCredentials * credentials, uint tlsThreadCount);
+	Impl(TCPManager & parent, uint tlsThreadCount);
 	~Impl();
 
 	bool isRunning() const { return listenSock_ != -1; }
-	bool start(int listenSocket);
+	bool start(int listenSocket, crypt::TLSCredentials * credentials);
 	bool stop();
 
 	const TCPConnInitializer * openConnection(const QByteArray & destIP, quint16 destPort,
@@ -69,8 +68,8 @@ private:
 	int listenSock_;
 	bool isIPv6Sock_;
 	ev_io * readWatcher_;
-	crypt::TLSSessions * sessions_;
 	crypt::TLSCredentials * credentials_;
+	const uint tlsThreadCount_;
 	QVector<TLSThread *> tlsThreads_;
 	uint tlsConnId_;
 };

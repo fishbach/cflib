@@ -30,11 +30,12 @@ class TCPManager
 {
 	Q_DISABLE_COPY(TCPManager)
 public:
-	TCPManager();
-	TCPManager(crypt::TLSCredentials & credentials, uint tlsThreadCount = 4);
+	TCPManager(uint tlsThreadCount = 4);
 	virtual ~TCPManager();
 
 	bool start(const QByteArray & ip, quint16 port) { return start(openListenSocket(ip, port)); }
+	bool start(const QByteArray & ip, quint16 port, crypt::TLSCredentials & credentials) {
+		return start(openListenSocket(ip, port), credentials); }
 	bool stop();
 	bool isRunning() const;
 
@@ -49,6 +50,7 @@ public:
 
 	static int openListenSocket(const QByteArray & ip, quint16 port);
 	bool start(int listenSocket);
+	bool start(int listenSocket, crypt::TLSCredentials & credentials);
 
 protected:
 	virtual void newConnection(const TCPConnInitializer * init);

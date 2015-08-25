@@ -57,6 +57,8 @@ namespace cflib { namespace net {
 
 namespace {
 
+Q_GLOBAL_STATIC(TLSSessions, tlsSessions)
+
 inline bool setNonBlocking(int fd)
 {
 #ifdef Q_OS_WIN
@@ -92,28 +94,24 @@ inline bool callWithSockaddr(const QByteArray & ip, quint16 port, std::function<
 
 }
 
-TCPManager::Impl::Impl(TCPManager & parent, TLSCredentials * credentials, uint tlsThreadCount) :
-	ThreadVerify("TCPServer", ThreadVerify::Net),
+TCPManager::Impl::Impl(TCPManager & parent, uint tlsThreadCount) :
+	ThreadVerify("TCPManager", ThreadVerify::Net),
 	parent_(parent),
 	listenSock_(-1),
 	isIPv6Sock_(false),
 	readWatcher_(new ev_io),
-	sessions_(credentials ? new TLSSessions : 0),
-	credentials_(credentials),
+	credentials_(0),
+	tlsThreadCount_(tlsThreadCount),
 	tlsConnId_(0)
 {
+	if (tlsThreadCount == 0) logCritical("thread count cannot be 0 for worker thread TLSThread");
 	setThreadPrio(QThread::HighestPriority);
-	if (credentials) {
-		if (tlsThreadCount == 0) logCritical("thread count cannot be 0 for worker thread TLSThread");
-		for (uint i = 1 ; i <= tlsThreadCount ; ++i) tlsThreads_.append(new TLSThread(*this, i, tlsThreadCount));
-	}
 }
 
 TCPManager::Impl::~Impl()
 {
-	foreach (TLSThread * th, tlsThreads_) delete th;
 	stopVerifyThread();
-	delete sessions_;
+	foreach (TLSThread * th, tlsThreads_) delete th;
 	delete readWatcher_;
 }
 
@@ -122,10 +120,10 @@ void TCPManager::Impl::deleteThreadData()
 	if (isRunning()) stop();
 }
 
-bool TCPManager::Impl::start(int listenSocket)
+bool TCPManager::Impl::start(int listenSocket, crypt::TLSCredentials * credentials)
 {
 	SyncedThreadCall<bool> stc(this);
-	if (!stc.verify(&Impl::start, listenSocket)) return stc.retval();
+	if (!stc.verify(&Impl::start, listenSocket, credentials)) return stc.retval();
 
 	if (listenSocket < 0) return false;
 
@@ -143,6 +141,13 @@ bool TCPManager::Impl::start(int listenSocket)
 
 	listenSock_ = listenSocket;
 	isIPv6Sock_ = address.sa_family == AF_INET6;
+
+	if (credentials) {
+		credentials_ = credentials;
+		if (tlsThreads_.isEmpty()) {
+			for (uint i = 1 ; i <= tlsThreadCount_ ; ++i) tlsThreads_.append(new TLSThread(*this, i, tlsThreadCount_));
+		}
+	}
 
 	// watching for incoming activity
 	ev_io_init(readWatcher_, &Impl::listenSocketReadable, listenSock_, EV_READ);
@@ -166,6 +171,9 @@ bool TCPManager::Impl::stop()
 	ev_io_stop(libEVLoop(), readWatcher_);
 	close(listenSock_);
 	listenSock_ = -1;
+	credentials_ = 0;
+	foreach (TLSThread * th, tlsThreads_) delete th;
+	tlsThreads_.clear();
 
 	logInfo("server stopped");
 	return true;
@@ -206,9 +214,13 @@ const TCPConnInitializer * TCPManager::Impl::openConnection(
 		return 0;
 	}
 
+	if (tlsThreads_.isEmpty()) {
+		for (uint i = 1 ; i <= tlsThreadCount_ ; ++i) tlsThreads_.append(new TLSThread(*this, i, tlsThreadCount_));
+	}
+
 	const TCPConnInitializer * ci = credentials ?
 		new TCPConnInitializer(parent_, sock, destIP, destPort,
-			new TLSClient(*sessions_, *credentials), ++tlsConnId_ % tlsThreads_.size()) :
+			new TLSClient(*tlsSessions(), *credentials), ++tlsConnId_ % tlsThreadCount_) :
 		new TCPConnInitializer(parent_, sock, destIP, destPort, 0, 0);
 
 	logDebug("opened connection %1 to %2:%3", sock, ci->peerIP, ci->peerPort);
@@ -459,7 +471,7 @@ void TCPManager::Impl::listenSocketReadable(ev_loop *, ev_io * w, int)
 
 		const TCPConnInitializer * ci = impl->credentials_ ?
 			new TCPConnInitializer(impl->parent_, newSock, ip, port,
-				new TLSServer(*(impl->sessions_), *(impl->credentials_)),
+				new TLSServer(*tlsSessions(), *(impl->credentials_)),
 				++impl->tlsConnId_ % impl->tlsThreads_.size()) :
 			new TCPConnInitializer(impl->parent_, newSock, ip, port, 0, 0);
 		logDebug("new connection (%1) from %2:%3", newSock, ci->peerIP, ci->peerPort);

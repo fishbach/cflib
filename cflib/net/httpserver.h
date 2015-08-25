@@ -31,7 +31,6 @@ class HttpServer
 	Q_DISABLE_COPY(HttpServer)
 public:
 	HttpServer(uint threadCount = 2);
-	HttpServer(crypt::TLSCredentials & credentials, uint threadCount = 2);
 	~HttpServer();
 
 	bool start(int listenSocket);
