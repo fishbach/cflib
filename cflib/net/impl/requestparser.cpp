@@ -66,12 +66,9 @@ void RequestParser::sendReply(int id, const QByteArray & reply)
 		QMutableMapIterator<int, QByteArray> it(replies_);
 		while (it.hasNext()) {
 			it.next();
-			if (it.key() == nextReplyId_) {
-				writeReply(it.value());
-				it.remove();
-			} else {
-				break;
-			}
+			if (it.key() != nextReplyId_) break;
+			writeReply(it.value());
+			it.remove();
 		}
 	} else {
 		replies_[id] = reply;
@@ -132,10 +129,6 @@ void RequestParser::newBytesAvailable()
 	}
 
 	QByteArray newBytes = read();
-	if (newBytes.isEmpty()) {
-		startReadWatcher();
-		return;
-	}
 	logCustom(LogCat::Network | LogCat::Trace)("received %1 bytes on connection %2", newBytes.size(), id_);
 
 	if (contentLength_ == -1) header_ += newBytes;
@@ -290,7 +283,7 @@ bool RequestParser::handleRequestLine(const QByteArray & line)
 void RequestParser::writeReply(const QByteArray & reply)
 {
 	if (socketClosed_) {
-		logCustom(LogCat::Network | LogCat::Info)("cannot write %1 bytes of request %2 on closed connection %3",
+		logCustom(LogCat::Network | LogCat::Warn)("cannot write %1 bytes of request %2 on closed connection %3",
 			reply.size(), nextReplyId_, id_);
 	} else {
 		write(reply);
@@ -298,7 +291,7 @@ void RequestParser::writeReply(const QByteArray & reply)
 			reply.size(), nextReplyId_, id_);
 	}
 	if (passThrough_) {
-		logCustom(LogCat::Network | LogCat::Debug)("Not all bytes from pass through read! Closing connection %1 of request %2",
+		logCustom(LogCat::Network | LogCat::Warn)("Not all bytes from pass through read! Closing connection %1 of request %2",
 			id_, nextReplyId_);
 		close(ReadWriteClosed);
 	}
