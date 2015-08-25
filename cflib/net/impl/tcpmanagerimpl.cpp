@@ -172,8 +172,6 @@ bool TCPManager::Impl::stop()
 	close(listenSock_);
 	listenSock_ = -1;
 	credentials_ = 0;
-	foreach (TLSThread * th, tlsThreads_) delete th;
-	tlsThreads_.clear();
 
 	logInfo("server stopped");
 	return true;
