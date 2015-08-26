@@ -336,12 +336,12 @@ void Request::abort() const
 	if (d->parser) d->parser->close(TCPConn::HardClosed);
 }
 
-const TCPConnInitializer * Request::detachFromSocket() const
+TCPConnData * Request::detach() const
 {
 	if (!d->parser) return 0;
 	d->replySent = true;
 	d->detached = true;
-	return d->parser->detachFromSocket();
+	return d->parser->detach();
 }
 
 TCPManager * Request::tcpManager() const

@@ -23,7 +23,7 @@
 namespace cflib { namespace net {
 
 TCPManager::TCPManager(uint tlsThreadCount) :
-	impl_(new Impl(*this, tlsThreadCount))
+	impl_(new TCPManagerImpl(*this, tlsThreadCount))
 {
 }
 
@@ -42,24 +42,24 @@ bool TCPManager::isRunning() const
 	return impl_->isRunning();
 }
 
-const TCPConnInitializer * TCPManager::openConnection(const QByteArray & destIP, quint16 destPort)
+TCPConnData * TCPManager::openConnection(const QByteArray & destIP, quint16 destPort)
 {
 	return impl_->openConnection(destIP, destPort, QByteArray(), 0, 0);
 }
 
-const TCPConnInitializer * TCPManager::openConnection(const QByteArray & destIP, quint16 destPort,
+TCPConnData * TCPManager::openConnection(const QByteArray & destIP, quint16 destPort,
 	crypt::TLSCredentials & credentials)
 {
 	return impl_->openConnection(destIP, destPort, QByteArray(), 0, &credentials);
 }
 
-const TCPConnInitializer * TCPManager::openConnection(const QByteArray & destIP, quint16 destPort,
+TCPConnData * TCPManager::openConnection(const QByteArray & destIP, quint16 destPort,
 	const QByteArray & sourceIP, quint16 sourcePort)
 {
 	return impl_->openConnection(destIP, destPort, sourceIP, sourcePort, 0);
 }
 
-const TCPConnInitializer * TCPManager::openConnection(const QByteArray & destIP, quint16 destPort,
+TCPConnData * TCPManager::openConnection(const QByteArray & destIP, quint16 destPort,
 	const QByteArray & sourceIP, quint16 sourcePort,
 	crypt::TLSCredentials & credentials)
 {
@@ -68,7 +68,7 @@ const TCPConnInitializer * TCPManager::openConnection(const QByteArray & destIP,
 
 int TCPManager::openListenSocket(const QByteArray & ip, quint16 port)
 {
-	return Impl::openListenSocket(ip, port);
+	return TCPManagerImpl::openListenSocket(ip, port);
 }
 
 bool TCPManager::start(int listenSocket)
@@ -81,8 +81,9 @@ bool TCPManager::start(int listenSocket, crypt::TLSCredentials & credentials)
 	return impl_->start(listenSocket, &credentials);
 }
 
-void TCPManager::newConnection(const TCPConnInitializer *)
+void TCPManager::newConnection(TCPConnData * data)
 {
+	impl_->deleteOnFinish(data);
 }
 
 }}	// namespace

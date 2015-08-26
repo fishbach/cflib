@@ -31,7 +31,7 @@ namespace impl {
 class RequestParser : public util::ThreadVerify, public TCPConn
 {
 public:
-	RequestParser(const TCPConnInitializer * init,
+	RequestParser(TCPConnData * data,
 		const QList<RequestHandler *> & handlers, util::ThreadVerify * tv);
 	~RequestParser();
 
@@ -40,7 +40,7 @@ public:
 	void detachRequest();
 	void setPassThroughHandler(PassThroughHandler * hdl);
 	QByteArray readPassThrough(bool & isLast);
-	const TCPConnInitializer * detachFromSocket();
+	TCPConnData * detach();
 
 protected:
 	virtual void newBytesAvailable();

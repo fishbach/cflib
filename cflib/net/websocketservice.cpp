@@ -32,9 +32,9 @@ namespace cflib { namespace net {
 class WebSocketService::WSConnHandler : public util::ThreadVerify, public TCPConn
 {
 public:
-	WSConnHandler(WebSocketService * service, const TCPConnInitializer * connInit) :
+	WSConnHandler(WebSocketService * service, TCPConnData * connData) :
 		ThreadVerify(service),
-		TCPConn(connInit),
+		TCPConn(connData),
 		service_(*service),
 		clientId_(0),
 		isBinary_(false),
@@ -289,12 +289,12 @@ void WebSocketService::handleRequest(const Request & request)
 		return;
 	}
 
-	const TCPConnInitializer * connInit = request.detachFromSocket();
-	if (!connInit) {
+	TCPConnData * connData = request.detach();
+	if (!connData) {
 		logWarn("could not detach from socket");
 		return;
 	}
-	WSConnHandler * wsHdl = new WSConnHandler(this, connInit);
+	WSConnHandler * wsHdl = new WSConnHandler(this, connData);
 
 	QByteArray header =
 		"HTTP/1.1 101 Switching Protocols\r\n"

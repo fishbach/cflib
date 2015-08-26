@@ -18,83 +18,78 @@
 
 #include "tcpconn.h"
 
-#include <cflib/crypt/tlsstream.h>
-#include <cflib/net/impl/tcpconninitializer.h>
+#include <cflib/net/impl/tcpconndata.h>
 #include <cflib/net/impl/tcpmanagerimpl.h>
-#include <cflib/net/tcpmanager.h>
-#include <cflib/util/libev.h>
 
 namespace cflib { namespace net {
 
-TCPConn::TCPConn(const TCPConnInitializer * init, uint readBufferSize) :
-	mgr_(init->mgr),
-	socket_(init->socket), peerIP_(init->peerIP), peerPort_(init->peerPort),
-	readWatcher_(new ev_io),
-	writeWatcher_(new ev_io),
-	readBuf_(readBufferSize, '\0'),
-	closeAfterWriting_(false), notifyWrite_(false), closeType_(NotClosed),
-	tlsStream_(init->tlsStream), tlsThreadId_(init->tlsThreadId)
+TCPConn::TCPConn(TCPConnData * data, uint readBufferSize) :
+	data_(data)
 {
-	delete init;
-	ev_io_init(readWatcher_, &TCPManager::Impl::readable, socket_, EV_READ);
-	readWatcher_->data = this;
-	ev_io_init(writeWatcher_, &TCPManager::Impl::writeable, socket_, EV_WRITE);
-	writeWatcher_->data = this;
-
-	if (tlsStream_) {
-		const QByteArray data = tlsStream_->initialSend();
-		if (!data.isEmpty()) mgr_.impl_->writeToSocket(this, data, false);
-	}
+	data_->conn = this;
+	data_->readBuf = QByteArray(readBufferSize, '\0');
 }
 
 TCPConn::~TCPConn()
 {
-	delete readWatcher_;
-	delete writeWatcher_;
-	delete tlsStream_;
-}
-
-void TCPConn::destroy()
-{
-	mgr_.impl_->destroy(this);
+	if (data_) data_->impl.deleteOnFinish(data_);
 }
 
 QByteArray TCPConn::read()
 {
-	const QByteArray retval = readData_;
-	readData_.resize(0);
+	const QByteArray retval = data_->readData;
+	data_->readData.resize(0);
 	return retval;
-}
-
-void TCPConn::startReadWatcher()
-{
-	mgr_.impl_->startReadWatcher(this);
 }
 
 void TCPConn::write(const QByteArray & data, bool notifyFinished)
 {
-	if (tlsStream_) mgr_.impl_->tlsWrite(this, data, notifyFinished);
-	else            mgr_.impl_->writeToSocket(this, data, notifyFinished);
+	if (data_->tlsStream) data_->impl.tlsWrite(data_, data, notifyFinished);
+	else                  data_->impl.writeToSocket(data_, data, notifyFinished);
 }
 
 void TCPConn::close(CloseType type)
 {
-	if (tlsStream_) mgr_.impl_->tlsCloseConn(this, type);
-	else            mgr_.impl_->closeConn(this, type);
+	if (data_->tlsStream) data_->impl.tlsCloseConn(data_, type);
+	else                  data_->impl.closeConn(data_, type);
 }
 
-const TCPConnInitializer * TCPConn::detachFromSocket()
+void TCPConn::startReadWatcher()
 {
-	const TCPConnInitializer * rv = new TCPConnInitializer(mgr_, socket_, peerIP_, peerPort_, tlsStream_, tlsThreadId_);
-	socket_ = -1;
-	closeType_ = HardClosed;
-	tlsStream_ = 0;
+	data_->impl.startReadWatcher(data_);
+}
+
+TCPConn::CloseType TCPConn::isClosed() const
+{
+	return data_->closeType;
+}
+
+QByteArray TCPConn::peerIP() const
+{
+	return data_->peerIP;
+}
+
+quint16 TCPConn::peerPort() const
+{
+	return data_->peerPort;
+}
+
+TCPConnData * TCPConn::detach()
+{
+	TCPConnData * rv = data_;
+	data_ = 0;
+	rv->conn = 0;
 	return rv;
 }
 
 void TCPConn::setNoDelay(bool noDelay)
 {
-	TCPManager::Impl::setNoDelay(socket_, noDelay);
+	TCPManagerImpl::setNoDelay(data_->socket, noDelay);
+}
+
+TCPManager & TCPConn::manager() const
+{
+	return data_->impl.parent;
 }
 
 }}	// namespace

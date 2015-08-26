@@ -18,29 +18,46 @@
 
 #pragma once
 
-#include <QtCore>
+#include <cflib/net/tcpconn.h>
+#include <cflib/util/libev.h>
 
 namespace cflib { namespace crypt { class TLSStream; }}
 
 namespace cflib { namespace net {
 
-class TCPManager;
+class TCPManagerImpl;
 
-class TCPConnInitializer
+class TCPConnData
 {
+	Q_DISABLE_COPY(TCPConnData)
 public:
-	TCPConnInitializer(TCPManager & mgr, const int socket, const char * peerIP, const quint16 peerPort,
-		crypt::TLSStream * tlsStream, uint tlsThreadId)
-	:
-		mgr(mgr), socket(socket), peerIP(peerIP), peerPort(peerPort), tlsStream(tlsStream), tlsThreadId(tlsThreadId)
-	{}
+	TCPConnData(TCPManagerImpl & impl,
+		int socket, const char * peerIP, quint16 peerPort,
+		crypt::TLSStream * tlsStream, uint tlsThreadId);
+	~TCPConnData();
 
-	TCPManager & mgr;
+public:
+	TCPManagerImpl & impl;
+	TCPConn * conn;
+
+	// connection
 	const int socket;
 	const QByteArray peerIP;
 	const quint16 peerPort;
+
+	// TLS handling
 	crypt::TLSStream * tlsStream;
 	const uint tlsThreadId;
+
+	// state
+	ev_io readWatcher;
+	ev_io writeWatcher;
+	QByteArray readBuf;
+	QByteArray readData;
+	QByteArray writeBuf;
+	bool closeAfterWriting;
+	bool notifyWrite;
+	TCPConn::CloseType closeType;
 };
 
 }}	// namespace

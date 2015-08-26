@@ -24,13 +24,14 @@ namespace cflib { namespace crypt { class TLSCredentials; }}
 
 namespace cflib { namespace net {
 
-class TCPConnInitializer;
+class TCPConnData;
+class TCPManagerImpl;
 
 class TCPManager
 {
 	Q_DISABLE_COPY(TCPManager)
 public:
-	TCPManager(uint tlsThreadCount = 4);
+	TCPManager(uint tlsThreadCount = 0);	// must be set > 0 when TLS is used
 	virtual ~TCPManager();
 
 	bool start(const QByteArray & ip, quint16 port) { return start(openListenSocket(ip, port)); }
@@ -39,12 +40,12 @@ public:
 	bool stop();
 	bool isRunning() const;
 
-	const TCPConnInitializer * openConnection(const QByteArray & destIP, quint16 destPort);
-	const TCPConnInitializer * openConnection(const QByteArray & destIP, quint16 destPort,
+	TCPConnData * openConnection(const QByteArray & destIP, quint16 destPort);
+	TCPConnData * openConnection(const QByteArray & destIP, quint16 destPort,
 		crypt::TLSCredentials & credentials);
-	const TCPConnInitializer * openConnection(const QByteArray & destIP, quint16 destPort,
+	TCPConnData * openConnection(const QByteArray & destIP, quint16 destPort,
 		const QByteArray & sourceIP, quint16 sourcePort);
-	const TCPConnInitializer * openConnection(const QByteArray & destIP, quint16 destPort,
+	TCPConnData * openConnection(const QByteArray & destIP, quint16 destPort,
 		const QByteArray & sourceIP, quint16 sourcePort,
 		crypt::TLSCredentials & credentials);
 
@@ -53,13 +54,11 @@ public:
 	bool start(int listenSocket, crypt::TLSCredentials & credentials);
 
 protected:
-	virtual void newConnection(const TCPConnInitializer * init);
+	virtual void newConnection(TCPConnData * data);
 
 private:
-	class Impl;
-	Impl * impl_;
-	friend class TCPConn;
-	friend class TLSThread;
+	TCPManagerImpl * impl_;
+	friend class TCPManagerImpl;
 };
 
 }}	// namespace

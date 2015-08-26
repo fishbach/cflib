@@ -41,8 +41,8 @@ void msg(const QString & msg)
 class ServerConn : public TCPConn
 {
 public:
-	ServerConn(const TCPConnInitializer * init) :
-		TCPConn(init)
+	ServerConn(TCPConnData * data) :
+		TCPConn(data)
 	{
 		msg(QString("srv new: %1").arg(QString::fromLatin1(peerIP())));
 		startReadWatcher();
@@ -84,17 +84,17 @@ public:
 	QList<TCPConn *> conns;
 
 protected:
-	virtual void newConnection(const TCPConnInitializer * init)
+	virtual void newConnection(TCPConnData * data)
 	{
-		conns << new ServerConn(init);
+		conns << new ServerConn(data);
 	}
 };
 
 class ClientConn : public TCPConn
 {
 public:
-	ClientConn(const TCPConnInitializer * init) :
-		TCPConn(init)
+	ClientConn(TCPConnData * data) :
+		TCPConn(data)
 	{
 		msg(QString("cli new: %1:%2").arg(QString::fromLatin1(peerIP())).arg(peerPort()));
 		startReadWatcher();
@@ -135,9 +135,9 @@ private slots:
 		Server serv;
 		serv.start("127.0.0.1", 12301);
 		TCPManager cli;
-		const TCPConnInitializer * init = cli.openConnection("127.0.0.1", 12301);
-		QVERIFY(init != 0);
-		ClientConn * conn = new ClientConn(init);
+		TCPConnData * data = cli.openConnection("127.0.0.1", 12301);
+		QVERIFY(data != 0);
+		ClientConn * conn = new ClientConn(data);
 
 		msgSem.acquire(2);
 		QCOMPARE(msgs.size(), 2);
@@ -170,8 +170,8 @@ private slots:
 		QVERIFY(msgs.contains("cli closed: 2"));
 		msgs.clear();
 
-		conn->destroy();
-		foreach (TCPConn * sc, serv.conns) sc->destroy();
+		delete conn;
+		foreach (TCPConn * sc, serv.conns) delete sc;
 		msgSem.acquire(2);
 		QCOMPARE(msgs.size(), 2);
 		QVERIFY(msgs.contains("cli deleted"));
@@ -184,9 +184,9 @@ private slots:
 		Server serv;
 		serv.start("127.0.0.1", 12301);
 		TCPManager cli;
-		const TCPConnInitializer * init = cli.openConnection("127.0.0.1", 12301);
-		QVERIFY(init != 0);
-		ClientConn * conn = new ClientConn(init);
+		TCPConnData * data = cli.openConnection("127.0.0.1", 12301);
+		QVERIFY(data != 0);
+		ClientConn * conn = new ClientConn(data);
 
 		msgSem.acquire(2);
 		QCOMPARE(msgs.size(), 2);
@@ -208,8 +208,8 @@ private slots:
 		QVERIFY(msgs.contains("cli closed: 1"));
 		msgs.clear();
 
-		conn->destroy();
-		foreach (TCPConn * sc, serv.conns) sc->destroy();
+		delete conn;
+		foreach (TCPConn * sc, serv.conns) delete sc;
 		msgSem.acquire(2);
 		QCOMPARE(msgs.size(), 2);
 		QVERIFY(msgs.contains("cli deleted"));
@@ -220,9 +220,9 @@ private slots:
 	void test_connectionRefused()
 	{
 		TCPManager cli;
-		const TCPConnInitializer * init = cli.openConnection("127.0.0.1", 12301);
-		QVERIFY(init != 0);
-		ClientConn * conn = new ClientConn(init);
+		TCPConnData * data = cli.openConnection("127.0.0.1", 12301);
+		QVERIFY(data != 0);
+		ClientConn * conn = new ClientConn(data);
 
 		msgSem.acquire(2);
 		QCOMPARE(msgs.size(), 2);
@@ -236,7 +236,7 @@ private slots:
 		QVERIFY(msgs.contains("cli closed: 7"));
 		msgs.clear();
 
-		conn->destroy();
+		delete conn;
 		msgSem.acquire(1);
 		QCOMPARE(msgs.size(), 1);
 		QVERIFY(msgs.contains("cli deleted"));
@@ -255,9 +255,9 @@ private slots:
 		Server serv;
 		serv.start("127.0.0.1", 12301, serverCreds);
 		TCPManager cli;
-		const TCPConnInitializer * init = cli.openConnection("127.0.0.1", 12301, clientCreds);
-		QVERIFY(init != 0);
-		ClientConn * conn = new ClientConn(init);
+		TCPConnData * data = cli.openConnection("127.0.0.1", 12301, clientCreds);
+		QVERIFY(data != 0);
+		ClientConn * conn = new ClientConn(data);
 
 		msgSem.acquire(2);
 		QCOMPARE(msgs.size(), 2);
@@ -273,14 +273,14 @@ private slots:
 		QVERIFY(msgs.contains("cli read: pong 1"));
 		msgs.clear();
 
-		conn->destroy();
+		delete conn;
 		msgSem.acquire(2);
 		QCOMPARE(msgs.size(), 2);
 		QVERIFY(msgs.contains("cli deleted"));
 		QVERIFY(msgs.contains("srv closed: 1"));
 		msgs.clear();
 
-		foreach (TCPConn * sc, serv.conns) sc->destroy();
+		foreach (TCPConn * sc, serv.conns) delete sc;
 		msgSem.acquire(1);
 		QCOMPARE(msgs.size(), 1);
 		QVERIFY(msgs.contains("srv deleted"));
@@ -292,9 +292,9 @@ private slots:
 		Server serv;
 		serv.start("::1", 12301);
 		TCPManager cli;
-		const TCPConnInitializer * init = cli.openConnection("::1", 12301);
-		QVERIFY(init != 0);
-		ClientConn * conn = new ClientConn(init);
+		TCPConnData * data = cli.openConnection("::1", 12301);
+		QVERIFY(data != 0);
+		ClientConn * conn = new ClientConn(data);
 
 		msgSem.acquire(2);
 		QCOMPARE(msgs.size(), 2);
@@ -310,14 +310,14 @@ private slots:
 		QVERIFY(msgs.contains("cli read: pong 1"));
 		msgs.clear();
 
-		conn->destroy();
+		delete conn;
 		msgSem.acquire(2);
 		QCOMPARE(msgs.size(), 2);
 		QVERIFY(msgs.contains("cli deleted"));
 		QVERIFY(msgs.contains("srv closed: 1"));
 		msgs.clear();
 
-		foreach (TCPConn * sc, serv.conns) sc->destroy();
+		foreach (TCPConn * sc, serv.conns) delete sc;
 		msgSem.acquire(1);
 		QCOMPARE(msgs.size(), 1);
 		QVERIFY(msgs.contains("srv deleted"));

@@ -24,7 +24,7 @@ namespace cflib { namespace net {
 
 class PassThroughHandler;
 class RequestHandler;
-class TCPConnInitializer;
+class TCPConnData;
 class TCPManager;
 namespace impl { class RequestParser; }
 
@@ -83,7 +83,7 @@ public:
 	void startWatcher() const;
 	void abort() const;
 
-	const TCPConnInitializer * detachFromSocket() const;
+	TCPConnData * detach() const;
 	TCPManager * tcpManager() const;
 
 private:

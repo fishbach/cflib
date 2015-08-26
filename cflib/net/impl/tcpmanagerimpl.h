@@ -19,43 +19,47 @@
 #pragma once
 
 #include <cflib/net/tcpconn.h>
-#include <cflib/net/tcpmanager.h>
 #include <cflib/util/threadverify.h>
+
+struct ev_io;
 
 namespace cflib { namespace crypt { class TLSCredentials; }}
 
 namespace cflib { namespace net {
 
+class TCPManager;
 class TLSThread;
 
-class TCPManager::Impl : public util::ThreadVerify
+class TCPManagerImpl : public util::ThreadVerify
 {
 public:
-	Impl(TCPManager & parent, uint tlsThreadCount);
-	~Impl();
+	TCPManagerImpl(TCPManager & parent, uint tlsThreadCount);
+	~TCPManagerImpl();
 
 	bool isRunning() const { return listenSock_ != -1; }
 	bool start(int listenSocket, crypt::TLSCredentials * credentials);
 	bool stop();
 
-	const TCPConnInitializer * openConnection(const QByteArray & destIP, quint16 destPort,
+	TCPConnData * openConnection(const QByteArray & destIP, quint16 destPort,
 		const QByteArray & sourceIP, quint16 sourcePort,
 		crypt::TLSCredentials * credentials);
 
-	void startReadWatcher(TCPConn * conn);
-	void writeToSocket(TCPConn * conn, const QByteArray & data, bool notifyFinished);
-	void closeConn(TCPConn * conn, TCPConn::CloseType type);
-	void destroy(TCPConn * conn);
-	void deleteConn(TCPConn * conn);
+	void startReadWatcher(TCPConnData * conn);
+	void writeToSocket(TCPConnData * conn, const QByteArray & data, bool notifyFinished);
+	void closeConn(TCPConnData * conn, TCPConn::CloseType type);
+	void deleteOnFinish(TCPConnData * conn);
+	void deleteConn(TCPConnData * conn);
 
-	void tlsWrite(TCPConn * conn, const QByteArray & data, bool notifyFinished) const;
-	void tlsCloseConn(TCPConn * conn, TCPConn::CloseType type) const;
+	void tlsWrite(TCPConnData * conn, const QByteArray & data, bool notifyFinished) const;
+	void tlsCloseConn(TCPConnData * conn, TCPConn::CloseType type) const;
 
 	static void setNoDelay(int socket, bool noDelay);
 	static int openListenSocket(const QByteArray & ip, quint16 port);
 
 	static void readable(ev_loop * loop, ev_io * w, int revents);
 	static void writeable(ev_loop * loop, ev_io * w, int revents);
+
+	TCPManager & parent;
 
 protected:
 	virtual void deleteThreadData();
@@ -64,14 +68,12 @@ private:
 	static void listenSocketReadable(ev_loop * loop, ev_io * w, int revents);
 
 private:
-	TCPManager & parent_;
 	int listenSock_;
 	bool isIPv6Sock_;
 	ev_io * readWatcher_;
 	crypt::TLSCredentials * credentials_;
-	const uint tlsThreadCount_;
 	QVector<TLSThread *> tlsThreads_;
-	uint tlsConnId_;
+	QAtomicInteger<uint> tlsConnId_;
 };
 
 }}	// namespace

@@ -32,11 +32,11 @@ QAtomicInt connCount;
 
 }
 
-RequestParser::RequestParser(const TCPConnInitializer * init,
+RequestParser::RequestParser(TCPConnData * data,
 	const QList<RequestHandler *> & handlers, util::ThreadVerify * tv)
 :
 	util::ThreadVerify(tv),
-	TCPConn(init),
+	TCPConn(data),
 	handlers_(handlers),
 	id_(connCount.fetchAndAddRelaxed(1) + 1),
 	contentLength_(-1),
@@ -77,7 +77,7 @@ void RequestParser::sendReply(int id, const QByteArray & reply)
 
 void RequestParser::detachRequest()
 {
-	if (--attachedRequests_ == 0) execCall(new util::Functor0<RequestParser>(this, &RequestParser::destroy));
+	if (--attachedRequests_ == 0) util::deleteNext(this);
 }
 
 void RequestParser::setPassThroughHandler(PassThroughHandler * hdl)
@@ -111,12 +111,12 @@ QByteArray RequestParser::readPassThrough(bool & isLast)
 	return retval;
 }
 
-const TCPConnInitializer * RequestParser::detachFromSocket()
+TCPConnData * RequestParser::detach()
 {
 	logFunctionTrace
 	detached_ = true;
 	detachRequest();	// removes initial ref, so that we will be deleted
-	return TCPConn::detachFromSocket();
+	return TCPConn::detach();
 }
 
 void RequestParser::newBytesAvailable()

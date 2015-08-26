@@ -37,8 +37,8 @@ class TCPForwarder;
 class TCPReader : public TCPConn
 {
 public:
-	TCPReader(const TCPConnInitializer * init, TCPForwarder * forwarder) :
-		TCPConn(init), forwarder_(forwarder)
+	TCPReader(TCPConnData * data, TCPForwarder * forwarder) :
+		TCPConn(data), forwarder_(forwarder)
 	{
 		startReadWatcher();
 	}
@@ -64,8 +64,8 @@ private:
 class TCPForwarder : public TCPConn
 {
 public:
-	TCPForwarder(const TCPConnInitializer * init, const Request & request) :
-		TCPConn(init),
+	TCPForwarder(TCPConnData * data, const Request & request) :
+		TCPConn(data),
 		reader_(0)
 	{
 		logFunctionTrace
@@ -74,12 +74,12 @@ public:
 		requestData += "\r\n\r\n";
 		requestData += request.getBody();
 		write(requestData);
-		const TCPConnInitializer * oldInit = request.detachFromSocket();
-		if (!oldInit) {
+		TCPConnData * oldData = request.detach();
+		if (!oldData) {
 			logWarn("could not detach from socket");
 			deleteNext(this);
 		} else {
-			reader_ = new TCPReader(oldInit, this);
+			reader_ = new TCPReader(oldData, this);
 			startReadWatcher();
 		}
 	}
@@ -243,7 +243,7 @@ void RedirectServer::handleRequest(const cflib::net::Request & request)
 		} else {
 			destHost = entry.destHostReFunc ? entry.destHostReFunc(request, match) : entry.destHost;
 		}
-		const TCPConnInitializer * ci = tcpManager->openConnection(destHost.first, destHost.second);
+		TCPConnData * ci = tcpManager->openConnection(destHost.first, destHost.second);
 		if (!ci) {
 			logInfo("cannot open connection to %1:%2", destHost.first, destHost.second);
 			request.sendNotFound();

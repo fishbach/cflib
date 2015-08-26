@@ -46,9 +46,9 @@ public:
 	}
 
 protected:
-	virtual void newConnection(const TCPConnInitializer * init)
+	virtual void newConnection(TCPConnData * data)
     {
-		new impl::RequestParser(init, handlers_, this);
+		new impl::RequestParser(data, handlers_, this);
     }
 
 private:

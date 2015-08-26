@@ -21,8 +21,9 @@
 #include <cflib/crypt/tlsclient.h>
 #include <cflib/crypt/tlsserver.h>
 #include <cflib/crypt/tlssessions.h>
-#include <cflib/net/impl/tcpconninitializer.h>
+#include <cflib/net/impl/tcpconndata.h>
 #include <cflib/net/impl/tlsthread.h>
+#include <cflib/net/tcpmanager.h>
 #include <cflib/util/libev.h>
 #include <cflib/util/log.h>
 
@@ -94,41 +95,45 @@ inline bool callWithSockaddr(const QByteArray & ip, quint16 port, std::function<
 
 }
 
-TCPManager::Impl::Impl(TCPManager & parent, uint tlsThreadCount) :
+TCPManagerImpl::TCPManagerImpl(TCPManager & parent, uint tlsThreadCount) :
 	ThreadVerify("TCPManager", ThreadVerify::Net),
-	parent_(parent),
+	parent(parent),
 	listenSock_(-1),
 	isIPv6Sock_(false),
 	readWatcher_(new ev_io),
 	credentials_(0),
-	tlsThreadCount_(tlsThreadCount),
 	tlsConnId_(0)
 {
-	if (tlsThreadCount == 0) logCritical("thread count cannot be 0 for worker thread TLSThread");
 	setThreadPrio(QThread::HighestPriority);
+	for (uint i = 1 ; i <= tlsThreadCount ; ++i) tlsThreads_.append(new TLSThread(*this, i, tlsThreadCount));
 }
 
-TCPManager::Impl::~Impl()
+TCPManagerImpl::~TCPManagerImpl()
 {
 	stopVerifyThread();
 	foreach (TLSThread * th, tlsThreads_) delete th;
 	delete readWatcher_;
 }
 
-void TCPManager::Impl::deleteThreadData()
+void TCPManagerImpl::deleteThreadData()
 {
 	if (isRunning()) stop();
 }
 
-bool TCPManager::Impl::start(int listenSocket, crypt::TLSCredentials * credentials)
+bool TCPManagerImpl::start(int listenSocket, crypt::TLSCredentials * credentials)
 {
 	SyncedThreadCall<bool> stc(this);
-	if (!stc.verify(&Impl::start, listenSocket, credentials)) return stc.retval();
+	if (!stc.verify(&TCPManagerImpl::start, listenSocket, credentials)) return stc.retval();
 
 	if (listenSocket < 0) return false;
 
 	if (isRunning()) {
 		logWarn("server already running");
+		return false;
+	}
+
+	if (credentials && tlsThreads_.isEmpty()) {
+		logWarn("no TLS threads");
 		return false;
 	}
 
@@ -140,17 +145,11 @@ bool TCPManager::Impl::start(int listenSocket, crypt::TLSCredentials * credentia
 	}
 
 	listenSock_ = listenSocket;
+	credentials_ = credentials;
 	isIPv6Sock_ = address.sa_family == AF_INET6;
 
-	if (credentials) {
-		credentials_ = credentials;
-		if (tlsThreads_.isEmpty()) {
-			for (uint i = 1 ; i <= tlsThreadCount_ ; ++i) tlsThreads_.append(new TLSThread(*this, i, tlsThreadCount_));
-		}
-	}
-
 	// watching for incoming activity
-	ev_io_init(readWatcher_, &Impl::listenSocketReadable, listenSock_, EV_READ);
+	ev_io_init(readWatcher_, &TCPManagerImpl::listenSocketReadable, listenSock_, EV_READ);
 	readWatcher_->data = this;
 	ev_io_start(libEVLoop(), readWatcher_);
 
@@ -158,10 +157,10 @@ bool TCPManager::Impl::start(int listenSocket, crypt::TLSCredentials * credentia
 	return true;
 }
 
-bool TCPManager::Impl::stop()
+bool TCPManagerImpl::stop()
 {
 	SyncedThreadCall<bool> stc(this);
-	if (!stc.verify(&Impl::stop)) return stc.retval();
+	if (!stc.verify(&TCPManagerImpl::stop)) return stc.retval();
 
 	if (!isRunning()) {
 		logWarn("server not running");
@@ -177,15 +176,21 @@ bool TCPManager::Impl::stop()
 	return true;
 }
 
-const TCPConnInitializer * TCPManager::Impl::openConnection(
+TCPConnData * TCPManagerImpl::openConnection(
 	const QByteArray & destIP, quint16 destPort,
 	const QByteArray & sourceIP, quint16 sourcePort,
 	TLSCredentials * credentials)
 {
-	// create socket
+	// no thread verify needed here
+
+	if (credentials && tlsThreads_.isEmpty()) {
+		logWarn("no TLS threads");
+		return 0;
+	}
+
+	// create non blocking socket
 	int sock = socket(destIP.indexOf('.') == -1 ? AF_INET6 : AF_INET, SOCK_STREAM, 0);
 	if (sock < 0) return 0;
-
 	if (!setNonBlocking(sock)) {
 		close(sock);
 		return 0;
@@ -212,58 +217,53 @@ const TCPConnInitializer * TCPManager::Impl::openConnection(
 		return 0;
 	}
 
-	if (tlsThreads_.isEmpty()) {
-		for (uint i = 1 ; i <= tlsThreadCount_ ; ++i) tlsThreads_.append(new TLSThread(*this, i, tlsThreadCount_));
-	}
+	logDebug("opened connection %1 to %2:%3", sock, destIP, destPort);
 
-	const TCPConnInitializer * ci = credentials ?
-		new TCPConnInitializer(parent_, sock, destIP, destPort,
-			new TLSClient(*tlsSessions(), *credentials), ++tlsConnId_ % tlsThreadCount_) :
-		new TCPConnInitializer(parent_, sock, destIP, destPort, 0, 0);
-
-	logDebug("opened connection %1 to %2:%3", sock, ci->peerIP, ci->peerPort);
-	return ci;
+	return credentials ?
+		new TCPConnData(*this, sock, destIP, destPort,
+			new TLSClient(*tlsSessions(), *credentials), ++tlsConnId_ % tlsThreads_.size()) :
+		new TCPConnData(*this, sock, destIP, destPort, 0, 0);
 }
 
-void TCPManager::Impl::startReadWatcher(TCPConn * conn)
+void TCPManagerImpl::startReadWatcher(TCPConnData * conn)
 {
-	if (!verifyThreadCall(&Impl::startReadWatcher, conn)) return;
+	if (!verifyThreadCall(&TCPManagerImpl::startReadWatcher, conn)) return;
 
-	const TCPConn::CloseType ct = conn->closeType_;
+	const TCPConn::CloseType ct = conn->closeType;
 	if (ct & TCPConn::ReadClosed) {
-		execCall(new Functor1<TCPConn, TCPConn::CloseType>(conn, &TCPConn::closed, ct));
+		execCall(new Functor1<TCPConn, TCPConn::CloseType>(conn->conn, &TCPConn::closed, ct));
 		return;
 	}
-	ev_io_start(libEVLoop(), conn->readWatcher_);
+	ev_io_start(libEVLoop(), &conn->readWatcher);
 }
 
-void TCPManager::Impl::writeToSocket(TCPConn * conn, const QByteArray & data, bool notifyFinished)
+void TCPManagerImpl::writeToSocket(TCPConnData * conn, const QByteArray & data, bool notifyFinished)
 {
-	if (!verifyThreadCall(&Impl::writeToSocket, conn, data, notifyFinished)) return;
+	if (!verifyThreadCall(&TCPManagerImpl::writeToSocket, conn, data, notifyFinished)) return;
 
-	conn->writeBuf_ += data;
+	conn->writeBuf += data;
 
-	if (conn->writeBuf_.isEmpty()) {
-		if (notifyFinished) execCall(new Functor0<TCPConn>(conn, &TCPConn::writeFinished));
+	if (conn->writeBuf.isEmpty()) {
+		if (notifyFinished) execCall(new Functor0<TCPConn>(conn->conn, &TCPConn::writeFinished));
 		return;
 	}
 
-	if (conn->closeType_ & TCPConn::WriteClosed) {
-		conn->writeBuf_.clear();
-		execCall(new Functor1<TCPConn, TCPConn::CloseType>(conn, &TCPConn::closed, conn->closeType_));
+	if (conn->closeType & TCPConn::WriteClosed) {
+		conn->writeBuf.clear();
+		execCall(new Functor1<TCPConn, TCPConn::CloseType>(conn->conn, &TCPConn::closed, conn->closeType));
 		return;
 	}
 
-	if (notifyFinished) conn->notifyWrite_ = true;
-	if (!ev_is_active(conn->writeWatcher_)) writeable(libEVLoop(), conn->writeWatcher_, 0);
+	if (notifyFinished) conn->notifyWrite = true;
+	if (!ev_is_active(&conn->writeWatcher)) writeable(libEVLoop(), &conn->writeWatcher, 0);
 }
 
-void TCPManager::Impl::closeConn(TCPConn * conn, TCPConn::CloseType type)
+void TCPManagerImpl::closeConn(TCPConnData * conn, TCPConn::CloseType type)
 {
-	if (!verifyThreadCall(&Impl::closeConn, conn, type)) return;
+	if (!verifyThreadCall(&TCPManagerImpl::closeConn, conn, type)) return;
 
 	// update state
-	TCPConn::CloseType & ct = conn->closeType_;
+	TCPConn::CloseType & ct = conn->closeType;
 	const TCPConn::CloseType oldCt = ct;
 	ct = (TCPConn::CloseType)(ct | type);
 	if (oldCt == ct) return;
@@ -273,92 +273,90 @@ void TCPManager::Impl::closeConn(TCPConn * conn, TCPConn::CloseType type)
 	bool readClosed  = changed & TCPConn::ReadClosed;
 	bool writeClosed = changed & TCPConn::WriteClosed;
 
-	if (ct != TCPConn::HardClosed && writeClosed && !conn->writeBuf_.isEmpty()) {
+	if (ct != TCPConn::HardClosed && writeClosed && !conn->writeBuf.isEmpty()) {
 		ct = (TCPConn::CloseType)(ct & ~TCPConn::WriteClosed);
 		writeClosed = false;
-		conn->closeAfterWriting_ = true;
+		conn->closeAfterWriting = true;
 		if (oldCt == ct) return;
 	}
 
-	logDebug("socket %1 closed (%2 => %3)", conn->socket_, (int)oldCt, (int)ct);
+	logDebug("socket %1 closed (%2 => %3)", conn->socket, (int)oldCt, (int)ct);
 
 	// stop watcher
 	bool wasWatching = false;
-	if (readClosed && ev_is_active(conn->readWatcher_)) {
-		ev_io_stop(libEVLoop(), conn->readWatcher_);
+	if (readClosed && ev_is_active(&conn->readWatcher)) {
+		ev_io_stop(libEVLoop(), &conn->readWatcher);
 		wasWatching = true;
 	}
-	if (writeClosed && ev_is_active(conn->writeWatcher_)) {
-		ev_io_stop(libEVLoop(), conn->writeWatcher_);
+	if (writeClosed && ev_is_active(&conn->writeWatcher)) {
+		ev_io_stop(libEVLoop(), &conn->writeWatcher);
 		wasWatching = true;
 	}
-	if (wasWatching) execCall(new Functor1<TCPConn, TCPConn::CloseType>(conn, &TCPConn::closed, ct));
+	if (wasWatching) execCall(new Functor1<TCPConn, TCPConn::CloseType>(conn->conn, &TCPConn::closed, ct));
 
 	// close socket
 	if (ct == TCPConn::HardClosed) {
-		close(conn->socket_);
-		conn->socket_ = -1;
-		conn->readBuf_.clear();
+		close(conn->socket);
+		conn->readBuf.clear();
 	} else {
 		if (readClosed) {
-			conn->readBuf_.clear();
-			shutdown(conn->socket_, writeClosed ? SHUT_RDWR : SHUT_RD);
+			conn->readBuf.clear();
+			shutdown(conn->socket, writeClosed ? SHUT_RDWR : SHUT_RD);
 		} else {
-			shutdown(conn->socket_, SHUT_WR);
+			shutdown(conn->socket, SHUT_WR);
 		}
 	}
 }
 
-void TCPManager::Impl::destroy(TCPConn * conn)
+void TCPManagerImpl::deleteOnFinish(TCPConnData * conn)
 {
-	if (!verifyThreadCall(&Impl::destroy, conn)) return;
+	if (!verifyThreadCall(&TCPManagerImpl::deleteOnFinish, conn)) return;
 
-	if (conn->closeType_ != TCPConn::HardClosed) {
-		conn->closeType_ = TCPConn::HardClosed;
-		ev_io_stop(libEVLoop(), conn->readWatcher_);
-		ev_io_stop(libEVLoop(), conn->writeWatcher_);
-		close(conn->socket_);
+	if (conn->closeType != TCPConn::HardClosed) {
+		conn->closeType = TCPConn::HardClosed;
+		ev_io_stop(libEVLoop(), &conn->readWatcher);
+		ev_io_stop(libEVLoop(), &conn->writeWatcher);
+		close(conn->socket);
 	}
 
-	if (conn->tlsStream_) tlsThreads_[conn->tlsThreadId_]->destroy(conn);
-	else                  delete conn;
+	if (conn->tlsStream) tlsThreads_[conn->tlsThreadId]->destroy(conn);
+	else                 delete conn;
 }
 
-void TCPManager::Impl::deleteConn(TCPConn * conn)
+void TCPManagerImpl::deleteConn(TCPConnData * conn)
 {
-	if (!verifyThreadCall(&Impl::deleteConn, conn)) return;
+	if (!verifyThreadCall(&TCPManagerImpl::deleteConn, conn)) return;
 	delete conn;
 }
 
-void TCPManager::Impl::tlsWrite(TCPConn * conn, const QByteArray & data, bool notifyFinished) const
+void TCPManagerImpl::tlsWrite(TCPConnData * conn, const QByteArray & data, bool notifyFinished) const
 {
-	tlsThreads_[conn->tlsThreadId_]->write(conn, data, notifyFinished);
+	tlsThreads_[conn->tlsThreadId]->write(conn, data, notifyFinished);
 }
 
-void TCPManager::Impl::tlsCloseConn(TCPConn * conn, TCPConn::CloseType type) const
+void TCPManagerImpl::tlsCloseConn(TCPConnData * conn, TCPConn::CloseType type) const
 {
-	tlsThreads_[conn->tlsThreadId_]->closeConn(conn, type);
+	tlsThreads_[conn->tlsThreadId]->closeConn(conn, type);
 }
 
-void TCPManager::Impl::setNoDelay(int socket, bool noDelay)
+void TCPManagerImpl::setNoDelay(int socket, bool noDelay)
 {
 	int on = noDelay ? 1 : 0;
 	setsockopt(socket, IPPROTO_TCP, TCP_NODELAY, (char *)&on, sizeof(on));
 }
 
-int TCPManager::Impl::openListenSocket(const QByteArray & ip, quint16 port)
+int TCPManagerImpl::openListenSocket(const QByteArray & ip, quint16 port)
 {
-	// create socket
+	// create non blocking socket
 	int rv = socket(ip.indexOf('.') == -1 ? AF_INET6 : AF_INET, SOCK_STREAM, 0);
 	if (rv < 0) return -1;
-
 	if (!setNonBlocking(rv)) {
 		close(rv);
 		return -1;
 	}
-	{ int on = 1; setsockopt(rv, SOL_SOCKET, SO_REUSEADDR, (const char *)&on, sizeof(on)); }
 
 	// bind to address and port
+	{ int on = 1; setsockopt(rv, SOL_SOCKET, SO_REUSEADDR, (const char *)&on, sizeof(on)); }
 	if (!callWithSockaddr(ip, port, [rv](const struct sockaddr * addr, socklen_t addrlen) {
 		return bind(rv, addr, addrlen) >= 0; }))
 	{
@@ -376,54 +374,56 @@ int TCPManager::Impl::openListenSocket(const QByteArray & ip, quint16 port)
 	return rv;
 }
 
-void TCPManager::Impl::readable(ev_loop * loop, ev_io * w, int)
+void TCPManagerImpl::readable(ev_loop * loop, ev_io * w, int)
 {
-	TCPConn * conn = (TCPConn *)w->data;
-	Impl & impl = *conn->mgr_.impl_;
+	TCPConnData * conn = (TCPConnData *)w->data;
+	TCPManagerImpl & impl = conn->impl;
 
-	char * data = (char *)conn->readBuf_.constData();
-	const ssize_t count = ::recv(conn->socket_, data, conn->readBuf_.size(), 0);
+	char * data = (char *)conn->readBuf.constData();
+	const int fd = conn->socket;
+
+	const ssize_t count = ::recv(fd, data, conn->readBuf.size(), 0);
 	if (count > 0) {
-		logTrace("read %1 raw bytes", (int)count);
+		logTrace("read %1 raw bytes from %2", (int)count, fd);
 		ev_io_stop(loop, w);
-		conn->readData_.append(data, (int)count);
-		if (!conn->tlsStream_) conn->newBytesAvailable();
-		else                   impl.tlsThreads_[conn->tlsThreadId_]->read(conn);
+		conn->readData.append(data, (int)count);
+		if (!conn->tlsStream) conn->conn->newBytesAvailable();
+		else                  impl.tlsThreads_[conn->tlsThreadId]->read(conn);
 		return;
 	}
 
 	if (count == 0) {
-		logDebug("read channel closed on fd %1", conn->socket_);
+		logDebug("read channel closed on fd %1", fd);
 		impl.closeConn(conn, TCPConn::ReadClosed);
 		return;
 	}
 
 	if (errno == EAGAIN || errno == EWOULDBLOCK) {
-		logDebug("nothing to read on fd %1 (errno: %2)", conn->socket_, errno);
+		logDebug("nothing to read on fd %1 (errno: %2)", fd, errno);
 		return;
 	}
 
-	logInfo("read on fd %1 failed (errno: %2)", conn->socket_, errno);
+	logInfo("read on fd %1 failed (errno: %2)", fd, errno);
 	impl.closeConn(conn, TCPConn::HardClosed);
 }
 
-void TCPManager::Impl::writeable(ev_loop * loop, ev_io * w, int)
+void TCPManagerImpl::writeable(ev_loop * loop, ev_io * w, int)
 {
-	TCPConn * conn = (TCPConn *)w->data;
-	Impl & impl = *conn->mgr_.impl_;
+	TCPConnData * conn = (TCPConnData *)w->data;
+	TCPManagerImpl & impl = conn->impl;
 
-	QByteArray & buf = conn->writeBuf_;
-	const int fd = conn->socket_;
+	QByteArray & buf = conn->writeBuf;
+	const int fd = conn->socket;
 
 	ssize_t count = ::send(fd, buf.constData(), buf.size(), 0);
-	logTrace("wrote %1 / %2 bytes", (qint64)count, buf.size());
+	logTrace("wrote %1 / %2 bytes on %3", (qint64)count, buf.size(), fd);
 	if (count < buf.size()) {
 		if (count < 0 && errno != EAGAIN && errno != EWOULDBLOCK && errno != ENOTCONN) {
 			logDebug("write on fd %1 failed (errno: %2)", fd, errno);
 			buf.clear();
 			if (ev_is_active(w)) ev_io_stop(loop, w);
 			impl.closeConn(conn, errno == EPIPE ? TCPConn::WriteClosed : TCPConn::HardClosed);
-			impl.execCall(new Functor1<TCPConn, TCPConn::CloseType>(conn, &TCPConn::closed, conn->closeType_));
+			impl.execCall(new Functor1<TCPConn, TCPConn::CloseType>(conn->conn, &TCPConn::closed, conn->closeType));
 			return;
 		}
 		if (count > 0) buf.remove(0, count);
@@ -431,20 +431,20 @@ void TCPManager::Impl::writeable(ev_loop * loop, ev_io * w, int)
 	} else {
 		buf.clear();
 		if (ev_is_active(w)) ev_io_stop(loop, w);
-		if (conn->closeAfterWriting_ && !(conn->closeType_ & TCPConn::WriteClosed))
+		if (conn->closeAfterWriting && !(conn->closeType & TCPConn::WriteClosed))
 			impl.closeConn(conn, TCPConn::WriteClosed);
-		if (conn->notifyWrite_) {
-			conn->notifyWrite_ = false;
-			impl.execCall(new Functor0<TCPConn>(conn, &TCPConn::writeFinished));
+		if (conn->notifyWrite) {
+			conn->notifyWrite = false;
+			impl.execCall(new Functor0<TCPConn>(conn->conn, &TCPConn::writeFinished));
 		}
 	}
 }
 
-void TCPManager::Impl::listenSocketReadable(ev_loop *, ev_io * w, int)
+void TCPManagerImpl::listenSocketReadable(ev_loop *, ev_io * w, int)
 {
 	logFunctionTrace
 
-	Impl * impl = (Impl *)w->data;
+	TCPManagerImpl * impl = (TCPManagerImpl *)w->data;
 	forever {
 		int newSock;
 		char ip[40];
@@ -467,13 +467,14 @@ void TCPManager::Impl::listenSocketReadable(ev_loop *, ev_io * w, int)
 
 		setNonBlocking(newSock);
 
-		const TCPConnInitializer * ci = impl->credentials_ ?
-			new TCPConnInitializer(impl->parent_, newSock, ip, port,
+		logDebug("new connection (%1) from %2:%3", newSock, ip, port);
+
+		impl->parent.newConnection(impl->credentials_ ?
+			new TCPConnData(*impl, newSock, ip, port,
 				new TLSServer(*tlsSessions(), *(impl->credentials_)),
 				++impl->tlsConnId_ % impl->tlsThreads_.size()) :
-			new TCPConnInitializer(impl->parent_, newSock, ip, port, 0, 0);
-		logDebug("new connection (%1) from %2:%3", newSock, ci->peerIP, ci->peerPort);
-		impl->parent_.newConnection(ci);
+			new TCPConnData(*impl, newSock, ip, port, 0, 0)
+		);
 	}
 }
 

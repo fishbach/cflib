@@ -19,24 +19,26 @@
 #pragma once
 
 #include <cflib/net/tcpconn.h>
-#include <cflib/net/tcpmanager.h>
 #include <cflib/util/threadverify.h>
 
 namespace cflib { namespace net {
 
+class TCPConnData;
+class TCPManagerImpl;
+
 class TLSThread : public util::ThreadVerify
 {
 public:
-	TLSThread(TCPManager::Impl & impl, uint no, uint total);
+	TLSThread(TCPManagerImpl & impl, uint no, uint total);
 	~TLSThread();
 
-	void read(TCPConn * conn);
-	void write(TCPConn * conn, const QByteArray & data, bool notifyFinished);
-	void closeConn(TCPConn * conn, TCPConn::CloseType type);
-	void destroy(TCPConn * conn);
+	void read(TCPConnData * conn);
+	void write(TCPConnData * conn, const QByteArray & data, bool notifyFinished);
+	void closeConn(TCPConnData * conn, TCPConn::CloseType type);
+	void destroy(TCPConnData * conn);
 
 private:
-	TCPManager::Impl & impl_;
+	TCPManagerImpl & impl_;
 };
 
 }}	// namespace

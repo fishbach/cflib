@@ -20,13 +20,9 @@
 
 #include <QtCore>
 
-struct ev_io;
-
-namespace cflib { namespace crypt { class TLSStream; }}
-
 namespace cflib { namespace net {
 
-class TCPConnInitializer;
+class TCPConnData;
 class TCPManager;
 
 class TCPConn
@@ -42,7 +38,7 @@ public:
 	};
 
 public:
-	TCPConn(const TCPConnInitializer * init, uint readBufferSize = 0x100000 /* 1mb */);
+	TCPConn(TCPConnData * data, uint readBufferSize = 0x10000 /* 64kb */);
 	virtual ~TCPConn();
 
 	// returns all available bytes
@@ -53,28 +49,27 @@ public:
 	void write(const QByteArray & data, bool notifyFinished = false);
 
 	// closes the socket
+	// - WriteClosed closes the write channel after all bytes have been written
+	// - HardClosed may abort pending writes
 	// on TCP level:
 	// - WriteClosed sends FIN to peer
 	// - ReadClosed does not inform the sender in any way (!)
+	// - ReadClosed does not inform the sender in any way and just releases some system resources (!)
 	void close(CloseType type = ReadWriteClosed);
 
 	// has to be called repeatedly to get informed via function newBytesAvailable
 	void startReadWatcher();
 
-	CloseType isClosed() const { return closeType_; }
+	CloseType isClosed() const;
+	QByteArray peerIP() const;
+	quint16 peerPort() const;
 
-	QByteArray peerIP() const { return peerIP_; }
-	quint16 peerPort() const { return peerPort_; }
-
-	const TCPConnInitializer * detachFromSocket();
+	TCPConnData * detach();
 
 	// sets TCP_NODELAY flag on socket
 	void setNoDelay(bool noDelay);
 
-	// deletes all ressources and this
-	void destroy();
-
-	TCPManager & manager() const { return mgr_; }
+	TCPManager & manager() const;
 
 protected:
 	virtual void newBytesAvailable() = 0;
@@ -82,28 +77,8 @@ protected:
 	virtual void writeFinished() {}
 
 private:
-	TCPManager & mgr_;
-
-	// connection
-	int socket_;
-	const QByteArray peerIP_;
-	const quint16 peerPort_;
-
-	// state
-	ev_io * readWatcher_;
-	ev_io * writeWatcher_;
-	QByteArray readBuf_;
-	QByteArray readData_;
-	QByteArray writeBuf_;
-	bool closeAfterWriting_;
-	bool notifyWrite_;
-	CloseType closeType_;
-
-	// TLS handling
-	crypt::TLSStream * tlsStream_;
-	const uint tlsThreadId_;
-
-	friend class TCPManager;
+	TCPConnData * data_;
+	friend class TCPManagerImpl;
 	friend class TLSThread;
 };
 

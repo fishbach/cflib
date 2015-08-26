@@ -37,7 +37,7 @@ HEADERS = \
 	websocketservice.h \
 	apiserver.h \
 	impl/requestparser.h \
-	impl/tcpconninitializer.h \
+	impl/tcpconndata.h \
 	impl/tcpmanagerimpl.h \
 	impl/tlsthread.h \
 
