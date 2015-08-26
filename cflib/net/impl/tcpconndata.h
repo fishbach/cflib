@@ -56,6 +56,7 @@ public:
 	QByteArray readData;
 	QByteArray writeBuf;
 	bool closeAfterWriting;
+	bool deleteAfterWriting;
 	bool notifyWrite;
 	TCPConn::CloseType closeType;
 };

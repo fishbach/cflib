@@ -30,7 +30,7 @@ TCPConnData::TCPConnData(impl::TCPManagerImpl & impl,
 	impl(impl), conn(0),
 	socket(socket), peerIP(peerIP), peerPort(peerPort),
 	tlsStream(tlsStream), tlsThreadId(tlsThreadId),
-	closeAfterWriting(false), notifyWrite(false), closeType(TCPConn::NotClosed)
+	closeAfterWriting(false), deleteAfterWriting(false), notifyWrite(false), closeType(TCPConn::NotClosed)
 {
 	ev_io_init(&readWatcher, &impl::TCPManagerImpl::readable, socket, EV_READ);
 	readWatcher.data = this;

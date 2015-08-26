@@ -63,6 +63,8 @@ protected:
 			write(in);
 		} else if (in == "close") {
 			close(ReadWriteClosed);
+		} else if (in == "hard") {
+			close(HardClosed);
 		}
 		startReadWatcher();
 	}
@@ -81,6 +83,8 @@ protected:
 class Server : public TCPManager
 {
 public:
+	Server(uint tlsThreadCount = 0) : TCPManager(tlsThreadCount) {}
+
 	QList<TCPConn *> conns;
 
 protected:
@@ -133,7 +137,7 @@ private slots:
 	void test_writerClose()
 	{
 		Server serv;
-		serv.start("127.0.0.1", 12301);
+		QVERIFY(serv.start("127.0.0.1", 12301));
 		TCPManager cli;
 		TCPConnData * data = cli.openConnection("127.0.0.1", 12301);
 		QVERIFY(data != 0);
@@ -170,6 +174,12 @@ private slots:
 		QVERIFY(msgs.contains("cli closed: 2"));
 		msgs.clear();
 
+		conn->close();
+		msgSem.acquire(1);
+		QCOMPARE(msgs.size(), 1);
+		QVERIFY(msgs.contains("cli closed: 3"));
+		msgs.clear();
+
 		delete conn;
 		foreach (TCPConn * sc, serv.conns) delete sc;
 		msgSem.acquire(2);
@@ -182,7 +192,7 @@ private slots:
 	void test_readerClose()
 	{
 		Server serv;
-		serv.start("127.0.0.1", 12301);
+		QVERIFY(serv.start("127.0.0.1", 12301));
 		TCPManager cli;
 		TCPConnData * data = cli.openConnection("127.0.0.1", 12301);
 		QVERIFY(data != 0);
@@ -206,6 +216,45 @@ private slots:
 		QVERIFY(msgs.contains("srv read: close"));
 		QVERIFY(msgs.contains("srv closed: 3"));
 		QVERIFY(msgs.contains("cli closed: 1"));
+		msgs.clear();
+
+		delete conn;
+		foreach (TCPConn * sc, serv.conns) delete sc;
+		msgSem.acquire(2);
+		QCOMPARE(msgs.size(), 2);
+		QVERIFY(msgs.contains("cli deleted"));
+		QVERIFY(msgs.contains("srv deleted"));
+		msgs.clear();
+	}
+
+	void test_hardClose()
+	{
+		Server serv;
+		QVERIFY(serv.start("127.0.0.1", 12301));
+		TCPManager cli;
+		TCPConnData * data = cli.openConnection("127.0.0.1", 12301);
+		QVERIFY(data != 0);
+		ClientConn * conn = new ClientConn(data);
+
+		msgSem.acquire(2);
+		QCOMPARE(msgs.size(), 2);
+		QVERIFY(msgs.contains("cli new: 127.0.0.1:12301"));
+		QVERIFY(msgs.contains("srv new: 127.0.0.1"));
+		msgs.clear();
+
+		conn->write("1st msg");
+		msgSem.acquire(1);
+		QCOMPARE(msgs.size(), 1);
+		QVERIFY(msgs.contains("srv read: 1st msg"));
+		msgs.clear();
+
+		conn->write("hard");
+
+		msgSem.acquire(3);
+		QCOMPARE(msgs.size(), 3);
+		QVERIFY(msgs.contains("srv read: hard"));
+		QVERIFY(msgs.contains("srv closed: 7"));
+		QVERIFY(msgs.contains("cli closed: 7"));
 		msgs.clear();
 
 		delete conn;
@@ -252,9 +301,9 @@ private slots:
 		TLSCredentials clientCreds;
 		QCOMPARE((int)clientCreds.addCerts(cert3, true), 1);
 
-		Server serv;
-		serv.start("127.0.0.1", 12301, serverCreds);
-		TCPManager cli;
+		Server serv(1);
+		QVERIFY(serv.start("127.0.0.1", 12301, serverCreds));
+		TCPManager cli(1);
 		TCPConnData * data = cli.openConnection("127.0.0.1", 12301, clientCreds);
 		QVERIFY(data != 0);
 		ClientConn * conn = new ClientConn(data);
@@ -271,6 +320,12 @@ private slots:
 		QVERIFY(msgs.contains("cli writeFinished"));
 		QVERIFY(msgs.contains("srv read: ping 1"));
 		QVERIFY(msgs.contains("cli read: pong 1"));
+		msgs.clear();
+
+		conn->close(TCPConn::ReadClosed);
+		msgSem.acquire(1);
+		QCOMPARE(msgs.size(), 1);
+		QVERIFY(msgs.contains("cli closed: 1"));
 		msgs.clear();
 
 		delete conn;
@@ -290,7 +345,7 @@ private slots:
 	void test_IPv6()
 	{
 		Server serv;
-		serv.start("::1", 12301);
+		QVERIFY(serv.start("::1", 12301));
 		TCPManager cli;
 		TCPConnData * data = cli.openConnection("::1", 12301);
 		QVERIFY(data != 0);
@@ -308,6 +363,12 @@ private slots:
 		QVERIFY(msgs.contains("cli writeFinished"));
 		QVERIFY(msgs.contains("srv read: ping 1"));
 		QVERIFY(msgs.contains("cli read: pong 1"));
+		msgs.clear();
+
+		conn->close(TCPConn::ReadClosed);
+		msgSem.acquire(1);
+		QCOMPARE(msgs.size(), 1);
+		QVERIFY(msgs.contains("cli closed: 1"));
 		msgs.clear();
 
 		delete conn;

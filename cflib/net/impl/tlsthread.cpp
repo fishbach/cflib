@@ -67,10 +67,10 @@ void TLSThread::closeConn(TCPConnData * conn, TCPConn::CloseType type)
 	impl_.closeConn(conn, type);
 }
 
-void TLSThread::destroy(TCPConnData * conn)
+void TLSThread::deleteOnFinish(TCPConnData * conn)
 {
-	if (!verifyThreadCall(&TLSThread::destroy, conn)) return;
-	impl_.deleteConn(conn);
+	if (!verifyThreadCall(&TLSThread::deleteOnFinish, conn)) return;
+	impl_.deleteOnFinish(conn);
 }
 
 }}}	// namespace

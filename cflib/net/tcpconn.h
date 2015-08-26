@@ -41,6 +41,12 @@ public:
 
 public:
 	TCPConn(TCPConnData * data, uint readBufferSize = 0x10000 /* 64kb */);
+
+	// When destroying TCPConn object, make sure no callback is still active:
+	// every call to startReadWatcher() will result in exactly one call of "newBytesAvailable" or "closed"
+	// every call to write(data, true) will result in exactly one call of "writeFinished" or "closed"
+	// destructor returns immediately, but write data will be send completely
+	// If this is not desired, call close(HardClosed) before destruction.
 	virtual ~TCPConn();
 
 	// returns all available bytes
@@ -55,8 +61,8 @@ public:
 	// - HardClosed may abort pending writes
 	// on TCP level:
 	// - WriteClosed sends FIN to peer
-	// - ReadClosed does not inform the sender in any way (!)
 	// - ReadClosed does not inform the sender in any way and just releases some system resources (!)
+	// - HardClosed sends RST to peer
 	void close(CloseType type = ReadWriteClosed);
 
 	// has to be called repeatedly to get informed via function newBytesAvailable

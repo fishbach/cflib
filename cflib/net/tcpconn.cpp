@@ -32,7 +32,9 @@ TCPConn::TCPConn(TCPConnData * data, uint readBufferSize) :
 
 TCPConn::~TCPConn()
 {
-	if (data_) data_->impl.deleteOnFinish(data_);
+	if (!data_) return;
+	if (data_->tlsStream) data_->impl.tlsDeleteOnFinish(data_);
+	else                  data_->impl.deleteOnFinish(data_);
 }
 
 QByteArray TCPConn::read()

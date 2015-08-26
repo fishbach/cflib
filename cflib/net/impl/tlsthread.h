@@ -38,7 +38,7 @@ public:
 	void read(TCPConnData * conn);
 	void write(TCPConnData * conn, const QByteArray & data, bool notifyFinished);
 	void closeConn(TCPConnData * conn, TCPConn::CloseType type);
-	void destroy(TCPConnData * conn);
+	void deleteOnFinish(TCPConnData * conn);
 
 private:
 	TCPManagerImpl & impl_;

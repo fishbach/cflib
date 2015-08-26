@@ -51,10 +51,10 @@ public:
 	void writeToSocket(TCPConnData * conn, const QByteArray & data, bool notifyFinished);
 	void closeConn(TCPConnData * conn, TCPConn::CloseType type);
 	void deleteOnFinish(TCPConnData * conn);
-	void deleteConn(TCPConnData * conn);
 
 	void tlsWrite(TCPConnData * conn, const QByteArray & data, bool notifyFinished) const;
 	void tlsCloseConn(TCPConnData * conn, TCPConn::CloseType type) const;
+	void tlsDeleteOnFinish(TCPConnData * conn) const;
 
 	static void setNoDelay(int socket, bool noDelay);
 	static int openListenSocket(const QByteArray & ip, quint16 port);
