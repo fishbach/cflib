@@ -22,7 +22,7 @@
 #include <cflib/net/impl/tcpconndata.h>
 #include <cflib/net/impl/tcpmanagerimpl.h>
 
-namespace cflib { namespace net {
+namespace cflib { namespace net { namespace impl {
 
 TLSThread::TLSThread(TCPManagerImpl & impl, uint no, uint total) :
 	ThreadVerify(QString("TLSThread %1/%2").arg(no).arg(total), ThreadVerify::Worker),
@@ -73,4 +73,4 @@ void TLSThread::destroy(TCPConnData * conn)
 	impl_.deleteConn(conn);
 }
 
-}}	// namespace
+}}}	// namespace

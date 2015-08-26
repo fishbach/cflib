@@ -54,7 +54,7 @@ USE_LOG(LogCat::Network)
 using namespace cflib::crypt;
 using namespace cflib::util;
 
-namespace cflib { namespace net {
+namespace cflib { namespace net { namespace impl {
 
 namespace {
 
@@ -478,4 +478,4 @@ void TCPManagerImpl::listenSocketReadable(ev_loop *, ev_io * w, int)
 	}
 }
 
-}}	// namespace
+}}}	// namespace

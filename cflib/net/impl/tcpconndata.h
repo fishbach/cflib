@@ -25,19 +25,19 @@ namespace cflib { namespace crypt { class TLSStream; }}
 
 namespace cflib { namespace net {
 
-class TCPManagerImpl;
+namespace impl { class TCPManagerImpl; }
 
 class TCPConnData
 {
 	Q_DISABLE_COPY(TCPConnData)
 public:
-	TCPConnData(TCPManagerImpl & impl,
+	TCPConnData(impl::TCPManagerImpl & impl,
 		int socket, const char * peerIP, quint16 peerPort,
 		crypt::TLSStream * tlsStream, uint tlsThreadId);
 	~TCPConnData();
 
 public:
-	TCPManagerImpl & impl;
+	impl::TCPManagerImpl & impl;
 	TCPConn * conn;
 
 	// connection

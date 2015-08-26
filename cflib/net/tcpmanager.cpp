@@ -23,7 +23,7 @@
 namespace cflib { namespace net {
 
 TCPManager::TCPManager(uint tlsThreadCount) :
-	impl_(new TCPManagerImpl(*this, tlsThreadCount))
+	impl_(new impl::TCPManagerImpl(*this, tlsThreadCount))
 {
 }
 
@@ -68,7 +68,7 @@ TCPConnData * TCPManager::openConnection(const QByteArray & destIP, quint16 dest
 
 int TCPManager::openListenSocket(const QByteArray & ip, quint16 port)
 {
-	return TCPManagerImpl::openListenSocket(ip, port);
+	return impl::TCPManagerImpl::openListenSocket(ip, port);
 }
 
 bool TCPManager::start(int listenSocket)

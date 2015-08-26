@@ -25,7 +25,7 @@ namespace cflib { namespace crypt { class TLSCredentials; }}
 namespace cflib { namespace net {
 
 class TCPConnData;
-class TCPManagerImpl;
+namespace impl { class TCPManagerImpl; }
 
 class TCPManager
 {
@@ -57,8 +57,8 @@ protected:
 	virtual void newConnection(TCPConnData * data);
 
 private:
-	TCPManagerImpl * impl_;
-	friend class TCPManagerImpl;
+	impl::TCPManagerImpl * impl_;
+	friend class impl::TCPManagerImpl;
 };
 
 }}	// namespace

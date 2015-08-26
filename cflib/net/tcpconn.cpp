@@ -84,7 +84,7 @@ TCPConnData * TCPConn::detach()
 
 void TCPConn::setNoDelay(bool noDelay)
 {
-	TCPManagerImpl::setNoDelay(data_->socket, noDelay);
+	impl::TCPManagerImpl::setNoDelay(data_->socket, noDelay);
 }
 
 TCPManager & TCPConn::manager() const

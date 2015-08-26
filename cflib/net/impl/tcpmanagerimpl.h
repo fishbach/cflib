@@ -28,6 +28,9 @@ namespace cflib { namespace crypt { class TLSCredentials; }}
 namespace cflib { namespace net {
 
 class TCPManager;
+
+namespace impl {
+
 class TLSThread;
 
 class TCPManagerImpl : public util::ThreadVerify
@@ -76,4 +79,4 @@ private:
 	QAtomicInteger<uint> tlsConnId_;
 };
 
-}}	// namespace
+}}}	// namespace

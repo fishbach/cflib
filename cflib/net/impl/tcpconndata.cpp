@@ -23,7 +23,7 @@
 
 namespace cflib { namespace net {
 
-TCPConnData::TCPConnData(TCPManagerImpl & impl,
+TCPConnData::TCPConnData(impl::TCPManagerImpl & impl,
 	int socket, const char * peerIP, quint16 peerPort,
 	crypt::TLSStream * tlsStream, uint tlsThreadId)
 :
@@ -32,9 +32,9 @@ TCPConnData::TCPConnData(TCPManagerImpl & impl,
 	tlsStream(tlsStream), tlsThreadId(tlsThreadId),
 	closeAfterWriting(false), notifyWrite(false), closeType(TCPConn::NotClosed)
 {
-	ev_io_init(&readWatcher, &TCPManagerImpl::readable, socket, EV_READ);
+	ev_io_init(&readWatcher, &impl::TCPManagerImpl::readable, socket, EV_READ);
 	readWatcher.data = this;
-	ev_io_init(&writeWatcher, &TCPManagerImpl::writeable, socket, EV_WRITE);
+	ev_io_init(&writeWatcher, &impl::TCPManagerImpl::writeable, socket, EV_WRITE);
 	writeWatcher.data = this;
 
 	if (tlsStream) {

@@ -24,6 +24,9 @@
 namespace cflib { namespace net {
 
 class TCPConnData;
+
+namespace impl {
+
 class TCPManagerImpl;
 
 class TLSThread : public util::ThreadVerify
@@ -41,4 +44,4 @@ private:
 	TCPManagerImpl & impl_;
 };
 
-}}	// namespace
+}}}	// namespace

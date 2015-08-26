@@ -24,6 +24,8 @@ namespace cflib { namespace net {
 
 class TCPConnData;
 class TCPManager;
+namespace impl { class TCPManagerImpl; }
+namespace impl { class TLSThread; }
 
 class TCPConn
 {
@@ -78,8 +80,8 @@ protected:
 
 private:
 	TCPConnData * data_;
-	friend class TCPManagerImpl;
-	friend class TLSThread;
+	friend class impl::TCPManagerImpl;
+	friend class impl::TLSThread;
 };
 
 }}	// namespace
