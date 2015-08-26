@@ -19,7 +19,8 @@
 #pragma once
 
 #include <cflib/net/tcpconn.h>
-#include <cflib/util/libev.h>
+
+struct ev_io;
 
 namespace cflib { namespace crypt { class TLSStream; }}
 
@@ -50,8 +51,8 @@ public:
 	const uint tlsThreadId;
 
 	// state
-	ev_io readWatcher;
-	ev_io writeWatcher;
+	ev_io * readWatcher;
+	ev_io * writeWatcher;
 	QByteArray readBuf;
 	QByteArray readData;
 	QByteArray writeBuf;

@@ -20,6 +20,7 @@
 
 #include <cflib/crypt/tlsstream.h>
 #include <cflib/net/impl/tcpmanagerimpl.h>
+#include <cflib/util/libev.h>
 
 namespace cflib { namespace net {
 
@@ -30,12 +31,13 @@ TCPConnData::TCPConnData(impl::TCPManagerImpl & impl,
 	impl(impl), conn(0),
 	socket(socket), peerIP(peerIP), peerPort(peerPort),
 	tlsStream(tlsStream), tlsThreadId(tlsThreadId),
+	readWatcher(new ev_io), writeWatcher(new ev_io),
 	closeAfterWriting(false), deleteAfterWriting(false), notifyWrite(false), closeType(TCPConn::NotClosed)
 {
-	ev_io_init(&readWatcher, &impl::TCPManagerImpl::readable, socket, EV_READ);
-	readWatcher.data = this;
-	ev_io_init(&writeWatcher, &impl::TCPManagerImpl::writeable, socket, EV_WRITE);
-	writeWatcher.data = this;
+	ev_io_init(readWatcher, &impl::TCPManagerImpl::readable, socket, EV_READ);
+	readWatcher->data = this;
+	ev_io_init(writeWatcher, &impl::TCPManagerImpl::writeable, socket, EV_WRITE);
+	writeWatcher->data = this;
 
 	if (tlsStream) {
 		const QByteArray data = tlsStream->initialSend();
@@ -46,6 +48,8 @@ TCPConnData::TCPConnData(impl::TCPManagerImpl & impl,
 TCPConnData::~TCPConnData()
 {
 	delete tlsStream;
+	delete readWatcher;
+	delete writeWatcher;
 }
 
 }}	// namespace

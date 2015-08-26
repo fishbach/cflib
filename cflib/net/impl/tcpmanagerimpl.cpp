@@ -235,7 +235,7 @@ void TCPManagerImpl::startReadWatcher(TCPConnData * conn)
 		execCall(new Functor1<TCPConn, TCPConn::CloseType>(conn->conn, &TCPConn::closed, ct));
 		return;
 	}
-	ev_io_start(libEVLoop(), &conn->readWatcher);
+	ev_io_start(libEVLoop(), conn->readWatcher);
 }
 
 void TCPManagerImpl::writeToSocket(TCPConnData * conn, const QByteArray & data, bool notifyFinished)
@@ -256,7 +256,7 @@ void TCPManagerImpl::writeToSocket(TCPConnData * conn, const QByteArray & data, 
 	}
 
 	if (notifyFinished) conn->notifyWrite = true;
-	if (!ev_is_active(&conn->writeWatcher)) writeable(libEVLoop(), &conn->writeWatcher, 0);
+	if (!ev_is_active(conn->writeWatcher)) writeable(libEVLoop(), conn->writeWatcher, 0);
 }
 
 void TCPManagerImpl::closeConn(TCPConnData * conn, TCPConn::CloseType type)
@@ -285,12 +285,12 @@ void TCPManagerImpl::closeConn(TCPConnData * conn, TCPConn::CloseType type)
 
 	// stop watcher
 	bool wasWatching = false;
-	if (readClosed && ev_is_active(&conn->readWatcher)) {
-		ev_io_stop(libEVLoop(), &conn->readWatcher);
+	if (readClosed && ev_is_active(conn->readWatcher)) {
+		ev_io_stop(libEVLoop(), conn->readWatcher);
 		wasWatching = true;
 	}
-	if (writeClosed && ev_is_active(&conn->writeWatcher)) {
-		ev_io_stop(libEVLoop(), &conn->writeWatcher);
+	if (writeClosed && ev_is_active(conn->writeWatcher)) {
+		ev_io_stop(libEVLoop(), conn->writeWatcher);
 		if (conn->notifyWrite) {
 			conn->notifyWrite = false;
 			wasWatching = true;
@@ -330,8 +330,8 @@ void TCPManagerImpl::deleteOnFinish(TCPConnData * conn)
 	if (!verifyThreadCall(&TCPManagerImpl::deleteOnFinish, conn)) return;
 
 	closeConn(conn, TCPConn::ReadWriteClosed);
-	if (ev_is_active(&conn->writeWatcher)) conn->deleteAfterWriting = true;
-	else                                   delete conn;
+	if (ev_is_active(conn->writeWatcher)) conn->deleteAfterWriting = true;
+	else                                  delete conn;
 }
 
 void TCPManagerImpl::tlsWrite(TCPConnData * conn, const QByteArray & data, bool notifyFinished) const
