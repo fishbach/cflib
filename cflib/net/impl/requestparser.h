@@ -69,7 +69,6 @@ private:
 	QMap<int, QByteArray> replies_;
 
 	int attachedRequests_;
-	bool socketClosed_;
 	bool detached_;
 	bool passThrough_;
 	PassThroughHandler * passThroughHandler_;

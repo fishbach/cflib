@@ -43,7 +43,6 @@ RequestParser::RequestParser(TCPConnData * data,
 	method_(Request::NONE),
 	requestCount_(0), nextReplyId_(1),
 	attachedRequests_(1),
-	socketClosed_(false),
 	detached_(false),
 	passThrough_(false),
 	passThroughHandler_(0)
@@ -87,7 +86,7 @@ void RequestParser::setPassThroughHandler(PassThroughHandler * hdl)
 
 QByteArray RequestParser::readPassThrough(bool & isLast)
 {
-	if (!passThrough_ || socketClosed_) {
+	if (!passThrough_ || (isClosed() & ReadClosed)) {
 		isLast = true;
 		return QByteArray();
 	}
@@ -141,8 +140,7 @@ void RequestParser::closed(CloseType type)
 {
 	if (!verifyThreadCall(&RequestParser::closed, type)) return;
 
-	socketClosed_ = true;
-	logCustom(LogCat::Network | LogCat::Debug)("connection %1 closed", id_);
+	logCustom(LogCat::Network | LogCat::Debug)("connection %1 closed (type: %2)", id_, (int)type);
 	detachRequest();	// removes initial ref, so that we will be deleted
 
 	if (passThroughHandler_) passThroughHandler_->morePassThroughData();
@@ -153,7 +151,7 @@ void RequestParser::parseRequest()
 	logFunctionTrace
 	do {
 
-		// header ok?
+		// header finished?
 		if (contentLength_ == -1) {
 			const int pos = header_.indexOf("\r\n\r\n");
 			if (pos == -1) break;
@@ -282,7 +280,7 @@ bool RequestParser::handleRequestLine(const QByteArray & line)
 
 void RequestParser::writeReply(const QByteArray & reply)
 {
-	if (socketClosed_) {
+	if (isClosed() & WriteClosed) {
 		logCustom(LogCat::Network | LogCat::Warn)("cannot write %1 bytes of request %2 on closed connection %3",
 			reply.size(), nextReplyId_, id_);
 	} else {

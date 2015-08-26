@@ -40,9 +40,9 @@ public:
 		stopVerifyThread();
 	}
 
-	void registerHandler(RequestHandler * handler)
+	void registerHandler(RequestHandler & handler)
 	{
-		handlers_ << handler;
+		handlers_ << &handler;
 	}
 
 protected:
@@ -95,7 +95,7 @@ bool HttpServer::isRunning() const
 	return impl_->isRunning();
 }
 
-void HttpServer::registerHandler(RequestHandler * handler)
+void HttpServer::registerHandler(RequestHandler & handler)
 {
 	impl_->registerHandler(handler);
 }

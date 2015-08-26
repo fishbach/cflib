@@ -22,6 +22,7 @@ QT = core
 TARGET = net_test
 
 SOURCES = \
+	http_test.cpp \
 	tcp_test.cpp \
 
 useLibs(cflib_net cflib_crypt cflib_util)

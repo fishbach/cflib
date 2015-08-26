@@ -20,31 +20,26 @@
 
 #include <QtCore>
 
-namespace cflib { namespace crypt { class TLSCredentials; }}
-
 namespace cflib { namespace net {
 
-class RequestHandler;
+class TCPManager;
 
-class HttpServer
+class HttpClient
 {
-	Q_DISABLE_COPY(HttpServer)
+	Q_DISABLE_COPY(HttpClient)
 public:
-	HttpServer(uint threadCount = 2, uint tlsThreadCount = 0);
-	~HttpServer();
+	HttpClient(TCPManager & mgr);
+	~HttpClient();
 
-	bool start(const QByteArray & address, quint16 port);
-	bool start(const QByteArray & address, quint16 port, crypt::TLSCredentials & credentials);
-	bool start(int listenSocket);
-	bool start(int listenSocket, crypt::TLSCredentials & credentials);
-	bool stop();
-	bool isRunning() const;
+	void get(const QByteArray & ip, quint16 port, const QByteArray & url);
 
-	void registerHandler(RequestHandler & handler);
+protected:
+	virtual void reply(const QByteArray & raw) = 0;
 
 private:
-	class Impl;
-	Impl * impl_;
+	TCPManager & mgr_;
+	class HttpConn;
+	HttpConn * conn_;
 };
 
 }}	// namespace

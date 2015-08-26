@@ -22,8 +22,10 @@ QT = core
 TARGET = cflib_net
 
 HEADERS = \
+	apiserver.h \
 	fileserver.h \
 	httpauth.h \
+	httpclient.h \
 	httpserver.h \
 	jsservice.h \
 	logservice.h \
@@ -35,7 +37,6 @@ HEADERS = \
 	tcpmanager.h \
 	uploadservice.h \
 	websocketservice.h \
-	apiserver.h \
 	impl/requestparser.h \
 	impl/tcpconndata.h \
 	impl/tcpmanagerimpl.h \
