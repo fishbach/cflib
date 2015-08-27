@@ -264,7 +264,7 @@ void TCPManagerImpl::closeConn(TCPConnData * conn, TCPConn::CloseType type)
 	if (!verifyThreadCall(&TCPManagerImpl::closeConn, conn, type)) return;
 
 	// update state
-	TCPConn::CloseType & ct = conn->closeType;
+	volatile TCPConn::CloseType & ct = conn->closeType;
 	const TCPConn::CloseType oldCt = ct;
 	ct = (TCPConn::CloseType)(ct | type);
 	if (oldCt == ct) return;

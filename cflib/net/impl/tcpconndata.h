@@ -47,7 +47,7 @@ public:
 	const quint16 peerPort;
 
 	// TLS handling
-	crypt::TLSStream * tlsStream;
+	crypt::TLSStream * const tlsStream;
 	const uint tlsThreadId;
 
 	// state
@@ -59,7 +59,7 @@ public:
 	bool closeAfterWriting;
 	bool deleteAfterWriting;
 	bool notifyWrite;
-	TCPConn::CloseType closeType;
+	volatile TCPConn::CloseType closeType;
 };
 
 }}	// namespace
