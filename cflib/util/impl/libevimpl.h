@@ -16,6 +16,9 @@
  * along with cflib. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "libev.h"
+// these only work in includes
+#pragma GCC system_header
+#pragma clang system_header
 
-#include <cflib/util/impl/libevimpl.h>
+#undef signals
+#include "../libev/ev.c"

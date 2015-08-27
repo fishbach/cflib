@@ -26,6 +26,7 @@ HEADERS = \
 	evtimer.h \
 	functor.h \
 	hex.h \
+	impl/libevimpl.h \
 	impl/logformat.h \
 	impl/threadverifyimpl.h \
 	libev.h \
