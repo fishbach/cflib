@@ -34,13 +34,16 @@ public:
 		TCPConn(data),
 		parent_(parent)
 	{
-		startReadWatcher();
 	}
 
 protected:
 	virtual void newBytesAvailable()
 	{
 		parent_.reply(read());
+		if (!parent_.keepAlive_) {
+			parent_.conn_ = 0;
+			delete this;
+		}
 	}
 
 	virtual void closed(CloseType)
@@ -53,8 +56,8 @@ private:
 };
 
 
-HttpClient::HttpClient(TCPManager & mgr) :
-	mgr_(mgr), conn_(0)
+HttpClient::HttpClient(TCPManager & mgr, bool keepAlive) :
+	mgr_(mgr), keepAlive_(keepAlive), conn_(0)
 {
 }
 
@@ -75,9 +78,11 @@ void HttpClient::get(const QByteArray & ip, quint16 port, const QByteArray & url
 	request <<
 		"GET " << url << " HTTP/1.1\r\n"
 		"Host: " << ip << ":" << QByteArray::number(port) << "\r\n"
-		"Connection: keep-alive\r\n"
+		<< (keepAlive_ ? "Connection: keep-alive\r\n" : "") <<
 		"\r\n";
 	conn_->write(request);
+	if (!keepAlive_) conn_->close(TCPConn::WriteClosed);
+	conn_->startReadWatcher();
 }
 
 }}	// namespace

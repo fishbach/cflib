@@ -28,9 +28,10 @@ class HttpClient
 {
 	Q_DISABLE_COPY(HttpClient)
 public:
-	HttpClient(TCPManager & mgr);
+	HttpClient(TCPManager & mgr, bool keepAlive = true);
 	~HttpClient();
 
+	// TODO: getaddrinfo -> dns resolve
 	void get(const QByteArray & ip, quint16 port, const QByteArray & url);
 
 protected:
@@ -38,6 +39,7 @@ protected:
 
 private:
 	TCPManager & mgr_;
+	bool keepAlive_;
 	class HttpConn;
 	HttpConn * conn_;
 };
