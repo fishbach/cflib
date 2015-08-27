@@ -61,6 +61,7 @@ private:
 	TCPForwarder * forwarder_;
 };
 
+// Forwarder holds outgoing connection
 class TCPForwarder : public TCPConn
 {
 public:
@@ -70,18 +71,25 @@ public:
 	{
 		logFunctionTrace
 
+		// write request
 		QByteArray requestData = request.getRawHeader();
 		requestData += "\r\n\r\n";
 		requestData += request.getBody();
 		write(requestData);
+
+		// take incoming tcp connection from request
 		TCPConnData * oldData = request.detach();
 		if (!oldData) {
 			logWarn("could not detach from socket");
 			deleteNext(this);
-		} else {
-			reader_ = new TCPReader(oldData, this);
-			startReadWatcher();
+			return;
 		}
+
+		// wait for more requests from client
+		reader_ = new TCPReader(oldData, this);
+
+		// wait for reply from outgoing connection
+		startReadWatcher();
 	}
 
 	~TCPForwarder()
@@ -97,20 +105,22 @@ public:
 protected:
 	virtual void newBytesAvailable()
 	{
-		logFunctionTrace
 		const QByteArray data = read();
+		logTrace("read %1 bytes from outgoing connection", data.size());
 		if (reader_) reader_->write(data);
 		startReadWatcher();
 	}
 
 	virtual void closed(CloseType type)
 	{
-		logFunctionTrace
-		if (reader_) {
-			reader_->detach();
-			reader_->close(ReadWriteClosed);
+		logTrace("outgoing connection closed with %1", (int)type);
+		if (type & ReadClosed) {
+			if (reader_) {
+				reader_->detach();
+				reader_->close(ReadWriteClosed);
+			}
+			deleteNext(this);
 		}
-		deleteNext(this);
 	}
 
 private:
@@ -119,20 +129,22 @@ private:
 
 void TCPReader::newBytesAvailable()
 {
-	logFunctionTrace
 	const QByteArray data = read();
+	logTrace("read %1 bytes from incoming connection", data.size());
 	if (forwarder_) forwarder_->write(data);
 	startReadWatcher();
 }
 
 void TCPReader::closed(CloseType type)
 {
-	logFunctionTrace
-	if (forwarder_) {
-		forwarder_->detach();
-		forwarder_->close(ReadWriteClosed);
-	}
-	deleteNext(this);
+	logTrace("incoming connection closed with %1", (int)type);
+	if (type & WriteClosed) {
+		if (forwarder_) {
+			forwarder_->detach();
+			forwarder_->close(ReadWriteClosed);
+		}
+		deleteNext(this);
+	} else if (forwarder_) forwarder_->close(WriteClosed);
 }
 
 }
@@ -211,10 +223,12 @@ void RedirectServer::handleRequest(const cflib::net::Request & request)
 {
 	QString url = request.getHostname();
 	url += request.getUri();
+
 	QListIterator<Entry> it(entries_);
 	while (it.hasNext()) {
 		const Entry & entry = it.next();
 
+		// check for match
 		QRegularExpressionMatch match;
 		if (!entry.isDefault) {
 			match = entry.test.match(url);
@@ -222,6 +236,7 @@ void RedirectServer::handleRequest(const cflib::net::Request & request)
 			if (entry.isValid) return;
 		}
 
+		// handle redirect
 		if (entry.isRedirect) {
 			if (entry.isDefault) {
 				request.sendRedirect(entry.destUrlFunc ? entry.destUrlFunc(request) : entry.destUrl);
@@ -231,12 +246,14 @@ void RedirectServer::handleRequest(const cflib::net::Request & request)
 			return;
 		}
 
+		// handle forward (pass through)
 		TCPManager * tcpManager = request.tcpManager();
 		if (!tcpManager) {
 			logWarn("cannot forward request");
 			return;
 		}
 
+		// open destination connection
 		DestHost destHost;
 		if (entry.isDefault) {
 			destHost = entry.destHostFunc ? entry.destHostFunc(request) : entry.destHost;
@@ -249,6 +266,8 @@ void RedirectServer::handleRequest(const cflib::net::Request & request)
 			request.sendNotFound();
 			return;
 		}
+
+		// start tcp forwarding
 		new TCPForwarder(ci, request);
 		return;
 	}
