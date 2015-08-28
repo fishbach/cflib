@@ -290,13 +290,11 @@ private slots:
 		msgs.clear();
 
 		conn->write("1st msg");
-		conn->write("2st msg");
 		delete conn;
-		msgSem.acquire(4);
-		QCOMPARE(msgs.size(), 4);
+		msgSem.acquire(3);
+		QCOMPARE(msgs.size(), 3);
 		QVERIFY(msgs.contains("cli deleted"));
 		QVERIFY(msgs.contains("srv read: 1st msg"));
-		QVERIFY(msgs.contains("srv read: 2st msg"));
 		QVERIFY(msgs.contains("srv closed: 3"));
 		msgs.clear();
 

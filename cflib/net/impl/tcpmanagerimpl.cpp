@@ -304,7 +304,6 @@ void TCPManagerImpl::closeConn(TCPConnData * conn, TCPConn::CloseType type, bool
 
 	// close socket
 	if (readClosed)  conn->readBuf.clear();
-	if (writeClosed) conn->writeBuf.clear();
 	if (ct == TCPConn::HardClosed) {
 		// send RST instead of FIN
 		struct linger lin;
@@ -436,6 +435,7 @@ void TCPManagerImpl::writeable(ev_loop * loop, ev_io * w, int)
 	if (count < buf.size()) {
 		if (count < 0 && errno != EAGAIN && errno != EWOULDBLOCK && errno != ENOTCONN) {
 			logDebug("write on fd %1 failed (%2 - %3)", fd, errno, strerror(errno));
+			buf.clear();
 			impl.closeConn(conn, errno == EPIPE ? TCPConn::WriteClosed : TCPConn::HardClosed, false);
 			if (conn->deleteAfterWriting) delete conn;
 			return;
@@ -443,11 +443,11 @@ void TCPManagerImpl::writeable(ev_loop * loop, ev_io * w, int)
 		if (count > 0) buf.remove(0, count);
 		if (!ev_is_active(w)) ev_io_start(loop, w);
 	} else {
+		buf.clear();
 		if (conn->closeAfterWriting) {
 			impl.closeConn(conn, TCPConn::WriteClosed, false);
 			if (conn->deleteAfterWriting) delete conn;
 		} else {
-			buf.clear();
 			if (ev_is_active(w)) ev_io_stop(loop, w);
 			if (conn->notifyWrite) {
 				conn->notifyWrite = false;
