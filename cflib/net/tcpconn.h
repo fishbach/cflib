@@ -45,6 +45,10 @@ public:
 	// When destroying TCPConn object, make sure no callback is still active:
 	// every call to startReadWatcher() will result in exactly one call of "newBytesAvailable" or "closed"
 	// every call to write(data, true) will result in exactly one call of "writeFinished" or "closed"
+	// exception: closed is only called with new state
+	// example:
+	//   startReadWatcher() -> peer closed our read channel -> closed(ReadClosed)
+	//   if startReadWatcher() is called again, no callback will happen
 	// destructor returns immediately, but write data will be send completely
 	// If this is not desired, call close(HardClosed) before destruction.
 	virtual ~TCPConn();

@@ -321,11 +321,6 @@ private slots:
 		msgs.clear();
 
 		conn->write("no msg", true);
-		msgSem.acquire(1);
-		QCOMPARE(msgs.size(), 1);
-		QVERIFY(msgs.contains("cli closed: 7"));
-		msgs.clear();
-
 		delete conn;
 		msgSem.acquire(1);
 		QCOMPARE(msgs.size(), 1);

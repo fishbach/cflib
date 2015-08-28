@@ -30,6 +30,7 @@ class WebSocketService : public RequestHandler, public util::ThreadVerify
 {
 public:
 	WebSocketService(const QString & path);
+	~WebSocketService();
 
 protected:
 	void send(uint connId, const QByteArray & data, bool isBinary);

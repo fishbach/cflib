@@ -35,7 +35,8 @@ TCPConnData::TCPConnData(impl::TCPManagerImpl & impl,
 	socket(socket), peerIP(peerIP), peerPort(peerPort),
 	tlsStream(tlsStream), tlsThreadId(tlsThreadId),
 	readWatcher(new ev_io), writeWatcher(new ev_io),
-	closeAfterWriting(false), deleteAfterWriting(false), notifyWrite(false), closeType(TCPConn::NotClosed)
+	closeAfterWriting(false), deleteAfterWriting(false), notifyWrite(false),
+	closeType(TCPConn::NotClosed), lastInformedCloseType(TCPConn::NotClosed)
 {
 	ev_io_init(readWatcher, &impl::TCPManagerImpl::readable, socket, EV_READ);
 	readWatcher->data = this;
@@ -50,10 +51,10 @@ TCPConnData::TCPConnData(impl::TCPManagerImpl & impl,
 
 TCPConnData::~TCPConnData()
 {
-	logFunctionTrace
 	delete tlsStream;
 	delete readWatcher;
 	delete writeWatcher;
+	logTrace("~TCPConnData()");
 }
 
 void TCPConnData::callClosed()

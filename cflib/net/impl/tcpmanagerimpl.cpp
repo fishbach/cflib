@@ -111,6 +111,7 @@ TCPManagerImpl::TCPManagerImpl(TCPManager & parent, uint tlsThreadCount) :
 
 TCPManagerImpl::~TCPManagerImpl()
 {
+	logFunctionTrace
 	stopVerifyThread();
 	foreach (TLSThread * th, tlsThreads_) delete th;
 	delete readWatcher_;
@@ -266,10 +267,9 @@ void TCPManagerImpl::closeConn(TCPConnData * conn, TCPConn::CloseType type, bool
 	volatile TCPConn::CloseType & ct = conn->closeType;
 	const TCPConn::CloseType oldCt = ct;
 	ct = (TCPConn::CloseType)(ct | type);
-	if (oldCt == ct) {
-		if (notifyClose) callClosed(conn);
-		return;
-	}
+
+	// nothing changed
+	if (oldCt == ct) return;
 
 	// calc changes
 	const TCPConn::CloseType changed = (TCPConn::CloseType)(oldCt ^ ct);
@@ -498,6 +498,8 @@ void TCPManagerImpl::listenSocketReadable(ev_loop *, ev_io * w, int)
 
 void TCPManagerImpl::callClosed(TCPConnData * conn)
 {
+	if (conn->lastInformedCloseType == conn->closeType) return;
+	conn->lastInformedCloseType = conn->closeType;
 	if (conn->tlsStream) tlsThreads_[conn->tlsThreadId]->callClosed(conn);
 	else                 execCall(new Functor0<TCPConnData>(conn, &TCPConnData::callClosed));
 }

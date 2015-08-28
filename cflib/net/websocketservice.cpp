@@ -37,9 +37,7 @@ public:
 		TCPConn(connData),
 		service_(*service),
 		connId_(connId),
-		isBinary_(false),
-		isFirstMsg_(true),
-		abort_(false)
+		isBinary_(false)
 	{
 		logFunctionTrace
 		setNoDelay(true);
@@ -56,7 +54,11 @@ public:
 		const uint len = data.size();
 		QByteArray frame;
 		frame.reserve(len + 10);
+
+		// write first start byte
 		frame += isBinary ? 0x82 : 0x81;
+
+		// write length
 		if (len < 126) {
 			frame += len;
 		} else if (len < 0x10000) {
@@ -74,6 +76,7 @@ public:
 			frame += (len >>  8) & 0xFF;
 			frame += len & 0xFF;
 		}
+
 		frame += data;
 		write(frame);
 	}
@@ -85,70 +88,24 @@ protected:
 
 		buf_ += read();
 		handleData();
-//		startWatcher();
+		startReadWatcher();
 	}
 
 	virtual void closed(CloseType type)
 	{
 		if (!verifyThreadCall(&WSConnHandler::closed, type)) return;
-/*
-		logFunctionTrace
-		service_.all_.remove(this);
-		if (clientId_ == 0) {
-			if (!abort_) service_.closed(0);
-		} else {
-			service_.clients_.remove(clientId_, this);
-			if (!service_.clients_.contains(clientId_) && !abort_) {
-				service_.apiServer_.blockExpiration(clientId_, false);
-				service_.closed(clientId_);
-			}
+
+		if ((type & ReadClosed) && (type & WriteClosed)) {
+			service_.connections_.remove(connId_);
+			util::deleteNext(this);
 		}
-		util::deleteNext(this);
-*/
+		service_.closed(connId_, type);
 	}
 
 private:
-	inline bool idMsg(const QByteArray & data)
-	{
-		if (!isFirstMsg_) return false;
-		isFirstMsg_ = false;
-/*
-		if (!data.startsWith("CFLIB_clientId#")) {
-			abort_ = !service_.newClient(0);
-			if (abort_) {
-//				abortConnection();
-				return true;
-			}
-			service_.all_ << this;
-			return false;
-		}
-
-		service_.apiServer_.getClientId(data.mid(15), clientId_);
-		if (clientId_ == 0) {
-			logInfo("unknown client id: %1", data);
-			abort_ = true;
-//			abortConnection();
-			return true;
-		}
-
-		if (!service_.clients_.contains(clientId_)) {
-			abort_ = !service_.newClient(clientId_);
-			if (abort_) {
-//				abortConnection();
-				return true;
-			}
-			service_.apiServer_.blockExpiration(clientId_, true);
-		}
-		service_.all_ << this;
-		service_.clients_.insert(clientId_, this);
-*/
-		return true;
-	}
-
 	void handleData()
 	{
-/*
-		while (buf_.size() >= 2 && !abort_) {
+		while (buf_.size() >= 2) {
 			quint8 * data = (quint8 *)buf_.constData();
 			uint dLen = buf_.size();
 			bool fin = data[0] & 0x80;
@@ -158,10 +115,11 @@ private:
 			// clients must send masked data
 			if (!mask) {
 				logWarn("no mask in frame: %1", buf_);
-//				abortConnection();
+				close(HardClosed, true);
 				return;
 			}
 
+			// read len
 			quint64 len = data[1] & 0x7F;
 			if (len < 126) {
 				data += 2;
@@ -180,34 +138,36 @@ private:
 				dLen -= 10;
 			}
 
-			// apply mask
+			// Enough data available?
 			if (dLen < len + 4) return;
+
+			// apply mask
 			const quint8 * maskKey = data;
 			data += 4;
 			dLen -= 4;
 			for (uint i = 0 ; i < len ; ++i) data[i] ^= maskKey[i % 4];
 
-			if (opcode == 0x0) {
+			// handle message types
+			if (opcode == 0x0) {	// continuation frame
 				fragmentBuf_.append((const char *)data, len);
 				if (fin) {
-					if (!idMsg(fragmentBuf_)) service_.newMsg(clientId_, fragmentBuf_, isBinary_);
+					service_.newMsg(connId_, fragmentBuf_, isBinary_);
 					fragmentBuf_.clear();
 				}
-			} else if (opcode == 0x1 || opcode == 0x2) {
+			} else if (opcode == 0x1 || opcode == 0x2) {	// test / binary frame
 				if (!fin) {
 					isBinary_ = opcode == 2;
 					fragmentBuf_.append((const char *)data, len);
 				} else {
-					QByteArray payload((const char *)data, len);
-					if (!idMsg(payload)) service_.newMsg(clientId_, payload, opcode == 2);
+					service_.newMsg(connId_, QByteArray((const char *)data, len), opcode == 2);
 				}
-			} else if (opcode == 0x8) {	// close
+			} else if (opcode == 0x8) {	// connection close
 				logDebug("received close frame");
-//				closeNicely();
+				close(ReadWriteClosed, true);
 			} else if (opcode == 0x9) {	// ping
 				// send pong
 				quint8 * orig = (quint8 *)buf_.constData();
-				orig[0] = (orig[0] & 0xF) | 0xA;
+				orig[0] = (orig[0] & 0xF0) | 0xA;
 				orig[1] &= 0x7F;
 				QByteArray pong((const char *)orig, buf_.size() - dLen - 4);
 				pong.append((const char *)data, len);
@@ -220,19 +180,14 @@ private:
 
 			buf_.remove(0, buf_.size() - dLen + len);
 		}
-
-*/
 	}
 
 private:
 	WebSocketService & service_;
-	const QString name_;
-	QByteArray buf_;
 	uint connId_;
-	bool isBinary_;
+	QByteArray buf_;
 	QByteArray fragmentBuf_;
-	bool isFirstMsg_;
-	bool abort_;
+	bool isBinary_;
 };
 
 // ============================================================================
@@ -245,10 +200,16 @@ WebSocketService::WebSocketService(const QString & path) :
 	setThreadPrio(QThread::HighPriority);
 }
 
+WebSocketService::~WebSocketService()
+{
+	QHashIterator<uint, WSConnHandler *> it(connections_);
+	while (it.hasNext()) it.next().value()->close(TCPConn::HardClosed, true);
+}
+
 void WebSocketService::send(uint connId, const QByteArray & data, bool isBinary)
 {
 	WSConnHandler * wsHdl = connections_.value(connId);
-//	if (wsHdl) wsHdl->send(data, isBinary);
+	if (wsHdl) wsHdl->send(data, isBinary);
 }
 
 void WebSocketService::close(uint connId, TCPConn::CloseType type)
@@ -304,6 +265,8 @@ void WebSocketService::addConnection(const Request & request)
 	header += cflib::crypt::sha1(wsKey + "258EAFA5-E914-47DA-95CA-C5AB0DC85B11").toBase64();
 	header += "\r\n\r\n";
 	wsHdl->write(header);
+
+	newConnection(connId);
 }
 
 }}	// namespace

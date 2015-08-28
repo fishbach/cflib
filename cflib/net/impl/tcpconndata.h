@@ -62,6 +62,7 @@ public:
 	bool deleteAfterWriting;
 	bool notifyWrite;
 	volatile TCPConn::CloseType closeType;
+	TCPConn::CloseType lastInformedCloseType;
 };
 
 }}	// namespace

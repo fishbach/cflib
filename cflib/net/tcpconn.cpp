@@ -20,6 +20,9 @@
 
 #include <cflib/net/impl/tcpconndata.h>
 #include <cflib/net/impl/tcpmanagerimpl.h>
+#include <cflib/util/log.h>
+
+USE_LOG(LogCat::Network)
 
 namespace cflib { namespace net {
 
@@ -32,6 +35,7 @@ TCPConn::TCPConn(TCPConnData * data, uint readBufferSize) :
 
 TCPConn::~TCPConn()
 {
+	logFunctionTrace
 	if (!data_) return;
 	if (data_->tlsStream) data_->impl.tlsDeleteOnFinish(data_);
 	else                  data_->impl.deleteOnFinish(data_);
