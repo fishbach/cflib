@@ -148,7 +148,6 @@ void RequestParser::closed(CloseType type)
 
 void RequestParser::parseRequest()
 {
-	logFunctionTrace
 	do {
 
 		// header finished?
