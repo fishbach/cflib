@@ -65,6 +65,8 @@ protected:
 			close(ReadWriteClosed);
 		} else if (in == "hard") {
 			close(HardClosed);
+		} else if (in == "writeclose") {
+			close(WriteClosed);
 		}
 		startReadWatcher();
 	}
@@ -261,6 +263,46 @@ private slots:
 		msgSem.acquire(2);
 		QCOMPARE(msgs.size(), 2);
 		QVERIFY(msgs.contains("cli deleted"));
+		QVERIFY(msgs.contains("srv deleted"));
+		msgs.clear();
+	}
+
+	void test_sendAndDelete()
+	{
+		Server serv;
+		QVERIFY(serv.start("127.0.0.1", 12301));
+		TCPManager cli;
+		TCPConnData * data = cli.openConnection("127.0.0.1", 12301);
+		QVERIFY(data != 0);
+		ClientConn * conn = new ClientConn(data);
+
+		msgSem.acquire(2);
+		QCOMPARE(msgs.size(), 2);
+		QVERIFY(msgs.contains("cli new: 127.0.0.1:12301"));
+		QVERIFY(msgs.contains("srv new: 127.0.0.1"));
+		msgs.clear();
+
+		conn->write("writeclose");
+		msgSem.acquire(2);
+		QCOMPARE(msgs.size(), 2);
+		QVERIFY(msgs.contains("srv read: writeclose"));
+		QVERIFY(msgs.contains("cli closed: 1"));
+		msgs.clear();
+
+		conn->write("1st msg");
+		conn->write("2st msg");
+		delete conn;
+		msgSem.acquire(4);
+		QCOMPARE(msgs.size(), 4);
+		QVERIFY(msgs.contains("cli deleted"));
+		QVERIFY(msgs.contains("srv read: 1st msg"));
+		QVERIFY(msgs.contains("srv read: 2st msg"));
+		QVERIFY(msgs.contains("srv closed: 3"));
+		msgs.clear();
+
+		foreach (TCPConn * sc, serv.conns) delete sc;
+		msgSem.acquire(1);
+		QCOMPARE(msgs.size(), 1);
 		QVERIFY(msgs.contains("srv deleted"));
 		msgs.clear();
 	}

@@ -47,7 +47,11 @@ protected:
 	virtual void handleRequest(const Request & request)
 	{
 		msg("new request: " + request.getUri());
-		request.sendText(QString("reply %1").arg(++count_));
+		if (request.getUri() == "/abort") {
+			request.abort();
+		} else {
+			request.sendText(QString("reply %1").arg(++count_));
+		}
 	}
 private:
 	uint count_;
@@ -109,6 +113,14 @@ private slots:
 			"Connection: keep-alive\\|"
 			"Content-Type: text/html; charset=utf-8|Content-Length: 7||reply 2"
 		)).isEmpty());
+		msgs.clear();
+
+
+		cli.get("127.0.0.1", 12301, "/abort");
+		msgSem.acquire(2);
+		QCOMPARE(msgs.size(), 2);
+		QVERIFY(msgs.contains("new request: /abort"));
+		QVERIFY(msgs.contains("http reply: "));
 		msgs.clear();
 	}
 

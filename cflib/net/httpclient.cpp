@@ -49,6 +49,10 @@ protected:
 	virtual void closed(CloseType)
 	{
 		parent_.reply(QByteArray());
+		if (!parent_.keepAlive_) {
+			parent_.conn_ = 0;
+			delete this;
+		}
 	}
 
 private:
@@ -68,12 +72,15 @@ HttpClient::~HttpClient()
 
 void HttpClient::get(const QByteArray & ip, quint16 port, const QByteArray & url)
 {
-	TCPConnData * data = mgr_.openConnection(ip, port);
-	if (!data) {
-		reply(QByteArray());
-		return;
+	if (!conn_) {
+		TCPConnData * data = mgr_.openConnection(ip, port);
+		if (!data) {
+			reply(QByteArray());
+			return;
+		}
+		conn_ = new HttpConn(data, *this);
 	}
-	conn_ = new HttpConn(data, *this);
+
 	QByteArray request;
 	request <<
 		"GET " << url << " HTTP/1.1\r\n"

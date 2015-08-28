@@ -21,6 +21,9 @@
 #include <cflib/crypt/tlsstream.h>
 #include <cflib/net/impl/tcpmanagerimpl.h>
 #include <cflib/util/libev.h>
+#include <cflib/util/log.h>
+
+USE_LOG(LogCat::Network)
 
 namespace cflib { namespace net {
 
@@ -47,6 +50,7 @@ TCPConnData::TCPConnData(impl::TCPManagerImpl & impl,
 
 TCPConnData::~TCPConnData()
 {
+	logFunctionTrace
 	delete tlsStream;
 	delete readWatcher;
 	delete writeWatcher;

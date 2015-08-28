@@ -312,10 +312,12 @@ void TCPManagerImpl::closeConn(TCPConnData * conn, TCPConn::CloseType type, bool
 		lin.l_linger = 0;
 		setsockopt(conn->socket, SOL_SOCKET, SO_LINGER, (const void *)&lin, sizeof(lin));
 		close(conn->socket);
+		logDebug("fd %1 closed", conn->socket);
 	} else if (ct & TCPConn::ReadClosed) {
 		if (ct & TCPConn::WriteClosed) {
 			// no need to call shutdown(conn->socket, SHUT_RDWR) - close() will do.
 			close(conn->socket);
+			logDebug("fd %1 closed", conn->socket);
 		} else {
 			shutdown(conn->socket, SHUT_RD);
 		}
