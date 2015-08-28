@@ -37,6 +37,8 @@ public:
 		crypt::TLSStream * tlsStream, uint tlsThreadId);
 	~TCPConnData();
 
+	void callClosed();
+
 public:
 	impl::TCPManagerImpl & impl;
 	TCPConn * conn;

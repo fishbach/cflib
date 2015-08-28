@@ -230,9 +230,8 @@ void TCPManagerImpl::startReadWatcher(TCPConnData * conn)
 {
 	if (!verifyThreadCall(&TCPManagerImpl::startReadWatcher, conn)) return;
 
-	const TCPConn::CloseType ct = conn->closeType;
-	if (ct & TCPConn::ReadClosed) {
-		execCall(new Functor1<TCPConn, TCPConn::CloseType>(conn->conn, &TCPConn::closed, ct));
+	if (conn->closeType & TCPConn::ReadClosed) {
+		callClosed(conn);
 		return;
 	}
 	ev_io_start(libEVLoop(), conn->readWatcher);
@@ -251,7 +250,7 @@ void TCPManagerImpl::writeToSocket(TCPConnData * conn, const QByteArray & data, 
 
 	if (conn->closeType & TCPConn::WriteClosed) {
 		conn->writeBuf.clear();
-		execCall(new Functor1<TCPConn, TCPConn::CloseType>(conn->conn, &TCPConn::closed, conn->closeType));
+		if (notifyFinished) callClosed(conn);
 		return;
 	}
 
@@ -259,15 +258,18 @@ void TCPManagerImpl::writeToSocket(TCPConnData * conn, const QByteArray & data, 
 	if (!ev_is_active(conn->writeWatcher)) writeable(libEVLoop(), conn->writeWatcher, 0);
 }
 
-void TCPManagerImpl::closeConn(TCPConnData * conn, TCPConn::CloseType type)
+void TCPManagerImpl::closeConn(TCPConnData * conn, TCPConn::CloseType type, bool notifyClose)
 {
-	if (!verifyThreadCall(&TCPManagerImpl::closeConn, conn, type)) return;
+	if (!verifyThreadCall(&TCPManagerImpl::closeConn, conn, type, notifyClose)) return;
 
 	// update state
 	volatile TCPConn::CloseType & ct = conn->closeType;
 	const TCPConn::CloseType oldCt = ct;
 	ct = (TCPConn::CloseType)(ct | type);
-	if (oldCt == ct) return;
+	if (oldCt == ct) {
+		if (notifyClose) callClosed(conn);
+		return;
+	}
 
 	// calc changes
 	const TCPConn::CloseType changed = (TCPConn::CloseType)(oldCt ^ ct);
@@ -284,44 +286,41 @@ void TCPManagerImpl::closeConn(TCPConnData * conn, TCPConn::CloseType type)
 	logDebug("socket %1 closed (%2 => %3)", conn->socket, (int)oldCt, (int)ct);
 
 	// stop watcher
-	bool wasWatching = false;
 	if (readClosed && ev_is_active(conn->readWatcher)) {
 		ev_io_stop(libEVLoop(), conn->readWatcher);
-		wasWatching = true;
+		notifyClose = true;
 	}
-	if (writeClosed && ev_is_active(conn->writeWatcher)) {
-		ev_io_stop(libEVLoop(), conn->writeWatcher);
+	if (writeClosed) {
+		if (ev_is_active(conn->writeWatcher)) ev_io_stop(libEVLoop(), conn->writeWatcher);
 		if (conn->notifyWrite) {
 			conn->notifyWrite = false;
-			wasWatching = true;
+			notifyClose = true;
 		}
 	}
-	if (wasWatching) execCall(new Functor1<TCPConn, TCPConn::CloseType>(conn->conn, &TCPConn::closed, ct));
+	if (notifyClose) callClosed(conn);
+
+	// hard close and nothing to do
+	if (!readClosed && !writeClosed) return;
 
 	// close socket
-	if (ct == TCPConn::HardClosed && (readClosed || writeClosed)) {
-		conn->readBuf.clear();
-		conn->writeBuf.clear();
-
+	if (readClosed)  conn->readBuf.clear();
+	if (writeClosed) conn->writeBuf.clear();
+	if (ct == TCPConn::HardClosed) {
 		// send RST instead of FIN
 		struct linger lin;
 		lin.l_onoff  = 1;
 		lin.l_linger = 0;
 		setsockopt(conn->socket, SOL_SOCKET, SO_LINGER, (const void *)&lin, sizeof(lin));
 		close(conn->socket);
-	} else {
-		if (readClosed) {
-			conn->readBuf.clear();
-			if (writeClosed) {
-				conn->writeBuf.clear();
-				// no need to call shutdown(conn->socket, SHUT_RDWR) - close() will do.
-				close(conn->socket);
-			} else {
-				shutdown(conn->socket, SHUT_RD);
-			}
+	} else if (ct & TCPConn::ReadClosed) {
+		if (ct & TCPConn::WriteClosed) {
+			// no need to call shutdown(conn->socket, SHUT_RDWR) - close() will do.
+			close(conn->socket);
 		} else {
-			shutdown(conn->socket, SHUT_WR);
+			shutdown(conn->socket, SHUT_RD);
 		}
+	} else {
+		shutdown(conn->socket, SHUT_WR);
 	}
 }
 
@@ -329,9 +328,14 @@ void TCPManagerImpl::deleteOnFinish(TCPConnData * conn)
 {
 	if (!verifyThreadCall(&TCPManagerImpl::deleteOnFinish, conn)) return;
 
-	closeConn(conn, TCPConn::ReadWriteClosed);
-	if (ev_is_active(conn->writeWatcher)) conn->deleteAfterWriting = true;
-	else                                  delete conn;
+	if (ev_is_active(conn->writeWatcher)) {
+		closeConn(conn, TCPConn::ReadClosed, false);
+		conn->closeAfterWriting = true;
+		conn->deleteAfterWriting = true;
+	} else {
+		closeConn(conn, TCPConn::ReadWriteClosed, false);
+		delete conn;
+	}
 }
 
 void TCPManagerImpl::tlsWrite(TCPConnData * conn, const QByteArray & data, bool notifyFinished) const
@@ -339,9 +343,9 @@ void TCPManagerImpl::tlsWrite(TCPConnData * conn, const QByteArray & data, bool 
 	tlsThreads_[conn->tlsThreadId]->write(conn, data, notifyFinished);
 }
 
-void TCPManagerImpl::tlsCloseConn(TCPConnData * conn, TCPConn::CloseType type) const
+void TCPManagerImpl::tlsCloseConn(TCPConnData * conn, TCPConn::CloseType type, bool notifyClose) const
 {
-	tlsThreads_[conn->tlsThreadId]->closeConn(conn, type);
+	tlsThreads_[conn->tlsThreadId]->closeConn(conn, type, notifyClose);
 }
 
 void TCPManagerImpl::tlsDeleteOnFinish(TCPConnData * conn) const
@@ -404,7 +408,7 @@ void TCPManagerImpl::readable(ev_loop * loop, ev_io * w, int)
 
 	if (count == 0) {
 		logDebug("read channel closed on fd %1", fd);
-		impl.closeConn(conn, TCPConn::ReadClosed);
+		impl.closeConn(conn, TCPConn::ReadClosed, false);
 		return;
 	}
 
@@ -414,7 +418,7 @@ void TCPManagerImpl::readable(ev_loop * loop, ev_io * w, int)
 	}
 
 	logInfo("read on fd %1 failed (%2 - %3)", fd, errno, strerror(errno));
-	impl.closeConn(conn, TCPConn::HardClosed);
+	impl.closeConn(conn, TCPConn::HardClosed, false);
 }
 
 void TCPManagerImpl::writeable(ev_loop * loop, ev_io * w, int)
@@ -430,26 +434,23 @@ void TCPManagerImpl::writeable(ev_loop * loop, ev_io * w, int)
 	if (count < buf.size()) {
 		if (count < 0 && errno != EAGAIN && errno != EWOULDBLOCK && errno != ENOTCONN) {
 			logDebug("write on fd %1 failed (%2 - %3)", fd, errno, strerror(errno));
-			buf.clear();
-			if (ev_is_active(w)) ev_io_stop(loop, w);
-			impl.closeConn(conn, errno == EPIPE ? TCPConn::WriteClosed : TCPConn::HardClosed);
+			impl.closeConn(conn, errno == EPIPE ? TCPConn::WriteClosed : TCPConn::HardClosed, false);
 			if (conn->deleteAfterWriting) delete conn;
-			else if (conn->notifyWrite) {
-				conn->notifyWrite = false;
-				impl.execCall(new Functor1<TCPConn, TCPConn::CloseType>(conn->conn, &TCPConn::closed, conn->closeType));
-			}
 			return;
 		}
 		if (count > 0) buf.remove(0, count);
 		if (!ev_is_active(w)) ev_io_start(loop, w);
 	} else {
-		buf.clear();
-		if (ev_is_active(w)) ev_io_stop(loop, w);
-		if (conn->closeAfterWriting) impl.closeConn(conn, TCPConn::WriteClosed);
-		if (conn->deleteAfterWriting) delete conn;
-		else if (conn->notifyWrite) {
-			conn->notifyWrite = false;
-			impl.execCall(new Functor0<TCPConn>(conn->conn, &TCPConn::writeFinished));
+		if (conn->closeAfterWriting) {
+			impl.closeConn(conn, TCPConn::WriteClosed, false);
+			if (conn->deleteAfterWriting) delete conn;
+		} else {
+			buf.clear();
+			if (ev_is_active(w)) ev_io_stop(loop, w);
+			if (conn->notifyWrite) {
+				conn->notifyWrite = false;
+				impl.execCall(new Functor0<TCPConn>(conn->conn, &TCPConn::writeFinished));
+			}
 		}
 	}
 }
@@ -459,7 +460,9 @@ void TCPManagerImpl::listenSocketReadable(ev_loop *, ev_io * w, int)
 	logFunctionTrace
 
 	TCPManagerImpl * impl = (TCPManagerImpl *)w->data;
+
 	forever {
+		// get socket and source address
 		int newSock;
 		char ip[40];
 		quint16 port;
@@ -478,7 +481,6 @@ void TCPManagerImpl::listenSocketReadable(ev_loop *, ev_io * w, int)
 			inet_ntop(AF_INET, &cliAddr.sin_addr, ip, sizeof(ip));
 			port = ntohs(cliAddr.sin_port);
 		}
-
 		setNonBlocking(newSock);
 
 		logDebug("new connection (%1) from %2:%3", newSock, ip, port);
@@ -490,6 +492,12 @@ void TCPManagerImpl::listenSocketReadable(ev_loop *, ev_io * w, int)
 			new TCPConnData(*impl, newSock, ip, port, 0, 0)
 		);
 	}
+}
+
+void TCPManagerImpl::callClosed(TCPConnData * conn)
+{
+	if (conn->tlsStream) tlsThreads_[conn->tlsThreadId]->callClosed(conn);
+	else                 execCall(new Functor0<TCPConnData>(conn, &TCPConnData::callClosed));
 }
 
 }}}	// namespace

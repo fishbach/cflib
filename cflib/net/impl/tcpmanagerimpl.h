@@ -49,11 +49,11 @@ public:
 
 	void startReadWatcher(TCPConnData * conn);
 	void writeToSocket(TCPConnData * conn, const QByteArray & data, bool notifyFinished);
-	void closeConn(TCPConnData * conn, TCPConn::CloseType type);
+	void closeConn(TCPConnData * conn, TCPConn::CloseType type, bool notifyClose);
 	void deleteOnFinish(TCPConnData * conn);
 
 	void tlsWrite(TCPConnData * conn, const QByteArray & data, bool notifyFinished) const;
-	void tlsCloseConn(TCPConnData * conn, TCPConn::CloseType type) const;
+	void tlsCloseConn(TCPConnData * conn, TCPConn::CloseType type, bool notifyClose) const;
 	void tlsDeleteOnFinish(TCPConnData * conn) const;
 
 	static void setNoDelay(int socket, bool noDelay);
@@ -69,6 +69,7 @@ protected:
 
 private:
 	static void listenSocketReadable(ev_loop * loop, ev_io * w, int revents);
+	void callClosed(TCPConnData * conn);
 
 private:
 	int listenSock_;

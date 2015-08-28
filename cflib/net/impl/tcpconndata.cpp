@@ -52,4 +52,9 @@ TCPConnData::~TCPConnData()
 	delete writeWatcher;
 }
 
+void TCPConnData::callClosed()
+{
+	conn->closed(closeType);
+}
+
 }}	// namespace

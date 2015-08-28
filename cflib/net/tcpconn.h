@@ -63,7 +63,7 @@ public:
 	// - WriteClosed sends FIN to peer
 	// - ReadClosed does not inform the sender in any way and just releases some system resources (!)
 	// - HardClosed sends RST to peer
-	void close(CloseType type = ReadWriteClosed);
+	void close(CloseType type = ReadWriteClosed, bool notifyClose = false);
 
 	// has to be called repeatedly to get informed via function newBytesAvailable
 	void startReadWatcher();
@@ -86,6 +86,7 @@ protected:
 
 private:
 	TCPConnData * data_;
+	friend class TCPConnData;
 	friend class impl::TCPManagerImpl;
 	friend class impl::TLSThread;
 };

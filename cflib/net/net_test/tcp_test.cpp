@@ -166,12 +166,11 @@ private slots:
 		conn->write("ping 2");
 		conn->close(TCPConn::WriteClosed);
 		conn->write("no msg");
-		msgSem.acquire(4);
-		QCOMPARE(msgs.size(), 4);
+		msgSem.acquire(3);
+		QCOMPARE(msgs.size(), 3);
 		QVERIFY(msgs.contains("srv read: ping 2"));
 		QVERIFY(msgs.contains("cli read: pong 2"));
 		QVERIFY(msgs.contains("srv closed: 1"));
-		QVERIFY(msgs.contains("cli closed: 2"));
 		msgs.clear();
 
 		conn->close();
@@ -279,7 +278,7 @@ private slots:
 		QVERIFY(msgs.contains("cli closed: 7"));
 		msgs.clear();
 
-		conn->write("no msg");
+		conn->write("no msg", true);
 		msgSem.acquire(1);
 		QCOMPARE(msgs.size(), 1);
 		QVERIFY(msgs.contains("cli closed: 7"));

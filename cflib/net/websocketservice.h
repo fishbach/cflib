@@ -19,6 +19,7 @@
 #pragma once
 
 #include <cflib/net/requesthandler.h>
+#include <cflib/net/tcpconn.h>
 #include <cflib/util/threadverify.h>
 
 namespace cflib { namespace net {
@@ -28,26 +29,26 @@ class ApiServer;
 class WebSocketService : public RequestHandler, public util::ThreadVerify
 {
 public:
-	WebSocketService(ApiServer & apiServer, const QString & path);
-
-	void send(uint clientId, const QByteArray & data, bool isBinary);
-	void sendAll(const QByteArray & data, bool isBinary);
-	void close(uint clientId);
-	bool isConnected(uint clientId) const;
+	WebSocketService(const QString & path);
 
 protected:
-	virtual void newMsg(uint clientId, const QByteArray & data, bool isBinary) = 0;
-	virtual bool newClient(uint clientId);	// abort if return value is false
-	virtual void closed(uint clientId);
+	void send(uint connId, const QByteArray & data, bool isBinary);
+	void close(uint connId, TCPConn::CloseType type = TCPConn::ReadWriteClosed);
+
+	virtual void newConnection(uint connId);
+	virtual void newMsg(uint connId, const QByteArray & data, bool isBinary) = 0;
+	virtual void closed(uint connId, TCPConn::CloseType type);
 
 	virtual void handleRequest(const Request & request);
 
 private:
-	ApiServer & apiServer_;
+	void addConnection(const Request & request);
+
+private:
 	const QString path_;
 	class WSConnHandler;
-	QMultiHash<uint, WSConnHandler *> clients_;
-	QSet<WSConnHandler *> all_;
+	QHash<uint, WSConnHandler *> connections_;
+	uint lastConnId_;
 };
 
 }}	// namespace

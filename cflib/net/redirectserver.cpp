@@ -117,8 +117,7 @@ protected:
 		if (type & ReadClosed) {
 			if (reader_) {
 				reader_->detach();
-				if (reader_->isClosed() & ReadClosed) delete reader_;
-				else reader_->close(ReadWriteClosed);
+				reader_->close(ReadWriteClosed, true);
 			}
 			deleteNext(this);
 		}

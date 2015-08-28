@@ -32,11 +32,11 @@ namespace cflib { namespace net {
 class WebSocketService::WSConnHandler : public util::ThreadVerify, public TCPConn
 {
 public:
-	WSConnHandler(WebSocketService * service, TCPConnData * connData) :
+	WSConnHandler(WebSocketService * service, TCPConnData * connData, uint connId) :
 		ThreadVerify(service),
 		TCPConn(connData),
 		service_(*service),
-		clientId_(0),
+		connId_(connId),
 		isBinary_(false),
 		isFirstMsg_(true),
 		abort_(false)
@@ -78,12 +78,6 @@ public:
 		write(frame);
 	}
 
-	void close()
-	{
-		abort_ = true;
-//		closeNicely();
-	}
-
 protected:
 	virtual void newBytesAvailable()
 	{
@@ -97,7 +91,7 @@ protected:
 	virtual void closed(CloseType type)
 	{
 		if (!verifyThreadCall(&WSConnHandler::closed, type)) return;
-
+/*
 		logFunctionTrace
 		service_.all_.remove(this);
 		if (clientId_ == 0) {
@@ -110,6 +104,7 @@ protected:
 			}
 		}
 		util::deleteNext(this);
+*/
 	}
 
 private:
@@ -117,7 +112,7 @@ private:
 	{
 		if (!isFirstMsg_) return false;
 		isFirstMsg_ = false;
-
+/*
 		if (!data.startsWith("CFLIB_clientId#")) {
 			abort_ = !service_.newClient(0);
 			if (abort_) {
@@ -144,14 +139,15 @@ private:
 			}
 			service_.apiServer_.blockExpiration(clientId_, true);
 		}
-
 		service_.all_ << this;
 		service_.clients_.insert(clientId_, this);
+*/
 		return true;
 	}
 
 	void handleData()
 	{
+/*
 		while (buf_.size() >= 2 && !abort_) {
 			quint8 * data = (quint8 *)buf_.constData();
 			uint dLen = buf_.size();
@@ -224,13 +220,15 @@ private:
 
 			buf_.remove(0, buf_.size() - dLen + len);
 		}
+
+*/
 	}
 
 private:
 	WebSocketService & service_;
 	const QString name_;
 	QByteArray buf_;
-	uint clientId_;
+	uint connId_;
 	bool isBinary_;
 	QByteArray fragmentBuf_;
 	bool isFirstMsg_;
@@ -239,49 +237,47 @@ private:
 
 // ============================================================================
 
-WebSocketService::WebSocketService(ApiServer & apiServer, const QString & path) :
+WebSocketService::WebSocketService(const QString & path) :
 	ThreadVerify("WebSocketService", LoopType::Worker),
-	apiServer_(apiServer),
-	path_(path)
+	path_(path),
+	lastConnId_(0)
 {
 	setThreadPrio(QThread::HighPriority);
 }
 
-void WebSocketService::send(uint clientId, const QByteArray & data, bool isBinary)
+void WebSocketService::send(uint connId, const QByteArray & data, bool isBinary)
 {
-	foreach (WSConnHandler * wsHdl, clients_.values(clientId)) wsHdl->send(data, isBinary);
+	WSConnHandler * wsHdl = connections_.value(connId);
+//	if (wsHdl) wsHdl->send(data, isBinary);
 }
 
-void WebSocketService::sendAll(const QByteArray & data, bool isBinary)
+void WebSocketService::close(uint connId, TCPConn::CloseType type)
 {
-	foreach (WSConnHandler * wsHdl, all_) wsHdl->send(data, isBinary);
+	WSConnHandler * wsHdl = connections_.value(connId);
+	if (wsHdl) wsHdl->close(type, true);
 }
 
-void WebSocketService::close(uint clientId)
+void WebSocketService::newConnection(uint)
 {
-	foreach (WSConnHandler * wsHdl, clients_.values(clientId)) wsHdl->close();
 }
 
-bool WebSocketService::isConnected(uint clientId) const
-{
-	return clients_.contains(clientId);
-}
-
-bool WebSocketService::newClient(uint)
-{
-	return true;
-}
-
-void WebSocketService::closed(uint)
+void WebSocketService::closed(uint, TCPConn::CloseType)
 {
 }
 
 void WebSocketService::handleRequest(const Request & request)
 {
+	if (request.getUri() != path_ || !request.isGET()) return;
+	addConnection(request);
+}
+
+void WebSocketService::addConnection(const Request & request)
+{
+	if (!verifyThreadCall(&WebSocketService::addConnection, request)) return;
+
 	logFunctionTrace
 
-	if (request.getUri() != path_ || !request.isGET()) return;
-
+	// check WS headers
 	const Request::KeyVal headers = request.getHeaderFields();
 	const QByteArray wsKey = headers["sec-websocket-key"];
 	if (headers["upgrade"] != "websocket" || wsKey.isEmpty()) {
@@ -289,13 +285,17 @@ void WebSocketService::handleRequest(const Request & request)
 		return;
 	}
 
+	// detach from socket
 	TCPConnData * connData = request.detach();
 	if (!connData) {
 		logWarn("could not detach from socket");
 		return;
 	}
-	WSConnHandler * wsHdl = new WSConnHandler(this, connData);
+	const uint connId = ++lastConnId_;
+	WSConnHandler * wsHdl = new WSConnHandler(this, connData, connId);
+	connections_[connId] = wsHdl;
 
+	// write WS header
 	QByteArray header =
 		"HTTP/1.1 101 Switching Protocols\r\n"
 		"Upgrade: websocket\r\n"

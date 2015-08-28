@@ -50,10 +50,10 @@ void TCPConn::write(const QByteArray & data, bool notifyFinished)
 	else                  data_->impl.writeToSocket(data_, data, notifyFinished);
 }
 
-void TCPConn::close(CloseType type)
+void TCPConn::close(CloseType type, bool notifyClose)
 {
-	if (data_->tlsStream) data_->impl.tlsCloseConn(data_, type);
-	else                  data_->impl.closeConn(data_, type);
+	if (data_->tlsStream) data_->impl.tlsCloseConn(data_, type, notifyClose);
+	else                  data_->impl.closeConn(data_, type, notifyClose);
 }
 
 void TCPConn::startReadWatcher()

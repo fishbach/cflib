@@ -41,7 +41,11 @@ void TLSThread::read(TCPConnData * conn)
 
 	QByteArray sendBack;
 	QByteArray plain;
-	if (!conn->tlsStream->received(conn->readData, plain, sendBack)) impl_.closeConn(conn, TCPConn::ReadWriteClosed);
+	if (!conn->tlsStream->received(conn->readData, plain, sendBack)) {
+		conn->readData.resize(0);
+		impl_.closeConn(conn, TCPConn::ReadWriteClosed, true);
+		return;
+	}
 	if (!sendBack.isEmpty()) impl_.writeToSocket(conn, sendBack, false);
 	if (plain.isEmpty()) {
 		conn->readData.resize(0);
@@ -57,20 +61,29 @@ void TLSThread::write(TCPConnData * conn, const QByteArray & data, bool notifyFi
 	if (!verifyThreadCall(&TLSThread::write, conn, data, notifyFinished)) return;
 
 	QByteArray enc;
-	if (!conn->tlsStream->send(data, enc)) impl_.closeConn(conn, TCPConn::ReadWriteClosed);
-	impl_.writeToSocket(conn, enc, notifyFinished);
+	if (!conn->tlsStream->send(data, enc)) {
+		impl_.closeConn(conn, TCPConn::ReadWriteClosed, notifyFinished);
+	} else {
+		impl_.writeToSocket(conn, enc, notifyFinished);
+	}
 }
 
-void TLSThread::closeConn(TCPConnData * conn, TCPConn::CloseType type)
+void TLSThread::closeConn(TCPConnData * conn, TCPConn::CloseType type, bool notifyClose)
 {
-	if (!verifyThreadCall(&TLSThread::closeConn, conn, type)) return;
-	impl_.closeConn(conn, type);
+	if (!verifyThreadCall(&TLSThread::closeConn, conn, type, notifyClose)) return;
+	impl_.closeConn(conn, type, notifyClose);
 }
 
 void TLSThread::deleteOnFinish(TCPConnData * conn)
 {
 	if (!verifyThreadCall(&TLSThread::deleteOnFinish, conn)) return;
 	impl_.deleteOnFinish(conn);
+}
+
+void TLSThread::callClosed(TCPConnData * conn)
+{
+	if (!verifyThreadCall(&TLSThread::callClosed, conn)) return;
+	conn->callClosed();
 }
 
 }}}	// namespace
