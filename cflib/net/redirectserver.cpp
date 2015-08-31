@@ -65,11 +65,12 @@ private:
 };
 
 // Forwarder holds outgoing connection
-class TCPForwarder : public TCPConn
+class TCPForwarder : public TCPConn, public ThreadVerify
 {
 public:
 	TCPForwarder(TCPConnData * data, const Request & request) :
 		TCPConn(data),
+		ThreadVerify(manager().networkThread()),
 		reader_(0)
 	{
 		logFunctionTrace
@@ -108,6 +109,9 @@ public:
 protected:
 	virtual void newBytesAvailable()
 	{
+		// we might get called by TLS-Thread here
+		if (!verifyThreadCall(&TCPForwarder::newBytesAvailable)) return;
+
 		const QByteArray data = read();
 		logTrace("read %1 bytes from outgoing connection", data.size());
 		if (reader_) reader_->write(data);
@@ -116,6 +120,9 @@ protected:
 
 	virtual void closed(CloseType type)
 	{
+		// we might get called by TLS-Thread here
+		if (!verifyThreadCall(&TCPForwarder::closed, type)) return;
+
 		logTrace("outgoing connection closed with %1", (int)type);
 		if (type & ReadClosed) {
 			if (reader_) {
@@ -132,6 +139,7 @@ private:
 
 void TCPReader::newBytesAvailable()
 {
+	// we might get called by TLS-Thread here
 	if (!verifyThreadCall(&TCPReader::newBytesAvailable)) return;
 
 	const QByteArray data = read();
@@ -142,6 +150,7 @@ void TCPReader::newBytesAvailable()
 
 void TCPReader::closed(CloseType type)
 {
+	// we might get called by TLS-Thread here
 	if (!verifyThreadCall(&TCPReader::closed, type)) return;
 
 	logTrace("incoming connection closed with %1", (int)type);
