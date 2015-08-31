@@ -50,13 +50,13 @@ inline QByteArray toByteArray(const T & v, quint64 tag = 1)
 }
 
 template<typename T>
-inline T fromByteArray(const quint8 * data, qint32 tlvLength, int tagLen, int lengthSize)
+inline T fromByteArray(const QByteArray & data, qint32 tlvLen, int tagLen, int lengthSize)
 {
-	qint32 valueLen = tlvLength - tagLen - lengthSize;
+	qint32 valueLen = tlvLen - tagLen - lengthSize;
 	if (valueLen == 0 && lengthSize == 2) return T();
 	T retval;
 	impl::BERDeserializerBase * dummy = 0;
-	impl::deserializeBER(retval, data + tagLen + lengthSize, valueLen, *dummy);
+	impl::deserializeBER(retval, (const quint8 *)data.constData() + tagLen + lengthSize, valueLen, *dummy);
 	return retval;
 }
 
