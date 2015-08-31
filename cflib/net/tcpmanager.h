@@ -21,6 +21,7 @@
 #include <QtCore>
 
 namespace cflib { namespace crypt { class TLSCredentials; }}
+namespace cflib { namespace util  { class ThreadVerify; }}
 
 namespace cflib { namespace net {
 
@@ -52,6 +53,8 @@ public:
 	static int openListenSocket(const QByteArray & ip, quint16 port);
 	bool start(int listenSocket);
 	bool start(int listenSocket, crypt::TLSCredentials & credentials);
+
+	util::ThreadVerify * networkThread();
 
 protected:
 	virtual void newConnection(TCPConnData * data);

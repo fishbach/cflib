@@ -81,6 +81,11 @@ bool TCPManager::start(int listenSocket, crypt::TLSCredentials & credentials)
 	return impl_->start(listenSocket, &credentials);
 }
 
+util::ThreadVerify * TCPManager::networkThread()
+{
+	return impl_;
+}
+
 void TCPManager::newConnection(TCPConnData * data)
 {
 	impl_->deleteOnFinish(data);

@@ -22,6 +22,7 @@
 #include <cflib/net/tcpconn.h>
 #include <cflib/net/tcpmanager.h>
 #include <cflib/util/log.h>
+#include <cflib/util/threadverify.h>
 #include <cflib/util/util.h>
 
 using namespace cflib::util;
@@ -34,11 +35,13 @@ namespace {
 
 class TCPForwarder;
 
-class TCPReader : public TCPConn
+class TCPReader : public TCPConn, public ThreadVerify
 {
 public:
 	TCPReader(TCPConnData * data, TCPForwarder * forwarder) :
-		TCPConn(data), forwarder_(forwarder)
+		TCPConn(data),
+		ThreadVerify(manager().networkThread()),
+		forwarder_(forwarder)
 	{
 		startReadWatcher();
 	}
@@ -129,6 +132,8 @@ private:
 
 void TCPReader::newBytesAvailable()
 {
+	if (!verifyThreadCall(&TCPReader::newBytesAvailable)) return;
+
 	const QByteArray data = read();
 	logTrace("read %1 bytes from incoming connection", data.size());
 	if (forwarder_) forwarder_->write(data);
@@ -137,6 +142,8 @@ void TCPReader::newBytesAvailable()
 
 void TCPReader::closed(CloseType type)
 {
+	if (!verifyThreadCall(&TCPReader::closed, type)) return;
+
 	logTrace("incoming connection closed with %1", (int)type);
 	if (type & WriteClosed) {
 		if (forwarder_) {
