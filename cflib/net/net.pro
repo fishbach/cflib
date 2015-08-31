@@ -37,6 +37,7 @@ HEADERS = \
 	tcpmanager.h \
 	uploadservice.h \
 	websocketservice.h \
+	wscommmanager.h \
 	impl/requestparser.h \
 	impl/tcpconndata.h \
 	impl/tcpmanagerimpl.h \

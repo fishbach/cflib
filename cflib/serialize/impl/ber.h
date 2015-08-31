@@ -27,9 +27,44 @@ inline bool isZeroTag(quint64 tag, quint8 tagLen)
 	return (tag & 0x1f) == 0 && tagLen == 1;
 }
 
+inline bool isTagConstructed(quint64 tag, quint8 tagLen)
+{
+	return tag & (0x20 << ((tagLen-1) * 8));
+}
+
 inline quint64 setConstructedBit(quint64 tag, quint8 tagLen)
 {
 	return tag | (0x20 << ((tagLen-1) * 8));
+}
+
+inline quint64 createTag(quint64 tagNo, quint8 & tagLen)
+{
+	tagLen = 1;
+	if (tagNo < 0x1F) return 0xC0 | tagNo;
+
+	++tagLen;
+	quint64 rv = tagNo & 0x7F;
+	tagNo >>= 7;
+	while (tagNo > 0) {
+		rv |= ((tagNo & 0x7F) | 0x80) << ((++tagLen - 2) * 8);
+		tagNo >>= 7;
+	}
+	return rv | (0xDF << ((tagLen - 1) * 8));
+}
+
+inline quint64 getTagNumber(quint64 tagBytes, quint8 tagLen)
+{
+	// one byte tags
+	if (tagLen == 1) return tagBytes & 0x1F;
+
+	// multi byte tags
+	quint64 rv = tagBytes & 0x7F;
+	--tagLen;
+	for (quint8 i = 1 ; i < tagLen ; ++i) {
+		tagBytes >>= 8;
+		rv |= (tagBytes & 0x7F) << (i * 7);
+	}
+	return rv;
 }
 
 inline void incTag(quint64 & tag, quint8 & tagLen)
@@ -101,15 +136,33 @@ inline quint8 minSizeOfInt(qint64 v)
 }
 
 // returns -1 if not enough data available
+inline qint64 decodeBERTag(const quint8 * data, int len, int & tagLen)
+{
+	if (len < 1) return -1;
+	quint64 tag = *data & 0x1F;	// remove Class and P/C
+	tagLen = 1;
+	if (tag == 0x1F) {
+		++tagLen;
+		if (len < tagLen) return -1;
+		tag <<= 8;
+		tag |= *(++data);
+		while (tag & 0x80) {
+			++tagLen;
+			if (len < tagLen) return -1;
+			tag <<= 8;
+			tag |= *(++data);
+		}
+	}
+	return (qint64)tag;
+}
+
+// returns -1 if not enough data available
 // returns -2 if length is undefined (one byte: 0x80)
 // returns -3 if too big length was found
 inline qint64 decodeBERLength(const quint8 * data, int len, int & lengthSize)
 {
 	// Is some data available?
-	if (len < 1) {
-		lengthSize = 0;
-		return -1;
-	}
+	if (len < 1) return -1;
 
 	// If 8th bit is not set, length is in this byte.
 	quint8 b = *data;
@@ -120,10 +173,8 @@ inline qint64 decodeBERLength(const quint8 * data, int len, int & lengthSize)
 
 	// 8th bit is set, so lower bits hold the size of the length
 	int ls = b & 0x7F;
-	if (len <= ls || ls > 8) {
-		lengthSize = 0;
-		return ls > 8 ? -3 : -1;
-	}
+	if (ls > 8) return -3;
+	if (len <= ls) return -1;
 
 	// check for undefined length
 	if (ls == 0) {
@@ -133,16 +184,24 @@ inline qint64 decodeBERLength(const quint8 * data, int len, int & lengthSize)
 
 	// check for too big length (signed qint64 overflow)
 	b = *(++data);
-	if (ls == 8 && ((b & 0x80) != 0)) {
-		lengthSize = 0;
-		return -3;
-	}
+	if (ls == 8 && ((b & 0x80) != 0)) return -3;
 
 	// calculate length
 	lengthSize = ls + 1;
 	qint64 retval = b;
 	while (--ls > 0) retval = (retval << 8) | *(++data);
 	return retval;
+}
+
+// returns -1 if not enough data available
+// returns -2 if length is undefined (one byte: 0x80)
+// returns -3 if too big length was found
+inline qint64 decodeTLV(const quint8 * data, int len, quint64 & tag, int & tagLen, int & lengthSize)
+{
+	qint64 & sTag = (qint64 &)tag;
+	sTag = decodeBERTag(data, len, tagLen);
+	if (sTag < 0) return -1;
+	return decodeBERLength(data + tagLen, len - tagLen, lengthSize);
 }
 
 // The first byte the length is returned. All other bytes are in lenBytes

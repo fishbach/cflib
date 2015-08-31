@@ -35,6 +35,12 @@ private slots:
 		QCOMPARE(flatten("\t _ \r\n_"), QString("_"));
 	}
 
+	void test_QString()
+	{
+		QVERIFY(QString().isNull());
+		QVERIFY(!QString("").isNull());
+	}
+
 	void test_QByteArray()
 	{
 		QByteArray ba;
@@ -52,6 +58,7 @@ private slots:
 		ba.clear();
 		QVERIFY(ba.isNull());
 		QCOMPARE(ba.capacity(), 0);
+		QVERIFY(!QByteArray("").isNull());
 	}
 
 };

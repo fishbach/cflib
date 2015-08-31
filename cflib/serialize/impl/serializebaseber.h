@@ -60,30 +60,12 @@ public:
 	BERDeserializerBase & operator>>(T & cl)
 	{
 		forever {
-			// read tag
-			if (bytesAvailable_ < 1) break;
-			quint64 tag = *readPos_ & 0x1F;	// remove Class and P/C
-			quint8 tagLen = 1;
-			if (tag == 0x1F) {
-				const quint8 * p = readPos_;
-				++tagLen;
-				if (bytesAvailable_ < tagLen) break;
-				tag <<= 8;
-				tag |= *(++p);
-				while (tag & 0x80) {
-					++tagLen;
-					if (bytesAvailable_ < tagLen) break;
-					tag <<= 8;
-					tag |= *(++p);
-				}
-			}
-
-			// read length
+			// read tlv
+			quint64 tag;
+			int tagLen;
 			int lengthSize;
-			const int valueLen = decodeBERLength(readPos_ + tagLen, bytesAvailable_ - tagLen, lengthSize);
+			const int valueLen = decodeTLV(readPos_, bytesAvailable_, tag, tagLen, lengthSize);
 			const int tlvLen = tagLen + lengthSize + valueLen;
-
-			// check for broken TLV
 			if (valueLen < 0 || bytesAvailable_ < tlvLen) break;
 
 			// check tag and deserialize

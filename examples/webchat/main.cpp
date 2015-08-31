@@ -23,6 +23,7 @@
 #include <cflib/net/httpserver.h>
 #include <cflib/net/logservice.h>
 #include <cflib/net/requestlog.h>
+#include <cflib/net/wscommmanager.h>
 #include <cflib/util/log.h>
 #include <cflib/util/unixsignal.h>
 
@@ -49,8 +50,11 @@ int main(int argc, char *argv[])
 
 	FileServer fs("htdocs");
 
+	WSCommManager<QString> wsCommManager("/ws");
+
 	HttpServer serv;
 	serv.registerHandler(requestLog);
+	serv.registerHandler(wsCommManager);
 	serv.registerHandler(api);
 	serv.registerHandler(fs);
 	serv.start("127.0.0.1", 8080);
