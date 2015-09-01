@@ -41,6 +41,11 @@ ThreadHolder::ThreadHolder(const QString & threadName) :
 {
 }
 
+ThreadHolder::~ThreadHolder()
+{
+	logTrace("~ThreadHolder()");
+}
+
 ThreadHolderQt::ThreadHolderQt(const QString & threadName) :
 	ThreadHolder(threadName)
 {

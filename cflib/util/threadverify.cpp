@@ -52,7 +52,7 @@ ThreadVerify::~ThreadVerify()
 		if (verifyThread_->isActive()) {
 			logCritical("thread %1 has not been stopped before destruction", verifyThread_->threadName);
 		}
-		verifyThread_->deleteLater();
+		delete verifyThread_;
 	}
 }
 

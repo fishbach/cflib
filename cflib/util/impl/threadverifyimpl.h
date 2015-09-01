@@ -47,6 +47,7 @@ class ThreadHolder : public QThread
 {
 public:
 	ThreadHolder(const QString & threadName);
+	~ThreadHolder();
 
 	const QString threadName;
 	bool isActive() const { return isActive_; }
