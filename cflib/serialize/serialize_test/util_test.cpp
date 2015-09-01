@@ -33,12 +33,12 @@ private slots:
 		int lengthSize;
 		QCOMPARE(getTLVLength(QByteArray::fromHex(""            ), tag, tagLen, lengthSize), -1);
 		QCOMPARE(getTLVLength(QByteArray::fromHex("c1"          ), tag, tagLen, lengthSize), -1);
-		QCOMPARE(getTLVLength(QByteArray::fromHex("c100"        ), tag, tagLen, lengthSize),  2); QCOMPARE(lengthSize, 1);
-		QCOMPARE(getTLVLength(QByteArray::fromHex("c18100"      ), tag, tagLen, lengthSize),  3); QCOMPARE(lengthSize, 2);
+		QCOMPARE(getTLVLength(QByteArray::fromHex("c100"        ), tag, tagLen, lengthSize),  0); QCOMPARE(lengthSize, 1);
+		QCOMPARE(getTLVLength(QByteArray::fromHex("c18100"      ), tag, tagLen, lengthSize),  0); QCOMPARE(lengthSize, 2);
 		QCOMPARE(getTLVLength(QByteArray::fromHex("c180"        ), tag, tagLen, lengthSize), -2);
 		QCOMPARE(getTLVLength(QByteArray::fromHex("c101"        ), tag, tagLen, lengthSize), -1);
-		QCOMPARE(getTLVLength(QByteArray::fromHex("c10100"      ), tag, tagLen, lengthSize),  3); QCOMPARE(lengthSize, 1);
-		QCOMPARE(getTLVLength(QByteArray::fromHex("c1810100"    ), tag, tagLen, lengthSize),  4); QCOMPARE(lengthSize, 2);
+		QCOMPARE(getTLVLength(QByteArray::fromHex("c10100"      ), tag, tagLen, lengthSize),  1); QCOMPARE(lengthSize, 1);
+		QCOMPARE(getTLVLength(QByteArray::fromHex("c1810100"    ), tag, tagLen, lengthSize),  1); QCOMPARE(lengthSize, 2);
 		QCOMPARE(getTLVLength(QByteArray::fromHex("c1847FFFFFF9"), tag, tagLen, lengthSize), -1);
 		QCOMPARE(getTLVLength(QByteArray::fromHex("c1847FFFFFFA"), tag, tagLen, lengthSize), -3);
 		QCOMPARE(getTLVLength(QByteArray::fromHex("c18480000000"), tag, tagLen, lengthSize), -3);

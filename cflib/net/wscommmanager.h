@@ -21,6 +21,7 @@
 #include <cflib/crypt/util.h>
 #include <cflib/net/websocketservice.h>
 #include <cflib/serialize/util.h>
+#include <cflib/util/log.h>
 
 namespace cflib { namespace net {
 
@@ -49,11 +50,15 @@ public:
 template <class C>
 class WSCommManager : public WebSocketService
 {
+	USE_LOG_MEMBER(LogCat::Http)
 public:
 	typedef WSCommStateListener<C> StateListener;
 
 public:
-	WSCommManager(const QString & path) : WebSocketService(path) {}
+	WSCommManager(const QString & path) :
+		WebSocketService(path),
+		connDataId_(0)
+	{}
 	~WSCommManager() { stopVerifyThread(); }
 
 protected:
@@ -65,50 +70,62 @@ protected:
 
 	virtual void newMsg(uint connId, const QByteArray & data, bool isBinary)
 	{
+		const uint dataId = connId2dataId_.value(connId);
+
+		// handle text msg
 		if (!isBinary) {
+			if (dataId == 0) {
+				close(TCPConn::HardClosed);
+				logInfo("request without clientId from %1", connId);
+				return;
+			}
+
 			QListIterator<StateListener *> it(stateListener_);
 			while (it.hasNext()) {
-				if (it.next()->handleTextMsg(data, connData_.value(connId).first, connId)) break;
+				if (it.next()->handleTextMsg(data, connData_.value(connId).first, connId)) return;
 			}
+			close(TCPConn::HardClosed);
+			logInfo("unhandled text message from %1", connId);
 			return;
 		}
+
+		// read outer BER
 		quint64 tag;
 		int tagLen;
 		int lengthSize;
-		qint32 tlvLen = serialize::getTLVLength(data, tag, tagLen, lengthSize);
-		if (tlvLen < 0) {
+		const qint32 valueLen = serialize::getTLVLength(data, tag, tagLen, lengthSize);
+		if (valueLen < 0) {
 			close(TCPConn::HardClosed);
+			logInfo("broken BER msg %1 (%2)", connId, valueLen);
 			return;
 		}
-		switch (tag) {
-			case 1: {
-				sendNewClientId(connId);
-				return;
-			}
-			case 2: {
-				QByteArray clId; serialize::fromByteArray<QByteArray>(data, tlvLen, tagLen, lengthSize);
-				ConnData & cd = connData_[connId];
+		logTrace("ws msg (connId: %1, tag: %2, valueLen: %3)", connId, tag, valueLen);
 
-				// any change?
-				if (cd.second == clId) return;
-
-				// does the id exist?
-				if (!clientIds_.contains(clId)) {
+		// handle new connections
+		if (dataId == 0) {
+			switch (tag) {
+				case 1:
 					sendNewClientId(connId);
-					return;
+				case 2: {
+					const QByteArray clId = serialize::fromByteArray<QByteArray>(data, tagLen, lengthSize, valueLen);
+					const uint dId = clientIds_.value(clId);
+					if (dId == 0) sendNewClientId(connId);
+					else          connId2dataId_[connId] = dId;
 				}
-
-				clientIds_[clId] << connId;
-				if (!cd.second.isNull()) {
-					clientIds_[cd.second].remove(connId);
-				}
-				return;
+				default:
+					close(TCPConn::HardClosed);
+					logInfo("request without clientId from %1", connId);
 			}
+			return;
 		}
 
-		// only with clientId from here on
-		ConnData & cd = connData_[connId];
-		if (cd.second.isNull()) return;
+		switch (tag) {
+			case 1:
+			case 2:
+				close(TCPConn::HardClosed);
+				logInfo("two client id requests from %1", connId);
+				return;
+		}
 
 
 	}
@@ -116,26 +133,28 @@ protected:
 	virtual void closed(uint connId, TCPConn::CloseType type)
 	{
 		if (!(type & TCPConn::ReadClosed) || !(type & TCPConn::WriteClosed)) return;
-		ConnData & cd = connData_[connId];
-		if (!cd.second.isEmpty()) clientIds_[cd.second].remove(connId);
-		connData_.remove(connId);
+		connId2dataId_.remove(connId);
 	}
 
 private:
 	void sendNewClientId(uint connId)
 	{
-		QByteArray clId = crypt::random(20);
-		clientIds_[clId] << connId;
-		ConnData & cd = connData_[connId];
-		cd.second = clId;
+		const QByteArray clId = crypt::random(20);
+		uint dId = ++connDataId_;
+		while (connData_.contains(dId)) dId = ++connDataId_;
+		clientIds_[clId] = dId;
+		connData_[dId].second = clId;
 		send(connId, serialize::toByteArray(clId, 1), true);
 	}
 
 private:
 	QList<StateListener *> stateListener_;
+
+	uint connDataId_;
 	typedef QPair<C, QByteArray> ConnData;	// data, clientId
 	QHash<uint, ConnData> connData_;
-	QHash<QByteArray, QSet<uint> > clientIds_;
+	QHash<uint, uint> connId2dataId_;
+	QMap<QByteArray, uint> clientIds_;
 };
 
 }}	// namespace

@@ -22,7 +22,7 @@
 
 namespace cflib { namespace serialize {
 
-// returns the length of the complete BER packet (Tag size + Length size + Value size)
+// returns the value length of the BER TLV
 // returns -1 if not enough data available
 // returns -2 if length is undefined (one byte: 0x80)
 // returns -3 if too big length was found (max TLV size is 2^32 - 1)
@@ -32,10 +32,9 @@ inline qint32 getTLVLength(const QByteArray & data, quint64 & tag, int & tagLen,
 	const qint64 valueLen = impl::decodeTLV((const quint8 *)data.constData(), data.size(), tagBytes, tagLen, lengthSize);
 	if (valueLen < 0) return valueLen;
 	if (valueLen > Q_INT64_C(0x7FFFFFFF) - tagLen - lengthSize) return -3;
-	const qint64 rv = tagLen + lengthSize + valueLen;
-	if (data.size() < rv) return -1;
+	if (data.size() < tagLen + lengthSize + valueLen) return -1;
 	tag = impl::getTagNumber(tagBytes, tagLen);
-	return rv;
+	return valueLen;
 }
 
 template<typename T>
@@ -50,9 +49,8 @@ inline QByteArray toByteArray(const T & v, quint64 tag = 1)
 }
 
 template<typename T>
-inline T fromByteArray(const QByteArray & data, qint32 tlvLen, int tagLen, int lengthSize)
+inline T fromByteArray(const QByteArray & data, int tagLen, int lengthSize, qint32 valueLen)
 {
-	qint32 valueLen = tlvLen - tagLen - lengthSize;
 	if (valueLen == 0 && lengthSize == 2) return T();
 	T retval;
 	impl::BERDeserializerBase * dummy = 0;
@@ -66,8 +64,8 @@ inline T fromByteArray(const QByteArray & data)
 	quint64 tag;
 	int tagLen;
 	int lengthSize;
-	const qint64 valueLen = impl::decodeTLV((const quint8 *)data.constData(), data.size(), tag, tagLen, lengthSize);
-	if (valueLen < 0 || valueLen > Q_INT64_C(0x7FFFFFFF) - tagLen - lengthSize) return T();
+	const qint64 valueLen = getTLVLength(data, tag, tagLen, lengthSize);
+	if (valueLen < 0) return T();
 
 	if (valueLen == 0 && lengthSize == 2) return T();
 	T retval;

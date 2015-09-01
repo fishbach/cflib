@@ -24,20 +24,22 @@
 
 #define USE_LOG(category) \
 	namespace { const cflib::util::LogFileInfo cflib_util_logFileInfo(__FILE__, (category)); }
+#define USE_LOG_MEMBER(category) \
+	const cflib::util::LogFileInfo cflib_util_logFileInfo = cflib::util::LogFileInfo(__FILE__, (category));
 
-#define logTrace    cflib::util::Log(::cflib_util_logFileInfo, __LINE__, LogCat::Trace)
-#define logDebug    cflib::util::Log(::cflib_util_logFileInfo, __LINE__, LogCat::Debug)
-#define logInfo     cflib::util::Log(::cflib_util_logFileInfo, __LINE__, LogCat::Info)
-#define logWarn     cflib::util::Log(::cflib_util_logFileInfo, __LINE__, LogCat::Warn)
-#define logCritical cflib::util::Log(::cflib_util_logFileInfo, __LINE__, LogCat::Critical)
+#define logTrace    cflib::util::Log(cflib_util_logFileInfo, __LINE__, LogCat::Trace)
+#define logDebug    cflib::util::Log(cflib_util_logFileInfo, __LINE__, LogCat::Debug)
+#define logInfo     cflib::util::Log(cflib_util_logFileInfo, __LINE__, LogCat::Info)
+#define logWarn     cflib::util::Log(cflib_util_logFileInfo, __LINE__, LogCat::Warn)
+#define logCritical cflib::util::Log(cflib_util_logFileInfo, __LINE__, LogCat::Critical)
 
-#define logCustom(category) cflib::util::Log(::cflib_util_logFileInfo, __LINE__, (category))
+#define logCustom(category) cflib::util::Log(cflib_util_logFileInfo, __LINE__, (category))
 
 #define logFunctionTrace \
-	const cflib::util::LogFunctionTrace cflib_util_logFunctionTrace(::cflib_util_logFileInfo, __LINE__, Q_FUNC_INFO);
+	const cflib::util::LogFunctionTrace cflib_util_logFunctionTrace(cflib_util_logFileInfo, __LINE__, Q_FUNC_INFO);
 
 #define logFunctionTraceParam \
-	const cflib::util::LogFunctionTrace cflib_util_logFunctionTrace(::cflib_util_logFileInfo, __LINE__); \
+	const cflib::util::LogFunctionTrace cflib_util_logFunctionTrace(cflib_util_logFileInfo, __LINE__); \
 	cflib_util_logFunctionTrace
 
 namespace LogCat { enum {
