@@ -31,19 +31,30 @@ class WSCommStateListener
 public:
 	virtual void newClient(uint connId) { Q_UNUSED(connId) }
 	virtual void connDataChange(const C & connData, uint connId) { Q_UNUSED(connData) Q_UNUSED(connId) }
+};
+
+template <class C>
+class WSCommTextMsgHandler
+{
+public:
 	virtual bool handleTextMsg(const QByteArray & data, const C & connData, uint connId)
 	{
 		Q_UNUSED(data) Q_UNUSED(connData) Q_UNUSED(connId)
 		return false;
 	}
-	virtual bool handleBinaryMsg(quint64 tag,
-		const QByteArray & data, qint32 tlvLen, int tagLen, int lengthSize,
+};
+
+template <class C>
+class WSCommMsgHandler
+{
+public:
+	virtual void handleMsg(quint64 tag,
+		const QByteArray & data, int tagLen, int lengthSize, qint32 valueLen,
 		const C & connData, uint connId)
 	{
 		Q_UNUSED(tag)
-		Q_UNUSED(data) Q_UNUSED(tlvLen) Q_UNUSED(tagLen) Q_UNUSED(lengthSize)
+		Q_UNUSED(data) Q_UNUSED(tagLen) Q_UNUSED(lengthSize) Q_UNUSED(valueLen)
 		Q_UNUSED(connData) Q_UNUSED(connId)
-		return false;
 	}
 };
 
@@ -52,7 +63,9 @@ class WSCommManager : public WebSocketService
 {
 	USE_LOG_MEMBER(LogCat::Http)
 public:
-	typedef WSCommStateListener<C> StateListener;
+	typedef WSCommStateListener <C> StateListener;
+	typedef WSCommTextMsgHandler<C> TextMsgHandler;
+	typedef WSCommMsgHandler    <C> MsgHandler;
 
 public:
 	WSCommManager(const QString & path, uint connectionTimeoutSec = 30) :
@@ -80,9 +93,9 @@ protected:
 				return;
 			}
 
-			QListIterator<StateListener *> it(stateListener_);
+			QListIterator<TextMsgHandler *> it(textMsgHandler_);
 			while (it.hasNext()) {
-				if (it.next()->handleTextMsg(data, connData_.value(connId).first, connId)) return;
+				if (it.next()->handleTextMsg(data, connData_[dataId].first, connId)) return;
 			}
 			close(connId, TCPConn::HardClosed);
 			logInfo("unhandled text message from %1", connId);
@@ -121,17 +134,28 @@ protected:
 			}
 		}
 
-		switch (tag) {
-			case 1:
-			case 2:
-				close(connId, TCPConn::HardClosed);
-				logInfo("two client id requests from %1", connId);
-				return;
-			case 3:
-				QCoreApplication::quit();
+		if (tag < 10) {
+			close(connId, TCPConn::HardClosed);
+			logInfo("invalid management request from %1", connId);
+			return;
 		}
 
+		// forwarding
+		if (channels_.contains(TagConnId(tag, connId))) {
+			QSetIterator<uint> it(channels_[TagConnId(tag, connId)]);
+			while (it.hasNext()) send(it.next(), data, true);
+			return;
+		}
 
+		// handler
+		MsgHandler * hdl = msgHandler_.value(tag);
+		if (hdl) {
+			hdl->handleMsg(tag, data, tagLen, lengthSize, valueLen, connData_[dataId].first, connId);
+			return;
+		}
+
+		close(connId, TCPConn::HardClosed);
+		logInfo("unhandled message from %1 (tag: %2)", connId, tag);
 	}
 
 	virtual void closed(uint connId, TCPConn::CloseType type)
@@ -154,6 +178,12 @@ private:
 
 private:
 	QList<StateListener *> stateListener_;
+	QList<TextMsgHandler *> textMsgHandler_;
+	QHash<quint64, MsgHandler *> msgHandler_;
+
+	typedef QPair<quint64, uint> TagConnId;
+	typedef QSet<uint> ConnIds;
+	QHash<TagConnId, ConnIds> channels_;
 
 	uint connDataId_;
 	typedef QPair<C, QByteArray> ConnData;	// data, clientId
