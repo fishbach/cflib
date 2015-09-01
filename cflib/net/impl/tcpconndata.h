@@ -58,6 +58,7 @@ public:
 	QByteArray readBuf;
 	QByteArray readData;
 	QByteArray writeBuf;
+	bool notifySomeBytesWritten;
 	bool closeAfterWriting;
 	bool deleteAfterWriting;
 	bool notifyWrite;

@@ -40,7 +40,7 @@ public:
 	};
 
 public:
-	TCPConn(TCPConnData * data, uint readBufferSize = 0x10000 /* 64kb */);
+	TCPConn(TCPConnData * data, uint readBufferSize = 0x10000 /* 64kb */, bool notifySomeBytesWritten = false);
 
 	// When destroying TCPConn object, make sure no callback is still active:
 	// every call to startReadWatcher() will result in exactly one call of "newBytesAvailable" or "closed"
@@ -87,6 +87,7 @@ protected:
 	virtual void newBytesAvailable() = 0;
 	virtual void closed(CloseType type) = 0;
 	virtual void writeFinished() {}
+	virtual void someBytesWritten(quint64 count) { Q_UNUSED(count) }
 
 private:
 	TCPConnData * data_;

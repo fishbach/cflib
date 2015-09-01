@@ -22,6 +22,7 @@
 #include <cflib/net/apiserver.h>
 #include <cflib/net/request.h>
 #include <cflib/net/tcpconn.h>
+#include <cflib/util/evtimer.h>
 #include <cflib/util/log.h>
 #include <cflib/util/util.h>
 
@@ -32,16 +33,25 @@ namespace cflib { namespace net {
 class WebSocketService::WSConnHandler : public util::ThreadVerify, public TCPConn
 {
 public:
-	WSConnHandler(WebSocketService * service, TCPConnData * connData, uint connId) :
+	WSConnHandler(WebSocketService * service, TCPConnData * connData, uint connId, uint connectionTimeoutSec) :
 		ThreadVerify(service),
-		TCPConn(connData),
+		TCPConn(connData, 0x10000, connectionTimeoutSec > 0),
 		service_(*service),
 		connId_(connId),
-		isBinary_(false)
+		connectionSendInterval_(connectionTimeoutSec / 2),
+		connectionDataTimeout_(connectionTimeoutSec * 3 / 2),
+		isBinary_(false),
+		timer_(this, &WSConnHandler::checkTimeout),
+		ping_("\x89\x00", 2)
 	{
 		logFunctionTrace
 		setNoDelay(true);
 		startReadWatcher();
+		if (connectionTimeoutSec > 0) {
+			lastRead_  = QDateTime::currentDateTime();
+			lastWrite_ = QDateTime::currentDateTime();
+			timer_.start(connectionTimeoutSec / 4.0);
+		}
 	}
 
 	~WSConnHandler()
@@ -87,6 +97,7 @@ protected:
 		if (!verifyThreadCall(&WSConnHandler::newBytesAvailable)) return;
 
 		buf_ += read();
+		if (connectionDataTimeout_ > 0) lastRead_ = QDateTime::currentDateTime();
 		handleData();
 		startReadWatcher();
 	}
@@ -100,6 +111,12 @@ protected:
 			util::deleteNext(this);
 		}
 		service_.closed(connId_, type);
+	}
+
+	virtual void someBytesWritten(quint64 count)
+	{
+		if (!verifyThreadCall(&WSConnHandler::someBytesWritten, count)) return;
+		lastWrite_ = QDateTime::currentDateTime();
 	}
 
 private:
@@ -172,8 +189,8 @@ private:
 				QByteArray pong((const char *)orig, buf_.size() - dLen - 4);
 				pong.append((const char *)data, len);
 				write(pong);
-			} else if (opcode == 0xA) {	// pong
-				logDebug("pong received");
+			} else if (opcode == 0xA) {
+				// pong
 			} else  {
 				logWarn("unknown opcode %1 in frame (%2)", opcode, buf_.toHex());
 			}
@@ -182,19 +199,39 @@ private:
 		}
 	}
 
+	void checkTimeout()
+	{
+		const QDateTime now = QDateTime::currentDateTime();
+		uint last = qMax(lastRead_.secsTo(now), lastWrite_.secsTo(now));
+		if (last < connectionSendInterval_) return;
+		if (last > connectionDataTimeout_) {
+			logInfo("timeout on connection %1", connId_);
+			close(HardClosed, true);
+		} else {
+			write(ping_);
+		}
+	}
+
 private:
 	WebSocketService & service_;
-	uint connId_;
+	const uint connId_;
+	const uint connectionSendInterval_;
+	const uint connectionDataTimeout_;
 	QByteArray buf_;
 	QByteArray fragmentBuf_;
 	bool isBinary_;
+	QDateTime lastRead_;
+	QDateTime lastWrite_;
+	util::EVTimer timer_;
+	const QByteArray ping_;
 };
 
 // ============================================================================
 
-WebSocketService::WebSocketService(const QString & path) :
+WebSocketService::WebSocketService(const QString & path, uint connectionTimeoutSec) :
 	ThreadVerify("WebSocketService", LoopType::Worker),
 	path_(path),
+	connectionTimeoutSec_(connectionTimeoutSec),
 	lastConnId_(0)
 {
 	setThreadPrio(QThread::HighPriority);
@@ -253,7 +290,7 @@ void WebSocketService::addConnection(const Request & request)
 		return;
 	}
 	const uint connId = ++lastConnId_;
-	WSConnHandler * wsHdl = new WSConnHandler(this, connData, connId);
+	WSConnHandler * wsHdl = new WSConnHandler(this, connData, connId, connectionTimeoutSec_);
 	connections_[connId] = wsHdl;
 
 	// write WS header

@@ -28,4 +28,16 @@ infoService.test(function(val) {
 	$('#msg').html(val);
 });
 
+
+window.initWebSocket = function(msgFunc) {
+	var loc = window.location;
+	webSock = new WebSocket((loc.protocol == 'https:' ? 'wss://' : 'ws://') + loc.host + '/ws');
+	webSock.binaryType = 'arraybuffer';
+	webSock.onmessage = function(e) { msgFunc(e.data); };
+	webSock.onopen = function() {
+		console.log('ws open');
+	};
+};
+
+
 }); }); });

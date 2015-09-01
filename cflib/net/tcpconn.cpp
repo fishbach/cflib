@@ -26,11 +26,12 @@ USE_LOG(LogCat::Network)
 
 namespace cflib { namespace net {
 
-TCPConn::TCPConn(TCPConnData * data, uint readBufferSize) :
+TCPConn::TCPConn(TCPConnData * data, uint readBufferSize, bool notifySomeBytesWritten) :
 	data_(data)
 {
 	data_->conn = this;
 	data_->readBuf = QByteArray(readBufferSize, '\0');
+	data_->notifySomeBytesWritten = notifySomeBytesWritten;
 }
 
 TCPConn::~TCPConn()

@@ -35,7 +35,7 @@ TCPConnData::TCPConnData(impl::TCPManagerImpl & impl,
 	socket(socket), peerIP(peerIP), peerPort(peerPort),
 	tlsStream(tlsStream), tlsThreadId(tlsThreadId),
 	readWatcher(new ev_io), writeWatcher(new ev_io),
-	closeAfterWriting(false), deleteAfterWriting(false), notifyWrite(false),
+	notifySomeBytesWritten(false), closeAfterWriting(false), deleteAfterWriting(false), notifyWrite(false),
 	closeType(TCPConn::NotClosed), lastInformedCloseType(TCPConn::NotClosed)
 {
 	ev_io_init(readWatcher, &impl::TCPManagerImpl::readable, socket, EV_READ);

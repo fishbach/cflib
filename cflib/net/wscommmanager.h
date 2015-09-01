@@ -29,20 +29,20 @@ template <class C>
 class WSCommStateListener
 {
 public:
-	virtual void newClient(uint connId) { Q_UNUSED(connId); }
-	virtual void connDataChange(const C & connData, uint connId) { Q_UNUSED(connData); Q_UNUSED(connId); }
+	virtual void newClient(uint connId) { Q_UNUSED(connId) }
+	virtual void connDataChange(const C & connData, uint connId) { Q_UNUSED(connData) Q_UNUSED(connId) }
 	virtual bool handleTextMsg(const QByteArray & data, const C & connData, uint connId)
 	{
-		Q_UNUSED(data); Q_UNUSED(connData); Q_UNUSED(connId);
+		Q_UNUSED(data) Q_UNUSED(connData) Q_UNUSED(connId)
 		return false;
 	}
 	virtual bool handleBinaryMsg(quint64 tag,
 		const QByteArray & data, qint32 tlvLen, int tagLen, int lengthSize,
 		const C & connData, uint connId)
 	{
-		Q_UNUSED(tag);
-		Q_UNUSED(data); Q_UNUSED(tlvLen); Q_UNUSED(tagLen); Q_UNUSED(lengthSize);
-		Q_UNUSED(connData); Q_UNUSED(connId);
+		Q_UNUSED(tag)
+		Q_UNUSED(data) Q_UNUSED(tlvLen) Q_UNUSED(tagLen) Q_UNUSED(lengthSize)
+		Q_UNUSED(connData) Q_UNUSED(connId)
 		return false;
 	}
 };
@@ -55,8 +55,8 @@ public:
 	typedef WSCommStateListener<C> StateListener;
 
 public:
-	WSCommManager(const QString & path) :
-		WebSocketService(path),
+	WSCommManager(const QString & path, uint connectionTimeoutSec = 30) :
+		WebSocketService(path, connectionTimeoutSec),
 		connDataId_(0)
 	{}
 	~WSCommManager() { stopVerifyThread(); }

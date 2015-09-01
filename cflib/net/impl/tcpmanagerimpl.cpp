@@ -279,6 +279,7 @@ void TCPManagerImpl::closeConn(TCPConnData * conn, TCPConn::CloseType type, bool
 	if (ct != TCPConn::HardClosed && writeClosed && !conn->writeBuf.isEmpty()) {
 		ct = (TCPConn::CloseType)(ct & ~TCPConn::WriteClosed);
 		writeClosed = false;
+		conn->notifySomeBytesWritten = false;
 		conn->closeAfterWriting = true;
 		if (oldCt == ct) return;
 	}
@@ -331,6 +332,7 @@ void TCPManagerImpl::deleteOnFinish(TCPConnData * conn)
 
 	if (ev_is_active(conn->writeWatcher)) {
 		closeConn(conn, TCPConn::ReadClosed, false);
+		conn->notifySomeBytesWritten = false;
 		conn->closeAfterWriting = true;
 		conn->deleteAfterWriting = true;
 	} else {
@@ -430,7 +432,7 @@ void TCPManagerImpl::writeable(ev_loop * loop, ev_io * w, int)
 	QByteArray & buf = conn->writeBuf;
 	const int fd = conn->socket;
 
-	ssize_t count = ::send(fd, buf.constData(), buf.size(), 0);
+	const ssize_t count = ::send(fd, buf.constData(), buf.size(), 0);
 	logTrace("wrote %1 / %2 bytes on %3", (qint64)count, buf.size(), fd);
 	if (count < buf.size()) {
 		if (count < 0 && errno != EAGAIN && errno != EWOULDBLOCK && errno != ENOTCONN) {
@@ -440,7 +442,12 @@ void TCPManagerImpl::writeable(ev_loop * loop, ev_io * w, int)
 			if (conn->deleteAfterWriting) delete conn;
 			return;
 		}
-		if (count > 0) buf.remove(0, count);
+		if (count > 0) {
+			buf.remove(0, count);
+			if (conn->notifySomeBytesWritten) {
+				impl.execCall(new Functor1<TCPConn, quint64>(conn->conn, &TCPConn::someBytesWritten, (quint64)count));
+			}
+		}
 		if (!ev_is_active(w)) ev_io_start(loop, w);
 	} else {
 		buf.clear();
@@ -449,6 +456,9 @@ void TCPManagerImpl::writeable(ev_loop * loop, ev_io * w, int)
 			if (conn->deleteAfterWriting) delete conn;
 		} else {
 			if (ev_is_active(w)) ev_io_stop(loop, w);
+			if (conn->notifySomeBytesWritten) {
+				impl.execCall(new Functor1<TCPConn, quint64>(conn->conn, &TCPConn::someBytesWritten, (quint64)count));
+			}
 			if (conn->notifyWrite) {
 				conn->notifyWrite = false;
 				impl.execCall(new Functor0<TCPConn>(conn->conn, &TCPConn::writeFinished));
