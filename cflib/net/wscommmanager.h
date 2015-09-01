@@ -127,6 +127,8 @@ protected:
 				close(connId, TCPConn::HardClosed);
 				logInfo("two client id requests from %1", connId);
 				return;
+			case 3:
+				QCoreApplication::quit();
 		}
 
 

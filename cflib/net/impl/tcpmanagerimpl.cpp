@@ -120,6 +120,10 @@ TCPManagerImpl::~TCPManagerImpl()
 void TCPManagerImpl::deleteThreadData()
 {
 	if (isRunning()) stop();
+	foreach (TCPConnData * c, connections_) {
+		if (c->tlsStream) tlsCloseConn(c, TCPConn::HardClosed, false);
+		else              closeConn(c, TCPConn::HardClosed, false);
+	}
 }
 
 bool TCPManagerImpl::start(int listenSocket, crypt::TLSCredentials * credentials)
@@ -221,10 +225,12 @@ TCPConnData * TCPManagerImpl::openConnection(
 
 	logDebug("opened connection %1 to %2:%3", sock, destIP, destPort);
 
-	return credentials ?
+	TCPConnData * conn = credentials ?
 		new TCPConnData(*this, sock, destIP, destPort,
 			new TLSClient(*tlsSessions(), *credentials), ++tlsConnId_ % tlsThreads_.size()) :
 		new TCPConnData(*this, sock, destIP, destPort, 0, 0);
+	connections_ << conn;
+	return conn;
 }
 
 void TCPManagerImpl::startReadWatcher(TCPConnData * conn)
@@ -337,6 +343,7 @@ void TCPManagerImpl::deleteOnFinish(TCPConnData * conn)
 		conn->deleteAfterWriting = true;
 	} else {
 		closeConn(conn, TCPConn::ReadWriteClosed, false);
+		connections_.remove(conn);
 		delete conn;
 	}
 }
@@ -439,7 +446,10 @@ void TCPManagerImpl::writeable(ev_loop * loop, ev_io * w, int)
 			logDebug("write on fd %1 failed (%2 - %3)", fd, errno, strerror(errno));
 			buf.clear();
 			impl.closeConn(conn, errno == EPIPE ? TCPConn::WriteClosed : TCPConn::HardClosed, false);
-			if (conn->deleteAfterWriting) delete conn;
+			if (conn->deleteAfterWriting) {
+				impl.connections_.remove(conn);
+				delete conn;
+			}
 			return;
 		}
 		if (count > 0) {
@@ -453,7 +463,10 @@ void TCPManagerImpl::writeable(ev_loop * loop, ev_io * w, int)
 		buf.clear();
 		if (conn->closeAfterWriting) {
 			impl.closeConn(conn, TCPConn::WriteClosed, false);
-			if (conn->deleteAfterWriting) delete conn;
+			if (conn->deleteAfterWriting) {
+				impl.connections_.remove(conn);
+				delete conn;
+			}
 		} else {
 			if (ev_is_active(w)) ev_io_stop(loop, w);
 			if (conn->notifySomeBytesWritten) {
@@ -497,12 +510,13 @@ void TCPManagerImpl::listenSocketReadable(ev_loop *, ev_io * w, int)
 
 		logDebug("new connection (%1) from %2:%3", newSock, ip, port);
 
-		impl->parent.newConnection(impl->credentials_ ?
+		TCPConnData * conn = impl->credentials_ ?
 			new TCPConnData(*impl, newSock, ip, port,
 				new TLSServer(*tlsSessions(), *(impl->credentials_)),
 				++impl->tlsConnId_ % impl->tlsThreads_.size()) :
-			new TCPConnData(*impl, newSock, ip, port, 0, 0)
-		);
+			new TCPConnData(*impl, newSock, ip, port, 0, 0);
+		impl->connections_ << conn;
+		impl->parent.newConnection(conn);
 	}
 }
 

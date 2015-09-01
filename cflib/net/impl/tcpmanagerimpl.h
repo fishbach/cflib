@@ -78,6 +78,7 @@ private:
 	crypt::TLSCredentials * credentials_;
 	QVector<TLSThread *> tlsThreads_;
 	QAtomicInteger<uint> tlsConnId_;
+	QSet<TCPConnData *> connections_;
 };
 
 }}}	// namespace
