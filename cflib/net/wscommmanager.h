@@ -75,7 +75,7 @@ protected:
 		// handle text msg
 		if (!isBinary) {
 			if (dataId == 0) {
-				close(TCPConn::HardClosed);
+				close(connId, TCPConn::HardClosed);
 				logInfo("request without clientId from %1", connId);
 				return;
 			}
@@ -84,7 +84,7 @@ protected:
 			while (it.hasNext()) {
 				if (it.next()->handleTextMsg(data, connData_.value(connId).first, connId)) return;
 			}
-			close(TCPConn::HardClosed);
+			close(connId, TCPConn::HardClosed);
 			logInfo("unhandled text message from %1", connId);
 			return;
 		}
@@ -95,7 +95,7 @@ protected:
 		int lengthSize;
 		const qint32 valueLen = serialize::getTLVLength(data, tag, tagLen, lengthSize);
 		if (valueLen < 0) {
-			close(TCPConn::HardClosed);
+			close(connId, TCPConn::HardClosed);
 			logInfo("broken BER msg %1 (%2)", connId, valueLen);
 			return;
 		}
@@ -106,23 +106,25 @@ protected:
 			switch (tag) {
 				case 1:
 					sendNewClientId(connId);
+					return;
 				case 2: {
 					const QByteArray clId = serialize::fromByteArray<QByteArray>(data, tagLen, lengthSize, valueLen);
 					const uint dId = clientIds_.value(clId);
 					if (dId == 0) sendNewClientId(connId);
 					else          connId2dataId_[connId] = dId;
+					return;
 				}
 				default:
-					close(TCPConn::HardClosed);
+					close(connId, TCPConn::HardClosed);
 					logInfo("request without clientId from %1", connId);
+					return;
 			}
-			return;
 		}
 
 		switch (tag) {
 			case 1:
 			case 2:
-				close(TCPConn::HardClosed);
+				close(connId, TCPConn::HardClosed);
 				logInfo("two client id requests from %1", connId);
 				return;
 		}
@@ -144,6 +146,7 @@ private:
 		while (connData_.contains(dId)) dId = ++connDataId_;
 		clientIds_[clId] = dId;
 		connData_[dId].second = clId;
+		connId2dataId_[connId] = dId;
 		send(connId, serialize::toByteArray(clId, 1), true);
 	}
 

@@ -29,6 +29,7 @@ infoService.test(function(val) {
 });
 
 
+var webSock = null;
 window.initWebSocket = function(msgFunc) {
 	var loc = window.location;
 	webSock = new WebSocket((loc.protocol == 'https:' ? 'wss://' : 'ws://') + loc.host + '/ws');
@@ -37,6 +38,9 @@ window.initWebSocket = function(msgFunc) {
 	webSock.onopen = function() {
 		console.log('ws open');
 	};
+};
+window.send = function(msg) {
+	webSock.send(msg);
 };
 
 
