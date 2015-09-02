@@ -41,7 +41,6 @@ public:
 		connectionSendInterval_(connectionTimeoutSec / 2),
 		connectionDataTimeout_(connectionTimeoutSec * 3 / 2),
 		isBinary_(false),
-		timer_(this, &WSConnHandler::checkTimeout),
 		ping_("\x89\x00", 2)
 	{
 		logFunctionTrace
@@ -50,7 +49,6 @@ public:
 		if (connectionTimeoutSec > 0) {
 			lastRead_  = QDateTime::currentDateTime();
 			lastWrite_ = QDateTime::currentDateTime();
-			timer_.start(connectionTimeoutSec / 4.0);
 		}
 	}
 
@@ -89,6 +87,18 @@ public:
 
 		frame += data;
 		write(frame);
+	}
+
+	void checkTimeout(const QDateTime & now)
+	{
+		uint last = qMax(lastRead_.secsTo(now), lastWrite_.secsTo(now));
+		if (last < connectionSendInterval_) return;
+		if (last > connectionDataTimeout_) {
+			logInfo("timeout on connection %1", connId_);
+			close(HardClosed, true);
+		} else {
+			write(ping_);
+		}
 	}
 
 protected:
@@ -199,19 +209,6 @@ private:
 		}
 	}
 
-	void checkTimeout()
-	{
-		const QDateTime now = QDateTime::currentDateTime();
-		uint last = qMax(lastRead_.secsTo(now), lastWrite_.secsTo(now));
-		if (last < connectionSendInterval_) return;
-		if (last > connectionDataTimeout_) {
-			logInfo("timeout on connection %1", connId_);
-			close(HardClosed, true);
-		} else {
-			write(ping_);
-		}
-	}
-
 private:
 	WebSocketService & service_;
 	const uint connId_;
@@ -222,7 +219,6 @@ private:
 	bool isBinary_;
 	QDateTime lastRead_;
 	QDateTime lastWrite_;
-	util::EVTimer timer_;
 	const QByteArray ping_;
 };
 
@@ -232,15 +228,16 @@ WebSocketService::WebSocketService(const QString & path, uint connectionTimeoutS
 	ThreadVerify("WebSocketService", LoopType::Worker),
 	path_(path),
 	connectionTimeoutSec_(connectionTimeoutSec),
-	lastConnId_(0)
+	lastConnId_(0),
+	timer_(connectionTimeoutSec > 0 ? new util::EVTimer(this, &WebSocketService::checkTimeout) : 0)
 {
 	setThreadPrio(QThread::HighPriority);
+	if (timer_) startTimer();
 }
 
 WebSocketService::~WebSocketService()
 {
-	QHashIterator<uint, WSConnHandler *> it(connections_);
-	while (it.hasNext()) it.next().value()->close(TCPConn::HardClosed, true);
+	delete timer_;
 }
 
 void WebSocketService::send(uint connId, const QByteArray & data, bool isBinary)
@@ -304,6 +301,19 @@ void WebSocketService::addConnection(const Request & request)
 	wsHdl->write(header);
 
 	newConnection(connId);
+}
+
+void WebSocketService::startTimer()
+{
+	if (!verifyThreadCall(&WebSocketService::startTimer)) return;
+	timer_->start(connectionTimeoutSec_ / 4.0);
+}
+
+void WebSocketService::checkTimeout()
+{
+	const QDateTime now = QDateTime::currentDateTime();
+	QHashIterator<uint, WSConnHandler *> it(connections_);
+	while (it.hasNext()) it.next().value()->checkTimeout(now);
 }
 
 }}	// namespace

@@ -59,7 +59,6 @@ int main(int argc, char *argv[])
 	serv.registerHandler(fs);
 	serv.start("127.0.0.1", 8080);
 
-	QTimer::singleShot(5000, qApp, SLOT(quit()));
 	int retval = a.exec();
 	logInfo("terminating softly with retval: %1", retval);
 	return retval;

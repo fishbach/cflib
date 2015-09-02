@@ -22,6 +22,8 @@
 #include <cflib/net/tcpconn.h>
 #include <cflib/util/threadverify.h>
 
+namespace cflib { namespace util { class EVTimer; }}
+
 namespace cflib { namespace net {
 
 class ApiServer;
@@ -44,6 +46,8 @@ protected:
 
 private:
 	void addConnection(const Request & request);
+	void startTimer();
+	void checkTimeout();
 
 private:
 	const QString path_;
@@ -51,6 +55,7 @@ private:
 	class WSConnHandler;
 	QHash<uint, WSConnHandler *> connections_;
 	uint lastConnId_;
+	util::EVTimer * timer_;
 };
 
 }}	// namespace
