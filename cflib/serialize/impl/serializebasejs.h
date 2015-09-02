@@ -39,7 +39,7 @@ public:
 		data_ += ']';
 	}
 
-	template <typename T>
+	template<typename T>
 	JSSerializerBase & operator<<(const T & cl)
 	{
 		if (isFirst_) isFirst_ = false;
@@ -80,7 +80,7 @@ public:
 		}
 	}
 
-	template <typename T>
+	template<typename T>
 	JSDeserializerBase & operator>>(T & cl)
 	{
 		const int pos = findNextKommaInJS(readPos_, bytesAvailable_);

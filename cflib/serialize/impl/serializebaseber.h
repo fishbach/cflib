@@ -29,7 +29,7 @@ public:
 	BERSerializerBase(QByteArray & data, bool disableTagNumbering = false) :
 		data_(data), tag_(disableTagNumbering ? 0xC0 : 0xC1), tagLen_(1) {}
 
-	template <typename T>
+	template<typename T>
 	BERSerializerBase & operator<<(const T & cl)
 	{
 		serializeBER(cl, tag_, tagLen_, data_, *this); // *this is needed for C++ ADL
@@ -56,7 +56,7 @@ public:
 		readPos_(data), bytesAvailable_(len), tag_(disableTagNumbering ? 0 : 1), tagLen_(1),
 		wasLastAvailable_(false) {}
 
-	template <typename T>
+	template<typename T>
 	BERDeserializerBase & operator>>(T & cl)
 	{
 		forever {

@@ -26,14 +26,14 @@ namespace cflib { namespace serialize { namespace impl {
 // integer
 // ============================================================================
 
-template <typename T>
+template<typename T>
 inline void serializeJSInt(T v, QByteArray & data)
 {
 	if (v == 0) return;
 	data += QByteArray::number(v);
 }
 
-template <typename T>
+template<typename T>
 inline void deserializeJSInt(T & v, const quint8 * data, int len)
 {
 	v = 0;
@@ -51,7 +51,7 @@ inline void deserializeJSInt(T & v, const quint8 * data, int len)
 	}
 }
 
-template <>
+template<>
 inline void deserializeJSInt(bool & v, const quint8 * data, int len)
 {
 	v = len > 0 && (char)*data == '1';
@@ -219,13 +219,13 @@ inline void deserializeJS(QDateTime & dt, const quint8 * data, int len, JSDeseri
 // QFlags
 // ----------------------------------------------------------------------------
 
-template <typename T>
+template<typename T>
 inline void serializeJS(const QFlags<T> & fl, QByteArray & data, JSSerializerBase &)
 {
 	serializeJSInt((int)fl, data);
 }
 
-template <typename T>
+template<typename T>
 inline void deserializeJS(QFlags<T> & fl, const quint8 * data, int len, JSDeserializerBase &)
 {
 	int flags;
@@ -244,14 +244,14 @@ inline void deserializeJS(QFlags<T> & fl, const quint8 * data, int len, JSDeseri
 // QPair
 // ----------------------------------------------------------------------------
 
-template <typename T1, typename T2>
+template<typename T1, typename T2>
 inline void serializeJS(const QPair<T1, T2> & cl, QByteArray & data, JSSerializerBase &)
 {
 	JSSerializerBase ser(data);
 	ser << cl.first << cl.second;
 }
 
-template <typename T1, typename T2>
+template<typename T1, typename T2>
 inline void deserializeJS(QPair<T1, T2> & cl, const quint8 * data, int len, JSDeserializerBase &)
 {
 	JSDeserializerBase ser(data, len);
@@ -262,14 +262,14 @@ inline void deserializeJS(QPair<T1, T2> & cl, const quint8 * data, int len, JSDe
 // QList
 // ----------------------------------------------------------------------------
 
-template <typename T>
+template<typename T>
 inline void serializeJS(const QList<T> & cl, QByteArray & data, JSSerializerBase &)
 {
 	JSSerializerBase ser(data);
 	for (typename QList<T>::const_iterator it = cl.begin() ; it != cl.end() ; ++it) ser << *it;
 }
 
-template <typename T>
+template<typename T>
 inline void deserializeJS(QList<T> & cl, const quint8 * data, int len, JSDeserializerBase &)
 {
 	JSDeserializerBase ser(data, len);
@@ -298,14 +298,14 @@ inline void deserializeJS(QStringList & cl, const quint8 * data, int len, JSDese
 // QLinkedList
 // ----------------------------------------------------------------------------
 
-template <typename T>
+template<typename T>
 inline void serializeJS(const QLinkedList<T> & cl, QByteArray & data, JSSerializerBase &)
 {
 	JSSerializerBase ser(data);
 	for (typename QLinkedList<T>::const_iterator it = cl.begin() ; it != cl.end() ; ++it) ser << *it;
 }
 
-template <typename T>
+template<typename T>
 inline void deserializeJS(QLinkedList<T> & cl, const quint8 * data, int len, JSDeserializerBase &)
 {
 	JSDeserializerBase ser(data, len);
@@ -320,14 +320,14 @@ inline void deserializeJS(QLinkedList<T> & cl, const quint8 * data, int len, JSD
 // QVector
 // ----------------------------------------------------------------------------
 
-template <typename T>
+template<typename T>
 inline void serializeJS(const QVector<T> & cl, QByteArray & data, JSSerializerBase &)
 {
 	JSSerializerBase ser(data);
 	for (typename QVector<T>::const_iterator it = cl.begin() ; it != cl.end() ; ++it) ser << *it;
 }
 
-template <typename T>
+template<typename T>
 inline void deserializeJS(QVector<T> & cl, const quint8 * data, int len, JSDeserializerBase &)
 {
 	JSDeserializerBase ser(data, len);
@@ -342,14 +342,14 @@ inline void deserializeJS(QVector<T> & cl, const quint8 * data, int len, JSDeser
 // QSet
 // ----------------------------------------------------------------------------
 
-template <typename T>
+template<typename T>
 inline void serializeJS(const QSet<T> & cl, QByteArray & data, JSSerializerBase &)
 {
 	JSSerializerBase ser(data);
 	for (typename QSet<T>::const_iterator it = cl.constBegin() ; it != cl.constEnd() ; ++it) ser << *it;
 }
 
-template <typename T>
+template<typename T>
 inline void deserializeJS(QSet<T> & cl, const quint8 * data, int len, JSDeserializerBase &)
 {
 	JSDeserializerBase ser(data, len);
@@ -364,7 +364,7 @@ inline void deserializeJS(QSet<T> & cl, const quint8 * data, int len, JSDeserial
 // QHash
 // ----------------------------------------------------------------------------
 
-template <typename Key, typename T>
+template<typename Key, typename T>
 inline void serializeJS(const QHash<Key, T> & cl, QByteArray & data, JSSerializerBase &)
 {
 	JSSerializerBase ser(data);
@@ -376,7 +376,7 @@ inline void serializeJS(const QHash<Key, T> & cl, QByteArray & data, JSSerialize
 	}
 }
 
-template <typename Key, typename T>
+template<typename Key, typename T>
 inline void deserializeJS(QHash<Key, T> & cl, const quint8 * data, int len, JSDeserializerBase &)
 {
 	JSDeserializerBase ser(data, len);
@@ -393,7 +393,7 @@ inline void deserializeJS(QHash<Key, T> & cl, const quint8 * data, int len, JSDe
 // QMap
 // ----------------------------------------------------------------------------
 
-template <typename Key, typename T>
+template<typename Key, typename T>
 inline void serializeJS(const QMap<Key, T> & cl, QByteArray & data, JSSerializerBase &)
 {
 	JSSerializerBase ser(data);
@@ -405,7 +405,7 @@ inline void serializeJS(const QMap<Key, T> & cl, QByteArray & data, JSSerializer
 	}
 }
 
-template <typename Key, typename T>
+template<typename Key, typename T>
 inline void deserializeJS(QMap<Key, T> & cl, const quint8 * data, int len, JSDeserializerBase &)
 {
 	JSDeserializerBase ser(data, len);
@@ -423,14 +423,14 @@ inline void deserializeJS(QMap<Key, T> & cl, const quint8 * data, int len, JSDes
 // custom classes
 // ============================================================================
 
-template <typename T>
+template<typename T>
 inline void serializeJS(const T & cl, QByteArray & data, JSSerializerBase &)
 {
 	JSSerializerBase ser(data);
 	cl.serialize(ser);
 }
 
-template <typename T>
+template<typename T>
 inline void deserializeJS(T & cl, const quint8 * data, int len, JSDeserializerBase &)
 {
 	JSDeserializerBase ser(data, len);

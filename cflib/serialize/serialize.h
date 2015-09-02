@@ -24,7 +24,7 @@
 
 #define SERIALIZE_CLASS_USE_NULL(Class) \
 	namespace cflib { namespace serialize { namespace impl { \
-	template <> inline void serializeBER(const Class & cl, quint64 tag, quint8 tagLen, QByteArray & data, \
+	template<> inline void serializeBER(const Class & cl, quint64 tag, quint8 tagLen, QByteArray & data, \
 		BERSerializerBase &) \
 	{ \
 		if (cl.isNull()) { writeNull(data, tag, tagLen); return; } \
@@ -32,7 +32,7 @@
 		BERSerializerBase ser(data); \
 		cl.serialize(ser); \
 	} \
-	template <> inline void serializeJS(const Class & cl, QByteArray & data, JSSerializerBase &) { \
+	template<> inline void serializeJS(const Class & cl, QByteArray & data, JSSerializerBase &) { \
 		if (cl.isNull()) return; \
 		JSSerializerBase ser(data); \
 		cl.serialize(ser); \
@@ -41,8 +41,8 @@
 
 #define SERIALIZE_CLASS \
 	public: \
-		template <typename T> void serialize(T & ser) const; \
-		template <typename T> void deserialize(T & ser); \
+		template<typename T> void serialize(T & ser) const; \
+		template<typename T> void deserialize(T & ser); \
 		static cflib::serialize::SerializeTypeInfo serializeTypeInfo(); \
 
 #define serialized

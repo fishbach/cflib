@@ -18,11 +18,11 @@
 
 #include <infoservice.h>
 
-#include <cflib/net/apiserver.h>
 #include <cflib/net/fileserver.h>
 #include <cflib/net/httpserver.h>
 #include <cflib/net/logservice.h>
 #include <cflib/net/requestlog.h>
+#include <cflib/net/rmiserver.h>
 #include <cflib/net/wscommmanager.h>
 #include <cflib/util/log.h>
 #include <cflib/util/unixsignal.h>
@@ -44,18 +44,19 @@ int main(int argc, char *argv[])
 
 	RequestLog requestLog;
 
-	ApiServer  api;
-	InfoService infoService; api.registerService(&infoService);
-	LogService  logService;  api.registerService(&logService);
+//	RMIServer<QString> rmi;
+//	InfoService infoService; api.registerService(&infoService);
+//	LogService  logService;  api.registerService(&logService);
 
 	FileServer fs("htdocs");
 
-	WSCommManager<QString> wsCommManager("/ws");
+	WSCommManager<QString> commMgr("/ws");
+	RMIServer<QString> rmiServer(commMgr);
 
 	HttpServer serv;
 	serv.registerHandler(requestLog);
-	serv.registerHandler(wsCommManager);
-	serv.registerHandler(api);
+	serv.registerHandler(commMgr);
+	serv.registerHandler(rmiServer);
 	serv.registerHandler(fs);
 	serv.start("127.0.0.1", 8080);
 

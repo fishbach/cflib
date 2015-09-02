@@ -16,13 +16,11 @@
  * along with cflib. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "rmiserver.h"
+#include "RMIServerBase.h"
 
-#include <cflib/crypt/util.h>
 #include <cflib/net/request.h>
 #include <cflib/net/rmiservice.h>
-#include <cflib/net/uploadservice.h>
-#include <cflib/util/evtimer.h>
+#include <cflib/net/wscommmanager.h>
 #include <cflib/util/log.h>
 #include <cflib/util/util.h>
 
@@ -30,7 +28,7 @@ USE_LOG(LogCat::Http)
 
 using namespace cflib::serialize;
 
-namespace cflib { namespace net {
+namespace cflib { namespace net { namespace impl {
 
 namespace {
 
@@ -196,21 +194,21 @@ QString getJSParameters(const SerializeFunctionTypeInfo & func)
 
 // ============================================================================
 
-RMIServer::RMIServer(bool descriptionEnabled) :
-	ThreadVerify("RMIServer", Worker),
-	descriptionEnabled_(descriptionEnabled),
+RMIServerBase::RMIServerBase(WebSocketService & wsService) :
+	ThreadVerify("RMIServerBase", Worker),
+	wsService_(wsService),
 	containerRE_("^(.+)<(.+)>$")
 {
 }
 
-RMIServer::~RMIServer()
+RMIServerBase::~RMIServerBase()
 {
 	stopVerifyThread();
 }
 
-void RMIServer::registerService(RMIService * service)
+void RMIServerBase::registerService(RMIServiceBase * service)
 {
-	service->server_ = this;
+//	service->server_ = this;
 	SerializeTypeInfo servInfo = service->getServiceInfo();
 	services_[servInfo.typeName.toLower()] = service;
 	foreach (const SerializeTypeInfo & ti, getFunctionClassInfos(servInfo)) {
@@ -224,7 +222,7 @@ void RMIServer::registerService(RMIService * service)
 	}
 }
 
-void RMIServer::exportTo(const QString & dest) const
+void RMIServerBase::exportTo(const QString & dest) const
 {
 	// write services
 	QDir().mkpath(dest + "/js/services");
@@ -240,16 +238,16 @@ void RMIServer::exportTo(const QString & dest) const
 	exportClass(classInfos_, "", dest);
 }
 
-void RMIServer::handleRequest(const Request & request)
+void RMIServerBase::handleRequest(const Request & request)
 {
 	QByteArray path = request.getUri();
 	if (path.startsWith("/api/")) {
 		path.remove(0, 5);
 		if      (path.startsWith("rmi/"))                            doRMI(request, path.mid(4));
-		else if (descriptionEnabled_ && path.startsWith("services")) showServices(request, path.mid(8));
-		else if (descriptionEnabled_ && path.startsWith("classes"))  showClasses(request, path.mid(7));
+		else if (path.startsWith("services")) showServices(request, path.mid(8));
+		else if (path.startsWith("classes"))  showClasses(request, path.mid(7));
 		else request.sendNotFound();
-	} else if (descriptionEnabled_) {
+	} else {
 		if (path.startsWith("/js/")) {
 			QString js = generateJS(path.mid(4));
 			if (!js.isNull()) request.sendText(js, "application/javascript");
@@ -267,7 +265,7 @@ void RMIServer::handleRequest(const Request & request)
 	}
 }
 
-void RMIServer::showServices(const Request & request, QString path) const
+void RMIServerBase::showServices(const Request & request, QString path) const
 {
 	QString info = HTMLDocHeader;
 
@@ -288,7 +286,7 @@ void RMIServer::showServices(const Request & request, QString path) const
 	}
 	path.remove(0, 1);
 
-	RMIService * srv = services_.value(path);
+	RMIServiceBase * srv = services_.value(path);
 	if (!srv) return;
 	SerializeTypeInfo ti = srv->getServiceInfo();
 
@@ -306,7 +304,7 @@ void RMIServer::showServices(const Request & request, QString path) const
 	request.sendText(info << footer);
 }
 
-void RMIServer::showClasses(const Request & request, QString path) const
+void RMIServerBase::showClasses(const Request & request, QString path) const
 {
 	QString info = HTMLDocHeader;
 
@@ -349,7 +347,7 @@ void RMIServer::showClasses(const Request & request, QString path) const
 	request.sendText(info << footer);
 }
 
-void RMIServer::classesToHTML(QString & info, const ClassInfoEl & infoEl) const
+void RMIServerBase::classesToHTML(QString & info, const ClassInfoEl & infoEl) const
 {
 	foreach (const QString & ns, infoEl.infos.keys()) {
 		const ClassInfoEl & el = *infoEl.infos[ns];
@@ -368,7 +366,7 @@ void RMIServer::classesToHTML(QString & info, const ClassInfoEl & infoEl) const
 	}
 }
 
-QString RMIServer::generateJS(const QString & path) const
+QString RMIServerBase::generateJS(const QString & path) const
 {
 	if (!path.endsWith(".js")) return QString();
 	const SerializeTypeInfo ti = getTypeInfo(path.left(path.length() - 3));
@@ -402,10 +400,10 @@ QString RMIServer::generateJS(const QString & path) const
 	return js;
 }
 
-SerializeTypeInfo RMIServer::getTypeInfo(const QString & path) const
+SerializeTypeInfo RMIServerBase::getTypeInfo(const QString & path) const
 {
 	if (path.startsWith("services/")) {
-		RMIService * srv = services_[path.mid(9)];
+		RMIServiceBase * srv = services_[path.mid(9)];
 		if (!srv) return SerializeTypeInfo();
 		return srv->getServiceInfo();
 	}
@@ -418,7 +416,7 @@ SerializeTypeInfo RMIServer::getTypeInfo(const QString & path) const
 	return ciEl->ti;
 }
 
-QString RMIServer::generateJSForClass(const SerializeTypeInfo & ti) const
+QString RMIServerBase::generateJSForClass(const SerializeTypeInfo & ti) const
 {
 	QString base;
 	if (!ti.bases.isEmpty()) {
@@ -503,7 +501,7 @@ QString RMIServer::generateJSForClass(const SerializeTypeInfo & ti) const
 	return js;
 }
 
-QString RMIServer::generateJSForService(const SerializeTypeInfo & ti) const
+QString RMIServerBase::generateJSForService(const SerializeTypeInfo & ti) const
 {
 	QString objName = ti.typeName;
 	objName[0] = ti.typeName[0].toLower();
@@ -568,9 +566,9 @@ QString RMIServer::generateJSForService(const SerializeTypeInfo & ti) const
 	return js;
 }
 
-void RMIServer::doRMI(const Request & request, const QString & path)
+void RMIServerBase::doRMI(const Request & request, const QString & path)
 {
-	if (!verifyThreadCall(&RMIServer::doRMI, request, path)) return;
+	if (!verifyThreadCall(&RMIServerBase::doRMI, request, path)) return;
 
 	if (!services_.contains(path) || !request.isPOST()) {
 		request.sendNotFound();
@@ -613,7 +611,7 @@ void RMIServer::doRMI(const Request & request, const QString & path)
 //	services_[path]->processServiceJSRequest(requestData, request, el.first, prependData);
 }
 
-void RMIServer::exportClass(const ClassInfoEl & cl, const QString & path, const QString & dest) const
+void RMIServerBase::exportClass(const ClassInfoEl & cl, const QString & path, const QString & dest) const
 {
 	if (cl.infos.isEmpty()) {
 		QString cl = path + ".js";
@@ -631,4 +629,4 @@ void RMIServer::exportClass(const ClassInfoEl & cl, const QString & path, const 
 	}
 }
 
-}}	// namespace
+}}}	// namespace

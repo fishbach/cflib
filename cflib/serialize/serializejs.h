@@ -35,7 +35,7 @@ public:
 
 	QByteArray data() const { return data_ + (base_.lastWasEmpty() ? ",]" : "]"); }
 
-	template <typename T>
+	template<typename T>
 	inline JSSerializer & operator<<(const T & cl) { base_ << cl; return *this; }
 
 	inline JSSerializer & operator<<(Placeholder ph) { base_ << ph; return *this; }
@@ -51,12 +51,12 @@ public:
 	JSDeserializer(const QByteArray & data) :
 		data_(data), base_((const quint8 *)data_.constData(), data_.size()) {}
 
-	template <typename T>
+	template<typename T>
 	inline JSDeserializer & operator>>(T & cl) { base_ >> cl; return *this; }
 
 	inline JSDeserializer & operator>>(Placeholder ph) { base_ >> ph; return *this; }
 
-	template <typename T>
+	template<typename T>
 	inline T get() { T retval; base_ >> retval; return retval; }
 
 private:

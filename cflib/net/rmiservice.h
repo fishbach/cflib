@@ -25,14 +25,14 @@
 
 namespace cflib { namespace net {
 
-class RMIServer;
-class Replier;
+//class RMIServer;
+class Replier2;
 
-class RMIService : public util::ThreadVerify
+class RMIServiceBase : public util::ThreadVerify
 {
 public:
-	RMIService(const QString & threadName, uint threadCount = 1, LoopType loopType = Worker);
-	RMIService(ThreadVerify * other);
+	RMIServiceBase(const QString & threadName, uint threadCount = 1, LoopType loopType = Worker);
+	RMIServiceBase(ThreadVerify * other);
 
 	void processServiceJSRequest(const QByteArray & requestData, const Request & request, uint clId,
 		const QByteArray & prependData);
@@ -45,22 +45,28 @@ protected:
 	uint clientId() const { return clId_; }
 	const Request & request() const { return *requestPtr_; }
 	virtual void preCallInit() {}
-	Replier delayReply();
+	Replier2 delayReply();
 	QByteArray getRemoteIP() const;
 
 private:
-	RMIServer * server_;
+//	RMIServer * server_;
+	void * server_;
 	uint clId_;
 	bool delayedReply_;
 	const Request * requestPtr_;
 	const QByteArray * prependDataPtr_;
-	friend class RMIServer;
+//	friend class RMIServer;
 };
 
-class Replier : public cflib::serialize::JSSerializer
+template<class c>
+class RMIService : public RMIServiceBase
+{
+};
+
+class Replier2 : public cflib::serialize::JSSerializer
 {
 public:
-	Replier(uint clId, const Request & request, const QByteArray & prependData) :
+	Replier2(uint clId, const Request & request, const QByteArray & prependData) :
 		clId_(clId), request_(request), prependData_(prependData) {}
 
 	void send();
@@ -70,7 +76,7 @@ private:
 	uint clId_;
 	Request request_;
 	QByteArray prependData_;
-	friend class RMIService;
+	friend class RMIServiceBase;
 };
 
 }}	// namespace

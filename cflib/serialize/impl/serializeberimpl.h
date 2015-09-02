@@ -26,7 +26,7 @@ namespace cflib { namespace serialize { namespace impl {
 // integer
 // ============================================================================
 
-template <typename T>
+template<typename T>
 inline void serializeBERInt(T v, quint64 tag, quint8 tagLen, QByteArray & data, bool isMaxUInt = false)
 {
 	if (v == 0) { writeNull(data, tag, tagLen); return; }
@@ -53,7 +53,7 @@ inline void serializeBERInt(T v, quint64 tag, quint8 tagLen, QByteArray & data, 
 	}
 }
 
-template <>
+template<>
 inline void serializeBERInt(bool v, quint64 tag, quint8 tagLen, QByteArray & data, bool)
 {
 	if (!v) { writeNull(data, tag, tagLen); return; }
@@ -77,7 +77,7 @@ inline void serializeBERInt(quint64 v, quint64 tag, quint8 tagLen, QByteArray & 
 	serializeBERInt<quint64>(v, tag, tagLen, data, (v >> 63));
 }
 
-template <typename T>
+template<typename T>
 inline void deserializeBERInt(T & v, const quint8 * data, int len)
 {
 	if (len < 1) {
@@ -90,7 +90,7 @@ inline void deserializeBERInt(T & v, const quint8 * data, int len)
 	while (--len > 0) v = (v << 8) | *(++b);
 }
 
-template <>
+template<>
 inline void deserializeBERInt(bool & v, const quint8 * data, int len)
 {
 	v = len > 0 && (quint8)*data == 1;
@@ -227,13 +227,13 @@ inline void deserializeBER(QDateTime & dt, const quint8 * data, int len, BERDese
 // QFlags
 // ----------------------------------------------------------------------------
 
-template <typename T>
+template<typename T>
 inline void serializeBER(const QFlags<T> & fl, quint64 tag, quint8 tagLen, QByteArray & data, BERSerializerBase &)
 {
 	serializeBERInt((int)fl, tag, tagLen, data);
 }
 
-template <typename T>
+template<typename T>
 inline void deserializeBER(QFlags<T> & fl, const quint8 * data, int len, BERDeserializerBase &)
 {
 	int flags;
@@ -252,7 +252,7 @@ inline void deserializeBER(QFlags<T> & fl, const quint8 * data, int len, BERDese
 // QPair
 // ----------------------------------------------------------------------------
 
-template <typename T1, typename T2>
+template<typename T1, typename T2>
 inline void serializeBER(const QPair<T1, T2> & cl, quint64 tag, quint8 tagLen, QByteArray & data, BERSerializerBase &)
 {
 	TLWriter tlw(data, tag, tagLen);
@@ -260,7 +260,7 @@ inline void serializeBER(const QPair<T1, T2> & cl, quint64 tag, quint8 tagLen, Q
 	ser << cl.first << cl.second;
 }
 
-template <typename T1, typename T2>
+template<typename T1, typename T2>
 inline void deserializeBER(QPair<T1, T2> & cl, const quint8 * data, int len, BERDeserializerBase &)
 {
 	BERDeserializerBase ser(data, len);
@@ -271,7 +271,7 @@ inline void deserializeBER(QPair<T1, T2> & cl, const quint8 * data, int len, BER
 // QList
 // ----------------------------------------------------------------------------
 
-template <typename T>
+template<typename T>
 inline void serializeBER(const QList<T> & cl, quint64 tag, quint8 tagLen, QByteArray & data, BERSerializerBase &)
 {
 	TLWriter tlw(data, tag, tagLen);
@@ -279,7 +279,7 @@ inline void serializeBER(const QList<T> & cl, quint64 tag, quint8 tagLen, QByteA
 	for (typename QList<T>::const_iterator it = cl.begin() ; it != cl.end() ; ++it) ser << *it;
 }
 
-template <typename T>
+template<typename T>
 inline void deserializeBER(QList<T> & cl, const quint8 * data, int len, BERDeserializerBase &)
 {
 	BERDeserializerBase ser(data, len, true);
@@ -308,7 +308,7 @@ inline void deserializeBER(QStringList & cl, const quint8 * data, int len, BERDe
 // QLinkedList
 // ----------------------------------------------------------------------------
 
-template <typename T>
+template<typename T>
 inline void serializeBER(const QLinkedList<T> & cl, quint64 tag, quint8 tagLen, QByteArray & data, BERSerializerBase &)
 {
 	TLWriter tlw(data, tag, tagLen);
@@ -316,7 +316,7 @@ inline void serializeBER(const QLinkedList<T> & cl, quint64 tag, quint8 tagLen, 
 	for (typename QLinkedList<T>::const_iterator it = cl.begin() ; it != cl.end() ; ++it) ser << *it;
 }
 
-template <typename T>
+template<typename T>
 inline void deserializeBER(QLinkedList<T> & cl, const quint8 * data, int len, BERDeserializerBase &)
 {
 	BERDeserializerBase ser(data, len, true);
@@ -331,7 +331,7 @@ inline void deserializeBER(QLinkedList<T> & cl, const quint8 * data, int len, BE
 // QVector
 // ----------------------------------------------------------------------------
 
-template <typename T>
+template<typename T>
 inline void serializeBER(const QVector<T> & cl, quint64 tag, quint8 tagLen, QByteArray & data, BERSerializerBase &)
 {
 	TLWriter tlw(data, tag, tagLen);
@@ -340,7 +340,7 @@ inline void serializeBER(const QVector<T> & cl, quint64 tag, quint8 tagLen, QByt
 	for (typename QVector<T>::const_iterator it = cl.begin() ; it != cl.end() ; ++it) ser << *it;
 }
 
-template <typename T>
+template<typename T>
 inline void deserializeBER(QVector<T> & cl, const quint8 * data, int len, BERDeserializerBase &)
 {
 	BERDeserializerBase ser(data, len, true);
@@ -357,7 +357,7 @@ inline void deserializeBER(QVector<T> & cl, const quint8 * data, int len, BERDes
 // QSet
 // ----------------------------------------------------------------------------
 
-template <typename T>
+template<typename T>
 inline void serializeBER(const QSet<T> & cl, quint64 tag, quint8 tagLen, QByteArray & data, BERSerializerBase &)
 {
 	TLWriter tlw(data, tag, tagLen);
@@ -365,7 +365,7 @@ inline void serializeBER(const QSet<T> & cl, quint64 tag, quint8 tagLen, QByteAr
 	for (typename QSet<T>::const_iterator it = cl.constBegin() ; it != cl.constEnd() ; ++it) ser << *it;
 }
 
-template <typename T>
+template<typename T>
 inline void deserializeBER(QSet<T> & cl, const quint8 * data, int len, BERDeserializerBase &)
 {
 	BERDeserializerBase ser(data, len, true);
@@ -380,7 +380,7 @@ inline void deserializeBER(QSet<T> & cl, const quint8 * data, int len, BERDeseri
 // QHash
 // ----------------------------------------------------------------------------
 
-template <typename Key, typename T>
+template<typename Key, typename T>
 inline void serializeBER(const QHash<Key, T> & cl, quint64 tag, quint8 tagLen, QByteArray & data, BERSerializerBase &)
 {
 	TLWriter tlw(data, tag, tagLen);
@@ -393,7 +393,7 @@ inline void serializeBER(const QHash<Key, T> & cl, quint64 tag, quint8 tagLen, Q
 	}
 }
 
-template <typename Key, typename T>
+template<typename Key, typename T>
 inline void deserializeBER(QHash<Key, T> & cl, const quint8 * data, int len, BERDeserializerBase &)
 {
 	BERDeserializerBase ser(data, len, true);
@@ -410,7 +410,7 @@ inline void deserializeBER(QHash<Key, T> & cl, const quint8 * data, int len, BER
 // QMap
 // ----------------------------------------------------------------------------
 
-template <typename Key, typename T>
+template<typename Key, typename T>
 inline void serializeBER(const QMap<Key, T> & cl, quint64 tag, quint8 tagLen, QByteArray & data, BERSerializerBase &)
 {
 	TLWriter tlw(data, tag, tagLen);
@@ -423,7 +423,7 @@ inline void serializeBER(const QMap<Key, T> & cl, quint64 tag, quint8 tagLen, QB
 	}
 }
 
-template <typename Key, typename T>
+template<typename Key, typename T>
 inline void deserializeBER(QMap<Key, T> & cl, const quint8 * data, int len, BERDeserializerBase &)
 {
 	BERDeserializerBase ser(data, len, true);
@@ -441,7 +441,7 @@ inline void deserializeBER(QMap<Key, T> & cl, const quint8 * data, int len, BERD
 // custom classes
 // ============================================================================
 
-template <typename T>
+template<typename T>
 inline void serializeBER(const T & cl, quint64 tag, quint8 tagLen, QByteArray & data, BERSerializerBase &)
 {
 	TLWriter tlw(data, tag, tagLen);
@@ -449,7 +449,7 @@ inline void serializeBER(const T & cl, quint64 tag, quint8 tagLen, QByteArray & 
 	cl.serialize(ser);
 }
 
-template <typename T>
+template<typename T>
 inline void deserializeBER(T & cl, const quint8 * data, int len, BERDeserializerBase &)
 {
 	BERDeserializerBase ser(data, len);

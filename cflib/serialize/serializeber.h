@@ -29,7 +29,7 @@ public:
 
 	QByteArray data() const { return data_; }
 
-	template <typename T>
+	template<typename T>
 	inline BERSerializer & operator<<(const T & cl) { base_ << cl; return *this; }
 
 	inline BERSerializer & operator<<(Placeholder ph) { base_ << ph; return *this; }
@@ -45,12 +45,12 @@ public:
 	BERDeserializer(const QByteArray & data) :
 		data_(data), base_((const quint8 *)data_.constData(), data_.size()) {}
 
-	template <typename T>
+	template<typename T>
 	inline BERDeserializer & operator>>(T & cl) { base_ >> cl; return *this; }
 
 	inline BERDeserializer & operator>>(Placeholder ph) { base_ >> ph; return *this; }
 
-	template <typename T>
+	template<typename T>
 	inline T get() { T retval; base_ >> retval; return retval; }
 
 private:

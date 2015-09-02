@@ -20,22 +20,22 @@
 
 namespace cflib { namespace net {
 
-RMIService::RMIService(const QString & threadName, uint threadCount, LoopType loopType) :
+RMIServiceBase::RMIServiceBase(const QString & threadName, uint threadCount, LoopType loopType) :
 	util::ThreadVerify(threadName, loopType, threadCount),
 	server_(0), clId_(0), delayedReply_(false), requestPtr_(0), prependDataPtr_(0)
 {
 }
 
-RMIService::RMIService(util::ThreadVerify * other) :
+RMIServiceBase::RMIServiceBase(util::ThreadVerify * other) :
 	util::ThreadVerify(other),
 	server_(0), clId_(0), delayedReply_(false), requestPtr_(0), prependDataPtr_(0)
 {
 }
 
-void RMIService::processServiceJSRequest(const QByteArray & requestData, const Request & request, uint clId,
+void RMIServiceBase::processServiceJSRequest(const QByteArray & requestData, const Request & request, uint clId,
 	const QByteArray & prependData)
 {
-	if (!verifyThreadCall(&RMIService::processServiceJSRequest, requestData, request, clId, prependData)) return;
+	if (!verifyThreadCall(&RMIServiceBase::processServiceJSRequest, requestData, request, clId, prependData)) return;
 
 	clId_           = clId;
 	requestPtr_     = &request;
@@ -53,18 +53,18 @@ void RMIService::processServiceJSRequest(const QByteArray & requestData, const R
 	}
 }
 
-Replier RMIService::delayReply()
+Replier2 RMIServiceBase::delayReply()
 {
 	delayedReply_ = true;
-	return Replier(clId_, *requestPtr_, *prependDataPtr_);
+	return Replier2(clId_, *requestPtr_, *prependDataPtr_);
 }
 
-QByteArray RMIService::getRemoteIP() const
+QByteArray RMIServiceBase::getRemoteIP() const
 {
 	return requestPtr_ ? requestPtr_->getRemoteIP() : QByteArray();
 }
 
-void Replier::send()
+void Replier2::send()
 {
 	prependData_ += data();
 	request_.sendReply(prependData_, "application/javascript; charset=utf-8");

@@ -24,11 +24,11 @@ void writeMethods(QTextStream & out, const HeaderParser::Class & cl)
 {
 	if (cl.members.isEmpty() && !cl.doBaseSerialize) {
 		out <<
-			"template <typename T> void " << cl.name << "::serialize(T &) const {}\n"
-			"template <typename T> void " << cl.name << "::deserialize(T &) {}\n";
+			"template<typename T> void " << cl.name << "::serialize(T &) const {}\n"
+			"template<typename T> void " << cl.name << "::deserialize(T &) {}\n";
 	} else {
 		out <<
-			"template <typename T> void " << cl.name << "::serialize(T & ser) const {\n"
+			"template<typename T> void " << cl.name << "::serialize(T & ser) const {\n"
 			"\tser";
 		if (cl.doBaseSerialize) {
 			out << " << (const " << cl.base << " &)*this";
@@ -39,7 +39,7 @@ void writeMethods(QTextStream & out, const HeaderParser::Class & cl)
 		out <<
 			";\n"
 			"}\n"
-			"template <typename T> void " << cl.name << "::deserialize(T & ser) {\n"
+			"template<typename T> void " << cl.name << "::deserialize(T & ser) {\n"
 			"\tser";
 		if (cl.doBaseSerialize) {
 			out << " >> (" << cl.base << " &)*this";

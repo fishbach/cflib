@@ -27,7 +27,7 @@ namespace {
 
 QTextStream out(stdout);
 
-template <typename T>
+template<typename T>
 bool checkSer(T val, const QByteArray & expected) {
 	JSSerializer ser;
 	ser << val;
@@ -40,7 +40,7 @@ bool checkSer(T val, const QByteArray & expected) {
 	return true;
 }
 
-template <typename T>
+template<typename T>
 bool checkDeser(T val, const QByteArray & expected) {
 	JSDeserializer deser(expected);
 	T test; deser >> test;
@@ -53,7 +53,7 @@ bool checkDeser(T val, const QByteArray & expected) {
 	return true;
 }
 
-template <typename T>
+template<typename T>
 bool checkDeserNull(T val, const QByteArray & expected) {
 	JSDeserializer deser(expected);
 	T test; deser >> test;
@@ -66,12 +66,12 @@ bool checkDeserNull(T val, const QByteArray & expected) {
 	return true;
 }
 
-template <typename T>
+template<typename T>
 bool checkSerDeser(T val, const QByteArray & expected) {
 	return checkSer(val, expected) & checkDeser(val, expected);
 }
 
-template <typename T>
+template<typename T>
 bool checkSerDeserNull(T val, const QByteArray & expected) {
 	return checkSer(val, expected) & checkDeser(val, expected) & checkDeserNull(val, expected);
 }

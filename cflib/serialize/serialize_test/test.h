@@ -29,12 +29,12 @@ public:
 	bool operator!=(const Test1 & rhs) const { return a != rhs.a || b != rhs.b; }
 	bool isNull() const { return a == 0 && b == 0; }
 
-	template <typename T>
+	template<typename T>
 	void serialize(T & ser) const
 	{
 		ser << a << b;
 	}
-	template <typename T>
+	template<typename T>
 	void deserialize(T & ser)
 	{
 		ser >> a >> b;
@@ -56,12 +56,12 @@ public:
 
 	bool operator!=(const Test2 & rhs) const { return t1 != rhs.t1 || a != rhs.a; }
 
-	template <typename T>
+	template<typename T>
 	void serialize(T & ser) const
 	{
 		ser << t1 << a;
 	}
-	template <typename T>
+	template<typename T>
 	void deserialize(T & ser)
 	{
 		ser >> t1 >> a;
@@ -73,7 +73,7 @@ inline QTextStream & operator<<(QTextStream & s, const Test2 & t2)
 	return s << t2.t1 << ", " << t2.a;
 }
 
-template <typename T>
+template<typename T>
 inline QTextStream & operator<<(QTextStream & s, const QList<T> & list)
 {
 	bool isFirst = true;
@@ -85,7 +85,7 @@ inline QTextStream & operator<<(QTextStream & s, const QList<T> & list)
 	return s;
 }
 
-template <typename Key, typename Val>
+template<typename Key, typename Val>
 inline QTextStream & operator<<(QTextStream & s, const QMap<Key, Val> & map)
 {
 	bool isFirst = true;
@@ -97,7 +97,7 @@ inline QTextStream & operator<<(QTextStream & s, const QMap<Key, Val> & map)
 	return s;
 }
 
-template <typename Key, typename Val>
+template<typename Key, typename Val>
 inline QTextStream & operator<<(QTextStream & s, const QHash<Key, Val> & map)
 {
 	bool isFirst = true;

@@ -27,7 +27,7 @@ namespace {
 
 QTextStream out(stdout);
 
-template <typename T>
+template<typename T>
 bool checkSer(T val, const char * hex)
 {
 	BERSerializer ser;
@@ -42,7 +42,7 @@ bool checkSer(T val, const char * hex)
 	return true;
 }
 
-template <typename T>
+template<typename T>
 bool checkDeser(T val, const char * hex)
 {
 	const QByteArray expected = QByteArray::fromHex(hex);
@@ -57,7 +57,7 @@ bool checkDeser(T val, const char * hex)
 	return true;
 }
 
-template <typename T>
+template<typename T>
 bool checkDeserNull(T val, const char * hex)
 {
 	const QByteArray expected = QByteArray::fromHex(hex);
@@ -72,13 +72,13 @@ bool checkDeserNull(T val, const char * hex)
 	return true;
 }
 
-template <typename T>
+template<typename T>
 bool checkSerDeser(T val, const char * hex)
 {
 	return checkSer(val, hex) && checkDeser(val, hex);
 }
 
-template <typename T>
+template<typename T>
 bool checkSerDeserNull(T val, const char * hex)
 {
 	return checkSer(val, hex) && checkDeser(val, hex) && checkDeserNull(val, hex);

@@ -18,55 +18,28 @@
 
 #pragma once
 
+#include <cflib/net/impl/rmiserverbase.h>
 #include <cflib/net/requesthandler.h>
+#include <cflib/net/wscommmanager.h>
+#include <cflib/net/rmiservice.h>
 #include <cflib/serialize/serializetypeinfo.h>
-#include <cflib/util/threadverify.h>
 
 namespace cflib { namespace net {
 
-class RMIService;
-
-class RMIServer : public RequestHandler, public util::ThreadVerify
+template<class C>
+class RMIServer : public RequestHandler, private impl::RMIServerBase
 {
 public:
-	RMIServer(bool descriptionEnabled = true);
-	~RMIServer();
+	RMIServer(WSCommManager<C> & commMgr) : RMIServerBase(commMgr) {}
 
-	void registerService(RMIService * service);
-	void exportTo(const QString & dest) const;
+	void registerService(RMIService<C> * service) { RMIServerBase::registerService(service); }
+	using RMIServerBase::exportTo;
 
 protected:
-	virtual void handleRequest(const Request & request);
-
-private:
-	struct ClassInfoEl;
-	class ClassInfos : public QMap<QString, ClassInfoEl *> {
-		Q_DISABLE_COPY(ClassInfos)
-	public:
-		ClassInfos() {}
-		~ClassInfos() { foreach (ClassInfoEl * val, values()) delete val; }
-	};
-	struct ClassInfoEl {
-		ClassInfos infos;
-		cflib::serialize::SerializeTypeInfo ti;
-	};
-
-private:
-	void showServices(const Request & request, QString path) const;
-	void showClasses(const Request & request, QString path) const;
-	void classesToHTML(QString & info, const ClassInfoEl & infoEl) const;
-	QString generateJS(const QString & path) const;
-	cflib::serialize::SerializeTypeInfo getTypeInfo(const QString & path) const;
-	QString generateJSForClass(const cflib::serialize::SerializeTypeInfo & ti) const;
-	QString generateJSForService(const cflib::serialize::SerializeTypeInfo & ti) const;
-	void doRMI(const Request & request, const QString & path);
-	void exportClass(const ClassInfoEl & cl, const QString & path, const QString & dest) const;
-
-private:
-	const bool descriptionEnabled_;
-	QMap<QString, RMIService *> services_;
-	ClassInfoEl classInfos_;
-	const QRegularExpression containerRE_;
+	virtual void handleRequest(const Request & request) { RMIServerBase::handleRequest(request); }
+	virtual void processServiceRequest(RMIServiceBase * service, const QByteArray & requestData) {
+//		((RMIService<C> *)service)->processServiceJSRequest(requestData);
+	}
 };
 
 }}	// namespace

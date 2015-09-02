@@ -26,7 +26,7 @@
 
 namespace cflib { namespace net {
 
-template <class C>
+template<class C>
 class WSCommStateListener
 {
 public:
@@ -34,14 +34,14 @@ public:
 	virtual void connDataChange(const C & connData, uint connId);
 };
 
-template <class C>
+template<class C>
 class WSCommTextMsgHandler
 {
 public:
 	virtual bool handleTextMsg(const QByteArray & data, const C & connData, uint connId);
 };
 
-template <class C>
+template<class C>
 class WSCommMsgHandler
 {
 public:
@@ -50,7 +50,7 @@ public:
 		const C & connData, uint connId);
 };
 
-template <class C>
+template<class C>
 class WSCommManager : public WebSocketService
 {
 	USE_LOG_MEMBER(LogCat::Http)
@@ -66,6 +66,9 @@ public:
 		ConnIds connIds;
 		QDateTime lastClosed;
 	};
+
+	using WebSocketService::send;
+	using WebSocketService::close;
 
 public:
 	WSCommManager(const QString & path, uint connectionTimeoutSec = 30, uint sessionTimeoutSec = 86400);

@@ -24,7 +24,7 @@ namespace cflib { namespace serialize { namespace impl {
 
 class SerializeTypeInfoImpl : public SerializeTypeInfo {};
 
-template <typename T>
+template<typename T>
 inline SerializeTypeInfo fromType()
 {
 	SerializeTypeInfoImpl retval;
@@ -58,7 +58,7 @@ DO_SERIALIZE_TYPE_INFO(QString,    String)
 DO_SERIALIZE_TYPE_INFO(QChar,      Char)
 DO_SERIALIZE_TYPE_INFO(QDateTime,  DateTime)
 
-template <typename T>
+template<typename T>
 inline void serializeTypeInfo(SerializeTypeInfoImpl & si, QFlags<T> *)
 {
 	serializeTypeInfo(si, (int *)0);
@@ -69,7 +69,7 @@ inline void serializeTypeInfo(SerializeTypeInfoImpl & si, QFlags<T> *)
 // container types
 // ============================================================================
 
-template <typename T1, typename T2>
+template<typename T1, typename T2>
 inline void serializeTypeInfo(SerializeTypeInfoImpl & si, QPair<T1, T2> *)
 {
 	SerializeTypeInfoImpl si1;
@@ -81,7 +81,7 @@ inline void serializeTypeInfo(SerializeTypeInfoImpl & si, QPair<T1, T2> *)
 	si.bases << si1 << si2;
 }
 
-template <typename T>
+template<typename T>
 inline void serializeTypeInfo(SerializeTypeInfoImpl & si, QList<T> *)
 {
 	SerializeTypeInfoImpl si1;
@@ -96,25 +96,25 @@ inline void serializeTypeInfo(SerializeTypeInfoImpl & si, QStringList *)
 	serializeTypeInfo(si, (QList<QString> *)0);
 }
 
-template <typename T>
+template<typename T>
 inline void serializeTypeInfo(SerializeTypeInfoImpl & si, QLinkedList<T> *)
 {
 	serializeTypeInfo(si, (QList<T> *)0);
 }
 
-template <typename T>
+template<typename T>
 inline void serializeTypeInfo(SerializeTypeInfoImpl & si, QVector<T> *)
 {
 	serializeTypeInfo(si, (QList<T> *)0);
 }
 
-template <typename T>
+template<typename T>
 inline void serializeTypeInfo(SerializeTypeInfoImpl & si, QSet<T> *)
 {
 	serializeTypeInfo(si, (QList<T> *)0);
 }
 
-template <typename Key, typename T>
+template<typename Key, typename T>
 inline void serializeTypeInfo(SerializeTypeInfoImpl & si, QMap<Key, T> *)
 {
 	SerializeTypeInfoImpl si1;
@@ -126,7 +126,7 @@ inline void serializeTypeInfo(SerializeTypeInfoImpl & si, QMap<Key, T> *)
 	si.bases << si1 << si2;
 }
 
-template <typename Key, typename T>
+template<typename Key, typename T>
 inline void serializeTypeInfo(SerializeTypeInfoImpl & si, QHash<Key, T> *)
 {
 	serializeTypeInfo(si, (QMap<Key, T> *)0);
@@ -137,7 +137,7 @@ inline void serializeTypeInfo(SerializeTypeInfoImpl & si, QHash<Key, T> *)
 // classes
 // ============================================================================
 
-template <typename T>
+template<typename T>
 inline void serializeTypeInfo(SerializeTypeInfoImpl & si, T *)
 {
 	(SerializeTypeInfo &)si = T::serializeTypeInfo();
