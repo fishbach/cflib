@@ -40,9 +40,7 @@ public:
 	void handleRequest(const Request & request);
 	void sendReply(uint connId, const QByteArray & data);
 	QByteArray getRemoteIP(uint connId);
-
-protected:
-	virtual void processServiceRequest(RMIServiceBase * service, const QByteArray & requestData, uint connId) = 0;
+	RMIServiceBase * findServiceForCall(const quint8 * & data, int & len, uint connId);
 
 private:
 	struct ClassInfoEl;
@@ -65,7 +63,6 @@ private:
 	cflib::serialize::SerializeTypeInfo getTypeInfo(const QString & path) const;
 	QString generateJSForClass(const cflib::serialize::SerializeTypeInfo & ti) const;
 	QString generateJSForService(const cflib::serialize::SerializeTypeInfo & ti) const;
-	void doRMI(const Request & request, const QString & path);
 	void exportClass(const ClassInfoEl & cl, const QString & path, const QString & dest) const;
 
 private:
@@ -73,6 +70,7 @@ private:
 	QMap<QString, RMIServiceBase *> services_;
 	ClassInfoEl classInfos_;
 	const QRegularExpression containerRE_;
+	QSet<uint> activeRequests_;
 };
 
 }}}	// namespace

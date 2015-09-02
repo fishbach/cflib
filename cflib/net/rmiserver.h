@@ -26,18 +26,32 @@
 namespace cflib { namespace net {
 
 template<class C>
-class RMIServer : public RequestHandler, private impl::RMIServerBase
+class RMIServer : public RequestHandler, public WSCommMsgHandler<C>, private impl::RMIServerBase
 {
 public:
-	RMIServer(WSCommManager<C> & commMgr) : RMIServerBase(commMgr) {}
+	RMIServer(WSCommManager<C> & commMgr) : RMIServerBase(commMgr) {
+		commMgr.registerMsgHandler(3, *this);
+	}
 
 	void registerService(RMIService<C> * service) { RMIServerBase::registerService(service); }
 	using RMIServerBase::exportTo;
 
+	virtual void handleMsg(quint64,
+		const QByteArray & data, int tagLen, int lengthSize, qint32 valueLen,
+		const C & connData, uint connId)
+	{
+		handleCall((const quint8 *)data.constData() + tagLen + lengthSize, valueLen, connData, connId);
+	}
+
 protected:
 	virtual void handleRequest(const Request & request) { RMIServerBase::handleRequest(request); }
-	virtual void processServiceRequest(RMIServiceBase * service, const QByteArray & requestData, uint connId) {
-		((RMIService<C> *)service)->processServiceRequest(requestData, connId);
+
+private:
+	void handleCall(const quint8 * data, int len, const C & connData, uint connId)
+	{
+		if (!verifyThreadCall(&RMIServer::handleCall, data, len, connData, connId)) return;
+		RMIService<C> * service = (RMIService<C> *)findServiceForCall(data, len, connId);
+		if (service) service->processServiceRequest(data, len, connData, connId);
 	}
 };
 

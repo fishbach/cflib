@@ -38,7 +38,7 @@ template<class C>
 class WSCommTextMsgHandler
 {
 public:
-	virtual bool handleTextMsg(const QByteArray & data, const C & connData, uint connId);
+	virtual bool handleTextMsg(const QByteArray & data, const C & connData, uint connId) = 0;
 };
 
 template<class C>
@@ -47,7 +47,7 @@ class WSCommMsgHandler
 public:
 	virtual void handleMsg(quint64 tag,
 		const QByteArray & data, int tagLen, int lengthSize, qint32 valueLen,
-		const C & connData, uint connId);
+		const C & connData, uint connId) = 0;
 };
 
 class WSCommManagerBase : public WebSocketService
@@ -81,6 +81,8 @@ public:
 public:
 	WSCommManager(const QString & path, uint connectionTimeoutSec = 30, uint sessionTimeoutSec = 86400);
 	~WSCommManager();
+
+	void registerMsgHandler(quint64 tag, MsgHandler & hdl) { msgHandler_[tag] = &hdl; }
 
 protected:
 	virtual void newConnection(uint connId);
@@ -120,26 +122,6 @@ void WSCommStateListener<C>::newClient(uint connId)
 template<class C>
 void WSCommStateListener<C>::connDataChange(const C & connData, uint connId)
 {
-	Q_UNUSED(connData) Q_UNUSED(connId)
-}
-
-// ----------------------------------------------------------------------------
-
-template<class C>
-bool WSCommTextMsgHandler<C>::handleTextMsg(const QByteArray & data, const C & connData, uint connId)
-{
-	Q_UNUSED(data) Q_UNUSED(connData) Q_UNUSED(connId)
-	return false;
-}
-
-// ----------------------------------------------------------------------------
-
-template<class C>
-void WSCommMsgHandler<C>::handleMsg(quint64 tag, const QByteArray & data, int tagLen, int lengthSize, qint32 valueLen,
-	const C & connData, uint connId)
-{
-	Q_UNUSED(tag)
-	Q_UNUSED(data) Q_UNUSED(tagLen) Q_UNUSED(lengthSize) Q_UNUSED(valueLen)
 	Q_UNUSED(connData) Q_UNUSED(connId)
 }
 

@@ -24,37 +24,8 @@
 
 namespace cflib { namespace net {
 
+template<class C> class RMIServer;
 namespace impl { class RMIServerBase; }
-class RMIReplier;
-
-class RMIServiceBase : public util::ThreadVerify
-{
-public:
-	RMIServiceBase(const QString & threadName, uint threadCount = 1, LoopType loopType = Worker);
-	RMIServiceBase(ThreadVerify * other);
-
-	void processServiceRequest(const QByteArray & requestData, uint connId);
-
-	virtual cflib::serialize::SerializeTypeInfo getServiceInfo() = 0;
-	virtual QByteArray processServiceCall(const QByteArray & data) = 0;
-
-protected:
-	uint connId() const { return connId_; }
-	RMIReplier delayReply();
-	QByteArray getRemoteIP() const;
-	virtual void preCallInit() {}
-
-private:
-	impl::RMIServerBase * server_;
-	uint connId_;
-	bool delayedReply_;
-	friend class impl::RMIServerBase;
-};
-
-template<class C>
-class RMIService : public RMIServiceBase
-{
-};
 
 class RMIReplier : public cflib::serialize::BERSerializer
 {
@@ -67,6 +38,55 @@ private:
 	impl::RMIServerBase & server_;
 	uint connId_;
 	friend class RMIServiceBase;
+};
+
+class RMIServiceBase : public util::ThreadVerify
+{
+public:
+	virtual cflib::serialize::SerializeTypeInfo getServiceInfo() = 0;
+
+protected:
+	uint connId() const { return connId_; }
+	RMIReplier delayReply();
+	QByteArray getRemoteIP() const;
+	virtual void preCallInit() {}
+
+protected:
+	RMIServiceBase(const QString & threadName, uint threadCount, LoopType loopType);
+	RMIServiceBase(ThreadVerify * other);
+	void processServiceRequest(const quint8 * data, int len, uint connId);
+	virtual QByteArray processServiceCall(const quint8 * data, int len) = 0;
+
+private:
+	impl::RMIServerBase * server_;
+	uint connId_;
+	bool delayedReply_;
+	friend class impl::RMIServerBase;
+};
+
+template<class C>
+class RMIService : public RMIServiceBase
+{
+public:
+	RMIService(const QString & threadName, uint threadCount = 1, LoopType loopType = Worker) :
+		RMIServiceBase(threadName, threadCount, loopType) {}
+	RMIService(ThreadVerify * other) : RMIServiceBase(other) {}
+
+protected:
+	const C & connData() { return connData_; }
+
+private:
+	void processServiceRequest(const quint8 * data, int len, const C & connData, uint connId)
+	{
+		if (!verifyThreadCall(&RMIService::processServiceRequest, data, len, connData, connId)) return;
+		connData_ = connData;
+		RMIServiceBase::processServiceRequest(data, len, connId);
+		connData_ = C();
+	}
+
+private:
+	C connData_;
+	friend class RMIServer<C>;
 };
 
 }}	// namespace

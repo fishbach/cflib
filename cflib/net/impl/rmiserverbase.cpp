@@ -20,9 +20,10 @@
 
 #include <cflib/net/request.h>
 #include <cflib/net/rmiservice.h>
+#include <cflib/net/wscommmanager.h>
+#include <cflib/serialize/serializeber.h>
 #include <cflib/util/log.h>
 #include <cflib/util/util.h>
-#include <cflib/net/wscommmanager.h>
 
 USE_LOG(LogCat::Http)
 
@@ -243,8 +244,7 @@ void RMIServerBase::handleRequest(const Request & request)
 	QByteArray path = request.getUri();
 	if (path.startsWith("/api/")) {
 		path.remove(0, 5);
-		if      (path.startsWith("rmi/"))                            doRMI(request, path.mid(4));
-		else if (path.startsWith("services")) showServices(request, path.mid(8));
+		if (path.startsWith("services")) showServices(request, path.mid(8));
 		else if (path.startsWith("classes"))  showClasses(request, path.mid(7));
 		else request.sendNotFound();
 	} else {
@@ -257,8 +257,6 @@ void RMIServerBase::handleRequest(const Request & request)
 				"<ul>\n"
 				"<li><a href=\"api/services\">services</a> - API Services Description</li>\n"
 				"<li><a href=\"api/classes\">classes</a> - API Classes Description</li>\n"
-				"</ul><ul>\n"
-				"<li>rmi/&lt;service&gt; - Service Interface</a></li>\n"
 				"</ul>\n";
 			request.sendText(info << footer);
 		}
@@ -267,12 +265,33 @@ void RMIServerBase::handleRequest(const Request & request)
 
 void RMIServerBase::sendReply(uint connId, const QByteArray & data)
 {
+	activeRequests_.remove(connId);
 	wsService_.send(connId, data, true);
 }
 
 QByteArray RMIServerBase::getRemoteIP(uint connId)
 {
 	return wsService_.getRemoteIP(connId);
+}
+
+RMIServiceBase * RMIServerBase::findServiceForCall(const quint8 *& data, int & len, uint connId)
+{
+	if (activeRequests_.contains(connId)) {
+		logWarn("two simultaneous requests from connection %1", connId);
+		wsService_.close(connId, TCPConn::HardClosed);
+		return 0;
+	}
+	BERDeserializer deser(data, len);
+	QString name;
+	deser >> name;
+	RMIServiceBase * service = services_.value(name);
+	if (!service) {
+		logWarn("unknown service %1 connection %2", name, connId);
+		wsService_.close(connId, TCPConn::HardClosed);
+		return 0;
+	}
+	deser.nextValueData(data, len);
+	return service;
 }
 
 void RMIServerBase::showServices(const Request & request, QString path) const
@@ -574,51 +593,6 @@ QString RMIServerBase::generateJSForService(const SerializeTypeInfo & ti) const
 
 	js << "return " << objName << ";\n";
 	return js;
-}
-
-void RMIServerBase::doRMI(const Request & request, const QString & path)
-{
-	if (!verifyThreadCall(&RMIServerBase::doRMI, request, path)) return;
-
-	if (!services_.contains(path) || !request.isPOST()) {
-		request.sendNotFound();
-		return;
-	}
-
-	QByteArray requestData = request.getBody();
-
-	const int pos = requestData.indexOf('[');
-	if (pos == -1) {
-		logWarn("broken RMI request: %1", requestData);
-		return;
-	}
-
-	logInfo("RMI call from IP %1: %2", request.getRemoteIP(), request.getUri());
-
-//	bool ok = false;
-//	QByteArray clIdData;
-//	if (pos == 40) {
-//		clIdData = requestData.left(pos);
-//		ok = clientIds_.contains(clIdData);
-//	}
-
-//	QByteArray prependData;
-//	if (!ok) {
-//		clIdData = cflib::crypt::randomId();
-//		prependData = clIdData;
-//	}
-//	requestData.remove(0, pos);
-
-//	ClientIdTimestamp & el = clientIds_[clIdData];
-//	if (!ok) {
-//		el.first = ++lastId_;
-//		logDebug("new client: %1 -> %2", clIdData, el.first);
-//	} else {
-//		logDebug("request from client: %1 -> %2", clIdData, el.first);
-//	}
-//	el.second = QDateTime::currentDateTime();
-
-//	services_[path]->processServiceJSRequest(requestData, request, el.first, prependData);
 }
 
 void RMIServerBase::exportClass(const ClassInfoEl & cl, const QString & path, const QString & dest) const

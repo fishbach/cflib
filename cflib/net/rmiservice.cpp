@@ -34,13 +34,11 @@ RMIServiceBase::RMIServiceBase(util::ThreadVerify * other) :
 {
 }
 
-void RMIServiceBase::processServiceRequest(const QByteArray & requestData, uint connId)
+void RMIServiceBase::processServiceRequest(const quint8 * data, int len, uint connId)
 {
-	if (!verifyThreadCall(&RMIServiceBase::processServiceRequest, requestData, connId)) return;
-
 	connId_ = connId;
 	preCallInit();
-	const QByteArray reply = processServiceCall(requestData);
+	const QByteArray reply = processServiceCall(data, len);
 	connId_ = 0;
 	if (delayedReply_) {
 		delayedReply_ = false;
