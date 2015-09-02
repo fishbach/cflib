@@ -44,14 +44,12 @@ int main(int argc, char *argv[])
 
 	RequestLog requestLog;
 
-//	RMIServer<QString> rmi;
-//	InfoService infoService; api.registerService(&infoService);
-//	LogService  logService;  api.registerService(&logService);
-
 	FileServer fs("htdocs");
 
 	WSCommManager<QString> commMgr("/ws");
 	RMIServer<QString> rmiServer(commMgr);
+	InfoService infoService; rmiServer.registerService(infoService);
+	LogService  logService;  rmiServer.registerService(logService);
 
 	HttpServer serv;
 	serv.registerHandler(requestLog);
