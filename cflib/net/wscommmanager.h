@@ -30,19 +30,15 @@ template <class C>
 class WSCommStateListener
 {
 public:
-	virtual void newClient(uint connId) { Q_UNUSED(connId) }
-	virtual void connDataChange(const C & connData, uint connId) { Q_UNUSED(connData) Q_UNUSED(connId) }
+	virtual void newClient(uint connId);
+	virtual void connDataChange(const C & connData, uint connId);
 };
 
 template <class C>
 class WSCommTextMsgHandler
 {
 public:
-	virtual bool handleTextMsg(const QByteArray & data, const C & connData, uint connId)
-	{
-		Q_UNUSED(data) Q_UNUSED(connData) Q_UNUSED(connId)
-		return false;
-	}
+	virtual bool handleTextMsg(const QByteArray & data, const C & connData, uint connId);
 };
 
 template <class C>
@@ -51,12 +47,7 @@ class WSCommMsgHandler
 public:
 	virtual void handleMsg(quint64 tag,
 		const QByteArray & data, int tagLen, int lengthSize, qint32 valueLen,
-		const C & connData, uint connId)
-	{
-		Q_UNUSED(tag)
-		Q_UNUSED(data) Q_UNUSED(tagLen) Q_UNUSED(lengthSize) Q_UNUSED(valueLen)
-		Q_UNUSED(connData) Q_UNUSED(connId)
-	}
+		const C & connData, uint connId);
 };
 
 template <class C>
@@ -77,154 +68,18 @@ public:
 	};
 
 public:
-	WSCommManager(const QString & path, uint connectionTimeoutSec = 30, uint sessionTimeoutSec = 86400) :
-		WebSocketService(path, connectionTimeoutSec),
-		connDataId_(0),
-		timer_(this, &WSCommManager::checkTimeout), sessionTimeoutSec_(sessionTimeoutSec)
-	{
-		init();
-	}
-	~WSCommManager() { stopVerifyThread(); }
+	WSCommManager(const QString & path, uint connectionTimeoutSec = 30, uint sessionTimeoutSec = 86400);
+	~WSCommManager();
 
 protected:
-	virtual void newConnection(uint connId)
-	{
-		QListIterator<StateListener *> it(stateListener_);
-		while (it.hasNext()) it.next()->newClient(connId);
-	}
-
-	virtual void newMsg(uint connId, const QByteArray & data, bool isBinary)
-	{
-		const uint dataId = connId2dataId_.value(connId);
-
-		// handle text msg
-		if (!isBinary) {
-			if (dataId == 0) {
-				close(connId, TCPConn::HardClosed);
-				logInfo("request without clientId from %1", connId);
-				return;
-			}
-
-			QListIterator<TextMsgHandler *> it(textMsgHandler_);
-			while (it.hasNext()) {
-				if (it.next()->handleTextMsg(data, connData_[dataId].connData, connId)) return;
-			}
-			close(connId, TCPConn::HardClosed);
-			logInfo("unhandled text message from %1", connId);
-			return;
-		}
-
-		// read outer BER
-		quint64 tag;
-		int tagLen;
-		int lengthSize;
-		const qint32 valueLen = serialize::getTLVLength(data, tag, tagLen, lengthSize);
-		if (valueLen < 0) {
-			close(connId, TCPConn::HardClosed);
-			logInfo("broken BER msg %1 (%2)", connId, valueLen);
-			return;
-		}
-		logTrace("ws msg (connId: %1, tag: %2, valueLen: %3)", connId, tag, valueLen);
-
-		// handle new connections
-		if (dataId == 0) {
-			switch (tag) {
-				case 1:
-					sendNewClientId(connId);
-					return;
-				case 2: {
-					const QByteArray clId = serialize::fromByteArray<QByteArray>(data, tagLen, lengthSize, valueLen);
-					const uint dId = clientIds_.value(clId);
-					if (dId == 0) {
-						sendNewClientId(connId);
-					} else {
-						connId2dataId_[connId] = dId;
-						connData_[dId].connIds << connId;
-					}
-					return;
-				}
-				default:
-					close(connId, TCPConn::HardClosed);
-					logInfo("request without clientId from %1", connId);
-					return;
-			}
-		}
-
-		// forwarding
-		if (channels_.contains(TagConnId(tag, connId))) {
-			QSetIterator<uint> it(channels_[TagConnId(tag, connId)]);
-			while (it.hasNext()) send(it.next(), data, true);
-			return;
-		}
-
-		// handler
-		MsgHandler * hdl = msgHandler_.value(tag);
-		if (hdl) {
-			hdl->handleMsg(tag, data, tagLen, lengthSize, valueLen, connData_[dataId].connData, connId);
-			return;
-		}
-
-		close(connId, TCPConn::HardClosed);
-		logInfo("unhandled message from %1 (tag: %2)", connId, tag);
-	}
-
-	virtual void closed(uint connId, TCPConn::CloseType type)
-	{
-		if (!(type & TCPConn::ReadClosed) || !(type & TCPConn::WriteClosed)) return;
-		const uint dataId = connId2dataId_.value(connId);
-		if (dataId == 0) return;
-		connId2dataId_.remove(connId);
-		ConnInfo & info = connData_[dataId];
-		info.connIds.remove(connId);
-		if (info.connIds.isEmpty()) {
-			info.lastClosed = QDateTime::currentDateTime();
-
-			// msg
-		}
-	}
+	virtual void newConnection(uint connId);
+	virtual void newMsg(uint connId, const QByteArray & data, bool isBinary);
+	virtual void closed(uint connId, TCPConn::CloseType type);
 
 private:
-	void init()
-	{
-		if (!verifyThreadCall(&WSCommManager::init)) return;
-		timer_.start(sessionTimeoutSec_ / 10.0);
-	}
-
-	void sendNewClientId(uint connId)
-	{
-		// create clientId
-		const QByteArray clId = crypt::random(20);
-
-		// get free id
-		uint dataId = ++connDataId_;
-		while (connData_.contains(dataId)) dataId = ++connDataId_;
-
-		connId2dataId_[connId] = dataId;
-		connData_[dataId].connIds << connId;
-		clientIds_[clId] = dataId;
-		send(connId, serialize::toByteArray(clId, 1), true);
-	}
-
-	void checkTimeout()
-	{
-		const QDateTime now = QDateTime::currentDateTime();
-		QSet<uint> removedIds;
-
-		QMutableHashIterator<uint, ConnInfo> it(connData_);
-		while (it.hasNext()) {
-			ConnInfo & info = it.next().value();
-			if (info.connIds.isEmpty() && info.lastClosed.secsTo(now) > sessionTimeoutSec_) {
-				removedIds << it.key();
-				it.remove();
-			}
-		}
-
-		if (!removedIds.isEmpty()) {
-			QMutableMapIterator<QByteArray, uint> it2(clientIds_);
-			while (it2.hasNext()) if (removedIds.contains(it2.next().value())) it2.remove();
-			logDebug("timeout of %1 sessions", removedIds.size());
-		}
-	}
+	void init();
+	void sendNewClientId(uint connId);
+	void checkTimeout();
 
 private:
 	QList<StateListener *> stateListener_;
@@ -242,5 +97,194 @@ private:
 	util::EVTimer timer_;
 	uint sessionTimeoutSec_;
 };
+
+// ============================================================================
+
+template<class C>
+void WSCommStateListener<C>::newClient(uint connId)
+{
+	Q_UNUSED(connId)
+}
+
+template<class C>
+void WSCommStateListener<C>::connDataChange(const C & connData, uint connId)
+{
+	Q_UNUSED(connData) Q_UNUSED(connId)
+}
+
+template<class C>
+bool WSCommTextMsgHandler<C>::handleTextMsg(const QByteArray & data, const C & connData, uint connId)
+{
+	Q_UNUSED(data) Q_UNUSED(connData) Q_UNUSED(connId)
+	return false;
+}
+
+template<class C>
+void WSCommMsgHandler<C>::handleMsg(quint64 tag, const QByteArray & data, int tagLen, int lengthSize, qint32 valueLen,
+	const C & connData, uint connId)
+{
+	Q_UNUSED(tag)
+	Q_UNUSED(data) Q_UNUSED(tagLen) Q_UNUSED(lengthSize) Q_UNUSED(valueLen)
+	Q_UNUSED(connData) Q_UNUSED(connId)
+}
+
+template<class C>
+WSCommManager<C>::WSCommManager(const QString & path, uint connectionTimeoutSec, uint sessionTimeoutSec) :
+	WebSocketService(path, connectionTimeoutSec),
+	connDataId_(0),
+	timer_(this, &WSCommManager::checkTimeout), sessionTimeoutSec_(sessionTimeoutSec)
+{
+	init();
+}
+
+template<class C>
+WSCommManager<C>::~WSCommManager()
+{
+	stopVerifyThread();
+}
+
+template<class C>
+void WSCommManager<C>::newConnection(uint connId)
+{
+	QListIterator<StateListener *> it(stateListener_);
+	while (it.hasNext()) it.next()->newClient(connId);
+}
+
+template<class C>
+void WSCommManager<C>::newMsg(uint connId, const QByteArray & data, bool isBinary)
+{
+	const uint dataId = connId2dataId_.value(connId);
+
+	// handle text msg
+	if (!isBinary) {
+		if (dataId == 0) {
+			close(connId, TCPConn::HardClosed);
+			logInfo("request without clientId from %1", connId);
+			return;
+		}
+
+		QListIterator<TextMsgHandler *> it(textMsgHandler_);
+		while (it.hasNext()) {
+			if (it.next()->handleTextMsg(data, connData_[dataId].connData, connId)) return;
+		}
+		close(connId, TCPConn::HardClosed);
+		logInfo("unhandled text message from %1", connId);
+		return;
+	}
+
+	// read outer BER
+	quint64 tag;
+	int tagLen;
+	int lengthSize;
+	const qint32 valueLen = serialize::getTLVLength(data, tag, tagLen, lengthSize);
+	if (valueLen < 0) {
+		close(connId, TCPConn::HardClosed);
+		logInfo("broken BER msg %1 (%2)", connId, valueLen);
+		return;
+	}
+	logTrace("ws msg (connId: %1, tag: %2, valueLen: %3)", connId, tag, valueLen);
+
+	// handle new connections
+	if (dataId == 0) {
+		switch (tag) {
+			case 1:
+				sendNewClientId(connId);
+				return;
+			case 2: {
+				const QByteArray clId = serialize::fromByteArray<QByteArray>(data, tagLen, lengthSize, valueLen);
+				const uint dId = clientIds_.value(clId);
+				if (dId == 0) {
+					sendNewClientId(connId);
+				} else {
+					connId2dataId_[connId] = dId;
+					connData_[dId].connIds << connId;
+				}
+				return;
+			}
+			default:
+				close(connId, TCPConn::HardClosed);
+				logInfo("request without clientId from %1", connId);
+				return;
+		}
+	}
+
+	// forwarding
+	if (channels_.contains(TagConnId(tag, connId))) {
+		QSetIterator<uint> it(channels_[TagConnId(tag, connId)]);
+		while (it.hasNext()) send(it.next(), data, true);
+		return;
+	}
+
+	// handler
+	MsgHandler * hdl = msgHandler_.value(tag);
+	if (hdl) {
+		hdl->handleMsg(tag, data, tagLen, lengthSize, valueLen, connData_[dataId].connData, connId);
+		return;
+	}
+
+	close(connId, TCPConn::HardClosed);
+	logInfo("unhandled message from %1 (tag: %2)", connId, tag);
+}
+
+template<class C>
+void WSCommManager<C>::closed(uint connId, TCPConn::CloseType type)
+{
+	if (!(type & TCPConn::ReadClosed) || !(type & TCPConn::WriteClosed)) return;
+	const uint dataId = connId2dataId_.value(connId);
+	if (dataId == 0) return;
+	connId2dataId_.remove(connId);
+	ConnInfo & info = connData_[dataId];
+	info.connIds.remove(connId);
+	if (info.connIds.isEmpty()) {
+		info.lastClosed = QDateTime::currentDateTime();
+
+		// msg
+	}
+}
+
+template<class C>
+void WSCommManager<C>::init()
+{
+	if (!verifyThreadCall(&WSCommManager::init)) return;
+	timer_.start(sessionTimeoutSec_ / 10.0);
+}
+
+template<class C>
+void WSCommManager<C>::sendNewClientId(uint connId)
+{
+	// create clientId
+	const QByteArray clId = crypt::random(20);
+
+	// get free id
+	uint dataId = ++connDataId_;
+	while (connData_.contains(dataId)) dataId = ++connDataId_;
+
+	connId2dataId_[connId] = dataId;
+	connData_[dataId].connIds << connId;
+	clientIds_[clId] = dataId;
+	send(connId, serialize::toByteArray(clId, 1), true);
+}
+
+template<class C>
+void WSCommManager<C>::checkTimeout()
+{
+	const QDateTime now = QDateTime::currentDateTime();
+	QSet<uint> removedIds;
+
+	QMutableHashIterator<uint, ConnInfo> it(connData_);
+	while (it.hasNext()) {
+		ConnInfo & info = it.next().value();
+		if (info.connIds.isEmpty() && info.lastClosed.secsTo(now) > sessionTimeoutSec_) {
+			removedIds << it.key();
+			it.remove();
+		}
+	}
+
+	if (!removedIds.isEmpty()) {
+		QMutableMapIterator<QByteArray, uint> it2(clientIds_);
+		while (it2.hasNext()) if (removedIds.contains(it2.next().value())) it2.remove();
+		logDebug("timeout of %1 sessions", removedIds.size());
+	}
+}
 
 }}	// namespace
