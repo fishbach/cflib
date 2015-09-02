@@ -33,6 +33,8 @@ HEADERS = \
 	request.h \
 	requesthandler.h \
 	requestlog.h \
+	rmiserver.h \
+	rmiservice.h \
 	tcpconn.h \
 	tcpmanager.h \
 	uploadservice.h \
