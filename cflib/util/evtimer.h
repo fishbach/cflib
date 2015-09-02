@@ -30,7 +30,7 @@ class EVTimer
 public:
 	template<typename C>
 	EVTimer(C * obj, void (C::*method)()) :
-		loop_(0), timer_(0),
+		timer_(0),
 		func_(new Functor0<C>(obj, method))
 	{
 		init();
@@ -46,7 +46,6 @@ private:
 	static void timeout(ev_loop * loop, ev_timer * w, int revents);
 
 private:
-	ev_loop * loop_;
 	ev_timer * timer_;
 	Functor * func_;
 };

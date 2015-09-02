@@ -28,12 +28,6 @@ namespace cflib { namespace util {
 
 void EVTimer::init()
 {
-	loop_ = libEVLoopOfThread();
-	if (!loop_) {
-		logWarn("current thread does not have a libev event loop");
-		return;
-	}
-
 	timer_ = new ev_timer;
 	ev_init(timer_, &EVTimer::timeout);
 	timer_->data = this;
@@ -41,8 +35,6 @@ void EVTimer::init()
 
 EVTimer::~EVTimer()
 {
-	ev_timer_stop(loop_, timer_);
-	timer_->data = 0;
 	delete timer_;
 	delete func_;
 }
@@ -50,12 +42,12 @@ EVTimer::~EVTimer()
 void EVTimer::start(double after, double repeat)
 {
 	ev_timer_set(timer_, after, repeat);
-	ev_timer_start(loop_, timer_);
+	ev_timer_start(libEVLoopOfThread(), timer_);
 }
 
 void EVTimer::stop()
 {
-	ev_timer_stop(loop_, timer_);
+	ev_timer_stop(libEVLoopOfThread(), timer_);
 }
 
 void EVTimer::timeout(ev_loop *, ev_timer * w, int)

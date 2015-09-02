@@ -42,6 +42,6 @@ window.initWebSocket = function(msgFunc) {
 window.send = function(msg) {
 	webSock.send(msg);
 };
-
+window.wsClose = function() { webSock.close() };
 
 }); }); });

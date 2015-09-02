@@ -21,6 +21,7 @@
 #include <cflib/crypt/util.h>
 #include <cflib/net/websocketservice.h>
 #include <cflib/serialize/util.h>
+#include <cflib/util/evtimer.h>
 #include <cflib/util/log.h>
 
 namespace cflib { namespace net {
@@ -66,12 +67,23 @@ public:
 	typedef WSCommStateListener <C> StateListener;
 	typedef WSCommTextMsgHandler<C> TextMsgHandler;
 	typedef WSCommMsgHandler    <C> MsgHandler;
+	typedef QSet<uint> ConnIds;
+
+	class ConnInfo {
+	public:
+		C connData;
+		ConnIds connIds;
+		QDateTime lastClosed;
+	};
 
 public:
-	WSCommManager(const QString & path, uint connectionTimeoutSec = 30) :
+	WSCommManager(const QString & path, uint connectionTimeoutSec = 30, uint sessionTimeoutSec = 86400) :
 		WebSocketService(path, connectionTimeoutSec),
-		connDataId_(0)
-	{}
+		connDataId_(0),
+		timer_(this, &WSCommManager::checkTimeout), sessionTimeoutSec_(sessionTimeoutSec)
+	{
+		init();
+	}
 	~WSCommManager() { stopVerifyThread(); }
 
 protected:
@@ -95,7 +107,7 @@ protected:
 
 			QListIterator<TextMsgHandler *> it(textMsgHandler_);
 			while (it.hasNext()) {
-				if (it.next()->handleTextMsg(data, connData_[dataId].first, connId)) return;
+				if (it.next()->handleTextMsg(data, connData_[dataId].connData, connId)) return;
 			}
 			close(connId, TCPConn::HardClosed);
 			logInfo("unhandled text message from %1", connId);
@@ -123,8 +135,12 @@ protected:
 				case 2: {
 					const QByteArray clId = serialize::fromByteArray<QByteArray>(data, tagLen, lengthSize, valueLen);
 					const uint dId = clientIds_.value(clId);
-					if (dId == 0) sendNewClientId(connId);
-					else          connId2dataId_[connId] = dId;
+					if (dId == 0) {
+						sendNewClientId(connId);
+					} else {
+						connId2dataId_[connId] = dId;
+						connData_[dId].connIds << connId;
+					}
 					return;
 				}
 				default:
@@ -132,12 +148,6 @@ protected:
 					logInfo("request without clientId from %1", connId);
 					return;
 			}
-		}
-
-		if (tag < 10) {
-			close(connId, TCPConn::HardClosed);
-			logInfo("invalid management request from %1", connId);
-			return;
 		}
 
 		// forwarding
@@ -150,7 +160,7 @@ protected:
 		// handler
 		MsgHandler * hdl = msgHandler_.value(tag);
 		if (hdl) {
-			hdl->handleMsg(tag, data, tagLen, lengthSize, valueLen, connData_[dataId].first, connId);
+			hdl->handleMsg(tag, data, tagLen, lengthSize, valueLen, connData_[dataId].connData, connId);
 			return;
 		}
 
@@ -161,19 +171,59 @@ protected:
 	virtual void closed(uint connId, TCPConn::CloseType type)
 	{
 		if (!(type & TCPConn::ReadClosed) || !(type & TCPConn::WriteClosed)) return;
+		const uint dataId = connId2dataId_.value(connId);
+		if (dataId == 0) return;
 		connId2dataId_.remove(connId);
+		ConnInfo & info = connData_[dataId];
+		info.connIds.remove(connId);
+		if (info.connIds.isEmpty()) {
+			info.lastClosed = QDateTime::currentDateTime();
+
+			// msg
+		}
 	}
 
 private:
+	void init()
+	{
+		if (!verifyThreadCall(&WSCommManager::init)) return;
+		timer_.start(sessionTimeoutSec_ / 10.0);
+	}
+
 	void sendNewClientId(uint connId)
 	{
+		// create clientId
 		const QByteArray clId = crypt::random(20);
-		uint dId = ++connDataId_;
-		while (connData_.contains(dId)) dId = ++connDataId_;
-		clientIds_[clId] = dId;
-		connData_[dId].second = clId;
-		connId2dataId_[connId] = dId;
+
+		// get free id
+		uint dataId = ++connDataId_;
+		while (connData_.contains(dataId)) dataId = ++connDataId_;
+
+		connId2dataId_[connId] = dataId;
+		connData_[dataId].connIds << connId;
+		clientIds_[clId] = dataId;
 		send(connId, serialize::toByteArray(clId, 1), true);
+	}
+
+	void checkTimeout()
+	{
+		const QDateTime now = QDateTime::currentDateTime();
+		QSet<uint> removedIds;
+
+		QMutableHashIterator<uint, ConnInfo> it(connData_);
+		while (it.hasNext()) {
+			ConnInfo & info = it.next().value();
+			if (info.connIds.isEmpty() && info.lastClosed.secsTo(now) > sessionTimeoutSec_) {
+				removedIds << it.key();
+				it.remove();
+			}
+		}
+
+		if (!removedIds.isEmpty()) {
+			QMutableMapIterator<QByteArray, uint> it2(clientIds_);
+			while (it2.hasNext()) if (removedIds.contains(it2.next().value())) it2.remove();
+			logDebug("timeout of %1 sessions", removedIds.size());
+		}
 	}
 
 private:
@@ -182,14 +232,15 @@ private:
 	QHash<quint64, MsgHandler *> msgHandler_;
 
 	typedef QPair<quint64, uint> TagConnId;
-	typedef QSet<uint> ConnIds;
 	QHash<TagConnId, ConnIds> channels_;
 
 	uint connDataId_;
-	typedef QPair<C, QByteArray> ConnData;	// data, clientId
-	QHash<uint, ConnData> connData_;
 	QHash<uint, uint> connId2dataId_;
+	QHash<uint, ConnInfo> connData_;
 	QMap<QByteArray, uint> clientIds_;
+
+	util::EVTimer timer_;
+	uint sessionTimeoutSec_;
 };
 
 }}	// namespace
