@@ -18,9 +18,9 @@
 
 #pragma once
 
-#include <cflib/net/jsservice.h>
+#include <cflib/net/rmiservice.h>
 
-class InfoService : public cflib::net::JSService
+class InfoService : public cflib::net::RMIService<QString>
 {
 	SERIALIZE_CLASS
 public:

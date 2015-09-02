@@ -108,7 +108,7 @@ public:
 	bool isAnyAvailable()   const { return bytesAvailable_ > 0; }
 	bool wasLastAvailable() const { return wasLastAvailable_; }
 
-	void nextValueData(const quint8 *& data, int & len)
+	void nextValueData(const quint8 *& data, int & len) const
 	{
 		quint64 tag;
 		int tagLen;

@@ -19,7 +19,7 @@
 #include "infoservice.h"
 
 InfoService::InfoService() :
-	JSService(serializeTypeInfo().typeName)
+	RMIService(serializeTypeInfo().typeName)
 {
 }
 

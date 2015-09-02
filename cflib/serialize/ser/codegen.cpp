@@ -73,7 +73,7 @@ int genSerialize(const QString & headerName, const HeaderParser & hp, QIODevice 
 		"#include \"" << headerName << "\"\n"
 		"\n"
 		"#include <cflib/serialize/impl/serializetypeinfoimpl.h>\n"
-		"#include <cflib/serialize/serializejs.h>\n";
+		"#include <cflib/serialize/serializeber.h>\n";
 
 	foreach (const HeaderParser::Class & cl, hp.classes()) {
 		out << "\n";
@@ -137,7 +137,7 @@ int genSerialize(const QString & headerName, const HeaderParser & hp, QIODevice 
 
 		if (!cl.functions.isEmpty()) {
 			out <<
-				"QByteArray " << cl.name << "::processServiceJSCall(const QByteArray & jsData) {\n"
+				"QByteArray " << cl.name << "::processRMIServiceCallImpl(const quint8 * __data, int __len) {\n"
 				"\tclass __FunctionIds : public QMap<QString, int> { public: __FunctionIds() {\n"
 				"\t\tint i = 0;\n"
 				"\t\tforeach (const cflib::serialize::SerializeFunctionTypeInfo & f, serializeTypeInfo().functions) {\n"
@@ -145,8 +145,8 @@ int genSerialize(const QString & headerName, const HeaderParser & hp, QIODevice 
 				"\t\t}\n"
 				"\t}};\n"
 				"\tstatic const __FunctionIds __funcIds;\n"
-				"\tcflib::serialize::JSDeserializer __deser(jsData);\n"
-				"\tcflib::serialize::JSSerializer __ser;\n"
+				"\tcflib::serialize::BERDeserializer __deser(__data, __len);\n"
+				"\tcflib::serialize::BERSerializer __ser;\n"
 				"\tswitch (__funcIds[__deser.get<QString>()]) {\n";
 			int i = 0;
 			foreach (const HeaderParser::Function & f, cl.functions) {

@@ -33,7 +33,7 @@ public:
 		commMgr.registerMsgHandler(3, *this);
 	}
 
-	void registerService(RMIService<C> * service) { RMIServerBase::registerService(service); }
+	using RMIServerBase::registerService;
 	using RMIServerBase::exportTo;
 
 	virtual void handleMsg(quint64,
@@ -45,14 +45,6 @@ public:
 
 protected:
 	virtual void handleRequest(const Request & request) { RMIServerBase::handleRequest(request); }
-
-private:
-	void handleCall(const quint8 * data, int len, const C & connData, uint connId)
-	{
-		if (!verifyThreadCall(&RMIServer::handleCall, data, len, connData, connId)) return;
-		RMIService<C> * service = (RMIService<C> *)findServiceForCall(data, len, connId);
-		if (service) service->processServiceRequest(data, len, connData, connId);
-	}
 };
 
 }}	// namespace

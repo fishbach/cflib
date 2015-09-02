@@ -18,12 +18,12 @@
 
 #pragma once
 
+#include <cflib/net/rmiservice.h>
 #include <cflib/serialize/serializetypeinfo.h>
 #include <cflib/util/threadverify.h>
 
 namespace cflib { namespace net {
 
-class RMIServiceBase;
 class Request;
 class WSCommManagerBase;
 
@@ -35,12 +35,23 @@ public:
 	RMIServerBase(WSCommManagerBase & wsService);
 	~RMIServerBase();
 
-	void registerService(RMIServiceBase * service);
+	void registerService(RMIServiceBase & service);
 	void exportTo(const QString & dest) const;
 	void handleRequest(const Request & request);
 	void sendReply(uint connId, const QByteArray & data);
 	QByteArray getRemoteIP(uint connId);
-	RMIServiceBase * findServiceForCall(const quint8 * & data, int & len, uint connId);
+
+	template<class C>
+	void handleCall(const quint8 * data, int len, const C & connData, uint connId)
+	{
+		if (!verifyThreadCall(&RMIServerBase::handleCall<C>, data, len, connData, connId)) return;
+
+		RMIServiceBase * serviceBase = findServiceForCall(data, len, connId);
+		if (!serviceBase) return;
+		RMIService<C> * service = dynamic_cast<RMIService<C> *>(serviceBase);
+		if (service) service->processRMIServiceCall(data, len, connData, connId);
+		else         serviceBase->processRMIServiceCall(data, len, connId);
+	}
 
 private:
 	struct ClassInfoEl;
@@ -56,6 +67,7 @@ private:
 	};
 
 private:
+	RMIServiceBase * findServiceForCall(const quint8 * & data, int & len, uint connId);
 	void showServices(const Request & request, QString path) const;
 	void showClasses(const Request & request, QString path) const;
 	void classesToHTML(QString & info, const ClassInfoEl & infoEl) const;

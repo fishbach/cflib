@@ -18,12 +18,12 @@
 
 #pragma once
 
-#include <cflib/net/jsservice.h>
+#include <cflib/net/rmiservice.h>
 #include <cflib/util/log.h>
 
 namespace cflib { namespace net {
 
-class LogService : public JSService
+class LogService : public RMIServiceBase
 {
 	SERIALIZE_CLASS
 public:

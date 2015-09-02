@@ -207,11 +207,11 @@ RMIServerBase::~RMIServerBase()
 	stopVerifyThread();
 }
 
-void RMIServerBase::registerService(RMIServiceBase * service)
+void RMIServerBase::registerService(RMIServiceBase & service)
 {
-	service->server_ = this;
-	SerializeTypeInfo servInfo = service->getServiceInfo();
-	services_[servInfo.typeName.toLower()] = service;
+	service.server_ = this;
+	SerializeTypeInfo servInfo = service.getServiceInfo();
+	services_[servInfo.typeName.toLower()] = &service;
 	foreach (const SerializeTypeInfo & ti, getFunctionClassInfos(servInfo)) {
 		ClassInfoEl * ciEl = &classInfos_;
 		foreach (const QString & ns, ti.getName().split("::")) {
