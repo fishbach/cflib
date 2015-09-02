@@ -25,22 +25,24 @@ namespace cflib { namespace net {
 
 class RMIServiceBase;
 class Request;
-class WebSocketService;
+class WSCommManagerBase;
 
 namespace impl {
 
 class RMIServerBase : public util::ThreadVerify
 {
 public:
-	RMIServerBase(WebSocketService & wsService);
+	RMIServerBase(WSCommManagerBase & wsService);
 	~RMIServerBase();
 
 	void registerService(RMIServiceBase * service);
 	void exportTo(const QString & dest) const;
 	void handleRequest(const Request & request);
+	void sendReply(uint connId, const QByteArray & data);
+	QByteArray getRemoteIP(uint connId);
 
 protected:
-	virtual void processServiceRequest(RMIServiceBase * service, const QByteArray & requestData) = 0;
+	virtual void processServiceRequest(RMIServiceBase * service, const QByteArray & requestData, uint connId) = 0;
 
 private:
 	struct ClassInfoEl;
@@ -67,7 +69,7 @@ private:
 	void exportClass(const ClassInfoEl & cl, const QString & path, const QString & dest) const;
 
 private:
-	WebSocketService & wsService_;
+	WSCommManagerBase & wsService_;
 	QMap<QString, RMIServiceBase *> services_;
 	ClassInfoEl classInfos_;
 	const QRegularExpression containerRE_;

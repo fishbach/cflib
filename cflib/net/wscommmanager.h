@@ -50,8 +50,19 @@ public:
 		const C & connData, uint connId);
 };
 
+class WSCommManagerBase : public WebSocketService
+{
+public:
+	void send(uint connId, const QByteArray & data, bool isBinary);
+	void close(uint connId, TCPConn::CloseType type = TCPConn::ReadWriteClosed);
+	QByteArray getRemoteIP(uint connId);
+
+protected:
+	WSCommManagerBase(const QString & path, uint connectionTimeoutSec);
+};
+
 template<class C>
-class WSCommManager : public WebSocketService
+class WSCommManager : public WSCommManagerBase
 {
 	USE_LOG_MEMBER(LogCat::Http)
 public:
@@ -66,9 +77,6 @@ public:
 		ConnIds connIds;
 		QDateTime lastClosed;
 	};
-
-	using WebSocketService::send;
-	using WebSocketService::close;
 
 public:
 	WSCommManager(const QString & path, uint connectionTimeoutSec = 30, uint sessionTimeoutSec = 86400);
@@ -115,12 +123,16 @@ void WSCommStateListener<C>::connDataChange(const C & connData, uint connId)
 	Q_UNUSED(connData) Q_UNUSED(connId)
 }
 
+// ----------------------------------------------------------------------------
+
 template<class C>
 bool WSCommTextMsgHandler<C>::handleTextMsg(const QByteArray & data, const C & connData, uint connId)
 {
 	Q_UNUSED(data) Q_UNUSED(connData) Q_UNUSED(connId)
 	return false;
 }
+
+// ----------------------------------------------------------------------------
 
 template<class C>
 void WSCommMsgHandler<C>::handleMsg(quint64 tag, const QByteArray & data, int tagLen, int lengthSize, qint32 valueLen,
@@ -131,9 +143,11 @@ void WSCommMsgHandler<C>::handleMsg(quint64 tag, const QByteArray & data, int ta
 	Q_UNUSED(connData) Q_UNUSED(connId)
 }
 
+// ----------------------------------------------------------------------------
+
 template<class C>
 WSCommManager<C>::WSCommManager(const QString & path, uint connectionTimeoutSec, uint sessionTimeoutSec) :
-	WebSocketService(path, connectionTimeoutSec),
+	WSCommManagerBase(path, connectionTimeoutSec),
 	connDataId_(0),
 	timer_(this, &WSCommManager::checkTimeout), sessionTimeoutSec_(sessionTimeoutSec)
 {

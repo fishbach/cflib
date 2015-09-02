@@ -18,56 +18,51 @@
 
 #include "rmiservice.h"
 
+#include <cflib/net/impl/rmiserverbase.h>
+
 namespace cflib { namespace net {
 
 RMIServiceBase::RMIServiceBase(const QString & threadName, uint threadCount, LoopType loopType) :
 	util::ThreadVerify(threadName, loopType, threadCount),
-	server_(0), clId_(0), delayedReply_(false), requestPtr_(0), prependDataPtr_(0)
+	server_(0), connId_(0), delayedReply_(false)
 {
 }
 
 RMIServiceBase::RMIServiceBase(util::ThreadVerify * other) :
 	util::ThreadVerify(other),
-	server_(0), clId_(0), delayedReply_(false), requestPtr_(0), prependDataPtr_(0)
+	server_(0), connId_(0), delayedReply_(false)
 {
 }
 
-void RMIServiceBase::processServiceJSRequest(const QByteArray & requestData, const Request & request, uint clId,
-	const QByteArray & prependData)
+void RMIServiceBase::processServiceRequest(const QByteArray & requestData, uint connId)
 {
-	if (!verifyThreadCall(&RMIServiceBase::processServiceJSRequest, requestData, request, clId, prependData)) return;
+	if (!verifyThreadCall(&RMIServiceBase::processServiceRequest, requestData, connId)) return;
 
-	clId_           = clId;
-	requestPtr_     = &request;
-	prependDataPtr_ = &prependData;
+	connId_ = connId;
 	preCallInit();
-	QByteArray reply = processServiceJSCall(requestData);
-	clId_           = 0;
-	requestPtr_     = 0;
-	prependDataPtr_ = 0;
+	const QByteArray reply = processServiceCall(requestData);
+	connId_ = 0;
 	if (delayedReply_) {
 		delayedReply_ = false;
 	} else {
-		if (!prependData.isNull()) reply.prepend(prependData);
-		request.sendReply(reply, "application/javascript; charset=utf-8");
+		server_->sendReply(connId_, reply);
 	}
 }
 
-Replier2 RMIServiceBase::delayReply()
+RMIReplier RMIServiceBase::delayReply()
 {
 	delayedReply_ = true;
-	return Replier2(clId_, *requestPtr_, *prependDataPtr_);
+	return RMIReplier(*server_, connId_);
 }
 
 QByteArray RMIServiceBase::getRemoteIP() const
 {
-	return requestPtr_ ? requestPtr_->getRemoteIP() : QByteArray();
+	return server_->getRemoteIP(connId_);
 }
 
-void Replier2::send()
+void RMIReplier::send()
 {
-	prependData_ += data();
-	request_.sendReply(prependData_, "application/javascript; charset=utf-8");
+	server_.sendReply(connId_, data());
 }
 
 }}	// namespace

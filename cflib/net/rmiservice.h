@@ -18,15 +18,14 @@
 
 #pragma once
 
-#include <cflib/net/request.h>
 #include <cflib/serialize/serialize.h>
-#include <cflib/serialize/serializejs.h>
+#include <cflib/serialize/serializeber.h>
 #include <cflib/util/threadverify.h>
 
 namespace cflib { namespace net {
 
-//class RMIServer;
-class Replier2;
+namespace impl { class RMIServerBase; }
+class RMIReplier;
 
 class RMIServiceBase : public util::ThreadVerify
 {
@@ -34,48 +33,39 @@ public:
 	RMIServiceBase(const QString & threadName, uint threadCount = 1, LoopType loopType = Worker);
 	RMIServiceBase(ThreadVerify * other);
 
-	void processServiceJSRequest(const QByteArray & requestData, const Request & request, uint clId,
-		const QByteArray & prependData);
+	void processServiceRequest(const QByteArray & requestData, uint connId);
 
 	virtual cflib::serialize::SerializeTypeInfo getServiceInfo() = 0;
-	virtual QByteArray processServiceJSCall(const QByteArray & jsData) = 0;
-	virtual void clientExpired(uint clId) { Q_UNUSED(clId) }
+	virtual QByteArray processServiceCall(const QByteArray & data) = 0;
 
 protected:
-	uint clientId() const { return clId_; }
-	const Request & request() const { return *requestPtr_; }
-	virtual void preCallInit() {}
-	Replier2 delayReply();
+	uint connId() const { return connId_; }
+	RMIReplier delayReply();
 	QByteArray getRemoteIP() const;
+	virtual void preCallInit() {}
 
 private:
-//	RMIServer * server_;
-	void * server_;
-	uint clId_;
+	impl::RMIServerBase * server_;
+	uint connId_;
 	bool delayedReply_;
-	const Request * requestPtr_;
-	const QByteArray * prependDataPtr_;
-//	friend class RMIServer;
+	friend class impl::RMIServerBase;
 };
 
-template<class c>
+template<class C>
 class RMIService : public RMIServiceBase
 {
 };
 
-class Replier2 : public cflib::serialize::JSSerializer
+class RMIReplier : public cflib::serialize::BERSerializer
 {
 public:
-	Replier2(uint clId, const Request & request, const QByteArray & prependData) :
-		clId_(clId), request_(request), prependData_(prependData) {}
-
 	void send();
-	uint clientId() const { return clId_; }
+	uint connId() const { return connId_; }
 
 private:
-	uint clId_;
-	Request request_;
-	QByteArray prependData_;
+	RMIReplier(impl::RMIServerBase & server, uint connId) : server_(server), connId_(connId) {}
+	impl::RMIServerBase & server_;
+	uint connId_;
 	friend class RMIServiceBase;
 };
 

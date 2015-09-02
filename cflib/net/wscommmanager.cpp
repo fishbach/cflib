@@ -16,29 +16,32 @@
  * along with cflib. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#pragma once
-
-#include <cflib/net/impl/rmiserverbase.h>
-#include <cflib/net/requesthandler.h>
-#include <cflib/net/rmiservice.h>
-#include <cflib/net/wscommmanager.h>
+#include "wscommmanager.h"
 
 namespace cflib { namespace net {
 
-template<class C>
-class RMIServer : public RequestHandler, private impl::RMIServerBase
+void WSCommManagerBase::send(uint connId, const QByteArray & data, bool isBinary)
 {
-public:
-	RMIServer(WSCommManager<C> & commMgr) : RMIServerBase(commMgr) {}
+	if (!verifyThreadCall(&WSCommManagerBase::send, connId, data, isBinary)) return;
+	WebSocketService::send(connId, data, isBinary);
+}
 
-	void registerService(RMIService<C> * service) { RMIServerBase::registerService(service); }
-	using RMIServerBase::exportTo;
+void WSCommManagerBase::close(uint connId, TCPConn::CloseType type)
+{
+	if (!verifyThreadCall(&WSCommManagerBase::close, connId, type)) return;
+	WebSocketService::close(connId, type);
+}
 
-protected:
-	virtual void handleRequest(const Request & request) { RMIServerBase::handleRequest(request); }
-	virtual void processServiceRequest(RMIServiceBase * service, const QByteArray & requestData, uint connId) {
-		((RMIService<C> *)service)->processServiceRequest(requestData, connId);
-	}
-};
+QByteArray WSCommManagerBase::getRemoteIP(uint connId)
+{
+	SyncedThreadCall<QByteArray> stc(this);
+	if (!stc.verify(&WSCommManagerBase::getRemoteIP, connId)) return stc.retval();
+	return getRemoteIP(connId);
+}
+
+WSCommManagerBase::WSCommManagerBase(const QString & path, uint connectionTimeoutSec) :
+	WebSocketService(path, connectionTimeoutSec)
+{
+}
 
 }}	// namespace

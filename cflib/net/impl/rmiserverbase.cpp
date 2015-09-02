@@ -16,13 +16,13 @@
  * along with cflib. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "RMIServerBase.h"
+#include "rmiserverbase.h"
 
 #include <cflib/net/request.h>
 #include <cflib/net/rmiservice.h>
-#include <cflib/net/wscommmanager.h>
 #include <cflib/util/log.h>
 #include <cflib/util/util.h>
+#include <cflib/net/wscommmanager.h>
 
 USE_LOG(LogCat::Http)
 
@@ -194,7 +194,7 @@ QString getJSParameters(const SerializeFunctionTypeInfo & func)
 
 // ============================================================================
 
-RMIServerBase::RMIServerBase(WebSocketService & wsService) :
+RMIServerBase::RMIServerBase(WSCommManagerBase & wsService) :
 	ThreadVerify("RMIServerBase", Worker),
 	wsService_(wsService),
 	containerRE_("^(.+)<(.+)>$")
@@ -208,7 +208,7 @@ RMIServerBase::~RMIServerBase()
 
 void RMIServerBase::registerService(RMIServiceBase * service)
 {
-//	service->server_ = this;
+	service->server_ = this;
 	SerializeTypeInfo servInfo = service->getServiceInfo();
 	services_[servInfo.typeName.toLower()] = service;
 	foreach (const SerializeTypeInfo & ti, getFunctionClassInfos(servInfo)) {
@@ -263,6 +263,16 @@ void RMIServerBase::handleRequest(const Request & request)
 			request.sendText(info << footer);
 		}
 	}
+}
+
+void RMIServerBase::sendReply(uint connId, const QByteArray & data)
+{
+	wsService_.send(connId, data, true);
+}
+
+QByteArray RMIServerBase::getRemoteIP(uint connId)
+{
+	return wsService_.getRemoteIP(connId);
 }
 
 void RMIServerBase::showServices(const Request & request, QString path) const

@@ -252,6 +252,13 @@ void WebSocketService::close(uint connId, TCPConn::CloseType type)
 	if (wsHdl) wsHdl->close(type, true);
 }
 
+QByteArray WebSocketService::getRemoteIP(uint connId)
+{
+	WSConnHandler * wsHdl = connections_.value(connId);
+	if (wsHdl) return wsHdl->peerIP();
+	return QByteArray();
+}
+
 void WebSocketService::newConnection(uint)
 {
 }
