@@ -1,12 +1,14 @@
 require([
 	'cflib/ext/jquery'
 ], function() { require([
+	'cflib/net/ber',
+	'cflib/net/rmi',
 	'cflib/util/api',
 	'cflib/util/storage',
 	'cflib/util/url',
 	'cflib/util/util',
 	'services/infoservice'
-], function(api, Storage, url, util, infoService) { $(function() {
+], function(ber, rmi, api, Storage, url, util, infoService) { $(function() {
 
 window.onerror = function() {
 	util.logInfo("JS exception: " + Array.prototype.join.call(arguments, ', '));
@@ -24,24 +26,13 @@ api.ev.secureTokenLost.bind(function() {
 	location.href = location.href;
 });
 
-infoService.test(function(val) {
-	$('#msg').html(val);
-});
+//infoService.test(function(val) {
+//	$('#msg').html(val);
+//});
 
+window.ber = ber;
+window.rmi = rmi;
+window.util = util;
 
-var webSock = null;
-window.initWebSocket = function(msgFunc) {
-	var loc = window.location;
-	webSock = new WebSocket((loc.protocol == 'https:' ? 'wss://' : 'ws://') + loc.host + '/ws');
-	webSock.binaryType = 'arraybuffer';
-	webSock.onmessage = function(e) { msgFunc(e.data); };
-	webSock.onopen = function() {
-		console.log('ws open');
-	};
-};
-window.send = function(msg) {
-	webSock.send(msg);
-};
-window.wsClose = function() { webSock.close() };
 
 }); }); });

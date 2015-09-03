@@ -309,6 +309,38 @@ define([
 		else if ('onwebkitpointerlockchange' in document) document.addEventListener('webkitpointerlockchange', cb, false);
 	};
 
+	util.fromUTF8 = function(uint8Array) {
+		var se = '';
+		for (var i = 0, l = uint8Array.length ; i < l ; ++i) {
+			var c = uint8Array[i];
+			se += '%';
+			var h = (c >> 4) + 48;
+			if (h > 57) h += 7;
+			se += String.fromCharCode(h);
+			h = (c & 15) + 48;
+			if (h > 57) h += 7;
+			se += String.fromCharCode(h);
+		}
+		return decodeURI(se);
+	};
+
+	util.toUTF8 = function(str) {
+		var se = encodeURI(str);
+		var a8 = [];
+		for (var i = 0, l = se.length ; i < l ; ++i) {
+			var c = se.charCodeAt(i);
+			if (c == 37) {
+				var h = se.charCodeAt(++i) - 48;
+				if (h > 9) h -= 7;
+				c = se.charCodeAt(++i) - 48;
+				if (c > 9) c -= 7;
+				c |= h << 4;
+			}
+			a8.push(c);
+		}
+		return new Uint8Array(a8);
+	};
+
 	util.fromBase64 = function(base64Str) {
 		var inLen = base64Str.indexOf('=');
 		if (inLen == -1) inLen = base64Str.length;
