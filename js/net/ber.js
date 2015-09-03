@@ -88,10 +88,10 @@ define(function() {
 		if (tagNo < 0x1F) return [(constructed ? 0xE0 : 0xC0) | tagNo];
 
 		var rv = [tagNo & 0x7F];
-		tagNo >>= 7;
+		tagNo >>>= 7;
 		while (tagNo > 0) {
 			rv.unshift((tagNo & 0x7F) | 0x80);
-			tagNo >>= 7;
+			tagNo >>>= 7;
 		}
 		rv.unshift(constructed ? 0xFF : 0xDF);
 		return rv;
@@ -106,7 +106,7 @@ define(function() {
 
 		var rv = [length & 0xFF];
 		while (length > 0xFF) {
-			length >>= 8;
+			length >>>= 8;
 			rv.unshift(length & 0xFF);
 		}
 		rv.unshift(rv.length | 0x80);

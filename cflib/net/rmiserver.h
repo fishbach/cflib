@@ -30,7 +30,7 @@ class RMIServer : public RequestHandler, public WSCommMsgHandler<C>, private imp
 {
 public:
 	RMIServer(WSCommManager<C> & commMgr) : RMIServerBase(commMgr) {
-		commMgr.registerMsgHandler(3, *this);
+		commMgr.registerMsgHandler(2, *this);
 	}
 
 	using RMIServerBase::registerService;

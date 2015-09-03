@@ -314,7 +314,7 @@ define([
 		for (var i = 0, l = uint8Array.length ; i < l ; ++i) {
 			var c = uint8Array[i];
 			se += '%';
-			var h = (c >> 4) + 48;
+			var h = (c >>> 4) + 48;
 			if (h > 57) h += 7;
 			se += String.fromCharCode(h);
 			h = (c & 15) + 48;
@@ -344,7 +344,7 @@ define([
 	util.fromBase64 = function(base64Str) {
 		var inLen = base64Str.indexOf('=');
 		if (inLen == -1) inLen = base64Str.length;
-		var outLen = (inLen * 3 + 1) >> 2;
+		var outLen = (inLen * 3 + 1) >>> 2;
 		var rv = new Uint8Array(outLen);
 		var val = 0;
 		var j = 0;
@@ -352,9 +352,9 @@ define([
 			var pos = i & 3;
 			val |= base64CharToInt(base64Str.charCodeAt(i)) << (18 - 6 * pos);
 			if (pos == 3 || i == inLen - 1) {
-				rv[j++] = val >> 16;
+				rv[j++] = val >>> 16;
 				if (j == outLen) break;
-				rv[j++] = (val >> 8) & 255;
+				rv[j++] = (val >>> 8) & 255;
 				if (j == outLen) break;
 				rv[j++] = val & 255;
 				val = 0;
@@ -371,11 +371,11 @@ define([
 			var pos = i % 3;
 			val |= uint8Array[i] << (16 - 8 * pos);
 			if (pos == 2 || i == inLen - 1) {
-				rv += base64Chars.charAt(val >> 18);
-				rv += base64Chars.charAt((val >> 12) & 63);
+				rv += base64Chars.charAt(val >>> 18);
+				rv += base64Chars.charAt((val >>> 12) & 63);
 				if (pos === 0) rv += '==';
 				else {
-					rv += base64Chars.charAt((val >> 6) & 63);
+					rv += base64Chars.charAt((val >>> 6) & 63);
 					if (pos == 1) rv += '=';
 					else          rv += base64Chars.charAt(val & 63);
 				}

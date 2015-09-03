@@ -28,21 +28,10 @@ define([
 	var waitingRequests = [];
 	var ws              = null;
 
-	function getClId()
-	{
-		var c = storage.get('clId');
-		return c ? util.fromBase64(c) : null;
-	}
-
-	function setClId(clId)
-	{
-		storage.set('clId', util.toBase64(clId), true);
-	}
-
 	function wsOpen(e)
 	{
-		var id = getClId();
-		if (id) ws.send(ber.makeTLV(2, false, id));
+		var id = storage.get('clId');
+		if (id) ws.send(ber.makeTLV(1, false, util.fromBase64(id)));
 		else    ws.send(ber.makeTLV(1));
 	}
 
@@ -66,7 +55,7 @@ define([
 		console.log(tlv, data);
 		switch (tlv[1]) {
 			case 1:
-				setClId(new Uint8Array(data.buffer, tlv[2] + tlv[3], tlv[0]));
+				storage.set('clId', util.toBase64(new Uint8Array(data.buffer, tlv[2] + tlv[3], tlv[0])), true);
 				rmi.ev.identityReset.fire();
 				break;
 			default:

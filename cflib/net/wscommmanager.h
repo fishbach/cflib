@@ -185,11 +185,10 @@ void WSCommManager<C>::newMsg(uint connId, const QByteArray & data, bool isBinar
 
 	// handle new connections
 	if (dataId == 0) {
-		switch (tag) {
-			case 1:
+		if (tag == 1) {
+			if (valueLen != 20) {
 				sendNewClientId(connId);
-				return;
-			case 2: {
+			} else {
 				const QByteArray clId = serialize::fromByteArray<QByteArray>(data, tagLen, lengthSize, valueLen);
 				const uint dId = clientIds_.value(clId);
 				if (dId == 0) {
@@ -198,13 +197,12 @@ void WSCommManager<C>::newMsg(uint connId, const QByteArray & data, bool isBinar
 					connId2dataId_[connId] = dId;
 					connData_[dId].connIds << connId;
 				}
-				return;
 			}
-			default:
-				close(connId, TCPConn::HardClosed);
-				logInfo("request without clientId from %1", connId);
-				return;
+		} else {
+			close(connId, TCPConn::HardClosed);
+			logInfo("request without clientId from %1", connId);
 		}
+		return;
 	}
 
 	// forwarding
