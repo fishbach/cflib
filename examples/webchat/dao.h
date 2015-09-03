@@ -18,18 +18,12 @@
 
 #pragma once
 
-#include <cflib/net/rmiservice.h>
-#include <dao.h>
+#include <cflib/serialize/serialize.h>
 
-class InfoService : public cflib::net::RMIService<QString>
+class Dao
 {
 	SERIALIZE_CLASS
-public:
-	InfoService();
-	~InfoService();
-
-rmi:
-	QString test();
-	void async(int i);
-	Dao update(const Dao & dao);
+public serialized:
+	QString name;
+	quint32 number;
 };

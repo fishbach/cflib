@@ -41,7 +41,7 @@ public:
 	void sendReply(uint connId, const QByteArray & data);
 	QByteArray getRemoteIP(uint connId);
 
-	template<class C>
+	template<typename C>
 	void handleCall(const QByteArray & ba, const quint8 * data, int len, const C & connData, uint connId)
 	{
 		if (!verifyThreadCall(&RMIServerBase::handleCall<C>, ba, data, len, connData, connId)) return;

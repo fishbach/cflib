@@ -20,7 +20,6 @@
 
 #include <cflib/net/request.h>
 #include <cflib/serialize/serialize.h>
-#include <cflib/serialize/serializejs.h>
 #include <cflib/util/threadverify.h>
 
 namespace cflib { namespace net {
@@ -58,7 +57,7 @@ private:
 	friend class ApiServer;
 };
 
-class Replier : public cflib::serialize::JSSerializer
+class Replier : public QByteArray
 {
 public:
 	Replier(uint clId, const Request & request, const QByteArray & prependData) :

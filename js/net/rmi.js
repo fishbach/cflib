@@ -23,7 +23,6 @@ define([
 	'cflib/util/util'
 ], function(ber, EV, storage, util) {
 
-	var isFirst         = true;
 	var requestActive   = false;
 	var waitingRequests = [];
 	var ws              = null;

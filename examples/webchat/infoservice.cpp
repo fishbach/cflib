@@ -18,6 +18,10 @@
 
 #include "infoservice.h"
 
+#include <cflib/util/log.h>
+
+USE_LOG(LogCat::Compute)
+
 InfoService::InfoService() :
 	RMIService(serializeTypeInfo().typeName)
 {
@@ -31,4 +35,17 @@ InfoService::~InfoService()
 QString InfoService::test()
 {
 	return "hello world";
+}
+
+void InfoService::async(int i)
+{
+	logInfo("async: %1", i);
+}
+
+Dao InfoService::update(const Dao & dao)
+{
+	Dao rv;
+	rv.name = dao.name + "XX";
+	rv.number = dao.number + 13;
+	return rv;
 }

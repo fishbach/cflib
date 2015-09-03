@@ -23,6 +23,7 @@ CONFIG += console
 TARGET = webchat
 
 HEADERS = \
+	dao.h \
 	infoservice.h \
 
 SOURCES = \

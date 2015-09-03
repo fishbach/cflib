@@ -25,6 +25,7 @@ namespace cflib { namespace serialize { namespace impl {
 
 class BERSerializerBase
 {
+	Q_DISABLE_COPY(BERSerializerBase)
 public:
 	BERSerializerBase(QByteArray & data, bool disableTagNumbering = false) :
 		data_(data), tag_(disableTagNumbering ? 0xC0 : 0xC1), tagLen_(1) {}

@@ -26,7 +26,7 @@
 
 namespace cflib { namespace net {
 
-template<class C>
+template<typename C>
 class WSCommStateListener
 {
 public:
@@ -34,14 +34,14 @@ public:
 	virtual void connDataChange(const C & connData, uint connId);
 };
 
-template<class C>
+template<typename C>
 class WSCommTextMsgHandler
 {
 public:
 	virtual bool handleTextMsg(const QByteArray & data, const C & connData, uint connId) = 0;
 };
 
-template<class C>
+template<typename C>
 class WSCommMsgHandler
 {
 public:
@@ -61,7 +61,7 @@ protected:
 	WSCommManagerBase(const QString & path, uint connectionTimeoutSec);
 };
 
-template<class C>
+template<typename C>
 class WSCommManager : public WSCommManagerBase
 {
 	USE_LOG_MEMBER(LogCat::Http)
@@ -113,13 +113,13 @@ private:
 
 // ============================================================================
 
-template<class C>
+template<typename C>
 void WSCommStateListener<C>::newClient(uint connId)
 {
 	Q_UNUSED(connId)
 }
 
-template<class C>
+template<typename C>
 void WSCommStateListener<C>::connDataChange(const C & connData, uint connId)
 {
 	Q_UNUSED(connData) Q_UNUSED(connId)
@@ -127,7 +127,7 @@ void WSCommStateListener<C>::connDataChange(const C & connData, uint connId)
 
 // ----------------------------------------------------------------------------
 
-template<class C>
+template<typename C>
 WSCommManager<C>::WSCommManager(const QString & path, uint connectionTimeoutSec, uint sessionTimeoutSec) :
 	WSCommManagerBase(path, connectionTimeoutSec),
 	connDataId_(0),
@@ -136,20 +136,20 @@ WSCommManager<C>::WSCommManager(const QString & path, uint connectionTimeoutSec,
 	init();
 }
 
-template<class C>
+template<typename C>
 WSCommManager<C>::~WSCommManager()
 {
 	stopVerifyThread();
 }
 
-template<class C>
+template<typename C>
 void WSCommManager<C>::newConnection(uint connId)
 {
 	QListIterator<StateListener *> it(stateListener_);
 	while (it.hasNext()) it.next()->newClient(connId);
 }
 
-template<class C>
+template<typename C>
 void WSCommManager<C>::newMsg(uint connId, const QByteArray & data, bool isBinary)
 {
 	const uint dataId = connId2dataId_.value(connId);
@@ -223,7 +223,7 @@ void WSCommManager<C>::newMsg(uint connId, const QByteArray & data, bool isBinar
 	logInfo("unhandled message from %1 (tag: %2)", connId, tag);
 }
 
-template<class C>
+template<typename C>
 void WSCommManager<C>::closed(uint connId, TCPConn::CloseType type)
 {
 	if (!(type & TCPConn::ReadClosed) || !(type & TCPConn::WriteClosed)) return;
@@ -239,14 +239,14 @@ void WSCommManager<C>::closed(uint connId, TCPConn::CloseType type)
 	}
 }
 
-template<class C>
+template<typename C>
 void WSCommManager<C>::init()
 {
 	if (!verifyThreadCall(&WSCommManager::init)) return;
 	timer_.start(sessionTimeoutSec_ / 10.0);
 }
 
-template<class C>
+template<typename C>
 void WSCommManager<C>::sendNewClientId(uint connId)
 {
 	// create clientId
@@ -262,7 +262,7 @@ void WSCommManager<C>::sendNewClientId(uint connId)
 	send(connId, serialize::toByteArray(clId, 1), true);
 }
 
-template<class C>
+template<typename C>
 void WSCommManager<C>::checkTimeout()
 {
 	const QDateTime now = QDateTime::currentDateTime();

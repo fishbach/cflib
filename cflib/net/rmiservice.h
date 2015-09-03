@@ -19,15 +19,14 @@
 #pragma once
 
 #include <cflib/serialize/serialize.h>
-#include <cflib/serialize/serializeber.h>
 #include <cflib/util/threadverify.h>
 
 namespace cflib { namespace net {
 
-template<class C> class RMIServer;
+template<typename C> class RMIServer;
 namespace impl { class RMIServerBase; }
 
-class RMIReplier : public cflib::serialize::BERSerializer
+class RMIReplier : public QByteArray
 {
 public:
 	void send();
@@ -65,7 +64,7 @@ private:
 	friend class impl::RMIServerBase;
 };
 
-template<class C>
+template<typename C>
 class RMIService : public RMIServiceBase
 {
 protected:

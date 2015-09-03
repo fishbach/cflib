@@ -27,12 +27,6 @@ class JSSerializer
 public:
 	JSSerializer() : data_(), base_(data_) {}
 
-	JSSerializer(const JSSerializer & other) : data_(other.data_), base_(data_)
-	{
-		data_.resize(data_.size() - 1);	// remove superfluous '['
-	}
-	JSSerializer & operator=(const JSSerializer & other) { data_ = other.data_; return *this; }
-
 	QByteArray data() const { return data_ + (base_.lastWasEmpty() ? ",]" : "]"); }
 
 	template<typename T>

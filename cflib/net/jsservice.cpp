@@ -66,7 +66,7 @@ QByteArray JSService::getRemoteIP() const
 
 void Replier::send()
 {
-	prependData_ += data();
+	prependData_ += *this;
 	request_.sendReply(prependData_, "application/javascript; charset=utf-8");
 }
 

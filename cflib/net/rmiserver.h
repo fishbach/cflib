@@ -25,7 +25,7 @@
 
 namespace cflib { namespace net {
 
-template<class C>
+template<typename C>
 class RMIServer : public RequestHandler, public WSCommMsgHandler<C>, private impl::RMIServerBase
 {
 public:

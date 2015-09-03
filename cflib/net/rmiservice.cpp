@@ -62,7 +62,7 @@ QByteArray RMIServiceBase::getRemoteIP() const
 
 void RMIReplier::send()
 {
-	server_.sendReply(connId_, data());
+	server_.sendReply(connId_, *this);
 }
 
 }}	// namespace

@@ -25,6 +25,7 @@ namespace cflib { namespace serialize { namespace impl {
 
 class JSSerializerBase
 {
+	Q_DISABLE_COPY(JSSerializerBase)
 public:
 	JSSerializerBase(QByteArray & data) :
 		data_(data), isFirst_(true), lastWasEmpty_(false)
