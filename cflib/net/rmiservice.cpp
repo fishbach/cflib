@@ -42,13 +42,16 @@ void RMIServiceBase::processRMIServiceCall(serialize::BERDeserializer deser, uin
 
 	connId_ = connId;
 	preCallInit();
-	const QByteArray reply;// = processRMIServiceCallImpl(callNo, len, 2);
-	connId_ = 0;
-	if (delayedReply_) {
-		delayedReply_ = false;
+	if (hasReturnValues) {
+		serialize::BERSerializer ser(2);
+		processRMIServiceCallImpl(deser, callNo, ser);
+		if (delayedReply_) delayedReply_ = false;
+		else               server_->sendReply(connId_, ser.data());
 	} else {
-		server_->sendReply(connId_, reply);
+		processRMIServiceCallImpl(deser, callNo);
+		delayedReply_ = false;
 	}
+	connId_ = 0;
 }
 
 RMIReplier RMIServiceBase::delayReply()

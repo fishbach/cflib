@@ -65,6 +65,7 @@ void writeFunctionSwitch(const HeaderParser::Functions & list, bool withReturnVa
 	foreach (const HeaderParser::Function & f, list) {
 		++i;
 		if (f.hasReturnValues() != withReturnValues) continue;
+
 		out << "\t\tcase " << QByteArray::number(i) << ": {\n";
 		if (!f.parameters.isEmpty()) {
 			int id = 0;

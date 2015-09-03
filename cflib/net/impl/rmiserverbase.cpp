@@ -210,7 +210,14 @@ void RMIServerBase::registerService(RMIServiceBase & service)
 {
 	service.server_ = this;
 	SerializeTypeInfo servInfo = service.getServiceInfo();
-	services_[servInfo.typeName.toLower()] = &service;
+
+	ServiceFunctions & sfs = services_[servInfo.typeName.toLower()];
+	sfs.service = &service;
+	uint i = 0;
+	foreach (const SerializeFunctionTypeInfo & ti, servInfo.functions) {
+		sfs.signatures[ti.signature()] = qMakePair(++i, ti.hasReturnValues());
+	}
+
 	foreach (const SerializeTypeInfo & ti, getFunctionClassInfos(servInfo)) {
 		ClassInfoEl * ciEl = &classInfos_;
 		foreach (const QString & ns, ti.getName().split("::")) {
@@ -277,8 +284,8 @@ QByteArray RMIServerBase::getRemoteIP(uint connId)
 RMIServiceBase * RMIServerBase::checkServiceCall(serialize::BERDeserializer & deser, uint connId,
 	uint & callNo, bool & hasReturnValues)
 {
-	QByteArray serviceName;
-	QByteArray signature;
+	QString serviceName;
+	QString signature;
 	deser >> serviceName >> signature;
 	if (signature.isEmpty()) {
 		logWarn("broken BER request from connection %1", connId);
@@ -286,22 +293,31 @@ RMIServiceBase * RMIServerBase::checkServiceCall(serialize::BERDeserializer & de
 		return 0;
 	}
 
-	return 0;
+	ServiceFunctions sf = services_.value(serviceName);
+	if (!sf.service) {
+		logWarn("service %1 not found from connection %2", serviceName, connId);
+		wsService_.close(connId, TCPConn::HardClosed);
+		return 0;
+	}
 
-	if (activeRequests_.contains(connId)) {
-		logWarn("two simultaneous requests from connection %1", connId);
+	QPair<uint, bool> method = sf.signatures.value(signature);
+	if (method.first == 0) {
+		logWarn("signature %1 of service %2 not found from connection %3", signature, serviceName, connId);
 		wsService_.close(connId, TCPConn::HardClosed);
 		return 0;
 	}
-	QString name;
-	deser >> name;
-	RMIServiceBase * service = services_.value(name);
-	if (!service) {
-		logWarn("unknown service %1 connection %2", name, connId);
-		wsService_.close(connId, TCPConn::HardClosed);
-		return 0;
+	callNo          = method.first;
+	hasReturnValues = method.second;
+
+	if (hasReturnValues) {
+		if (activeRequests_.contains(connId)) {
+			logWarn("two simultaneous requests from connection %1", connId);
+			wsService_.close(connId, TCPConn::HardClosed);
+			return 0;
+		}
+		activeRequests_ << connId;
 	}
-	return service;
+	return sf.service;
 }
 
 void RMIServerBase::showServices(const Request & request, QString path) const
@@ -315,7 +331,7 @@ void RMIServerBase::showServices(const Request & request, QString path) const
 		foreach (const QString & name, services_.keys()) {
 			info
 				<< "<li><a href=\"services/" << name << "\">"
-				<< services_[name]->getServiceInfo().typeName << "</a></li>\n";
+				<< services_[name].service->getServiceInfo().typeName << "</a></li>\n";
 		}
 		info <<
 			"</ul>\n";
@@ -325,7 +341,7 @@ void RMIServerBase::showServices(const Request & request, QString path) const
 	}
 	path.remove(0, 1);
 
-	RMIServiceBase * srv = services_.value(path);
+	RMIServiceBase * srv = services_.value(path).service;
 	if (!srv) return;
 	SerializeTypeInfo ti = srv->getServiceInfo();
 
@@ -442,7 +458,7 @@ QString RMIServerBase::generateJS(const QString & path) const
 SerializeTypeInfo RMIServerBase::getTypeInfo(const QString & path) const
 {
 	if (path.startsWith("services/")) {
-		RMIServiceBase * srv = services_[path.mid(9)];
+		RMIServiceBase * srv = services_[path.mid(9)].service;
 		if (!srv) return SerializeTypeInfo();
 		return srv->getServiceInfo();
 	}

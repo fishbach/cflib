@@ -69,6 +69,11 @@ private:
 		ClassInfos infos;
 		cflib::serialize::SerializeTypeInfo ti;
 	};
+	struct ServiceFunctions {
+		ServiceFunctions() : service(0) {}
+		RMIServiceBase * service;
+		QMap<QString, QPair<uint, bool> > signatures;
+	};
 
 private:
 	RMIServiceBase * checkServiceCall(serialize::BERDeserializer & deser, uint connId,
@@ -85,7 +90,7 @@ private:
 private:
 	WSCommManagerBase & wsService_;
 	const QRegularExpression containerRE_;
-	QMap<QString, RMIServiceBase *> services_;
+	QMap<QString, ServiceFunctions> services_;
 	ClassInfoEl classInfos_;
 	QSet<uint> activeRequests_;
 };
