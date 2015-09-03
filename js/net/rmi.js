@@ -23,7 +23,6 @@ define([
 	'cflib/util/util'
 ], function(ber, EV, storage, util) {
 
-	var clId            = null;
 	var isFirst         = true;
 	var requestActive   = false;
 	var waitingRequests = [];
@@ -31,34 +30,48 @@ define([
 
 	function getClId()
 	{
-		if (clId !== null) return clId;
-		clId = util.fromBase64(c);
 		var c = storage.get('clId');
-		if (!c) return null;
-		clId = util.fromBase64(c);
-		return clId;
+		return c ? util.fromBase64(c) : null;
 	}
 
-	function setClId(newId)
+	function setClId(clId)
 	{
-		clId = newId;
 		storage.set('clId', util.toBase64(clId), true);
 	}
 
 	function wsOpen(e)
 	{
-		console.log("ws open: ", e);
+		var id = getClId();
+		if (id) ws.send(ber.makeTLV(2, false, id));
+		else    ws.send(ber.makeTLV(1));
 	}
 
 	function wsClose(e)
 	{
-		ws = null;
-		setTimeout(rmi.start, 5000);
+		if (ws) {
+			ws = null;
+			setTimeout(rmi.start, 5000);
+		}
 	}
 
 	function newMessage(e)
 	{
-		console.log("ws: ", e.data);
+		var data = e.data;
+		if (!(data instanceof ArrayBuffer)) {
+			rmi.ev.newMessage.fire(data);
+			return;
+		}
+		data = new Uint8Array(data);
+		var tlv = ber.decodeTLV(data, 0, data.length);
+		console.log(tlv, data);
+		switch (tlv[1]) {
+			case 1:
+				setClId(new Uint8Array(data.buffer, tlv[2] + tlv[3], tlv[0]));
+				rmi.ev.identityReset.fire();
+				break;
+			default:
+				rmi.ev.newMessage.fire(data);
+		}
 	}
 
 	// ========================================================================
@@ -67,19 +80,26 @@ define([
 	var rmi = new RMI();
 
 	rmi.ev = {
-		loading:      new EV(rmi, "loading"),		// bool isLoading
-		identityLost: new EV(rmi, "identityLost"),
-		newMessage:   new EV(rmi, "newMessage")		// (string / arraybuffer) data
+		loading:       new EV(rmi, "loading"),			// bool isLoading
+		identityReset: new EV(rmi, "identityReset"),
+		newMessage:    new EV(rmi, "newMessage")		// (string / arraybuffer) data
 	};
 
 	rmi.start = function() {
-		if (ws) ws.close();
+		if (ws) return;
 		var loc = window.location;
 		ws = new WebSocket((loc.protocol == 'https:' ? 'wss://' : 'ws://') + loc.host + '/ws');
 		ws.binaryType = 'arraybuffer';
 		ws.onmessage = newMessage;
 		ws.onopen = wsOpen;
 		ws.onclose = wsClose;
+	};
+
+	rmi.stop = function() {
+		if (!ws) return;
+		var cl = ws;
+		ws = null;
+		cl.close();
 	};
 
 	return rmi;

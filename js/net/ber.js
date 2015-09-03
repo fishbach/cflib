@@ -49,7 +49,7 @@ define(function() {
 
 		// If 8th bit is not set, length is in this byte.
 		var b = data[start];
-		if ((b & 0x80) == 0) return [b, 1];
+		if ((b & 0x80) === 0) return [b, 1];
 
 		// 8th bit is set, so lower bits hold the size of the length
 		var ls = b & 0x7F;
@@ -57,11 +57,11 @@ define(function() {
 		if (len <= ls) return [-1, 0];
 
 		// check for undefined length
-		if (ls == 0) return [-2, 1];
+		if (ls === 0) return [-2, 1];
 
 		// check for too big length (signed qint64 overflow)
 		b = data[++start];
-		if (ls == 8 && ((b & 0x80) != 0)) return [-3, 0];
+		if (ls == 8 && ((b & 0x80) !== 0)) return [-3, 0];
 
 		// calculate length
 		var lengthSize = ls + 1;
@@ -83,13 +83,59 @@ define(function() {
 		return [rv2[0], tag, tagLen, rv2[1]];
 	}
 
+	function createTag(tagNo, constructed)
+	{
+		if (tagNo < 0x1F) return [(constructed ? 0xE0 : 0xC0) | tagNo];
+
+		var rv = [tagNo & 0x7F];
+		tagNo >>= 7;
+		while (tagNo > 0) {
+			rv.unshift((tagNo & 0x7F) | 0x80);
+			tagNo >>= 7;
+		}
+		rv.unshift(constructed ? 0xFF : 0xDF);
+		return rv;
+	}
+
+	// If length < 0 the undefined length is written.
+	function encodeBERLength(length)
+	{
+		// one byte encoding
+		if (length < 0)    return [0x80];
+		if (length < 0x80) return [length];
+
+		var rv = [length & 0xFF];
+		while (length > 0xFF) {
+			length >>= 8;
+			rv.unshift(length & 0xFF);
+		}
+		rv.unshift(rv.length | 0x80);
+		return rv;
+	}
+
+	function makeTLV(tagNo, constructed, uint8Array)
+	{
+		var tag = createTag(tagNo, constructed);
+		if (uint8Array === null)                    { tag.push(0x81, 0); return new Uint8Array(tag); }
+		if (!uint8Array || uint8Array.length === 0) { tag.push(0      ); return new Uint8Array(tag); }
+
+		var valueLen = uint8Array.length;
+		var len = encodeBERLength(valueLen);
+		var valueStart = tag.length + len.length;
+		var rv = new Uint8Array(valueStart + valueLen);
+		rv.set(tag);
+		rv.set(len, tag.length);
+		rv.set(uint8Array, valueStart);
+		return rv;
+	}
+
 	// ========================================================================
 
 	var BER = function() {};
 	var ber = new BER();
 
 	ber.decodeTLV = decodeTLV;
-
+	ber.makeTLV = makeTLV;
 
 	return ber;
 });
