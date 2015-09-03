@@ -56,8 +56,8 @@ class BERDeserializer
 public:
 	BERDeserializer(const QByteArray & data) :
 		data_(data), base_((const quint8 *)data_.constData(), data_.size()) {}
-	BERDeserializer(const quint8 * data, int len) :
-		base_(data, len) {}
+	BERDeserializer(const QByteArray & ba, const quint8 * data, int len) :
+		data_(ba), base_(data, len) {}
 
 	template<typename T>
 	inline BERDeserializer & operator>>(T & cl) { base_ >> cl; return *this; }

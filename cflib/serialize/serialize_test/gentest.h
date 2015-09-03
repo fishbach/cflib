@@ -19,6 +19,7 @@
 #pragma once
 
 #include <cflib/serialize/serialize.h>
+#include <cflib/serialize/serializeber.h>
 
 class GenTest1
 {

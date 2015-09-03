@@ -21,7 +21,6 @@
 #include <cflib/net/request.h>
 #include <cflib/net/rmiservice.h>
 #include <cflib/net/wscommmanager.h>
-#include <cflib/serialize/serializeber.h>
 #include <cflib/util/log.h>
 #include <cflib/util/util.h>
 
@@ -265,6 +264,7 @@ void RMIServerBase::handleRequest(const Request & request)
 
 void RMIServerBase::sendReply(uint connId, const QByteArray & data)
 {
+	if (!verifyThreadCall(&RMIServerBase::sendReply, connId, data)) return;
 	activeRequests_.remove(connId);
 	wsService_.send(connId, data, true);
 }
@@ -274,14 +274,25 @@ QByteArray RMIServerBase::getRemoteIP(uint connId)
 	return wsService_.getRemoteIP(connId);
 }
 
-RMIServiceBase * RMIServerBase::findServiceForCall(const quint8 *& data, int & len, uint connId)
+RMIServiceBase * RMIServerBase::checkServiceCall(serialize::BERDeserializer & deser, uint connId,
+	uint & callNo, bool & hasReturnValues)
 {
+	QByteArray serviceName;
+	QByteArray signature;
+	deser >> serviceName >> signature;
+	if (signature.isEmpty()) {
+		logWarn("broken BER request from connection %1", connId);
+		wsService_.close(connId, TCPConn::HardClosed);
+		return 0;
+	}
+
+	return 0;
+
 	if (activeRequests_.contains(connId)) {
 		logWarn("two simultaneous requests from connection %1", connId);
 		wsService_.close(connId, TCPConn::HardClosed);
 		return 0;
 	}
-	BERDeserializer deser(data, len);
 	QString name;
 	deser >> name;
 	RMIServiceBase * service = services_.value(name);
@@ -290,7 +301,6 @@ RMIServiceBase * RMIServerBase::findServiceForCall(const quint8 *& data, int & l
 		wsService_.close(connId, TCPConn::HardClosed);
 		return 0;
 	}
-	deser.nextValueData(data, len);
 	return service;
 }
 

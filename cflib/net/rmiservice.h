@@ -19,11 +19,11 @@
 #pragma once
 
 #include <cflib/serialize/serialize.h>
+#include <cflib/serialize/serializeber.h>
 #include <cflib/util/threadverify.h>
 
 namespace cflib { namespace net {
 
-template<typename C> class RMIServer;
 namespace impl { class RMIServerBase; }
 
 class RMIReplier : public QByteArray
@@ -54,8 +54,11 @@ protected:
 	virtual void preCallInit() {}
 
 protected:
-	void processRMIServiceCall(const QByteArray & ba, const quint8 * data, int len, uint connId);
-	virtual QByteArray processRMIServiceCallImpl(const quint8 * data, int len, quint64 tag) = 0;
+	void processRMIServiceCall(serialize::BERDeserializer deser, uint callNo,  bool hasReturnValues,
+		uint connId);
+	virtual void processRMIServiceCallImpl(serialize::BERDeserializer & deser, uint callNo) = 0;
+	virtual void processRMIServiceCallImpl(serialize::BERDeserializer & deser, uint callNo,
+		serialize::BERSerializer & ser) = 0;
 
 private:
 	impl::RMIServerBase * server_;
@@ -75,12 +78,14 @@ protected:
 	const C & connData() { return connData_; }
 
 private:
-	void processRMIServiceCall(const QByteArray & ba, const quint8 * data, int len, const C & connData, uint connId)
+	void processRMIServiceCall(serialize::BERDeserializer deser, uint callNo, bool hasReturnValues,
+		const C & connData, uint connId)
 	{
-		if (!verifyThreadCall(&RMIService::processRMIServiceCall, ba, data, len, connData, connId)) return;
+		if (!verifyThreadCall(&RMIService::processRMIServiceCall, deser, callNo, hasReturnValues,
+			connData, connId)) return;
 
 		connData_ = connData;
-		RMIServiceBase::processRMIServiceCall(ba, data, len, connId);
+		RMIServiceBase::processRMIServiceCall(deser, callNo, hasReturnValues, connId);
 		connData_ = C();
 	}
 

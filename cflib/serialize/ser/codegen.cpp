@@ -58,6 +58,60 @@ void writeMethods(QTextStream & out, const HeaderParser::Class & cl)
 		"template void " << cl.name << "::deserialize(cflib::serialize::impl::JSDeserializerBase &);\n";
 }
 
+void writeFunctionSwitch(const HeaderParser::Functions & list, bool withReturnValues, QTextStream & out)
+{
+	out << "\tswitch (__callNo) {\n";
+	int i = 0;
+	foreach (const HeaderParser::Function & f, list) {
+		++i;
+		if (f.hasReturnValues() != withReturnValues) continue;
+		out << "\t\tcase " << QByteArray::number(i) << ": {\n";
+		if (!f.parameters.isEmpty()) {
+			int id = 0;
+			foreach (const HeaderParser::Variable & p, f.parameters) {
+				out << "\t\t\t" << p.type << ' ';
+				if (p.name.isEmpty()) out << "__param_" << QString::number(++id);
+				else out << "__" << p.name;
+				out << ";\n";
+			}
+			out << "\t\t\t__deser";
+			id = 0;
+			foreach (const HeaderParser::Variable & p, f.parameters) {
+				out << " >> ";
+				if (p.name.isEmpty()) out << "__param_" << QString::number(++id);
+				else out << "__" << p.name;
+			}
+			out << ";\n";
+		}
+		out << "\t\t\t";
+		if (f.returnType != "void") out << "__ser << ";
+		out << f.name << '(';
+		int id = 0;
+		bool isFirst = true;
+		foreach (const HeaderParser::Variable & p, f.parameters) {
+			if (isFirst) isFirst = false;
+			else out << ", ";
+			if (p.name.isEmpty()) out << "__param_" << QString::number(++id);
+			else out << "__" << p.name;
+		}
+		out << ")";
+		if (f.hasReturnValues()) {
+			if (f.returnType == "void") out << ";\n\t\t\t__ser";
+			id = 0;
+			foreach (const HeaderParser::Variable & p, f.parameters) {
+				if (!p.isRef) continue;
+				out << " << ";
+				if (p.name.isEmpty()) out << "__param_" << QString::number(++id);
+				else out << "__" << p.name;
+			}
+		}
+		out << ";\n"
+			"\t\t\treturn;\n"
+			"\t\t}\n";
+	}
+	out << "\t}\n";
+}
+
 }
 
 int genSerialize(const QString & headerName, const HeaderParser & hp, QIODevice & outDev)
@@ -136,68 +190,27 @@ int genSerialize(const QString & headerName, const HeaderParser & hp, QIODevice 
 			"}\n";
 
 		if (!cl.functions.isEmpty()) {
-			out <<
-				"QByteArray " << cl.name << "::processRMIServiceCallImpl(const quint8 * __data, int __len, quint64 __tag) {\n"
-				"\tclass __FunctionIds : public QMap<QString, int> { public: __FunctionIds() {\n"
-				"\t\tint i = 0;\n"
-				"\t\tforeach (const cflib::serialize::SerializeFunctionTypeInfo & f, serializeTypeInfo().functions) {\n"
-				"\t\t\tinsert(f.signature(), ++i);\n"
-				"\t\t}\n"
-				"\t}};\n"
-				"\tstatic const __FunctionIds __funcIds;\n"
-				"\tcflib::serialize::BERDeserializer __deser(__data, __len);\n"
-				"\tcflib::serialize::BERSerializer __ser(__tag);\n"
-				"\tswitch (__funcIds[__deser.get<QString>()]) {\n";
-			int i = 0;
+			bool existsWithReturnValues    = false;
+			bool existsWithoutReturnValues = false;
 			foreach (const HeaderParser::Function & f, cl.functions) {
-				out << "\t\tcase " << QByteArray::number(++i) << ": {\n";
-				if (!f.parameters.isEmpty()) {
-					int id = 0;
-					foreach (const HeaderParser::Variable & p, f.parameters) {
-						out << "\t\t\t" << p.type << ' ';
-						if (p.name.isEmpty()) out << "__param_" << QString::number(++id);
-						else out << "__" << p.name;
-						out << ";\n";
-					}
-					out << "\t\t\t__deser";
-					id = 0;
-					foreach (const HeaderParser::Variable & p, f.parameters) {
-						out << " >> ";
-						if (p.name.isEmpty()) out << "__param_" << QString::number(++id);
-						else out << "__" << p.name;
-					}
-					out << ";\n";
-				}
-				out << "\t\t\t";
-				if (f.returnType != "void") out << "__ser << ";
-				out << f.name << '(';
-				int id = 0;
-				bool isFirst = true;
-				foreach (const HeaderParser::Variable & p, f.parameters) {
-					if (isFirst) isFirst = false;
-					else out << ", ";
-					if (p.name.isEmpty()) out << "__param_" << QString::number(++id);
-					else out << "__" << p.name;
-				}
-				out << ")";
-				if (f.hasReturnValues()) {
-					if (f.returnType == "void") out << ";\n\t\t\t__ser";
-					id = 0;
-					foreach (const HeaderParser::Variable & p, f.parameters) {
-						if (!p.isRef) continue;
-						out << " << ";
-						if (p.name.isEmpty()) out << "__param_" << QString::number(++id);
-						else out << "__" << p.name;
-					}
-				}
-				out << ";\n"
-					"\t\t\tbreak;\n"
-					"\t\t}\n";
+				if (f.hasReturnValues()) existsWithReturnValues    = true;
+				else                     existsWithoutReturnValues = true;
+				if (existsWithReturnValues && existsWithoutReturnValues) break;
 			}
-			out <<
-				"\t}\n"
-				"\treturn __ser.data();\n"
-				"}\n";
+			if (existsWithoutReturnValues) {
+				out << "void " << cl.name << "::processRMIServiceCallImpl(cflib::serialize::BERDeserializer & __deser, uint __callNo) {\n";
+				writeFunctionSwitch(cl.functions, false, out);
+				out << "}\n";
+			} else {
+				out << "void " << cl.name << "::processRMIServiceCallImpl(cflib::serialize::BERDeserializer &, uint) {}\n";
+			}
+			if (existsWithReturnValues) {
+				out << "void " << cl.name << "::processRMIServiceCallImpl(cflib::serialize::BERDeserializer & __deser, uint __callNo, cflib::serialize::BERSerializer & __ser) {\n";
+				writeFunctionSwitch(cl.functions, true, out);
+				out << "}\n";
+			} else {
+				out << "void " << cl.name << "::processRMIServiceCallImpl(cflib::serialize::BERDeserializer &, uint, cflib::serialize::BERSerializer &) {}\n";
+			}
 		}
 
 		for (int i = 0 ; i < nsList.size() ; ++i) out << "}";

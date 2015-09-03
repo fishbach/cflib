@@ -49,7 +49,8 @@
 #define rmi \
 	public: \
 		virtual cflib::serialize::SerializeTypeInfo getServiceInfo() { return serializeTypeInfo(); } \
-		virtual QByteArray processRMIServiceCallImpl(const quint8 * data, int len, quint64 tag); \
+		virtual void processRMIServiceCallImpl(cflib::serialize::BERDeserializer & deser, uint callNo); \
+		virtual void processRMIServiceCallImpl(cflib::serialize::BERDeserializer & deser, uint callNo, cflib::serialize::BERSerializer & ser); \
 	public
 #define SERIALIZE_BASE
 #define SERIALIZE_SKIP(member)

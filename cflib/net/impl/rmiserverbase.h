@@ -19,6 +19,7 @@
 #pragma once
 
 #include <cflib/net/rmiservice.h>
+#include <cflib/serialize/serializeber.h>
 #include <cflib/serialize/serializetypeinfo.h>
 #include <cflib/util/threadverify.h>
 
@@ -46,11 +47,14 @@ public:
 	{
 		if (!verifyThreadCall(&RMIServerBase::handleCall<C>, ba, data, len, connData, connId)) return;
 
-		RMIServiceBase * serviceBase = findServiceForCall(data, len, connId);
+		serialize::BERDeserializer deser(ba, data, len);
+		uint callNo;
+		bool hasReturnValues;
+		RMIServiceBase * serviceBase = checkServiceCall(deser, connId, callNo, hasReturnValues);
 		if (!serviceBase) return;
 		RMIService<C> * service = dynamic_cast<RMIService<C> *>(serviceBase);
-		if (service) service->processRMIServiceCall(ba, data, len, connData, connId);
-		else         serviceBase->processRMIServiceCall(ba, data, len, connId);
+		if (service) service->processRMIServiceCall(deser, callNo, hasReturnValues, connData, connId);
+		else         serviceBase->processRMIServiceCall(deser, callNo, hasReturnValues, connId);
 	}
 
 private:
@@ -67,7 +71,8 @@ private:
 	};
 
 private:
-	RMIServiceBase * findServiceForCall(const quint8 * & data, int & len, uint connId);
+	RMIServiceBase * checkServiceCall(serialize::BERDeserializer & deser, uint connId,
+		uint & callNo, bool & hasReturnValues);
 	void showServices(const Request & request, QString path) const;
 	void showClasses(const Request & request, QString path) const;
 	void classesToHTML(QString & info, const ClassInfoEl & infoEl) const;
