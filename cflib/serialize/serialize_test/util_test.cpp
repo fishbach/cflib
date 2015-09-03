@@ -72,6 +72,9 @@ private slots:
 		QCOMPARE(toByteArray(1,   256), QByteArray::fromHex("DF82000101"));
 		QCOMPARE(toByteArray(1, 16383), QByteArray::fromHex("DFFF7F0101"));
 		QCOMPARE(toByteArray(1, 16384), QByteArray::fromHex("DF8180000101"));
+
+		QCOMPARE(toByteArray(QByteArray(),   3), QByteArray::fromHex(""));
+		QCOMPARE(toByteArray(QByteArray(""), 3), QByteArray::fromHex("C300"));
 	}
 
 	void test_fromByteArray()

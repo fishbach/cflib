@@ -137,7 +137,7 @@ int genSerialize(const QString & headerName, const HeaderParser & hp, QIODevice 
 
 		if (!cl.functions.isEmpty()) {
 			out <<
-				"QByteArray " << cl.name << "::processRMIServiceCallImpl(const quint8 * __data, int __len) {\n"
+				"QByteArray " << cl.name << "::processRMIServiceCallImpl(const quint8 * __data, int __len, quint64 __tag) {\n"
 				"\tclass __FunctionIds : public QMap<QString, int> { public: __FunctionIds() {\n"
 				"\t\tint i = 0;\n"
 				"\t\tforeach (const cflib::serialize::SerializeFunctionTypeInfo & f, serializeTypeInfo().functions) {\n"
@@ -146,7 +146,7 @@ int genSerialize(const QString & headerName, const HeaderParser & hp, QIODevice 
 				"\t}};\n"
 				"\tstatic const __FunctionIds __funcIds;\n"
 				"\tcflib::serialize::BERDeserializer __deser(__data, __len);\n"
-				"\tcflib::serialize::BERSerializer __ser;\n"
+				"\tcflib::serialize::BERSerializer __ser(__tag);\n"
 				"\tswitch (__funcIds[__deser.get<QString>()]) {\n";
 			int i = 0;
 			foreach (const HeaderParser::Function & f, cl.functions) {

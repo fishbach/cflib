@@ -25,9 +25,20 @@ namespace cflib { namespace serialize {
 class BERSerializer
 {
 public:
-	BERSerializer() : data_(), base_(data_) {}
+	BERSerializer(quint64 tagNo = 0) : lenPos_(0), data_(), base_(data_) {
+		if (tagNo > 0) {
+			quint8 tagLen;
+			quint64 tag = impl::createTag(tagNo, tagLen);
+			impl::writeTag(data_, impl::setConstructedBit(tag, tagLen), tagLen);
+			data_ += '\0';
+			lenPos_ = tagLen + 1;
+		}
+	}
 
-	QByteArray data() const { return data_; }
+	QByteArray data() {
+		if (lenPos_) impl::insertBERLength(data_, lenPos_);
+		return data_;
+	}
 
 	template<typename T>
 	inline BERSerializer & operator<<(const T & cl) { base_ << cl; return *this; }
@@ -35,6 +46,7 @@ public:
 	inline BERSerializer & operator<<(Placeholder ph) { base_ << ph; return *this; }
 
 private:
+	int lenPos_;
 	QByteArray data_;
 	impl::BERSerializerBase base_;
 };

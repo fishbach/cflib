@@ -40,7 +40,7 @@ public:
 		const QByteArray & data, int tagLen, int lengthSize, qint32 valueLen,
 		const C & connData, uint connId)
 	{
-		handleCall((const quint8 *)data.constData() + tagLen + lengthSize, valueLen, connData, connId);
+		handleCall(data, (const quint8 *)data.constData() + tagLen + lengthSize, valueLen, connData, connId);
 	}
 
 protected:

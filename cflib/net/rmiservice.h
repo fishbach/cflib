@@ -55,8 +55,8 @@ protected:
 	virtual void preCallInit() {}
 
 protected:
-	void processRMIServiceCall(const quint8 * data, int len, uint connId);
-	virtual QByteArray processRMIServiceCallImpl(const quint8 * data, int len) = 0;
+	void processRMIServiceCall(const QByteArray & ba, const quint8 * data, int len, uint connId);
+	virtual QByteArray processRMIServiceCallImpl(const quint8 * data, int len, quint64 tag) = 0;
 
 private:
 	impl::RMIServerBase * server_;
@@ -76,11 +76,12 @@ protected:
 	const C & connData() { return connData_; }
 
 private:
-	void processRMIServiceCall(const quint8 * data, int len, const C & connData, uint connId)
+	void processRMIServiceCall(const QByteArray & ba, const quint8 * data, int len, const C & connData, uint connId)
 	{
-		if (!verifyThreadCall(&RMIService::processRMIServiceCall, data, len, connData, connId)) return;
+		if (!verifyThreadCall(&RMIService::processRMIServiceCall, ba, data, len, connData, connId)) return;
+
 		connData_ = connData;
-		RMIServiceBase::processRMIServiceCall(data, len, connId);
+		RMIServiceBase::processRMIServiceCall(ba, data, len, connId);
 		connData_ = C();
 	}
 

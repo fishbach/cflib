@@ -42,15 +42,15 @@ public:
 	QByteArray getRemoteIP(uint connId);
 
 	template<class C>
-	void handleCall(const quint8 * data, int len, const C & connData, uint connId)
+	void handleCall(const QByteArray & ba, const quint8 * data, int len, const C & connData, uint connId)
 	{
-		if (!verifyThreadCall(&RMIServerBase::handleCall<C>, data, len, connData, connId)) return;
+		if (!verifyThreadCall(&RMIServerBase::handleCall<C>, ba, data, len, connData, connId)) return;
 
 		RMIServiceBase * serviceBase = findServiceForCall(data, len, connId);
 		if (!serviceBase) return;
 		RMIService<C> * service = dynamic_cast<RMIService<C> *>(serviceBase);
-		if (service) service->processRMIServiceCall(data, len, connData, connId);
-		else         serviceBase->processRMIServiceCall(data, len, connId);
+		if (service) service->processRMIServiceCall(ba, data, len, connData, connId);
+		else         serviceBase->processRMIServiceCall(ba, data, len, connId);
 	}
 
 private:
@@ -79,9 +79,9 @@ private:
 
 private:
 	WSCommManagerBase & wsService_;
+	const QRegularExpression containerRE_;
 	QMap<QString, RMIServiceBase *> services_;
 	ClassInfoEl classInfos_;
-	const QRegularExpression containerRE_;
 	QSet<uint> activeRequests_;
 };
 

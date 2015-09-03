@@ -49,7 +49,7 @@
 #define rmi \
 	public: \
 		virtual cflib::serialize::SerializeTypeInfo getServiceInfo() { return serializeTypeInfo(); } \
-		virtual QByteArray processRMIServiceCallImpl(const quint8 * data, int len); \
+		virtual QByteArray processRMIServiceCallImpl(const quint8 * data, int len, quint64 tag); \
 	public
 #define SERIALIZE_BASE
 #define SERIALIZE_SKIP(member)
