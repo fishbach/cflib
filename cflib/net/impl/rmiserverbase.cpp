@@ -200,14 +200,14 @@ QString getSerializeCode(const SerializeTypeInfo & ti, const QString & name)
 				<< getSerializeCode(ti.bases[0], name + "[0]")
 				<< getSerializeCode(ti.bases[1], name + "[1]")
 				<< ".data)";
-//		} else if (ti.typeName.startsWith("List<")) {
-//			js	<< "API.map(" << raw << ", function(el) { return "
-//				<< formatJSTypeConstruction(ti.bases[0], "el") << "; })";
-//		} else if (ti.typeName.startsWith("Map<")) {
-//			js	<< "API.map2(" << raw << ", function(key, val) { return ["
-//				<< formatJSTypeConstruction(ti.bases[0], "key")
-//				<< ", "
-//				<< formatJSTypeConstruction(ti.bases[1], "val") << "]; })";
+		} else if (ti.typeName.startsWith("List<")) {
+			js	<< ".map(" << name << ", function(__e, __S) { __S"
+				<< getSerializeCode(ti.bases[0], "__e") << "; })";
+		} else if (ti.typeName.startsWith("Map<")) {
+			js	<< ".map2(" << name << ", function(__e, __S) { __S"
+				<< getSerializeCode(ti.bases[0], "__e[0]")
+				<< getSerializeCode(ti.bases[1], "__e[1]")
+				<< "; })";
 		} else {
 			logWarn("no code for Container type '%1'", ti.typeName);
 		}

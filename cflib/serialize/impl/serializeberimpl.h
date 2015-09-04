@@ -381,7 +381,6 @@ inline void serializeBER(const QVector<T> & cl, quint64 tag, quint8 tagLen, QByt
 {
 	TLWriter tlw(data, tag, tagLen);
 	BERSerializerBase ser(data, true);
-	ser << cl.size();
 	for (typename QVector<T>::const_iterator it = cl.begin() ; it != cl.end() ; ++it) ser << *it;
 }
 
@@ -390,11 +389,9 @@ inline void deserializeBER(QVector<T> & cl, const quint8 * data, int len, BERDes
 {
 	BERDeserializerBase ser(data, len, true);
 	cl.clear();
-	quint32 size; ser >> size;
-	cl.resize(size);
-	for (quint32 i = 0 ; i < size ; ++i) {
+	while (ser.isAnyAvailable()) {
 		T el; ser >> el;
-		cl[i] = el;
+		cl.append(el);
 	}
 }
 
