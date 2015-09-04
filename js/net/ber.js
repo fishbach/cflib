@@ -153,6 +153,10 @@ define([
 			this.add(tag);
 		},
 
+		boxTag: function(tagNo) {
+			return makeTLV(tagNo, true, this.data);
+		},
+
 		i: function(val) {
 			var tagNo = this.noInc ? this.tagNo : ++this.tagNo;
 			if (!val) {

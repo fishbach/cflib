@@ -33,6 +33,7 @@ api.ev.secureTokenLost.bind(function() {
 window.ber = ber;
 window.rmi = rmi;
 window.util = util;
+window.info = infoService;
 
 
 }); }); });
