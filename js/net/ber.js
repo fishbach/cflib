@@ -146,23 +146,25 @@ define([
 			this.data.set(d, od.length);
 		},
 
-		writeNull: function() { this.add([0xC0, 0x81, 0x00]); },
-		writeZero: function(tagNo) {
-			var tag = createTag(tagNo);
-			tag.push(0);
-			this.add(tag);
-		},
-
-		boxTag: function(tagNo) {
+		box: function(tagNo) {
 			return makeTLV(tagNo, true, this.data);
 		},
 
-		i: function(val) {
+		n: function() {
 			var tagNo = this.noInc ? this.tagNo : ++this.tagNo;
-			if (!val) {
-				if (tagNo === 0) this.writeNull();
-				return this;
-			}
+			if (tagNo === 0) this.add([0xC0, 0x81, 0x00]);
+			return this;
+		},
+
+		z: function(tagNo) {
+			var tag = createTag(this.noInc ? this.tagNo : ++this.tagNo);
+			tag.push(0);
+			this.add(tag);
+			return this;
+		},
+
+		i: function(val) {
+			if (!val) return this.n();
 
 			var neg = val < 0;
 			if (neg) val = -val - 1;
@@ -179,20 +181,16 @@ define([
 				else     bytes.unshift(0);
 			}
 
-			var tag = createTag(tagNo);
+			var tag = createTag(this.noInc ? this.tagNo : ++this.tagNo);
 			tag.push(bytes.length);
 			this.add(tag.concat(bytes));
 			return this;
 		},
 
 		f32: function(val) {
-			var tagNo = this.noInc ? this.tagNo : ++this.tagNo;
-			if (!val) {
-				if (tagNo === 0) this.writeNull();
-				return this;
-			}
+			if (!val) return this.n();
 
-			var tag = createTag(tagNo);
+			var tag = createTag(this.noInc ? this.tagNo : ++this.tagNo);
 			tag.push(4);
 			this.add(tag);
 			var fa = new Float32Array(1);
@@ -202,13 +200,9 @@ define([
 		},
 
 		f64: function(val) {
-			var tagNo = this.noInc ? this.tagNo : ++this.tagNo;
-			if (!val) {
-				if (tagNo === 0) this.writeNull();
-				return this;
-			}
+			if (!val) return this.n();
 
-			var tag = createTag(tagNo);
+			var tag = createTag(this.noInc ? this.tagNo : ++this.tagNo);
 			tag.push(8);
 			this.add(tag);
 			var fa = new Float64Array(1);
@@ -218,18 +212,29 @@ define([
 		},
 
 		s: function(str) {
-			var tagNo = this.noInc ? this.tagNo : ++this.tagNo;
-			if (!str) {
-				if (str == '')        this.writeZero(tagNo);
-				else if (tagNo === 0) this.writeNull();
-				return this;
-			}
+			if (str == '') return this.z();
+			if (!str)      return this.n();
 
 			var u8 = util.toUTF8(str);
-			var tag = createTag(tagNo);
+			var tag = createTag(this.noInc ? this.tagNo : ++this.tagNo);
 			this.add(tag.concat(encodeBERLength(u8.length)));
 			this.add(u8);
 			return this;
+		},
+
+		a: function(byteArray) {
+			if (!byteArray            ) return this.n();
+			if (byteArray.length === 0) return this.z();
+
+			var tag = createTag(this.noInc ? this.tagNo : ++this.tagNo);
+			this.add(tag.concat(encodeBERLength(byteArray.length)));
+			this.add(byteArray);
+			return this;
+		},
+
+		o: function(obj) {
+			if (!obj) return this.n();
+			return this.a(obj.__serialize());
 		}
 
 	});

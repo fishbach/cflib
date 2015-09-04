@@ -156,7 +156,6 @@ QString formatJSTypeConstruction(const SerializeTypeInfo & ti, const QString & r
 	} else {	// SerializeTypeInfo::Null
 		js << "undefined";
 	}
-
 	return js;
 }
 
@@ -190,6 +189,50 @@ QString getJSParameters(const SerializeFunctionTypeInfo & func)
 	return js;
 }
 
+QString getSerializeCode(const SerializeTypeInfo & ti, const QString & name)
+{
+	QString js;
+	if (ti.type == SerializeTypeInfo::Class) {
+		js << ".o(" << name << ")";
+	} else if (ti.type == SerializeTypeInfo::Container) {
+		if (ti.typeName.startsWith("Pair<")) {
+			js	<< ".a(!" << name << " ? null : __ber.S()"
+				<< getSerializeCode(ti.bases[0], name + "[0]")
+				<< getSerializeCode(ti.bases[1], name + "[1]")
+				<< ".data)";
+//		} else if (ti.typeName.startsWith("List<")) {
+//			js	<< "API.map(" << raw << ", function(el) { return "
+//				<< formatJSTypeConstruction(ti.bases[0], "el") << "; })";
+//		} else if (ti.typeName.startsWith("Map<")) {
+//			js	<< "API.map2(" << raw << ", function(key, val) { return ["
+//				<< formatJSTypeConstruction(ti.bases[0], "key")
+//				<< ", "
+//				<< formatJSTypeConstruction(ti.bases[1], "val") << "]; })";
+		} else {
+			logWarn("no code for Container type '%1'", ti.typeName);
+		}
+	} else if (ti.type == SerializeTypeInfo::Basic) {
+		if (ti.typeName == "DateTime") {
+			js << ".i(!" << name << " ? 0 : " << name << ".getTime())";
+		} else if (ti.typeName == "String") {
+			js << ".s(" << name << ")";
+		} else if (ti.typeName == "ByteArray") {
+			js << ".a(" << name << ")";
+		} else if (ti.typeName.indexOf("int") != -1) {
+			js << ".i(" << name << ")";
+		} else if (ti.typeName == "tribool") {
+			js << ".i(" << name << " === true || " << name << " === 1 ? 1 : " << name << " === false || " << name << " === 2 ? 2 : 0)";
+		} else if (ti.typeName == "bool") {
+			js << ".i(" << name << " ? 1 : 0)";
+		} else {
+			logWarn("no code for Basic type '%1'", ti.typeName);
+		}
+	} else {	// SerializeTypeInfo::Null
+		logWarn("no code for type 'Null'");
+	}
+	return js;
+}
+
 QString getSerializeJSParameters(const SerializeFunctionTypeInfo & func)
 {
 	QString js;
@@ -197,11 +240,7 @@ QString getSerializeJSParameters(const SerializeFunctionTypeInfo & func)
 	foreach (const SerializeVariableTypeInfo & p, func.parameters) {
 		QString name = p.name;
 		if (name.isEmpty()) name << "__param_" << QString::number(++id);
-		const SerializeTypeInfo & ti = p.type;
-		if (ti.type == SerializeTypeInfo::Basic) {
-			if (ti.typeName.indexOf("int") != -1) js << ".i(" << name << ")";
-			else if (ti.typeName == "String") js << ".s(" << name << ")";
-		}
+		js << getSerializeCode(p.type, name);
 	}
 	return js;
 }
@@ -588,12 +627,12 @@ QString RMIServerBase::generateJSForService(const SerializeTypeInfo & ti) const
 		if (func.parameters.isEmpty()) {
 			js << objName << '.' << func.name << " = function(" << (hasRV ? "callback, context" : "") << ") {\n"
 				"\t__rmi.send" << (hasRV ? "Request" : "Async") << "(__ber.S().s('"
-				<< ti.typeName.toLower() << "').s('" << func.signature() << "').boxTag(2)";
+				<< ti.typeName.toLower() << "').s('" << func.signature() << "').box(2)";
 		} else {
 			js << objName << '.' << getJSFunctionName(containerRE_, func) << " = function("
 				<< getJSParameters(func) << (hasRV ? ", callback, context" : "") << ") {\n"
 				"\t__rmi.send" << (hasRV ? "Request" : "Async") << "(__ber.S().s('"
-				<< ti.typeName.toLower() << "').s('" << func.signature() << "')" << getSerializeJSParameters(func) << ".boxTag(2)";
+				<< ti.typeName.toLower() << "').s('" << func.signature() << "')" << getSerializeJSParameters(func) << ".box(2)";
 		}
 
 		if (!hasRV) {
@@ -605,8 +644,8 @@ QString RMIServerBase::generateJSForService(const SerializeTypeInfo & ti) const
 
 		js << ",\n"
 			"\t\tfunction(__data, __start, __len) {\n"
-			"\t\t\tif (!callback) return;\n";
-
+			"\t\t\tif (!callback) return;\n"
+			"\t\t\tconsole.log('re: ', __start, __len, __data);\n";
 
 		js << "\t\t});\n"
 			"};\n"
