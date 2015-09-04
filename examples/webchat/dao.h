@@ -27,3 +27,19 @@ public serialized:
 	QString name;
 	quint32 number;
 };
+
+class Dao2
+{
+	SERIALIZE_CLASS
+public serialized:
+	Dao dao;
+	QList<int> numbers;
+};
+
+class Dao3 : public Dao2
+{
+	SERIALIZE_CLASS
+	SERIALIZE_BASE
+public serialized:
+	QDateTime timestamp;
+};

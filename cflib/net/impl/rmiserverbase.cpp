@@ -135,13 +135,13 @@ QString formatJSTypeConstruction(const SerializeTypeInfo & ti, const QString & r
 				<< formatJSTypeConstruction(ti.bases[0], raw + "[0]") << ", "
 				<< formatJSTypeConstruction(ti.bases[1], raw + "[1]") << "]";
 		} else if (ti.typeName.startsWith("List<")) {
-			js	<< "API.map(" << raw << ", function(el) { return "
-				<< formatJSTypeConstruction(ti.bases[0], "el") << "; })";
+			js	<< "__inherit.map(" << raw << ", function(__e) { return "
+				<< formatJSTypeConstruction(ti.bases[0], "__e") << "; })";
 		} else if (ti.typeName.startsWith("Map<")) {
-			js	<< "API.map2(" << raw << ", function(key, val) { return ["
-				<< formatJSTypeConstruction(ti.bases[0], "key")
+			js	<< "__inherit.map(" << raw << ", function(__e) { return ["
+				<< formatJSTypeConstruction(ti.bases[0], "__e[0]")
 				<< ", "
-				<< formatJSTypeConstruction(ti.bases[1], "val") << "]; })";
+				<< formatJSTypeConstruction(ti.bases[1], "__e[1]") << "]; })";
 		}
 	} else if (ti.type == SerializeTypeInfo::Basic) {
 		if (ti.typeName == "DateTime") {
@@ -204,7 +204,7 @@ QString getSerializeCode(const SerializeTypeInfo & ti, const QString & name)
 			js	<< ".map(" << name << ", function(__e, __S) { __S"
 				<< getSerializeCode(ti.bases[0], "__e") << "; })";
 		} else if (ti.typeName.startsWith("Map<")) {
-			js	<< ".map2(" << name << ", function(__e, __S) { __S"
+			js	<< ".map(" << name << ", function(__e, __S) { __S"
 				<< getSerializeCode(ti.bases[0], "__e[0]")
 				<< getSerializeCode(ti.bases[1], "__e[1]")
 				<< "; })";
@@ -537,7 +537,7 @@ QString RMIServerBase::generateJSForClass(const SerializeTypeInfo & ti) const
 
 	QString js;
 
-	// JS namespece for debugging
+	// JS namespace for debugging
 	QString nsPrefix;
 	if (!ti.ns.isEmpty()) {
 		js << "var ";
@@ -564,49 +564,22 @@ QString RMIServerBase::generateJSForClass(const SerializeTypeInfo & ti) const
 	if (base.isEmpty()) js << "__inherit.Base";
 	else js << base;
 	js << ");\n"
-		<< nsPrefix << ti.typeName << ".prototype.constructor = function(param) {\n";
-	if (base.isEmpty()) js << "\t" << nsPrefix << ti.typeName << ".__super.call(this);\n";
-	js <<
-		"\tvar initArray = [];\n"
-		"\tif (param instanceof Array) initArray = param;\n"
-		"\telse if (typeof param == 'object') initArray = [";
-	bool isFirst = true;
-	if (!base.isEmpty()) {
-		isFirst = false;
-		js << "new " << base << "(param).__memberArray()";
-	}
+		<< nsPrefix << ti.typeName << ".prototype.constructor = function(param) {\n"
+		"\t" << nsPrefix << ti.typeName << ".__super.call(this, param);\n"
+		"\tif (typeof param != 'object') param = {}\n";
 	foreach (const SerializeVariableTypeInfo & vti, ti.members) {
-		if (isFirst) isFirst = false;
-		else js << ", ";
-		js << "param." << formatMembernameForJS(vti);
-	}
-	js <<
-		"];\n";
-	int i = 0;
-	if (!base.isEmpty()) {
-		js << "\t" << nsPrefix << ti.typeName << ".__super.call(this, initArray[0]);\n";
-		++i;
-	}
-	foreach (const SerializeVariableTypeInfo & vti, ti.members) {
-		QString raw;
-		raw << "initArray[" << QString::number(i++) << "]";
-		js << "\tthis." << formatMembernameForJS(vti) << " = " << formatJSTypeConstruction(vti.type, raw) << ";\n";
+		const QString name = formatMembernameForJS(vti);;
+		js << "\tthis." << name << " = " << formatJSTypeConstruction(vti.type, "param." + name) << ";\n";
 	}
 	js <<
 		"};\n"
-		<< nsPrefix << ti.typeName << ".prototype.__memberArray = function() {\n"
-		"\treturn [";
-	isFirst = true;
-	if (!base.isEmpty()) {
-		isFirst = false;
-		js << base << ".prototype.__memberArray.call(this)";
-	}
+		<< nsPrefix << ti.typeName << ".prototype.__serialize = function() {\n"
+		"\treturn __ber.S()";
+	if (!base.isEmpty()) js << ".a(" << base << ".prototype.__serialize.call(this))";
 	foreach (const SerializeVariableTypeInfo & vti, ti.members) {
-		if (isFirst) isFirst = false;
-		else js << ", ";
-		js << "this." << formatMembernameForJS(vti);
+		js << getSerializeCode(vti.type, "this." + formatMembernameForJS(vti));
 	}
-	js << "];\n"
+	js << ".data;\n"
 		"};\n"
 		"return " << nsPrefix << ti.typeName << ";\n";
 	return js;
@@ -643,11 +616,10 @@ QString RMIServerBase::generateJSForService(const SerializeTypeInfo & ti) const
 		}
 
 		js << ",\n"
-			"\t\tfunction(__data, __start, __len) {\n"
-			"\t\t\tif (!callback) return;\n"
+			"\t\tcallback ? function(__data, __start, __len) {\n"
 			"\t\t\tconsole.log('re: ', __start, __len, __data);\n";
 
-		js << "\t\t});\n"
+		js << "\t\t} : null);\n"
 			"};\n"
 			"\n";
 	}

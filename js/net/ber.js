@@ -242,13 +242,6 @@ define([
 			var S = new Serializer(true);
 			for (var i = 0, l = list.length ; i < l ; ++i) func(list[i], S);
 			return this.a(S.data);
-		},
-
-		map2: function(list, func) {
-			if (!list) return this.n();
-			var S = new Serializer(true);
-			for (var i = 0, l = list.length ; i < l ; ++i) func(list[i], S);
-			return this.a(S.data);
 		}
 
 	});

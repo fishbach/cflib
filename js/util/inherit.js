@@ -21,13 +21,20 @@ define(function() {
 	var Inherit = function() {};
 	var inherit = new Inherit();
 
-	inherit.Base = function() { api.Base.prototype.constructor.apply(this, arguments); };
+	inherit.Base = function() { inherit.Base.prototype.constructor.apply(this, arguments); };
 	inherit.Base.prototype.constructor = function() {};
 	inherit.setBase = function(cl, base) {
 		var Prototype = function() {};
 		Prototype.prototype = base.prototype;
 		cl.prototype = new Prototype();
 		cl.__super = base;
+	};
+
+	inherit.map = function(list, func) {
+		if (!list) return [];
+		var rv = [];
+		for (var i = 0, l = list.length ; i < l ; ++i) rv.push(func(list[i]));
+		return rv;
 	};
 
 	return inherit;

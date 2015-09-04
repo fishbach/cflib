@@ -32,4 +32,6 @@ rmi:
 	QString test();
 	void async(int i);
 	Dao update(const Dao & dao);
+	void update(Dao2 & dao);
+	void update(Dao3 & dao);
 };

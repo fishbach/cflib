@@ -34,7 +34,7 @@ InfoService::~InfoService()
 
 QString InfoService::test()
 {
-	return "hello world";
+	return QString::fromUtf8("hello w\xc3\xb6rld");
 }
 
 void InfoService::async(int i)
@@ -48,4 +48,14 @@ Dao InfoService::update(const Dao & dao)
 	rv.name = dao.name + "XX";
 	rv.number = dao.number + 13;
 	return rv;
+}
+
+void InfoService::update(Dao2 & dao)
+{
+	dao.numbers << 3 << 4 << 5;
+}
+
+void InfoService::update(Dao3 & dao)
+{
+	dao.timestamp = QDateTime::currentDateTime();
 }
