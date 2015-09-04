@@ -92,6 +92,13 @@ private slots:
 		QCOMPARE(fromByteArray<QString>(QByteArray::fromHex("C103626C61")), QString("bla"));
 	}
 
+	void test_sizes()
+	{
+		QCOMPARE((int)sizeof(float      ),  4);
+		QCOMPARE((int)sizeof(double     ),  8);
+		QCOMPARE((int)sizeof(long double), 16);
+	}
+
 };
 #include "util_test.moc"
 ADD_TEST(Util_Test)

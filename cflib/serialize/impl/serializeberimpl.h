@@ -22,6 +22,7 @@
 
 namespace cflib { namespace serialize { namespace impl {
 
+
 // ============================================================================
 // integer
 // ============================================================================
@@ -113,6 +114,50 @@ DO_SERIALIZE_BER(qint32 )
 DO_SERIALIZE_BER(quint32)
 DO_SERIALIZE_BER(qint64 )
 DO_SERIALIZE_BER(quint64)
+
+
+// ============================================================================
+// float
+// ============================================================================
+
+inline void serializeBER(float d, quint64 tag, quint8 tagLen, QByteArray & data, BERSerializerBase &)
+{
+	if (d == 0) { writeNull(data, tag, tagLen); return; }
+	writeTag(data, tag, tagLen);
+	data += 4;
+	data.append((const char *)&d, 4);
+}
+
+inline void deserializeBER(float & d, const quint8 * data, int len, BERDeserializerBase &)
+{
+	d = len != 4 ? 0 : *((const float *)data);
+}
+
+inline void serializeBER(double d, quint64 tag, quint8 tagLen, QByteArray & data, BERSerializerBase &)
+{
+	if (d == 0) { writeNull(data, tag, tagLen); return; }
+	writeTag(data, tag, tagLen);
+	data += 8;
+	data.append((const char *)&d, 8);
+}
+
+inline void deserializeBER(double & d, const quint8 * data, int len, BERDeserializerBase &)
+{
+	d = len != 8 ? 0 : *((const double *)data);
+}
+
+inline void serializeBER(long double d, quint64 tag, quint8 tagLen, QByteArray & data, BERSerializerBase &)
+{
+	if (d == 0) { writeNull(data, tag, tagLen); return; }
+	writeTag(data, tag, tagLen);
+	data += 16;
+	data.append((const char *)&d, 16);
+}
+
+inline void deserializeBER(long double & d, const quint8 * data, int len, BERDeserializerBase &)
+{
+	d = len != 16 ? 0 : *((const long double *)data);
+}
 
 
 // ============================================================================

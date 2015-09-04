@@ -129,6 +129,69 @@ define(function() {
 		return rv;
 	}
 
+	function Serializer(disableTagNumbering)
+	{
+		this.tagNo = 0;
+		this.noInc = disableTagNumbering;
+		this.data = new Uint8Array(0);
+	}
+	$.extend(Serializer.prototype, {
+
+		add: function(d) {
+			var od = this.data;
+			this.data = new Uint8Array(od.length + d.length);
+			this.data.set(od);
+			this.data.set(d, od.length);
+		},
+
+		writeNull: function() { this.add([0xD0, 0x81, 0x00]); },
+
+		i: function(val) {
+			var tagNo = this.noInc ? this.tagNo : ++this.tagNo;
+			if (!val) {
+				if (tagNo === 0) this.writeNull();
+				return this;
+			}
+
+			var neg = val < 0;
+			if (neg) val = -val - 1;
+			var b = val & 0xFF;
+			var bytes = [neg ? ~b : b];
+			val = val > 0xFFFFFFFF ? Math.floor(val / 16) : val >>> 8;
+			while (val > 0) {
+				b = val & 0xFF;
+				bytes.unshift(neg ? ~b : b);
+				val = val > 0xFFFFFFFF ? Math.floor(val / 16) : val >>> 8;
+			}
+			if ((b & 0x80) !== 0) {
+				if (neg) bytes.unshift(0xFF);
+				else     bytes.unshift(0);
+			}
+
+			var tag = createTag(tagNo);
+			tag.push(bytes.length);
+			this.add(tag.concat(bytes));
+			return this;
+		},
+
+		f64: function(val) {
+			var tagNo = this.noInc ? this.tagNo : ++this.tagNo;
+			if (!val) {
+				if (tagNo === 0) this.writeNull();
+				return this;
+			}
+
+			var tag = createTag(tagNo);
+			tag.push(8);
+			this.add(tag);
+			var fa = new Float64Array(1);
+			fa[0] = val;
+			this.add(new Uint8Array(fa.buffer));
+			return this;
+		}
+
+	});
+
 	// ========================================================================
 
 	var BER = function() {};
@@ -136,6 +199,7 @@ define(function() {
 
 	ber.decodeTLV = decodeTLV;
 	ber.makeTLV = makeTLV;
+	ber.S = function() { return new Serializer(); };
 
 	return ber;
 });

@@ -67,8 +67,6 @@ public:
 	template<typename T>
 	inline T get() { T retval; base_ >> retval; return retval; }
 
-	inline void nextValueData(const quint8 *& data, int & len) const { base_.nextValueData(data, len); }
-
 private:
 	const QByteArray data_;
 	impl::BERDeserializerBase base_;

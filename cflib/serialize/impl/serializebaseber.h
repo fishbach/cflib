@@ -109,20 +109,6 @@ public:
 	bool isAnyAvailable()   const { return bytesAvailable_ > 0; }
 	bool wasLastAvailable() const { return wasLastAvailable_; }
 
-	void nextValueData(const quint8 *& data, int & len) const
-	{
-		quint64 tag;
-		int tagLen;
-		int lengthSize;
-		len = decodeTLV(readPos_, bytesAvailable_, tag, tagLen, lengthSize);
-		if (len < 0) {
-			data = 0;
-			len = 0;
-		} else {
-			data = readPos_ + tagLen + lengthSize;
-		}
-	}
-
 private:
 	const quint8 * readPos_;
 	int bytesAvailable_;
