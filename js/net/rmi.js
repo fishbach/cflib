@@ -24,6 +24,7 @@ define([
 ], function(ber, EV, storage, util) {
 
 	var requestActive   = false;
+	var requestCallback = null;
 	var waitingRequests = [];
 	var ws              = null;
 
@@ -56,7 +57,19 @@ define([
 			case 1:
 				storage.set('clId', util.toBase64(new Uint8Array(data.buffer, tlv[2] + tlv[3], tlv[0])), true);
 				rmi.ev.identityReset.fire();
-				break;
+				return;
+			case 2:
+				if (requestCallback) requestCallback(data, lv[2] + tlv[3], tlv[0]);
+				if (waitingRequests.length > 0) {
+					var wr = waitingRequests.shift();
+					requestCallback = wr[1];
+					ws.send(wr[0]);
+				} else {
+					requestCallback = null;
+					requestActive = false;
+					rmi.ev.loading.fire(false);
+				}
+				return;
 			default:
 				rmi.ev.newMessage.fire(data);
 		}
@@ -88,6 +101,17 @@ define([
 		var cl = ws;
 		ws = null;
 		cl.close();
+	};
+
+	rmi.sendAsync   = function(data) { ws.send(data); };
+	rmi.sendRequest = function(data, callback) {
+		if (requestActive) waitingRequests.push([data, callback]);
+		else {
+			rmi.ev.loading.fire(true);
+			requestActive = true;
+			requestCallback = callback;
+			ws.send(data);
+		}
 	};
 
 	return rmi;

@@ -16,7 +16,9 @@
  * along with cflib. If not, see <http://www.gnu.org/licenses/>.
  */
 
-define(function() {
+define([
+	'cflib/util/util'
+], function(util) {
 
 	// returns -1 if not enough data available
 	function decodeBERTag(data, start, len)
@@ -144,7 +146,12 @@ define(function() {
 			this.data.set(d, od.length);
 		},
 
-		writeNull: function() { this.add([0xD0, 0x81, 0x00]); },
+		writeNull: function() { this.add([0xC0, 0x81, 0x00]); },
+		writeZero: function(tagNo) {
+			var tag = createTag(tagNo);
+			tag.push(0);
+			this.add(tag);
+		},
 
 		i: function(val) {
 			var tagNo = this.noInc ? this.tagNo : ++this.tagNo;
@@ -174,6 +181,22 @@ define(function() {
 			return this;
 		},
 
+		f32: function(val) {
+			var tagNo = this.noInc ? this.tagNo : ++this.tagNo;
+			if (!val) {
+				if (tagNo === 0) this.writeNull();
+				return this;
+			}
+
+			var tag = createTag(tagNo);
+			tag.push(4);
+			this.add(tag);
+			var fa = new Float32Array(1);
+			fa[0] = val;
+			this.add(new Uint8Array(fa.buffer));
+			return this;
+		},
+
 		f64: function(val) {
 			var tagNo = this.noInc ? this.tagNo : ++this.tagNo;
 			if (!val) {
@@ -188,6 +211,21 @@ define(function() {
 			fa[0] = val;
 			this.add(new Uint8Array(fa.buffer));
 			return this;
+		},
+
+		s: function(str) {
+			var tagNo = this.noInc ? this.tagNo : ++this.tagNo;
+			if (!str) {
+				if (str == '')        this.writeZero(tagNo);
+				else if (tagNo === 0) this.writeNull();
+				return this;
+			}
+
+			var u8 = util.toUTF8(str);
+			var tag = createTag(tagNo);
+			this.add(tag.concat(encodeBERLength(u8.length)));
+			this.add(u8);
+			return this;
 		}
 
 	});
@@ -199,7 +237,7 @@ define(function() {
 
 	ber.decodeTLV = decodeTLV;
 	ber.makeTLV = makeTLV;
-	ber.S = function() { return new Serializer(); };
+	ber.S = function(disableTagNumbering) { return new Serializer(disableTagNumbering); };
 
 	return ber;
 });
