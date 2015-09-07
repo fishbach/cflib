@@ -262,14 +262,14 @@ private slots:
 		t2.t1.b = 0;
 		QVERIFY(checkSerDeser<Test2>(t2, "E1 03 C2 01 43"));
 		t2.a = 0;
-		QVERIFY(checkSerDeser<Test2>(t2, "e1 00"));
+		QVERIFY(checkSerDeser<Test2>(t2, ""));
 		t2.t1.a = 0x42;
 		QVERIFY(checkSerDeser<Test2>(t2, "e1 05 e1 03 c1 01 42"));
 	}
 
 	void lists()
 	{
-		QVERIFY(checkSerDeser<QList<quint8 > >(QList<quint8 >(), "e100"));
+		QVERIFY(checkSerDeser<QList<quint8 > >(QList<quint8 >(), ""));
 		QVERIFY(checkSerDeser<QList<quint8 > >(QList<quint8 >() << 0x42, "e103c00142"));
 		QVERIFY(checkSerDeser<QList<quint8 > >(QList<quint8 >() << 0x42 << 0x43, "e106c00142c00143"));
 		QVERIFY(checkSerDeser<QStringList    >(QStringList() << QString("XY") << QString() << "" << "A",
@@ -286,7 +286,7 @@ private slots:
 	{
 		typedef QMap<QString, int> Map;
 		Map map;
-		QVERIFY(checkSerDeser<Map>(map, "e100"));
+		QVERIFY(checkSerDeser<Map>(map, ""));
 		map["xy"] = 4;
 		QVERIFY(checkSerDeser<Map>(map, "e107 c0027879 c00104"));
 		map["xyz"] = 7;

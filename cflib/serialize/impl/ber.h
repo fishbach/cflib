@@ -283,7 +283,7 @@ class TLWriter
 {
 public:
 	TLWriter(QByteArray & data, quint64 tag, quint8 tagLen) :
-		data_(data)
+		data_(data), tag_(tag), tagLen_(tagLen)
 	{
 		writeTag(data, setConstructedBit(tag, tagLen), tagLen);
 		data += '\0';
@@ -292,11 +292,22 @@ public:
 
 	~TLWriter()
 	{
-		insertBERLength(data_, oldSize_);
+		if (oldSize_ == data_.size()) {
+			if (!isZeroTag(tag_, tagLen_)) {
+				data_.resize(oldSize_ - tagLen_ - 1);
+			} else {
+				data_[oldSize_ - 1] = '\x81';
+				data_ += '\0';
+			}
+		} else {
+			insertBERLength(data_, oldSize_);
+		}
 	}
 
 private:
 	QByteArray & data_;
+	const quint64 tag_;
+	const quint8 tagLen_;
 	int oldSize_;
 };
 

@@ -222,9 +222,9 @@ define([
 			return this;
 		},
 
-		a: function(byteArray) {
+		a: function(byteArray, emptyIsNull) {
 			if (!byteArray            ) return this.n();
-			if (byteArray.length === 0) return this.z();
+			if (byteArray.length === 0) return emptyIsNull ? this.n() : this.z();
 
 			var tag = createTag(this.noInc ? this.tagNo : ++this.tagNo);
 			this.add(tag.concat(encodeBERLength(byteArray.length)));
@@ -241,7 +241,7 @@ define([
 			if (!list) return this.n();
 			var S = new Serializer(true);
 			for (var i = 0, l = list.length ; i < l ; ++i) func(list[i], S);
-			return this.a(S.data);
+			return this.a(S.data, true);
 		}
 
 	});

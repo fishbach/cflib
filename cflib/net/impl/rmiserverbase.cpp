@@ -193,13 +193,13 @@ QString getSerializeCode(const SerializeTypeInfo & ti, const QString & name)
 {
 	QString js;
 	if (ti.type == SerializeTypeInfo::Class) {
-		js << ".o(" << name << ")";
+		js << ".o(" << name << ", true)";
 	} else if (ti.type == SerializeTypeInfo::Container) {
 		if (ti.typeName.startsWith("Pair<")) {
 			js	<< ".a(!" << name << " ? null : __ber.S()"
 				<< getSerializeCode(ti.bases[0], name + "[0]")
 				<< getSerializeCode(ti.bases[1], name + "[1]")
-				<< ".data)";
+				<< ".data, true)";
 		} else if (ti.typeName.startsWith("List<")) {
 			js	<< ".map(" << name << ", function(__e, __S) { __S"
 				<< getSerializeCode(ti.bases[0], "__e") << "; })";
