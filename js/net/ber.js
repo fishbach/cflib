@@ -234,7 +234,7 @@ define([
 
 		o: function(obj) {
 			if (!obj) return this.n();
-			return this.a(obj.__serialize());
+			return this.a(obj.__serialize(), true);
 		},
 
 		map: function(list, func) {

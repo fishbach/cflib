@@ -193,7 +193,7 @@ QString getSerializeCode(const SerializeTypeInfo & ti, const QString & name)
 {
 	QString js;
 	if (ti.type == SerializeTypeInfo::Class) {
-		js << ".o(" << name << ", true)";
+		js << ".o(" << name << ")";
 	} else if (ti.type == SerializeTypeInfo::Container) {
 		if (ti.typeName.startsWith("Pair<")) {
 			js	<< ".a(!" << name << " ? null : __ber.S()"
@@ -575,7 +575,7 @@ QString RMIServerBase::generateJSForClass(const SerializeTypeInfo & ti) const
 		"};\n"
 		<< nsPrefix << ti.typeName << ".prototype.__serialize = function() {\n"
 		"\treturn __ber.S()";
-	if (!base.isEmpty()) js << ".a(" << base << ".prototype.__serialize.call(this))";
+	if (!base.isEmpty()) js << ".a(" << base << ".prototype.__serialize.call(this), true)";
 	foreach (const SerializeVariableTypeInfo & vti, ti.members) {
 		js << getSerializeCode(vti.type, "this." + formatMembernameForJS(vti));
 	}
