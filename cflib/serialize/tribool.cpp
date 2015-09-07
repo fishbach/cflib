@@ -30,9 +30,9 @@ void serializeTypeInfo(SerializeTypeInfoImpl & si, TriBool *)
 	si.typeName = "tribool";
 }
 
-void serializeBER(const TriBool & val, quint64 tag, quint8 tagLen, QByteArray & data, BERSerializerBase &)
+void serializeBER(const TriBool & val, quint64 tagNo, QByteArray & data, BERSerializerBase &)
 {
-	serializeBERInt(val.toInt(), tag, tagLen, data);
+	serializeBERInt(val.toInt(), tagNo, data);
 }
 
 void deserializeBER(TriBool & val, const quint8 * data, int len, BERDeserializerBase &)

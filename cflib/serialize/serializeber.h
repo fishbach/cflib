@@ -27,10 +27,11 @@ class BERSerializer
 public:
 	BERSerializer(quint64 tagNo = 0) : lenPos_(0), data_(), base_(data_) {
 		if (tagNo > 0) {
-			quint8 tagLen;
-			quint64 tag = impl::createTag(tagNo, tagLen);
-			impl::writeTag(data_, impl::setConstructedBit(tag, tagLen), tagLen);
-			data_ += '\0';
+			const quint8 tagLen = impl::calcTagLen(tagNo);
+			data_.resize(tagLen + 1);
+			quint8 * pos = (quint8 *)data_.constData();
+			impl::writeTagBytes(pos, tagNo, true, tagLen);
+			pos[tagLen] = '\0';
 			lenPos_ = tagLen + 1;
 		}
 	}

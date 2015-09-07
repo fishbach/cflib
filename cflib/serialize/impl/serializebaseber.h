@@ -28,33 +28,32 @@ class BERSerializerBase
 	Q_DISABLE_COPY(BERSerializerBase)
 public:
 	BERSerializerBase(QByteArray & data, bool disableTagNumbering = false) :
-		data_(data), tag_(disableTagNumbering ? 0xC0 : 0xC1), tagLen_(1) {}
+		data_(data), tag_(disableTagNumbering ? 0 : 1) {}
 
 	template<typename T>
 	BERSerializerBase & operator<<(const T & cl)
 	{
-		serializeBER(cl, tag_, tagLen_, data_, *this); // *this is needed for C++ ADL
-		incTag(tag_, tagLen_);
+		serializeBER(cl, tag_, data_, *this); // *this is needed for C++ ADL
+		if (tag_ != 0) ++tag_;
 		return *this;
 	}
 
 	BERSerializerBase & operator<<(Placeholder)
 	{
-		incTag(tag_, tagLen_);
+		if (tag_ != 0) ++tag_;
 		return *this;
 	}
 
 private:
 	QByteArray & data_;
 	quint64 tag_;
-	quint8 tagLen_;
 };
 
 class BERDeserializerBase
 {
 public:
 	BERDeserializerBase(const quint8 * data, int len, bool disableTagNumbering = false) :
-		readPos_(data), bytesAvailable_(len), tag_(disableTagNumbering ? 0 : 1), tagLen_(1) {}
+		readPos_(data), bytesAvailable_(len), tag_(disableTagNumbering ? 0 : 1) {}
 
 	template<typename T>
 	BERDeserializerBase & operator>>(T & cl)
@@ -77,11 +76,11 @@ public:
 				}
 				readPos_        += tlvLen;
 				bytesAvailable_ -= tlvLen;
-				incTag(tag_, tagLen_);
+				if (tag_ != 0) ++tag_;
 				return *this;
 			} else if (tag > tag_) {
 				cl = T();	// default construct
-				incTag(tag_, tagLen_);
+				if (tag_ != 0) ++tag_;
 				return *this;
 			}
 
@@ -98,7 +97,7 @@ public:
 
 	BERDeserializerBase & operator>>(Placeholder)
 	{
-		incTag(tag_, tagLen_);
+		if (tag_ != 0) ++tag_;
 		return *this;
 	}
 
@@ -108,7 +107,6 @@ private:
 	const quint8 * readPos_;
 	int bytesAvailable_;
 	quint64 tag_;
-	quint8 tagLen_;
 };
 
 }}}	// namespace

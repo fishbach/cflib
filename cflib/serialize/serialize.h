@@ -24,11 +24,11 @@
 
 #define SERIALIZE_CLASS_USE_NULL(Class) \
 	namespace cflib { namespace serialize { namespace impl { \
-	template<> inline void serializeBER(const Class & cl, quint64 tag, quint8 tagLen, QByteArray & data, \
+	template<> inline void serializeBER(const Class & cl, quint64 tagNo, QByteArray & data, \
 		BERSerializerBase &) \
 	{ \
-		if (cl.isNull()) { writeNull(data, tag, tagLen); return; } \
-		TLWriter tlw(data, tag, tagLen); \
+		if (cl.isNull()) { writeNull(data, tagNo); return; } \
+		TLWriter tlw(data, tagNo); \
 		BERSerializerBase ser(data); \
 		cl.serialize(ser); \
 	} \

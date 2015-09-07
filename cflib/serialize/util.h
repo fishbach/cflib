@@ -26,25 +26,21 @@ namespace cflib { namespace serialize {
 // returns -1 if not enough data available
 // returns -2 if length is undefined (one byte: 0x80)
 // returns -3 if too big length was found (max TLV size is 2^32 - 1)
-inline qint32 getTLVLength(const QByteArray & data, quint64 & tag, int & tagLen, int & lengthSize)
+inline qint32 getTLVLength(const QByteArray & data, quint64 & tagNo, int & tagLen, int & lengthSize)
 {
-	quint64 tagBytes;
-	const qint64 valueLen = impl::decodeTLV((const quint8 *)data.constData(), data.size(), tagBytes, tagLen, lengthSize);
+	const qint64 valueLen = impl::decodeTLV((const quint8 *)data.constData(), data.size(), tagNo, tagLen, lengthSize);
 	if (valueLen < 0) return valueLen;
 	if (valueLen > Q_INT64_C(0x7FFFFFFF) - tagLen - lengthSize) return -3;
 	if (data.size() < tagLen + lengthSize + valueLen) return -1;
-	tag = impl::getTagNumber(tagBytes, tagLen);
 	return valueLen;
 }
 
 template<typename T>
-inline QByteArray toByteArray(const T & v, quint64 tag = 1)
+inline QByteArray toByteArray(const T & v, quint64 tagNo = 1)
 {
-	quint8 tagLen;
-	quint64 tagBytes = impl::createTag(tag, tagLen);
 	QByteArray rv;
 	impl::BERSerializerBase * dummy = 0;
-	impl::serializeBER(v, tagBytes, tagLen, rv, *dummy);
+	impl::serializeBER(v, tagNo, rv, *dummy);
 	return rv;
 }
 

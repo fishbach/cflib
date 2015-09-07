@@ -22,82 +22,6 @@
 
 namespace cflib { namespace serialize { namespace impl {
 
-inline bool isZeroTag(quint64 tag, quint8 tagLen)
-{
-	return (tag & 0x1f) == 0 && tagLen == 1;
-}
-
-inline bool isTagConstructed(quint64 tag, quint8 tagLen)
-{
-	return tag & (0x20 << ((tagLen-1) * 8));
-}
-
-inline quint64 setConstructedBit(quint64 tag, quint8 tagLen)
-{
-	return tag | (0x20 << ((tagLen-1) * 8));
-}
-
-inline quint64 createTag(quint64 tagNo, quint8 & tagLen)
-{
-	tagLen = 1;
-	if (tagNo < 0x1F) return 0xC0 | tagNo;
-
-	++tagLen;
-	quint64 rv = tagNo & 0x7F;
-	tagNo >>= 7;
-	while (tagNo > 0) {
-		rv |= ((tagNo & 0x7F) | 0x80) << ((++tagLen - 2) * 8);
-		tagNo >>= 7;
-	}
-	return rv | (0xDF << ((tagLen - 1) * 8));
-}
-
-inline quint64 getTagNumber(quint64 tagBytes, quint8 tagLen)
-{
-	// one byte tags
-	if (tagLen == 1) return tagBytes & 0x1F;
-
-	// multi byte tags
-	quint64 rv = tagBytes & 0x7F;
-	--tagLen;
-	for (quint8 i = 1 ; i < tagLen ; ++i) {
-		tagBytes >>= 8;
-		rv |= (tagBytes & 0x7F) << (i * 7);
-	}
-	return rv;
-}
-
-inline void incTag(quint64 & tag, quint8 & tagLen)
-{
-	if (isZeroTag(tag, tagLen)) return;
-	++tag;
-	if (tagLen == 1) {
-		if ((tag & 0x1F) == 0x1F) {
-			tag <<= 8;
-			tag |= 0x1F;
-			++tagLen;
-		}
-		return;
-	}
-	if ((tag & 0x80) == 0) return;
-
-	int c = 1;
-	for ( ; c < tagLen - 1 ; ++c) {
-		quint8 b = tag >> (c * 8);
-		if (b != 0xff) {
-			tag += Q_UINT64_C(0x01) << (c * 8);
-			tag &= ~Q_UINT64_C(0xff);
-			return;
-		}
-		tag &= ~(Q_UINT64_C(0x7f) << (c * 8));
-	}
-
-	// one byte more
-	tag <<= 8;
-	tag |= Q_UINT64_C(0x01) << (c * 8);
-	++tagLen;
-}
-
 inline quint8 minSizeOfUInt(quint64 v)
 {
 	if (v < 256) return 1;
@@ -139,21 +63,19 @@ inline quint8 minSizeOfInt(qint64 v)
 inline qint64 decodeBERTag(const quint8 * data, int len, int & tagLen)
 {
 	if (len < 1) return -1;
-	quint64 tag = *data & 0x1F;	// remove Class and P/C
+	quint64 tagNo = *data & 0x1F;	// remove Class and P/C
 	tagLen = 1;
-	if (tag == 0x1F) {
-		++tagLen;
-		if (len < tagLen) return -1;
-		tag <<= 8;
-		tag |= *(++data);
-		while (tag & 0x80) {
-			++tagLen;
-			if (len < tagLen) return -1;
-			tag <<= 8;
-			tag |= *(++data);
+	if (tagNo == 0x1F) {
+		if (len < ++tagLen) return -1;
+		quint8 b = *(++data);
+		tagNo = b & 0x7F;
+		while (b & 0x80) {
+			if (len < ++tagLen) return -1;
+			b = *(++data);
+			tagNo = (tagNo << 7) | (b & 0x7F);
 		}
 	}
-	return (qint64)tag;
+	return (qint64)tagNo;
 }
 
 // returns -1 if not enough data available
@@ -196,104 +118,101 @@ inline qint64 decodeBERLength(const quint8 * data, int len, int & lengthSize)
 // returns -1 if not enough data available
 // returns -2 if length is undefined (one byte: 0x80)
 // returns -3 if too big length was found
-inline qint64 decodeTLV(const quint8 * data, int len, quint64 & tag, int & tagLen, int & lengthSize)
+inline qint64 decodeTLV(const quint8 * data, int len, quint64 & tagNo, int & tagLen, int & lengthSize)
 {
-	qint64 & sTag = (qint64 &)tag;
+	qint64 & sTag = (qint64 &)tagNo;
 	sTag = decodeBERTag(data, len, tagLen);
 	if (sTag < 0) return -1;
 	return decodeBERLength(data + tagLen, len - tagLen, lengthSize);
 }
 
-// The first byte the length is returned. All other bytes are in lenBytes
-// If length < 0 the undefined length is written.
-inline quint8 encodeBERLength(qint64 length, QByteArray & lenBytes)
+inline quint8 calcBERlengthSize(qint64 length)
 {
-	// one byte encoding
-	if (length < 0)    return 0x80;
-	if (length < 0x80) return (quint8)length;
+	if (length < 0x80) return 1;
+	return minSizeOfUInt((quint64)length) + 1;
+}
 
-	// calculate needed bytes
+// If length < 0 the undefined length is written.
+inline void writeLenBytes(quint8 * pos, qint64 length, quint8 lengthSize)
+{
+	if (length < 0)      { *pos = 0x80; return; }
+	if (lengthSize == 1) { *pos = (quint8)length; return; }
+	*(pos++) = lengthSize | 0x80;
 	quint64 len = (quint64)length;
-	quint8 size = minSizeOfUInt(len);
-	const quint8 rv = size | 0x80;
-
-	lenBytes.resize(size);
-	quint8 * lb = (quint8 *)lenBytes.constData() + size;	// constData for performance
-
-	// write length
-	*(--lb) = (quint8)len;
-	while (--size > 0) {
-		len >>= 8;
-		*(--lb) = (quint8)len;
-	}
-
-	return rv;
+	while (--lengthSize) *(pos++) = (quint8)(len >> ((lengthSize - 1) * 8));
 }
 
 inline void insertBERLength(QByteArray & data, int oldSize)
 {
-	QByteArray lenBytes;
-	data[oldSize - 1] = encodeBERLength(data.size() - oldSize, lenBytes);
-	if (!lenBytes.isEmpty()) data.insert(oldSize, lenBytes);
+	const qint64 length = data.size() - oldSize;
+	const quint8 lengthSize = calcBERlengthSize(length);
+	if (lengthSize > 1) data.insert(oldSize, QByteArray(lengthSize - 1, '\0'));
+	writeLenBytes((quint8 *)data.constData() + oldSize - 1, length, lengthSize);
 }
 
-inline void writeTag(quint8 * pos, quint64 tag, quint8 tagLen)
+inline quint8 calcTagLen(quint64 tagNo)
 {
-	pos += tagLen;
-	*(--pos) = tag;
-	while (--tagLen) {
-		tag >>= 8;
-		*(--pos) = tag;
+	if (tagNo < 0x1F) return 1;
+	quint8 tagLen = 2;
+	quint64 tn = tagNo >> 7;
+	while (tn > 0) {
+		++tagLen;
+		tn >>= 7;
 	}
+	return tagLen;
 }
 
-inline void writeTag(QByteArray & data, quint64 tag, quint8 tagLen)
+inline void writeTagBytes(quint8 * pos, quint64 tagNo, bool constructed, quint8 tagLen)
 {
 	if (tagLen == 1) {
-		data += (char)tag;
-		return;
+		*pos = (constructed ? 0xE0 : 0xC0) | tagNo;
+	} else {
+		*(pos++) = constructed ? 0xFF : 0xDF;
+		while (--tagLen > 1) *(pos++) = ((tagNo >> ((tagLen - 1) * 7)) & 0x7F) | 0x80;
+		*(pos++) = tagNo & 0x7F;
 	}
-	const int oldSize = data.size();
-	data.resize(oldSize + tagLen);
-	writeTag((quint8 *)data.constData() + oldSize, tag, tagLen);
 }
 
-inline void writeNull(QByteArray & data, quint64 tag, quint8 tagLen)
+inline void writeNull(QByteArray & data, quint64 tagNo)
 {
-	if (!isZeroTag(tag, tagLen)) return;
-
+	if (tagNo > 0) return;
+	const quint8 tagLen = calcTagLen(tagNo);
 	const int oldSize = data.size();
 	data.resize(oldSize + tagLen + 2);
 	quint8 * pos = (quint8 *)data.constData() + oldSize;
-	writeTag(pos, tag, tagLen);
+	writeTagBytes(pos, tagNo, false, tagLen);
 	pos[tagLen] = 0x81;
 	pos[tagLen + 1] = 0;
 }
 
-inline void writeZero(QByteArray & data, quint64 tag, quint8 tagLen)
+inline void writeZero(QByteArray & data, quint64 tagNo)
 {
+	const quint8 tagLen = calcTagLen(tagNo);
 	const int oldSize = data.size();
 	data.resize(oldSize + tagLen + 1);
 	quint8 * pos = (quint8 *)data.constData() + oldSize;
-	writeTag(pos, tag, tagLen);
+	writeTagBytes(pos, tagNo, false, tagLen);
 	pos[tagLen] = 0;
 }
 
 class TLWriter
 {
 public:
-	TLWriter(QByteArray & data, quint64 tag, quint8 tagLen) :
-		data_(data), tag_(tag), tagLen_(tagLen)
+	TLWriter(QByteArray & data, quint64 tagNo) :
+		data_(data), tagNo_(tagNo), tagLen_(calcTagLen(tagNo))
 	{
-		writeTag(data, setConstructedBit(tag, tagLen), tagLen);
-		data += '\0';
-		oldSize_ = data.size();
+		const int oldSize = data.size();
+		oldSize_ = oldSize + tagLen_ + 1;
+		data.resize(oldSize_);
+		quint8 * pos = (quint8 *)data.constData() + oldSize;
+		writeTagBytes(pos, tagNo, true, tagLen_);
+		pos[tagLen_] = '\0';
 	}
 
 	~TLWriter()
 	{
 		if (oldSize_ == data_.size()) {
-			if (!isZeroTag(tag_, tagLen_)) {
+			if (tagNo_ > 0) {
 				data_.resize(oldSize_ - tagLen_ - 1);
 			} else {
 				data_[oldSize_ - 1] = '\x81';
@@ -306,7 +225,7 @@ public:
 
 private:
 	QByteArray & data_;
-	const quint64 tag_;
+	const quint64 tagNo_;
 	const quint8 tagLen_;
 	int oldSize_;
 };

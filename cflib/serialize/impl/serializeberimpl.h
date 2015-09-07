@@ -28,18 +28,19 @@ namespace cflib { namespace serialize { namespace impl {
 // ============================================================================
 
 template<typename T>
-inline void serializeBERInt(T v, quint64 tag, quint8 tagLen, QByteArray & data, bool isMaxUInt = false)
+inline void serializeBERInt(T v, quint64 tagNo, QByteArray & data, bool isMaxUInt = false)
 {
-	if (v == 0) { writeNull(data, tag, tagLen); return; }
+	if (v == 0) { writeNull(data, tagNo); return; }
 
 	quint8 len = isMaxUInt ? 9 : minSizeOfInt(v);
 
+	const quint8 tagLen = calcTagLen(tagNo);
 	const int size = data.size();
 	data.resize(size + tagLen + 1 + len);
 	quint8 * p = (quint8 *)data.constData() + size;	// constData for performance
 
 	// write tag
-	writeTag(p, tag, tagLen);
+	writeTagBytes(p, tagNo, false, tagLen);
 	p += tagLen;
 
 	// write len
@@ -55,16 +56,17 @@ inline void serializeBERInt(T v, quint64 tag, quint8 tagLen, QByteArray & data, 
 }
 
 template<>
-inline void serializeBERInt(bool v, quint64 tag, quint8 tagLen, QByteArray & data, bool)
+inline void serializeBERInt(bool v, quint64 tagNo, QByteArray & data, bool)
 {
-	if (!v) { writeNull(data, tag, tagLen); return; }
+	if (!v) { writeNull(data, tagNo); return; }
 
+	const quint8 tagLen = calcTagLen(tagNo);
 	const int size = data.size();
 	data.resize(size + tagLen + 2);
 	quint8 * p = (quint8 *)data.constData() + size;	// constData for performance
 
 	// write tag
-	writeTag(p, tag, tagLen);
+	writeTagBytes(p, tagNo, false, tagLen);
 
 	// write len
 	p[tagLen] = 1;
@@ -73,9 +75,9 @@ inline void serializeBERInt(bool v, quint64 tag, quint8 tagLen, QByteArray & dat
 	p[tagLen + 1] = 1;
 }
 
-inline void serializeBERInt(quint64 v, quint64 tag, quint8 tagLen, QByteArray & data)
+inline void serializeBERInt(quint64 v, quint64 tagNo, QByteArray & data)
 {
-	serializeBERInt<quint64>(v, tag, tagLen, data, (v >> 63));
+	serializeBERInt<quint64>(v, tagNo, data, (v >> 63));
 }
 
 template<typename T>
@@ -100,8 +102,8 @@ inline void deserializeBERInt(bool & v, const quint8 * data, int len)
 // ----------------------------------------------------------------------------
 
 #define DO_SERIALIZE_BER(typ) \
-	inline void serializeBER(typ val, quint64 tag, quint8 tagLen, QByteArray & data, BERSerializerBase &) { \
-		serializeBERInt(val, tag, tagLen, data); } \
+	inline void serializeBER(typ val, quint64 tag, QByteArray & data, BERSerializerBase &) { \
+		serializeBERInt(val, tag, data); } \
 	inline void deserializeBER(typ & val, const quint8 * data, int len, BERDeserializerBase &) { \
 		deserializeBERInt(val, data, len); } \
 
@@ -120,12 +122,17 @@ DO_SERIALIZE_BER(quint64)
 // float
 // ============================================================================
 
-inline void serializeBER(float d, quint64 tag, quint8 tagLen, QByteArray & data, BERSerializerBase &)
+inline void serializeBER(float d, quint64 tagNo, QByteArray & data, BERSerializerBase &)
 {
-	if (d == 0) { writeNull(data, tag, tagLen); return; }
-	writeTag(data, tag, tagLen);
-	data += 4;
-	data.append((const char *)&d, 4);
+	if (d == 0) { writeNull(data, tagNo); return; }
+	const quint8 tagLen = calcTagLen(tagNo);
+	const int oldSize = data.size();
+	data.resize(oldSize + tagLen + 5);
+	quint8 * pos = (quint8 *)data.constData() + oldSize;
+	writeTagBytes(pos, tagNo, false, tagLen);
+	pos += tagLen;
+	*(pos++) = 4;
+	memcpy(pos, (const char *)&d, 4);
 }
 
 inline void deserializeBER(float & d, const quint8 * data, int len, BERDeserializerBase &)
@@ -133,12 +140,17 @@ inline void deserializeBER(float & d, const quint8 * data, int len, BERDeseriali
 	d = len != 4 ? 0 : *((const float *)data);
 }
 
-inline void serializeBER(double d, quint64 tag, quint8 tagLen, QByteArray & data, BERSerializerBase &)
+inline void serializeBER(double d, quint64 tagNo, QByteArray & data, BERSerializerBase &)
 {
-	if (d == 0) { writeNull(data, tag, tagLen); return; }
-	writeTag(data, tag, tagLen);
-	data += 8;
-	data.append((const char *)&d, 8);
+	if (d == 0) { writeNull(data, tagNo); return; }
+	const quint8 tagLen = calcTagLen(tagNo);
+	const int oldSize = data.size();
+	data.resize(oldSize + tagLen + 9);
+	quint8 * pos = (quint8 *)data.constData() + oldSize;
+	writeTagBytes(pos, tagNo, false, tagLen);
+	pos += tagLen;
+	*(pos++) = 8;
+	memcpy(pos, (const char *)&d, 8);
 }
 
 inline void deserializeBER(double & d, const quint8 * data, int len, BERDeserializerBase &)
@@ -146,12 +158,17 @@ inline void deserializeBER(double & d, const quint8 * data, int len, BERDeserial
 	d = len != 8 ? 0 : *((const double *)data);
 }
 
-inline void serializeBER(long double d, quint64 tag, quint8 tagLen, QByteArray & data, BERSerializerBase &)
+inline void serializeBER(long double d, quint64 tagNo, QByteArray & data, BERSerializerBase &)
 {
-	if (d == 0) { writeNull(data, tag, tagLen); return; }
-	writeTag(data, tag, tagLen);
-	data += 16;
-	data.append((const char *)&d, 16);
+	if (d == 0) { writeNull(data, tagNo); return; }
+	const quint8 tagLen = calcTagLen(tagNo);
+	const int oldSize = data.size();
+	data.resize(oldSize + tagLen + 17);
+	quint8 * pos = (quint8 *)data.constData() + oldSize;
+	writeTagBytes(pos, tagNo, false, tagLen);
+	pos += tagLen;
+	*(pos++) = 16;
+	memcpy(pos, (const char *)&d, 16);
 }
 
 inline void deserializeBER(long double & d, const quint8 * data, int len, BERDeserializerBase &)
@@ -168,16 +185,19 @@ inline void deserializeBER(long double & d, const quint8 * data, int len, BERDes
 // QByteArray
 // ----------------------------------------------------------------------------
 
-inline void serializeBER(const QByteArray & ba, quint64 tag, quint8 tagLen, QByteArray & data, BERSerializerBase &)
+inline void serializeBER(const QByteArray & ba, quint64 tagNo, QByteArray & data, BERSerializerBase &)
 {
-	if (ba.isNull())  { writeNull(data, tag, tagLen); return; }
-	if (ba.isEmpty()) { writeZero(data, tag, tagLen); return; }
+	if (ba.isNull())  { writeNull(data, tagNo); return; }
+	if (ba.isEmpty()) { writeZero(data, tagNo); return; }
 
-	writeTag(data, tag, tagLen);
-	QByteArray lenBytes;
-	data += (char)encodeBERLength(ba.size(), lenBytes);
-	if (!lenBytes.isEmpty()) data += lenBytes;
-	data += ba;
+	const quint8 tagLen = calcTagLen(tagNo);
+	const quint8 lengthSize = calcBERlengthSize(ba.size());
+	const int oldSize = data.size();
+	data.resize(oldSize + tagLen + lengthSize + ba.size());
+	quint8 * pos = (quint8 *)data.constData() + oldSize;
+	writeTagBytes(pos, tagNo, false, tagLen);
+	writeLenBytes(pos + tagLen, ba.size(), lengthSize);
+	memcpy(pos + tagLen + lengthSize, ba.constData(), ba.size());
 }
 
 inline void deserializeBER(QByteArray & ba, const quint8 * data, int len, BERDeserializerBase &)
@@ -189,11 +209,11 @@ inline void deserializeBER(QByteArray & ba, const quint8 * data, int len, BERDes
 // QString
 // ----------------------------------------------------------------------------
 
-inline void serializeBER(const QString & str, quint64 tag, quint8 tagLen, QByteArray & data, BERSerializerBase & ser)
+inline void serializeBER(const QString & str, quint64 tagNo, QByteArray & data, BERSerializerBase & ser)
 {
-	if (str.isNull())  { writeNull(data, tag, tagLen); return; }
-	if (str.isEmpty()) { writeZero(data, tag, tagLen); return; }
-	serializeBER(str.toUtf8(), tag, tagLen, data, ser);
+	if (str.isNull())  { writeNull(data, tagNo); return; }
+	if (str.isEmpty()) { writeZero(data, tagNo); return; }
+	serializeBER(str.toUtf8(), tagNo, data, ser);
 }
 
 inline void deserializeBER(QString & str, const quint8 * data, int len, BERDeserializerBase &)
@@ -205,38 +225,31 @@ inline void deserializeBER(QString & str, const quint8 * data, int len, BERDeser
 // const char * (use QByteArray for deserialization)
 // ----------------------------------------------------------------------------
 
-inline void serializeBER(const char * str, quint64 tag, quint8 tagLen, QByteArray & data, BERSerializerBase &)
+inline void serializeBER(const char * str, quint64 tagNo, QByteArray & data, BERSerializerBase &)
 {
-	if (str == 0) { writeNull(data, tag, tagLen); return; }
+	if (str == 0) { writeNull(data, tagNo); return; }
 
 	const qint64 len = strlen(str);
-	if (len == 0) { writeZero(data, tag, tagLen); return; }
+	if (len == 0) { writeZero(data, tagNo); return; }
 
-	QByteArray lenBytes;
-	const quint8 fb = encodeBERLength(len, lenBytes);
-
-	const int size = data.size();
-	data.resize(size + 2 + lenBytes.size() + len);
-	quint8 * p = (quint8 *)data.constData() + size;	// constData for performance
-
-	// write tag
-	writeTag(p, tag, tagLen);
-	p += tagLen;
-
-	*p = fb;
-	memcpy(++p, lenBytes.constData(), lenBytes.size());
-	p += lenBytes.size();
-	memcpy(p, str, len);
+	const quint8 tagLen = calcTagLen(tagNo);
+	const quint8 lengthSize = calcBERlengthSize(len);
+	const int oldSize = data.size();
+	data.resize(oldSize + tagLen + lengthSize + len);
+	quint8 * pos = (quint8 *)data.constData() + oldSize;
+	writeTagBytes(pos, tagNo, false, tagLen);
+	writeLenBytes(pos + tagLen, len, lengthSize);
+	memcpy(pos + tagLen + lengthSize, str, len);
 }
 
 // ----------------------------------------------------------------------------
 // QChar
 // ----------------------------------------------------------------------------
 
-inline void serializeBER(const QChar & c, quint64 tag, quint8 tagLen, QByteArray & data, BERSerializerBase &)
+inline void serializeBER(const QChar & c, quint64 tagNo, QByteArray & data, BERSerializerBase &)
 {
-	if (c.isNull())  { writeNull(data, tag, tagLen); return; }
-	serializeBERInt(c.unicode(), tag, tagLen, data);
+	if (c.isNull())  { writeNull(data, tagNo); return; }
+	serializeBERInt(c.unicode(), tagNo, data);
 }
 
 inline void deserializeBER(QChar & c, const quint8 * data, int len, BERDeserializerBase &)
@@ -255,10 +268,10 @@ inline void deserializeBER(QChar & c, const quint8 * data, int len, BERDeseriali
 // QDateTime
 // ----------------------------------------------------------------------------
 
-inline void serializeBER(const QDateTime & dt, quint64 tag, quint8 tagLen, QByteArray & data, BERSerializerBase &)
+inline void serializeBER(const QDateTime & dt, quint64 tagNo, QByteArray & data, BERSerializerBase &)
 {
-	if (dt.isNull()) { writeNull(data, tag, tagLen); return; }
-	serializeBERInt(dt.toMSecsSinceEpoch(), tag, tagLen, data);
+	if (dt.isNull()) { writeNull(data, tagNo); return; }
+	serializeBERInt(dt.toMSecsSinceEpoch(), tagNo, data);
 }
 
 inline void deserializeBER(QDateTime & dt, const quint8 * data, int len, BERDeserializerBase &)
@@ -273,9 +286,9 @@ inline void deserializeBER(QDateTime & dt, const quint8 * data, int len, BERDese
 // ----------------------------------------------------------------------------
 
 template<typename T>
-inline void serializeBER(const QFlags<T> & fl, quint64 tag, quint8 tagLen, QByteArray & data, BERSerializerBase &)
+inline void serializeBER(const QFlags<T> & fl, quint64 tagNo, QByteArray & data, BERSerializerBase &)
 {
-	serializeBERInt((int)fl, tag, tagLen, data);
+	serializeBERInt((int)fl, tagNo, data);
 }
 
 template<typename T>
@@ -298,9 +311,9 @@ inline void deserializeBER(QFlags<T> & fl, const quint8 * data, int len, BERDese
 // ----------------------------------------------------------------------------
 
 template<typename T1, typename T2>
-inline void serializeBER(const QPair<T1, T2> & cl, quint64 tag, quint8 tagLen, QByteArray & data, BERSerializerBase &)
+inline void serializeBER(const QPair<T1, T2> & cl, quint64 tagNo, QByteArray & data, BERSerializerBase &)
 {
-	TLWriter tlw(data, tag, tagLen);
+	TLWriter tlw(data, tagNo);
 	BERSerializerBase ser(data);
 	ser << cl.first << cl.second;
 }
@@ -317,9 +330,9 @@ inline void deserializeBER(QPair<T1, T2> & cl, const quint8 * data, int len, BER
 // ----------------------------------------------------------------------------
 
 template<typename T>
-inline void serializeBER(const QList<T> & cl, quint64 tag, quint8 tagLen, QByteArray & data, BERSerializerBase &)
+inline void serializeBER(const QList<T> & cl, quint64 tagNo, QByteArray & data, BERSerializerBase &)
 {
-	TLWriter tlw(data, tag, tagLen);
+	TLWriter tlw(data, tagNo);
 	BERSerializerBase ser(data, true);
 	for (typename QList<T>::const_iterator it = cl.begin() ; it != cl.end() ; ++it) ser << *it;
 }
@@ -339,9 +352,9 @@ inline void deserializeBER(QList<T> & cl, const quint8 * data, int len, BERDeser
 // QStringList
 // ----------------------------------------------------------------------------
 
-inline void serializeBER(const QStringList & cl, quint64 tag, quint8 tagLen, QByteArray & data, BERSerializerBase & ser)
+inline void serializeBER(const QStringList & cl, quint64 tagNo, QByteArray & data, BERSerializerBase & ser)
 {
-	serializeBER((const QList<QString> &)cl, tag, tagLen, data, ser);
+	serializeBER((const QList<QString> &)cl, tagNo, data, ser);
 }
 
 inline void deserializeBER(QStringList & cl, const quint8 * data, int len, BERDeserializerBase & ser)
@@ -354,9 +367,9 @@ inline void deserializeBER(QStringList & cl, const quint8 * data, int len, BERDe
 // ----------------------------------------------------------------------------
 
 template<typename T>
-inline void serializeBER(const QLinkedList<T> & cl, quint64 tag, quint8 tagLen, QByteArray & data, BERSerializerBase &)
+inline void serializeBER(const QLinkedList<T> & cl, quint64 tagNo, QByteArray & data, BERSerializerBase &)
 {
-	TLWriter tlw(data, tag, tagLen);
+	TLWriter tlw(data, tagNo);
 	BERSerializerBase ser(data, true);
 	for (typename QLinkedList<T>::const_iterator it = cl.begin() ; it != cl.end() ; ++it) ser << *it;
 }
@@ -377,9 +390,9 @@ inline void deserializeBER(QLinkedList<T> & cl, const quint8 * data, int len, BE
 // ----------------------------------------------------------------------------
 
 template<typename T>
-inline void serializeBER(const QVector<T> & cl, quint64 tag, quint8 tagLen, QByteArray & data, BERSerializerBase &)
+inline void serializeBER(const QVector<T> & cl, quint64 tagNo, QByteArray & data, BERSerializerBase &)
 {
-	TLWriter tlw(data, tag, tagLen);
+	TLWriter tlw(data, tagNo);
 	BERSerializerBase ser(data, true);
 	for (typename QVector<T>::const_iterator it = cl.begin() ; it != cl.end() ; ++it) ser << *it;
 }
@@ -400,9 +413,9 @@ inline void deserializeBER(QVector<T> & cl, const quint8 * data, int len, BERDes
 // ----------------------------------------------------------------------------
 
 template<typename T>
-inline void serializeBER(const QSet<T> & cl, quint64 tag, quint8 tagLen, QByteArray & data, BERSerializerBase &)
+inline void serializeBER(const QSet<T> & cl, quint64 tagNo, QByteArray & data, BERSerializerBase &)
 {
-	TLWriter tlw(data, tag, tagLen);
+	TLWriter tlw(data, tagNo);
 	BERSerializerBase ser(data, true);
 	for (typename QSet<T>::const_iterator it = cl.constBegin() ; it != cl.constEnd() ; ++it) ser << *it;
 }
@@ -423,9 +436,9 @@ inline void deserializeBER(QSet<T> & cl, const quint8 * data, int len, BERDeseri
 // ----------------------------------------------------------------------------
 
 template<typename Key, typename T>
-inline void serializeBER(const QHash<Key, T> & cl, quint64 tag, quint8 tagLen, QByteArray & data, BERSerializerBase &)
+inline void serializeBER(const QHash<Key, T> & cl, quint64 tagNo, QByteArray & data, BERSerializerBase &)
 {
-	TLWriter tlw(data, tag, tagLen);
+	TLWriter tlw(data, tagNo);
 	BERSerializerBase ser(data, true);
 	typename QHash<Key, T>::const_iterator it = cl.end();
 	typename QHash<Key, T>::const_iterator begin = cl.begin();
@@ -453,9 +466,9 @@ inline void deserializeBER(QHash<Key, T> & cl, const quint8 * data, int len, BER
 // ----------------------------------------------------------------------------
 
 template<typename Key, typename T>
-inline void serializeBER(const QMap<Key, T> & cl, quint64 tag, quint8 tagLen, QByteArray & data, BERSerializerBase &)
+inline void serializeBER(const QMap<Key, T> & cl, quint64 tagNo, QByteArray & data, BERSerializerBase &)
 {
-	TLWriter tlw(data, tag, tagLen);
+	TLWriter tlw(data, tagNo);
 	BERSerializerBase ser(data, true);
 	typename QMap<Key, T>::const_iterator it = cl.end();
 	typename QMap<Key, T>::const_iterator begin = cl.begin();
@@ -484,9 +497,9 @@ inline void deserializeBER(QMap<Key, T> & cl, const quint8 * data, int len, BERD
 // ============================================================================
 
 template<typename T>
-inline void serializeBER(const T & cl, quint64 tag, quint8 tagLen, QByteArray & data, BERSerializerBase &)
+inline void serializeBER(const T & cl, quint64 tagNo, QByteArray & data, BERSerializerBase &)
 {
-	TLWriter tlw(data, tag, tagLen);
+	TLWriter tlw(data, tagNo);
 	BERSerializerBase ser(data);
 	cl.serialize(ser);
 }
