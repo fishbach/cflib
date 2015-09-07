@@ -171,11 +171,11 @@ define([
 			if (neg) val = -val - 1;
 			var b = val & 0xFF;
 			var bytes = [neg ? ~b : b];
-			val = val > 0xFFFFFFFF ? Math.floor(val / 16) : val >>> 8;
+			val = val > 0xFFFFFFFF ? Math.floor(val / 256) : val >>> 8;
 			while (val > 0) {
 				b = val & 0xFF;
 				bytes.unshift(neg ? ~b : b);
-				val = val > 0xFFFFFFFF ? Math.floor(val / 16) : val >>> 8;
+				val = val > 0xFFFFFFFF ? Math.floor(val / 256) : val >>> 8;
 			}
 			if ((b & 0x80) !== 0) {
 				if (neg) bytes.unshift(0xFF);
@@ -291,6 +291,20 @@ define([
 		},
 
 		i: function() {
+			var raw = this.read();
+			if (!raw) return 0;
+			var d = this.data;
+			var s = raw[0];
+			var e = s + raw[1];
+			console.log('se: ', s, e);
+			var rv = d[s++];
+			var neg = (rv & 0x80) !== 0;
+			console.log('rv: ', rv);
+			if (neg) rv = ~rv & 0xFF;
+			console.log('rv: ', rv);
+			while (s < e) rv = (rv * 256) + (neg ? ~d[s++] & 0xFF : d[s++]);
+			console.log(neg, rv);
+			return neg ? -rv - 1 : rv;
 		}
 
 	});
