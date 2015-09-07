@@ -296,15 +296,50 @@ define([
 			var d = this.data;
 			var s = raw[0];
 			var e = s + raw[1];
-			console.log('se: ', s, e);
 			var rv = d[s++];
 			var neg = (rv & 0x80) !== 0;
-			console.log('rv: ', rv);
 			if (neg) rv = ~rv & 0xFF;
-			console.log('rv: ', rv);
 			while (s < e) rv = (rv * 256) + (neg ? ~d[s++] & 0xFF : d[s++]);
-			console.log(neg, rv);
 			return neg ? -rv - 1 : rv;
+		},
+
+		f32: function() {
+			var raw = this.read();
+			if (!raw || raw[1] != 4) return 0;
+			var a = new Uint8Array(4);
+			a.set(new Uint8Array(this.data.buffer, raw[0], 4));
+			return (new Float32Array(a.buffer))[0];
+		},
+
+		f64: function() {
+			var raw = this.read();
+			if (!raw || raw[1] != 8) return 0;
+			var a = new Uint8Array(8);
+			a.set(new Uint8Array(this.data.buffer, raw[0], 8));
+			return (new Float64Array(a.buffer))[0];
+		},
+
+		s: function() {
+			var raw = this.read();
+			if (!raw) return null;
+			var len = raw[1];
+			if (len === 0) return '';
+			return util.fromUTF8(new Uint8Array(this.data.buffer, raw[0], len));
+		},
+
+		a: function() {
+			var raw = this.read();
+			if (!raw) return null;
+			return new Uint8Array(this.data.buffer, raw[0], raw[1]);
+		},
+
+		map: function(func) {
+			var raw = this.read();
+			if (!raw) return [];
+			var D = new Deserializer(this.data, raw[0], raw[1], true);
+			var rv = [];
+			while (D.len > 0) rv.push(func(D));
+			return rv;
 		}
 
 	});
