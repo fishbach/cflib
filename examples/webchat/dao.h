@@ -26,6 +26,9 @@ class Dao
 public serialized:
 	QString name;
 	quint32 number;
+	typedef QList<quint32> List;
+	typedef QPair<List, QDateTime> Pair;
+	QPair<quint8, Pair> pair;
 };
 
 class Dao2

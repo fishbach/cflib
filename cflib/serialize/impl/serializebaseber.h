@@ -54,8 +54,7 @@ class BERDeserializerBase
 {
 public:
 	BERDeserializerBase(const quint8 * data, int len, bool disableTagNumbering = false) :
-		readPos_(data), bytesAvailable_(len), tag_(disableTagNumbering ? 0 : 1), tagLen_(1),
-		wasLastAvailable_(false) {}
+		readPos_(data), bytesAvailable_(len), tag_(disableTagNumbering ? 0 : 1), tagLen_(1) {}
 
 	template<typename T>
 	BERDeserializerBase & operator>>(T & cl)
@@ -78,11 +77,9 @@ public:
 				}
 				readPos_        += tlvLen;
 				bytesAvailable_ -= tlvLen;
-				wasLastAvailable_ = true;
 				incTag(tag_, tagLen_);
 				return *this;
 			} else if (tag > tag_) {
-				wasLastAvailable_ = false;
 				cl = T();	// default construct
 				incTag(tag_, tagLen_);
 				return *this;
@@ -95,7 +92,6 @@ public:
 
 		// some error occured
 		bytesAvailable_ = 0;
-		wasLastAvailable_ = false;
 		cl = T();	// default construct
 		return *this;
 	}
@@ -107,14 +103,12 @@ public:
 	}
 
 	bool isAnyAvailable()   const { return bytesAvailable_ > 0; }
-	bool wasLastAvailable() const { return wasLastAvailable_; }
 
 private:
 	const quint8 * readPos_;
 	int bytesAvailable_;
 	quint64 tag_;
 	quint8 tagLen_;
-	bool wasLastAvailable_;
 };
 
 }}}	// namespace

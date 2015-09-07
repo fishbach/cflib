@@ -71,7 +71,7 @@ class JSDeserializerBase
 {
 public:
 	JSDeserializerBase(const quint8 * data, int len) :
-		readPos_(data), bytesAvailable_(len), wasLastAvailable_(false)
+		readPos_(data), bytesAvailable_(len)
 	{
 		if (bytesAvailable_ < 2 || *readPos_ != (quint8)'[' || readPos_[bytesAvailable_ - 1] != (quint8)']') {
 			bytesAvailable_ = 0;
@@ -88,10 +88,8 @@ public:
 		const int avail = (pos == -1) ? bytesAvailable_ : pos;
 		if (avail == 0) {
 			cl = T();	// default construct
-			wasLastAvailable_ = false;
 		} else {
 			deserializeJS(cl, readPos_, avail, *this); // *this is needed for C++ ADL
-			wasLastAvailable_ = true;
 		}
 		if (pos == -1) bytesAvailable_ = 0;
 		else {
@@ -113,12 +111,10 @@ public:
 	}
 
 	bool isAnyAvailable()   const { return bytesAvailable_ > 0; }
-	bool wasLastAvailable() const { return wasLastAvailable_; }
 
 private:
 	const quint8 * readPos_;
 	int bytesAvailable_;
-	bool wasLastAvailable_;
 };
 
 }}}	// namespace

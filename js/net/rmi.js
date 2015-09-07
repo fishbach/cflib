@@ -52,7 +52,6 @@ define([
 		}
 		data = new Uint8Array(data);
 		var tlv = ber.decodeTLV(data, 0, data.length);
-		console.log(tlv, data);
 		switch (tlv[1]) {
 			case 1:
 				storage.set('clId', util.toBase64(new Uint8Array(data.buffer, tlv[2] + tlv[3], tlv[0])), true);

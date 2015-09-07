@@ -128,33 +128,48 @@ QString formatJSTypeConstruction(const SerializeTypeInfo & ti, const QString & r
 {
 	QString js;
 	if (ti.type == SerializeTypeInfo::Class) {
-		js << "new " << formatClassnameForJS(ti) << "(" << raw << ")";
+		js << "new " << formatClassnameForJS(ti) << "(" << (raw == "null" ? "" : raw) << ")";
 	} else if (ti.type == SerializeTypeInfo::Container) {
 		if (ti.typeName.startsWith("Pair<")) {
-			js	<< raw << " === undefined ? [] : ["
+			if (raw == "null") js << "["
+				<< formatJSTypeConstruction(ti.bases[0], "null") << ", "
+				<< formatJSTypeConstruction(ti.bases[1], "null") << "]";
+			else js << "(!" << raw << " ? ["
+				<< formatJSTypeConstruction(ti.bases[0], "null") << ", "
+				<< formatJSTypeConstruction(ti.bases[1], "null") << "] : ["
 				<< formatJSTypeConstruction(ti.bases[0], raw + "[0]") << ", "
-				<< formatJSTypeConstruction(ti.bases[1], raw + "[1]") << "]";
+				<< formatJSTypeConstruction(ti.bases[1], raw + "[1]") << "])";
 		} else if (ti.typeName.startsWith("List<")) {
-			js	<< "__inherit.map(" << raw << ", function(__e) { return "
+			if (raw == "null") js << "[]";
+			else js << "__inherit.map(" << raw << ", function(__e) { return "
 				<< formatJSTypeConstruction(ti.bases[0], "__e") << "; })";
 		} else if (ti.typeName.startsWith("Map<")) {
-			js	<< "__inherit.map(" << raw << ", function(__e) { return ["
+			if (raw == "null") js << "[]";
+			else js << "__inherit.map(" << raw << ", function(__e) { return ["
 				<< formatJSTypeConstruction(ti.bases[0], "__e[0]")
 				<< ", "
 				<< formatJSTypeConstruction(ti.bases[1], "__e[1]") << "]; })";
 		}
 	} else if (ti.type == SerializeTypeInfo::Basic) {
 		if (ti.typeName == "DateTime") {
-			js << "(!" << raw << " ? null : new Date(" << raw << "))";
-		} else if (ti.typeName == "String" || ti.typeName == "ByteArray") {
-			js << "(" << raw << " === undefined ? null : " << raw << ")";
-		} else if (ti.typeName.indexOf("int") != -1 || ti.typeName == "tribool") {
-			js << "(" << raw << " === undefined ? 0 : " << raw << ")";
+			if (raw == "null") js << "null";
+			else               js << "(!" << raw << " ? null : new Date(" << raw << "))";
+		} else if (ti.typeName == "String") {
+			if (raw == "null") js << "null";
+			else               js << "(!" << raw << "&& " << raw << " !== '' ? null : " << raw << ")";
+		} else if (ti.typeName == "ByteArray") {
+			if (raw == "null") js << "null";
+			else               js << "(!" << raw << " ? null : " << raw << ")";
+		} else if (ti.typeName.indexOf("int") != -1) {
+			if (raw == "null") js << "0";
+			else               js << "(!" << raw << " ? 0 : " << raw << ")";
+		} else if (ti.typeName == "tribool") {
+			if (raw == "null") js << "undefined";
+			else               js << "(" << raw << " === true || " << raw << " === 1 ? true : " << raw << " === false || " << raw << " === 2 ? false : undefined)";
 		} else if (ti.typeName == "bool") {
-			js << "(" << raw << " ? true : false)";
+			if (raw == "null") js << "false";
+			else               js << "(" << raw << " ? true : false)";
 		}
-	} else {	// SerializeTypeInfo::Null
-		js << "undefined";
 	}
 	return js;
 }

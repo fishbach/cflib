@@ -20,6 +20,7 @@ define([
 	'cflib/util/util'
 ], function(util) {
 
+	// returns [tag, tagLen]
 	// returns -1 if not enough data available
 	function decodeBERTag(data, start, len)
 	{
@@ -72,6 +73,7 @@ define([
 		return [retval, lengthSize];
 	}
 
+	// returns [valueLen, tag, tagLen, lengthSize]
 	// returns -1 if not enough data available
 	// returns -2 if length is undefined (one byte: 0x80)
 	// returns -3 if too big length was found
@@ -133,8 +135,7 @@ define([
 
 	function Serializer(disableTagNumbering)
 	{
-		this.tagNo = 0;
-		this.noInc = disableTagNumbering;
+		this.tagNo = disableTagNumbering ? 0 : 1;
 		this.data = new Uint8Array(0);
 	}
 	$.extend(Serializer.prototype, {
@@ -151,13 +152,13 @@ define([
 		},
 
 		n: function() {
-			var tagNo = this.noInc ? this.tagNo : ++this.tagNo;
-			if (tagNo === 0) this.add([0xC0, 0x81, 0x00]);
+			if (this.tagNo === 0) this.add([0xC0, 0x81, 0x00]);
+			else                  this.tagNo++;
 			return this;
 		},
 
-		z: function(tagNo) {
-			var tag = createTag(this.noInc ? this.tagNo : ++this.tagNo);
+		z: function() {
+			var tag = createTag(this.tagNo === 0 ? 0 : this.tagNo++);
 			tag.push(0);
 			this.add(tag);
 			return this;
@@ -181,7 +182,7 @@ define([
 				else     bytes.unshift(0);
 			}
 
-			var tag = createTag(this.noInc ? this.tagNo : ++this.tagNo);
+			var tag = createTag(this.tagNo === 0 ? 0 : this.tagNo++);
 			tag.push(bytes.length);
 			this.add(tag.concat(bytes));
 			return this;
@@ -190,7 +191,7 @@ define([
 		f32: function(val) {
 			if (!val) return this.n();
 
-			var tag = createTag(this.noInc ? this.tagNo : ++this.tagNo);
+			var tag = createTag(this.tagNo === 0 ? 0 : this.tagNo++);
 			tag.push(4);
 			this.add(tag);
 			var fa = new Float32Array(1);
@@ -202,7 +203,7 @@ define([
 		f64: function(val) {
 			if (!val) return this.n();
 
-			var tag = createTag(this.noInc ? this.tagNo : ++this.tagNo);
+			var tag = createTag(this.tagNo === 0 ? 0 : this.tagNo++);
 			tag.push(8);
 			this.add(tag);
 			var fa = new Float64Array(1);
@@ -216,7 +217,7 @@ define([
 			if (!str)      return this.n();
 
 			var u8 = util.toUTF8(str);
-			var tag = createTag(this.noInc ? this.tagNo : ++this.tagNo);
+			var tag = createTag(this.tagNo === 0 ? 0 : this.tagNo++);
 			this.add(tag.concat(encodeBERLength(u8.length)));
 			this.add(u8);
 			return this;
@@ -226,7 +227,7 @@ define([
 			if (!byteArray            ) return this.n();
 			if (byteArray.length === 0) return emptyIsNull ? this.n() : this.z();
 
-			var tag = createTag(this.noInc ? this.tagNo : ++this.tagNo);
+			var tag = createTag(this.tagNo === 0 ? 0 : this.tagNo++);
 			this.add(tag.concat(encodeBERLength(byteArray.length)));
 			this.add(byteArray);
 			return this;
@@ -246,6 +247,54 @@ define([
 
 	});
 
+	function Deserializer(data, start, len, disableTagNumbering)
+	{
+		this.data = data;
+		this.start = start;
+		this.len = len;
+		this.tagNo = disableTagNumbering ? 0 : 1;
+	}
+
+	$.extend(Deserializer.prototype, {
+
+		read: function() {
+			for (;;) {
+				// read tlv
+				var tlv = decodeTLV(this.data, this.start, this.len);
+				var valueLen = tlv[0];
+				var tag = tlv[1];
+				var tagLen = tlv[2];
+				var lengthSize = tlv[3];
+				var tlvLen = tagLen + lengthSize + valueLen;
+				if (valueLen < 0 || this.len < tlvLen) break;
+
+				// check tag and deserialize
+				if (tag == this.tagNo) {
+					var rv = valueLen === 0 && lengthSize == 2 ? null : [this.start + tagLen + lengthSize, valueLen];
+					this.start += tlvLen;
+					this.len   -= tlvLen;
+					if (this.tagNo > 0) ++this.tagNo;
+					return rv;
+				} else if (tag > this.tagNo) {
+					if (this.tagNo > 0) ++this.tagNo;
+					return null;
+				}
+
+				// tag < this.tagNo
+				this.start += tlvLen;
+				this.len   -= tlvLen;
+			}
+
+			// some error occured
+			this.len = 0;
+			return null;
+		},
+
+		i: function() {
+		}
+
+	});
+
 	// ========================================================================
 
 	var BER = function() {};
@@ -254,6 +303,7 @@ define([
 	ber.decodeTLV = decodeTLV;
 	ber.makeTLV = makeTLV;
 	ber.S = function(disableTagNumbering) { return new Serializer(disableTagNumbering); };
+	ber.D = function(data, start, len, disableTagNumbering) { return new Deserializer(data, start, len, disableTagNumbering); };
 
 	return ber;
 });
