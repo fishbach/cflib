@@ -30,7 +30,8 @@ public:
 
 rmi:
 	QString test();
-	void async(int i);
+	void async(qint64 i);
+	qint64 iTest(qint64 i) { return i; }
 	Dao update(const Dao & dao);
 	void update(Dao2 & dao);
 	void update(Dao3 & dao);

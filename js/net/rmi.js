@@ -58,7 +58,7 @@ define([
 				rmi.ev.identityReset.fire();
 				return;
 			case 2:
-				if (requestCallback) requestCallback(data, tlv[2] + tlv[3], tlv[0]);
+				if (requestCallback) requestCallback(new Uint8Array(data.buffer, tlv[2] + tlv[3], tlv[0]));
 				if (waitingRequests.length > 0) {
 					var wr = waitingRequests.shift();
 					requestCallback = wr[1];

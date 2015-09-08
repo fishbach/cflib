@@ -37,7 +37,7 @@ QString InfoService::test()
 	return QString::fromUtf8("hello w\xc3\xb6rld");
 }
 
-void InfoService::async(int i)
+void InfoService::async(qint64 i)
 {
 	logInfo("async: %1", i);
 }

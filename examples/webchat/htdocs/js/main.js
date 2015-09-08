@@ -34,6 +34,7 @@ window.ber = ber;
 window.rmi = rmi;
 window.util = util;
 window.info = infoService;
+window.plog = function() { console.log(arguments); };
 
 
 }); }); });

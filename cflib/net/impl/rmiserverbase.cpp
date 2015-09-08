@@ -693,11 +693,21 @@ QString RMIServerBase::generateJSForService(const SerializeTypeInfo & ti) const
 			continue;
 		}
 
-		js << ",\n"
-			"\t\tcallback ? function(__data, __start, __len) {\n"
-			"\t\t\tconsole.log('re: ', __start, __len, __data);\n";
-
-		js << "\t\t} : null);\n"
+		js <<
+			",\n"
+			"\t\tcallback ? function(__data) {\n"
+			"\t\t\tvar __D = __ber.D(__data);\n"
+			"\t\t\tcallback.call(context";
+		if (func.returnType.type != SerializeTypeInfo::Null) {
+			js << ", " << getDeserializeCode(func.returnType);
+		}
+		foreach (const SerializeVariableTypeInfo & p, func.parameters) {
+			if (!p.isRef) continue;
+			js << ", " << getDeserializeCode(p.type);
+		}
+		js <<
+			");\n"
+			"\t\t} : null);\n"
 			"};\n"
 			"\n";
 	}
