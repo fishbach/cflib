@@ -24,6 +24,7 @@
 #include <cflib/net/requestlog.h>
 #include <cflib/net/rmiserver.h>
 #include <cflib/net/wscommmanager.h>
+#include <cflib/util/cmdline.h>
 #include <cflib/util/log.h>
 #include <cflib/util/unixsignal.h>
 
@@ -36,6 +37,11 @@ USE_LOG(LogCat::Etc)
 
 int main(int argc, char *argv[])
 {
+	// parse cmd line
+	CmdLine cmdLine(argc, argv);
+	Option exportOpt('e', "export",   true); cmdLine << exportOpt;
+	if (!cmdLine.parse()) return 1;
+
 	QCoreApplication a(argc, argv);
 	UnixSignal unixSignal(true);
 
@@ -50,6 +56,13 @@ int main(int argc, char *argv[])
 	RMIServer<QString> rmiServer(commMgr);
 	InfoService infoService; rmiServer.registerService(infoService);
 	LogService  logService;  rmiServer.registerService(logService);
+
+	if (exportOpt.isSet()) {
+		logInfo("exporting to: %1", exportOpt.value());
+		rmiServer.exportTo(exportOpt.value());
+		fs.exportTo(exportOpt.value());
+		return 0;
+	}
 
 	HttpServer serv;
 	serv.registerHandler(requestLog);

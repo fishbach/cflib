@@ -213,7 +213,7 @@ define([
 		},
 
 		s: function(str) {
-			if (str == '') return this.z();
+			if (str === '') return this.z();
 			if (!str)      return this.n();
 
 			var u8 = util.toUTF8(str);
