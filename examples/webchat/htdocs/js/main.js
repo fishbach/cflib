@@ -26,9 +26,10 @@ api.ev.secureTokenLost.bind(function() {
 	location.href = location.href;
 });
 
-//infoService.test(function(val) {
-//	$('#msg').html(val);
-//});
+rmi.start();
+infoService.test(function(val) {
+	$('#msg').html(val);
+});
 
 window.ber = ber;
 window.rmi = rmi;

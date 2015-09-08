@@ -33,6 +33,11 @@ define([
 		var id = storage.get('clId');
 		if (id) ws.send(ber.makeTLV(1, false, util.fromBase64(id)));
 		else    ws.send(ber.makeTLV(1));
+		if (waitingRequests.length > 0) {
+			var wr = waitingRequests.shift();
+			requestCallback = wr[1];
+			ws.send(wr[0]);
+		}
 	}
 
 	function wsClose(e)
@@ -93,6 +98,7 @@ define([
 		ws.onmessage = newMessage;
 		ws.onopen = wsOpen;
 		ws.onclose = wsClose;
+		requestActive = true;
 	};
 
 	rmi.stop = function() {
