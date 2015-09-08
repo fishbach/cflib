@@ -28,16 +28,25 @@ define([
 	var waitingRequests = [];
 	var ws              = null;
 
+	function checkWaitingRequests()
+	{
+		if (waitingRequests.length > 0) {
+			var wr = waitingRequests.shift();
+			requestCallback = wr[1];
+			ws.send(wr[0]);
+		} else {
+			requestCallback = null;
+			requestActive = false;
+			rmi.ev.loading.fire(false);
+		}
+	}
+
 	function wsOpen(e)
 	{
 		var id = storage.get('clId');
 		if (id) ws.send(ber.makeTLV(1, false, util.fromBase64(id)));
 		else    ws.send(ber.makeTLV(1));
-		if (waitingRequests.length > 0) {
-			var wr = waitingRequests.shift();
-			requestCallback = wr[1];
-			ws.send(wr[0]);
-		}
+		checkWaitingRequests();
 	}
 
 	function wsClose(e)
@@ -64,15 +73,7 @@ define([
 				return;
 			case 2:
 				if (requestCallback) requestCallback(new Uint8Array(data.buffer, tlv[2] + tlv[3], tlv[0]));
-				if (waitingRequests.length > 0) {
-					var wr = waitingRequests.shift();
-					requestCallback = wr[1];
-					ws.send(wr[0]);
-				} else {
-					requestCallback = null;
-					requestActive = false;
-					rmi.ev.loading.fire(false);
-				}
+				checkWaitingRequests();
 				return;
 			default:
 				rmi.ev.newMessage.fire(data);
@@ -98,6 +99,7 @@ define([
 		ws.onmessage = newMessage;
 		ws.onopen = wsOpen;
 		ws.onclose = wsClose;
+		rmi.ev.loading.fire(true);
 		requestActive = true;
 	};
 

@@ -26,6 +26,7 @@ api.ev.secureTokenLost.bind(function() {
 	location.href = location.href;
 });
 
+rmi.ev.loading.bind(function(isLoading) { $('#loading').html(isLoading ? " (loading)" : ""); });
 rmi.start();
 infoService.test(function(val) {
 	$('#msg').html(val);
