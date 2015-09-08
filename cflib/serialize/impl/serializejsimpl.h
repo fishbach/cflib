@@ -75,6 +75,15 @@ DO_SERIALIZE_JS(quint32)
 DO_SERIALIZE_JS(qint64 )
 DO_SERIALIZE_JS(quint64)
 
+inline void serializeJS(double d, QByteArray & data, JSSerializerBase &)
+{
+	Q_UNUSED(d) Q_UNUSED(data)
+}
+
+inline void deserializeJS(double & d, const quint8 * data, int len, JSDeserializerBase &)
+{
+	Q_UNUSED(d) Q_UNUSED(data) Q_UNUSED(data) Q_UNUSED(len)
+}
 
 // ============================================================================
 // strings

@@ -156,11 +156,11 @@ QString formatJSTypeConstruction(const SerializeTypeInfo & ti, const QString & r
 			else               js << "(!" << raw << " ? null : new Date(" << raw << "))";
 		} else if (ti.typeName == "String") {
 			if (raw == "null") js << "null";
-			else               js << "(!" << raw << "&& " << raw << " !== '' ? null : " << raw << ")";
+			else               js << "(!" << raw << " && " << raw << " !== '' ? null : " << raw << ")";
 		} else if (ti.typeName == "ByteArray") {
 			if (raw == "null") js << "null";
 			else               js << "(!" << raw << " ? null : " << raw << ")";
-		} else if (ti.typeName.indexOf("int") != -1) {
+		} else if (ti.typeName.indexOf("int") != -1 || ti.typeName.indexOf("float") != -1) {
 			if (raw == "null") js << "0";
 			else               js << "(!" << raw << " ? 0 : " << raw << ")";
 		} else if (ti.typeName == "tribool") {
@@ -235,10 +235,62 @@ QString getSerializeCode(const SerializeTypeInfo & ti, const QString & name)
 			js << ".a(" << name << ")";
 		} else if (ti.typeName.indexOf("int") != -1) {
 			js << ".i(" << name << ")";
+		} else if (ti.typeName == "float32") {
+			js << ".f32(" << name << ")";
+		} else if (ti.typeName == "float64") {
+			js << ".f64(" << name << ")";
 		} else if (ti.typeName == "tribool") {
 			js << ".i(" << name << " === true || " << name << " === 1 ? 1 : " << name << " === false || " << name << " === 2 ? 2 : 0)";
 		} else if (ti.typeName == "bool") {
 			js << ".i(" << name << " ? 1 : 0)";
+		} else {
+			logWarn("no code for Basic type '%1'", ti.typeName);
+		}
+	} else {	// SerializeTypeInfo::Null
+		logWarn("no code for type 'Null'");
+	}
+	return js;
+}
+
+QString getDeserializeCode(const SerializeTypeInfo & ti)
+{
+	QString js;
+	if (ti.type == SerializeTypeInfo::Class) {
+		QString cl = ti.getName();
+		cl.replace("::", "__");
+		js << "new " << cl << "(__D.a())";
+	} else if (ti.type == SerializeTypeInfo::Container) {
+		if (ti.typeName.startsWith("Pair<")) {
+			js	<< "(function(__data) { var __D = __ber.D(__data); return ["
+				<< getDeserializeCode(ti.bases[0]) << ", "
+				<< getDeserializeCode(ti.bases[1]) << "]; })(__D.a())";
+		} else if (ti.typeName.startsWith("List<")) {
+			js	<< "__D.map(function(__D) { return "
+				<< getDeserializeCode(ti.bases[0]) << "; })";
+		} else if (ti.typeName.startsWith("Map<")) {
+			js	<< "__D.map(function(__D) { return ["
+				<< getDeserializeCode(ti.bases[0]) << ", "
+				<< getDeserializeCode(ti.bases[1]) << "]; })";
+		} else {
+			logWarn("no code for Container type '%1'", ti.typeName);
+		}
+	} else if (ti.type == SerializeTypeInfo::Basic) {
+		if (ti.typeName == "DateTime") {
+			js << "(function() { var ti = __D.i(); return !ti ? null : new Date(ti); })()";
+		} else if (ti.typeName == "String") {
+			js << "__D.s()";
+		} else if (ti.typeName == "ByteArray") {
+			js << "__D.a()";
+		} else if (ti.typeName.indexOf("int") != -1) {
+			js << "__D.i()";
+		} else if (ti.typeName == "float32") {
+			js << "__D.f32()";
+		} else if (ti.typeName == "float64") {
+			js << "__D.f64()";
+		} else if (ti.typeName == "tribool") {
+			js << "(function() { var tb = __D.i(); return tb == 1 ? true : tb == 2 ? false : undefined; })()";
+		} else if (ti.typeName == "bool") {
+			js << "__D.i() ? true : false";
 		} else {
 			logWarn("no code for Basic type '%1'", ti.typeName);
 		}
@@ -578,15 +630,26 @@ QString RMIServerBase::generateJSForClass(const SerializeTypeInfo & ti) const
 		"__inherit.setBase(" << nsPrefix << ti.typeName << ", ";
 	if (base.isEmpty()) js << "__inherit.Base";
 	else js << base;
-	js << ");\n"
-		<< nsPrefix << ti.typeName << ".prototype.constructor = function(param) {\n"
-		"\t" << nsPrefix << ti.typeName << ".__super.call(this, param);\n"
-		"\tif (typeof param != 'object') param = {}\n";
+	js	<< ");\n"
+		<< nsPrefix << ti.typeName << ".prototype.constructor = function(param) {\n";
+	if (base.isEmpty()) js << "\t" << nsPrefix << ti.typeName << ".__super.apply(this, arguments);\n";
+	js	<< "\tif (param instanceof Uint8Array) {\n"
+		"\t\tvar __D = __ber.D(param);\n";
+	if (!base.isEmpty()) js << "\t\t" << nsPrefix << ti.typeName << ".__super.call(this, __D.a());\n";
 	foreach (const SerializeVariableTypeInfo & vti, ti.members) {
-		const QString name = formatMembernameForJS(vti);;
-		js << "\tthis." << name << " = " << formatJSTypeConstruction(vti.type, "param." + name) << ";\n";
+		js << "\t\tthis." << formatMembernameForJS(vti) << " = " << getDeserializeCode(vti.type) << ";\n";
 	}
 	js <<
+		"\t} else {\n";
+	if (!base.isEmpty()) js <<"\t\t" << nsPrefix << ti.typeName << ".__super.apply(this, arguments);\n";
+	js <<
+		"\t\tif (typeof param != 'object') param = {};\n";
+	foreach (const SerializeVariableTypeInfo & vti, ti.members) {
+		const QString name = formatMembernameForJS(vti);
+		js << "\t\tthis." << name << " = " << formatJSTypeConstruction(vti.type, "param." + name) << ";\n";
+	}
+	js <<
+		"\t}\n"
 		"};\n"
 		<< nsPrefix << ti.typeName << ".prototype.__serialize = function() {\n"
 		"\treturn __ber.S()";

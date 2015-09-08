@@ -37,6 +37,7 @@ class Dao2
 public serialized:
 	Dao dao;
 	QList<int> numbers;
+	double f;
 };
 
 class Dao3 : public Dao2

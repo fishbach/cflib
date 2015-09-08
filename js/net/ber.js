@@ -247,11 +247,11 @@ define([
 
 	});
 
-	function Deserializer(data, start, len, disableTagNumbering)
+	function Deserializer(data, disableTagNumbering)
 	{
 		this.data = data;
-		this.start = start;
-		this.len = len;
+		this.start = 0;
+		this.len = data ? data.length : 0;
 		this.tagNo = disableTagNumbering ? 0 : 1;
 	}
 
@@ -270,7 +270,8 @@ define([
 
 				// check tag and deserialize
 				if (tag == this.tagNo) {
-					var rv = valueLen === 0 && lengthSize == 2 ? null : [this.start + tagLen + lengthSize, valueLen];
+					var rv = valueLen === 0 && lengthSize == 2 ? null :
+						new Uint8Array(this.data.buffer, this.data.byteOffset + this.start + tagLen + lengthSize, valueLen);
 					this.start += tlvLen;
 					this.len   -= tlvLen;
 					if (this.tagNo > 0) ++this.tagNo;
@@ -293,50 +294,48 @@ define([
 		i: function() {
 			var raw = this.read();
 			if (!raw) return 0;
-			var d = this.data;
-			var s = raw[0];
-			var e = s + raw[1];
-			var rv = d[s++];
+			var s = 0;
+			var e = raw.length;
+			var rv = raw[s++];
 			var neg = (rv & 0x80) !== 0;
 			if (neg) rv = ~rv & 0xFF;
-			while (s < e) rv = (rv * 256) + (neg ? ~d[s++] & 0xFF : d[s++]);
+			while (s < e) rv = (rv * 256) + (neg ? ~raw[s++] & 0xFF : raw[s++]);
 			return neg ? -rv - 1 : rv;
 		},
 
 		f32: function() {
 			var raw = this.read();
-			if (!raw || raw[1] != 4) return 0;
+			if (!raw || raw.length != 4) return 0;
 			var a = new Uint8Array(4);
-			a.set(new Uint8Array(this.data.buffer, raw[0], 4));
+			a.set(raw);
 			return (new Float32Array(a.buffer))[0];
 		},
 
 		f64: function() {
 			var raw = this.read();
-			if (!raw || raw[1] != 8) return 0;
+			if (!raw || raw.length != 8) return 0;
 			var a = new Uint8Array(8);
-			a.set(new Uint8Array(this.data.buffer, raw[0], 8));
+			a.set(raw);
 			return (new Float64Array(a.buffer))[0];
 		},
 
 		s: function() {
 			var raw = this.read();
 			if (!raw) return null;
-			var len = raw[1];
-			if (len === 0) return '';
-			return util.fromUTF8(new Uint8Array(this.data.buffer, raw[0], len));
+			if (raw.length === 0) return '';
+			return util.fromUTF8(raw);
 		},
 
 		a: function() {
 			var raw = this.read();
 			if (!raw) return null;
-			return new Uint8Array(this.data.buffer, raw[0], raw[1]);
+			return raw;
 		},
 
 		map: function(func) {
 			var raw = this.read();
 			if (!raw) return [];
-			var D = new Deserializer(this.data, raw[0], raw[1], true);
+			var D = new Deserializer(raw, true);
 			var rv = [];
 			while (D.len > 0) rv.push(func(D));
 			return rv;
@@ -352,7 +351,7 @@ define([
 	ber.decodeTLV = decodeTLV;
 	ber.makeTLV = makeTLV;
 	ber.S = function(disableTagNumbering) { return new Serializer(disableTagNumbering); };
-	ber.D = function(data, start, len, disableTagNumbering) { return new Deserializer(data, start, len, disableTagNumbering); };
+	ber.D = function(data, disableTagNumbering) { return new Deserializer(data, disableTagNumbering); };
 
 	return ber;
 });

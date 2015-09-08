@@ -53,6 +53,10 @@ DO_SERIALIZE_TYPE_INFO(quint32, uint32)
 DO_SERIALIZE_TYPE_INFO(qint64,  int64)
 DO_SERIALIZE_TYPE_INFO(quint64, uint64)
 
+DO_SERIALIZE_TYPE_INFO(float,       float32)
+DO_SERIALIZE_TYPE_INFO(double,      float64)
+DO_SERIALIZE_TYPE_INFO(long double, float128)
+
 DO_SERIALIZE_TYPE_INFO(QByteArray, ByteArray)
 DO_SERIALIZE_TYPE_INFO(QString,    String)
 DO_SERIALIZE_TYPE_INFO(QChar,      Char)
