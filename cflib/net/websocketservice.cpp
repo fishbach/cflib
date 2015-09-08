@@ -28,6 +28,10 @@
 
 USE_LOG(LogCat::Http)
 
+// Sec-WebSocket-Extensions: permessage-deflate; client_max_window_bits
+// Sec-WebSocket-Extensions: permessage-deflate
+// Sec-WebSocket-Extensions: x-webkit-deflate-frame
+
 namespace cflib { namespace net {
 
 class WebSocketService::WSConnHandler : public util::ThreadVerify, public TCPConn
