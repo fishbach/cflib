@@ -643,7 +643,7 @@ QString RMIServerBase::generateJSForClass(const SerializeTypeInfo & ti) const
 		"\t} else {\n";
 	if (!base.isEmpty()) js <<"\t\t" << nsPrefix << ti.typeName << ".__super.apply(this, arguments);\n";
 	js <<
-		"\t\tif (typeof param != 'object') param = {};\n";
+		"\t\tif (!param || typeof param != 'object') param = {};\n";
 	foreach (const SerializeVariableTypeInfo & vti, ti.members) {
 		const QString name = formatMembernameForJS(vti);
 		js << "\t\tthis." << name << " = " << formatJSTypeConstruction(vti.type, "param." + name) << ";\n";

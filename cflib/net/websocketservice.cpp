@@ -286,7 +286,7 @@ void WebSocketService::addConnection(const Request & request)
 	// check WS headers
 	const Request::KeyVal headers = request.getHeaderFields();
 	const QByteArray wsKey = headers["sec-websocket-key"];
-	if (headers["upgrade"] != "websocket" || wsKey.isEmpty()) {
+	if (headers["upgrade"].toLower() != "websocket" || wsKey.isEmpty()) {
 		request.sendNotFound();
 		return;
 	}
