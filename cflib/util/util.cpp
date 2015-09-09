@@ -18,6 +18,8 @@
 
 #include "util.h"
 
+#include <zlib.h>
+
 #ifdef Q_OS_UNIX
 #include <sys/stat.h>
 #include <unistd.h>
@@ -222,6 +224,53 @@ void gzip(QByteArray & data, int compressionLevel)
 		*(++dataPtr) = len & 0xFF;
 		len >>= 8;
 	}
+}
+
+void deflateRaw(QByteArray & data, int compressionLevel)
+{
+	z_stream s;
+	s.zalloc    = Z_NULL;
+	s.zfree     = Z_NULL;
+	s.opaque    = Z_NULL;
+	s.avail_in  = (uInt)   data.size();
+	s.next_in   = (Bytef *)data.constData();
+	deflateInit2(&s, compressionLevel, Z_DEFLATED, -15, 8, Z_DEFAULT_STRATEGY);
+	QByteArray out(deflateBound(&s, data.size()), '\0');
+	s.avail_out = (uInt)   out.size();
+	s.next_out  = (Bytef *)out.constData();
+	deflate(&s, Z_SYNC_FLUSH);
+	deflateEnd(&s);
+	out.resize(s.total_out - 4);
+	data = out;
+}
+
+void inflateRaw(QByteArray & data)
+{
+	QByteArray in;
+	in.reserve(data.size() + 4);
+	in.append(data);
+	in.append("\x00\x00\xFF\xFF", 4);
+	QByteArray out(in.size(), '\0');
+	z_stream s;
+	s.zalloc    = Z_NULL;
+	s.zfree     = Z_NULL;
+	s.opaque    = Z_NULL;
+	s.avail_in  = (uInt)   in.size();
+	s.next_in   = (Bytef *)in.constData();
+	s.avail_out = (uInt)   out.size();
+	s.next_out  = (Bytef *)out.constData();
+	inflateInit2(&s, -15);
+	forever {
+		inflate(&s, Z_NO_FLUSH);
+		if (s.avail_out > 0) break;
+		const int oldSize = out.size();
+		const int ext = oldSize * 3 / 2;
+		out.resize(oldSize + ext);
+		s.avail_out = (uInt)   ext;
+		s.next_out  = (Bytef *)out.constData() + oldSize;
+	}
+	out.resize(s.total_out);
+	data = out;
 }
 
 QByteArray readFile(const QString & path)

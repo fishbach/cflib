@@ -91,6 +91,9 @@ defineTest(setBuildPaths) {
 		QMAKE_CXXFLAGS += -march=native
 		export(QMAKE_CXXFLAGS)
 	}
+
+	LIBS += -lz
+	export(LIBS)
 }
 
 # addSubdir(dir, dependandept1 dependant2 ...)

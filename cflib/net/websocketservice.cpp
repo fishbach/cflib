@@ -37,7 +37,9 @@ namespace cflib { namespace net {
 class WebSocketService::WSConnHandler : public util::ThreadVerify, public TCPConn
 {
 public:
-	WSConnHandler(WebSocketService * service, TCPConnData * connData, uint connId, uint connectionTimeoutSec) :
+	WSConnHandler(WebSocketService * service, TCPConnData * connData, uint connId, uint connectionTimeoutSec,
+		bool deflate)
+	:
 		ThreadVerify(service),
 		TCPConn(connData, 0x10000, connectionTimeoutSec > 0),
 		service_(*service),
@@ -54,6 +56,7 @@ public:
 			lastRead_  = QDateTime::currentDateTime();
 			lastWrite_ = QDateTime::currentDateTime();
 		}
+		if (deflate) logDebug("using deflate on connection: %1", connId);
 	}
 
 	~WSConnHandler()
@@ -290,6 +293,7 @@ void WebSocketService::addConnection(const Request & request)
 		request.sendNotFound();
 		return;
 	}
+	const bool deflate = headers["sec-websocket-extensions"].toLower().indexOf("permessage-deflate") != -1;
 
 	// detach from socket
 	TCPConnData * connData = request.detach();
@@ -298,7 +302,7 @@ void WebSocketService::addConnection(const Request & request)
 		return;
 	}
 	const uint connId = ++lastConnId_;
-	WSConnHandler * wsHdl = new WSConnHandler(this, connData, connId, connectionTimeoutSec_);
+	WSConnHandler * wsHdl = new WSConnHandler(this, connData, connId, connectionTimeoutSec_, deflate);
 	connections_[connId] = wsHdl;
 
 	// write WS header
@@ -308,7 +312,9 @@ void WebSocketService::addConnection(const Request & request)
 		"Connection: Upgrade\r\n"
 		"Sec-WebSocket-Accept: ";
 	header += cflib::crypt::sha1(wsKey + "258EAFA5-E914-47DA-95CA-C5AB0DC85B11").toBase64();
-	header += "\r\n\r\n";
+	header += "\r\n";
+	if (deflate) header += "Sec-WebSocket-Extensions: permessage-deflate\r\n";
+	header += "\r\n";
 	wsHdl->write(header);
 
 	newConnection(connId);

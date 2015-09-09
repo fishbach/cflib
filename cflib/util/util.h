@@ -37,7 +37,11 @@ namespace cflib { namespace util {
 
 QByteArray weekDay(const QDate & date);
 QByteArray dateTimeForHTTP(const QDateTime & dateTime);
+
+// 0 -> no compression, 1 -> fast, 9 -> small
 void gzip(QByteArray & data, int compressionLevel = -1);
+void deflateRaw(QByteArray & data, int compressionLevel = -1);
+void inflateRaw(QByteArray & data);
 
 QByteArray readFile(const QString & path);
 QString readTextfile(const QString & path);

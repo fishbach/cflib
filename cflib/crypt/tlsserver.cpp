@@ -44,8 +44,7 @@ public:
 			std::bind(&Impl::alert_cb, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3),
 			std::bind(&Impl::handshake_cb, this, std::placeholders::_1),
 			session_manager, creds, *policy,
-			rng,
-			[](std::vector<std::string>) { return ""; })
+			rng)
 	{
 	}
 
