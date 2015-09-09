@@ -331,7 +331,7 @@ void WebSocketService::addConnection(const Request & request)
 	header += cflib::crypt::sha1(wsKey + "258EAFA5-E914-47DA-95CA-C5AB0DC85B11").toBase64();
 	header += "\r\n";
 	// firefox bug: it does not accept "server_no_context_takeover"
-	if (deflate) header += "Sec-WebSocket-Extensions: permessage-deflate; Xclient_no_context_takeover\r\n";
+	if (deflate) header += "Sec-WebSocket-Extensions: permessage-deflate; client_no_context_takeover\r\n";
 	header += "\r\n";
 	wsHdl->write(header);
 

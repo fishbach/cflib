@@ -224,9 +224,9 @@ void WSCommManager<C>::newMsg(uint connId, const QByteArray & data, bool isBinar
 }
 
 template<typename C>
-void WSCommManager<C>::closed(uint connId, TCPConn::CloseType type)
+void WSCommManager<C>::closed(uint connId, TCPConn::CloseType)
 {
-	if (!(type & TCPConn::ReadClosed) || !(type & TCPConn::WriteClosed)) return;
+	close(connId, TCPConn::ReadWriteClosed);
 	const uint dataId = connId2dataId_.value(connId);
 	if (dataId == 0) return;
 	connId2dataId_.remove(connId);
