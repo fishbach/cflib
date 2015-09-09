@@ -57,9 +57,9 @@ inline T fromByteArray(const QByteArray & data, int tagLen, int lengthSize, qint
 template<typename T>
 inline T fromByteArray(const QByteArray & data)
 {
-	quint64 tag;
-	int tagLen;
-	int lengthSize;
+	quint64 tag = 0;
+	int tagLen = 0;
+	int lengthSize = 0;
 	const qint64 valueLen = getTLVLength(data, tag, tagLen, lengthSize);
 	if (valueLen < 0) return T();
 

@@ -172,9 +172,9 @@ void WSCommManager<C>::newMsg(uint connId, const QByteArray & data, bool isBinar
 	}
 
 	// read outer BER
-	quint64 tag;
-	int tagLen;
-	int lengthSize;
+	quint64 tag = 0;
+	int tagLen = 0;
+	int lengthSize = 0;
 	const qint32 valueLen = serialize::getTLVLength(data, tag, tagLen, lengthSize);
 	if (valueLen < 0) {
 		close(connId, TCPConn::HardClosed);
