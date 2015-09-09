@@ -30,6 +30,7 @@ public:
 
 rmi:
 	QString test();
+	QString test(const QString & msg);
 	void async(qint64 i);
 	qint64 iTest(qint64 i) { return i; }
 	Dao update(const Dao & dao);

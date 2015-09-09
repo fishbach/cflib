@@ -137,7 +137,7 @@ inline void writeLenBytes(quint8 * pos, qint64 length, quint8 lengthSize)
 {
 	if (length < 0)      { *pos = 0x80; return; }
 	if (lengthSize == 1) { *pos = (quint8)length; return; }
-	*(pos++) = lengthSize | 0x80;
+	*(pos++) = (lengthSize - 1) | 0x80;
 	quint64 len = (quint64)length;
 	while (--lengthSize) *(pos++) = (quint8)(len >> ((lengthSize - 1) * 8));
 }

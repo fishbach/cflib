@@ -47,7 +47,9 @@ public:
 		connectionSendInterval_(connectionTimeoutSec / 2),
 		connectionDataTimeout_(connectionTimeoutSec * 3 / 2),
 		isBinary_(false),
-		ping_("\x89\x00", 2)
+		isDeflated_(false),
+		ping_("\x89\x00", 2),
+		deflateEnabled_(deflate)
 	{
 		logFunctionTrace
 		setNoDelay(true);
@@ -56,7 +58,7 @@ public:
 			lastRead_  = QDateTime::currentDateTime();
 			lastWrite_ = QDateTime::currentDateTime();
 		}
-		if (deflate) logDebug("using deflate on connection: %1", connId);
+		if (deflateEnabled_) logDebug("using deflate on connection: %1", connId);
 	}
 
 	~WSConnHandler()
@@ -66,12 +68,20 @@ public:
 
 	void send(const QByteArray & data, bool isBinary)
 	{
-		const uint len = data.size();
+		bool deflate = false;
+		QByteArray deflateBuf;
+		if (deflateEnabled_ && data.size() > 256) {
+			deflate = true;
+			deflateBuf = data;
+			util::deflateRaw(deflateBuf, 1);
+		}
+
+		const uint len = deflate ? deflateBuf.size() : data.size();
 		QByteArray frame;
 		frame.reserve(len + 10);
 
 		// write first start byte
-		frame += isBinary ? 0x82 : 0x81;
+		frame += isBinary ? (deflate ? 0xC2 : 0x82) : (deflate ? 0xC1 : 0x81);
 
 		// write length
 		if (len < 126) {
@@ -92,7 +102,7 @@ public:
 			frame += len & 0xFF;
 		}
 
-		frame += data;
+		frame += deflate ? deflateBuf : data;
 		write(frame);
 	}
 
@@ -142,9 +152,10 @@ private:
 		while (buf_.size() >= 2) {
 			quint8 * data = (quint8 *)buf_.constData();
 			uint dLen = buf_.size();
-			bool fin = data[0] & 0x80;
-			quint8 opcode = data[0] & 0xF;
-			bool mask = data[1] & 0x80;
+			const bool fin = data[0] & 0x80;
+			const bool deflate = deflateEnabled_ && (data[0] & 0x40);
+			const quint8 opcode = data[0] & 0xF;
+			const bool mask = data[1] & 0x80;
 
 			// clients must send masked data
 			if (!mask) {
@@ -185,15 +196,19 @@ private:
 			if (opcode == 0x0) {	// continuation frame
 				fragmentBuf_.append((const char *)data, len);
 				if (fin) {
+					if (isDeflated_) util::inflateRaw(fragmentBuf_);
 					service_.newMsg(connId_, fragmentBuf_, isBinary_);
 					fragmentBuf_.clear();
 				}
 			} else if (opcode == 0x1 || opcode == 0x2) {	// test / binary frame
 				if (!fin) {
 					isBinary_ = opcode == 2;
+					isDeflated_ = deflate;
 					fragmentBuf_.append((const char *)data, len);
 				} else {
-					service_.newMsg(connId_, QByteArray((const char *)data, len), opcode == 2);
+					QByteArray msg((const char *)data, len);
+					if (deflate) util::inflateRaw(msg);
+					service_.newMsg(connId_, msg, opcode == 2);
 				}
 			} else if (opcode == 0x8) {	// connection close
 				logDebug("received close frame");
@@ -224,9 +239,11 @@ private:
 	QByteArray buf_;
 	QByteArray fragmentBuf_;
 	bool isBinary_;
+	bool isDeflated_;
 	QDateTime lastRead_;
 	QDateTime lastWrite_;
 	const QByteArray ping_;
+	const bool deflateEnabled_;
 };
 
 // ============================================================================
@@ -313,7 +330,8 @@ void WebSocketService::addConnection(const Request & request)
 		"Sec-WebSocket-Accept: ";
 	header += cflib::crypt::sha1(wsKey + "258EAFA5-E914-47DA-95CA-C5AB0DC85B11").toBase64();
 	header += "\r\n";
-	if (deflate) header += "Sec-WebSocket-Extensions: permessage-deflate\r\n";
+	// firefox bug: it does not accept "server_no_context_takeover"
+	if (deflate) header += "Sec-WebSocket-Extensions: permessage-deflate; client_no_context_takeover\r\n";
 	header += "\r\n";
 	wsHdl->write(header);
 
