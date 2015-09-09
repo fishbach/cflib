@@ -18,12 +18,16 @@
 
 #include "util.h"
 
+#include <cflib/util/log.h>
+
 #include <zlib.h>
 
 #ifdef Q_OS_UNIX
 #include <sys/stat.h>
 #include <unistd.h>
 #endif
+
+USE_LOG(LogCat::Etc)
 
 namespace cflib { namespace util {
 
@@ -228,6 +232,10 @@ void gzip(QByteArray & data, int compressionLevel)
 
 void deflateRaw(QByteArray & data, int compressionLevel)
 {
+	if (data.isEmpty()) {
+		data += '\0';
+		return;
+	}
 	z_stream s;
 	s.zalloc    = Z_NULL;
 	s.zfree     = Z_NULL;
@@ -240,17 +248,24 @@ void deflateRaw(QByteArray & data, int compressionLevel)
 	s.next_out  = (Bytef *)out.constData();
 	deflate(&s, Z_SYNC_FLUSH);
 	deflateEnd(&s);
-	out.resize(s.total_out - 4);
+	int size = s.total_out;
+	if (size > 0) {
+		if (out[0] == '\0') --size;
+		else if (size >= 4) size -= 4;
+	}
+	out.resize(size);
 	data = out;
 }
 
 void inflateRaw(QByteArray & data)
 {
+	if (data.isEmpty()) return;
+	const char fb = data[0];
 	QByteArray in;
-	in.reserve(data.size() + 4);
+	in.reserve(data.size() + (fb == 0 ? 0 : 4));
 	in.append(data);
-	in.append("\x00\x00\xFF\xFF", 4);
-	QByteArray out(in.size(), '\0');
+	if (fb == 0) in.append("\x00\x00\xFF\xFF", 4);
+	QByteArray out(/*in.size()*/5, '\0');
 	z_stream s;
 	s.zalloc    = Z_NULL;
 	s.zfree     = Z_NULL;
@@ -261,7 +276,8 @@ void inflateRaw(QByteArray & data)
 	s.next_out  = (Bytef *)out.constData();
 	inflateInit2(&s, -15);
 	forever {
-		inflate(&s, Z_NO_FLUSH);
+		int rv = inflate(&s, Z_NO_FLUSH);
+		if (rv != Z_OK && rv != Z_BUF_ERROR) logWarn("inflate error: %1", rv);
 		if (s.avail_out > 0) break;
 		const int oldSize = out.size();
 		const int ext = oldSize * 3 / 2;
@@ -269,6 +285,7 @@ void inflateRaw(QByteArray & data)
 		s.avail_out = (uInt)   ext;
 		s.next_out  = (Bytef *)out.constData() + oldSize;
 	}
+	inflateEnd(&s);
 	out.resize(s.total_out);
 	data = out;
 }

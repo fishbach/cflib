@@ -114,11 +114,14 @@ private slots:
 
 	void test_deflate()
 	{
-		QVERIFY(checkDeflate(QByteArray(),        "0200",           1));
-		QVERIFY(checkDeflate(QByteArray("\0", 1), "620000",         1));
-		QVERIFY(checkDeflate("A",                 "720400",         1));
-		QVERIFY(checkDeflate("bc",                "4a4a0600",       1));
-		QVERIFY(checkDeflate("Hello",             "f248cdc9c90700", 1));
+		QVERIFY(checkDeflate(QByteArray(),        "00",                     1));
+		QVERIFY(checkDeflate(QByteArray(),        "00",                     0));
+		QVERIFY(checkDeflate(QByteArray("\0", 1), "620000",                 1));
+		QVERIFY(checkDeflate("A",                 "720400",                 1));
+		QVERIFY(checkDeflate("A",                 "000100feff4100",         0));
+		QVERIFY(checkDeflate("bc",                "4a4a0600",               1));
+		QVERIFY(checkDeflate("Hello",             "f248cdc9c90700",         1));
+		QVERIFY(checkDeflate("Hello",             "000500faff48656c6c6f00", 0));
 		QByteArray data;
 		inflateRaw(data);
 		QVERIFY(data.isEmpty());
