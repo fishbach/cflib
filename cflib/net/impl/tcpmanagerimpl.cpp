@@ -72,6 +72,10 @@ inline bool setNonBlocking(int fd)
 		return false;
 	}
 #endif
+#ifdef Q_OS_MAC
+	int set = 1;
+	setsockopt(fd, SOL_SOCKET, SO_NOSIGPIPE, (void *)&set, sizeof(int));
+#endif
 	return true;
 }
 
@@ -439,7 +443,11 @@ void TCPManagerImpl::writeable(ev_loop * loop, ev_io * w, int)
 	QByteArray & buf = conn->writeBuf;
 	const int fd = conn->socket;
 
+#ifdef Q_OS_LINUX
+	const ssize_t count = ::send(fd, buf.constData(), buf.size(), MSG_NOSIGNAL);
+#else
 	const ssize_t count = ::send(fd, buf.constData(), buf.size(), 0);
+#endif
 	logTrace("wrote %1 / %2 bytes on %3", (qint64)count, buf.size(), fd);
 	if (count < buf.size()) {
 		if (count < 0 && errno != EAGAIN && errno != EWOULDBLOCK && errno != ENOTCONN) {
