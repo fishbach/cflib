@@ -48,7 +48,7 @@ protected:
 	RMIServiceBase(const QString & threadName, uint threadCount = 1, LoopType loopType = Worker);
 	RMIServiceBase(ThreadVerify * other);
 
-	uint connId() const { return connId_; }
+	inline uint connId() const { return connId_; }
 	RMIReplier delayReply();
 	QByteArray getRemoteIP() const;
 	virtual void preCallInit() {}
@@ -72,25 +72,29 @@ class RMIService : public RMIServiceBase
 {
 protected:
 	RMIService(const QString & threadName, uint threadCount = 1, LoopType loopType = Worker) :
-		RMIServiceBase(threadName, threadCount, loopType) {}
-	RMIService(ThreadVerify * other) : RMIServiceBase(other) {}
+		RMIServiceBase(threadName, threadCount, loopType), connDataId_(0) {}
+	RMIService(ThreadVerify * other) : RMIServiceBase(other), connDataId_(0) {}
 
-	const C & connData() { return connData_; }
+	inline const C & connData() { return connData_; }
+	inline uint connDataId() { return connDataId_; }
 
 private:
 	void processRMIServiceCall(serialize::BERDeserializer deser, uint callNo, bool hasReturnValues,
-		const C & connData, uint connId)
+		const C & connData, uint connDataId, uint connId)
 	{
 		if (!verifyThreadCall(&RMIService::processRMIServiceCall, deser, callNo, hasReturnValues,
-			connData, connId)) return;
+			connData, connDataId, connId)) return;
 
 		connData_ = connData;
+		connDataId_ = connDataId;
 		RMIServiceBase::processRMIServiceCall(deser, callNo, hasReturnValues, connId);
 		connData_ = C();
+		connDataId_ = 0;
 	}
 
 private:
 	C connData_;
+	uint connDataId_;
 	friend class impl::RMIServerBase;
 };
 

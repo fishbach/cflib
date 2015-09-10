@@ -43,9 +43,9 @@ public:
 	QByteArray getRemoteIP(uint connId);
 
 	template<typename C>
-	void handleCall(const QByteArray & ba, const quint8 * data, int len, const C & connData, uint connId)
+	void handleCall(const QByteArray & ba, const quint8 * data, int len, const C & connData, uint connDataId, uint connId)
 	{
-		if (!verifyThreadCall(&RMIServerBase::handleCall<C>, ba, data, len, connData, connId)) return;
+		if (!verifyThreadCall(&RMIServerBase::handleCall<C>, ba, data, len, connData, connDataId, connId)) return;
 
 		serialize::BERDeserializer deser(ba, data, len);
 		uint callNo;
@@ -53,7 +53,7 @@ public:
 		RMIServiceBase * serviceBase = checkServiceCall(deser, connId, callNo, hasReturnValues);
 		if (!serviceBase) return;
 		RMIService<C> * service = dynamic_cast<RMIService<C> *>(serviceBase);
-		if (service) service->processRMIServiceCall(deser, callNo, hasReturnValues, connData, connId);
+		if (service) service->processRMIServiceCall(deser, callNo, hasReturnValues, connData, connDataId, connId);
 		else         serviceBase->processRMIServiceCall(deser, callNo, hasReturnValues, connId);
 	}
 

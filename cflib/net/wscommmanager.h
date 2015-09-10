@@ -47,7 +47,7 @@ class WSCommMsgHandler
 public:
 	virtual void handleMsg(quint64 tag,
 		const QByteArray & data, int tagLen, int lengthSize, qint32 valueLen,
-		const C & connData, uint connId) = 0;
+		const C & connData, uint connDataId, uint connId) = 0;
 };
 
 class WSCommManagerBase : public WebSocketService
@@ -83,6 +83,7 @@ public:
 	~WSCommManager();
 
 	void registerMsgHandler(quint64 tag, MsgHandler & hdl) { msgHandler_[tag] = &hdl; }
+	void updateConnData(uint connDataId, const C & connData);
 
 protected:
 	virtual void newConnection(uint connId);
@@ -140,6 +141,13 @@ template<typename C>
 WSCommManager<C>::~WSCommManager()
 {
 	stopVerifyThread();
+}
+
+template<typename C>
+void WSCommManager<C>::updateConnData(uint connDataId, const C & connData)
+{
+	if (!verifyThreadCall(&WSCommManager<C>::updateConnData, connDataId, connData)) return;
+	if (connData_.contains(connDataId)) connData_[connDataId].connData = connData;
 }
 
 template<typename C>
@@ -215,7 +223,7 @@ void WSCommManager<C>::newMsg(uint connId, const QByteArray & data, bool isBinar
 	// handler
 	MsgHandler * hdl = msgHandler_.value(tag);
 	if (hdl) {
-		hdl->handleMsg(tag, data, tagLen, lengthSize, valueLen, connData_[dataId].connData, connId);
+		hdl->handleMsg(tag, data, tagLen, lengthSize, valueLen, connData_[dataId].connData, dataId, connId);
 		return;
 	}
 

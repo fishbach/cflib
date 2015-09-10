@@ -38,9 +38,9 @@ public:
 
 	virtual void handleMsg(quint64,
 		const QByteArray & data, int tagLen, int lengthSize, qint32 valueLen,
-		const C & connData, uint connId)
+		const C & connData, uint connDataId, uint connId)
 	{
-		handleCall(data, (const quint8 *)data.constData() + tagLen + lengthSize, valueLen, connData, connId);
+		handleCall(data, (const quint8 *)data.constData() + tagLen + lengthSize, valueLen, connData, connDataId, connId);
 	}
 
 protected:
