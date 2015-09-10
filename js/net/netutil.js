@@ -19,8 +19,9 @@
 define([
 	'cflib/net/ajax',
 	'cflib/net/rmi',
-	'cflib/util/util'
-], function(ajax, rmi, util) {
+	'cflib/util/util',
+	'services/logservice'
+], function(ajax, rmi, util, logService) {
 
 	function logToServer(category, str)
 	{
@@ -31,7 +32,7 @@ define([
 			file = parts[1];
 			line = +parts[2];
 		} catch (e2) {} }
-		rmi.doAsyncRMI('logservice', ['void log(String,int32,uint16,String)', file, line, category, str]);
+		logService.log_Stringint32uint16String(file, line, category, str);
 	}
 
 	// ========================================================================
