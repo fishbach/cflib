@@ -53,9 +53,7 @@ void writeMethods(QTextStream & out, const HeaderParser::Class & cl)
 	}
 	out <<
 		"template void " << cl.name << "::serialize(cflib::serialize::impl::BERSerializerBase &) const;\n"
-		"template void " << cl.name << "::deserialize(cflib::serialize::impl::BERDeserializerBase &);\n"
-		"template void " << cl.name << "::serialize(cflib::serialize::impl::JSSerializerBase &) const;\n"
-		"template void " << cl.name << "::deserialize(cflib::serialize::impl::JSDeserializerBase &);\n";
+		"template void " << cl.name << "::deserialize(cflib::serialize::impl::BERDeserializerBase &);\n";
 }
 
 void writeFunctionSwitch(const HeaderParser::Functions & list, bool withReturnValues, QTextStream & out)

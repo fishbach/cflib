@@ -28,9 +28,7 @@ HEADERS = \
 
 SOURCES = \
 	gen_ber_test.cpp \
-	gen_js_test.cpp \
 	serializeber_test.cpp \
-	serializejs_test.cpp \
 	typeinfo_test.cpp \
 	util_test.cpp \
 

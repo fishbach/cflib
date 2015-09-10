@@ -48,8 +48,6 @@ class SerializeTypeInfoImpl;
 void serializeTypeInfo(SerializeTypeInfoImpl & si, TriBool *);
 void serializeBER(const TriBool & val, quint64 tag, quint8 tagLen, QByteArray & data, BERSerializerBase &);
 void deserializeBER(TriBool & val, const quint8 * data, int len, BERDeserializerBase &);
-void serializeJS(const TriBool & val, QByteArray & data, JSSerializerBase &);
-void deserializeJS(TriBool & val, const quint8 * data, int len, JSDeserializerBase &);
 
 }
 

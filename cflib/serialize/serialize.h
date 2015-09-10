@@ -20,7 +20,6 @@
 
 #include <cflib/serialize/serializetypeinfo.h>
 #include <cflib/serialize/impl/serializeberimpl.h>
-#include <cflib/serialize/impl/serializejsimpl.h>
 
 #define SERIALIZE_CLASS_USE_NULL(Class) \
 	namespace cflib { namespace serialize { namespace impl { \
@@ -30,11 +29,6 @@
 		if (cl.isNull()) { writeNull(data, tagNo); return; } \
 		TLWriter tlw(data, tagNo); \
 		BERSerializerBase ser(data); \
-		cl.serialize(ser); \
-	} \
-	template<> inline void serializeJS(const Class & cl, QByteArray & data, JSSerializerBase &) { \
-		if (cl.isNull()) return; \
-		JSSerializerBase ser(data); \
 		cl.serialize(ser); \
 	} \
 	}}} \

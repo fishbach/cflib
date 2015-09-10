@@ -25,16 +25,12 @@ HEADERS = \
 	common.h \
 	serialize.h \
 	serializeber.h \
-	serializejs.h \
 	serializetypeinfo.h \
 	tribool.h \
 	util.h \
 	impl/ber.h \
-	impl/js.h \
 	impl/serializebaseber.h \
-	impl/serializebasejs.h \
 	impl/serializeberimpl.h \
-	impl/serializejsimpl.h \
 	impl/serializetypeinfoimpl.h \
 
 SOURCES = \

@@ -42,18 +42,6 @@ void deserializeBER(TriBool & val, const quint8 * data, int len, BERDeserializer
 	val = TriBool::fromInt(v);
 }
 
-void serializeJS(const TriBool & val, QByteArray & data, JSSerializerBase &)
-{
-	serializeJSInt(val.toInt(), data);
-}
-
-void deserializeJS(TriBool & val, const quint8 * data, int len, JSDeserializerBase &)
-{
-	int v;
-	deserializeJSInt(v, data, len);
-	val = TriBool::fromInt(v);
-}
-
 }
 
 }}	// namespace

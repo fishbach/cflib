@@ -22,7 +22,6 @@ QT = core
 TARGET = cflib_net
 
 HEADERS = \
-	apiserver.h \
 	fileserver.h \
 	httpauth.h \
 	httpclient.h \
