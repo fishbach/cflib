@@ -17,28 +17,14 @@
  */
 
 define([
-	'cflib/util/ajax',
-	'cflib/util/api',
 	'cflib/ext/ZeroClipboard'
-], function(ajax, api, ZeroClipboard) {
+], function(ZeroClipboard) {
 
 	ZeroClipboard.config( { swfPath: '/swf/cflib/ZeroClipboard.swf' } );
 
 	var timeDiff = 0;
 	var popupZIndex = 1010;
 	var openPopups = [];
-
-	function logToServer(category, str)
-	{
-		var file = 'javascript';
-		var line = 0;
-		try { util.__undefined(); } catch (e) { try {
-			var parts = /.+\/[^\/]+\/[^\/]+.js:\d+.*\n.+\/[^\/]+\/[^\/]+.js:\d+.*\n.+\/([^\/]+\/[^\/]+.js):(\d+)/.exec(e.stack);
-			file = parts[1];
-			line = +parts[2];
-		} catch (e2) {} }
-		api.doAsyncRMI('logservice', ['void log(String,int32,uint16,String)', file, line, category, str]);
-	}
 
 	function base64CharToInt(c)
 	{
@@ -254,11 +240,6 @@ define([
 		});
 	};
 
-	util.getArrayBuffer = function(url, callback, scope, progress) {
-		ajax.request('GET', url,
-			function(status, buf, xhr) { callback.call(scope, status == 200 ? buf : null); }, null, null, null, 'arraybuffer', progress);
-	};
-
 	util.toHex = function(n, len) {
 		var rv = n.toString(16).toUpperCase();
 		if (len) while (rv.length < len) rv = '0' + rv;
@@ -309,38 +290,6 @@ define([
 		else if ('onwebkitpointerlockchange' in document) document.addEventListener('webkitpointerlockchange', cb, false);
 	};
 
-	util.fromUTF8 = function(uint8Array) {
-		var se = '';
-		for (var i = 0, l = uint8Array.length ; i < l ; ++i) {
-			var c = uint8Array[i];
-			se += '%';
-			var h = (c >>> 4) + 48;
-			if (h > 57) h += 7;
-			se += String.fromCharCode(h);
-			h = (c & 15) + 48;
-			if (h > 57) h += 7;
-			se += String.fromCharCode(h);
-		}
-		return decodeURI(se);
-	};
-
-	util.toUTF8 = function(str) {
-		var se = encodeURI(str);
-		var a8 = [];
-		for (var i = 0, l = se.length ; i < l ; ++i) {
-			var c = se.charCodeAt(i);
-			if (c == 37) {
-				var h = se.charCodeAt(++i) - 48;
-				if (h > 9) h -= 7;
-				c = se.charCodeAt(++i) - 48;
-				if (c > 9) c -= 7;
-				c |= h << 4;
-			}
-			a8.push(c);
-		}
-		return new Uint8Array(a8);
-	};
-
 	util.fromBase64 = function(base64Str) {
 		var inLen = base64Str.indexOf('=');
 		if (inLen == -1) inLen = base64Str.length;
@@ -383,61 +332,6 @@ define([
 			}
 		}
 		return rv;
-	};
-
-	util.initWaitingLayer = function(showWaitingFunc, hideWaitingFunc) {
-		var waitingTimeout = null;
-		var $backdrop = null;
-		var keepWaiting = false;
-
-		api.ev.loading.bind(function(isLoading) {
-
-			if (isLoading == 'on') {
-				keepWaiting = true;
-				if ($backdrop) {
-					if (waitingTimeout) {
-						clearTimeout(waitingTimeout);
-						waitingTimeout = null;
-						showWaitingFunc();
-					}
-					return;
-				}
-				isLoading = true;
-			} else if (isLoading == 'off') {
-				keepWaiting = false;
-				isLoading = false;
-			} else if (keepWaiting) return;
-
-			if (isLoading && !$backdrop) {
-				$backdrop = util.createBackdrop(false);
-				$(':focus').blur();
-				$(document).on('keydown.loading', function(e) {
-					// IE 11 Bug:
-					// It catches key events even from foreign iFrames.
-					// This is ie a problem with the iFrame of Credit Card 3D Secure.
-					if ($('iframe').length === 0) e.preventDefault();
-				});
-				if (keepWaiting) {
-					showWaitingFunc();
-				} else {
-					waitingTimeout = setTimeout(function() {
-						waitingTimeout = null;
-						showWaitingFunc();
-					}, 500);
-				}
-			} else if (!isLoading && $backdrop) {
-				if (waitingTimeout) {
-					clearTimeout(waitingTimeout);
-					waitingTimeout = null;
-				} else {
-					hideWaitingFunc();
-				}
-				$(document).off('keydown.loading');
-				$backdrop.remove();
-				$backdrop = null;
-				--popupZIndex;
-			}
-		});
 	};
 
 	util.createBackdrop = function(darken) {

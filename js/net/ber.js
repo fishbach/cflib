@@ -16,9 +16,41 @@
  * along with cflib. If not, see <http://www.gnu.org/licenses/>.
  */
 
-define([
-	'cflib/util/util'
-], function(util) {
+define(function() {
+
+	function fromUTF8(uint8Array)
+	{
+		var se = '';
+		for (var i = 0, l = uint8Array.length ; i < l ; ++i) {
+			var c = uint8Array[i];
+			se += '%';
+			var h = (c >>> 4) + 48;
+			if (h > 57) h += 7;
+			se += String.fromCharCode(h);
+			h = (c & 15) + 48;
+			if (h > 57) h += 7;
+			se += String.fromCharCode(h);
+		}
+		return decodeURI(se);
+	}
+
+	function toUTF8(str)
+	{
+		var se = encodeURI(str);
+		var a8 = [];
+		for (var i = 0, l = se.length ; i < l ; ++i) {
+			var c = se.charCodeAt(i);
+			if (c == 37) {
+				var h = se.charCodeAt(++i) - 48;
+				if (h > 9) h -= 7;
+				c = se.charCodeAt(++i) - 48;
+				if (c > 9) c -= 7;
+				c |= h << 4;
+			}
+			a8.push(c);
+		}
+		return new Uint8Array(a8);
+	}
 
 	// returns [tag, tagLen]
 	// returns -1 if not enough data available
@@ -216,7 +248,7 @@ define([
 			if (str === '') return this.z();
 			if (!str)      return this.n();
 
-			var u8 = util.toUTF8(str);
+			var u8 = toUTF8(str);
 			var tag = createTag(this.tagNo === 0 ? 0 : this.tagNo++);
 			this.add(tag.concat(encodeBERLength(u8.length)));
 			this.add(u8);
@@ -323,7 +355,7 @@ define([
 			var raw = this.read();
 			if (!raw) return null;
 			if (raw.length === 0) return '';
-			return util.fromUTF8(raw);
+			return fromUTF8(raw);
 		},
 
 		a: function() {
@@ -352,6 +384,8 @@ define([
 	ber.makeTLV = makeTLV;
 	ber.S = function(disableTagNumbering) { return new Serializer(disableTagNumbering); };
 	ber.D = function(data, disableTagNumbering) { return new Deserializer(data, disableTagNumbering); };
+	ber.fromUTF8 = fromUTF8;
+	ber.toUTF8   = toUTF8;
 
 	return ber;
 });
