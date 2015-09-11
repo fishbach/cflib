@@ -154,12 +154,12 @@ QString formatJSTypeConstruction(const SerializeTypeInfo & ti, const QString & r
 		if (ti.typeName == "DateTime") {
 			if (raw == "null") js << "null";
 			else               js << "(!" << raw << " ? null : new Date(" << raw << "))";
-		} else if (ti.typeName == "String") {
+		} else if (ti.typeName == "String" || ti.typeName == "ByteArray") {
 			if (raw == "null") js << "null";
 			else               js << "(!" << raw << " && " << raw << " !== '' ? null : " << raw << ")";
-		} else if (ti.typeName == "ByteArray") {
-			if (raw == "null") js << "null";
-			else               js << "(!" << raw << " ? null : " << raw << ")";
+//		} else if (ti.typeName == "ByteArray") {
+//			if (raw == "null") js << "null";
+//			else               js << "(!" << raw << " ? null : " << raw << ")";
 		} else if (ti.typeName.indexOf("int") != -1 || ti.typeName.indexOf("float") != -1) {
 			if (raw == "null") js << "0";
 			else               js << "(!" << raw << " ? 0 : " << raw << ")";
@@ -232,7 +232,8 @@ QString getSerializeCode(const SerializeTypeInfo & ti, const QString & name)
 		} else if (ti.typeName == "String") {
 			js << ".s(" << name << ")";
 		} else if (ti.typeName == "ByteArray") {
-			js << ".a(" << name << ")";
+			js << ".s(" << name << ")";
+//			js << ".a(" << name << ")";
 		} else if (ti.typeName.indexOf("int") != -1) {
 			js << ".i(" << name << ")";
 		} else if (ti.typeName == "float32") {
@@ -280,7 +281,8 @@ QString getDeserializeCode(const SerializeTypeInfo & ti)
 		} else if (ti.typeName == "String") {
 			js << "__D.s()";
 		} else if (ti.typeName == "ByteArray") {
-			js << "__D.a()";
+			js << "__D.s()";
+//			js << "__D.a()";
 		} else if (ti.typeName.indexOf("int") != -1) {
 			js << "__D.i()";
 		} else if (ti.typeName == "float32") {

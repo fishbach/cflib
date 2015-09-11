@@ -103,6 +103,8 @@ define([
 		requestActive = true;
 	};
 
+	rmi.isRunning = function() { return !!ws; };
+
 	rmi.stop = function() {
 		if (!ws) return;
 		var cl = ws;
@@ -111,6 +113,7 @@ define([
 	};
 
 	rmi.sendAsync   = function(data) { ws.send(data); };
+
 	rmi.sendRequest = function(data, callback) {
 		if (requestActive) waitingRequests.push([data, callback]);
 		else {
@@ -119,6 +122,19 @@ define([
 			requestCallback = callback;
 			ws.send(data);
 		}
+	};
+
+	rmi.resetStorage = function(keepItems) {
+		var keep = [['clId', storage.get('clId')]];
+		if (keepItems) {
+			if (!$.isArray(keepItems)) keepItems = [keepItems];
+			$.each(keepItems, function(i, name) {
+				var val = storage.get(name);
+				if (val) keep.push([name, val]);
+			});
+		}
+		storage.clear();
+		$.each(keep, function(i, keyVal) { storage.set(keyVal[0], keyVal[1], true); });
 	};
 
 	return rmi;

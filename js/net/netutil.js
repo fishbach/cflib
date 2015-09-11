@@ -99,7 +99,6 @@ define([
 				$(document).off('keydown.loading');
 				$backdrop.remove();
 				$backdrop = null;
-				--popupZIndex;
 			}
 		});
 	};

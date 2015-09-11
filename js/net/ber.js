@@ -31,12 +31,12 @@ define(function() {
 			if (h > 57) h += 7;
 			se += String.fromCharCode(h);
 		}
-		return decodeURI(se);
+		return decodeURIComponent(se);
 	}
 
 	function toUTF8(str)
 	{
-		var se = encodeURI(str);
+		var se = encodeURIComponent(str);
 		var a8 = [];
 		for (var i = 0, l = se.length ; i < l ; ++i) {
 			var c = se.charCodeAt(i);

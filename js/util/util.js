@@ -230,10 +230,6 @@ define([
 		return str;
 	};
 
-	util.logInfo     = function(str) { logToServer(4, str); };
-	util.logWarn     = function(str) { logToServer(5, str); };
-	util.logCritical = function(str) { logToServer(6, str); };
-
 	util.initClipboardButton = function(button, dataFunc) {
 		new ZeroClipboard(button).on('copy', function(e) {
 			e.clipboardData.setData('text/plain', dataFunc());
@@ -335,10 +331,13 @@ define([
 	};
 
 	util.createBackdrop = function(darken) {
-		return $(
+		var $rv = $(
 			'<div style="position:fixed;top:0;right:0;bottom:0;left:0;z-index:' +
 			(++popupZIndex) + ';background-color:#000;opacity:' + (darken ? '0.5' : '0') + '" />'
 		).appendTo(document.body);
+		var remove = $rv.remove;
+		$rv.remove = function() { remove.apply(this, arguments); --popupZIndex; };
+		return $rv;
 	};
 
 	util.showPopup = function($el, x, y, w, darken) {
