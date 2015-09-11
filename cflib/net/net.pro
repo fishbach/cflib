@@ -36,7 +36,6 @@ HEADERS = \
 	rmiservice.h \
 	tcpconn.h \
 	tcpmanager.h \
-	uploadservice.h \
 	websocketservice.h \
 	wscommmanager.h \
 	impl/requestparser.h \

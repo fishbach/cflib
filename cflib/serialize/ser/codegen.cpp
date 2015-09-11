@@ -189,22 +189,33 @@ int genSerialize(const QString & headerName, const HeaderParser & hp, QIODevice 
 			"}\n";
 
 		if (!cl.functions.isEmpty()) {
-			bool existsWithReturnValues    = false;
-			bool existsWithoutReturnValues = false;
+			bool existsWithReturnValues                 = false;
+			bool existsWithoutReturnValues              = false;
+			bool existsWithReturnValuesAndParameters    = false;
+			bool existsWithoutReturnValuesAndParameters = false;
 			foreach (const HeaderParser::Function & f, cl.functions) {
-				if (f.hasReturnValues()) existsWithReturnValues    = true;
-				else                     existsWithoutReturnValues = true;
-				if (existsWithReturnValues && existsWithoutReturnValues) break;
+				if (f.hasReturnValues()) {
+					existsWithReturnValues = true;
+					if (!f.parameters.isEmpty()) existsWithReturnValuesAndParameters = true;
+				} else {
+					existsWithoutReturnValues = true;
+					if (!f.parameters.isEmpty()) existsWithoutReturnValuesAndParameters = true;
+				}
+				if (existsWithReturnValues              && existsWithoutReturnValues &&
+					existsWithReturnValuesAndParameters && existsWithoutReturnValuesAndParameters) break;
 			}
 			if (existsWithoutReturnValues) {
-				out << "void " << cl.name << "::processRMIServiceCallImpl(cflib::serialize::BERDeserializer & __deser, uint __callNo) {\n";
+				out << "void " << cl.name << "::processRMIServiceCallImpl(cflib::serialize::BERDeserializer &"
+					<< (existsWithoutReturnValuesAndParameters ? " __deser" : "") << ", uint __callNo) {\n";
 				writeFunctionSwitch(cl.functions, false, out);
 				out << "}\n";
 			} else {
 				out << "void " << cl.name << "::processRMIServiceCallImpl(cflib::serialize::BERDeserializer &, uint) {}\n";
 			}
 			if (existsWithReturnValues) {
-				out << "void " << cl.name << "::processRMIServiceCallImpl(cflib::serialize::BERDeserializer & __deser, uint __callNo, cflib::serialize::BERSerializer & __ser) {\n";
+				out << "void " << cl.name << "::processRMIServiceCallImpl(cflib::serialize::BERDeserializer &"
+					<< (existsWithReturnValuesAndParameters ? " __deser" :"")
+					<< ", uint __callNo, cflib::serialize::BERSerializer & __ser) {\n";
 				writeFunctionSwitch(cl.functions, true, out);
 				out << "}\n";
 			} else {
