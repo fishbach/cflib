@@ -27,10 +27,17 @@
 namespace cflib { namespace net {
 
 template<typename C>
+class WSCommConnDataChecker
+{
+public:
+	virtual void checkConnData(const C & connData, uint connDataId) = 0;
+};
+
+template<typename C>
 class WSCommStateListener
 {
 public:
-	virtual void newConnection(C & connData, uint connDataId, uint connId);
+	virtual void newConnection(const C & connData, uint connDataId, uint connId);
 	virtual void connDataChange(const C & connData, uint connDataId);
 	virtual void connectionClosed(const C & connData, uint connDataId, uint connId, bool isLast);
 };
@@ -71,38 +78,47 @@ class WSCommManager : public WSCommManagerBase
 {
 	USE_LOG_MEMBER(LogCat::Http)
 public:
-	typedef WSCommStateListener <C> StateListener;
-	typedef WSCommTextMsgHandler<C> TextMsgHandler;
-	typedef WSCommMsgHandler    <C> MsgHandler;
+	typedef WSCommConnDataChecker<C> ConnDataChecker;
+	typedef WSCommStateListener  <C> StateListener;
+	typedef WSCommTextMsgHandler <C> TextMsgHandler;
+	typedef WSCommMsgHandler     <C> MsgHandler;
 	typedef QSet<uint> ConnIds;
 
 public:
 	WSCommManager(const QString & path, uint connectionTimeoutSec = 30, uint sessionTimeoutSec = 86400);
 	~WSCommManager();
 
+	void setConnDataChecker(ConnDataChecker & checker)         { connDataChecker_ = &checker; }
 	void registerStateListener (StateListener & listener)      { stateListener_ << &listener; }
 	void registerTextMsgHandler(TextMsgHandler & hdl)          { textMsgHandler_ << &hdl; }
 	void registerMsgHandler    (quint64 tag, MsgHandler & hdl) { msgHandler_[tag] = &hdl; }
 	void updateConnData(uint connDataId, const C & connData);
+	void connDataOk(uint connDataId);
 	void updateChannel(quint64 tag, uint srcConnId, const ConnIds & dstConnIds);
 
 protected:
-	virtual void newMsg(uint connId, const QByteArray & data, bool isBinary);
+	virtual void newMsg(uint connId, const QByteArray & data, bool isBinary, bool & stopRead);
 	virtual void closed(uint connId, TCPConn::CloseType type);
+
+private:
+	class ConnInfo {
+	public:
+		ConnInfo() : waitingForCheck(true), connDataVerified(true) {}
+		C connData;
+		ConnIds connIds;
+		QDateTime lastClosed;
+		bool waitingForCheck;
+		bool connDataVerified;
+	};
 
 private:
 	void init();
 	uint sendNewClientId(uint connId);
 	void checkTimeout();
+	bool connDataOk(ConnInfo & info, uint connDataId);
 
 private:
-	class ConnInfo {
-	public:
-		C connData;
-		ConnIds connIds;
-		QDateTime lastClosed;
-	};
-
+	ConnDataChecker * connDataChecker_;
 	QList<StateListener *> stateListener_;
 	QList<TextMsgHandler *> textMsgHandler_;
 	QHash<quint64, MsgHandler *> msgHandler_;
@@ -122,7 +138,7 @@ private:
 // ============================================================================
 
 template<typename C>
-void WSCommStateListener<C>::newConnection(C & connData, uint connDataId, uint connId)
+void WSCommStateListener<C>::newConnection(const C & connData, uint connDataId, uint connId)
 {
 	Q_UNUSED(connData) Q_UNUSED(connDataId) Q_UNUSED(connId)
 }
@@ -144,6 +160,7 @@ void WSCommStateListener<C>::connectionClosed(const C & connData, uint connDataI
 template<typename C>
 WSCommManager<C>::WSCommManager(const QString & path, uint connectionTimeoutSec, uint sessionTimeoutSec) :
 	WSCommManagerBase(path, connectionTimeoutSec),
+	connDataChecker_(0),
 	connDataId_(0),
 	timer_(this, &WSCommManager::checkTimeout), sessionTimeoutSec_(sessionTimeoutSec)
 {
@@ -162,11 +179,36 @@ void WSCommManager<C>::updateConnData(uint connDataId, const C & connData)
 	if (!verifyThreadCall(&WSCommManager<C>::updateConnData, connDataId, connData)) return;
 
 	if (!connData_.contains(connDataId)) return;
-	connData_[connDataId].connData = connData;
+	ConnInfo & info = connData_[connDataId];
+	info.connData = connData;
+	if (connDataOk(info, connDataId)) {
+		// inform state listener
+		QListIterator<StateListener *> it(stateListener_);
+		while (it.hasNext()) it.next()->connDataChange(connData, connDataId);
+	}
+}
 
-	// inform state listener
-	QListIterator<StateListener *> it(stateListener_);
-	while (it.hasNext()) it.next()->connDataChange(connData, connDataId);
+template<typename C>
+void WSCommManager<C>::connDataOk(uint connDataId)
+{
+	if (!verifyThreadCall(&WSCommManager<C>::connDataOk, connDataId)) return;
+
+	connDataOk(connData_[connDataId], connDataId);
+}
+
+template<typename C>
+bool WSCommManager<C>::connDataOk(WSCommManager::ConnInfo & info, uint connDataId)
+{
+	if (info.connDataVerified) return true;
+	info.connDataVerified = true;
+	foreach (uint connId, info.connIds) {
+		// inform state listener
+		QListIterator<StateListener *> it(stateListener_);
+		while (it.hasNext()) it.next()->newConnection(info.connData, connDataId, connId);
+
+		continueRead(connId);
+	}
+	return false;
 }
 
 template<typename C>
@@ -179,7 +221,7 @@ void WSCommManager<C>::updateChannel(quint64 tag, uint srcConnId, const ConnIds 
 }
 
 template<typename C>
-void WSCommManager<C>::newMsg(uint connId, const QByteArray & data, bool isBinary)
+void WSCommManager<C>::newMsg(uint connId, const QByteArray & data, bool isBinary, bool & stopRead)
 {
 	const uint dataId = connId2dataId_.value(connId);
 
@@ -225,7 +267,17 @@ void WSCommManager<C>::newMsg(uint connId, const QByteArray & data, bool isBinar
 					dId = sendNewClientId(connId);
 				} else {
 					connId2dataId_[connId] = dId;
-					connData_[dId].connIds << connId;
+					ConnInfo & info = connData_[dId];
+					info.connIds << connId;
+					if (!info.connDataVerified) {
+						if (!connDataChecker_) {
+							info.connDataVerified = true;
+						} else {
+							stopRead = true;
+							connDataChecker_->checkConnData(info.connData, dId);
+							return;
+						}
+					}
 				}
 			}
 
@@ -271,7 +323,10 @@ void WSCommManager<C>::closed(uint connId, TCPConn::CloseType)
 	ConnInfo & info = connData_[dataId];
 	info.connIds.remove(connId);
 	const bool isLast = info.connIds.isEmpty();
-	if (isLast) info.lastClosed = QDateTime::currentDateTime();
+	if (isLast) {
+		info.connDataVerified = false;
+		info.lastClosed = QDateTime::currentDateTime();
+	}
 
 	// inform state listener
 	QListIterator<StateListener *> it(stateListener_);

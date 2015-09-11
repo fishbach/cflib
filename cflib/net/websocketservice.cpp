@@ -65,6 +65,14 @@ public:
 		logTrace("~WSConnHandler(%1)", connId_);
 	}
 
+	void continueRead()
+	{
+		while (buf_.size() >= 2) {
+			if (handleData()) return;
+		}
+		startReadWatcher();
+	}
+
 	void send(const QByteArray & data, bool isBinary)
 	{
 		bool deflate = false;
@@ -124,8 +132,7 @@ protected:
 
 		buf_ += read();
 		if (connectionDataTimeout_ > 0) lastRead_ = QDateTime::currentDateTime();
-		handleData();
-		startReadWatcher();
+		continueRead();
 	}
 
 	virtual void closed(CloseType type)
@@ -146,88 +153,88 @@ protected:
 	}
 
 private:
-	void handleData()
+	bool handleData()
 	{
-		while (buf_.size() >= 2) {
-			quint8 * data = (quint8 *)buf_.constData();
-			uint dLen = buf_.size();
-			const bool fin = data[0] & 0x80;
-			const bool deflate = deflateEnabled_ && (data[0] & 0x40);
-			const quint8 opcode = data[0] & 0xF;
-			const bool mask = data[1] & 0x80;
+		bool stopRead = false;
+		quint8 * data = (quint8 *)buf_.constData();
+		uint dLen = buf_.size();
+		const bool fin = data[0] & 0x80;
+		const bool deflate = deflateEnabled_ && (data[0] & 0x40);
+		const quint8 opcode = data[0] & 0xF;
+		const bool mask = data[1] & 0x80;
 
-			// clients must send masked data
-			if (!mask) {
-				logWarn("no mask in frame: %1", buf_);
-				close(HardClosed, true);
-				return;
-			}
+		// clients must send masked data
+		if (!mask) {
+			logWarn("no mask in frame: %1", buf_);
+			close(HardClosed, true);
+			return false;
+		}
 
-			// read len
-			quint64 len = data[1] & 0x7F;
-			if (len < 126) {
-				data += 2;
-				dLen -= 2;
-			} else if (len == 126) {
-				if (dLen < 4) return;
-				len = (quint64)data[2] << 8 | (quint64)data[3];
-				data += 4;
-				dLen -= 4;
-			} else {
-				if (dLen < 10) return;
-				len =
-					(quint64)data[2] << 56 | (quint64)data[3] << 48 | (quint64)data[4] << 40 | (quint64)data[5] << 32 |
-					(quint64)data[6] << 24 | (quint64)data[7] << 16 | (quint64)data[8] <<  8 | (quint64)data[9];
-				data += 10;
-				dLen -= 10;
-			}
-
-			// Enough data available?
-			if (dLen < len + 4) return;
-
-			// apply mask
-			const quint8 * maskKey = data;
+		// read len
+		quint64 len = data[1] & 0x7F;
+		if (len < 126) {
+			data += 2;
+			dLen -= 2;
+		} else if (len == 126) {
+			if (dLen < 4) return true;
+			len = (quint64)data[2] << 8 | (quint64)data[3];
 			data += 4;
 			dLen -= 4;
-			for (uint i = 0 ; i < len ; ++i) data[i] ^= maskKey[i % 4];
-
-			// handle message types
-			if (opcode == 0x0) {	// continuation frame
-				fragmentBuf_.append((const char *)data, len);
-				if (fin) {
-					if (isDeflated_) util::inflateRaw(fragmentBuf_);
-					service_.newMsg(connId_, fragmentBuf_, isBinary_);
-					fragmentBuf_.clear();
-				}
-			} else if (opcode == 0x1 || opcode == 0x2) {	// test / binary frame
-				if (!fin) {
-					isBinary_ = opcode == 2;
-					isDeflated_ = deflate;
-					fragmentBuf_.append((const char *)data, len);
-				} else {
-					QByteArray msg((const char *)data, len);
-					if (deflate) util::inflateRaw(msg);
-					service_.newMsg(connId_, msg, opcode == 2);
-				}
-			} else if (opcode == 0x8) {	// connection close
-				logDebug("received close frame");
-				close(ReadWriteClosed, true);
-			} else if (opcode == 0x9) {	// ping
-				// send pong
-				quint8 * orig = (quint8 *)buf_.constData();
-				orig[0] = (orig[0] & 0xF0) | 0xA;
-				orig[1] &= 0x7F;
-				QByteArray pong((const char *)orig, buf_.size() - dLen - 4);
-				pong.append((const char *)data, len);
-				write(pong);
-			} else if (opcode == 0xA) {
-				// pong
-			} else  {
-				logWarn("unknown opcode %1 in frame (%2)", opcode, buf_.toHex());
-			}
-
-			buf_.remove(0, buf_.size() - dLen + len);
+		} else {
+			if (dLen < 10) return true;
+			len =
+				(quint64)data[2] << 56 | (quint64)data[3] << 48 | (quint64)data[4] << 40 | (quint64)data[5] << 32 |
+				(quint64)data[6] << 24 | (quint64)data[7] << 16 | (quint64)data[8] <<  8 | (quint64)data[9];
+			data += 10;
+			dLen -= 10;
 		}
+
+		// Enough data available?
+		if (dLen < len + 4) return true;
+
+		// apply mask
+		const quint8 * maskKey = data;
+		data += 4;
+		dLen -= 4;
+		for (uint i = 0 ; i < len ; ++i) data[i] ^= maskKey[i % 4];
+
+		// handle message types
+		if (opcode == 0x0) {	// continuation frame
+			fragmentBuf_.append((const char *)data, len);
+			if (fin) {
+				if (isDeflated_) util::inflateRaw(fragmentBuf_);
+				service_.newMsg(connId_, fragmentBuf_, isBinary_, stopRead);
+				fragmentBuf_.clear();
+			}
+		} else if (opcode == 0x1 || opcode == 0x2) {	// test / binary frame
+			if (!fin) {
+				isBinary_ = opcode == 2;
+				isDeflated_ = deflate;
+				fragmentBuf_.append((const char *)data, len);
+			} else {
+				QByteArray msg((const char *)data, len);
+				if (deflate) util::inflateRaw(msg);
+				service_.newMsg(connId_, msg, opcode == 2, stopRead);
+			}
+		} else if (opcode == 0x8) {	// connection close
+			logDebug("received close frame");
+			close(ReadWriteClosed, true);
+		} else if (opcode == 0x9) {	// ping
+			// send pong
+			quint8 * orig = (quint8 *)buf_.constData();
+			orig[0] = (orig[0] & 0xF0) | 0xA;
+			orig[1] &= 0x7F;
+			QByteArray pong((const char *)orig, buf_.size() - dLen - 4);
+			pong.append((const char *)data, len);
+			write(pong);
+		} else if (opcode == 0xA) {
+			// pong
+		} else  {
+			logWarn("unknown opcode %1 in frame (%2)", opcode, buf_.toHex());
+		}
+
+		buf_.remove(0, buf_.size() - dLen + len);
+		return stopRead;
 	}
 
 private:
@@ -280,6 +287,12 @@ QByteArray WebSocketService::getRemoteIP(uint connId)
 	WSConnHandler * wsHdl = connections_.value(connId);
 	if (wsHdl) return wsHdl->peerIP();
 	return QByteArray();
+}
+
+void WebSocketService::continueRead(uint connId)
+{
+	WSConnHandler * wsHdl = connections_.value(connId);
+	if (wsHdl) wsHdl->continueRead();
 }
 
 void WebSocketService::newConnection(uint)

@@ -38,9 +38,10 @@ protected:
 	void send(uint connId, const QByteArray & data, bool isBinary);
 	void close(uint connId, TCPConn::CloseType type = TCPConn::ReadWriteClosed);
 	QByteArray getRemoteIP(uint connId);
+	void continueRead(uint connId);
 
 	virtual void newConnection(uint connId);
-	virtual void newMsg(uint connId, const QByteArray & data, bool isBinary) = 0;
+	virtual void newMsg(uint connId, const QByteArray & data, bool isBinary, bool & stopRead) = 0;
 	virtual void closed(uint connId, TCPConn::CloseType type);
 
 	virtual void handleRequest(const Request & request);
