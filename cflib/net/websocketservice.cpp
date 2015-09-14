@@ -68,7 +68,9 @@ public:
 	void continueRead()
 	{
 		while (buf_.size() >= 2) {
-			if (handleData()) return;
+			uint rv = handleData();
+			if (rv == 0) return;
+			if (rv == 2) break;
 		}
 		startReadWatcher();
 	}
@@ -153,9 +155,9 @@ protected:
 	}
 
 private:
-	bool handleData()
+	// 0 -> stop, 1 -> continue, 2 -> need more data
+	uint handleData()
 	{
-		bool stopRead = false;
 		quint8 * data = (quint8 *)buf_.constData();
 		uint dLen = buf_.size();
 		const bool fin = data[0] & 0x80;
@@ -167,7 +169,7 @@ private:
 		if (!mask) {
 			logWarn("no mask in frame: %1", buf_);
 			close(HardClosed, true);
-			return false;
+			return 0;
 		}
 
 		// read len
@@ -176,12 +178,12 @@ private:
 			data += 2;
 			dLen -= 2;
 		} else if (len == 126) {
-			if (dLen < 4) return true;
+			if (dLen < 4) return 2;
 			len = (quint64)data[2] << 8 | (quint64)data[3];
 			data += 4;
 			dLen -= 4;
 		} else {
-			if (dLen < 10) return true;
+			if (dLen < 10) return 2;
 			len =
 				(quint64)data[2] << 56 | (quint64)data[3] << 48 | (quint64)data[4] << 40 | (quint64)data[5] << 32 |
 				(quint64)data[6] << 24 | (quint64)data[7] << 16 | (quint64)data[8] <<  8 | (quint64)data[9];
@@ -190,13 +192,15 @@ private:
 		}
 
 		// Enough data available?
-		if (dLen < len + 4) return true;
+		if (dLen < len + 4) return 2;
 
 		// apply mask
 		const quint8 * maskKey = data;
 		data += 4;
 		dLen -= 4;
 		for (uint i = 0 ; i < len ; ++i) data[i] ^= maskKey[i % 4];
+
+		bool stopRead = false;
 
 		// handle message types
 		if (opcode == 0x0) {	// continuation frame
@@ -234,7 +238,7 @@ private:
 		}
 
 		buf_.remove(0, buf_.size() - dLen + len);
-		return stopRead;
+		return stopRead ? 0 : 1;
 	}
 
 private:

@@ -27,6 +27,7 @@ define([
 	var requestCallback = null;
 	var waitingRequests = [];
 	var ws              = null;
+	var msgHandlers     = {};
 
 	function checkWaitingRequests()
 	{
@@ -66,17 +67,20 @@ define([
 		}
 		data = new Uint8Array(data);
 		var tlv = ber.decodeTLV(data, 0, data.length);
-		switch (tlv[1]) {
+		var tagNo = tlv[1];
+		var value = new Uint8Array(data.buffer, tlv[2] + tlv[3], tlv[0]);
+		switch (tagNo) {
 			case 1:
-				storage.set('clId', util.toBase64(new Uint8Array(data.buffer, tlv[2] + tlv[3], tlv[0])), true);
+				storage.set('clId', util.toBase64(value), true);
 				rmi.ev.identityReset.fire();
 				return;
 			case 2:
-				if (requestCallback) requestCallback(new Uint8Array(data.buffer, tlv[2] + tlv[3], tlv[0]));
+				if (requestCallback) requestCallback(value);
 				checkWaitingRequests();
 				return;
 			default:
-				rmi.ev.newMessage.fire(data);
+				if (tagNo in msgHandlers) msgHandlers[tagNo](value);
+				else                      rmi.ev.newMessage.fire(data);
 		}
 	}
 
@@ -123,6 +127,8 @@ define([
 			ws.send(data);
 		}
 	};
+
+	rmi.register = function(tagNo, func) { msgHandlers[tagNo] = func; };
 
 	rmi.resetStorage = function(keepItems) {
 		var keep = [['clId', storage.get('clId')]];
