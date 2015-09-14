@@ -38,26 +38,40 @@ define(function() {
 
 	function toUTF8(str)
 	{
-		var i, c;
 		var il = str.length;
-		var ol = 0;
-		for (i = 0 ; i < il ; ++i) {
-			c = str.charCodeAt(i);
-			/*jshint smarttabs:true */
-			ol +=
-				c <    0x80 ? 1 :
-				c <   0x800 ? 2 :
-				c < 0x10000 ? 3 :
-				              4;
-		}
-		var rv = new Uint8Array(ol);
-		ol = 0;
-		for (i = 0 ; i < il ; ++i) {
-			c = str.charCodeAt(i);
-			if      (c <    0x80)   rv[ol++] = c;
-			else if (c <   0x800) { rv[ol++] = 0xC0 | c >>>  6; rv[ol++] = 0x80 | (c        & 0x3F); }
-			else if (c < 0x10000) { rv[ol++] = 0xE0 | c >>> 12; rv[ol++] = 0x80 | (c >>>  6 & 0x3F); rv[ol++] = 0x80 | (c       & 0x3F); }
-			else                  { rv[ol++] = 0xF0 | c >>> 18; rv[ol++] = 0x80 | (c >>> 12 & 0x3F); rv[ol++] = 0x80 | (c >>> 6 & 0x3F); rv[ol++] = 0x80 | (c & 0x3F); }
+		var rv = new Uint8Array(il);
+		var oi = 0;
+		var isLatin = true;
+		for (var i = 0 ; i < il ; ++i) {
+			var c = str.charCodeAt(i);
+			if (c < 0x80) rv[oi++] = c;
+			else {
+				// resize output array
+				if (isLatin) {
+					isLatin = false;
+					/*jshint smarttabs:true */
+					var ol = oi + (
+						c <   0x800 ? 2 :
+						c < 0x10000 ? 3 :
+						              4);
+					for (var j = i + 1 ; j < il ; ++j) {
+						var cl = str.charCodeAt(j);
+						/*jshint smarttabs:true */
+						ol +=
+							cl <    0x80 ? 1 :
+							cl <   0x800 ? 2 :
+							cl < 0x10000 ? 3 :
+							               4;
+					}
+					var nrv = new Uint8Array(ol);
+					nrv.set(rv);
+					rv = nrv;
+				}
+
+				if      (c <   0x800) { rv[oi++] = 0xC0 | c >>>  6; rv[oi++] = 0x80 | (c        & 0x3F); }
+				else if (c < 0x10000) { rv[oi++] = 0xE0 | c >>> 12; rv[oi++] = 0x80 | (c >>>  6 & 0x3F); rv[oi++] = 0x80 | (c       & 0x3F); }
+				else                  { rv[oi++] = 0xF0 | c >>> 18; rv[oi++] = 0x80 | (c >>> 12 & 0x3F); rv[oi++] = 0x80 | (c >>> 6 & 0x3F); rv[oi++] = 0x80 | (c & 0x3F); }
+			}
 		}
 		return rv;
 	}
