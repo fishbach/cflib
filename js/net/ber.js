@@ -21,35 +21,45 @@ define(function() {
 	function fromUTF8(uint8Array)
 	{
 		var se = '';
-		for (var i = 0, l = uint8Array.length ; i < l ; ++i) {
-			var c = uint8Array[i];
-			se += '%';
-			var h = (c >>> 4) + 48;
-			if (h > 57) h += 7;
-			se += String.fromCharCode(h);
-			h = (c & 15) + 48;
-			if (h > 57) h += 7;
-			se += String.fromCharCode(h);
+		var i = 0;
+		var l = uint8Array.length;
+		while (i < l) {
+			var u8 = uint8Array[i++];
+			/*jshint smarttabs:true */
+			se += String.fromCharCode(
+				u8 < 0x80 ?  u8 :
+				u8 < 0xE0 ? (u8 & 0x1F) <<  6 | (uint8Array[i++] & 0x3F) :
+				u8 < 0xF0 ? (u8 & 0x0F) << 12 | (uint8Array[i++] & 0x3F) <<  6 | (uint8Array[i++] & 0x3F) :
+				            (u8 & 0x07) << 18 | (uint8Array[i++] & 0x3F) << 12 | (uint8Array[i++] & 0x3F) << 6 | (uint8Array[i++] & 0x3F)
+			);
 		}
-		return decodeURIComponent(se);
+		return se;
 	}
 
 	function toUTF8(str)
 	{
-		var se = encodeURIComponent(str);
-		var a8 = [];
-		for (var i = 0, l = se.length ; i < l ; ++i) {
-			var c = se.charCodeAt(i);
-			if (c == 37) {
-				var h = se.charCodeAt(++i) - 48;
-				if (h > 9) h -= 7;
-				c = se.charCodeAt(++i) - 48;
-				if (c > 9) c -= 7;
-				c |= h << 4;
-			}
-			a8.push(c);
+		var i, c;
+		var il = str.length;
+		var ol = 0;
+		for (i = 0 ; i < il ; ++i) {
+			c = str.charCodeAt(i);
+			/*jshint smarttabs:true */
+			ol +=
+				c <    0x80 ? 1 :
+				c <   0x800 ? 2 :
+				c < 0x10000 ? 3 :
+				              4;
 		}
-		return new Uint8Array(a8);
+		var rv = new Uint8Array(ol);
+		ol = 0;
+		for (i = 0 ; i < il ; ++i) {
+			c = str.charCodeAt(i);
+			if      (c <    0x80)   rv[ol++] = c;
+			else if (c <   0x800) { rv[ol++] = 0xC0 | c >>>  6; rv[ol++] = 0x80 | (c        & 0x3F); }
+			else if (c < 0x10000) { rv[ol++] = 0xE0 | c >>> 12; rv[ol++] = 0x80 | (c >>>  6 & 0x3F); rv[ol++] = 0x80 | (c       & 0x3F); }
+			else                  { rv[ol++] = 0xF0 | c >>> 18; rv[ol++] = 0x80 | (c >>> 12 & 0x3F); rv[ol++] = 0x80 | (c >>> 6 & 0x3F); rv[ol++] = 0x80 | (c & 0x3F); }
+		}
+		return rv;
 	}
 
 	// returns [tag, tagLen]

@@ -40,6 +40,7 @@ QString InfoService::test()
 QString InfoService::test(const QString & msg)
 {
 	logInfo("msg %1: %2", msg.length(), msg);
+	QTextStream(stdout) << msg << endl;
 	return msg;
 }
 
