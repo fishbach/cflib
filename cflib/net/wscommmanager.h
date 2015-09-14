@@ -26,15 +26,31 @@
 
 namespace cflib { namespace net {
 
+template<typename C> class WSCommManager;
+
 template<typename C>
-class WSCommConnDataChecker
+class WSCommConnMgrAccess
+{
+public:
+	WSCommConnMgrAccess() : mgr_(0) {}
+
+protected:
+	inline WSCommManager<C> & commMgr() { return *mgr_; }
+
+private:
+	WSCommManager<C> * mgr_;
+	friend class WSCommManager<C>;
+};
+
+template<typename C>
+class WSCommConnDataChecker : public virtual WSCommConnMgrAccess<C>
 {
 public:
 	virtual void checkConnData(const C & connData, uint connDataId) = 0;
 };
 
 template<typename C>
-class WSCommStateListener
+class WSCommStateListener : public virtual WSCommConnMgrAccess<C>
 {
 public:
 	virtual void newConnection(const C & connData, uint connDataId, uint connId);
@@ -45,14 +61,14 @@ public:
 // ----------------------------------------------------------------------------
 
 template<typename C>
-class WSCommTextMsgHandler
+class WSCommTextMsgHandler : public virtual WSCommConnMgrAccess<C>
 {
 public:
 	virtual bool handleTextMsg(const QByteArray & data, const C & connData, uint connId) = 0;
 };
 
 template<typename C>
-class WSCommMsgHandler
+class WSCommMsgHandler : public virtual WSCommConnMgrAccess<C>
 {
 public:
 	virtual void handleMsg(quint64 tag,
@@ -88,10 +104,10 @@ public:
 	WSCommManager(const QString & path, uint connectionTimeoutSec = 30, uint sessionTimeoutSec = 86400);
 	~WSCommManager();
 
-	void setConnDataChecker(ConnDataChecker & checker)         { connDataChecker_ = &checker; }
-	void registerStateListener (StateListener & listener)      { stateListener_ << &listener; }
-	void registerTextMsgHandler(TextMsgHandler & hdl)          { textMsgHandler_ << &hdl; }
-	void registerMsgHandler    (quint64 tag, MsgHandler & hdl) { msgHandler_[tag] = &hdl; }
+	void setConnDataChecker(ConnDataChecker & checker)     { connDataChecker_ = &checker; checker.mgr_ = this; }
+	void registerStateListener (StateListener & listener)  { stateListener_ << &listener; listener.mgr_ = this; }
+	void registerTextMsgHandler(TextMsgHandler & hdl)      { textMsgHandler_ << &hdl; hdl.mgr_ = this; }
+	void registerMsgHandler(quint64 tag, MsgHandler & hdl) { msgHandler_[tag] = &hdl; hdl.mgr_ = this; }
 	void updateConnData(uint connDataId, const C & connData);
 	void connDataOk(uint connDataId);
 	void updateChannel(quint64 tag, uint srcConnId, const ConnIds & dstConnIds);
