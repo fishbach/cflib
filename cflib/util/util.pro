@@ -26,9 +26,6 @@ HEADERS = \
 	evtimer.h \
 	functor.h \
 	hex.h \
-	impl/libevimpl.h \
-	impl/logformat.h \
-	impl/threadverifyimpl.h \
 	libev.h \
 	log.h \
 	mailer.h \
@@ -39,8 +36,13 @@ HEADERS = \
 	timeshifter.h \
 	unixsignal.h \
 	util.h \
+	impl/libevimpl.h \
+	impl/logformat.h \
+	impl/threadverifyimpl.h \
 
 OTHER_FILES = \
 	impl/generate_templates.pl \
 
 lib()
+
+macx: OBJECTIVE_SOURCES += impl/util_mac.mm

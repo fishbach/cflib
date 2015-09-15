@@ -433,4 +433,10 @@ bool setProcessOwner(int uid, int gid)
 #endif
 }
 
+#ifndef Q_OS_MAC
+void preventApplicationSuspend()
+{
+}
+#endif
+
 }}	// namespace

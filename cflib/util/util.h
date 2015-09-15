@@ -119,4 +119,9 @@ bool setProcessOwner(int uid, int gid);
 
 template<typename C> void deleteNext(const C * obj) { Timer::singleShot(0, new Deleter<C>(obj)); }
 
+// currently only needed for OSX when using QGuiApplication ("App Nap")
+// also needed in pro file:
+// macx: LIBS += -framework Cocoa
+void preventApplicationSuspend();
+
 }}	// namespace
