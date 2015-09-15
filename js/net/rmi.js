@@ -116,7 +116,7 @@ define([
 		cl.close();
 	};
 
-	rmi.sendAsync   = function(data) { ws.send(data); };
+	rmi.sendAsync = function(data) { ws.send(data); };
 
 	rmi.sendRequest = function(data, callback) {
 		if (requestActive) waitingRequests.push([data, callback]);
