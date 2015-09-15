@@ -362,7 +362,6 @@ void WebSocketService::startTimer()
 
 void WebSocketService::checkTimeout()
 {
-	logFunctionTrace
 	const QDateTime now = QDateTime::currentDateTime();
 	QHashIterator<uint, WSConnHandler *> it(connections_);
 	while (it.hasNext()) it.next().value()->checkTimeout(now);
