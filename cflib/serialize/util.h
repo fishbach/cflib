@@ -35,6 +35,14 @@ inline qint32 getTLVLength(const QByteArray & data, quint64 & tagNo, int & tagLe
 	return valueLen;
 }
 
+inline QByteArray emptyTag(quint64 tagNo)
+{
+	const quint8 tagLen = impl::calcTagLen(tagNo);
+	QByteArray rv(tagLen + 1, '\0');
+	impl::writeTagBytes((quint8 *)rv.constData(), tagNo, false, tagLen);
+	return rv;
+}
+
 template<typename T>
 inline QByteArray toByteArray(const T & v, quint64 tagNo = 1)
 {
