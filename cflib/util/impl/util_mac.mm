@@ -27,10 +27,12 @@ namespace {
 id<NSObject> activityId;
 
 }
+
 void preventApplicationSuspend()
 {
 	if ([[NSProcessInfo processInfo] respondsToSelector:@selector(beginActivityWithOptions:reason:)]) {
 		activityId = [[NSProcessInfo processInfo] beginActivityWithOptions:NSActivityUserInitiated reason:@"preventApplicationSuspend"];
+		[activityId retain];
 	}
 }
 

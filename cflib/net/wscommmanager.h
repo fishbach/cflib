@@ -54,7 +54,7 @@ class WSCommStateListener : public virtual WSCommConnMgrAccess<C>
 {
 public:
 	virtual void newConnection(const C & connData, uint connDataId, uint connId);
-	virtual void connDataChange(const C & connData, uint connDataId);
+	virtual void connDataChange(const C & oldConnData, const C & newConnData, uint connDataId, QSet<uint> connIds);
 	virtual void connectionClosed(const C & connData, uint connDataId, uint connId, bool isLast);
 };
 
@@ -160,9 +160,11 @@ void WSCommStateListener<C>::newConnection(const C & connData, uint connDataId, 
 }
 
 template<typename C>
-void WSCommStateListener<C>::connDataChange(const C & connData, uint connDataId)
+void WSCommStateListener<C>::connDataChange(
+	const C & oldConnData, const C & newConnData,
+	uint connDataId, QSet<uint> connIds)
 {
-	Q_UNUSED(connData) Q_UNUSED(connDataId)
+	Q_UNUSED(oldConnData) Q_UNUSED(newConnData) Q_UNUSED(connDataId) Q_UNUSED(connIds)
 }
 
 template<typename C>
@@ -196,11 +198,12 @@ void WSCommManager<C>::updateConnData(uint connDataId, const C & connData)
 
 	if (!connData_.contains(connDataId)) return;
 	ConnInfo & info = connData_[connDataId];
+	C oldConnData = info.connData;
 	info.connData = connData;
 	if (connDataOk(info, connDataId)) {
 		// inform state listener
 		QListIterator<StateListener *> it(stateListener_);
-		while (it.hasNext()) it.next()->connDataChange(connData, connDataId);
+		while (it.hasNext()) it.next()->connDataChange(oldConnData, connData, connDataId, info.connIds);
 	}
 }
 
