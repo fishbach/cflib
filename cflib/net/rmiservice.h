@@ -62,8 +62,8 @@ protected:
 
 private:
 	impl::RMIServerBase * server_;
-	uint connId_;
-	bool delayedReply_;
+	PerThread<uint> connId_;
+	PerThread<bool> delayedReply_;
 	friend class impl::RMIServerBase;
 };
 
@@ -72,8 +72,8 @@ class RMIService : public RMIServiceBase
 {
 protected:
 	RMIService(const QString & threadName, uint threadCount = 1, LoopType loopType = Worker) :
-		RMIServiceBase(threadName, threadCount, loopType), connDataId_(0) {}
-	RMIService(ThreadVerify * other) : RMIServiceBase(other), connDataId_(0) {}
+		RMIServiceBase(threadName, threadCount, loopType), connData_(this), connDataId_(this, 0) {}
+	RMIService(ThreadVerify * other) : RMIServiceBase(other), connData_(this), connDataId_(this, 0) {}
 
 	inline const C & connData() { return connData_; }
 	inline uint connDataId() { return connDataId_; }
@@ -93,8 +93,8 @@ private:
 	}
 
 private:
-	C connData_;
-	uint connDataId_;
+	PerThread<C> connData_;
+	PerThread<uint> connDataId_;
 	friend class impl::RMIServerBase;
 };
 

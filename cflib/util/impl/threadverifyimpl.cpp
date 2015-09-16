@@ -125,7 +125,7 @@ ThreadHolderWorkerPool::ThreadHolderWorkerPool(const QString & threadName, bool 
 {
     start();
 	for (uint i = 2 ; i <= threadCount ; ++i) {
-		Worker * thread = new Worker(QString("%1 %2/%3").arg(threadName).arg(i).arg(threadCount), externalCalls_);
+		Worker * thread = new Worker(QString("%1 %2/%3").arg(threadName).arg(i).arg(threadCount), i - 1, externalCalls_);
 		workers_ << thread;
 	}
 }
@@ -162,6 +162,11 @@ bool ThreadHolderWorkerPool::isOwnThread() const
 	return false;
 }
 
+uint ThreadHolderWorkerPool::threadCount() const
+{
+	return 1 + workers_.size();
+}
+
 void ThreadHolderWorkerPool::wokeUp()
 {
 	if (stopLoop_) {
@@ -181,9 +186,10 @@ void ThreadHolderWorkerPool::run()
 	foreach (Worker * w, workers_) w->wait();
 }
 
-ThreadHolderWorkerPool::Worker::Worker(const QString & threadName, ThreadFifo<const Functor *> & externalCalls)
+ThreadHolderWorkerPool::Worker::Worker(const QString & threadName, uint threadNo, ThreadFifo<const Functor *> & externalCalls)
 :
 	ThreadHolderLibEV(threadName, true),
+	threadNo_(threadNo),
 	externalCalls_(externalCalls),
 	stopLoop_(false)
 {

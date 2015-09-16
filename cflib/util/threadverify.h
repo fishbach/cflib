@@ -468,6 +468,29 @@ protected:
 
 	// ------------------------------------------------------------------------
 
+	template<typename C>
+	class PerThread
+	{
+	public:
+		inline PerThread(const ThreadVerify * tv) :
+			objs_(tv->verifyThread_->threadCount()), objPtr_((C *)objs_.constData()) {}
+		inline PerThread(const ThreadVerify * tv, const C & obj) :
+			objs_(tv->verifyThread_->threadCount(), obj), objPtr_((C *)objs_.constData()) {}
+
+		inline C & operator=(const C & obj) { return threadObj() = obj; }
+		inline operator C () const          { return threadObj(); }
+		inline operator C & ()              { return threadObj(); }
+
+	private:
+		inline C & threadObj() const {
+			if (objs_.size() == 1) return *objPtr_;
+			const impl::ThreadHolder * thread = dynamic_cast<const impl::ThreadHolder *>(QThread::currentThread());
+			return thread ? *(objPtr_ + thread->threadNo()) : *objPtr_;
+		}
+		const QVector<C> objs_;
+		C * const objPtr_;
+	};
+
 private:
 	void shutdownThread();
 
@@ -479,8 +502,7 @@ private:
 inline ev_loop * libEVLoopOfThread()
 {
 	const impl::ThreadHolderLibEV * thread = dynamic_cast<const impl::ThreadHolderLibEV *>(QThread::currentThread());
-	if (!thread) return 0;
-	return thread->loop();
+	return thread ? thread->loop() : 0;
 }
 
 }}	// namespace

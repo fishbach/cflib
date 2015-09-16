@@ -54,6 +54,8 @@ public:
 	virtual bool doCall(const Functor * func) = 0;
 	virtual void stopLoop() = 0;
 	virtual bool isOwnThread() const { return QThread::currentThread() == this; }
+	virtual uint threadCount() const { return 1; }
+	virtual uint threadNo() const    { return 0; }
 
 protected:
 	bool isActive_;
@@ -106,6 +108,7 @@ public:
 	virtual bool doCall(const Functor * func);
 	virtual void stopLoop();
 	virtual bool isOwnThread() const;
+	virtual uint threadCount() const;
 
 protected:
     virtual void run();
@@ -115,15 +118,17 @@ private:
 	class Worker : public ThreadHolderLibEV
 	{
 	public:
-		Worker(const QString & threadName, ThreadFifo<const Functor *> & externalCalls);
+		Worker(const QString & threadName, uint threadNo, ThreadFifo<const Functor *> & externalCalls);
 
 		virtual bool doCall(const Functor *) { return false; }
 		virtual void stopLoop();
+		virtual uint threadNo() const { return threadNo_; }
 
 	protected:
 		virtual void wokeUp();
 
 	private:
+		const uint threadNo_;
 		ThreadFifo<const Functor *> & externalCalls_;
 		bool stopLoop_;
 	};
