@@ -531,7 +531,7 @@ void RMIServerBase::classesToHTML(QString & info, const ClassInfoEl & infoEl) co
 		if (!el.ti.getName().isEmpty()) {
 			QString path = el.ti.getName();
 			path.replace("::", "/");
-			info << "<li><a href=\"classes/" << path.toLower() << "\">" << el.ti.typeName << "</a></li>\n";
+			info << "<li><a href=\"classes/" << path.toLower() << "\">" << el.ti.typeName.split("::").last() << "</a></li>\n";
 		}
 		if (!el.infos.isEmpty()) {
 			info <<
@@ -549,7 +549,7 @@ QString RMIServerBase::generateJS(const QString & path) const
 	const SerializeTypeInfo ti = getTypeInfo(path.left(path.length() - 3));
 	if (ti.getName().isEmpty()) return QString();
 
-	const bool isService = path.startsWith("services/");
+	const bool isService = !ti.functions.isEmpty();
 	QString js;
 	js <<
 		"// ============================================================================\n"
@@ -580,11 +580,8 @@ QString RMIServerBase::generateJS(const QString & path) const
 
 SerializeTypeInfo RMIServerBase::getTypeInfo(const QString & path) const
 {
-	if (path.startsWith("services/")) {
-		RMIServiceBase * srv = services_[path.mid(9)].service;
-		if (!srv) return SerializeTypeInfo();
-		return srv->getServiceInfo();
-	}
+	RMIServiceBase * srv = services_[path.mid(9)].service;
+	if (srv) return srv->getServiceInfo();
 
 	const ClassInfoEl * ciEl = &classInfos_;
 	foreach (const QString & ns, path.split('/')) {
@@ -606,11 +603,22 @@ QString RMIServerBase::generateJSForClass(const SerializeTypeInfo & ti) const
 
 	// JS namespace for debugging
 	QString nsPrefix;
-	if (!ti.ns.isEmpty()) {
+	QString typeName = ti.typeName;
+	if (!ti.ns.isEmpty() || typeName.indexOf("::") != -1) {
 		js << "var ";
 		int i = 0;
 		bool isFirst = true;
 		foreach (const QString & ns, ti.ns.split("::")) {
+			if (isFirst) {
+				isFirst = false;
+				js << ns << " = {";
+			} else js << ns <<  ": {";
+			nsPrefix << ns << '.';
+			++i;
+		}
+		QStringList classNs = typeName.split("::");
+		typeName = classNs.takeLast();
+		foreach (const QString & ns, classNs) {
 			if (isFirst) {
 				isFirst = false;
 				js << ns << " = {";
@@ -625,23 +633,23 @@ QString RMIServerBase::generateJSForClass(const SerializeTypeInfo & ti) const
 
 	if (nsPrefix.isEmpty()) js << "var ";
 	js <<
-		nsPrefix << ti.typeName << " = function() { " <<
-		nsPrefix << ti.typeName << ".prototype.constructor.apply(this, arguments); };\n"
-		"__inherit.setBase(" << nsPrefix << ti.typeName << ", ";
+		nsPrefix << typeName << " = function() { " <<
+		nsPrefix << typeName << ".prototype.constructor.apply(this, arguments); };\n"
+		"__inherit.setBase(" << nsPrefix << typeName << ", ";
 	if (base.isEmpty()) js << "__inherit.Base";
 	else js << base;
 	js	<< ");\n"
-		<< nsPrefix << ti.typeName << ".prototype.constructor = function(param) {\n";
-	if (base.isEmpty()) js << "\t" << nsPrefix << ti.typeName << ".__super.apply(this, arguments);\n";
+		<< nsPrefix << typeName << ".prototype.constructor = function(param) {\n";
+	if (base.isEmpty()) js << "\t" << nsPrefix << typeName << ".__super.apply(this, arguments);\n";
 	js	<< "\tif (param instanceof Uint8Array) {\n"
 		"\t\tvar __D = __ber.D(param);\n";
-	if (!base.isEmpty()) js << "\t\t" << nsPrefix << ti.typeName << ".__super.call(this, __D.a());\n";
+	if (!base.isEmpty()) js << "\t\t" << nsPrefix << typeName << ".__super.call(this, __D.a());\n";
 	foreach (const SerializeVariableTypeInfo & vti, ti.members) {
 		js << "\t\tthis." << formatMembernameForJS(vti) << " = " << getDeserializeCode(vti.type) << ";\n";
 	}
 	js <<
 		"\t} else {\n";
-	if (!base.isEmpty()) js <<"\t\t" << nsPrefix << ti.typeName << ".__super.apply(this, arguments);\n";
+	if (!base.isEmpty()) js <<"\t\t" << nsPrefix << typeName << ".__super.apply(this, arguments);\n";
 	js <<
 		"\t\tif (!param || typeof param != 'object') param = {};\n";
 	foreach (const SerializeVariableTypeInfo & vti, ti.members) {
@@ -651,7 +659,7 @@ QString RMIServerBase::generateJSForClass(const SerializeTypeInfo & ti) const
 	js <<
 		"\t}\n"
 		"};\n"
-		<< nsPrefix << ti.typeName << ".prototype.__serialize = function() {\n"
+		<< nsPrefix << typeName << ".prototype.__serialize = function() {\n"
 		"\treturn __ber.S()";
 	if (!base.isEmpty()) js << ".a(" << base << ".prototype.__serialize.call(this), true)";
 	foreach (const SerializeVariableTypeInfo & vti, ti.members) {
@@ -659,7 +667,7 @@ QString RMIServerBase::generateJSForClass(const SerializeTypeInfo & ti) const
 	}
 	js << ".data;\n"
 		"};\n"
-		"return " << nsPrefix << ti.typeName << ";\n";
+		"return " << nsPrefix << typeName << ";\n";
 	return js;
 }
 
