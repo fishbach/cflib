@@ -18,8 +18,8 @@
 
 #pragma once
 
+#include <cflib/serialize/serializeber.h>
 #include <cflib/serialize/serializetypeinfo.h>
-#include <cflib/serialize/impl/serializeberimpl.h>
 
 #define SERIALIZE_CLASS_USE_NULL(Class) \
 	namespace cflib { namespace serialize { namespace impl { \
