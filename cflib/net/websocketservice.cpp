@@ -310,14 +310,6 @@ void WebSocketService::closed(uint, TCPConn::CloseType)
 void WebSocketService::handleRequest(const Request & request)
 {
 	if (request.getUri() != path_ || !request.isGET()) return;
-	addConnection(request);
-}
-
-void WebSocketService::addConnection(const Request & request)
-{
-	if (!verifyThreadCall(&WebSocketService::addConnection, request)) return;
-
-	logFunctionTrace
 
 	// check WS headers
 	const Request::KeyVal headers = request.getHeaderFields();
@@ -334,6 +326,16 @@ void WebSocketService::addConnection(const Request & request)
 		logWarn("could not detach from socket");
 		return;
 	}
+
+	addConnection(connData, wsKey, deflate);
+}
+
+void WebSocketService::addConnection(TCPConnData * connData, const QByteArray & wsKey, bool deflate)
+{
+	if (!verifyThreadCall(&WebSocketService::addConnection, connData, wsKey, deflate)) return;
+
+	logFunctionTrace
+
 	const uint connId = ++lastConnId_;
 	WSConnHandler * wsHdl = new WSConnHandler(this, connData, connId, connectionTimeoutSec_, deflate);
 	connections_[connId] = wsHdl;

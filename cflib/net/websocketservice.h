@@ -47,7 +47,7 @@ protected:
 	virtual void handleRequest(const Request & request);
 
 private:
-	void addConnection(const Request & request);
+	void addConnection(TCPConnData * connData, const QByteArray & wsKey, bool deflate);
 	void startTimer();
 	void checkTimeout();
 

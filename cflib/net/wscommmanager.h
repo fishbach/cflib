@@ -324,7 +324,6 @@ void WSCommManager<C>::newMsg(uint connId, const QByteArray & data, bool isBinar
 		return;
 	}
 
-	close(connId, TCPConn::HardClosed);
 	logInfo("unhandled message from %1 (tag: %2)", connId, tag);
 }
 
