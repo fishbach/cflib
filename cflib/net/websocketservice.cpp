@@ -83,6 +83,7 @@ public:
 			deflate = true;
 			deflateBuf = data;
 			util::deflateRaw(deflateBuf, 1);
+			logDebug("deflated %1 -> %2 (connId: %3)", data.size(), deflateBuf.size(), connId_);
 		}
 
 		const uint len = deflate ? deflateBuf.size() : data.size();
