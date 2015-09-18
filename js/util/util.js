@@ -98,6 +98,7 @@ define([
 	};
 
 	util.debounce = function(func, ms) {
+		if (!ms) ms = 50;
 		var timer = null;
 		return function() {
 			var scope = this;
@@ -106,7 +107,22 @@ define([
 			timer = setTimeout(function() {
 				timer = null;
 				func.apply(scope, param);
-			}, ms ? ms : 50);
+			}, ms);
+		};
+	};
+
+	util.throttle = function(func, ms) {
+		if (ms === undefined) ms = 50;
+		var running = false;
+		var last = null;
+		return function() {
+			if (running || new Date() - last < ms) return;
+			var scope = this;
+			var param = arguments;
+			running = true;
+			func.apply(scope, param);
+			running = false;
+			last = new Date();
 		};
 	};
 
