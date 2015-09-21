@@ -117,10 +117,8 @@ define([
 		var last = null;
 		return function() {
 			if (running || new Date() - last < ms) return;
-			var scope = this;
-			var param = arguments;
 			running = true;
-			func.apply(scope, param);
+			func.apply(this, arguments);
 			running = false;
 			last = new Date();
 		};
