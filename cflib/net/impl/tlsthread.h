@@ -35,6 +35,7 @@ public:
 	TLSThread(TCPManagerImpl & impl, uint no, uint total);
 	~TLSThread();
 
+	void startReadWatcher(TCPConnData * conn);
 	void read(TCPConnData * conn);
 	void write(TCPConnData * conn, const QByteArray & data, bool notifyFinished);
 	void closeConn(TCPConnData * conn, TCPConn::CloseType type, bool notifyClose);

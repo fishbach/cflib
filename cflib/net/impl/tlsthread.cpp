@@ -35,6 +35,12 @@ TLSThread::~TLSThread()
 	stopVerifyThread();
 }
 
+void TLSThread::startReadWatcher(TCPConnData * conn)
+{
+	if (!verifyThreadCall(&TLSThread::startReadWatcher, conn)) return;
+	impl_.startReadWatcher(conn);
+}
+
 void TLSThread::read(TCPConnData * conn)
 {
 	if (!verifyThreadCall(&TLSThread::read, conn)) return;

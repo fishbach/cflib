@@ -63,7 +63,8 @@ void TCPConn::close(CloseType type, bool notifyClose)
 
 void TCPConn::startReadWatcher()
 {
-	data_->impl.startReadWatcher(data_);
+	if (data_->tlsStream) data_->impl.tlsStartReadWatcher(data_);
+	else                  data_->impl.startReadWatcher(data_);
 }
 
 TCPConn::CloseType TCPConn::isClosed() const

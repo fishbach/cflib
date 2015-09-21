@@ -224,6 +224,7 @@ private:
 		} else if (opcode == 0x8) {	// connection close
 			logDebug("received close frame");
 			close(ReadWriteClosed, true);
+			stopRead = true;
 		} else if (opcode == 0x9) {	// ping
 			// send pong
 			quint8 * orig = (quint8 *)buf_.constData();

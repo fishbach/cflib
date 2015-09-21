@@ -352,6 +352,11 @@ void TCPManagerImpl::deleteOnFinish(TCPConnData * conn)
 	}
 }
 
+void TCPManagerImpl::tlsStartReadWatcher(TCPConnData * conn)
+{
+	tlsThreads_[conn->tlsThreadId]->startReadWatcher(conn);
+}
+
 void TCPManagerImpl::tlsWrite(TCPConnData * conn, const QByteArray & data, bool notifyFinished) const
 {
 	tlsThreads_[conn->tlsThreadId]->write(conn, data, notifyFinished);

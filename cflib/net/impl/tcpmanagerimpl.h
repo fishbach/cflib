@@ -52,6 +52,7 @@ public:
 	void closeConn(TCPConnData * conn, TCPConn::CloseType type, bool notifyClose);
 	void deleteOnFinish(TCPConnData * conn);
 
+	void tlsStartReadWatcher(TCPConnData * conn);
 	void tlsWrite(TCPConnData * conn, const QByteArray & data, bool notifyFinished) const;
 	void tlsCloseConn(TCPConnData * conn, TCPConn::CloseType type, bool notifyClose) const;
 	void tlsDeleteOnFinish(TCPConnData * conn) const;

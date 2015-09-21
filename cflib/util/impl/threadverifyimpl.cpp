@@ -39,6 +39,7 @@ bool ThreadObject::event(QEvent * event)
 ThreadHolder::ThreadHolder(const QString & threadName) :
 	threadName(threadName), isActive_(true)
 {
+	setObjectName(threadName);
 }
 
 ThreadHolder::~ThreadHolder()
