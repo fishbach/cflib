@@ -52,6 +52,7 @@ private slots:
 
 	void test_memorableRandom()
 	{
+		QTextStream(stdout) << "random: '" << memorableRandom() << "'" << endl;
 		QCOMPARE(memorableRandom().length(), 8);
 		QVERIFY(memorableRandom() != memorableRandom());
 	}
