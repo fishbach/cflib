@@ -16,11 +16,7 @@
  * along with cflib. If not, see <http://www.gnu.org/licenses/>.
  */
 
-define([
-	'cflib/ext/ZeroClipboard'
-], function(ZeroClipboard) {
-
-	ZeroClipboard.config( { swfPath: '/swf/cflib/ZeroClipboard.swf' } );
+define(function() {
 
 	var timeDiff = 0;
 	var popupZIndex = 1010;
@@ -42,6 +38,9 @@ define([
 		this.closeFunc     = callback;
 		this.closeContext  = context;
 	};
+
+	var clipboardDataFunc = null;
+	var clipboardBeforecopy = function(e) { e.preventDefault(); };
 
 	// ========================================================================
 
@@ -244,10 +243,23 @@ define([
 		return str;
 	};
 
-	util.initClipboardButton = function(button, dataFunc) {
-		new ZeroClipboard(button).on('copy', function(e) {
-			e.clipboardData.setData('text/plain', dataFunc());
-		});
+	util.setClipboardDefault = function(dataFunc) {
+		if (clipboardDataFunc) {
+			document.removeEventListener('beforecopy', clipboardBeforecopy);
+			document.removeEventListener('copy',       clipboardDataFunc);
+			clipboardDataFunc = null;
+		}
+		if (!dataFunc) return;
+		clipboardDataFunc = function(e) {
+			var sel = window.getSelection().toString();
+			if (!sel || sel.length < 2) {
+				e.preventDefault();
+				if (e.clipboardData) e.clipboardData.setData('text/plain', dataFunc());
+				else                 window.clipboardData.setData('Text',  dataFunc());
+			}
+		};
+		document.addEventListener('beforecopy', clipboardBeforecopy);
+		document.addEventListener('copy',       clipboardDataFunc);
 	};
 
 	util.toHex = function(n, len) {

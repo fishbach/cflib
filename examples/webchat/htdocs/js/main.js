@@ -4,8 +4,9 @@ require([
 	'cflib/net/netutil',
 	'cflib/net/rmi',
 	'cflib/util/storage',
+	'cflib/util/util',
 	'services/infoservice'
-], function(netUtil, rmi, storage, infoService) { $(function() {
+], function(netUtil, rmi, storage, util, infoService) { $(function() {
 
 window.onerror = function() {
 	netUtil.logInfo("JS exception: " + Array.prototype.join.call(arguments, ', '));
@@ -24,10 +25,9 @@ infoService.test(function(val) {
 	$('#msg').html(val);
 });
 
-
 window.rmi = rmi;
 window.info = infoService;
 window.plog = function() { console.log(arguments); };
-
+window.util = util;
 
 }); }); });
