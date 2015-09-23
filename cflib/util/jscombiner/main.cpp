@@ -172,7 +172,8 @@ void convertFile(const QString & name)
 		foreach (QString dep, parseDepends(m.captured(2))) {
 			if (first) first = false;
 			else params += ", ";
-			params << "mod." << (defined.contains(dep) ? dep.replace('/', '.') : "null");
+			if (defined.contains(dep)) params << "mod." << dep.replace('/', '.');
+			else                       params << "null";
 		}
 		params += ")";
 		file.insert(closing, params);
