@@ -39,7 +39,7 @@ int main(int argc, char *argv[])
 {
 	// parse cmd line
 	CmdLine cmdLine(argc, argv);
-	Option exportOpt('e', "export",   true); cmdLine << exportOpt;
+	Option exportOpt('e', "export", true); cmdLine << exportOpt;
 	if (!cmdLine.parse()) return 1;
 
 	QCoreApplication a(argc, argv);

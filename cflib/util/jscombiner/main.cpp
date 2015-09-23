@@ -21,7 +21,7 @@
 inline QString & operator<<(QString & lhs, const QString & rhs) { return lhs += rhs; }
 inline QString & operator<<(QString & lhs, const char * rhs) { return lhs += rhs; }
 
-const QRegularExpression callRE(R"((?:^|\W)(require|define)\s*\((.*?)function\s*\()",
+const QRegularExpression callRE(R"((?:^|\W)(require|define)\s*\((\s*|\s*\[.*?\]\s*,\s*)function\s*\()",
 	QRegularExpression::DotMatchesEverythingOption);
 const QRegularExpression closingRE(R"(\(|\)|"|'|//|/\*)",
 	QRegularExpression::DotMatchesEverythingOption);
@@ -29,6 +29,13 @@ const QRegularExpression eolRE(R"(\r|\n)",
 	QRegularExpression::DotMatchesEverythingOption);
 
 QString output;
+
+QString basePath = "";
+
+struct Space {
+	QMap<QString, Space> sub;
+};
+Space spaces;
 
 int usage()
 {
@@ -86,6 +93,49 @@ int findClosing(const QString & src, int start)
 	return len - 1;
 }
 
+QStringList parseDepends(const QString & depends)
+{
+	QStringList rv;
+	int pos = 0;
+	int start = -1;
+	while (pos < depends.length()) {
+		QChar c = depends[pos++];
+		if (c == '\'' || c == '"') {
+			if (start == -1) start = pos;
+			else {
+				rv << depends.mid(start, pos - start - 1);
+				start = -1;
+			}
+		}
+	}
+	return rv;
+}
+
+void getDependencies(const QString & name)
+{
+	QString file;
+	{
+		QFile f(name);
+		f.open(QFile::ReadOnly);
+		file = QString::fromUtf8(f.readAll());
+	}
+	int pos = 0;
+	forever {
+		QRegularExpressionMatch m = callRE.match(file, pos);
+		if (!m.hasMatch()) break;
+		pos = m.capturedEnd();
+
+		if (m.captured(1) == "define") {
+			QStringList parts = name.mid(basePath.length()).split('/');
+			parts.removeLast();
+			Space * sp = &spaces;
+			foreach (const QString & p, parts) sp = &(sp->sub[p]);
+		}
+
+		foreach (const QString & dep, parseDepends(m.captured(2))) getDependencies(basePath + dep + ".js");
+	}
+}
+
 void convertFile(const QString & name)
 {
 	QString file;
@@ -98,8 +148,9 @@ void convertFile(const QString & name)
 	forever {
 		QRegularExpressionMatch m = callRE.match(file, pos);
 		if (!m.hasMatch()) break;
+		pos = m.capturedEnd();
 
-		QTextStream(stdout) << m.captured(1) << " | " << m.captured(2) << " | " << m.captured(3) << "\n";
+//		QTextStream(stdout) << m.captured(1) << " | " << m.captured(2) << " | " << m.captured(3) << "\n";
 		int start = m.capturedStart(1);
 		int end = m.capturedEnd(2);
 		int closing = findClosing(file, end);
@@ -108,9 +159,27 @@ void convertFile(const QString & name)
 		file.insert(end, "Y");
 		file.insert(start, "X");
 
-		pos = m.capturedEnd();
 	}
-	output += file;
+//	output += file;
+}
+
+void printSpaces(const Space & space)
+{
+	if (space.sub.isEmpty()) {
+		output += "{}";
+		return;
+	}
+	output += "{ ";
+	bool first = true;
+	QMapIterator<QString, Space> it(space.sub);
+	while (it.hasNext()) {
+		it.next();
+		if (first) first = false;
+		else       output += ", ";
+		output << it.key() << ": ";
+		printSpaces(it.value());
+	}
+	output += " }";
 }
 
 int main(int argc, char *argv[])
@@ -123,7 +192,14 @@ int main(int argc, char *argv[])
 	QString main = args.first();
 	if (!QFileInfo(main).isReadable()) return usage();
 
-	convertFile(main);
+	int pos = main.lastIndexOf('/');
+	if (pos != -1) basePath = main.left(pos + 1);
+
+	getDependencies(main);
+	output += "var mod = ";
+	printSpaces(spaces);
+	output += ";\n";
+//	convertFile(main);
 
 	QTextStream(stdout) << output.toUtf8();
 	return 0;
