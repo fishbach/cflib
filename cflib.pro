@@ -37,6 +37,7 @@ addSubdir(cflib/util)
 addSubdir(cflib/util/util_test, cflib/util)
 addSubdir(cflib/util/filefinder)
 addSubdir(cflib/util/gitversion)
+addSubdir(cflib/util/jscombiner)
 addSubdir(examples/webchat, cflib_net cflib_crypt cflib/serialize/ser cflib_serialize cflib_util)
 
 OTHER_FILES = \
