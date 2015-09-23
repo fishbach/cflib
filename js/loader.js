@@ -21,6 +21,7 @@ var require, define, mod;
 
 var loadedModules = {};
 var loadingModules = {};
+var loadingCount = 0;
 var defines = {};
 var waitingCalls = [];
 var basePath = '';
@@ -48,7 +49,7 @@ function checkWaitingCalls()
 		again = false;
 		var i = waitingCalls.length;
 		while (i--) {
-			if (waitingCalls[i]()) {
+			if (checkDepends.apply(this, waitingCalls[i])) {
 				waitingCalls.splice(i, 1);
 				again = true;
 			}
@@ -79,13 +80,44 @@ function getCurrentModuleName()
 	return null;
 }
 
+function getLoop(chain, deps)
+{
+	var last = chain[chain.length - 1];
+	for (var d in deps[last]) {
+		for (var i = 0, len = chain.length ; i < len ; ++i) {
+			if (d == chain[i]) return chain.slice(i).concat(d);
+		}
+		if (d in deps) {
+			var rv = getLoop(chain.concat(d), deps);
+			if (rv) return rv;
+		}
+	}
+	return null;
+}
+
 function loadEvent()
 {
 	this.removeEventListener('load', loadEvent);
+
 	var name = getModuleName(this);
 	if (!(name in defines)) {
 		loadedModules[name] = null;
 		checkWaitingCalls();
+	}
+
+	if (--loadingCount === 0 && waitingCalls.length > 0) {
+		var deps = {};
+		var first = null;
+		for (var i = 0, len = waitingCalls.length ; i < len ; ++i) {
+			var c = waitingCalls[i];
+			var from = c[0];
+			if (!from) continue;
+			if (!first) first = from;
+			var o = deps[from] = {};
+			var to = c[1];
+			for (var j = 0, jLen = to.length ; j < jLen ; ++j) o[to[j]] = true;
+		}
+		throw new Error('dependency loop detected: ' + getLoop([first], deps).join(' -> '));
 	}
 }
 
@@ -102,6 +134,7 @@ function checkDepends(name, depends, func)
 			if (!(mod in loadingModules)) {
 				loadingModules[mod] = true;
 
+				++loadingCount;
 				var node = document.createElement('script');
 				node.addEventListener('load', loadEvent);
 				node.async = true;
@@ -124,7 +157,7 @@ function doDefine(name, depends, func)
 	if (name) defines[name] = true;
 	if (func) {
 		if (!checkDepends(name, depends, func)) {
-			waitingCalls.push(function() { return checkDepends(name, depends, func); });
+			waitingCalls.push(arguments);
 		} else {
 			if (name) checkWaitingCalls();
 		}
