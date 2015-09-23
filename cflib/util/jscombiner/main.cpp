@@ -37,6 +37,9 @@ struct Space {
 };
 Space spaces;
 
+QMap<QString, QMap<QString, bool> > deps;
+QSet<QString> defined;
+
 int usage()
 {
 	QTextStream(stderr) << "usage: " << QCoreApplication::applicationName() << " <main.js>" << endl;
@@ -113,6 +116,8 @@ QStringList parseDepends(const QString & depends)
 
 void getDependencies(const QString & name)
 {
+	deps[name] = QMap<QString, bool>();
+
 	QString file;
 	{
 		QFile f(name);
@@ -125,14 +130,21 @@ void getDependencies(const QString & name)
 		if (!m.hasMatch()) break;
 		pos = m.capturedEnd();
 
+		// update spaces
 		if (m.captured(1) == "define") {
-			QStringList parts = name.mid(basePath.length()).split('/');
+			const QString mod = name.mid(basePath.length(), name.length() - basePath.length() - 3);
+			defined << mod;
+			QStringList parts = mod.split('/');
 			parts.removeLast();
 			Space * sp = &spaces;
 			foreach (const QString & p, parts) sp = &(sp->sub[p]);
 		}
 
-		foreach (const QString & dep, parseDepends(m.captured(2))) getDependencies(basePath + dep + ".js");
+		foreach (const QString & dep, parseDepends(m.captured(2))) {
+			const QString depFile = basePath + dep + ".js";
+			deps[name][depFile] = true;
+			getDependencies(depFile);
+		}
 	}
 }
 
@@ -144,23 +156,37 @@ void convertFile(const QString & name)
 		f.open(QFile::ReadOnly);
 		file = QString::fromUtf8(f.readAll());
 	}
+
 	int pos = 0;
 	forever {
 		QRegularExpressionMatch m = callRE.match(file, pos);
 		if (!m.hasMatch()) break;
 		pos = m.capturedEnd();
 
-//		QTextStream(stdout) << m.captured(1) << " | " << m.captured(2) << " | " << m.captured(3) << "\n";
-		int start = m.capturedStart(1);
-		int end = m.capturedEnd(2);
+		int start   = m.capturedStart(1);
+		int end     = m.capturedEnd(2);
 		int closing = findClosing(file, end);
 
-		file.insert(closing, "C");
-		file.insert(end, "Y");
-		file.insert(start, "X");
+		QString params = "(";
+		bool first = true;
+		foreach (QString dep, parseDepends(m.captured(2))) {
+			if (first) first = false;
+			else params += ", ";
+			params << "mod." << (defined.contains(dep) ? dep.replace('/', '.') : "null");
+		}
+		params += ")";
+		file.insert(closing, params);
 
+		QString head;
+		if (m.captured(1) == "define") {
+			QString mod = name.mid(basePath.length(), name.length() - basePath.length() - 3);
+			head << "mod." << mod.replace('/', '.') << " = ";
+		}
+		head << "(";
+		file.replace(start, end - start, head);
+		pos += head.length() - end + start;
 	}
-//	output += file;
+	output += file;
 }
 
 void printSpaces(const Space & space)
@@ -196,10 +222,28 @@ int main(int argc, char *argv[])
 	if (pos != -1) basePath = main.left(pos + 1);
 
 	getDependencies(main);
+
 	output += "var mod = ";
 	printSpaces(spaces);
 	output += ";\n";
-//	convertFile(main);
+
+	while (!deps.isEmpty()) {
+		QMutableMapIterator<QString, QMap<QString, bool> > it(deps);
+		while (it.hasNext()) {
+			if (!it.next().value().isEmpty()) continue;
+			const QString f = it.key();
+			it.remove();
+
+			output
+				<< "\n// ============================\n"
+				<< "// " << f << "\n"
+				<< "// ============================\n\n";
+			convertFile(f);
+			output += "\n";
+			QMutableMapIterator<QString, QMap<QString, bool> > it2(deps);
+			while (it2.hasNext()) it2.next().value().remove(f);
+		}
+	}
 
 	QTextStream(stdout) << output.toUtf8();
 	return 0;
