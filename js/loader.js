@@ -26,6 +26,7 @@ var defines = {};
 var waitingCalls = [];
 var basePath = '';
 var head = null;
+var needName = null;
 
 function setModule(name, value)
 {
@@ -68,16 +69,10 @@ function getModuleName(node)
 	return path.substr(basePath.length, path.length - basePath.length - 3);
 }
 
-function getCurrentModuleName()
+function getCurrentModuleName(func)
 {
-	if (document.currentScript) return getModuleName(document.currentScript);
-	var scripts = document.getElementsByTagName('script');
-	var i = scripts.length;
-	while (i--) {
-		var scr = scripts[i];
-		if (scr.readyState == 'interactive') return getModuleName(scr);
-	}
-	return null;
+	if (document.currentScript) func(getModuleName(document.currentScript));
+	else                        needName = func;
 }
 
 function getLoop(chain, deps)
@@ -100,6 +95,11 @@ function loadEvent()
 	this.removeEventListener('load', loadEvent);
 
 	var name = getModuleName(this);
+	if (needName) {
+		needName(name);
+		needName = null;
+	}
+
 	if (!(name in defines)) {
 		loadedModules[name] = null;
 		checkWaitingCalls();
@@ -171,7 +171,7 @@ function doDefine(name, depends, func)
 }
 
 require = function(depends, func) { doDefine(null, depends, func); };
-define  = function(depends, func) { doDefine(getCurrentModuleName(), depends, func); };
+define  = function(depends, func) { getCurrentModuleName(function(name) { doDefine(name, depends, func); }); };
 mod     = {};
 
 (function() {
