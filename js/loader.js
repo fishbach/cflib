@@ -16,7 +16,7 @@
  * along with cflib. If not, see <http://www.gnu.org/licenses/>.
  */
 
-var require, define;
+var require, define, mod;
 (function(scope) {
 
 var loadedModules = {};
@@ -24,8 +24,22 @@ var loadingModules = {};
 var defines = {};
 var waitingCalls = [];
 var basePath = '';
-var basePathLen = 0;
 var head = null;
+
+function setModule(name, value)
+{
+	loadedModules[name] = value;
+
+	var last = mod;
+	var parts = name.split('/');
+	var len = parts.length - 1;
+	for (var i = 0 ; i < len ; ++i) {
+		var p = parts[i];
+		if (!(p in last)) last = last[p] = {};
+		else              last = last[p];
+	}
+	last[parts[len]] = value;
+}
 
 function checkWaitingCalls()
 {
@@ -50,7 +64,7 @@ function checkWaitingCalls()
 function getModuleName(node)
 {
 	var path = node.getAttribute('src');
-	return path.substr(basePathLen, path.length - basePathLen - 3);
+	return path.substr(basePath.length, path.length - basePath.length - 3);
 }
 
 function getCurrentModuleName()
@@ -101,7 +115,7 @@ function checkDepends(name, depends, func)
 	if (needLoad) return false;
 
 	var rv = func.apply(scope, args);
-	if (name) loadedModules[name] = rv;
+	if (name) setModule(name, rv);
 	return true;
 }
 
@@ -111,19 +125,21 @@ function doDefine(name, depends, func)
 	if (func) {
 		if (!checkDepends(name, depends, func)) {
 			waitingCalls.push(function() { return checkDepends(name, depends, func); });
-		} else if (name) checkWaitingCalls();
-		return;
-	}
-
-	var rv = depends();
-	if (name) {
-		loadedModules[name] = rv;
-		checkWaitingCalls();
+		} else {
+			if (name) checkWaitingCalls();
+		}
+	} else {
+		var rv = depends();
+		if (name) {
+			setModule(name, rv);
+			checkWaitingCalls();
+		}
 	}
 }
 
 require = function(depends, func) { doDefine(null, depends, func); };
 define  = function(depends, func) { doDefine(getCurrentModuleName(), depends, func); };
+mod     = {};
 
 (function() {
 	var scripts = document.getElementsByTagName('script');
@@ -134,11 +150,7 @@ define  = function(depends, func) { doDefine(getCurrentModuleName(), depends, fu
 		if (!main) continue;
 
 		var p = main.lastIndexOf('/');
-		if (p != -1) {
-			++p;
-			basePath = main.substr(0, p);
-			basePathLen = basePath.length;
-		}
+		if (p != -1) basePath = main.substr(0, p + 1);
 		head = scr.parentNode;
 
 		var node = document.createElement('script');
