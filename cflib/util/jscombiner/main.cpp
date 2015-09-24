@@ -16,10 +16,10 @@
  * along with cflib. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <QtCore>
+#include <cflib/util/cmdline.h>
+#include <cflib/util/util.h>
 
-inline QString & operator<<(QString & lhs, const QString & rhs) { return lhs += rhs; }
-inline QString & operator<<(QString & lhs, const char * rhs) { return lhs += rhs; }
+using namespace cflib::util;
 
 const QRegularExpression callRE(R"((?:^|\W)(require|define)\s*\((\s*|\s*\[.*?\]\s*,\s*)function\s*\()",
 	QRegularExpression::DotMatchesEverythingOption);
@@ -39,6 +39,7 @@ Space spaces;
 
 QMap<QString, QMap<QString, bool> > deps;
 QSet<QString> defined;
+QSet<QString> excludes;
 
 int usage()
 {
@@ -116,14 +117,10 @@ QStringList parseDepends(const QString & depends)
 
 void getDependencies(const QString & name)
 {
+	QString file = readTextfile(name);
+
 	deps[name] = QMap<QString, bool>();
 
-	QString file;
-	{
-		QFile f(name);
-		f.open(QFile::ReadOnly);
-		file = QString::fromUtf8(f.readAll());
-	}
 	int pos = 0;
 	forever {
 		QRegularExpressionMatch m = callRE.match(file, pos);
@@ -141,6 +138,7 @@ void getDependencies(const QString & name)
 		}
 
 		foreach (const QString & dep, parseDepends(m.captured(2))) {
+			if (excludes.contains(dep)) continue;
 			const QString depFile = basePath + dep + ".js";
 			deps[name][depFile] = true;
 			getDependencies(depFile);
@@ -150,12 +148,7 @@ void getDependencies(const QString & name)
 
 void convertFile(const QString & name)
 {
-	QString file;
-	{
-		QFile f(name);
-		f.open(QFile::ReadOnly);
-		file = QString::fromUtf8(f.readAll());
-	}
+	QString file = readTextfile(name);
 
 	int pos = 0;
 	forever {
@@ -212,12 +205,18 @@ void printSpaces(const Space & space)
 int main(int argc, char *argv[])
 {
 	QCoreApplication app(argc, argv);
-	QStringList args = app.arguments();
-	args.removeFirst();
 
-	if (args.size() != 1) return usage();
-	QString main = args.first();
+	// parse cmd line
+	CmdLine cmdLine(argc, argv);
+	Option help    ('h', "help"                     ); cmdLine << help;
+	Option exclude ('e', "exclude", true, true, true); cmdLine << exclude;
+	Arg    fileName(false                           ); cmdLine << fileName;
+	if (!cmdLine.parse() || help.isSet()) return usage();
+
+	QString main = fileName.value();
 	if (!QFileInfo(main).isReadable()) return usage();
+
+	foreach (const QByteArray & a, exclude.values()) excludes << QString::fromUtf8(a);
 
 	int pos = main.lastIndexOf('/');
 	if (pos != -1) basePath = main.left(pos + 1);

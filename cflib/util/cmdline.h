@@ -20,6 +20,8 @@
 
 #include <QtCore>
 
+namespace cflib { namespace util {
+
 class ArgBase
 {
 public:
@@ -79,3 +81,5 @@ private:
 	QList<ArgBase *> nonOptionals_;
 	QByteArray executable_;
 };
+
+}}	// namespace

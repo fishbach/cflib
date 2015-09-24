@@ -25,4 +25,5 @@ TARGET = jscombiner
 SOURCES = \
 	main.cpp \
 
+useLibs(cflib_util)
 app()

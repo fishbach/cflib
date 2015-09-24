@@ -18,6 +18,8 @@
 
 #include "cmdline.h"
 
+namespace cflib { namespace util {
+
 CmdLine::CmdLine(int argc, char *argv[])
 {
 	for (int i = 0 ; i < argc ; ++i) rawArgs_ << argv[i];
@@ -87,3 +89,5 @@ CmdLine & CmdLine::operator<<(Option & opt)
 	if (!opt.isOptional_) nonOptionals_ << &opt;
 	return *this;
 }
+
+}}	// namespace
