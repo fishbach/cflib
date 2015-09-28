@@ -18,11 +18,31 @@
 
 define(function() {
 
+	var spaceRE = /\s+/;
+
 	function html(code) { this.innerHTML = code; }
 	function remove() { this.parentNode.removeChild(this); }
 	function css(name, value, priority) {
-		if (value !== undefined) this.style.setProperty(name, value, priority);
-		else                     return this.style.getPropertyValue(name);
+		if (value === undefined) return this.style.getPropertyValue(name);
+		else                            this.style.setProperty(name, value, priority);
+	}
+	function style(styles) {
+		if (styles === undefined) return this.style.cssText;
+		else                             this.style.cssText = styles;
+	}
+	function appendTo(el) { el.appendChild(this); }
+	function addClass(name) {
+		var names = this.className;
+		var a = names.split(spaceRE);
+		var i = a.length;
+		while (i--) if (a[i] == name) return;
+		this.className = names + ' ' + name;
+	}
+	function removeClass(name) {
+		var a = this.className.split(spaceRE);
+		var i = a.length;
+		while (i--) if (a[i] == name) a.splice(i, 1);
+		this.className = a.join(' ');
 	}
 
 	function Fn(el) { this.el = el; }
@@ -37,6 +57,10 @@ define(function() {
 
 	$.all = function(sel, scope) {
 		return new Fn(scope ? scope.querySelectorAll(sel) : document.querySelectorAll(sel));
+	};
+
+	$.create = function(tagName) {
+		return new Fn(document.createElement(tagName));
 	};
 
 	$.start = function(func) {
@@ -54,6 +78,13 @@ define(function() {
 
 	$.unfocus = function() { document.activeElement.blur(); };
 
+	$.scrollPos = function() {
+		var el = document.documentElement;
+		return [
+			(window.pageXOffset || el.scrollLeft) - (el.clientLeft || 0),
+			(window.pageYOffset || el.scrollTop ) - (el.clientTop  || 0)];
+	}
+
 	// ------------------------------------------------------------------------
 
 	$.fn = Fn.prototype = {
@@ -67,13 +98,20 @@ define(function() {
 			return rv === undefined ? this : rv;
 		},
 
-		html: function(code) { return this.each(html, arguments); },
+		html        : function(code)                  { return this.each(html, arguments); },
+		on          : function(name, func, capture)   { return this.each(this.el.addEventListener,    arguments); },
+		off         : function(name, func)            { return this.each(this.el.removeEventListener, arguments); },
+		remove      : function()                      { return this.each(remove, arguments); },
+		css         : function(name, value, priority) { return this.each(css, arguments); },
+		style       : function(styles)                { return this.each(style, arguments); },
+		appendTo    : function(el)                    { return this.each(appendTo, arguments); },
 
-		on : function(name, func, capture) { return this.each(EventTarget.addEventListener,    arguments); },
-		off: function(name, func)          { return this.each(EventTarget.removeEventListener, arguments); },
+		addClass    : function(name)                  { return this.each(addClass, arguments); },
+		removeClass : function(name)                  { return this.each(removeClass, arguments); },
+		toggleClass : function(name, state)           { return this.each(state ? addClass : removeClass, arguments); },
 
-		remove: function() { return this.each(remove, arguments); },
-		css: function(name, value, priority) { return this.each(css, arguments); }
+		width       : function()                      { return this.el.offsetWidth; },
+		height      : function()                      { return this.el.offsetHeight; }
 	};
 
 	return $;

@@ -1,5 +1,5 @@
 require([
-	'cflib/ext/jquery'
+	'cflib/domext/util'
 ], function() { require([
 	'cflib/dom',
 	'cflib/net/netutil',

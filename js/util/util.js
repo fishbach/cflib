@@ -187,20 +187,6 @@ define([
 		return (str.lastIndexOf(part) == (str.length - part.length));
 	};
 
-	// time = 150
-	util.scrollTop = function(time, finishCb, scope) {
-		if (time === undefined) {
-			window.scrollTo(0, 0);
-		} else {
-			var cb = scope ? function() { finishCb.call(scope); } : finishCb;
-			$('html, body').animate({ scrollTop : 0 }, time, cb);
-		}
-	};
-
-	util.scrollToBottom = function($el) {
-		$el.scrollTop($el.prop('scrollHeight'));
-	};
-
 	util.dateIsValid = function(date) {
 		return (
 			Object.prototype.toString.call(date) === "[object Date]" &&
@@ -341,10 +327,11 @@ define([
 	};
 
 	util.createBackdrop = function(darken) {
-		var $rv = $(
-			'<div style="position:fixed;top:0;right:0;bottom:0;left:0;z-index:' +
-			(++popupZIndex) + ';background-color:#000;opacity:' + (darken ? '0.5' : '0') + '" />'
-		).appendTo(document.body);
+		var $rv = $
+			.create('div')
+			.style('position:fixed;top:0;right:0;bottom:0;left:0;z-index:' +
+				(++popupZIndex) + ';background-color:#000;opacity:' + (darken ? '0.5' : '0'))
+			.appendTo(document.body);
 		var remove = $rv.remove;
 		$rv.remove = function() { remove.apply(this, arguments); --popupZIndex; };
 		return $rv;
@@ -352,7 +339,7 @@ define([
 
 	util.showPopup = function($el, x, y, w, darken) {
 		var $backdrop = util.createBackdrop(darken);
-		var $arrow    = $('div', $el).eq(0);
+		var $arrow    = $('div', $el.el);
 
 		var ew = $el.width() + 26;
 		var eh = $el.height();
@@ -380,15 +367,17 @@ define([
 		}
 
 		var rv = new Popup();
+		var noEv = function(e) { e.stopPropagation(); };
+		var escClose = function(e) { if (e.keyCode == 27) rv.close(); };
 		rv.close = function() {
 			var i = openPopups.length;
 			while (i--) if (openPopups[i] == rv) { openPopups.splice(i, 1); break; }
 
-			$el.off().css('display', 'none');
-			$backdrop.off().remove();
-			$arrow.off();
-			$('.popupContent', $el).off();
-			$(document).off('.cflibUtilShowPopup' + popupZIndex);
+			$el.off('click', closeEv).css('display', 'none');
+			$backdrop.off('mousedown', closeEv).remove();
+			$arrow.off('click', noEv);
+			$('.popupContent', $el).off('click', noEv);
+			$(document).off('keydown', escClose);
 			popupZIndex -= 2;
 			rv.close = function() {};
 			if (rv.closeFunc) rv.closeFunc.call(rv.closeContext);
@@ -399,23 +388,15 @@ define([
 			e.stopPropagation();
 			rv.close();
 		};
-		$backdrop.mousedown(closeEv);
-		$el.click(closeEv);
-		var noEv = function(e) { e.stopPropagation(); };
-		$arrow.click(noEv);
-		$('.popupContent', $el).click(noEv);
+		$backdrop.on('mousedown', closeEv);
+		$el.on('click', closeEv);
+		$arrow.on('click', noEv);
+		$('.popupContent', $el).on('click', noEv);
 
-		$(':focus').blur();
-		$el.css({
-			'z-index' : ++popupZIndex,
-			display   : 'block',
-			top       : wy + 'px',
-			left      : wx + 'px'
-		});
+		$.unfocus();
+		$el.style('z-index:' + (++popupZIndex) + ';display:block;top:' + wy + 'px;left:' + wx + 'px');
 
-		$(document).on('keydown.cflibUtilShowPopup' + popupZIndex, function(e) {
-			if (e.keyCode == 27) rv.close();
-		});
+		$(document).on('keydown', escClose);
 
 		openPopups.push(rv);
 		return rv;
@@ -426,15 +407,17 @@ define([
 	};
 
 	util.preloadImage = function(src, callback, context) {
-		if (!$.isArray(src)) src = [src];
+		if (!Array.isArray(src)) src = [src];
 		var count = src.length;
-		$.each(src, function(i, src) {
+		$.each(src, function(src) {
 			var img = new Image();
-			$(img).load(function() {
+			var loadFunc = function() {
+				img.removeEventListener('load', loadFunc);
 				img = null;
 				--count;
 				if (callback && count === 0) callback.call(context);
-			});
+			};
+			img.addEventListener('load', loadFunc);
 			img.src = src;
 		});
 	};

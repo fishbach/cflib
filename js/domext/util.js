@@ -25,15 +25,25 @@ require([
 
 	function setAnimProps(el, props)
 	{
-		for (var p in props) el.css(p, props[p] + 'px');
+		for (var p in props) {
+			if (p == 'scrollTop') {
+				window.scrollTo($.scrollPos()[0], props[p]);
+			} else {
+				el.css(p, props[p] + 'px');
+			}
+		}
 	}
 
 	function getAnimProps(el, props)
 	{
 		var rv = {};
 		for (var p in props) {
-			var val = el.css(p);
-			rv[p] = !val ? 0 : parseInt(val, 10);
+			if (p == 'scrollTop') {
+				rv[p] = $.scrollPos()[1];
+			} else {
+				var val = el.css(p);
+				rv[p] = !val ? 0 : parseInt(val, 10);
+			}
 		}
 		return rv;
 	}
@@ -128,6 +138,16 @@ require([
 				.animate({ left:  0 }, 40, !i ? finished : undefined);
 		}
 		return this;
+	};
+
+	// time = 150
+	$.scrollTop = function(time, finishCb, scope) {
+		if (time === undefined) {
+			window.scrollTo(0, 0);
+		} else {
+			var cb = scope ? function() { finishCb.call(scope); } : finishCb;
+			$.all('html, body').animate({ scrollTop : 0 }, time, cb);
+		}
 	};
 
 });
