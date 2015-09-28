@@ -17,11 +17,12 @@
  */
 
 define([
+	'cflib/dom',
 	'cflib/net/ber',
 	'cflib/util/ev',
 	'cflib/util/storage',
 	'cflib/util/util'
-], function(ber, EV, storage, util) {
+], function($, ber, EV, storage, util) {
 
 	var requestActive   = false;
 	var requestCallback = null;
@@ -133,14 +134,14 @@ define([
 	rmi.resetStorage = function(keepItems) {
 		var keep = [['clId', storage.get('clId')]];
 		if (keepItems) {
-			if (!$.isArray(keepItems)) keepItems = [keepItems];
-			$.each(keepItems, function(i, name) {
+			if (!keepItems.length) keepItems = [keepItems];
+			$.each(keepItems, function(name) {
 				var val = storage.get(name);
 				if (val) keep.push([name, val]);
 			});
 		}
 		storage.clear();
-		$.each(keep, function(i, keyVal) { storage.set(keyVal[0], keyVal[1], true); });
+		$.each(keep, function(keyVal) { storage.set(keyVal[0], keyVal[1], true); });
 	};
 
 	return rmi;

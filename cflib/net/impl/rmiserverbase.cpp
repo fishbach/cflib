@@ -634,12 +634,12 @@ QString RMIServerBase::generateJSForClass(const SerializeTypeInfo & ti) const
 	if (nsPrefix.isEmpty()) js << "var ";
 	js <<
 		nsPrefix << typeName << " = function() { " <<
-		nsPrefix << typeName << ".prototype.constructor.apply(this, arguments); };\n"
+		nsPrefix << typeName << ".prototype.__init.apply(this, arguments); };\n"
 		"__inherit.setBase(" << nsPrefix << typeName << ", ";
 	if (base.isEmpty()) js << "__inherit.Base";
 	else js << base;
 	js	<< ");\n"
-		<< nsPrefix << typeName << ".prototype.constructor = function(param) {\n";
+		<< nsPrefix << typeName << ".prototype.__init = function(param) {\n";
 	if (base.isEmpty()) js << "\t" << nsPrefix << typeName << ".__super.apply(this, arguments);\n";
 	js	<< "\tif (param instanceof Uint8Array) {\n"
 		"\t\tvar __D = __ber.D(param);\n";

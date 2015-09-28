@@ -17,11 +17,12 @@
  */
 
 define([
+	'cflib/dom',
 	'cflib/net/ajax',
 	'cflib/net/rmi',
 	'cflib/util/util',
 	'services/logservice'
-], function(ajax, rmi, util, logService) {
+], function($, ajax, rmi, util, logService) {
 
 	function logToServer(category, str)
 	{
@@ -74,13 +75,16 @@ define([
 
 			if (isLoading && !$backdrop) {
 				$backdrop = util.createBackdrop(false);
-				$(':focus').blur();
-				$(document).on('keydown.loading', function(e) {
+				$.unfocus();
+
+				var iePrevent = function(e) {
 					// IE 11 Bug:
 					// It catches key events even from foreign iFrames.
 					// This is ie a problem with the iFrame of Credit Card 3D Secure.
-					if ($('iframe').length === 0) e.preventDefault();
-				});
+					if ($.all('iframe').length === 0) e.preventDefault();
+				};
+				$(document).on('keydown', iePrevent);
+
 				if (keepWaiting) {
 					showWaitingFunc();
 				} else {
@@ -96,7 +100,7 @@ define([
 				} else {
 					hideWaitingFunc();
 				}
-				$(document).off('keydown.loading');
+				$(document).off('keydown', iePrevent);
 				$backdrop.remove();
 				$backdrop = null;
 			}

@@ -94,7 +94,7 @@ define(function() {
 		unbindFromAll(obj);
 	};
 
-	$.extend(EV.prototype, {
+	EV.prototype = {
 
 		// While an event is in process, it may happen that the listeners of that event change.
 		// In this case newly added or removed listeners will not be called.
@@ -149,7 +149,7 @@ define(function() {
 			this.enabled = enabled;
 		}
 
-	});
+	};
 
 	return EV;
 });

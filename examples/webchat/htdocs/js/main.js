@@ -1,12 +1,13 @@
 require([
 	'cflib/ext/jquery'
 ], function() { require([
+	'cflib/dom',
 	'cflib/net/netutil',
 	'cflib/net/rmi',
 	'cflib/util/storage',
 	'cflib/util/util',
 	'services/infoservice'
-], function(netUtil, rmi, storage, util, infoService) { $(function() {
+], function($, netUtil, rmi, storage, util, infoService) { $.start(function() {
 
 window.onerror = function() {
 	netUtil.logInfo("JS exception: " + Array.prototype.join.call(arguments, ', '));

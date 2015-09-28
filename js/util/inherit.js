@@ -21,8 +21,8 @@ define(function() {
 	var Inherit = function() {};
 	var inherit = new Inherit();
 
-	inherit.Base = function() { inherit.Base.prototype.constructor.apply(this, arguments); };
-	inherit.Base.prototype.constructor = function() {};
+	inherit.Base = function() { inherit.Base.prototype.__init.apply(this, arguments); };
+	inherit.Base.prototype.__init = function() {};
 	inherit.setBase = function(cl, base) {
 		var Prototype = function() {};
 		Prototype.prototype = base.prototype;

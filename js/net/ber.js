@@ -194,7 +194,8 @@ define(function() {
 		this.tagNo = disableTagNumbering ? 0 : 1;
 		this.data = new Uint8Array(0);
 	}
-	$.extend(Serializer.prototype, {
+
+	Serializer.prototype = {
 
 		add: function(d) {
 			var od = this.data;
@@ -301,7 +302,7 @@ define(function() {
 			return this.a(S.data, true);
 		}
 
-	});
+	};
 
 	function Deserializer(data, disableTagNumbering)
 	{
@@ -311,7 +312,7 @@ define(function() {
 		this.tagNo = disableTagNumbering ? 0 : 1;
 	}
 
-	$.extend(Deserializer.prototype, {
+	Deserializer.prototype = {
 
 		read: function() {
 			for (;;) {
@@ -397,7 +398,7 @@ define(function() {
 			return rv;
 		}
 
-	});
+	};
 
 	// ========================================================================
 

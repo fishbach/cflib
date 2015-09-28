@@ -16,7 +16,9 @@
  * along with cflib. If not, see <http://www.gnu.org/licenses/>.
  */
 
-define(function() {
+define([
+	'cflib/dom'
+], function($) {
 
 	var timeDiff = 0;
 	var popupZIndex = 1010;
@@ -71,29 +73,11 @@ define(function() {
 	};
 
 	util.getInputStr = function(el) {
-		return util.simplifyStr($(el).val()).replace(/[^\w@\._\- ]+/g, '');
+		return util.simplifyStr(el.value).replace(/[^\w@\._\- ]+/g, '');
 	};
 
 	util.dateFromUTC = function(date) {
 		return new Date(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate());
-	};
-
-	util.shake = function($el) {
-		var oldPos  = $el.css('position');
-		var oldLeft = $el.css('left');
-		$el.css('position', 'relative');
-		var elCount = $el.length;
-		var finished = function() {
-			if (--elCount) return;
-			$el.css('position', oldPos).css('left', oldLeft);
-		};
-		var i = 3;
-		while (i--) {
-			$el
-				.animate({ left: -5 }, 40)
-				.animate({ left:  5 }, 80)
-				.animate({ left:  0 }, 40, !i ? finished : undefined);
-		}
 	};
 
 	util.debounce = function(func, ms) {
