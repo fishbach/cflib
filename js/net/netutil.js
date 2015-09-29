@@ -55,6 +55,13 @@ define([
 		var $backdrop = null;
 		var keepWaiting = false;
 
+		var disableKeys = function(e) {
+			// IE 11 Bug:
+			// It catches key events even from foreign iFrames.
+			// This is ie a problem with the iFrame of Credit Card 3D Secure.
+			if ($.all('iframe').length === 0) e.preventDefault();
+		};
+
 		rmi.ev.loading.bind(function(isLoading) {
 
 			if (isLoading == 'on') {
@@ -77,13 +84,7 @@ define([
 				$backdrop = util.createBackdrop(false);
 				$.unfocus();
 
-				var iePrevent = function(e) {
-					// IE 11 Bug:
-					// It catches key events even from foreign iFrames.
-					// This is ie a problem with the iFrame of Credit Card 3D Secure.
-					if ($.all('iframe').length === 0) e.preventDefault();
-				};
-				$(document).on('keydown', iePrevent);
+				$(document).on('keydown', disableKeys);
 
 				if (keepWaiting) {
 					showWaitingFunc();
@@ -100,7 +101,7 @@ define([
 				} else {
 					hideWaitingFunc();
 				}
-				$(document).off('keydown', iePrevent);
+				$(document).off('keydown', disableKeys);
 				$backdrop.remove();
 				$backdrop = null;
 			}
