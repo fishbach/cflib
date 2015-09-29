@@ -50,7 +50,7 @@ public:
 		ping_("\x89\x00", 2),
 		deflateEnabled_(deflate)
 	{
-		logFunctionTrace
+		logTrace("WSConnHandler(%1)", connId_);
 		setNoDelay(true);
 		startReadWatcher();
 		if (connectionTimeoutSec > 0) {

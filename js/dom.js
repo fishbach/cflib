@@ -27,7 +27,7 @@ define(function() {
 	function css(name, value, priority)
 	{
 		if (value === undefined) return this.style.getPropertyValue(name);
-		else                            this.style.setProperty(name, value, priority);
+		else                            this.style.setProperty(name, value, !priority ? null : priority /* IE 11 bug */);
 	}
 
 	function style(styles)
