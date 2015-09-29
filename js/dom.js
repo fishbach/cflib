@@ -40,13 +40,13 @@ define(function() {
 
 	function addClass(name)
 	{
-		if (this.className.search(new ReExp('(^|\\s)' + name + '(\\s|$)')) != -1) return;
+		if (this.className.search(new RegExp('(^|\\s)' + name + '(\\s|$)')) != -1) return;
 		this.className += ' ' + name;
 	}
 
 	function removeClass(name)
 	{
-		this.className = this.className.replace(new ReExp('(^|\\s+)' + name + '(\\s+|$)', 'g'), ' ');
+		this.className = this.className.replace(new RegExp('(^|\\s+)' + name + '(\\s+|$)', 'g'), ' ');
 	}
 
 	function getValue(value)
@@ -55,18 +55,46 @@ define(function() {
 		else                            this.value = value;
 	}
 
+	function closest(sel)
+	{
+		var e = this.el.parentNode;
+		while (e && e != document) {
+			var a = e.parentNode.querySelectorAll(sel);
+			var i = a.length;
+			while (i--) if (a[i] == e) return new Fn(e);
+		}
+		return null;
+	}
+
+	function getWidth()
+	{
+		if (this.el == document) return document.body.clientWidth;
+		return this.el.offsetWidth;
+	}
+
+	function getHeight()
+	{
+		if (this.el == document) return document.body.clientHeight;
+		return this.el.offsetHeight;
+	}
+
 	function Fn(el) { this.el = el; }
 
 	// ========================================================================
 
 	var $ = function(sel, scope) {
-		return new Fn(typeof sel != 'string' ? sel :
-			scope ? scope.querySelector(sel) :
-			document.querySelector(sel));
+		return new Fn(
+			typeof sel != 'string' ? sel :
+			!scope                 ? document.querySelector(sel) :
+			scope instanceof Fn    ? scope.el.querySelector(sel) :
+			                         scope.querySelector(sel));
 	};
 
 	$.all = function(sel, scope) {
-		return new Fn(scope ? scope.querySelectorAll(sel) : document.querySelectorAll(sel));
+		return new Fn(
+			!scope                 ? document.querySelectorAll(sel) :
+			scope instanceof Fn    ? scope.el.querySelectorAll(sel) :
+			                         scope.querySelectorAll(sel));
 	};
 
 	$.create = function(tagName) {
@@ -120,8 +148,11 @@ define(function() {
 		toggleClass : function(name, state)           { return this.each(state ? addClass : removeClass, arguments); },
 		val         : function(value)                 { return this.each(getValue, arguments); },
 
-		width       : function()                      { return this.el.offsetWidth; },
-		height      : function()                      { return this.el.offsetHeight; }
+		width       : getWidth,
+		height      : getHeight,
+		offset      : function()                      { return this.el.getBoundingClientRect(); },
+
+		closest     : closest
 	};
 
 	return $;

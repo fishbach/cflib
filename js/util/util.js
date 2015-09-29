@@ -339,9 +339,10 @@ define([
 
 	util.showPopup = function($el, x, y, w, darken) {
 		var $backdrop = util.createBackdrop(darken);
-		var $arrow    = $('div', $el.el);
+		var $arrow    = $('div', $el);
 
-		var ew = $el.width() + 26;
+		$el.style('visibility:hidden;display:block');
+		var ew = $el.width();
 		var eh = $el.height();
 		var sw = $(document).width();
 		var sh = $(document).height();
