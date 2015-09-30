@@ -20,13 +20,10 @@ require([
 	'cflib/dom'
 ], function($) {
 
-	var animEls     = [];
-	var animTimer   = null;
-	var wheelYMin   = Infinity;
-	var wheelYMax   = 0;
-	var wheelYStart = 0;
-	var wheelYCount = 0;
-	var wheelYTrans = null;
+	var animEls   = [];
+	var animTimer = null;
+	var wheelYMin = Infinity;
+	var wheelYSeen = [];
 
 	function setAnimProps(el, props)
 	{
@@ -156,27 +153,21 @@ require([
 	};
 
 	$.wheelAdjustY = function(e) {
-		console.log(e.deltaY, e.deltaMode, wheelYTrans ? wheelYTrans(e.deltaY) : null);
 		var dy = e.deltaY;
-		if (wheelYTrans) return wheelYTrans(dy);
+		var abs = Math.abs(dy);
+		if (abs < 1) return 0;
 
-		if (Math.abs(dy) < 1) return 0;
-		++wheelYCount;
-		if (!wheelYStart) wheelYStart = new Date().getTime();
-		if (new Date().getTime() - wheelYStart < 1000 || wheelYCount <= 5) {
-			wheelYMin = Math.min(Math.abs(dy), wheelYMin);
-			wheelYMax = Math.max(Math.abs(dy), wheelYMax);
-			return dy > 0 ? 5 : -5;
+		var i = wheelYSeen.length;
+		if (i == 5) return dy;
+
+		while (i--) if (wheelYSeen[i] == abs) break;
+		if (i < 0) {
+			wheelYSeen.push(abs);
+			wheelYMin = Math.min(abs, wheelYMin);
 		}
 
-		/*jshint smarttabs:true */
-		console.log('mima: ', wheelYMin, wheelYMax);
-		wheelYTrans =
-			wheelYMin == wheelYMax    ? function(x) { return x > 0 ? 5 : -5; } :
-			wheelYMax / wheelYMin > 3 ? function(x) { return x; } :
-			                            function(x) { return x / wheelYMin * 5; };
-
-		return wheelYTrans(dy);
+		if (wheelYSeen.length == 1) return dy > 0 ? 5 : -5;
+		return dy / wheelYMin * 5;
 	};
 
 });
