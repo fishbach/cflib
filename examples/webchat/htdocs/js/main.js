@@ -30,5 +30,6 @@ window.rmi = rmi;
 window.info = infoService;
 window.plog = function() { console.log(arguments); };
 window.util = util;
+window.$ = $;
 
 }); }); });

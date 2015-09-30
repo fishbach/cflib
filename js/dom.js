@@ -78,12 +78,21 @@ define(function() {
 		return this.el.offsetHeight;
 	}
 
+	function matches(sel, scope)
+	{
+		var a = $.all(sel, scope).el;
+		var i = a.length;
+		while (i--) if (a[i] == this.el) return true;
+		return false;
+	}
+
 	function Fn(el) { this.el = el; }
 
 	// ========================================================================
 
 	var $ = function(sel, scope) {
 		return new Fn(
+			/*jshint smarttabs:true */
 			typeof sel != 'string' ? sel :
 			!scope                 ? document.querySelector(sel) :
 			scope instanceof Fn    ? scope.el.querySelector(sel) :
@@ -92,6 +101,7 @@ define(function() {
 
 	$.all = function(sel, scope) {
 		return new Fn(
+			/*jshint smarttabs:true */
 			!scope                 ? document.querySelectorAll(sel) :
 			scope instanceof Fn    ? scope.el.querySelectorAll(sel) :
 			                         scope.querySelectorAll(sel));
@@ -123,6 +133,12 @@ define(function() {
 			(window.pageYOffset || el.scrollTop ) - (el.clientTop  || 0)];
 	};
 
+	$.checkEvent = function(e, sel, scope) {
+		e.stopPropagation();
+		var $rv = $(e.target);
+		return $rv.matches(sel, scope) ? $rv : null;
+	};
+
 	// ------------------------------------------------------------------------
 
 	$.fn = Fn.prototype = {
@@ -151,6 +167,7 @@ define(function() {
 		width       : getWidth,
 		height      : getHeight,
 		offset      : function()                      { return this.el.getBoundingClientRect(); },
+		matches     : matches,
 
 		closest     : closest
 	};

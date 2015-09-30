@@ -20,8 +20,13 @@ require([
 	'cflib/dom'
 ], function($) {
 
-	var animEls = [];
-	var animTimer = null;
+	var animEls     = [];
+	var animTimer   = null;
+	var wheelYMin   = Infinity;
+	var wheelYMax   = 0;
+	var wheelYStart = 0;
+	var wheelYCount = 0;
+	var wheelYTrans = null;
 
 	function setAnimProps(el, props)
 	{
@@ -148,6 +153,30 @@ require([
 			var cb = scope ? function() { finishCb.call(scope); } : finishCb;
 			$.all('html, body').animate({ scrollTop : 0 }, time, cb);
 		}
+	};
+
+	$.wheelAdjustY = function(e) {
+		console.log(e.deltaY, e.deltaMode, wheelYTrans ? wheelYTrans(e.deltaY) : null);
+		var dy = e.deltaY;
+		if (wheelYTrans) return wheelYTrans(dy);
+
+		if (Math.abs(dy) < 1) return 0;
+		++wheelYCount;
+		if (!wheelYStart) wheelYStart = new Date().getTime();
+		if (new Date().getTime() - wheelYStart < 1000 || wheelYCount <= 5) {
+			wheelYMin = Math.min(Math.abs(dy), wheelYMin);
+			wheelYMax = Math.max(Math.abs(dy), wheelYMax);
+			return dy > 0 ? 5 : -5;
+		}
+
+		/*jshint smarttabs:true */
+		console.log('mima: ', wheelYMin, wheelYMax);
+		wheelYTrans =
+			wheelYMin == wheelYMax    ? function(x) { return x > 0 ? 5 : -5; } :
+			wheelYMax / wheelYMin > 3 ? function(x) { return x; } :
+			                            function(x) { return x / wheelYMin * 5; };
+
+		return wheelYTrans(dy);
 	};
 
 });
