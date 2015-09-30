@@ -36,7 +36,17 @@ define(function() {
 		else                             this.style.cssText = styles;
 	}
 
-	function appendTo(el) { el.appendChild(this); }
+	function append(el)
+	{
+		if (el instanceof Fn) el.appendTo(this);
+		else                  this.appendChild(el);
+	}
+
+	function appendTo(el)
+	{
+		if (el instanceof Fn) el.append(this);
+		else                  el.appendChild(this);
+	}
 
 	function addClass(name)
 	{
@@ -62,6 +72,7 @@ define(function() {
 			var a = e.parentNode.querySelectorAll(sel);
 			var i = a.length;
 			while (i--) if (a[i] == e) return new Fn(e);
+			e = e.parentNode;
 		}
 		return null;
 	}
@@ -78,12 +89,25 @@ define(function() {
 		return this.el.offsetHeight;
 	}
 
-	function matches(sel, scope)
+	function data(name, value)
 	{
-		var a = $.all(sel, scope).el;
-		var i = a.length;
-		while (i--) if (a[i] == this.el) return true;
-		return false;
+		if (value === undefined) return this.el.getAttribute('data-' + name);
+		else                            this.el.setAttribute('data-' + name, value);
+	}
+
+	function checkEvent(e, sel, scope)
+	{
+		e.stopPropagation();
+		var el = e.target;
+		var p = el.parentNode;
+		while (el != scope && p) {
+			var a = p.querySelectorAll(sel);
+			var i = a.length;
+			while (i--) if (a[i] == el) return el;
+			el = p;
+			p = el.parentNode;
+		}
+		return null;
 	}
 
 	function Fn(el) { this.el = el; }
@@ -133,10 +157,12 @@ define(function() {
 			(window.pageYOffset || el.scrollTop ) - (el.clientTop  || 0)];
 	};
 
-	$.checkEvent = function(e, sel, scope) {
-		e.stopPropagation();
-		var $rv = $(e.target);
-		return $rv.matches(sel, scope) ? $rv : null;
+	$.checkEvent = function(sel, func) {
+		return function(e) {
+			var el = checkEvent(e, sel, this);
+			if (!el) return;
+			func.call(el, e);
+		};
 	};
 
 	$.extend = function(obj1, obj2) { for (var key in obj2) obj1[key] = obj2[key]; };
@@ -145,7 +171,7 @@ define(function() {
 
 	$.fn = Fn.prototype = {
 
-		count: function() { var l = this.el.length; return !l ? 1 : l; },
+		count: function() { return !this.el ? 0 : Array.isArray(this.el) ? this.el.length : 1; },
 		each: function(func, params) {
 			var els = this.el;
 			var rv;
@@ -160,6 +186,7 @@ define(function() {
 		remove      : function()                      { return this.each(remove, arguments); },
 		css         : function(name, value, priority) { return this.each(css, arguments); },
 		style       : function(styles)                { return this.each(style, arguments); },
+		append      : function(el)                    { return this.each(append, arguments); },
 		appendTo    : function(el)                    { return this.each(appendTo, arguments); },
 		addClass    : function(name)                  { return this.each(addClass, arguments); },
 		removeClass : function(name)                  { return this.each(removeClass, arguments); },
@@ -169,9 +196,12 @@ define(function() {
 		width       : getWidth,
 		height      : getHeight,
 		offset      : function()                      { return this.el.getBoundingClientRect(); },
-		matches     : matches,
+		data        : data,
 
-		closest     : closest
+		eq          : function(id)                    { return $(this.el[id]); },
+		closest     : closest,
+		next        : function()                      { return $(this.el.nextElementSibling    ); },
+		prev        : function()                      { return $(this.el.previousElementSibling); }
 	};
 
 	return $;
