@@ -97,7 +97,6 @@ define(function() {
 
 	function checkEvent(e, sel, scope)
 	{
-		e.stopPropagation();
 		var el = e.target;
 		var p = el.parentNode;
 		while (el != scope && p) {
@@ -115,20 +114,22 @@ define(function() {
 	// ========================================================================
 
 	var $ = function(sel, scope) {
-		return new Fn(
+		var el =
 			/*jshint smarttabs:true */
 			typeof sel != 'string' ? sel :
 			!scope                 ? document.querySelector(sel) :
 			scope instanceof Fn    ? scope.el.querySelector(sel) :
-			                         scope.querySelector(sel));
+			                         scope.querySelector(sel);
+		return el ? new Fn(el) : null;
 	};
 
 	$.all = function(sel, scope) {
-		return new Fn(
+		var els =
 			/*jshint smarttabs:true */
 			!scope                 ? document.querySelectorAll(sel) :
 			scope instanceof Fn    ? scope.el.querySelectorAll(sel) :
-			                         scope.querySelectorAll(sel));
+			                         scope.querySelectorAll(sel);
+		return els.length > 0 ? new Fn(els) : null;
 	};
 
 	$.create = function(tagName) {
@@ -161,7 +162,7 @@ define(function() {
 		return function(e) {
 			var el = checkEvent(e, sel, this);
 			if (!el) return;
-			func.call(el, e);
+			if (func.call(el, e) !== false) e.stopPropagation();
 		};
 	};
 
