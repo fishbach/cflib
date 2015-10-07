@@ -68,13 +68,33 @@ define(function() {
 		else                            this.value = value;
 	}
 
+	function attr(name, value)
+	{
+		if (value === undefined) return this.getAttribute(name);
+		else                            this.setAttribute(name, value);
+	}
+
+	function prop(name, active)
+	{
+		if (active === undefined) return this.getAttribute(name) !== null;
+		else if (active)                 this.setAttribute(name, '');
+		else                             this.removeAttribute(name);
+	}
+
 	function closest(sel)
 	{
-		var e = this.el.parentNode;
+		var s = this.el;
+		var e = s.parentNode;
+		var chain = [s];
 		while (e && e != document) {
-			var a = e.parentNode.querySelectorAll(sel);
+			var a = e.querySelectorAll(sel);
 			var i = a.length;
-			while (i--) if (a[i] == e) return new Fn(e);
+			while (i--) {
+				var ai = a[i];
+				var j = chain.length;
+				while (j--) if (ai == chain[j]) return new Fn(ai);
+			}
+			chain.push(e);
 			e = e.parentNode;
 		}
 		return null;
@@ -94,8 +114,14 @@ define(function() {
 
 	function data(name, value)
 	{
-		if (value === undefined) return this.el.getAttribute('data-' + name);
-		else                            this.el.setAttribute('data-' + name, value);
+		return attr.call(this.el, 'data-' + name, value);
+	}
+
+	function index(testFunc)
+	{
+		var els = this.els;
+		for (var i = 0, len = els.length ; i < len ; ++i) if (testFunc.call(els[i])) return i;
+		return -1;
 	}
 
 	function checkEvent(e, sel, scope)
@@ -197,6 +223,8 @@ define(function() {
 		removeClass : function(name)                  { return this.each(removeClass, arguments); },
 		toggleClass : function(name, state)           { return this.each(state ? addClass : removeClass, arguments); },
 		val         : function(value)                 { return this.each(getValue, arguments); },
+		attr        : function(name, value)           { return this.each(attr, arguments); },
+		prop        : function(name, active)          { return this.each(prop, arguments); },
 
 		width       : getWidth,
 		height      : getHeight,
@@ -205,6 +233,8 @@ define(function() {
 		data        : data,
 
 		eq          : function(id)                    { return $(this.els[id]); },
+		index       : index,
+
 		closest     : closest,
 		next        : function()                      { return $(this.el.nextElementSibling    ); },
 		prev        : function()                      { return $(this.el.previousElementSibling); },
