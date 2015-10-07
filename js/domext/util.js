@@ -31,7 +31,7 @@ require([
 		var rv = {};
 		for (var p in props) {
 			var parts = unitRE.exec(props[p]);
-			if (parts) rv[p] = [parts[1], parts[2]];
+			if (parts) rv[p] = [+parts[1], parts[2]];
 		}
 		return rv;
 	}
@@ -57,15 +57,15 @@ require([
 			var is;
 			if (p == 'scrollTop') is = $.scrollPos()[1];
 			else {
-				is = parseFloat($el.computed(p)) || 0;
-				if (u == '%' && is > 0) {
-					var rel = parseFloat($el.parent().computed(
+				var comp = unitRE.exec($el.computed(p));
+				is = comp ? +comp[1] : 0;
+				if (u == '%' && (!comp || comp[2] != '%')) {
+					var rel =
 						p == 'height' ||
 						p == 'top'         || p == 'bottom' ||
 						p == 'margin-top'  || p == 'margin-bottom' ||
 						p == 'padding-top' || p == 'padding-bottom' ?
-						'height' : 'width'
-					));
+						$el.parent().height() : $el.parent().width();
 					is = rel ? 100 * is / rel : 0;
 				}
 			}
