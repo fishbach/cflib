@@ -51,6 +51,30 @@ define(function() {
 		else                  el.appendChild(this);
 	}
 
+	function insertBeforeMe(el)
+	{
+		if (el instanceof Fn) el.insertMeBefore(this);
+		else                  this.parentNode.insertBefore(el, this);
+	}
+
+	function insertMeBefore(el)
+	{
+		if (el instanceof Fn) el.insertBeforeMe(this);
+		else                  el.parentNode.insertBefore(this, el);
+	}
+
+	function insertAfterMe(el)
+	{
+		if (el instanceof Fn) el.insertMeAfter(this);
+		else                  this.parentNode.insertBefore(el, this.nextSibling);
+	}
+
+	function insertMeAfter(el)
+	{
+		if (el instanceof Fn) el.insertAfterMe(this);
+		else                  el.parentNode.insertBefore(this, el.nextSibling);
+	}
+
 	function addClass(name)
 	{
 		if (this.className.search(new RegExp('(^|\\s)' + name + '(\\s|$)')) != -1) return;
@@ -211,20 +235,24 @@ define(function() {
 			return rv === undefined ? this : rv;
 		},
 
-		html        : function(code)                  { return this.each(html, arguments); },
-		on          : function(name, func, capture)   { return this.each(addEventListener,    arguments); },
-		off         : function(name, func)            { return this.each(removeEventListener, arguments); },
-		remove      : function()                      { return this.each(remove, arguments); },
-		css         : function(name, value, priority) { return this.each(css, arguments); },
-		style       : function(styles)                { return this.each(style, arguments); },
-		append      : function(el)                    { return this.each(append, arguments); },
-		appendTo    : function(el)                    { return this.each(appendTo, arguments); },
-		addClass    : function(name)                  { return this.each(addClass, arguments); },
-		removeClass : function(name)                  { return this.each(removeClass, arguments); },
-		toggleClass : function(name, state)           { return this.each(state ? addClass : removeClass, arguments); },
-		val         : function(value)                 { return this.each(getValue, arguments); },
-		attr        : function(name, value)           { return this.each(attr, arguments); },
-		prop        : function(name, active)          { return this.each(prop, arguments); },
+		html           : function(code)                  { return this.each(html, arguments); },
+		on             : function(name, func, capture)   { return this.each(addEventListener,    arguments); },
+		off            : function(name, func)            { return this.each(removeEventListener, arguments); },
+		remove         : function()                      { return this.each(remove, arguments); },
+		css            : function(name, value, priority) { return this.each(css, arguments); },
+		style          : function(styles)                { return this.each(style, arguments); },
+		append         : function(el)                    { return this.each(append, arguments); },
+		appendTo       : function(el)                    { return this.each(appendTo, arguments); },
+		insertBeforeMe : function(el)                    { return this.each(insertBeforeMe, arguments); },
+		insertMeBefore : function(el)                    { return this.each(insertMeBefore, arguments); },
+		insertAfterMe  : function(el)                    { return this.each(insertAfterMe, arguments); },
+		insertMeAfter  : function(el)                    { return this.each(insertMeAfter, arguments); },
+		addClass       : function(name)                  { return this.each(addClass, arguments); },
+		removeClass    : function(name)                  { return this.each(removeClass, arguments); },
+		toggleClass    : function(name, state)           { return this.each(state ? addClass : removeClass, arguments); },
+		val            : function(value)                 { return this.each(getValue, arguments); },
+		attr           : function(name, value)           { return this.each(attr, arguments); },
+		prop           : function(name, active)          { return this.each(prop, arguments); },
 
 		width       : getWidth,
 		height      : getHeight,
