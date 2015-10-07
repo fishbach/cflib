@@ -204,7 +204,7 @@ define(function() {
 		offset      : function()                      { return this.el.getBoundingClientRect(); },
 		data        : data,
 
-		eq          : function(id)                    { return $(this.el[id]); },
+		eq          : function(id)                    { return $(this.els[id]); },
 		closest     : closest,
 		next        : function()                      { return $(this.el.nextElementSibling    ); },
 		prev        : function()                      { return $(this.el.previousElementSibling); },
