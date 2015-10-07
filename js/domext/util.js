@@ -24,28 +24,52 @@ require([
 	var animTimer = null;
 	var wheelYMin = Infinity;
 	var wheelYSeen = [];
+	var unitRE = /^\s*([-\d.]+)\s*(\D*)\s*$/;
 
-	function setAnimProps(el, props)
+	function splitUnit(props)
+	{
+		var rv = {};
+		for (var p in props) {
+			var parts = unitRE.exec(props[p]);
+			if (parts) rv[p] = [parts[1], parts[2]];
+		}
+		return rv;
+	}
+
+	function setAnimProps($el, props)
 	{
 		for (var p in props) {
+			var v = props[p];
 			if (p == 'scrollTop') {
-				window.scrollTo($.scrollPos()[0], props[p]);
+				window.scrollTo($.scrollPos()[0], v[0]);
 			} else {
-				el.css(p, props[p] + 'px');
+				$el.css(p, v[0] + v[1]);
 			}
 		}
 	}
 
-	function getAnimProps(el, props)
+	function getAnimProps($el)
 	{
 		var rv = {};
+		var props = $el.anim.prop;
 		for (var p in props) {
-			if (p == 'scrollTop') {
-				rv[p] = $.scrollPos()[1];
-			} else {
-				var val = el.css(p);
-				rv[p] = !val ? 0 : parseInt(val, 10);
+			var u = props[p][1];
+			var is;
+			if (p == 'scrollTop') is = $.scrollPos()[1];
+			else {
+				is = parseFloat($el.computed(p)) || 0;
+				if (u == '%' && is > 0) {
+					var rel = parseFloat($el.parent().computed(
+						p == 'height' ||
+						p == 'top'         || p == 'bottom' ||
+						p == 'margin-top'  || p == 'margin-bottom' ||
+						p == 'padding-top' || p == 'padding-bottom' ?
+						'height' : 'width'
+					));
+					is = rel ? 100 * is / rel : 0;
+				}
 			}
+			rv[p] = [is, u];
 		}
 		return rv;
 	}
@@ -79,7 +103,10 @@ require([
 					var sProp = anim.startProp;
 					var eProp = anim.prop;
 					var p = anim.easing(td / anim.duration);
-					for (var prop in sProp) nProp[prop] = eProp[prop] * p + sProp[prop] * (1 - p);
+					for (var prop in sProp) {
+						var sp = sProp[prop];
+						nProp[prop] = [eProp[prop][0] * p + sp[0] * (1 - p), sp[1]];
+					}
 					setAnimProps(el, nProp);
 				}
 
@@ -106,21 +133,41 @@ require([
 		else if (!easing) easing = $.easing.swing;
 
 		if (this.anim) {
-			this.anim.queue.push([prop, ms, finishFunc, easing]);
+			this.anim.queue.push([splitUnit(prop), ms, finishFunc, easing]);
 			return this;
 		}
 
 		this.anim = {};
 		this.anim.queue = [];
-		this.anim.prop = prop;
+		this.anim.prop = splitUnit(prop);
 		this.anim.duration = ms;
 		this.anim.finish = finishFunc;
 		this.anim.easing = easing;
 		this.anim.start = new Date().getTime();
-		this.anim.startProp = getAnimProps(this, prop);
+		this.anim.startProp = getAnimProps(this);
 		animEls.push(this);
 		if (!animTimer) animTimer = setInterval(animStep, 13);
 		return this;
+	};
+
+	$.fn.stop = function(setFinishState) {
+		if (!this.anim) return this;
+		if (setFinishState) {
+			var q = this.anim.queue;
+			setAnimProps(this, q.length > 0 ? q[q.length - 1][0]: this.anim.prop);
+		}
+		delete this.anim;
+		var i = animEls.length;
+		while (i--) {
+			if (animEls[i] == this) {
+				animEls.splice(i, 1);
+				if (animEls.length === 0) {
+					clearInterval(animTimer);
+					animTimer = null;
+				}
+				return this;
+			}
+		}
 	};
 
 	$.fn.shake = function() {
@@ -135,9 +182,9 @@ require([
 		var i = 3;
 		while (i--) {
 			this
-				.animate({ left: -5 }, 40)
-				.animate({ left:  5 }, 80)
-				.animate({ left:  0 }, 40, !i ? finished : undefined);
+				.animate({ left: '-5px' }, 40)
+				.animate({ left:  '5px' }, 80)
+				.animate({ left:  '0'   }, 40, !i ? finished : undefined);
 		}
 		return this;
 	};

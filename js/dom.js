@@ -22,6 +22,9 @@ define(function() {
 
 	function html(code) { this.innerHTML = code; }
 
+	function addEventListener   () { this.addEventListener   .apply(this, arguments); }
+	function removeEventListener() { this.removeEventListener.apply(this, arguments); }
+
 	function remove() { this.parentNode.removeChild(this); }
 
 	function css(name, value, priority)
@@ -124,12 +127,13 @@ define(function() {
 	};
 
 	$.all = function(sel, scope) {
-		var els =
+		var rv = new Fn();
+		rv.els =
 			/*jshint smarttabs:true */
 			!scope                 ? document.querySelectorAll(sel) :
 			scope instanceof Fn    ? scope.el.querySelectorAll(sel) :
 			                         scope.querySelectorAll(sel);
-		return els.length > 0 ? new Fn(els) : null;
+		return rv;
 	};
 
 	$.create = function(tagName) {
@@ -172,18 +176,18 @@ define(function() {
 
 	$.fn = Fn.prototype = {
 
-		count: function() { return !this.el ? 0 : Array.isArray(this.el) ? this.el.length : 1; },
+		count: function() { return this.els ? this.els.length : 1; },
 		each: function(func, params) {
-			var els = this.el;
+			var els = this.els;
 			var rv;
-			if (!els.length) rv = func.apply(els, params);
-			for (var i = 0, len = els.length ; i < len ; ++i) rv = func.apply(els[i], params);
+			if (!els) rv = func.apply(this.el, params);
+			else for (var i = 0, len = els.length ; i < len ; ++i) rv = func.apply(els[i], params);
 			return rv === undefined ? this : rv;
 		},
 
 		html        : function(code)                  { return this.each(html, arguments); },
-		on          : function(name, func, capture)   { return this.each(this.el.addEventListener,    arguments); },
-		off         : function(name, func)            { return this.each(this.el.removeEventListener, arguments); },
+		on          : function(name, func, capture)   { return this.each(addEventListener,    arguments); },
+		off         : function(name, func)            { return this.each(removeEventListener, arguments); },
 		remove      : function()                      { return this.each(remove, arguments); },
 		css         : function(name, value, priority) { return this.each(css, arguments); },
 		style       : function(styles)                { return this.each(style, arguments); },
@@ -196,13 +200,15 @@ define(function() {
 
 		width       : getWidth,
 		height      : getHeight,
+		computed    : function(name)                  { return getComputedStyle(this.el, null).getPropertyValue(name); },
 		offset      : function()                      { return this.el.getBoundingClientRect(); },
 		data        : data,
 
 		eq          : function(id)                    { return $(this.el[id]); },
 		closest     : closest,
 		next        : function()                      { return $(this.el.nextElementSibling    ); },
-		prev        : function()                      { return $(this.el.previousElementSibling); }
+		prev        : function()                      { return $(this.el.previousElementSibling); },
+		parent      : function()                      { return $(this.el.parentNode); }
 	};
 
 	return $;
