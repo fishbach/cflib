@@ -105,23 +105,41 @@ define(function() {
 		else                             this.removeAttribute(name);
 	}
 
-	function closest(sel)
+	function closest(el, sel)
 	{
-		var s = this.el;
-		var e = s.parentNode;
-		var chain = [s];
+		var e = el.parentNode;
+		var chain = [el];
 		while (e && e != document) {
 			var a = e.querySelectorAll(sel);
 			var i = a.length;
 			while (i--) {
 				var ai = a[i];
 				var j = chain.length;
-				while (j--) if (ai == chain[j]) return new Fn(ai);
+				while (j--) if (ai == chain[j]) return ai;
 			}
 			chain.push(e);
 			e = e.parentNode;
 		}
 		return null;
+	}
+
+	function closestAll(sel)
+	{
+		var els = this.els;
+		var el;
+
+		if (!els) {
+			el = closest(this.el, sel);
+			return el ? new Fn(el) : null;
+		}
+
+		var rv = new Fn();
+		rv.els = [];
+		for (var i = 0, len = els.length ; i < len ; ++i) {
+			el = closest(els[i], sel);
+			if (el) rv.els.push(el);
+		}
+		return rv;
 	}
 
 	function getWidth()
@@ -166,23 +184,25 @@ define(function() {
 
 	// ========================================================================
 
-	var $ = function(sel, scope) {
+	var $ = function(sel, subSel, scope) {
+		if (typeof subSel == 'string') return $(sel + ' ' + subSel, scope).closest(sel);
 		var el =
 			/*jshint smarttabs:true */
 			typeof sel != 'string' ? sel :
-			!scope                 ? document.querySelector(sel) :
-			scope instanceof Fn    ? scope.el.querySelector(sel) :
-			                         scope.querySelector(sel);
+			!subSel                ? document.querySelector(sel) :
+			subSel instanceof Fn   ? subSel.el.querySelector(sel) :
+			                         subSel.querySelector(sel);
 		return el ? new Fn(el) : null;
 	};
 
-	$.all = function(sel, scope) {
+	$.all = function(sel, subSel, scope) {
+		if (typeof subSel == 'string') return $.all(sel + ' ' + subSel, scope).closest(sel);
 		var rv = new Fn();
 		rv.els =
 			/*jshint smarttabs:true */
-			!scope                 ? document.querySelectorAll(sel) :
-			scope instanceof Fn    ? scope.el.querySelectorAll(sel) :
-			                         scope.querySelectorAll(sel);
+			!subSel              ? document.querySelectorAll(sel) :
+			subSel instanceof Fn ? subSel.el.querySelectorAll(sel) :
+			                       subSel.querySelectorAll(sel);
 		return rv;
 	};
 
@@ -254,19 +274,20 @@ define(function() {
 		attr           : function(name, value)           { return this.each(attr, arguments); },
 		prop           : function(name, active)          { return this.each(prop, arguments); },
 
-		width       : getWidth,
-		height      : getHeight,
-		computed    : function(name)                  { return getComputedStyle(this.el, null).getPropertyValue(name); },
-		offset      : function()                      { return this.el.getBoundingClientRect(); },
-		data        : data,
+		width          : getWidth,
+		height         : getHeight,
+		computed       : function(name)                  { return getComputedStyle(this.el, null).getPropertyValue(name); },
+		offset         : function()                      { return this.el.getBoundingClientRect(); },
+		data           : data,
+		hasClass       : function(name)                  { return this.el.className.search(new RegExp('(^|\\s)' + name + '(\\s|$)')) != -1; },
 
-		eq          : function(id)                    { return $(this.els[id]); },
-		index       : index,
+		eq             : function(id)                    { return $(this.els[id]); },
+		index          : index,
 
-		closest     : closest,
-		next        : function()                      { return $(this.el.nextElementSibling    ); },
-		prev        : function()                      { return $(this.el.previousElementSibling); },
-		parent      : function()                      { return $(this.el.parentNode); }
+		closest        : closestAll,
+		next           : function()                      { return $(this.el.nextElementSibling    ); },
+		prev           : function()                      { return $(this.el.previousElementSibling); },
+		parent         : function()                      { return $(this.el.parentNode            ); }
 	};
 
 	return $;
