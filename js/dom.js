@@ -223,7 +223,7 @@ define(function() {
 		for (var i = 0, len = a.length ; i < len ; ++i) func(a[i], i);
 	};
 
-	$.unfocus = function() { document.activeElement.blur(); };
+	$.unfocus = function() { var e = document.activeElement; if (e) e.blur(); };
 
 	$.scrollPos = function() {
 		var el = document.documentElement;

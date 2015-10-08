@@ -184,7 +184,7 @@ require([
 			this
 				.animate({ left: '-5px' }, 40)
 				.animate({ left:  '5px' }, 80)
-				.animate({ left:  '0'   }, 40, !i ? finished : undefined);
+				.animate({ left:  '0px' }, 40, !i ? finished : undefined);
 		}
 		return this;
 	};

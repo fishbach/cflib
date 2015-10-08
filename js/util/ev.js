@@ -76,13 +76,14 @@ define(function() {
 
 	// ========================================================================
 
+	// throttle prevents more than one call per throttle ms
 	var EV = function(source, name, throttle) {
 		this.id = ++uniqueId;
 		this.listenerId = 0;
 		this.source = source;
 		this.name = name;
 		this.throttle = throttle === true ? 50 : throttle;
-		this.throttleLast = new Date().getTime();
+		this.throttleLast = 0;
 		this.throttleParams = null;
 		this.enabled = true;
 		this.listener = {};
@@ -99,17 +100,24 @@ define(function() {
 		// While an event is in process, it may happen that the listeners of that event change.
 		// In this case newly added or removed listeners will not be called.
 		fire: function() {
+			// no throttle
 			if (!this.throttle) return doFire.apply(this, arguments);
+
+			// throttle active -> new parameter
 			if (this.throttleParams) {
 				this.throttleParams = arguments;
 				return;
 			}
+
+			// last call was long ago -> call now
 			var now = new Date().getTime();
 			if (now - this.throttleLast >= this.throttle) {
 				this.throttleLast = now;
 				doFire.apply(this, arguments);
 				return;
 			}
+
+			// delay call
 			var ev = this;
 			this.throttleParams = arguments;
 			setTimeout(function() {

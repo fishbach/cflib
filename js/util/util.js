@@ -80,6 +80,9 @@ define([
 		return new Date(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate());
 	};
 
+	// Call function once at the end of multiple calls.
+	// Will always wait ms before doing call.
+	// If called from inner function, call may come immediately after finish.
 	util.debounce = function(func, ms) {
 		if (!ms) ms = 50;
 		var timer = null;
@@ -94,16 +97,35 @@ define([
 		};
 	};
 
+	// prevents more than one call every given ms.
+	// (same like in cflib/util/ev)
 	util.throttle = function(func, ms) {
 		if (ms === undefined) ms = 50;
-		var running = false;
-		var last = null;
+		var last = 0;
+		var scope = null;
+		var params = null;
 		return function() {
-			if (running || new Date() - last < ms) return;
-			running = true;
-			func.apply(this, arguments);
-			running = false;
-			last = new Date();
+			if (params) {
+				scope  = this;
+				params = arguments;
+				return;
+			}
+			var now = new Date().getTime();
+			if (now - last >= ms) {
+				last = now;
+				func.apply(this, arguments);
+				return;
+			}
+			scope = this;
+			params = arguments;
+			setTimeout(function() {
+				var s = scope;
+				var p = params;
+				last = new Date().getTime();
+				scope = null;
+				params = null;
+				func.apply(s, p);
+			}, ms - now + last);
 		};
 	};
 
