@@ -37,7 +37,8 @@ struct Space {
 };
 Space spaces;
 
-QMap<QString, QMap<QString, bool> > deps;
+QSet<QString> available;
+QStringList order;
 QSet<QString> defined;
 QSet<QString> excludes;
 
@@ -119,8 +120,6 @@ void getDependencies(const QString & name)
 {
 	QString file = readTextfile(name);
 
-	deps[name] = QMap<QString, bool>();
-
 	int pos = 0;
 	forever {
 		QRegularExpressionMatch m = callRE.match(file, pos);
@@ -140,10 +139,12 @@ void getDependencies(const QString & name)
 		foreach (const QString & dep, parseDepends(m.captured(2))) {
 			if (excludes.contains(dep)) continue;
 			const QString depFile = basePath + dep + ".js";
-			deps[name][depFile] = true;
-			getDependencies(depFile);
+			if (!available.contains(depFile)) getDependencies(depFile);
 		}
 	}
+
+	available << name;
+	order << name;
 }
 
 void convertFile(const QString & name)
@@ -227,22 +228,13 @@ int main(int argc, char *argv[])
 	printSpaces(spaces);
 	output += ";\n";
 
-	while (!deps.isEmpty()) {
-		QMutableMapIterator<QString, QMap<QString, bool> > it(deps);
-		while (it.hasNext()) {
-			if (!it.next().value().isEmpty()) continue;
-			const QString f = it.key();
-			it.remove();
-
-			output
-				<< "\n// ============================\n"
-				<< "// " << f << "\n"
-				<< "// ============================\n\n";
-			convertFile(f);
-			output += "\n";
-			QMutableMapIterator<QString, QMap<QString, bool> > it2(deps);
-			while (it2.hasNext()) it2.next().value().remove(f);
-		}
+	foreach (const QString & name, order) {
+		output
+			<< "\n// ============================\n"
+			<< "// " << name << "\n"
+			<< "// ============================\n\n";
+		convertFile(name);
+		output += "\n";
 	}
 
 	QTextStream(stdout) << output.toUtf8();
