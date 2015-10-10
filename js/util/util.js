@@ -401,7 +401,7 @@ define([
 			$arrow.off('click', noEv);
 			$('.popupContent', $el).off('click', noEv);
 			$(document).off('keydown', escClose);
-			popupZIndex -= 2;
+			--popupZIndex;
 			rv.close = function() {};
 			if (rv.closeFunc) rv.closeFunc.call(rv.closeContext);
 		};
