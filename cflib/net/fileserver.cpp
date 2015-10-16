@@ -321,7 +321,13 @@ void FileServer::exportDir(const QString & fullPath, const QString & path, const
 			writeHTMLFile(dest + "/index.html",      parseHtml(filePath, false, path));
 			writeHTMLFile(dest + "/index_part.html", parseHtml(filePath, true,  path));
 		} else if (fileName == "404.html") {
-			writeHTMLFile(dest + "/404.html", parseHtml(filePath, false, path));
+			writeHTMLFile(dest + "/404.html",        parseHtml(filePath, false, path));
+		} else if (fileName.endsWith(".css")) {
+			QString out = parseHtml(filePath, false, path);
+			out.replace(QRegularExpression("(@import url\\(\".*?)\\?" + eTag_), "\\1");
+			QFile f(dest + '/' + fileName);
+			f.open(QFile::WriteOnly | QFile::Truncate);
+			f.write(out.toUtf8());
 		} else {
 			const QString destFile = dest + '/' + fileName;
 			QFile::remove(destFile);
