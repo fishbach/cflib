@@ -445,5 +445,17 @@ define([
 		});
 	};
 
+	util.getETag = function() {
+		var scripts = document.getElementsByTagName('script');
+		var i = scripts.length;
+		while (i--) {
+			var scr = scripts[i];
+			var query = scr.getAttribute('src') || '';
+			var p = query.indexOf('?');
+			if (p != -1) return query.substr(p + 1);
+		}
+		return null;
+	};
+
 	return util;
 });

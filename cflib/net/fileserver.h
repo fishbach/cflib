@@ -43,6 +43,7 @@ private:
 private:
 	const QString path_;
 	const bool parseHtml_;
+	const QByteArray eTag_;
 	typedef QPair<QRegularExpression, QString> Redirect;
 	QList<Redirect> redirects404_;
 	const QRegularExpression pathRE_;

@@ -370,6 +370,10 @@ void RMIServerBase::exportTo(const QString & dest) const
 void RMIServerBase::handleRequest(const Request & request)
 {
 	QByteArray path = request.getUri();
+	{
+		int p = path.indexOf('?');
+		if (p != -1) path = path.left(p);
+	}
 	if (path.startsWith("/api/")) {
 		path.remove(0, 5);
 		if (path.startsWith("services")) showServices(request, path.mid(8));

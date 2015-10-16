@@ -25,6 +25,7 @@ var loadingCount = 0;
 var defines = {};
 var waitingCalls = [];
 var basePath = '';
+var query = '';
 var head = null;
 var needName = null;
 
@@ -66,7 +67,7 @@ function checkWaitingCalls()
 function getModuleName(node)
 {
 	var path = node.getAttribute('src');
-	return path.substr(basePath.length, path.length - basePath.length - 3);
+	return path.substr(basePath.length, path.length - basePath.length - 3 - query.length);
 }
 
 function getCurrentModuleName(func)
@@ -138,7 +139,7 @@ function checkDepends(name, depends, func)
 				var node = document.createElement('script');
 				node.addEventListener('load', loadEvent);
 				node.async = true;
-				node.src = basePath + mod + '.js';
+				node.src = basePath + mod + '.js' + query;
 				head.appendChild(node);
 			}
 		} else if (!needLoad) {
@@ -182,13 +183,21 @@ mod     = {};
 		var main = scr.getAttribute('data-main');
 		if (!main) continue;
 
+		// basePath
 		var p = main.lastIndexOf('/');
 		if (p != -1) basePath = main.substr(0, p + 1);
+
+		// query
+		query = scr.getAttribute('src') || '';
+		p = query.indexOf('?');
+		query = p == -1 ? '' : query.substr(p);
+
+		// head
 		head = scr.parentNode;
 
 		var node = document.createElement('script');
 		node.async = true;
-		node.src = main;
+		node.src = main + query;
 		head.appendChild(node);
 		return;
 	}

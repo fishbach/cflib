@@ -18,6 +18,7 @@
 
 #include "fileserver.h"
 
+#include <cflib/crypt/util.h>
 #include <cflib/net/request.h>
 #include <cflib/util/log.h>
 #include <cflib/util/util.h>
@@ -109,9 +110,10 @@ FileServer::FileServer(const QString & path, bool parseHtml, uint threadCount) :
 	ThreadVerify("FileServer", Worker, threadCount),
 	path_(path),
 	parseHtml_(parseHtml),
+	eTag_(crypt::random(8).toHex()),
 	pathRE_("^(/(?:[_\\-\\w][._\\-\\w]*(?:/[_\\-\\w][._\\-\\w]*)*/?)?)(?:\\?.*)?$"),
 	endingRE_("\\.(\\w+)$"),
-	elementRE_("<!\\s*(\\$|inc |if |else|end)(.*?)!>")
+	elementRE_("<!\\s*(\\$|inc |if |else|end|etag)(.*?)!>")
 {
 }
 
@@ -180,35 +182,49 @@ void FileServer::handleRequest(const Request & request)
 	}
 
 	fullPath = fi.canonicalFilePath();
+	QByteArray replyData;
 
 	// parse html files
 	if (fullPath.endsWith(".html")) {
+		request.addHeaderLine("Cache-Control: no-cache");
+		request.addHeaderLine("ETag: " << eTag_);
 		if (request.isHEAD()) request.sendText("");
 		else if (parseHtml_)  request.sendText(parseHtml(fullPath, isPart, path));
 		else                  request.sendText(cflib::util::readFile(fullPath));
 		return;
+	} else if (fullPath.endsWith(".css")) {
+		replyData = parseHtml(fullPath, false, path).toUtf8();
+	} else {
+		replyData = cflib::util::readFile(fullPath);
 	}
 
 	// deliver static content
+	bool cache = true;
 	bool compression = false;
 	QByteArray contentType = "application/octet-stream";
 	const QRegularExpressionMatch match = endingRE_.match(path);
 	if (match.hasMatch()) {
 		const QString ending = match.captured(1);
-		     if (ending == "htm"  ) { compression = true;  contentType = "text/html; charset=utf-8"; }
-		else if (ending == "ico"  ) { compression = false; contentType = "image/x-icon"; }
-		else if (ending == "gif"  ) { compression = false; contentType = "image/gif"; }
-		else if (ending == "png"  ) { compression = false; contentType = "image/png"; }
-		else if (ending == "jpg"  ) { compression = false; contentType = "image/jpeg"; }
-		else if (ending == "jpeg" ) { compression = false; contentType = "image/jpeg"; }
-		else if (ending == "svg"  ) { compression = true;  contentType = "image/svg+xml"; }
-		else if (ending == "js"   ) { compression = true;  contentType = "application/javascript; charset=utf-8"; }
-		else if (ending == "css"  ) { compression = true;  contentType = "text/css; charset=utf-8"; }
-		else if (ending == "data" ) { compression = true;  contentType = "application/octet-stream"; }
-		else if (ending == "pdf"  ) { compression = true;  contentType = "application/pdf"; }
+		     if (ending == "htm"  ) { cache = false; compression = true;  contentType = "text/html; charset=utf-8"; }
+		else if (ending == "ico"  ) { cache = true;  compression = false; contentType = "image/x-icon"; }
+		else if (ending == "gif"  ) { cache = true;  compression = false; contentType = "image/gif"; }
+		else if (ending == "png"  ) { cache = true;  compression = false; contentType = "image/png"; }
+		else if (ending == "jpg"  ) { cache = true;  compression = false; contentType = "image/jpeg"; }
+		else if (ending == "jpeg" ) { cache = true;  compression = false; contentType = "image/jpeg"; }
+		else if (ending == "svg"  ) { cache = true;  compression = true;  contentType = "image/svg+xml"; }
+		else if (ending == "js"   ) { cache = true;  compression = true;  contentType = "application/javascript; charset=utf-8"; }
+		else if (ending == "css"  ) { cache = true;  compression = true;  contentType = "text/css; charset=utf-8"; }
+		else if (ending == "data" ) { cache = true;  compression = true;  contentType = "application/octet-stream"; }
+		else if (ending == "pdf"  ) { cache = true;  compression = true;  contentType = "application/pdf"; }
+	}
+	if (cache) {
+		request.addHeaderLine("Cache-Control: max-age=31536000");
+	} else {
+		request.addHeaderLine("Cache-Control: no-cache");
+		request.addHeaderLine("ETag: " << eTag_);
 	}
 	if (request.isHEAD()) request.sendReply("", contentType);
-	else                  request.sendReply(cflib::util::readFile(fullPath), contentType, compression);
+	else                  request.sendReply(replyData, contentType, compression);
 }
 
 QString FileServer::parseHtml(const QString & fullPath, bool isPart, const QString & path,
@@ -247,6 +263,9 @@ QString FileServer::parseHtml(const QString & fullPath, bool isPart, const QStri
 		} else if (cmd == "$") {
 			if (skip) continue;
 			retval += handleVars('$' + param.trimmed(), path, params);
+		} else if (cmd == "etag") {
+			if (skip) continue;
+			retval += eTag_;
 		} else if (cmd == "if ") {
 			QStringList cond = splitParams(param);
 			if (cond.size() != 3) {

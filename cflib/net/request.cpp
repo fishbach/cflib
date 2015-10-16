@@ -152,7 +152,6 @@ public:
 	{
 		return
 			"Date: " << cflib::util::dateTimeForHTTP(QDateTime::currentDateTime()) << "\r\n"
-			"Cache-Control: no-store\r\n"
 			"Connection: keep-alive\r\n"
 			"Server: cflib/0.9\r\n";
 	}
