@@ -137,20 +137,23 @@ void FileServer::handleRequest(const Request & request)
 	if (!verifyThreadCall(&FileServer::handleRequest, request)) return;
 
 	// check eTag
-	if (request.getHeader("if-none-match") == eTag_) request.sendRaw(
-		"HTTP/1.1 304 Not Modified\r\n"
-		<< request.defaultHeaders() <<
-		"Cache-Control: no-cache\r\n"
-		"ETag: " << eTag_ << "\r\n"
-		"Content-Type: text/html; charset=utf-8\r\n",
+	if (request.getHeader("if-none-match") == eTag_) {
+		request.sendRaw(
+			"HTTP/1.1 304 Not Modified\r\n"
+			<< request.defaultHeaders() <<
+			"Cache-Control: no-cache\r\n"
+			"ETag: " << eTag_ << "\r\n"
+			"Content-Type: text/html; charset=utf-8\r\n",
 
-		"<html>\r\n"
-		"<head><title>304 - Not Modified</title></head>\r\n"
-		"<body>\r\n"
-		"<h1>304 - Not Modified</h1>\r\n"
-		"</body>\r\n"
-		"</html>\r\n",
-		false);
+			"<html>\r\n"
+			"<head><title>304 - Not Modified</title></head>\r\n"
+			"<body>\r\n"
+			"<h1>304 - Not Modified</h1>\r\n"
+			"</body>\r\n"
+			"</html>\r\n",
+			false);
+		return;
+	}
 
 	// check path for valid chars
 	QString path = request.getUri();
