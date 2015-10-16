@@ -150,13 +150,9 @@ public:
 
 	inline QByteArray defaultHeaders()
 	{
-		const QByteArray now = cflib::util::dateTimeForHTTP(QDateTime::currentDateTime());
 		return
-			"Date: " << now << "\r\n"
-			"Last-Modified: " << now << "\r\n"
-			"Expires: Sat, 01 Jan 2000 00:00:00 GMT\r\n"
-			"Cache-Control: max-age=0, no-store, no-cache, must-revalidate, post-check=0, pre-check=0\r\n"
-			"Pragma: no-cache\r\n"
+			"Date: " << cflib::util::dateTimeForHTTP(QDateTime::currentDateTime()) << "\r\n"
+			"Cache-Control: no-store\r\n"
 			"Connection: keep-alive\r\n"
 			"Server: cflib/0.9\r\n";
 	}
