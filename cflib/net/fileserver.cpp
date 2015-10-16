@@ -140,6 +140,8 @@ void FileServer::handleRequest(const Request & request)
 	if (request.getHeader("if-none-match") == eTag_) request.sendRaw(
 		"HTTP/1.1 304 Not Modified\r\n"
 		<< request.defaultHeaders() <<
+		"Cache-Control: no-cache\r\n"
+		"ETag: " << eTag_ << "\r\n"
 		"Content-Type: text/html; charset=utf-8\r\n",
 
 		"<html>\r\n"
