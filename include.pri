@@ -175,9 +175,13 @@ defineTest(app) {
 		export(QMAKE_POST_LINK)
 	}
 
-	osx:console {
-		CONFIG -= app_bundle
-		export(CONFIG)
+	macx {
+		console {
+			CONFIG -= app_bundle
+			export(CONFIG)
+		}
+		LIBS += -framework Security
+		export(LIBS)
 	}
 
 	win32 {
