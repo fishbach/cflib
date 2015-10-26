@@ -64,11 +64,11 @@ public:
 
 		if (util::libEVLoopOfThread()) {
 			evTimer_ = new util::EVTimer(this, &ThreadData::checkConnection);
-			evTimer_->start(60);
+			evTimer_->start(15);
 		} else {
 			QTimer * timer = new QTimer(this);
 			connect(timer, SIGNAL(timeout()), this, SLOT(checkConnection()));
-			timer->start(60 * 1000);
+			timer->start(15 * 1000);
 		}
 	}
 	~ThreadData()
@@ -86,9 +86,14 @@ private slots:
 	{
 		QTime watch;
 		watch.start();
-		if (!QSqlQuery(*db).exec("SELECT 1")) logWarn("DB error on connection check: %1", db->lastError().text());
-		int elapsed = watch.elapsed();
-		if (elapsed >= 5) logTrace("DB connection responsiveness: %1 msec", elapsed);
+		QSqlQuery query(*db);
+		if (!query.exec("SELECT 1") || !query.next()) {
+			logWarn("DB error on connection check: %1", db->lastError().text());
+			if (!db->open()) logWarn("DB error: %1", db->lastError().text());
+		} else {
+			const int elapsed = watch.elapsed();
+			if (elapsed >= 5) logTrace("DB connection responsiveness: %1 msec", elapsed);
+		}
 	}
 };
 QThreadStorage<ThreadData *> threadData;
