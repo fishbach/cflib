@@ -234,7 +234,7 @@ void FileServer::handleRequest(const Request & request)
 		else if (ending == "js"   ) { cache = true;  compression = true;  contentType = "application/javascript; charset=utf-8"; }
 		else if (ending == "css"  ) { cache = true;  compression = true;  contentType = "text/css; charset=utf-8"; }
 		else if (ending == "data" ) { cache = true;  compression = true;  contentType = "application/octet-stream"; }
-		else if (ending == "pdf"  ) { cache = true;  compression = true;  contentType = "application/pdf"; }
+		else if (ending == "pdf"  ) { cache = false; compression = true;  contentType = "application/pdf"; }
 	}
 	if (cache) {
 		request.addHeaderLine("Cache-Control: max-age=31536000");

@@ -128,7 +128,7 @@ require([
 
 	$.fn.animate = function(prop, ms, finishFunc, easing) {
 		if (!ms) ms = 400;
-		else if (!easing) easing = $.easing.swing;
+		if (!easing) easing = $.easing.swing;
 
 		if (this.anim) {
 			this.anim.queue.push([splitUnit(prop), ms, finishFunc, easing]);

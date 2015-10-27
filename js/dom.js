@@ -277,6 +277,8 @@ define(function() {
 		width          : getWidth,
 		height         : getHeight,
 		computed       : function(name)                  { return getComputedStyle(this.el, null).getPropertyValue(name); },
+
+		// viewport offset
 		offset         : function()                      { return this.el.getBoundingClientRect(); },
 		data           : data,
 		hasClass       : function(name)                  { return this.el.className.search(new RegExp('(^|\\s)' + name + '(\\s|$)')) != -1; },

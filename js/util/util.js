@@ -352,7 +352,7 @@ define([
 		var $rv = $
 			.create('div')
 			.style('position:fixed;top:0;right:0;bottom:0;left:0;z-index:' +
-				(++popupZIndex) + ';background-color:#000;opacity:' + (darken ? '0.5' : '0'))
+				(++popupZIndex) + ';background-color:#000;opacity:' + (!darken ? '0' : darken === true ? '0.5' : darken))
 			.appendTo(document.body);
 		var remove = $rv.remove;
 		$rv.remove = function() { remove.apply(this, arguments); --popupZIndex; };
