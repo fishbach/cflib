@@ -52,7 +52,7 @@ BOTAN_MINOR_VERSION = 23
 	message(cd Botan-1.11.$${BOTAN_MINOR_VERSION})
 	!win32 {
 		message(./configure.py --disable-shared)
-		message(make -j 2 libbotan-1.11.a)
+		message(make -j 10 libbotan-1.11.a)
 		message(chmod a-w build/obj/lib)
 	} else {
 		message(python.exe configure.py --disable-shared)
