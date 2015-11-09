@@ -29,6 +29,7 @@ HEADERS = \
 	libev.h \
 	log.h \
 	mailer.h \
+	sig.h \
 	test.h \
 	threadfifo.h \
 	threadverify.h \

@@ -22,6 +22,7 @@ QT = core
 TARGET = util_test
 
 SOURCES = \
+	sig_test.cpp \
 	threadfifo_test.cpp \
 	util_test.cpp \
 
