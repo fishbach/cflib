@@ -36,6 +36,12 @@ private slots:
 		QCOMPARE(callCount, 3);
 		sig(5);
 		QCOMPARE(callCount, 8);
+		sig.bind([&callCount](int x) { callCount += 2 * x; });
+		sig(2);
+		QCOMPARE(callCount, 14);
+		sig.unbindAll();
+		sig(7);
+		QCOMPARE(callCount, 14);
 	}
 
 	void return_test()
@@ -48,7 +54,6 @@ private slots:
 
 	void ref_test()
 	{
-		std::function<void (int &)> f1 = [](int & x) { x *= 3; };
 		Sig<void (int &)> sig;
 		sig.bind([](int & x) { x += 2; });
 		sig.bind([](int & x) { x *= 3; });

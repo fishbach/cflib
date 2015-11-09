@@ -38,9 +38,14 @@ public:
 		listeners_.push_back(func);
 	}
 
-	void operator()(P... p) const
+	void unbindAll()
 	{
-		for (auto it = listeners_.begin() ; it != listeners_.end() ; ++it) (*it)(p...);
+		listeners_.clear();
+	}
+
+	void operator()(P&&... p) const
+	{
+		for (auto it = listeners_.begin() ; it != listeners_.end() ; ++it) (*it)(std::forward<P>(p)...);
 	}
 
 private:
@@ -59,9 +64,14 @@ public:
 		listener_ = func;
 	}
 
-	R operator()(P... p) const
+	void unbind()
 	{
-		return listener_(p...);
+		listener_ = Func();
+	}
+
+	R operator()(P&&... p) const
+	{
+		return listener_(std::forward<P>(p)...);
 	}
 
 private:
