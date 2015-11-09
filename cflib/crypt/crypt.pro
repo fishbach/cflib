@@ -37,7 +37,7 @@ OTHER_FILES = \
 lib()
 
 # botan
-BOTAN_MINOR_VERSION = 23
+BOTAN_MINOR_VERSION = 24
 !defined(BOTAN_DIR, var) {
 	BOTAN_DIR = $${CFLIB_DIR}/../Botan-1.11.$${BOTAN_MINOR_VERSION}
 }
