@@ -22,6 +22,12 @@
 
 #include <functional>
 
+#define cfsignals \
+	public: \
+		template<typename F> class  sig : public cflib::util::Sig<F> {}; \
+		template<typename F> class rsig : public cflib::util::Sig<F> {}; \
+	public
+
 namespace cflib { namespace util {
 
 template<typename> class Sig;
@@ -38,12 +44,24 @@ public:
 		listeners_.push_back(func);
 	}
 
+	template<typename C>
+	void bind(C * obj, void (C::*func)(P...))
+	{
+		listeners_.push_back([obj, func](P... p) { (obj->*func)(std::forward<P>(p)...); });
+	}
+
+	template<typename C>
+	void bind(const C * obj, void (C::*func)(P...) const)
+	{
+		listeners_.push_back([obj, func](P... p) { (obj->*func)(std::forward<P>(p)...); });
+	}
+
 	void unbindAll()
 	{
 		listeners_.clear();
 	}
 
-	void operator()(P&&... p) const
+	void operator()(P... p) const
 	{
 		for (auto it = listeners_.begin() ; it != listeners_.end() ; ++it) (*it)(std::forward<P>(p)...);
 	}
@@ -64,12 +82,24 @@ public:
 		listener_ = func;
 	}
 
+	template<typename C>
+	void bind(C * obj, R (C::*func)(P...))
+	{
+		listener_ = [obj, func](P... p) { return (obj->*func)(std::forward<P>(p)...); };
+	}
+
+	template<typename C>
+	void bind(const C * obj, R (C::*func)(P...) const)
+	{
+		listener_ = [obj, func](P... p) { return (obj->*func)(std::forward<P>(p)...); };
+	}
+
 	void unbind()
 	{
 		listener_ = Func();
 	}
 
-	R operator()(P&&... p) const
+	R operator()(P... p) const
 	{
 		return listener_(std::forward<P>(p)...);
 	}
