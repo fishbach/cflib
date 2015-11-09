@@ -56,6 +56,11 @@ public:
 		listeners_.push_back([obj, func](P... p) { (obj->*func)(std::forward<P>(p)...); });
 	}
 
+	void bind(Sig<void (P...)> & sig)
+	{
+		listeners_.push_back(sig);
+	}
+
 	void unbindAll()
 	{
 		listeners_.clear();
@@ -92,6 +97,11 @@ public:
 	void bind(const C * obj, R (C::*func)(P...) const)
 	{
 		listener_ = [obj, func](P... p) { return (obj->*func)(std::forward<P>(p)...); };
+	}
+
+	void bind(Sig<R (P...)> & sig)
+	{
+		listener_ = sig;
 	}
 
 	void unbind()
