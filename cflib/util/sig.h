@@ -45,10 +45,16 @@ public:
 		listeners_.push_back(func);
 	}
 
-	template<typename C, typename F>
-	void bind(C obj, F func)
+	template<typename... A, typename C>
+	void bind(C * obj, void (C::*func)(A...))
 	{
-		listeners_.push_back(makeDelegate(obj, func));
+		listeners_.push_back(Delegate<C *, void, A...>(obj, func));
+	}
+
+	template<typename... A, typename C>
+	void bind(const C * obj, void (C::*func)(A...) const)
+	{
+		listeners_.push_back(Delegate<const C *, void, A...>(obj, func));
 	}
 
 	void unbindAll()
@@ -79,10 +85,16 @@ public:
 		listener_ = func;
 	}
 
-	template<typename C, typename F>
-	void bind(C obj, F func)
+	template<typename... A, typename C>
+	void bind(C * obj, R (C::*func)(A...))
 	{
-		listener_ = makeDelegate(obj, func);
+		listener_ = Delegate<C *, R, A...>(obj, func);
+	}
+
+	template<typename... A, typename C>
+	void bind(const C * obj, R (C::*func)(A...) const)
+	{
+		listener_ = Delegate<const C *, R, A...>(obj, func);
 	}
 
 	void unbind()
