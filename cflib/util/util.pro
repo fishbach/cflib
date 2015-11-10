@@ -23,6 +23,7 @@ TARGET = cflib_util
 
 HEADERS = \
 	cmdline.h \
+	delegate.h \
 	evtimer.h \
 	functor.h \
 	hex.h \

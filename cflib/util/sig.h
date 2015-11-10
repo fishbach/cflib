@@ -18,7 +18,7 @@
 
 #pragma once
 
-#include <QtCore>
+#include <cflib/util/delegate.h>
 
 #include <functional>
 
@@ -39,26 +39,16 @@ public:
 	typedef std::function<void (P...)> Func;
 
 public:
-	void bind(const Func & func)
+	template<typename F>
+	void bind(F func)
 	{
 		listeners_.push_back(func);
 	}
 
-	template<typename C>
-	void bind(C * obj, void (C::*func)(P...))
+	template<typename C, typename F>
+	void bind(C obj, F func)
 	{
-		listeners_.push_back([obj, func](P... p) { (obj->*func)(std::forward<P>(p)...); });
-	}
-
-	template<typename C>
-	void bind(const C * obj, void (C::*func)(P...) const)
-	{
-		listeners_.push_back([obj, func](P... p) { (obj->*func)(std::forward<P>(p)...); });
-	}
-
-	void bind(Sig<void (P...)> & sig)
-	{
-		listeners_.push_back(sig);
+		listeners_.push_back(makeDelegate(obj, func));
 	}
 
 	void unbindAll()
@@ -66,7 +56,8 @@ public:
 		listeners_.clear();
 	}
 
-	void operator()(P... p) const
+	template<typename... A>
+	inline void operator()(P... p, A...) const
 	{
 		for (auto it = listeners_.begin() ; it != listeners_.end() ; ++it) (*it)(std::forward<P>(p)...);
 	}
@@ -82,26 +73,16 @@ public:
 	typedef std::function<R (P...)> Func;
 
 public:
-	void bind(const Func & func)
+	template<typename F>
+	void bind(F func)
 	{
 		listener_ = func;
 	}
 
-	template<typename C>
-	void bind(C * obj, R (C::*func)(P...))
+	template<typename C, typename F>
+	void bind(C obj, F func)
 	{
-		listener_ = [obj, func](P... p) { return (obj->*func)(std::forward<P>(p)...); };
-	}
-
-	template<typename C>
-	void bind(const C * obj, R (C::*func)(P...) const)
-	{
-		listener_ = [obj, func](P... p) { return (obj->*func)(std::forward<P>(p)...); };
-	}
-
-	void bind(Sig<R (P...)> & sig)
-	{
-		listener_ = sig;
+		listener_ = makeDelegate(obj, func);
 	}
 
 	void unbind()
@@ -109,7 +90,8 @@ public:
 		listener_ = Func();
 	}
 
-	R operator()(P... p) const
+	template<typename... A>
+	inline R operator()(P... p, A...) const
 	{
 		return listener_(std::forward<P>(p)...);
 	}
