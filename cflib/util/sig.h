@@ -24,8 +24,7 @@
 
 #define cfsignals \
 	public: \
-		template<typename F> class  sig : public cflib::util::Sig<F> {}; \
-		template<typename F> class rsig : public cflib::util::Sig<F> {}; \
+		template<typename F> class sig : public cflib::util::Sig<F> {}; \
 	public
 
 namespace cflib { namespace util {

@@ -34,6 +34,7 @@ HEADERS = \
 	requestlog.h \
 	rmiserver.h \
 	rmiservice.h \
+	rsig.h \
 	tcpconn.h \
 	tcpmanager.h \
 	websocketservice.h \

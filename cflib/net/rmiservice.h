@@ -18,6 +18,7 @@
 
 #pragma once
 
+#include <cflib/net/rsig.h>
 #include <cflib/serialize/serialize.h>
 #include <cflib/serialize/serializeber.h>
 #include <cflib/util/threadverify.h>
@@ -41,6 +42,9 @@ private:
 
 class RMIServiceBase : public util::ThreadVerify
 {
+public:
+	template<typename F> class rsig : public cflib::net::RSig<F> {};
+
 public:
 	virtual cflib::serialize::SerializeTypeInfo getServiceInfo() = 0;
 
