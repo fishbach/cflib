@@ -106,9 +106,7 @@ private slots:
 		BERDeserializer deser(ser.data());
 		int i = 0;
 		QString s;
-		std::function<void (int, const QString &)> func = [&](int pi, const QString & ps) { i = pi; s = ps; };
-//		readAndCall<int, const QString &>(deser, [&](int pi, const QString & ps) -> void { i = pi; s = ps; });
-		readAndCall(deser, func);
+		readAndCall<int, const QString &>(deser, [&](int pi, const QString & ps) { i = pi; s = ps; });
 		QCOMPARE(i, 34);
 		QCOMPARE(s, QString("bla"));
 	}

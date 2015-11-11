@@ -87,8 +87,8 @@ inline T fromByteArray(const QByteArray & data)
 	return retval;
 }
 
-template<typename... P>
-inline void readAndCall(BERDeserializer & deser, std::function<void (P...)> func)
+template<typename... P, typename F>
+inline void readAndCall(BERDeserializer & deser, F func)
 {
 	impl::ReadAndCall<P...>()(deser, func);
 }

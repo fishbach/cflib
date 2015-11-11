@@ -65,7 +65,7 @@ public:
 
 	void regClient(uint connId, serialize::BERDeserializer & deser)
 	{
-		serialize::readAndCall(deser, [this, connId](uint checkCount, P... p) {
+		serialize::readAndCall<P...>(deser, [this, connId](uint checkCount, P... p) {
 			regClient(connId, checkCount, std::forward<P>(p)...);
 		});
 	}
@@ -79,7 +79,7 @@ public:
 
 	void unregClient(uint connId, serialize::BERDeserializer & deser)
 	{
-		serialize::readAndCall(deser, [this, connId](uint checkCount, P... p) {
+		serialize::readAndCall<P...>(deser, [this, connId](uint checkCount, P... p) {
 			unregClient(connId, checkCount, std::forward<P>(p)...);
 		});
 	}
