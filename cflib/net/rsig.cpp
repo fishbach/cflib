@@ -16,29 +16,15 @@
  * along with cflib. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#pragma once
+#include "rmiservice.h"
 
-#include <dao.h>
+#include <cflib/net/impl/rmiserverbase.h>
 
-#include <cflib/net/rmiservice.h>
+namespace cflib { namespace net {
 
-class InfoService : public cflib::net::RMIService<QString>
+void RSigBase::send(uint connId, const QByteArray & data)
 {
-	SERIALIZE_CLASS
-public:
-	InfoService();
-	~InfoService();
+	server_->send(connId, data);
+}
 
-rmi:
-	QString test();
-	QString test(const QString & msg);
-	void async(qint64 i);
-	qint64 iTest(qint64 i) { return i; }
-	Dao update(const Dao & dao);
-	void update(Dao2 & dao);
-	void update(Dao3 & dao);
-	void doSignal(int t) { mySig(t); }
-
-cfsignals:
-	rsig<void (int t)> mySig;
-};
+}}	// namespace

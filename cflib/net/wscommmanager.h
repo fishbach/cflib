@@ -89,6 +89,13 @@ protected:
 	WSCommManagerBase(const QString & path, uint connectionTimeoutSec);
 };
 
+/*
+ * Tags:
+ * 1 : client id (s <-> c)
+ * 2 : rmi       (s <-> c)
+ * 3 : rsig      (s  -> c)
+ */
+
 template<typename C>
 class WSCommManager : public WSCommManagerBase
 {

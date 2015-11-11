@@ -18,46 +18,27 @@
 
 #pragma once
 
-#include <tuple>
+#include <cflib/serialize/serializeber.h>
 
-namespace cflib { namespace util {
+namespace cflib { namespace serialize { namespace impl {
 
-namespace impl {
-
-template <size_t I, typename... P> struct TupleCmp;
+template <size_t I, typename... P> struct SomeToByteArray;
 
 template <size_t I, typename P, typename... PN>
-struct TupleCmp<I, P, PN...>
+struct SomeToByteArray<I, P, PN...>
 {
-	template <typename T>
-	bool operator()(const T & t, size_t count, P p, PN... pn)
+	void operator()(BERSerializer & ser, size_t count, P p, PN... pn)
 	{
-		return I >= count || (std::get<I>(t) == p && TupleCmp<I + 1, PN...>()(t, count, pn...));
+		if (I >= count) return;
+		ser << p;
+		SomeToByteArray<I + 1, PN...>()(ser, count, pn...);
 	}
 };
 
 template <size_t I>
-struct TupleCmp<I>
+struct SomeToByteArray<I>
 {
-	template <typename T>
-	bool operator()(const T &, size_t)
-	{
-		return true;
-	}
+	void operator()(BERSerializer &, size_t) {}
 };
 
-}
-
-template <typename... TP, typename... P>
-inline bool equal(const std::tuple<TP...> & t, P... p)
-{
-    return impl::TupleCmp<0, P...>()(t, sizeof...(TP), p...);
-}
-
-template <typename... TP, typename... P>
-inline bool partialEqual(const std::tuple<TP...> & t, size_t count, P... p)
-{
-    return impl::TupleCmp<0, P...>()(t, count, p...);
-}
-
-}}	// namespace
+}}}	// namespace

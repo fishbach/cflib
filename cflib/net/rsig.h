@@ -18,15 +18,89 @@
 
 #pragma once
 
+#include <cflib/serialize/util.h>
 #include <cflib/util/sig.h>
+#include <cflib/util/tuplecompare.h>
+
+#include <QtCore>
 
 namespace cflib { namespace net {
+
+namespace impl { class RMIServerBase; }
+
+class RSigBase
+{
+public:
+	RSigBase() : server_(0) {}
+
+protected:
+	QString serviceName_;
+	QString sigName_;
+
+	void send(uint connId, const QByteArray & data);
+
+private:
+	impl::RMIServerBase * server_;
+	friend class impl::RMIServerBase;
+};
 
 template<typename> class RSig;
 
 template<typename... P>
-class RSig<void (P...)> : public util::Sig<void (P...)>
+class RSig<void (P...)> : public RSigBase, public util::Sig<void (P...)>
 {
+public:
+	typedef util::Sig<void (P...)> Base;
+public:
+	RSig()
+	{
+		Base::bind(this, &RSig::handleRemote);
+	}
+
+	void unbindAll()
+	{
+		Base::unbindAll();
+		Base::bind(this, &RSig::handleRemote);
+	}
+
+	void regClient(uint connId, uint retCount, uint checkCount, P... p)
+	{
+		clients_ << ClData(connId, retCount, checkCount, std::forward<P>(p)...);
+	}
+
+	void unregClient(uint connId, uint checkCount, P... p)
+	{
+		QMutableVectorIterator<ClData> it(clients_);
+		while (it.hasNext()) {
+			const ClData & d = it.next();
+			if (d.connId == connId && d.checkCount == checkCount && util::equal(d.params, p...)) it.remove();
+		}
+	}
+
+private:
+	void handleRemote(P... p)
+	{
+		QMap<uint, QByteArray> partials;
+		QVectorIterator<ClData> it(clients_);
+		while (it.hasNext()) {
+			const ClData & d = it.next();
+			if (!util::partialEqual(d.params, d.checkCount, p...)) continue;
+			QByteArray & ba = partials[d.retCount];
+			if (ba.isNull()) ba = serialize::someToByteArray(3, d.retCount, p...);
+			send(d.connId, ba);
+		}
+	}
+
+private:
+	struct ClData {
+		const uint connId;
+		const uint retCount;
+		const uint checkCount;
+		const std::tuple<P...> params;
+		ClData(uint connId, uint retCount, uint checkCount, P... p) :
+			connId(connId), retCount(retCount), checkCount(checkCount), params(std::forward<P>(p)...) {}
+	};
+	QVector<ClData> clients_;
 };
 
 }}	// namespace

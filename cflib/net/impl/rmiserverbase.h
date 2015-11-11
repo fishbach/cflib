@@ -39,7 +39,7 @@ public:
 	void registerService(RMIServiceBase & service);
 	void exportTo(const QString & dest) const;
 	void handleRequest(const Request & request);
-	void sendReply(uint connId, const QByteArray & data);
+	void send(uint connId, const QByteArray & data);
 	QByteArray getRemoteIP(uint connId);
 
 	template<typename C>

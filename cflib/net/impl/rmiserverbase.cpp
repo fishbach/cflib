@@ -395,9 +395,9 @@ void RMIServerBase::handleRequest(const Request & request)
 	}
 }
 
-void RMIServerBase::sendReply(uint connId, const QByteArray & data)
+void RMIServerBase::send(uint connId, const QByteArray & data)
 {
-	if (!verifyThreadCall(&RMIServerBase::sendReply, connId, data)) return;
+	if (!verifyThreadCall(&RMIServerBase::send, connId, data)) return;
 	activeRequests_.remove(connId);
 	wsService_.send(connId, data, true);
 }

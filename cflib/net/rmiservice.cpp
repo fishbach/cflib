@@ -46,7 +46,7 @@ void RMIServiceBase::processRMIServiceCall(serialize::BERDeserializer deser, uin
 		serialize::BERSerializer ser(2);
 		processRMIServiceCallImpl(deser, callNo, ser);
 		if (delayedReply_) delayedReply_ = false;
-		else               server_->sendReply(connId_, ser.data());
+		else               server_->send(connId_, ser.data());
 	} else {
 		processRMIServiceCallImpl(deser, callNo);
 		delayedReply_ = false;
@@ -67,7 +67,7 @@ QByteArray RMIServiceBase::getRemoteIP() const
 
 void RMIReplier::send()
 {
-	server_.sendReply(connId_, *this);
+	server_.send(connId_, *this);
 }
 
 }}	// namespace

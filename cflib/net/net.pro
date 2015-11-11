@@ -26,7 +26,6 @@ HEADERS = \
 	httpauth.h \
 	httpclient.h \
 	httpserver.h \
-	jsservice.h \
 	logservice.h \
 	redirectserver.h \
 	request.h \

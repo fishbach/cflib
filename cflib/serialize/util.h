@@ -18,7 +18,7 @@
 
 #pragma once
 
-#include <cflib/serialize/serializeber.h>
+#include <cflib/serialize/impl/sometobytearray.h>
 
 namespace cflib { namespace serialize {
 
@@ -50,6 +50,14 @@ inline QByteArray toByteArray(const T & v, quint64 tagNo = 1)
 	impl::BERSerializerBase * dummy = 0;
 	impl::serializeBER(v, tagNo, rv, *dummy);
 	return rv;
+}
+
+template<typename... P>
+inline QByteArray someToByteArray(quint64 tagNo, uint count, P... p)
+{
+	BERSerializer ser(tagNo);
+	impl::SomeToByteArray<0, P...>()(ser, count, p...);
+	return ser.data();
 }
 
 template<typename T>
