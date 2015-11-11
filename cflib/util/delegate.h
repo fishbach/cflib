@@ -59,13 +59,13 @@ private:
 };
 
 template<typename... P, typename C, typename R>
-inline Delegate<C *, R, P...> makeDelegate(C * obj, R (C::*func)(P...))
+inline Delegate<C *, R, P...> delegate(C * obj, R (C::*func)(P...))
 {
 	return Delegate<C *, R, P...>(obj, func);
 }
 
 template<typename... P, typename C, typename R>
-inline Delegate<const C *, R, P...> makeDelegate(const C * obj, R (C::*func)(P...) const)
+inline Delegate<const C *, R, P...> delegate(const C * obj, R (C::*func)(P...) const)
 {
 	return Delegate<const C *, R, P...>(obj, func);
 }

@@ -41,6 +41,7 @@ HEADERS = \
 	impl/libevimpl.h \
 	impl/logformat.h \
 	impl/threadverifyimpl.h \
+	impl/tuplecompare.h \
 
 OTHER_FILES = \
 	impl/generate_templates.pl \
