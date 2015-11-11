@@ -36,12 +36,12 @@ HEADERS = \
 	threadverify.h \
 	timer.h \
 	timeshifter.h \
+	tuplecompare.h \
 	unixsignal.h \
 	util.h \
 	impl/libevimpl.h \
 	impl/logformat.h \
 	impl/threadverifyimpl.h \
-	impl/tuplecompare.h \
 
 OTHER_FILES = \
 	impl/generate_templates.pl \

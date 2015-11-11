@@ -20,7 +20,9 @@
 
 #include <tuple>
 
-namespace cflib { namespace util { namespace impl {
+namespace cflib { namespace util {
+
+namespace impl {
 
 template <size_t I, typename... P> struct TupleCmp;
 
@@ -44,16 +46,18 @@ struct TupleCmp<I>
     }
 };
 
+}
+
 template <typename... TP, typename... P>
 inline bool equal(const std::tuple<TP...> & t, P... p)
 {
-    return TupleCmp<0, P...>()(t, sizeof...(TP), p...);
+    return impl::TupleCmp<0, P...>()(t, sizeof...(TP), p...);
 }
 
 template <typename... TP, typename... P>
 inline bool partialEqual(const std::tuple<TP...> & t, size_t count, P... p)
 {
-    return TupleCmp<0, P...>()(t, count, p...);
+    return impl::TupleCmp<0, P...>()(t, count, p...);
 }
 
-}}}	// namespace
+}}	// namespace
