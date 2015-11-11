@@ -63,8 +63,17 @@ public:
 		Base::bind(this, &RSig::handleRemote);
 	}
 
-	void regClient(uint connId, uint retCount, uint checkCount, P... p)
+	void regClient(uint connId, serialize::BERDeserializer & deser)
 	{
+		serialize::readAndCall(deser, [this, connId](uint checkCount, P... p) {
+			regClient(connId, checkCount, std::forward<P>(p)...);
+		});
+	}
+
+	void regClient(uint connId, uint checkCount, P... p)
+	{
+		uint retCount = sizeof...(P);
+		if (checkRegister_ && !checkRegister_(connId, retCount, checkCount, p...)) return;
 		clients_ << ClData(connId, retCount, checkCount, std::forward<P>(p)...);
 	}
 
@@ -73,8 +82,27 @@ public:
 		QMutableVectorIterator<ClData> it(clients_);
 		while (it.hasNext()) {
 			const ClData & d = it.next();
-			if (d.connId == connId && d.checkCount == checkCount && util::equal(d.params, p...)) it.remove();
+			if (d.connId == connId && d.checkCount == checkCount &&
+				util::partialEqual(d.params, d.checkCount, p...)) it.remove();
 		}
+	}
+
+	template<typename F>
+	void setRegisterCheck(F func)
+	{
+		checkRegister_ = func;
+	}
+
+	template<typename... A, typename C>
+	void setRegisterCheck(C * obj, bool (C::*func)(A...))
+	{
+		checkRegister_ = util::Delegate<C *, bool, A...>(obj, func);
+	}
+
+	template<typename... A, typename C>
+	void setRegisterCheck(const C * obj, bool (C::*func)(A...) const)
+	{
+		checkRegister_ = util::Delegate<const C *, bool, A...>(obj, func);
 	}
 
 private:
@@ -85,8 +113,9 @@ private:
 		while (it.hasNext()) {
 			const ClData & d = it.next();
 			if (!util::partialEqual(d.params, d.checkCount, p...)) continue;
+
 			QByteArray & ba = partials[d.retCount];
-			if (ba.isNull()) ba = serialize::someToByteArray(3, d.retCount, p...);
+			if (ba.isNull()) ba = serialize::someToByteArray(3, d.retCount + 2, serviceName_, sigName_, p...);
 			send(d.connId, ba);
 		}
 	}
@@ -101,6 +130,7 @@ private:
 			connId(connId), retCount(retCount), checkCount(checkCount), params(std::forward<P>(p)...) {}
 	};
 	QVector<ClData> clients_;
+	std::function<bool (uint connId, uint & retCount, uint checkCount, P... p)> checkRegister_;
 };
 
 }}	// namespace

@@ -18,6 +18,7 @@
 
 #pragma once
 
+#include <cflib/serialize/impl/readandcall.h>
 #include <cflib/serialize/impl/sometobytearray.h>
 
 namespace cflib { namespace serialize {
@@ -84,6 +85,12 @@ inline T fromByteArray(const QByteArray & data)
 	impl::BERDeserializerBase * dummy = 0;
 	impl::deserializeBER(retval, (const quint8 *)data.constData() + tagLen + lengthSize, valueLen, *dummy);
 	return retval;
+}
+
+template<typename... P>
+inline void readAndCall(BERDeserializer & deser, std::function<void (P...)> func)
+{
+	impl::ReadAndCall<P...>()(deser, func);
 }
 
 }}	// namespace
