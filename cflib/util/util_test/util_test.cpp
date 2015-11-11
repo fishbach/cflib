@@ -17,6 +17,7 @@
  */
 
 #include <cflib/util/test.h>
+#include <cflib/util/tuplecompare.h>
 #include <cflib/util/util.h>
 
 using namespace cflib::util;
@@ -128,6 +129,32 @@ private slots:
 		data = "\x00";
 		inflateRaw(data);
 		QVERIFY(data.isEmpty());
+	}
+
+	void test_tupleCompare()
+	{
+		QVERIFY( equal(std::tuple<int, float>(2, 3.14f), 2, 3.14f));
+		QVERIFY(!equal(std::tuple<int, float>(2, 3.14f), 2, 3.2f));
+		QVERIFY( equal(std::tuple<int, float>(2, 3.14f), 2));
+		QVERIFY(!equal(std::tuple<int, float>(2, 3.14f), 3));
+		QVERIFY( equal(std::tuple<int, float>(2, 3.14f)));
+
+		QVERIFY( partialEqual(std::tuple<int, float>(2, 3.14f), 2, 2, 3.14f));
+		QVERIFY(!partialEqual(std::tuple<int, float>(2, 3.14f), 2, 2, 3.2f));
+		QVERIFY(!partialEqual(std::tuple<int, float>(2, 3.14f), 2, 3, 3.14f));
+		QVERIFY( partialEqual(std::tuple<int, float>(2, 3.14f), 2, 2));
+		QVERIFY(!partialEqual(std::tuple<int, float>(2, 3.14f), 2, 3));
+		QVERIFY( partialEqual(std::tuple<int, float>(2, 3.14f), 2));
+
+		QVERIFY( partialEqual(std::tuple<int, float>(2, 3.14f), 1, 2, 3.14f));
+		QVERIFY( partialEqual(std::tuple<int, float>(2, 3.14f), 1, 2, 3.2f));
+		QVERIFY(!partialEqual(std::tuple<int, float>(2, 3.14f), 1, 3, 3.14f));
+		QVERIFY( partialEqual(std::tuple<int, float>(2, 3.14f), 1, 2));
+		QVERIFY(!partialEqual(std::tuple<int, float>(2, 3.14f), 1, 3));
+		QVERIFY( partialEqual(std::tuple<int, float>(2, 3.14f), 1));
+
+		QVERIFY( partialEqual(std::tuple<int, float>(2, 3.14f), 0, 3, 3.2f));
+		QVERIFY( partialEqual(std::tuple<int, float>(2, 3.14f), 0));
 	}
 
 };
