@@ -77,6 +77,13 @@ public:
 		clients_ << ClData(connId, retCount, checkCount, std::forward<P>(p)...);
 	}
 
+	void unregClient(uint connId, serialize::BERDeserializer & deser)
+	{
+		serialize::readAndCall(deser, [this, connId](uint checkCount, P... p) {
+			unregClient(connId, checkCount, std::forward<P>(p)...);
+		});
+	}
+
 	void unregClient(uint connId, uint checkCount, P... p)
 	{
 		QMutableVectorIterator<ClData> it(clients_);

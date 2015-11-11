@@ -20,6 +20,8 @@
 
 #include <cflib/serialize/serializeber.h>
 
+#include <type_traits>
+
 namespace cflib { namespace serialize { namespace impl {
 
 template <typename... P> struct ReadAndCall;
@@ -30,7 +32,7 @@ struct ReadAndCall<P, PN...>
 	template<typename F, typename... A>
 	void operator()(BERDeserializer & deser, F func, A... a)
 	{
-		P p;
+		typename std::decay<P>::type p;
 		deser >> p;
 		ReadAndCall<PN...>()(deser, func, std::forward<A>(a)..., std::move(p));
 	}

@@ -99,6 +99,20 @@ private slots:
 		QCOMPARE((int)sizeof(long double), 16);
 	}
 
+	void test_readAndCall()
+	{
+		BERSerializer ser;
+		ser << 34 << "bla";
+		BERDeserializer deser(ser.data());
+		int i = 0;
+		QString s;
+		std::function<void (int, const QString &)> func = [&](int pi, const QString & ps) { i = pi; s = ps; };
+//		readAndCall<int, const QString &>(deser, [&](int pi, const QString & ps) -> void { i = pi; s = ps; });
+		readAndCall(deser, func);
+		QCOMPARE(i, 34);
+		QCOMPARE(s, QString("bla"));
+	}
+
 };
 #include "util_test.moc"
 ADD_TEST(Util_Test)
