@@ -34,6 +34,7 @@ public:
 	RSigBase() : server_(0) {}
 
 	virtual void regClient(uint connId, serialize::BERDeserializer & deser) = 0;
+	virtual void unregClient(uint connId, serialize::BERDeserializer & deser) = 0;
 
 protected:
 	QString serviceName_;
@@ -79,7 +80,7 @@ public:
 		clients_ << ClData(connId, retCount, checkCount, std::forward<P>(p)...);
 	}
 
-	void unregClient(uint connId, serialize::BERDeserializer & deser)
+	virtual void unregClient(uint connId, serialize::BERDeserializer & deser)
 	{
 		serialize::readAndCall<uint, P...>(deser, [this, connId](uint checkCount, P... p) {
 			unregClient(connId, checkCount, std::forward<P>(p)...);

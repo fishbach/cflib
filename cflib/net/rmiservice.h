@@ -58,8 +58,7 @@ protected:
 	virtual void preCallInit() {}
 
 protected:
-	void processRMIServiceCall(serialize::BERDeserializer deser, uint callNo,  bool hasReturnValues,
-		uint connId);
+	void processRMIServiceCall(serialize::BERDeserializer deser, uint callNo, uint type, uint connId);
 	virtual void processRMIServiceCallImpl(serialize::BERDeserializer & deser, uint callNo) = 0;
 	virtual void processRMIServiceCallImpl(serialize::BERDeserializer & deser, uint callNo,
 		serialize::BERSerializer & ser) = 0;
@@ -84,15 +83,15 @@ protected:
 	inline uint connDataId() { return connDataId_; }
 
 private:
-	void processRMIServiceCall(serialize::BERDeserializer deser, uint callNo, bool hasReturnValues,
+	void processRMIServiceCall(serialize::BERDeserializer deser, uint callNo, uint type,
 		const C & connData, uint connDataId, uint connId)
 	{
-		if (!verifyThreadCall(&RMIService::processRMIServiceCall, deser, callNo, hasReturnValues,
+		if (!verifyThreadCall(&RMIService::processRMIServiceCall, deser, callNo, type,
 			connData, connDataId, connId)) return;
 
 		connData_ = connData;
 		connDataId_ = connDataId;
-		RMIServiceBase::processRMIServiceCall(deser, callNo, hasReturnValues, connId);
+		RMIServiceBase::processRMIServiceCall(deser, callNo, type, connId);
 		connData_ = C();
 		connDataId_ = 0;
 	}

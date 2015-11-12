@@ -2,12 +2,13 @@ require([
 	'cflib/domext/util'
 ], function() { require([
 	'cflib/dom',
+	'cflib/net/ber',
 	'cflib/net/netutil',
 	'cflib/net/rmi',
 	'cflib/util/storage',
 	'cflib/util/util',
 	'services/infoservice'
-], function($, netUtil, rmi, storage, util, infoService) { $.start(function() {
+], function($, ber, netUtil, rmi, storage, util, infoService) { $.start(function() {
 
 window.onerror = function() {
 	netUtil.logInfo("JS exception: " + Array.prototype.join.call(arguments, ', '));
@@ -29,6 +30,7 @@ infoService.test(function(val) {
 rmi.register(3, function(data) { console.log('sig: ', data); });
 
 window.rmi = rmi;
+window.ber = ber;
 window.info = infoService;
 window.plog = function() { console.log(arguments); };
 window.util = util;

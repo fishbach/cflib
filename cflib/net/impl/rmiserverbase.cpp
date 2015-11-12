@@ -337,7 +337,16 @@ void RMIServerBase::registerService(RMIServiceBase & service)
 	sfs.service = &service;
 	uint i = 0;
 	foreach (const SerializeFunctionTypeInfo & ti, servInfo.functions) {
-		sfs.signatures[ti.signature()] = qMakePair(++i, ti.hasReturnValues());
+		sfs.signatures[ti.signature()] = qMakePair(++i, ti.hasReturnValues() ? 1 : 0);
+	}
+
+	i = 0;
+	foreach (const SerializeFunctionTypeInfo & ti, servInfo.cfSignals) {
+		RSigBase & sig = *service.getCfSignal(++i);
+		sig.server_ = this;
+		sig.serviceName_ = servInfo.typeName.toLower();
+		sig.sigName_ = ti.name;
+		sfs.signatures[ti.name] = qMakePair(i, 2);
 	}
 
 	foreach (const SerializeTypeInfo & ti, getFunctionClassInfos(servInfo)) {
@@ -408,7 +417,7 @@ QByteArray RMIServerBase::getRemoteIP(uint connId)
 }
 
 RMIServiceBase * RMIServerBase::checkServiceCall(serialize::BERDeserializer & deser, uint connId,
-	uint & callNo, bool & hasReturnValues)
+	uint & callNo, uint & type)
 {
 	QString serviceName;
 	QString signature;
@@ -426,16 +435,16 @@ RMIServiceBase * RMIServerBase::checkServiceCall(serialize::BERDeserializer & de
 		return 0;
 	}
 
-	QPair<uint, bool> method = sf.signatures.value(signature);
+	QPair<uint, uint> method = sf.signatures.value(signature);
 	if (method.first == 0) {
 		logWarn("signature %1 of service %2 not found from connection %3", signature, serviceName, connId);
 		wsService_.close(connId, TCPConn::HardClosed);
 		return 0;
 	}
-	callNo          = method.first;
-	hasReturnValues = method.second;
+	callNo = method.first;
+	type   = method.second;
 
-	if (hasReturnValues) {
+	if (type == 1) {
 		if (activeRequests_.contains(connId)) {
 			logWarn("two simultaneous requests from connection %1", connId);
 			wsService_.close(connId, TCPConn::HardClosed);

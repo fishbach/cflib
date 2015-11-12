@@ -49,12 +49,12 @@ public:
 
 		serialize::BERDeserializer deser(ba, data, len);
 		uint callNo;
-		bool hasReturnValues;
-		RMIServiceBase * serviceBase = checkServiceCall(deser, connId, callNo, hasReturnValues);
+		uint type;
+		RMIServiceBase * serviceBase = checkServiceCall(deser, connId, callNo, type);
 		if (!serviceBase) return;
 		RMIService<C> * service = dynamic_cast<RMIService<C> *>(serviceBase);
-		if (service) service->processRMIServiceCall(deser, callNo, hasReturnValues, connData, connDataId, connId);
-		else         serviceBase->processRMIServiceCall(deser, callNo, hasReturnValues, connId);
+		if (service) service->processRMIServiceCall(deser, callNo, type, connData, connDataId, connId);
+		else         serviceBase->processRMIServiceCall(deser, callNo, type, connId);
 	}
 
 private:
@@ -72,12 +72,12 @@ private:
 	struct ServiceFunctions {
 		ServiceFunctions() : service(0) {}
 		RMIServiceBase * service;
-		QMap<QString, QPair<uint, bool> > signatures;
+		QMap<QString, QPair<uint, uint> > signatures;
 	};
 
 private:
 	RMIServiceBase * checkServiceCall(serialize::BERDeserializer & deser, uint connId,
-		uint & callNo, bool & hasReturnValues);
+		uint & callNo, uint & type);
 	void showServices(const Request & request, QString path) const;
 	void showClasses(const Request & request, QString path) const;
 	void classesToHTML(QString & info, const ClassInfoEl & infoEl) const;

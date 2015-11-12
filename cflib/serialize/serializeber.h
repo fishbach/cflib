@@ -66,7 +66,7 @@ public:
 	inline BERDeserializer & operator>>(Placeholder ph) { base_ >> ph; return *this; }
 
 	template<typename T>
-	inline T get() { T retval; base_ >> retval; return retval; }
+	inline T get() { T retval; base_ >> retval; return std::move(retval); }
 
 private:
 	const QByteArray data_;
