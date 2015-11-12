@@ -491,6 +491,16 @@ void RMIServerBase::showServices(const Request & request, QString path) const
 	}
 	info << "</ul>\n";
 
+	if (!ti.cfSignals.isEmpty()) {
+		info <<
+			"<h4>Signals:</h4>\n"
+			"<ul>\n";
+		foreach (const SerializeFunctionTypeInfo & func, ti.cfSignals) {
+			info << "<li>" << func.signature(true).replace('<', "&lt;").replace('>', "&gt;") << "</li>\n";
+		}
+		info << "</ul>\n";
+	}
+
 	request.sendText(info << footer);
 }
 

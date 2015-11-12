@@ -57,11 +57,6 @@ function checkWaitingCalls()
 			}
 		}
 	} while (again);
-
-	if (waitingCalls.length === 0) {
-		loadingModules = {};
-		defines = {};
-	}
 }
 
 function getModuleName(node)
@@ -105,6 +100,9 @@ function loadEvent()
 		loadedModules[name] = null;
 		checkWaitingCalls();
 	}
+
+	delete defines[name];
+	delete loadingModules[name];
 
 	if (--loadingCount === 0 && waitingCalls.length > 0) {
 		var deps = {};
