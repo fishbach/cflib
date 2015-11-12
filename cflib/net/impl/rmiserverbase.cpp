@@ -722,6 +722,24 @@ QString RMIServerBase::generateJSForService(const SerializeTypeInfo & ti) const
 		}
 		js << "\n"
 			"};\n"
+			"__rmi.registerRSig('" << ti.typeName.toLower() << "', function(__D) {\n"
+			"\tvar __rsig = __D.s();\n";
+		isFirst = true;
+		foreach (const SerializeFunctionTypeInfo & func, ti.cfSignals) {
+			js << '\t';
+			if (isFirst) isFirst = false;
+			else         js << "else ";
+			js << "if (__rsig == '" << func.name << "') " << objName << ".rsig." << func.name << ".fire(";
+			bool isFirst2 = true;
+			foreach (const SerializeVariableTypeInfo & p, func.parameters) {
+				if (isFirst2) isFirst2 = false;
+				else          js << ", ";
+				js << getDeserializeCode(p.type);
+			}
+			js << ");\n";
+		}
+		js <<
+			"});\n"
 			"\n";
 	}
 

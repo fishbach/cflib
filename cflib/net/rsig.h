@@ -135,7 +135,7 @@ private:
 		uint connId;
 		uint retCount;
 		uint checkCount;
-		std::tuple<P...> params;
+		std::tuple<typename std::decay<P>::type ...> params;
 		ClData() : connId(0), retCount(0), checkCount(0) {}
 		ClData(uint connId, uint retCount, uint checkCount, P... p) :
 			connId(connId), retCount(retCount), checkCount(checkCount), params(std::forward<P>(p)...) {}

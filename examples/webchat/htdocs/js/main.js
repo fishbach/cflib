@@ -27,8 +27,6 @@ infoService.test(function(val) {
 	$('#msg').html(val);
 });
 
-rmi.register(3, function(data) { console.log('sig: ', data); });
-
 window.rmi = rmi;
 window.ber = ber;
 window.info = infoService;

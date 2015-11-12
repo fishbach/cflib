@@ -31,6 +31,7 @@ public:
 
 rmi:
 	QString test();
+	void test(int &, int &) {}
 	QString test(const QString & msg);
 	void async(qint64 i);
 	qint64 iTest(qint64 i) { return i; }
@@ -41,4 +42,5 @@ rmi:
 
 cfsignals:
 	rsig<void (int t)> mySig;
+	rsig<void (int t, const QString & s)> mySig2;
 };

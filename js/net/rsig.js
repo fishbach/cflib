@@ -32,13 +32,17 @@ define([
 
 	RSig.prototype.register = function() {
 		var s = ber.S().s(this.service).s(this.name).i(true).i(arguments.length);
-		this.ser(s, arguments);
+		var args = Array.prototype.slice.call(arguments);
+		args.unshift(s);
+		this.ser.apply(this, args);
 		rmi.sendAsync(s.box(2));
 	};
 
 	RSig.prototype.unregister = function() {
 		var s = ber.S().s(this.service).s(this.name).i(false).i(arguments.length);
-		this.ser(s, arguments);
+		var args = Array.prototype.slice.call(arguments);
+		args.unshift(s);
+		this.ser.apply(this, args);
 		rmi.sendAsync(s.box(2));
 	};
 

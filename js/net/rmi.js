@@ -29,6 +29,8 @@ define([
 	var waitingRequests = [];
 	var ws              = null;
 	var msgHandlers     = {};
+	var rsigHandlers    = {};
+	var waitingRSig     = [];
 
 	function checkWaitingRequests()
 	{
@@ -40,6 +42,11 @@ define([
 			requestCallback = null;
 			requestActive = false;
 			rmi.ev.loading.fire(false);
+
+			while (waitingRSig.length > 0) {
+				var rsig = waitingRSig.shift();
+				rsig[0](rsig[1]);
+			}
 		}
 	}
 
@@ -78,6 +85,14 @@ define([
 			case 2:
 				if (requestCallback) requestCallback(value);
 				checkWaitingRequests();
+				return;
+			case 3:
+				var deser = ber.D(value);
+				var func = rsigHandlers[deser.s()];
+				if (func) {
+					if (waitingRequests.length > 0) waitingRSig.push([func, deser]);
+					else                            func(deser);
+				}
 				return;
 			default:
 				if (tagNo in msgHandlers) msgHandlers[tagNo](value);
@@ -129,7 +144,8 @@ define([
 		}
 	};
 
-	rmi.register = function(tagNo, func) { msgHandlers[tagNo] = func; };
+	rmi.register     = function(tagNo, func) { msgHandlers [tagNo] = func; };
+	rmi.registerRSig = function(name,  func) { rsigHandlers[name]  = func; };
 
 	rmi.resetStorage = function(keepItems) {
 		var keep = [['clId', storage.get('clId')]];
