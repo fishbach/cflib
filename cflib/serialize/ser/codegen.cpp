@@ -232,6 +232,23 @@ int genSerialize(const QString & headerName, const HeaderParser & hp, QIODevice 
 			} else {
 				out << "void " << cl.name << "::processRMIServiceCallImpl(cflib::serialize::BERDeserializer &, uint, cflib::serialize::BERSerializer &) {}\n";
 			}
+
+			if (cl.cfSignals.isEmpty()) {
+				out << "cflib::net::RSigBase * " << cl.name << "::getCfSignal(uint) { return 0; }\n";
+			} else {
+				out <<
+					"cflib::net::RSigBase * " << cl.name << "::getCfSignal(uint __sigNo) {\n"
+					"\tswitch (__sigNo) {\n";
+				int i = 0;
+				foreach (const HeaderParser::Function & f, cl.cfSignals) {
+					++i;
+					out << "\t\tcase " << QByteArray::number(i) << ": return &" << f.name << ";\n";
+				}
+				out <<
+					"\t}\n"
+					"\t return 0;\n"
+					"}\n";
+			}
 		}
 
 		for (int i = 0 ; i < nsList.size() ; ++i) out << "}";

@@ -45,6 +45,7 @@
 		virtual cflib::serialize::SerializeTypeInfo getServiceInfo() { return serializeTypeInfo(); } \
 		virtual void processRMIServiceCallImpl(cflib::serialize::BERDeserializer & deser, uint callNo); \
 		virtual void processRMIServiceCallImpl(cflib::serialize::BERDeserializer & deser, uint callNo, cflib::serialize::BERSerializer & ser); \
+		virtual cflib::net::RSigBase * getCfSignal(uint sigNo); \
 	public
 #define SERIALIZE_BASE
 #define SERIALIZE_SKIP(member)

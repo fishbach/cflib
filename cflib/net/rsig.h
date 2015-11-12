@@ -33,6 +33,8 @@ class RSigBase
 public:
 	RSigBase() : server_(0) {}
 
+	virtual void regClient(uint connId, serialize::BERDeserializer & deser) = 0;
+
 protected:
 	QString serviceName_;
 	QString sigName_;
@@ -63,9 +65,9 @@ public:
 		Base::bind(this, &RSig::handleRemote);
 	}
 
-	void regClient(uint connId, serialize::BERDeserializer & deser)
+	virtual void regClient(uint connId, serialize::BERDeserializer & deser)
 	{
-		serialize::readAndCall<P...>(deser, [this, connId](uint checkCount, P... p) {
+		serialize::readAndCall<uint, P...>(deser, [this, connId](uint checkCount, P... p) {
 			regClient(connId, checkCount, std::forward<P>(p)...);
 		});
 	}
@@ -79,7 +81,7 @@ public:
 
 	void unregClient(uint connId, serialize::BERDeserializer & deser)
 	{
-		serialize::readAndCall<P...>(deser, [this, connId](uint checkCount, P... p) {
+		serialize::readAndCall<uint, P...>(deser, [this, connId](uint checkCount, P... p) {
 			unregClient(connId, checkCount, std::forward<P>(p)...);
 		});
 	}
@@ -129,10 +131,11 @@ private:
 
 private:
 	struct ClData {
-		const uint connId;
-		const uint retCount;
-		const uint checkCount;
-		const std::tuple<P...> params;
+		uint connId;
+		uint retCount;
+		uint checkCount;
+		std::tuple<P...> params;
+		ClData() : connId(0), retCount(0), checkCount(0) {}
 		ClData(uint connId, uint retCount, uint checkCount, P... p) :
 			connId(connId), retCount(retCount), checkCount(checkCount), params(std::forward<P>(p)...) {}
 	};

@@ -63,6 +63,7 @@ protected:
 	virtual void processRMIServiceCallImpl(serialize::BERDeserializer & deser, uint callNo) = 0;
 	virtual void processRMIServiceCallImpl(serialize::BERDeserializer & deser, uint callNo,
 		serialize::BERSerializer & ser) = 0;
+	virtual RSigBase * getCfSignal(uint sigNo) = 0;
 
 private:
 	impl::RMIServerBase * server_;

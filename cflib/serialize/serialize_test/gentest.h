@@ -18,6 +18,7 @@
 
 #pragma once
 
+#include <cflib/net/rsig.h>
 #include <cflib/serialize/serialize.h>
 #include <cflib/serialize/serializeber.h>
 
