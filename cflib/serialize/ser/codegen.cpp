@@ -111,6 +111,27 @@ void writeFunctionSwitch(const HeaderParser::Functions & list, bool withReturnVa
 	out << "\t}\n";
 }
 
+void writeFunction(const HeaderParser::Function & f, QTextStream & out)
+{
+	out <<
+		"\t{\n"
+		"\t\tcflib::serialize::SerializeFunctionTypeInfo func;\n"
+		"\t\tfunc.name = \"" << f.name << "\";\n";
+	if (f.returnType != "void") {
+		out << "\t\tfunc.returnType = cflib::serialize::impl::fromType<" << f.returnType << " >();\n";
+	}
+	if (!f.parameters.isEmpty()) {
+		out << "\t\tfunc.parameters";
+		foreach (const HeaderParser::Variable & m, f.parameters) {
+			out <<
+				"\n\t\t\t<< cflib::serialize::SerializeVariableTypeInfo(\""
+				<< m.name << "\", cflib::serialize::impl::fromType<" << m.type << " >(), "
+				<< (m.isRef ? "true" : "false") << ")";
+		}
+		out << ";\n";
+	}
+}
+
 }
 
 int genSerialize(const QString & headerName, const HeaderParser & hp, QIODevice & outDev)
@@ -163,25 +184,15 @@ int genSerialize(const QString & headerName, const HeaderParser & hp, QIODevice 
 			out << ";\n";
 		}
 		foreach (const HeaderParser::Function & f, cl.functions) {
-			out <<
-				"\t{\n"
-				"\t\tcflib::serialize::SerializeFunctionTypeInfo func;\n"
-				"\t\tfunc.name = \"" << f.name << "\";\n";
-			if (f.returnType != "void") {
-				out << "\t\tfunc.returnType = cflib::serialize::impl::fromType<" << f.returnType << " >();\n";
-			}
-			if (!f.parameters.isEmpty()) {
-				out << "\t\tfunc.parameters";
-				foreach (const HeaderParser::Variable & m, f.parameters) {
-					out <<
-						"\n\t\t\t<< cflib::serialize::SerializeVariableTypeInfo(\""
-						<< m.name << "\", cflib::serialize::impl::fromType<" << m.type << " >(), "
-						<< (m.isRef ? "true" : "false") << ")";
-				}
-				out << ";\n";
-			}
+			writeFunction(f, out);
 			out <<
 				"\t\tretval.functions << func;\n"
+				"\t}\n";
+		}
+		foreach (const HeaderParser::Function & f, cl.cfSignals) {
+			writeFunction(f, out);
+			out <<
+				"\t\tretval.cfSignals << func;\n"
 				"\t}\n";
 		}
 		out <<

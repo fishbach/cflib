@@ -49,6 +49,11 @@ QString SerializeTypeInfo::toString() const
 			else retval += ',';
 			retval += fn.toString();
 		}
+		foreach (const SerializeFunctionTypeInfo & fn, cfSignals) {
+			if (isFirst) isFirst = false;
+			else retval += ',';
+			retval += fn.toString();
+		}
 		return retval + '}';
 	}
 

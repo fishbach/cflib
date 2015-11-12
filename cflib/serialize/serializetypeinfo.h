@@ -41,6 +41,7 @@ public:
 	QList<SerializeTypeInfo> bases;
 	QList<SerializeVariableTypeInfo> members;
 	QList<SerializeFunctionTypeInfo> functions;
+	QList<SerializeFunctionTypeInfo> cfSignals;
 
 public:
 	SerializeTypeInfo() : type(Null) {}

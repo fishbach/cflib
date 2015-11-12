@@ -110,9 +110,36 @@ bool HeaderParser::getFunctions(const QString & in, int start, int end, Class & 
 	return true;
 }
 
+bool HeaderParser::getCfSignals(const QString & in, int start, int end, Class & cl)
+{
+	static const QRegExp sigRE("(?:^|;)\\s*rsig\\s*<\\s*([:\\w]+(?:\\s*<[^>]+>)?)\\s*\\(");
+	static const QRegExp sigNameRE("\\)\\s*>\\s*(\\w+)\\s*;");
+
+	int pos = sigRE.indexIn(in, start, QRegExp::CaretAtOffset);
+	while (pos != -1 && pos < end) {
+		HeaderParser::Function func;
+		func.returnType = sigRE.cap(1);
+		pos += sigRE.matchedLength();
+		const int paramEnd = findClosingBrace(in, pos, '(', ')');
+		if (paramEnd == -1 || paramEnd >= end) {
+			lastError_ = QString("cannot find closing brace at line: %1").arg(lineNr(in, pos - 1));
+			return false;
+		}
+
+		if (!getParameters(in, pos, paramEnd, func.parameters)) return false;
+
+		if (sigNameRE.indexIn(in, paramEnd) == -1) return false;
+		func.name = sigNameRE.cap(1);
+
+		cl.cfSignals << func;
+		pos = sigRE.indexIn(in, paramEnd + 1, QRegExp::CaretAtOffset);
+	}
+	return true;
+}
+
 bool HeaderParser::getMembers(const QString & in, int start, int end, Class & cl, int & state)
 {
-	static const QRegExp sectionRE("\\s(rmi|serialized)\\s*:");
+	static const QRegExp sectionRE("\\s(rmi|serialized|cfsignals)\\s*:");
 	static const QRegExp endRE("[^:]:\\s*\n");
 
 	bool openEnd = false;
@@ -124,8 +151,10 @@ bool HeaderParser::getMembers(const QString & in, int start, int end, Class & cl
 		if (openEnd) secEnd = end;
 		if (state == 2) {
 			if (!getFunctions(in, start, secEnd, cl)) return false;
-		} else {
+		} else if (state == 3) {
 			if (!getVariables(in, start, secEnd, cl)) return false;
+		} else {
+			if (!getCfSignals(in, start, secEnd, cl)) return false;
 		}
 		if (openEnd) return true;
 	}
@@ -141,9 +170,12 @@ bool HeaderParser::getMembers(const QString & in, int start, int end, Class & cl
 		if (sectionRE.cap(1) == "rmi") {
 			state = 2;
 			if (!getFunctions(in, pos, secEnd, cl)) return false;
-		} else {
+		} else if (sectionRE.cap(1) == "serialized") {
 			state = 3;
 			if (!getVariables(in, pos, secEnd, cl)) return false;
+		} else { // cfsignals
+			state = 4;
+			if (!getCfSignals(in, pos, secEnd, cl)) return false;
 		}
 
 		pos = sectionRE.indexIn(in, pos);

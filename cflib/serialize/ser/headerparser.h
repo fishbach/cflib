@@ -51,6 +51,7 @@ public:
 		bool doBaseSerialize;
 		Variables members;
 		Functions functions;
+		Functions cfSignals;
 
 		Class() : doBaseSerialize(false) {}
 	};
@@ -67,6 +68,7 @@ private:
 	bool getVariables(const QString & in, int start, int end, Class & cl);
 	bool getParameters(const QString & in, int start, int end, Variables & vars);
 	bool getFunctions(const QString & in, int start, int end, Class & cl);
+	bool getCfSignals(const QString & in, int start, int end, Class & cl);
 	bool getMembers(const QString & in, int start, int end, Class & cl, int & state);
 	bool getMemberBlocks(const QString & in, int start, int end, Class & cl, int & state);
 	bool getClasses(const QString & in, int start, int end, Class cl);
