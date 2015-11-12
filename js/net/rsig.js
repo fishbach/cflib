@@ -17,19 +17,29 @@
  */
 
 define([
+	'cflib/net/ber',
+	'cflib/net/rmi',
 	'cflib/util/ev',
 	'cflib/util/inherit'
-], function(EV, inherit) {
+], function(ber, rmi, EV, inherit) {
 
-	var RSig = function() { EV.apply(this, arguments); }
+	var RSig = function(source, name, service, ser) {
+		EV.call(this, source, name);
+		this.service = service;
+		this.ser     = ser;
+	};
 	inherit.setBase(RSig, EV);
 
 	RSig.prototype.register = function() {
-		console.log('r');
+		var s = ber.S().s(this.service).s(this.name).i(true).i(arguments.length);
+		this.ser(s, arguments);
+		rmi.sendAsync(s.box(2));
 	};
 
 	RSig.prototype.unregister = function() {
-		console.log('u');
+		var s = ber.S().s(this.service).s(this.name).i(false).i(arguments.length);
+		this.ser(s, arguments);
+		rmi.sendAsync(s.box(2));
 	};
 
 	return RSig;

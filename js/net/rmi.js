@@ -91,9 +91,9 @@ define([
 	var rmi = new RMI();
 
 	rmi.ev = {
-		loading:       new EV(rmi, "loading"),			// bool isLoading
-		identityReset: new EV(rmi, "identityReset"),
-		newMessage:    new EV(rmi, "newMessage")		// (string / arraybuffer) data
+		loading:       new EV(rmi, 'loading'),			// bool isLoading
+		identityReset: new EV(rmi, 'identityReset'),
+		newMessage:    new EV(rmi, 'newMessage')		// (string / arraybuffer) data
 	};
 
 	rmi.start = function() {
