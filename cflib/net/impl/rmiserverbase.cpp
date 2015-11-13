@@ -416,6 +416,18 @@ QByteArray RMIServerBase::getRemoteIP(uint connId)
 	return wsService_.getRemoteIP(connId);
 }
 
+void RMIServerBase::connectionClosed(uint connId)
+{
+	if (!verifyThreadCall(&RMIServerBase::connectionClosed, connId)) return;
+
+	QMapIterator<QString, ServiceFunctions> it(services_);
+	while (it.hasNext()) {
+		RMIServiceBase & service = *it.next().value().service;
+		int i = service.getServiceInfo().cfSignals.size();
+		while (i > 0) service.getCfSignal(i--)->unregClient(connId);
+	}
+}
+
 RMIServiceBase * RMIServerBase::checkServiceCall(serialize::BERDeserializer & deser, uint connId,
 	uint & callNo, uint & type)
 {

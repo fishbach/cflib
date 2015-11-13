@@ -38,24 +38,21 @@ void RMIServiceBase::processRMIServiceCall(serialize::BERDeserializer deser, uin
 {
 	if (!verifyThreadCall(&RMIServiceBase::processRMIServiceCall, deser, callNo, type, connId)) return;
 
-	// cfsignal
-	if (type == 2) {
-		RSigBase & sig = *getCfSignal(callNo);
-		if (deser.get<bool>()) sig.  regClient(connId, deser);
-		else                   sig.unregClient(connId, deser);
-		return;
-	}
-
 	connId_ = connId;
 	preCallInit();
-	if (type == 1) {
+	if (type == 0) {
+		processRMIServiceCallImpl(deser, callNo);
+		delayedReply_ = false;
+	} else if (type == 1) {
 		serialize::BERSerializer ser(2);
 		processRMIServiceCallImpl(deser, callNo, ser);
 		if (delayedReply_) delayedReply_ = false;
 		else               server_->send(connId_, ser.data());
-	} else {
-		processRMIServiceCallImpl(deser, callNo);
-		delayedReply_ = false;
+	} else {	// cfsignals
+		RSigBase & sig = *getCfSignal(callNo);
+		if (deser.get<bool>()) sig.  regClient(connId, deser);
+		else                   sig.unregClient(connId, deser);
+		return;
 	}
 	connId_ = 0;
 }

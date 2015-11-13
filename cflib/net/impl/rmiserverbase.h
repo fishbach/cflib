@@ -57,6 +57,8 @@ public:
 		else         serviceBase->processRMIServiceCall(deser, callNo, type, connId);
 	}
 
+	void connectionClosed(uint connId);
+
 private:
 	struct ClassInfoEl;
 	class ClassInfos : public QMap<QString, ClassInfoEl *> {

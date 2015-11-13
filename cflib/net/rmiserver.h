@@ -26,11 +26,16 @@
 namespace cflib { namespace net {
 
 template<typename C>
-class RMIServer : public RequestHandler, public WSCommMsgHandler<C>, private impl::RMIServerBase
+class RMIServer :
+	public RequestHandler,
+	public WSCommMsgHandler<C>,
+	public WSCommStateListener<C>,
+	private impl::RMIServerBase
 {
 public:
 	RMIServer(WSCommManager<C> & commMgr) : RMIServerBase(commMgr) {
 		commMgr.registerMsgHandler(2, *this);
+		commMgr.registerStateListener(*this);
 	}
 
 	using RMIServerBase::registerService;
@@ -42,6 +47,8 @@ public:
 	{
 		handleCall(data, (const quint8 *)data.constData() + tagLen + lengthSize, valueLen, connData, connDataId, connId);
 	}
+
+	virtual void connectionClosed(const C &, uint, uint connId, bool) { RMIServerBase::connectionClosed(connId); }
 
 protected:
 	virtual void handleRequest(const Request & request) { RMIServerBase::handleRequest(request); }

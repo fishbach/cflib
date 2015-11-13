@@ -35,6 +35,7 @@ public:
 
 	virtual void regClient(uint connId, serialize::BERDeserializer & deser) = 0;
 	virtual void unregClient(uint connId, serialize::BERDeserializer & deser) = 0;
+	virtual void unregClient(uint connId) = 0;
 
 protected:
 	QString serviceName_;
@@ -76,7 +77,7 @@ public:
 	void regClient(uint connId, uint checkCount, P... p)
 	{
 		uint retCount = sizeof...(P);
-		if (checkRegister_ && !checkRegister_(connId, retCount, checkCount, p...)) return;
+		if (checkRegister_ && !checkRegister_(retCount, checkCount, p...)) return;
 		clients_ << ClData(connId, retCount, checkCount, std::forward<P>(p)...);
 	}
 
@@ -94,6 +95,14 @@ public:
 			const ClData & d = it.next();
 			if (d.connId == connId && d.checkCount == checkCount &&
 				util::partialEqual(d.params, d.checkCount, p...)) it.remove();
+		}
+	}
+
+	virtual void unregClient(uint connId)
+	{
+		QMutableVectorIterator<ClData> it(clients_);
+		while (it.hasNext()) {
+			if (it.next().connId == connId) it.remove();
 		}
 	}
 
@@ -141,7 +150,7 @@ private:
 			connId(connId), retCount(retCount), checkCount(checkCount), params(std::forward<P>(p)...) {}
 	};
 	QVector<ClData> clients_;
-	std::function<bool (uint connId, uint & retCount, uint checkCount, P... p)> checkRegister_;
+	std::function<bool (uint & retCount, uint checkCount, P... p)> checkRegister_;
 };
 
 }}	// namespace
