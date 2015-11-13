@@ -59,6 +59,8 @@ protected:
 
 protected:
 	void processRMIServiceCall(serialize::BERDeserializer deser, uint callNo, uint type, uint connId);
+	void connDataChange(const QSet<uint> & connIds);
+
 	virtual void processRMIServiceCallImpl(serialize::BERDeserializer & deser, uint callNo) = 0;
 	virtual void processRMIServiceCallImpl(serialize::BERDeserializer & deser, uint callNo,
 		serialize::BERSerializer & ser) = 0;
@@ -92,6 +94,17 @@ private:
 		connData_ = connData;
 		connDataId_ = connDataId;
 		RMIServiceBase::processRMIServiceCall(deser, callNo, type, connId);
+		connData_ = C();
+		connDataId_ = 0;
+	}
+
+	void connDataChange(const C & connData, uint connDataId, const QSet<uint> & connIds)
+	{
+		if (!verifyThreadCall(&RMIService::connDataChange, connData, connDataId, connIds)) return;
+
+		connData_ = connData;
+		connDataId_ = connDataId;
+		RMIServiceBase::connDataChange(connIds);
 		connData_ = C();
 		connDataId_ = 0;
 	}

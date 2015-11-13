@@ -157,6 +157,18 @@ private slots:
 		QVERIFY( partialEqual(std::tuple<int, float>(2, 3.14f), 0));
 	}
 
+	void test_callWithTupleParams()
+	{
+		int i = 0;
+		float f = 0.0;
+		callWithTupleParams<void>([&](int pi, float pf) { i = pi; f = pf; }, std::tuple<int, float>(2, 3.14f));
+		QCOMPARE(i, 2);
+		QCOMPARE(f, 3.14f);
+		callWithTupleParams<void>([&](int & i, float pf) { ++i; f = pf; }, std::tuple<float>(2.34f), i);
+		QCOMPARE(i, 3);
+		QCOMPARE(f, 2.34f);
+	}
+
 };
 #include "util_test.moc"
 ADD_TEST(Util_Test)

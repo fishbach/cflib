@@ -53,8 +53,22 @@ public:
 		RMIServiceBase * serviceBase = checkServiceCall(deser, connId, callNo, type);
 		if (!serviceBase) return;
 		RMIService<C> * service = dynamic_cast<RMIService<C> *>(serviceBase);
-		if (service) service->processRMIServiceCall(deser, callNo, type, connData, connDataId, connId);
+		if (service) service    ->processRMIServiceCall(deser, callNo, type, connData, connDataId, connId);
 		else         serviceBase->processRMIServiceCall(deser, callNo, type, connId);
+	}
+
+	template<typename C>
+	void connDataChange(const C & connData, uint connDataId, const QSet<uint> & connIds)
+	{
+		if (!verifyThreadCall(&RMIServerBase::connDataChange<C>, connData, connDataId, connIds)) return;
+
+		QMapIterator<QString, ServiceFunctions> it(services_);
+		while (it.hasNext()) {
+			RMIServiceBase * serviceBase = it.next().value().service;
+			RMIService<C> * service = dynamic_cast<RMIService<C> *>(serviceBase);
+			if (service) service    ->connDataChange(connData, connDataId, connIds);
+			else         serviceBase->connDataChange(connIds);
+		}
 	}
 
 	void connectionClosed(uint connId);

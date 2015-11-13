@@ -54,7 +54,7 @@ class WSCommStateListener : public virtual WSCommConnMgrAccess<C>
 {
 public:
 	virtual void newConnection(const C & connData, uint connDataId, uint connId);
-	virtual void connDataChange(const C & oldConnData, const C & newConnData, uint connDataId, QSet<uint> connIds);
+	virtual void connDataChange(const C & oldConnData, const C & newConnData, uint connDataId, const QSet<uint> & connIds);
 	virtual void connectionClosed(const C & connData, uint connDataId, uint connId, bool isLast);
 };
 
@@ -167,9 +167,8 @@ void WSCommStateListener<C>::newConnection(const C & connData, uint connDataId, 
 }
 
 template<typename C>
-void WSCommStateListener<C>::connDataChange(
-	const C & oldConnData, const C & newConnData,
-	uint connDataId, QSet<uint> connIds)
+void WSCommStateListener<C>::connDataChange(const C & oldConnData, const C & newConnData,
+	uint connDataId, const QSet<uint> & connIds)
 {
 	Q_UNUSED(oldConnData) Q_UNUSED(newConnData) Q_UNUSED(connDataId) Q_UNUSED(connIds)
 }

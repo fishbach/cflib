@@ -48,6 +48,11 @@ public:
 		handleCall(data, (const quint8 *)data.constData() + tagLen + lengthSize, valueLen, connData, connDataId, connId);
 	}
 
+	virtual void connDataChange(const C &, const C & newConnData, uint connDataId, const QSet<uint> & connIds)
+	{
+		RMIServerBase::connDataChange(newConnData, connDataId, connIds);
+	}
+
 	virtual void connectionClosed(const C &, uint, uint connId, bool) { RMIServerBase::connectionClosed(connId); }
 
 protected:

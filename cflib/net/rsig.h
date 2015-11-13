@@ -36,6 +36,7 @@ public:
 	virtual void regClient(uint connId, serialize::BERDeserializer & deser) = 0;
 	virtual void unregClient(uint connId, serialize::BERDeserializer & deser) = 0;
 	virtual void unregClient(uint connId) = 0;
+	virtual void checkClient(uint connId) = 0;
 
 protected:
 	QString serviceName_;
@@ -103,6 +104,17 @@ public:
 		QMutableVectorIterator<ClData> it(clients_);
 		while (it.hasNext()) {
 			if (it.next().connId == connId) it.remove();
+		}
+	}
+
+	virtual void checkClient(uint connId)
+	{
+		if (!checkRegister_) return;
+		QMutableVectorIterator<ClData> it(clients_);
+		while (it.hasNext()) {
+			ClData & d = it.next();
+			if (d.connId != connId) continue;
+			if (!util::callWithTupleParams<bool>(checkRegister_, d.params, d.retCount, d.checkCount)) it.remove();
 		}
 	}
 
