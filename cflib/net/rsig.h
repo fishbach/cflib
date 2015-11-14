@@ -70,8 +70,9 @@ public:
 
 	virtual void regClient(uint connId, serialize::BERDeserializer & deser)
 	{
-		serialize::readAndCall<uint, P...>(deser, [this, connId](uint checkCount, P... p) {
-			regClient(connId, checkCount, std::forward<P>(p)...);
+		RSig<void (P...)> * that = this;	// workaround for g++ 4.7.2 bug
+		serialize::readAndCall<uint, P...>(deser, [that, connId](uint checkCount, P... p) {
+			that->regClient(connId, checkCount, std::forward<P>(p)...);
 		});
 	}
 
@@ -84,8 +85,9 @@ public:
 
 	virtual void unregClient(uint connId, serialize::BERDeserializer & deser)
 	{
-		serialize::readAndCall<uint, P...>(deser, [this, connId](uint checkCount, P... p) {
-			unregClient(connId, checkCount, std::forward<P>(p)...);
+		RSig<void (P...)> * that = this;	// workaround for g++ 4.7.2 bug
+		serialize::readAndCall<uint, P...>(deser, [that, connId](uint checkCount, P... p) {
+			that->unregClient(connId, checkCount, std::forward<P>(p)...);
 		});
 	}
 
