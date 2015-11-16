@@ -37,9 +37,30 @@ define(function() {
 		window.sessionStorage.removeItem(name);
 	};
 
-	storage.clear = function() {
+	storage.clear = function(keepItems) {
+		var i;
+		var keep = [];
+		if (keepItems) {
+			if (!keepItems.length) keepItems = [keepItems];
+			i = keepItems.length;
+			while (i--) {
+				var name = keepItems[i];
+				var rv = window.localStorage.getItem(name);
+				if (rv !== null) keep.push(true, name, rv);
+				else {
+					rv = window.sessionStorage.getItem(name);
+					if (rv !== null) keep.push(false, name, rv);
+				}
+			}
+		}
 		window.localStorage.clear();
 		window.sessionStorage.clear();
+		i = keep.length;
+		while (i--) {
+			var el = keep[i];
+			if (el[0]) window.localStorage  .setItem(el[1], el[2]);
+			else       window.sessionStorage.setItem(el[1], el[2]);
+		}
 	};
 
 	return storage;

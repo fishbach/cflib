@@ -147,18 +147,5 @@ define([
 	rmi.register     = function(tagNo, func) { msgHandlers [tagNo] = func; };
 	rmi.registerRSig = function(name,  func) { rsigHandlers[name]  = func; };
 
-	rmi.resetStorage = function(keepItems) {
-		var keep = [['clId', storage.get('clId')]];
-		if (keepItems) {
-			if (!keepItems.length) keepItems = [keepItems];
-			$.each(keepItems, function(name) {
-				var val = storage.get(name);
-				if (val) keep.push([name, val]);
-			});
-		}
-		storage.clear();
-		$.each(keep, function(keyVal) { storage.set(keyVal[0], keyVal[1], true); });
-	};
-
 	return rmi;
 });
