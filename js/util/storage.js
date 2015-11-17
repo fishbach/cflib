@@ -46,10 +46,10 @@ define(function() {
 			while (i--) {
 				var name = keepItems[i];
 				var rv = window.localStorage.getItem(name);
-				if (rv !== null) keep.push(true, name, rv);
+				if (rv !== null) keep.push([true, name, rv]);
 				else {
 					rv = window.sessionStorage.getItem(name);
-					if (rv !== null) keep.push(false, name, rv);
+					if (rv !== null) keep.push([false, name, rv]);
 				}
 			}
 		}
