@@ -36,6 +36,7 @@ define([
 		args.unshift(s);
 		this.ser.apply(this, args);
 		rmi.sendAsync(s.box(2));
+		return this;
 	};
 
 	RSig.prototype.unregister = function() {
@@ -44,6 +45,7 @@ define([
 		args.unshift(s);
 		this.ser.apply(this, args);
 		rmi.sendAsync(s.box(2));
+		return this;
 	};
 
 	return RSig;

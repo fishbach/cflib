@@ -164,7 +164,7 @@ private:
 			connId(connId), retCount(retCount), checkCount(checkCount), params(std::forward<P>(p)...) {}
 	};
 	QVector<ClData> clients_;
-	std::function<bool (uint & retCount, uint checkCount, P... p)> checkRegister_;
+	std::function<bool (uint & retCount, uint & checkCount, P&... p)> checkRegister_;
 };
 
 }}	// namespace

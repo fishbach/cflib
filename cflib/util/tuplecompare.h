@@ -54,6 +54,12 @@ struct TupleCall
 	{
 		return TupleCall<I + 1, S, R>()(func, tp, std::forward<P>(p)..., std::get<I>(tp));
 	}
+
+	template <typename F, typename... T, typename... P>
+	R operator()(F func, std::tuple<T...> & tp, P&&... p)
+	{
+		return TupleCall<I + 1, S, R>()(func, tp, std::forward<P>(p)..., std::get<I>(tp));
+	}
 };
 
 template <size_t S, typename R>
@@ -61,6 +67,12 @@ struct TupleCall<S, S, R>
 {
 	template <typename F, typename... T, typename... P>
 	R operator()(F func, const std::tuple<T...> &, P&&... p)
+	{
+		return func(std::forward<P>(p)...);
+	}
+
+	template <typename F, typename... T, typename... P>
+	R operator()(F func, std::tuple<T...> &, P&&... p)
 	{
 		return func(std::forward<P>(p)...);
 	}
@@ -82,6 +94,12 @@ inline bool partialEqual(const std::tuple<TP...> & t, size_t count, P... p)
 
 template <typename R, typename F, typename... T, typename... P>
 inline R callWithTupleParams(F func, const std::tuple<T...> & tp, P&&... p)
+{
+	return impl::TupleCall<0, sizeof...(T), R>()(func, tp, std::forward<P>(p)...);
+}
+
+template <typename R, typename F, typename... T, typename... P>
+inline R callWithTupleParams(F func, std::tuple<T...> & tp, P&&... p)
 {
 	return impl::TupleCall<0, sizeof...(T), R>()(func, tp, std::forward<P>(p)...);
 }

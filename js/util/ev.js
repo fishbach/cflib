@@ -129,7 +129,7 @@ define(function() {
 		},
 
 		forward: function(ev) {
-			this.bind(ev.fire, ev);
+			return this.bind(ev.fire, ev);
 		},
 
 		bind: function(func, scope) {
@@ -142,6 +142,7 @@ define(function() {
 				myData.ids.push(id);
 			}
 			this.listener[id] = [func, scope];
+			return this;
 		},
 
 		unbindAll: function(scope) {
@@ -151,6 +152,7 @@ define(function() {
 			var i = ids.length;
 			while (i--) delete listener[ids[i]];
 			delete evData[this.id];
+			return this;
 		},
 
 		setEnabled: function(enabled) {
