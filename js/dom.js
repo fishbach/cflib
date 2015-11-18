@@ -206,8 +206,15 @@ define(function() {
 		return rv;
 	};
 
-	$.create = function(tagName) {
-		return new Fn(document.createElement(tagName));
+	$.create = function(tagNameOrHtml) {
+		if (tagNameOrHtml.charAt(0) != '<') return new Fn(document.createElement(tagNameOrHtml));
+		var dummy = document.createElement('div');
+		dummy.innerHTML = tagNameOrHtml;
+		var els = dummy.childNodes;
+		if (els.length <= 1) return new Fn(els[0]);
+		var rv = new Fn();
+		rv.els = els;
+		return rv;
 	};
 
 	$.start = function(func) {
