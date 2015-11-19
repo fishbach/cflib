@@ -118,6 +118,12 @@ QStringList getMemberTypes(const SerializeTypeInfo & ti)
 			types += getCustomTypes(param.type);
 		}
 	}
+	foreach (const SerializeFunctionTypeInfo & func, ti.cfSignals) {
+		types += getCustomTypes(func.returnType);
+		foreach (const SerializeVariableTypeInfo & param, func.parameters) {
+			types += getCustomTypes(param.type);
+		}
+	}
 
 	QStringList retval = types.toList();
 	retval.sort();
