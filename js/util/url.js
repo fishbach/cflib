@@ -39,7 +39,6 @@ define([
 		else         return getHashPath();
 	}
 
-	if (usePush && loc.hash !== '') hist.replaceState({}, document.title, getHashPath());
 	var current = urlPath();
 
 	function urlChangeEvent()
