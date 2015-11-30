@@ -26,18 +26,23 @@ USE_LOG(LogCat::Http)
 
 namespace cflib { namespace net {
 
-class HttpServer::Impl : public util::ThreadVerify, public TCPManager
+class HttpServer::Impl : public TCPManager
 {
 public:
 	Impl(uint threadCount, uint tlsThreadCount) :
-		util::ThreadVerify("HTTP-Server", util::ThreadVerify::Worker, threadCount),
-		TCPManager(tlsThreadCount)
+		TCPManager(tlsThreadCount),
+		threadCounter_(0)
 	{
+		for (uint i = 1 ; i <= threadCount ; ++i) threads_.append(
+			new util::ThreadVerify(QString("HTTP-Server %1/%2").arg(i).arg(threadCount), util::ThreadVerify::Worker));
 	}
 
 	~Impl()
 	{
-		stopVerifyThread();
+		foreach (util::ThreadVerify * th, threads_) {
+			th->stopVerifyThread();
+			delete th;
+		}
 	}
 
 	void registerHandler(RequestHandler & handler)
@@ -48,10 +53,12 @@ public:
 protected:
 	virtual void newConnection(TCPConnData * data)
     {
-		new impl::RequestParser(data, handlers_, this);
+		new impl::RequestParser(data, handlers_, threads_[++threadCounter_ % threads_.size()]);
     }
 
 private:
+	QVector<util::ThreadVerify *> threads_;
+	uint threadCounter_;
 	QList<RequestHandler *> handlers_;
 };
 
