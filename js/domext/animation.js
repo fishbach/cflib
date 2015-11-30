@@ -193,7 +193,7 @@ require([
 			window.scrollTo(0, 0);
 		} else {
 			var cb = scope ? function() { finishCb.call(scope); } : finishCb;
-			$.all('html, body').animate({ scrollTop : 0 }, time, cb);
+			$(window).animate({ scrollTop : 0 }, time, cb);
 		}
 	};
 
