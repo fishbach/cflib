@@ -59,6 +59,8 @@ RequestParser::~RequestParser()
 
 void RequestParser::sendReply(int id, const QByteArray & reply)
 {
+	if (!verifyThreadCall(&RequestParser::sendReply, id, reply)) return;
+
 	if (id == nextReplyId_) {
 		writeReply(reply);
 
