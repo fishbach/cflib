@@ -289,6 +289,7 @@ define(function() {
 		offset         : function()                      { return this.el.getBoundingClientRect(); },
 		data           : data,
 		hasClass       : function(name)                  { return this.el.className.search(new RegExp('(^|\\s)' + name + '(\\s|$)')) != -1; },
+		eventIsFrom    : function(sel, event)            { return checkEvent(event, sel, this.el); },
 
 		eq             : function(id)                    { return $(this.els[id]); },
 		index          : index,
