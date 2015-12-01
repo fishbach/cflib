@@ -213,7 +213,7 @@ define(function() {
 		var els = dummy.childNodes;
 		if (els.length <= 1) return new Fn(els[0]);
 		var rv = new Fn();
-		rv.els = els;
+		rv.els = Array.prototype.slice.call(els);	// need slice here, otherwise appendChild will change the list
 		return rv;
 	};
 

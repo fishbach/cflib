@@ -23,6 +23,7 @@ define([
 	var timeDiff = 0;
 	var popupZIndex = 1010;
 	var openPopups = [];
+	var eTag;
 
 	function base64CharToInt(c)
 	{
@@ -446,15 +447,21 @@ define([
 	};
 
 	util.getETag = function() {
+		if (eTag !== undefined) return eTag;
+
 		var scripts = document.getElementsByTagName('script');
 		var i = scripts.length;
 		while (i--) {
 			var scr = scripts[i];
 			var query = scr.getAttribute('src') || '';
 			var p = query.indexOf('?');
-			if (p != -1) return query.substr(p + 1);
+			if (p != -1) {
+				eTag = query.substr(p + 1);
+				return eTag;
+			}
 		}
-		return null;
+		eTag = '';
+		return '';
 	};
 
 	return util;
