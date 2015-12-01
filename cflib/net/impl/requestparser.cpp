@@ -260,19 +260,19 @@ bool RequestParser::handleRequestLine(const QByteArray & line)
 	else if (method == "POST") method_ = Request::POST;
 	else if (method == "HEAD") method_ = Request::HEAD;
 	else {
-		logWarn("unknown method on connection %1: %2", id_, method);
+		logWarn("unknown method on connection %1: %2", id_, line);
 		return false;
 	}
 
 	uri_ = parts[1];
 	if (uri_.isEmpty()) {
-		logWarn("no URI on connection %1: %2", id_);
+		logWarn("no URI on connection %1: %2", id_, line);
 		return false;
 	}
 
 	const QByteArray & proto = parts[2];
 	if (!proto.startsWith("HTTP/")) {
-		logWarn("unknown protocol on connection %1: %2", id_, proto);
+		logWarn("unknown protocol on connection %1: %2", id_, line);
 		return false;
 	}
 
