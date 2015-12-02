@@ -269,6 +269,13 @@ define([
 		else if (el.msRequestFullscreen    ) el.msRequestFullscreen();
 	};
 
+	util.exitFullscreen = function() {
+		if      (document.exitFullscreen      ) document.exitFullscreen();
+		else if (document.mozCancelFullScreen ) document.mozCancelFullScreen();
+		else if (document.webkitExitFullscreen) document.webkitExitFullscreen();
+		else if (document.msExitFullscreen    ) document.msExitFullscreen();
+	};
+
 	util.getFullscreenEl = function() {
 		return (
 			document.fullscreenElement       ||
@@ -289,6 +296,12 @@ define([
 		if      (el.requestPointerLock      ) el.requestPointerLock();
 		else if (el.mozRequestPointerLock   ) el.mozRequestPointerLock();
 		else if (el.webkitRequestPointerLock) el.webkitRequestPointerLock();
+	};
+
+	util.exitPointerLock = function() {
+		if      (document.exitPointerLock      ) document.exitPointerLock();
+		else if (document.mozExitPointerLock   ) document.mozExitPointerLock();
+		else if (document.webkitExitPointerLock) document.webkitExitPointerLock();
 	};
 
 	util.getPointerLockEl = function() {
