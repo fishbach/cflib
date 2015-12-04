@@ -78,9 +78,10 @@ public:
 
 	void regClient(uint connId, uint checkCount, P... p)
 	{
+		uint retStart = 0;
 		uint retCount = sizeof...(P);
-		if (checkRegister_ && !checkRegister_(retCount, checkCount, p...)) return;
-		clients_ << ClData(connId, retCount, checkCount, std::forward<P>(p)...);
+		if (checkRegister_ && !checkRegister_(retStart, retCount, checkCount, p...)) return;
+		clients_ << ClData(connId, retStart, retCount, checkCount, std::forward<P>(p)...);
 	}
 
 	virtual void unregClient(uint connId, serialize::BERDeserializer & deser)
@@ -116,7 +117,7 @@ public:
 		while (it.hasNext()) {
 			ClData & d = it.next();
 			if (d.connId != connId) continue;
-			if (!util::callWithTupleParams<bool>(checkRegister_, d.params, d.retCount, d.checkCount)) it.remove();
+			if (!util::callWithTupleParams<bool>(checkRegister_, d.params, d.retStart, d.retCount, d.checkCount)) it.remove();
 		}
 	}
 
@@ -141,14 +142,19 @@ public:
 private:
 	void handleRemote(P... p)
 	{
-		QMap<uint, QByteArray> partials;
+		QMap<QPair<uint, uint>, QByteArray> partials;
 		QVectorIterator<ClData> it(clients_);
 		while (it.hasNext()) {
 			const ClData & d = it.next();
 			if (!util::partialEqual(d.params, d.checkCount, p...)) continue;
 
-			QByteArray & ba = partials[d.retCount];
-			if (ba.isNull()) ba = serialize::someToByteArray(3, d.retCount + 2, serviceName_, sigName_, p...);
+			QByteArray & ba = partials[qMakePair(d.retStart, d.retCount)];
+			if (ba.isNull()) {
+				serialize::BERSerializer ser(3);
+				ser << serviceName_ << sigName_;
+				serialize::someToByteArray(ser, d.retStart, d.retCount, p...);
+				ba = ser.data();
+			}
 			send(d.connId, ba);
 		}
 	}
@@ -156,15 +162,18 @@ private:
 private:
 	struct ClData {
 		uint connId;
+		uint retStart;
 		uint retCount;
 		uint checkCount;
 		std::tuple<typename std::decay<P>::type ...> params;
-		ClData() : connId(0), retCount(0), checkCount(0) {}
-		ClData(uint connId, uint retCount, uint checkCount, P... p) :
-			connId(connId), retCount(retCount), checkCount(checkCount), params(std::forward<P>(p)...) {}
+
+		ClData() : connId(0), retStart(0), retCount(0), checkCount(0) {}
+		ClData(uint connId, uint retStart, uint retCount, uint checkCount, P... p) :
+			connId(connId), retStart(retStart), retCount(retCount), checkCount(checkCount),
+			params(std::forward<P>(p)...) {}
 	};
 	QVector<ClData> clients_;
-	std::function<bool (uint & retCount, uint & checkCount, P&... p)> checkRegister_;
+	std::function<bool (uint & retStart, uint & retCount, uint & checkCount, P&... p)> checkRegister_;
 };
 
 }}	// namespace

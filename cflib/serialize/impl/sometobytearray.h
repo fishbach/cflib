@@ -27,18 +27,19 @@ template <size_t I, typename... P> struct SomeToByteArray;
 template <size_t I, typename P, typename... PN>
 struct SomeToByteArray<I, P, PN...>
 {
-	void operator()(BERSerializer & ser, size_t count, P p, PN... pn)
+	void operator()(BERSerializer & ser, size_t start, size_t count, P p, PN... pn)
 	{
-		if (I >= count) return;
-		ser << p;
-		SomeToByteArray<I + 1, PN...>()(ser, count, pn...);
+		if (I >= start + count) return;
+		if (I < start) ser << Placeholder();
+		else           ser << p;
+		SomeToByteArray<I + 1, PN...>()(ser, start, count, pn...);
 	}
 };
 
 template <size_t I>
 struct SomeToByteArray<I>
 {
-	void operator()(BERSerializer &, size_t) {}
+	void operator()(BERSerializer &, size_t, size_t) {}
 };
 
 }}}	// namespace

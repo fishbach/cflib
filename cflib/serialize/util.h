@@ -54,11 +54,9 @@ inline QByteArray toByteArray(const T & v, quint64 tagNo = 1)
 }
 
 template<typename... P>
-inline QByteArray someToByteArray(quint64 tagNo, uint count, P... p)
+inline void someToByteArray(BERSerializer & ser, uint start, uint count, P... p)
 {
-	BERSerializer ser(tagNo);
-	impl::SomeToByteArray<0, P...>()(ser, count, p...);
-	return ser.data();
+	impl::SomeToByteArray<0, P...>()(ser, start, count, p...);
 }
 
 template<typename T>
