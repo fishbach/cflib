@@ -149,7 +149,6 @@ private:
 	typedef QPair<quint64, uint> TagConnId;
 	QHash<TagConnId, ConnIds> channels_;
 
-	uint connDataId_;
 	QHash<uint, uint> connId2dataId_;
 	QHash<uint, ConnInfo> connData_;
 	QMap<QByteArray, uint> clientIds_;
@@ -185,7 +184,6 @@ template<typename C>
 WSCommManager<C>::WSCommManager(const QString & path, uint connectionTimeoutSec, uint sessionTimeoutSec) :
 	WSCommManagerBase(path, connectionTimeoutSec),
 	connDataChecker_(0),
-	connDataId_(0),
 	timer_(this, &WSCommManager::checkTimeout), sessionTimeoutSec_(sessionTimeoutSec)
 {
 	init();
@@ -371,8 +369,8 @@ uint WSCommManager<C>::sendNewClientId(uint connId)
 	const QByteArray clId = crypt::random(20);
 
 	// get free id
-	uint dataId = ++connDataId_;
-	while (connData_.contains(dataId)) dataId = ++connDataId_;
+	uint dataId = crypt::randomUInt32();
+	while (connData_.contains(dataId)) dataId = crypt::randomUInt32();
 
 	connId2dataId_[connId] = dataId;
 	connData_[dataId].connIds << connId;
