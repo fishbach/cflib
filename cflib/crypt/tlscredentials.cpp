@@ -19,6 +19,7 @@
 #include "tlscredentials.h"
 
 #include <cflib/crypt/impl/botanhelper.h>
+#include <cflib/util/util.h>
 
 USE_LOG(LogCat::Crypt)
 
@@ -156,6 +157,28 @@ bool TLSCredentials::addPrivateKey(const QByteArray & privateKey, const QByteArr
 		return true;
 	} CATCH
 	return false;
+}
+
+bool TLSCredentials::loadFromDir(const QString & path)
+{
+	QDir dir(path);
+	foreach (const QFileInfo & fi, dir.entryInfoList(QStringList() << "*_crt.pem", QDir::Readable | QDir::Files, QDir::Name)) {
+		const QString file = fi.absoluteFilePath();
+		if (!addCerts(util::readFile(file))) {
+			logCritical("could not read certificate: %1", file);
+			QTextStream(stderr) << "could not read certificate: " << file << endl;
+			return false;
+		}
+	}
+	foreach (const QFileInfo & fi, dir.entryInfoList(QStringList() << "*_key.pem", QDir::Readable | QDir::Files, QDir::Name)) {
+		const QString file = fi.absoluteFilePath();
+		if (!addPrivateKey(util::readFile(file))) {
+			logCritical("could not read key: %1", file);
+			QTextStream(stderr) << "could not read key: " << file << endl;
+			return false;
+		}
+	}
+	return true;
 }
 
 QList<TLSCertInfo> TLSCredentials::getCertInfos() const

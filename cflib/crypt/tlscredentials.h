@@ -51,6 +51,10 @@ public:
 	// destroys data in parameters
 	bool addPrivateKey(const QByteArray & privateKey, const QByteArray & password = QByteArray());
 
+	// loads all certificates ending with: _crt.pem
+	// and all keys ending with: _key.pem
+	bool loadFromDir(const QString & path);
+
 private:
 	class Impl;
 	Impl * impl_;
