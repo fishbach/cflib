@@ -53,7 +53,11 @@ public:
 
 	// loads all certificates ending with: _crt.pem
 	// and all keys ending with: _key.pem
+	// After load activate has to be called.
+	// This is necessary when you do a procsess owner change in between.
+	// Otherwise the secure memory of botan will not make the move to the new owner.
 	bool loadFromDir(const QString & path);
+	bool activateLoaded();
 
 private:
 	class Impl;

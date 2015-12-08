@@ -79,6 +79,8 @@ public:
 	QList<CertsPrivKey> chains;
 	QList<X509_Certificate> allCerts;
 	Certificate_Store_In_Memory trustedCAs;
+	QList<QByteArray> loadedCerts;
+	QList<QByteArray> loadedKeys;
 };
 
 TLSCredentials::TLSCredentials() :
@@ -162,28 +164,47 @@ bool TLSCredentials::addPrivateKey(const QByteArray & privateKey, const QByteArr
 bool TLSCredentials::loadFromDir(const QString & path)
 {
 	QDir dir(path);
-	foreach (const QFileInfo & fi, dir.entryInfoList(QStringList() << "*_crt.pem" << "*_key.pem",
-		QDir::Readable | QDir::Files, QDir::Name))
-	{
+	foreach (const QFileInfo & fi, dir.entryInfoList(QStringList() << "*_crt.pem", QDir::Readable | QDir::Files)) {
 		const QString file = fi.absoluteFilePath();
-		if (file.endsWith("_crt.pem")) {
-			if (!addCerts(util::readFile(file))) {
-				logCritical("could not read certificate: %1", file);
-				QTextStream(stderr) << "could not read certificate: " << file << endl;
-				return false;
-			} else {
-				logInfo("added certificate: %1", file);
-			}
-		} else {
-			if (!addPrivateKey(util::readFile(file))) {
-				logCritical("could not read key: %1", file);
-				QTextStream(stderr) << "could not read key: " << file << endl;
-				return false;
-			} else {
-				logInfo("added key: %1", file);
-			}
+		const QByteArray data = util::readFile(file);
+		if (data.isEmpty()) {
+			logCritical("could not read certificate: %1", file);
+			QTextStream(stderr) << "could not read certificate: " << file << endl;
+			return false;
+		}
+		impl_->loadedCerts << data;
+	}
+	foreach (const QFileInfo & fi, dir.entryInfoList(QStringList() << "*_key.pem", QDir::Readable | QDir::Files)) {
+		const QString file = fi.absoluteFilePath();
+		const QByteArray data = util::readFile(file);
+		if (data.isEmpty()) {
+			logCritical("could not read key: %1", file);
+			QTextStream(stderr) << "could not read key: " << file << endl;
+			return false;
+		}
+		impl_->loadedKeys << data;
+	}
+	return true;
+}
+
+bool TLSCredentials::activateLoaded()
+{
+	foreach (const QByteArray & data, impl_->loadedCerts) {
+		if (!addCerts(data)) {
+			logCritical("could not handle certificate: %1", data);
+			QTextStream(stderr) << "could not handle certificate: " << data << endl;
+			return false;
 		}
 	}
+	impl_->loadedCerts.clear();
+	foreach (const QByteArray & data, impl_->loadedKeys) {
+		if (!addPrivateKey(data)) {
+			logCritical("could not handle key: %1", data);
+			QTextStream(stderr) << "could not handle key: " << data << endl;
+			return false;
+		}
+	}
+	impl_->loadedKeys.clear();
 	return true;
 }
 
