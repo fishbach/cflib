@@ -369,8 +369,10 @@ uint WSCommManager<C>::sendNewClientId(uint connId)
 	const QByteArray clId = crypt::random(20);
 
 	// get free id
-	uint dataId = crypt::randomUInt32();
-	while (connData_.contains(dataId)) dataId = crypt::randomUInt32();
+	uint dataId;
+	do {
+		dataId = crypt::randomUInt32();
+	} while (dataId == 0 || connData_.contains(dataId));
 
 	connId2dataId_[connId] = dataId;
 	connData_[dataId].connIds << connId;
