@@ -162,20 +162,26 @@ bool TLSCredentials::addPrivateKey(const QByteArray & privateKey, const QByteArr
 bool TLSCredentials::loadFromDir(const QString & path)
 {
 	QDir dir(path);
-	foreach (const QFileInfo & fi, dir.entryInfoList(QStringList() << "*_crt.pem", QDir::Readable | QDir::Files, QDir::Name)) {
+	foreach (const QFileInfo & fi, dir.entryInfoList(QStringList() << "*_crt.pem" << "*_key.pem",
+		QDir::Readable | QDir::Files, QDir::Name))
+	{
 		const QString file = fi.absoluteFilePath();
-		if (!addCerts(util::readFile(file))) {
-			logCritical("could not read certificate: %1", file);
-			QTextStream(stderr) << "could not read certificate: " << file << endl;
-			return false;
-		}
-	}
-	foreach (const QFileInfo & fi, dir.entryInfoList(QStringList() << "*_key.pem", QDir::Readable | QDir::Files, QDir::Name)) {
-		const QString file = fi.absoluteFilePath();
-		if (!addPrivateKey(util::readFile(file))) {
-			logCritical("could not read key: %1", file);
-			QTextStream(stderr) << "could not read key: " << file << endl;
-			return false;
+		if (file.endsWith("_crt.pem")) {
+			if (!addCerts(util::readFile(file))) {
+				logCritical("could not read certificate: %1", file);
+				QTextStream(stderr) << "could not read certificate: " << file << endl;
+				return false;
+			} else {
+				logInfo("added certificate: %1", file);
+			}
+		} else {
+			if (!addPrivateKey(util::readFile(file))) {
+				logCritical("could not read key: %1", file);
+				QTextStream(stderr) << "could not read key: " << file << endl;
+				return false;
+			} else {
+				logInfo("added key: %1", file);
+			}
 		}
 	}
 	return true;
