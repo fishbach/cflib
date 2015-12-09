@@ -70,6 +70,14 @@ void RMIServiceBase::connDataChange(const QSet<uint> & connIds)
 	connId_ = 0;
 }
 
+void RMIServiceBase::connectionClosed(uint connId)
+{
+	if (!verifyThreadCall(&RMIServiceBase::connectionClosed, connId)) return;
+
+	int i = getServiceInfo().cfSignals.size();
+	while (i > 0) getCfSignal(i--)->unregClient(connId);
+}
+
 RMIReplier RMIServiceBase::delayReply()
 {
 	delayedReply_ = true;

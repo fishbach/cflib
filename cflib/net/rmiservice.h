@@ -60,6 +60,7 @@ protected:
 protected:
 	void processRMIServiceCall(serialize::BERDeserializer deser, uint callNo, uint type, uint connId);
 	void connDataChange(const QSet<uint> & connIds);
+	void connectionClosed(uint connId);
 
 	virtual void processRMIServiceCallImpl(serialize::BERDeserializer & deser, uint callNo) = 0;
 	virtual void processRMIServiceCallImpl(serialize::BERDeserializer & deser, uint callNo,

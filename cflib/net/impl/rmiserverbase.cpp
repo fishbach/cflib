@@ -429,8 +429,7 @@ void RMIServerBase::connectionClosed(uint connId)
 	QMapIterator<QString, ServiceFunctions> it(services_);
 	while (it.hasNext()) {
 		RMIServiceBase & service = *it.next().value().service;
-		int i = service.getServiceInfo().cfSignals.size();
-		while (i > 0) service.getCfSignal(i--)->unregClient(connId);
+		service.connectionClosed(connId);
 	}
 }
 
