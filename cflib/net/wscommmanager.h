@@ -117,7 +117,6 @@ public:
 	void registerMsgHandler(quint64 tag, MsgHandler & hdl) { msgHandler_[tag] = &hdl; hdl.mgr_ = this; }
 	void updateConnData(uint connDataId, const C & connData);
 	void connDataOk(uint connDataId);
-	void updateChannel(quint64 tag, uint srcConnId, const ConnIds & dstConnIds);
 
 protected:
 	virtual void newMsg(uint connId, const QByteArray & data, bool isBinary, bool & stopRead);
@@ -145,9 +144,6 @@ private:
 	QList<StateListener *> stateListener_;
 	QList<TextMsgHandler *> textMsgHandler_;
 	QHash<quint64, MsgHandler *> msgHandler_;
-
-	typedef QPair<quint64, uint> TagConnId;
-	QHash<TagConnId, ConnIds> channels_;
 
 	QHash<uint, uint> connId2dataId_;
 	QHash<uint, ConnInfo> connData_;
@@ -235,15 +231,6 @@ bool WSCommManager<C>::connDataOk(WSCommManager::ConnInfo & info, uint connDataI
 }
 
 template<typename C>
-void WSCommManager<C>::updateChannel(quint64 tag, uint srcConnId, const ConnIds & dstConnIds)
-{
-	if (!verifyThreadCall(&WSCommManager<C>::updateChannel, tag, srcConnId, dstConnIds)) return;
-
-	if (dstConnIds.isEmpty()) channels_.remove(TagConnId(tag, srcConnId));
-	else channels_[TagConnId(tag, srcConnId)] = dstConnIds;
-}
-
-template<typename C>
 void WSCommManager<C>::newMsg(uint connId, const QByteArray & data, bool isBinary, bool & stopRead)
 {
 	const uint dataId = connId2dataId_.value(connId);
@@ -311,13 +298,6 @@ void WSCommManager<C>::newMsg(uint connId, const QByteArray & data, bool isBinar
 			close(connId, TCPConn::HardClosed);
 			logInfo("request without clientId from %1", connId);
 		}
-		return;
-	}
-
-	// forwarding
-	if (channels_.contains(TagConnId(tag, connId))) {
-		QSetIterator<uint> it(channels_[TagConnId(tag, connId)]);
-		while (it.hasNext()) send(it.next(), data, true);
 		return;
 	}
 
