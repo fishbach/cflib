@@ -25,6 +25,15 @@ define([
 	var openPopups = [];
 	var eTag;
 
+	var escapeHtmlChars = {
+		'&' : '&amp;',
+		'<' : '&lt;',
+		'>' : '&gt;',
+		'"' : '&quot;',
+		"'" : '&#39;',
+		'/' : '&#x2F;'
+	};
+
 	function base64CharToInt(c)
 	{
 		if (64 < c && c <  91) return c - 65;	// A-Z
@@ -60,6 +69,7 @@ define([
 		return rv;
 	};
 
+	// cleans white spaces
 	util.simplifyStr = function(str, keepNewlines) {
 		if (!keepNewlines) return (str
 			.replace(/^\s+|\s+$/g, '')
@@ -73,8 +83,18 @@ define([
 		return rv;
 	};
 
-	util.getInputStr = function(el) {
-		return util.simplifyStr(el.value).replace(/[^\w@\._\- ]+/g, '');
+	// returns only plain words with clean spaces
+	util.textifyStr = function(str) {
+		return util.simplifyStr(str).replace(/[^\w@\._\- ]+/g, '');
+	};
+
+	// escapes dangerous HTML chars
+	function escapeHtml(str) {
+		return str.replace(/[&<>"'\/]/g, function(c) { return escapeHtmlChars[c]; });
+	}
+
+	util.isValidEmail = function(str) {
+		return (/^[\w.\-_]+@\w[\w.\-]+\.\w+$/.test(str));
 	};
 
 	util.dateFromUTC = function(date) {
@@ -146,12 +166,6 @@ define([
 			return true;
 		}
 		return false;
-	};
-
-	util.validInputChars = function(str, keepNewlines) {
-		str = util.simplifyStr(str, keepNewlines);
-		if (/[{}\[\]<>;"\\]/.test(str)) return null;
-		return str;
 	};
 
 	util.formatInt = function(i, w) {
@@ -228,12 +242,6 @@ define([
 	util.now = function(doFormat) {
 		if (doFormat) return util.formatDateTime(util.now(), false, true);
 		return new Date(new Date().getTime() + timeDiff);
-	};
-
-	util.validEmail = function(str) {
-		str = util.validInputChars(str);
-		if (str === null || !/^[\w.\-_]+@\w[\w.\-]+\.\w+$/.test(str)) return null;
-		return str;
 	};
 
 	util.setClipboardDefault = function(dataFunc) {
