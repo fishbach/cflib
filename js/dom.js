@@ -20,7 +20,8 @@ define(function() {
 
 	var spaceRE = /\s+/;
 
-	function html(code) { this.innerHTML = code; }
+	function html   (code) { this.innerHTML   = code; }
+	function setText(text) { this.textContent = text; }
 
 	function addEventListener   () { this.addEventListener   .apply(this, arguments); }
 	function removeEventListener() { this.removeEventListener.apply(this, arguments); }
@@ -263,6 +264,7 @@ define(function() {
 		},
 
 		html           : function(code)                  { return this.each(html, arguments); },
+		text           : function(text)                  { return this.each(setText, arguments); },
 		on             : function(name, func, capture)   { return this.each(addEventListener,    arguments); },
 		off            : function(name, func)            { return this.each(removeEventListener, arguments); },
 		remove         : function()                      { return this.each(remove, arguments); },

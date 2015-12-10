@@ -404,6 +404,11 @@ bool validWebInputChars(const QString & str)
 	return true;
 }
 
+bool isValidEmail(const QString & str)
+{
+	return QRegularExpression("^[\\w.\\-_]+@\\w[\\w.\\-]+\\.\\w+$").match(str).hasMatch();
+}
+
 bool daemonize()
 {
 #ifndef Q_OS_UNIX

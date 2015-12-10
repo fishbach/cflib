@@ -113,6 +113,7 @@ inline QDateTime readUTCDateTime(const QString & str)
 }
 
 bool validWebInputChars(const QString & str);
+bool isValidEmail(const QString & str);
 
 bool daemonize();
 bool setProcessOwner(int uid, int gid);
