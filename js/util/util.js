@@ -89,9 +89,9 @@ define([
 	};
 
 	// escapes dangerous HTML chars
-	function escapeHtml(str) {
+	util.escapeHtml = function(str) {
 		return str.replace(/[&<>"'\/]/g, function(c) { return escapeHtmlChars[c]; });
-	}
+	};
 
 	util.isValidEmail = function(str) {
 		return (/^[\w.\-_]+@\w[\w.\-]+\.\w+$/.test(str));
