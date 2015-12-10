@@ -31,6 +31,7 @@ define([
 	var msgHandlers     = {};
 	var rsigHandlers    = {};
 	var waitingRSig     = [];
+	var id              = null;
 
 	function checkWaitingRequests()
 	{
@@ -50,10 +51,19 @@ define([
 		}
 	}
 
+	function getId()
+	{
+		if (!id) {
+			id = storage.get('clId');
+			if (id) id = util.fromBase64(id);
+		}
+		return id;
+	}
+
 	function wsOpen(e)
 	{
-		var id = storage.get('clId');
-		if (id) ws.send(ber.makeTLV(1, false, util.fromBase64(id)));
+		var id = getId();
+		if (id) ws.send(ber.makeTLV(1, false, id));
 		else    ws.send(ber.makeTLV(1));
 		checkWaitingRequests();
 	}
@@ -79,7 +89,9 @@ define([
 		var value = new Uint8Array(data.buffer, tlv[2] + tlv[3], tlv[0]);
 		switch (tagNo) {
 			case 1:
-				storage.set('clId', util.toBase64(value), true);
+				id = new Uint8Array(value.length);
+				id.set(value);
+				storage.set('clId', util.toBase64(id), true);
 				rmi.ev.identityReset.fire();
 				return;
 			case 2:
@@ -131,6 +143,8 @@ define([
 		ws = null;
 		cl.close();
 	};
+
+	rmi.id = getId;
 
 	rmi.sendAsync = function(data) { ws.send(data); };
 
