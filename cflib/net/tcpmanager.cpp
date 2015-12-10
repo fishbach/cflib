@@ -32,9 +32,9 @@ TCPManager::~TCPManager()
 	delete impl_;
 }
 
-bool TCPManager::stop()
+void TCPManager::stop()
 {
-	return impl_->stop();
+	impl_->stop();
 }
 
 bool TCPManager::isRunning() const

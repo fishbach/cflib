@@ -123,11 +123,7 @@ TCPManagerImpl::~TCPManagerImpl()
 
 void TCPManagerImpl::deleteThreadData()
 {
-	if (isRunning()) stop();
-	foreach (TCPConnData * c, connections_) {
-		if (c->tlsStream) tlsCloseConn(c, TCPConn::HardClosed, false);
-		else              closeConn(c, TCPConn::HardClosed, false);
-	}
+	stop();
 }
 
 bool TCPManagerImpl::start(int listenSocket, crypt::TLSCredentials * credentials)
@@ -167,23 +163,23 @@ bool TCPManagerImpl::start(int listenSocket, crypt::TLSCredentials * credentials
 	return true;
 }
 
-bool TCPManagerImpl::stop()
+void TCPManagerImpl::stop()
 {
-	SyncedThreadCall<bool> stc(this);
-	if (!stc.verify(&TCPManagerImpl::stop)) return stc.retval();
+	if (!verifySyncedThreadCall(&TCPManagerImpl::stop)) return;
 
-	if (!isRunning()) {
-		logWarn("server not running");
-		return false;
+	logFunctionTrace
+
+	if (isRunning()) {
+		ev_io_stop(libEVLoop(), readWatcher_);
+		close(listenSock_);
+		listenSock_ = -1;
+		credentials_ = 0;
 	}
 
-	ev_io_stop(libEVLoop(), readWatcher_);
-	close(listenSock_);
-	listenSock_ = -1;
-	credentials_ = 0;
-
-	logInfo("server stopped");
-	return true;
+	foreach (TCPConnData * c, connections_) {
+		if (c->tlsStream) tlsCloseConn(c, TCPConn::HardClosed, false);
+		else              closeConn(c, TCPConn::HardClosed, false);
+	}
 }
 
 TCPConnData * TCPManagerImpl::openConnection(
@@ -310,7 +306,7 @@ void TCPManagerImpl::closeConn(TCPConnData * conn, TCPConn::CloseType type, bool
 	}
 	if (notifyClose) callClosed(conn);
 
-	// hard close and nothing to do
+	// hard close after both have been closed or no close change
 	if (!readClosed && !writeClosed) return;
 
 	// close socket

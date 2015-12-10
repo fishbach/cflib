@@ -28,11 +28,13 @@ class RequestHandler;
 
 namespace impl {
 
+class HttpThread;
+
 class RequestParser : public util::ThreadVerify, public TCPConn
 {
 public:
 	RequestParser(TCPConnData * data,
-		const QList<RequestHandler *> & handlers, util::ThreadVerify * tv);
+		const QList<RequestHandler *> & handlers, HttpThread * thread);
 	~RequestParser();
 
 	void sendReply(int id, const QByteArray & reply);
@@ -54,6 +56,7 @@ private:
 
 private:
 	const QList<RequestHandler *> & handlers_;
+	HttpThread * thread_;
 	const int id_;
 
 	QByteArray header_;

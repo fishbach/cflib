@@ -45,7 +45,7 @@ public:
 	// When destroying TCPConn object, make sure no callback is still active:
 	// every call to startReadWatcher() will result in exactly one call of "newBytesAvailable" or "closed"
 	// every call to write(data, true) will result in exactly one call of "writeFinished" or "closed"
-	// exception: closed is only called with new state
+	// exception: closed is only called once for each close state
 	// example:
 	//   startReadWatcher() -> peer closed our read channel -> closed(ReadClosed)
 	//   if startReadWatcher() is called again, no callback will happen
@@ -63,6 +63,8 @@ public:
 	// closes the socket
 	// - WriteClosed closes the write channel after all bytes have been written
 	// - HardClosed may abort pending writes
+	// - If readWatcher was active, "closed" will be called even when notifyClose == false.
+	// - If notifyClose == true it is guaranteed that "closed" will be called.
 	// on TCP level:
 	// - WriteClosed sends FIN to peer
 	// - ReadClosed does not inform the sender in any way and just releases some system resources (!)

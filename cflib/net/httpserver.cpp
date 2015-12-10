@@ -18,7 +18,7 @@
 
 #include "httpserver.h"
 
-#include <cflib/net/impl/requestparser.h>
+#include <cflib/net/impl/httpthread.h>
 #include <cflib/net/tcpmanager.h>
 #include <cflib/util/log.h>
 
@@ -33,16 +33,13 @@ public:
 		TCPManager(tlsThreadCount),
 		threadCounter_(0)
 	{
-		for (uint i = 1 ; i <= threadCount ; ++i) threads_.append(
-			new util::ThreadVerify(QString("HTTP-Server %1/%2").arg(i).arg(threadCount), util::ThreadVerify::Worker));
+		for (uint i = 1 ; i <= threadCount ; ++i) threads_.append(new impl::HttpThread(i, threadCount));
 	}
 
 	~Impl()
 	{
-		foreach (util::ThreadVerify * th, threads_) {
-			th->stopVerifyThread();
-			delete th;
-		}
+		stop();
+		foreach (impl::HttpThread * th, threads_) delete th;
 	}
 
 	void registerHandler(RequestHandler & handler)
@@ -53,11 +50,11 @@ public:
 protected:
 	virtual void newConnection(TCPConnData * data)
     {
-		new impl::RequestParser(data, handlers_, threads_[++threadCounter_ % threads_.size()]);
+		threads_[++threadCounter_ % threads_.size()]->newRequest(data, handlers_);
     }
 
 private:
-	QVector<util::ThreadVerify *> threads_;
+	QVector<impl::HttpThread *> threads_;
 	uint threadCounter_;
 	QList<RequestHandler *> handlers_;
 };
@@ -92,9 +89,9 @@ bool HttpServer::start(int listenSocket, crypt::TLSCredentials & credentials)
 	return impl_->start(listenSocket, credentials);
 }
 
-bool HttpServer::stop()
+void HttpServer::stop()
 {
-	return impl_->stop();
+	impl_->stop();
 }
 
 bool HttpServer::isRunning() const

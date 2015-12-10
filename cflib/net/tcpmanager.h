@@ -38,7 +38,7 @@ public:
 	bool start(const QByteArray & ip, quint16 port) { return start(openListenSocket(ip, port)); }
 	bool start(const QByteArray & ip, quint16 port, crypt::TLSCredentials & credentials) {
 		return start(openListenSocket(ip, port), credentials); }
-	bool stop();
+	void stop();
 	bool isRunning() const;
 
 	TCPConnData * openConnection(const QByteArray & destIP, quint16 destPort);

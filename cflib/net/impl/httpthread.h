@@ -18,33 +18,31 @@
 
 #pragma once
 
-#include <QtCore>
-
-namespace cflib { namespace crypt { class TLSCredentials; }}
+#include <cflib/util/threadverify.h>
 
 namespace cflib { namespace net {
 
+class TCPConnData;
 class RequestHandler;
 
-class HttpServer
+namespace impl {
+
+class HttpThread : public util::ThreadVerify
 {
-	Q_DISABLE_COPY(HttpServer)
 public:
-	HttpServer(uint threadCount = 2, uint tlsThreadCount = 0);
-	~HttpServer();
+	HttpThread(uint no, uint count);
+	~HttpThread();
 
-	bool start(const QByteArray & address, quint16 port);
-	bool start(const QByteArray & address, quint16 port, crypt::TLSCredentials & credentials);
-	bool start(int listenSocket);
-	bool start(int listenSocket, crypt::TLSCredentials & credentials);
-	void stop();
-	bool isRunning() const;
-
-	void registerHandler(RequestHandler & handler);
+	void newRequest(TCPConnData * data, const QList<RequestHandler *> & handlers);
+	void requestFinished();
 
 private:
-	class Impl;
-	Impl * impl_;
+	void waitForRequestsToFinish();
+
+private:
+	uint activeRequests_;
+	bool shutdown_;
+	QSemaphore sem_;
 };
 
-}}	// namespace
+}}}	// namespace

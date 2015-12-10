@@ -41,7 +41,7 @@ public:
 
 	bool isRunning() const { return listenSock_ != -1; }
 	bool start(int listenSocket, crypt::TLSCredentials * credentials);
-	bool stop();
+	void stop();
 
 	TCPConnData * openConnection(const QByteArray & destIP, quint16 destPort,
 		const QByteArray & sourceIP, quint16 sourcePort,

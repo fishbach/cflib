@@ -18,6 +18,7 @@
 
 #include "requestparser.h"
 
+#include <cflib/net/impl/httpthread.h>
 #include <cflib/net/request.h>
 #include <cflib/util/log.h>
 #include <cflib/util/util.h>
@@ -33,11 +34,12 @@ QAtomicInt connCount;
 }
 
 RequestParser::RequestParser(TCPConnData * data,
-	const QList<RequestHandler *> & handlers, util::ThreadVerify * tv)
+	const QList<RequestHandler *> & handlers, HttpThread * thread)
 :
-	util::ThreadVerify(tv),
+	util::ThreadVerify(thread),
 	TCPConn(data),
 	handlers_(handlers),
+	thread_(thread),
 	id_(connCount.fetchAndAddRelaxed(1) + 1),
 	contentLength_(-1),
 	method_(Request::NONE),
@@ -55,6 +57,7 @@ RequestParser::RequestParser(TCPConnData * data,
 RequestParser::~RequestParser()
 {
 	logTrace("deleted RequestParser of connection %1", id_);
+	thread_->requestFinished();
 }
 
 void RequestParser::sendReply(int id, const QByteArray & reply)
