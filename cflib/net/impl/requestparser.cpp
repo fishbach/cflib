@@ -81,6 +81,8 @@ void RequestParser::sendReply(int id, const QByteArray & reply)
 
 void RequestParser::detachRequest()
 {
+	if (!verifyThreadCall(&RequestParser::detachRequest)) return;
+
 	if (--attachedRequests_ == 0) util::deleteNext(this);
 }
 
