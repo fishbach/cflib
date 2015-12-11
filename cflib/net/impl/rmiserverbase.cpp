@@ -384,6 +384,8 @@ void RMIServerBase::exportTo(const QString & dest) const
 
 void RMIServerBase::handleRequest(const Request & request)
 {
+	if (!verifyThreadCall(&RMIServerBase::handleRequest, request)) return;
+
 	QByteArray path = request.getUri();
 	{
 		int p = path.indexOf('?');

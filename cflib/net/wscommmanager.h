@@ -117,6 +117,7 @@ public:
 	void registerMsgHandler(quint64 tag, MsgHandler & hdl) { msgHandler_[tag] = &hdl; hdl.mgr_ = this; }
 	void updateConnData(uint connDataId, const C & connData);
 	void connDataOk(uint connDataId);
+	void getConnData(const QByteArray & clientId, C & connData, uint & connDataId);
 
 protected:
 	virtual void newMsg(uint connId, const QByteArray & data, bool isBinary, bool & stopRead);
@@ -213,6 +214,15 @@ void WSCommManager<C>::connDataOk(uint connDataId)
 	if (!verifyThreadCall(&WSCommManager<C>::connDataOk, connDataId)) return;
 
 	connDataOk(connData_[connDataId], connDataId);
+}
+
+template<typename C>
+void WSCommManager<C>::getConnData(const QByteArray & clientId, C & connData, uint & connDataId)
+{
+	if (!verifySyncedThreadCall(&WSCommManager<C>::getConnData, clientId, connData, connDataId)) return;
+
+	connDataId = clientIds_.value(clientId);
+	connData = connDataId == 0 ? C() : connData_.value(connDataId).connData;
 }
 
 template<typename C>
