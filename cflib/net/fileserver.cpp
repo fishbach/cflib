@@ -201,7 +201,6 @@ void FileServer::handleRequest(const Request & request)
 	}
 
 	fullPath = fi.canonicalFilePath();
-	QByteArray replyData;
 
 	// parse html files
 	if (fullPath.endsWith(".html")) {
@@ -211,10 +210,15 @@ void FileServer::handleRequest(const Request & request)
 		else if (parseHtml_)  request.sendText(parseHtml(fullPath, isPart, path));
 		else                  request.sendText(cflib::util::readFile(fullPath));
 		return;
-	} else if (fullPath.endsWith(".css")) {
-		replyData = parseHtml(fullPath, false, path).toUtf8();
-	} else {
-		replyData = cflib::util::readFile(fullPath);
+	}
+
+	QByteArray replyData;
+	if (!request.isHEAD()) {
+		if (fullPath.endsWith(".css")) {
+			replyData = parseHtml(fullPath, false, path).toUtf8();
+		} else {
+			replyData = cflib::util::readFile(fullPath);
+		}
 	}
 
 	// deliver static content
