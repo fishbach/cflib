@@ -460,7 +460,7 @@ void LogProcStatus::timeout()
 {
 #ifdef Q_OS_LINUX
 	QByteArray stat = readFile("/proc/self/status");
-	stat.replace('\n', " | ");
+	stat.replace('\n', " | ").replace('\t', " ");
 	logTrace("proc status: %1", stat);
 #endif
 }
