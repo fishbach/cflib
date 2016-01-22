@@ -444,4 +444,25 @@ void preventApplicationSuspend()
 }
 #endif
 
+LogProcStatus::LogProcStatus(uint intervalMsec)
+{
+#ifndef Q_OS_LINUX
+	Q_UNUSED(intervalMsec)
+#else
+	QTimer * timer = new QTimer(this);
+	connect(timer, SIGNAL(timeout()), this, SLOT(timeout()));
+	timer->start(intervalMsec);
+	timeout();
+#endif
+}
+
+void LogProcStatus::timeout()
+{
+#ifdef Q_OS_LINUX
+	QByteArray stat = readFile("/proc/self/status");
+	stat.replace('\n', " | ");
+	logTrace("proc status: %1", stat);
+#endif
+}
+
 }}	// namespace

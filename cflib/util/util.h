@@ -125,4 +125,13 @@ template<typename C> void deleteNext(const C * obj) { Timer::singleShot(0, new D
 // macx: LIBS += -framework Cocoa
 void preventApplicationSuspend();
 
+class LogProcStatus : public QObject
+{
+	Q_OBJECT
+public:
+	LogProcStatus(uint intervalMsec);
+private slots:
+	void timeout();
+};
+
 }}	// namespace
