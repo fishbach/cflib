@@ -39,8 +39,8 @@ define(function() {
 	function toUTF8(str)
 	{
 		var il = str.length;
-		var rv = new Uint8Array(il);
-		var oi = 0;
+		var rv = this.d;
+		var oi = this.len;
 		var isLatin = true;
 		for (var i = 0 ; i < il ; ++i) {
 			var c = str.charCodeAt(i);
@@ -50,22 +50,21 @@ define(function() {
 				if (isLatin) {
 					isLatin = false;
 					/*jshint smarttabs:true */
-					var ol = oi + (
-						c <   0x800 ? 2 :
-						c < 0x10000 ? 3 :
-						              4);
+					var ol =
+						c <   0x800 ? 1 :
+						c < 0x10000 ? 2 :
+						              3;
 					for (var j = i + 1 ; j < il ; ++j) {
 						var cl = str.charCodeAt(j);
 						/*jshint smarttabs:true */
 						ol +=
-							cl <    0x80 ? 1 :
-							cl <   0x800 ? 2 :
-							cl < 0x10000 ? 3 :
-							               4;
+							cl <    0x80 ? 0 :
+							cl <   0x800 ? 1 :
+							cl < 0x10000 ? 2 :
+							               3;
 					}
-					var nrv = new Uint8Array(ol);
-					nrv.set(rv);
-					rv = nrv;
+					this.len = oi;
+					allocate.call(this, ol);
 				}
 
 				if      (c <   0x800) { rv[oi++] = 0xC0 | c >>>  6; rv[oi++] = 0x80 | (c        & 0x3F); }
@@ -73,7 +72,7 @@ define(function() {
 				else                  { rv[oi++] = 0xF0 | c >>> 18; rv[oi++] = 0x80 | (c >>> 12 & 0x3F); rv[oi++] = 0x80 | (c >>> 6 & 0x3F); rv[oi++] = 0x80 | (c & 0x3F); }
 			}
 		}
-		return rv;
+		this.len = oi;
 	}
 
 	// returns [tag, tagLen]
@@ -189,27 +188,45 @@ define(function() {
 		return rv;
 	}
 
+	var fa32 = new Float32Array(1);
+	var fa64 = new Float64Array(1);
+
+	function allocate(len)
+	{
+		var need = this.len + len;
+		if (this.d.length >= need) return;
+		var newSize = this.d.length * 2;
+		while (newSize < need) newSize *= 2;
+		var old = this.d;
+		this.d = new Uint8Array(newSize);
+		this.d.set(new Uint8Array(old.buffer, 0, this.len));
+	}
+
+	function add(bytes)
+	{
+		var l = bytes.length;
+		allocate.call(this, l);
+		this.d.set(bytes, this.len);
+		this.len += l;
+	}
+
 	function Serializer(disableTagNumbering)
 	{
 		this.tagNo = disableTagNumbering ? 0 : 1;
-		this.data = new Uint8Array(0);
+		this.d = new Uint8Array(4);
+		this.len = 0;
 	}
 
 	Serializer.prototype = {
 
-		add: function(d) {
-			var od = this.data;
-			this.data = new Uint8Array(od.length + d.length);
-			this.data.set(od);
-			this.data.set(d, od.length);
-		},
+		data: function() { return new Uint8Array(this.d.buffer, 0, this.len); },
 
 		box: function(tagNo) {
-			return makeTLV(tagNo, true, this.data);
+			return makeTLV(tagNo, true, this.data());
 		},
 
 		n: function() {
-			if (this.tagNo === 0) this.add([0xC0, 0x81, 0x00]);
+			if (this.tagNo === 0) add.call(this, [0xC0, 0x81, 0x00]);
 			else                  this.tagNo++;
 			return this;
 		},
@@ -217,7 +234,7 @@ define(function() {
 		z: function() {
 			var tag = createTag(this.tagNo === 0 ? 0 : this.tagNo++);
 			tag.push(0);
-			this.add(tag);
+			add.call(this, tag);
 			return this;
 		},
 
@@ -241,7 +258,7 @@ define(function() {
 
 			var tag = createTag(this.tagNo === 0 ? 0 : this.tagNo++);
 			tag.push(bytes.length);
-			this.add(tag.concat(bytes));
+			add.call(this, tag.concat(bytes));
 			return this;
 		},
 
@@ -251,9 +268,8 @@ define(function() {
 			var tag = createTag(this.tagNo === 0 ? 0 : this.tagNo++);
 			tag.push(4);
 			this.add(tag);
-			var fa = new Float32Array(1);
-			fa[0] = val;
-			this.add(new Uint8Array(fa.buffer));
+			fa32[0] = val;
+			add.call(this, new Uint8Array(fa32.buffer));
 			return this;
 		},
 
@@ -263,9 +279,8 @@ define(function() {
 			var tag = createTag(this.tagNo === 0 ? 0 : this.tagNo++);
 			tag.push(8);
 			this.add(tag);
-			var fa = new Float64Array(1);
-			fa[0] = val;
-			this.add(new Uint8Array(fa.buffer));
+			fa64[0] = val;
+			add.call(this, new Uint8Array(fa64.buffer));
 			return this;
 		},
 
@@ -273,10 +288,18 @@ define(function() {
 			if (str === '') return this.z();
 			if (!str)      return this.n();
 
-			var u8 = toUTF8(str);
-			var tag = createTag(this.tagNo === 0 ? 0 : this.tagNo++);
-			this.add(tag.concat(encodeBERLength(u8.length)));
-			this.add(u8);
+			var tagPos = this.len;
+			allocate.call(this, str.length + 2);
+			this.len += 2;
+			toUTF8.call(this, str);
+			var sPos = tagPos + 2;
+			var sLen = this.len - sPos;
+			var tl = createTag(this.tagNo === 0 ? 0 : this.tagNo++).concat(encodeBERLength(sLen));
+			if (tl.length > 2) {
+				allocate.call(this, tl.length - 2);
+				this.d.set(new Uint8Array(this.d.buffer, sPos, sLen), tagPos + tl.length);
+			}
+			this.d.set(tl, tagPos);
 			return this;
 		},
 
@@ -285,8 +308,8 @@ define(function() {
 			if (byteArray.length === 0) return emptyIsNull ? this.n() : this.z();
 
 			var tag = createTag(this.tagNo === 0 ? 0 : this.tagNo++);
-			this.add(tag.concat(encodeBERLength(byteArray.length)));
-			this.add(byteArray);
+			add.call(this, tag.concat(encodeBERLength(byteArray.length)));
+			add.call(this, byteArray);
 			return this;
 		},
 
@@ -299,7 +322,14 @@ define(function() {
 			if (!list) return this.n();
 			var S = new Serializer(true);
 			for (var i = 0, l = list.length ; i < l ; ++i) func(list[i], S);
-			return this.a(S.data, true);
+			return this.a(S.data(), true);
+		},
+
+		p: function(pair, func) {
+			if (!pair) return this.n();
+			var S = new Serializer(true);
+			func(pair, S);
+			return this.a(S.data(), true);
 		}
 
 	};
@@ -409,8 +439,6 @@ define(function() {
 	ber.makeTLV = makeTLV;
 	ber.S = function(disableTagNumbering) { return new Serializer(disableTagNumbering); };
 	ber.D = function(data, disableTagNumbering) { return new Deserializer(data, disableTagNumbering); };
-	ber.fromUTF8 = fromUTF8;
-	ber.toUTF8   = toUTF8;
 
 	return ber;
 });
