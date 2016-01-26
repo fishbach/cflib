@@ -703,9 +703,9 @@ QString RMIServerBase::generateJSForClass(const SerializeTypeInfo & ti) const
 	js <<
 		"\t}\n"
 		"};\n"
-		<< nsPrefix << typeName << ".prototype.__serialize = function() {\n"
-		"\treturn __ber.S()";
-	if (!base.isEmpty()) js << ".a(" << base << ".prototype.__serialize.call(this), true)";
+		<< nsPrefix << typeName << ".prototype.__serialize = function(__S) {\n"
+		"\t__S";
+	if (!base.isEmpty()) js << ".o(this, " << base << ".prototype.__serialize)";
 	foreach (const SerializeVariableTypeInfo & vti, ti.members) {
 		js << getSerializeCode(vti.type, "this." + formatMembernameForJS(vti));
 	}
@@ -736,7 +736,7 @@ QString RMIServerBase::generateJSForService(const SerializeTypeInfo & ti) const
 			if (func.parameters.isEmpty()) {
 				js << ") {})";
 			} else {
-				js << "__ser, " << getJSParameters(func) << ") { __ser" << getSerializeJSParameters(func) << "; })";
+				js << "__S, " << getJSParameters(func) << ") { __S" << getSerializeJSParameters(func) << "; })";
 			}
 		}
 		js << "\n"

@@ -210,6 +210,33 @@ define(function() {
 		this.len += l;
 	}
 
+	function prepareTagLen(estimatedLen)
+	{
+		var tagPos = this.len;
+		allocate.call(this, 2 + estimatedLen);
+		this.len += 2;
+		return tagPos;
+	}
+
+	function insertTagLen(tagPos)
+	{
+		var sPos = tagPos + 2;
+		var sLen = this.len - sPos;
+		if (sLen === 0) {
+			this.len -= 2;
+			return this.n();
+		}
+		var tl = createTag(this.tagNo === 0 ? 0 : this.tagNo++).concat(encodeBERLength(sLen));
+		if (tl.length > 2) {
+			var n = tl.length - 2;
+			allocate.call(this, n);
+			this.len += n;
+			this.d.set(new Uint8Array(this.d.buffer, sPos, sLen), sPos + n);
+		}
+		this.d.set(tl, tagPos);
+		return this;
+	}
+
 	function Serializer(disableTagNumbering)
 	{
 		this.tagNo = disableTagNumbering ? 0 : 1;
@@ -286,26 +313,16 @@ define(function() {
 
 		s: function(str) {
 			if (str === '') return this.z();
-			if (!str)      return this.n();
+			if (!str)       return this.n();
 
-			var tagPos = this.len;
-			allocate.call(this, str.length + 2);
-			this.len += 2;
+			var tagPos = prepareTagLen.call(this, str.length);
 			toUTF8.call(this, str);
-			var sPos = tagPos + 2;
-			var sLen = this.len - sPos;
-			var tl = createTag(this.tagNo === 0 ? 0 : this.tagNo++).concat(encodeBERLength(sLen));
-			if (tl.length > 2) {
-				allocate.call(this, tl.length - 2);
-				this.d.set(new Uint8Array(this.d.buffer, sPos, sLen), tagPos + tl.length);
-			}
-			this.d.set(tl, tagPos);
-			return this;
+			return insertTagLen.call(this, tagPos);
 		},
 
-		a: function(byteArray, emptyIsNull) {
+		a: function(byteArray) {
 			if (!byteArray            ) return this.n();
-			if (byteArray.length === 0) return emptyIsNull ? this.n() : this.z();
+			if (byteArray.length === 0) return this.z();
 
 			var tag = createTag(this.tagNo === 0 ? 0 : this.tagNo++);
 			add.call(this, tag.concat(encodeBERLength(byteArray.length)));
@@ -313,23 +330,44 @@ define(function() {
 			return this;
 		},
 
-		o: function(obj) {
+		o: function(obj, serFunc) {
 			if (!obj) return this.n();
-			return this.a(obj.__serialize(), true);
+
+			var tagPos = prepareTagLen.call(this, 4);
+			var oldTag = this.tagNo;
+			this.tagNo = 1;
+
+			if (serFunc) serFunc.call(obj, this);
+			else         obj.__serialize(this);
+
+			this.tagNo = oldTag;
+			return insertTagLen.call(this, tagPos);
 		},
 
 		map: function(list, func) {
-			if (!list) return this.n();
-			var S = new Serializer(true);
-			for (var i = 0, l = list.length ; i < l ; ++i) func(list[i], S);
-			return this.a(S.data(), true);
+			if (!list || list.length === 0) return this.n();
+
+			var tagPos = prepareTagLen.call(this, 4);
+			var oldTag = this.tagNo;
+			this.tagNo = 0;
+
+			for (var i = 0, l = list.length ; i < l ; ++i) func(list[i], this);
+
+			this.tagNo = oldTag;
+			return insertTagLen.call(this, tagPos);
 		},
 
 		p: function(pair, func) {
 			if (!pair) return this.n();
-			var S = new Serializer(true);
-			func(pair, S);
-			return this.a(S.data(), true);
+
+			var tagPos = prepareTagLen.call(this, 4);
+			var oldTag = this.tagNo;
+			this.tagNo = 1;
+
+			func(pair, this);
+
+			this.tagNo = oldTag;
+			return insertTagLen.call(this, tagPos);
 		}
 
 	};

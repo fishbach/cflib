@@ -78,13 +78,13 @@ public:
 				bytesAvailable_ -= tlvLen;
 				if (tag_ != 0) ++tag_;
 				return *this;
-			} else if (tag > tag_) {
+			} else if (tag > tag_ && tag_ != 0) {
 				cl = T();	// default construct
 				if (tag_ != 0) ++tag_;
 				return *this;
 			}
 
-			// tag < tag_
+			// tag < tag_ (placeholder)
 			readPos_        += tlvLen;
 			bytesAvailable_ -= tlvLen;
 		}
