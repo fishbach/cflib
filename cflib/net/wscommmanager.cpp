@@ -39,8 +39,10 @@ QByteArray WSCommManagerBase::getRemoteIP(uint connId)
 	return getRemoteIP(connId);
 }
 
-WSCommManagerBase::WSCommManagerBase(const QString & path, uint connectionTimeoutSec) :
-	WebSocketService(path, connectionTimeoutSec)
+WSCommManagerBase::WSCommManagerBase(const QString & path, const QRegularExpression & allowedOrigin,
+	uint connectionTimeoutSec)
+:
+	WebSocketService(path, allowedOrigin, connectionTimeoutSec)
 {
 }
 

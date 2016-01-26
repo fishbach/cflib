@@ -31,7 +31,8 @@ class ApiServer;
 class WebSocketService : public RequestHandler, public util::ThreadVerify
 {
 public:
-	WebSocketService(const QString & path, uint connectionTimeoutSec = 0);
+	WebSocketService(const QString & path, const QRegularExpression & allowedOrigin = QRegularExpression(),
+		uint connectionTimeoutSec = 0);
 	~WebSocketService();
 
 protected:
@@ -53,6 +54,7 @@ private:
 
 private:
 	const QString path_;
+	const QRegularExpression allowedOrigin_;
 	const uint connectionTimeoutSec_;
 	class WSConnHandler;
 	QHash<uint, WSConnHandler *> connections_;

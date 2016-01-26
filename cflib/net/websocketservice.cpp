@@ -260,9 +260,12 @@ private:
 
 // ============================================================================
 
-WebSocketService::WebSocketService(const QString & path, uint connectionTimeoutSec) :
+WebSocketService::WebSocketService(const QString & path, const QRegularExpression & allowedOrigin,
+	uint connectionTimeoutSec)
+:
 	ThreadVerify("WebSocketService", LoopType::Worker),
 	path_(path),
+	allowedOrigin_(allowedOrigin),
 	connectionTimeoutSec_(connectionTimeoutSec),
 	lastConnId_(0),
 	timer_(connectionTimeoutSec > 0 ? new util::EVTimer(this, &WebSocketService::checkTimeout) : 0)
@@ -321,6 +324,13 @@ void WebSocketService::handleRequest(const Request & request)
 		return;
 	}
 	const bool deflate = headers["sec-websocket-extensions"].toLower().indexOf("permessage-deflate") != -1;
+
+	// check origin
+	if (allowedOrigin_.isValid() && !allowedOrigin_.match(headers["origin"].toLower()).hasMatch()) {
+		logWarn("wrong Origin: %1", headers["origin"]);
+		request.sendNotFound();
+		return;
+	}
 
 	// detach from socket
 	TCPConnData * connData = request.detach();

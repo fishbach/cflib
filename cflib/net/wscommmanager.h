@@ -86,7 +86,7 @@ public:
 	QByteArray getRemoteIP(uint connId);
 
 protected:
-	WSCommManagerBase(const QString & path, uint connectionTimeoutSec);
+	WSCommManagerBase(const QString & path, const QRegularExpression & allowedOrigin, uint connectionTimeoutSec);
 };
 
 /*
@@ -108,7 +108,8 @@ public:
 	typedef QSet<uint> ConnIds;
 
 public:
-	WSCommManager(const QString & path, uint connectionTimeoutSec = 30, uint sessionTimeoutSec = 86400);
+	WSCommManager(const QString & path, const QRegularExpression & allowedOrigin = QRegularExpression(),
+		uint connectionTimeoutSec = 30, uint sessionTimeoutSec = 86400);
 	~WSCommManager();
 
 	void setConnDataChecker(ConnDataChecker & checker)     { connDataChecker_ = &checker; checker.mgr_ = this; }
@@ -178,8 +179,10 @@ void WSCommStateListener<C>::connectionClosed(const C & connData, uint connDataI
 // ----------------------------------------------------------------------------
 
 template<typename C>
-WSCommManager<C>::WSCommManager(const QString & path, uint connectionTimeoutSec, uint sessionTimeoutSec) :
-	WSCommManagerBase(path, connectionTimeoutSec),
+WSCommManager<C>::WSCommManager(const QString & path, const QRegularExpression & allowedOrigin,
+	uint connectionTimeoutSec, uint sessionTimeoutSec)
+:
+	WSCommManagerBase(path, allowedOrigin, connectionTimeoutSec),
 	connDataChecker_(0),
 	timer_(this, &WSCommManager::checkTimeout), sessionTimeoutSec_(sessionTimeoutSec)
 {
