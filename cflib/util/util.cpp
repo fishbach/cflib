@@ -52,7 +52,7 @@ QByteArray dateTimeForHTTP(const QDateTime & dateTime)
 	const QDateTime utc = dateTime.toUTC();
 	QByteArray retval = weekDay(utc.date());
 	retval += ", ";
-	retval += utc.toString("dd ___ yyyy hh:mm:ss").toLatin1();
+	retval += utc.toString("dd ___ yyyy hh:mm:ss").toUtf8();
 	switch (utc.date().month()) {
 		case  1: retval.replace("___", "Jan"); break;
 		case  2: retval.replace("___", "Feb"); break;
@@ -378,7 +378,7 @@ QByteArray encodeWord(const QString & str, bool strict)
 			onlyDirect = false;
 		}
 	}
-	if (onlyDirect) return str.toLatin1();
+	if (onlyDirect) return str.toUtf8();
 	retval += "?=";
 	return retval;
 

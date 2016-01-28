@@ -50,7 +50,7 @@ void HttpAuth::handleRequest(const Request & request)
 	if (checkedUsers_.contains(auth)) return;
 	const QRegularExpressionMatch match = authRe_.match(auth);
 	if (match.hasMatch()) {
-		QList<QByteArray> userPass = QByteArray::fromBase64(match.captured(1).toLatin1()).split(':');
+		QList<QByteArray> userPass = QByteArray::fromBase64(match.captured(1).toUtf8()).split(':');
 		if (userPass.size() == 2) {
 			const QByteArray hash = users_.value(userPass[0]);
 			if (!hash.isEmpty() && crypt::checkPassword(userPass[1], hash)) {

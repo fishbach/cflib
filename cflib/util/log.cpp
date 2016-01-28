@@ -244,7 +244,7 @@ void Log::qtMessageHandler(QtMsgType type, const QMessageLogContext & context, c
 		// QtInfoMsg if Qt >= 5.5
 		default:            cat = LogCat::Info; break;
 	}
-	Log::writeLog(context.file, context.line, cat, msg.toLatin1(), 0);
+	Log::writeLog(context.file, context.line, cat, msg.toUtf8(), 0);
 	if (type == QtFatalMsg) ::abort();
 }
 

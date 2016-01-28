@@ -94,7 +94,7 @@ public:
 	QByteArray getRequestField(const QByteArray & key)
 	{
 		const QByteArray search = key.toLower();
-		QHashIterator<QByteArray, QByteArray> it(headerFields);
+		QMapIterator<QByteArray, QByteArray> it(headerFields);
 		while (it.hasNext()) {
 			it.next();
 			if (it.key().toLower() == search) return it.value();

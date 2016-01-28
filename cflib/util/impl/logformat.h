@@ -87,18 +87,18 @@ inline void logFormat(QByteArray & dest, double val) { dest += QByteArray::numbe
 inline void logFormat(QByteArray & dest, char * str)            { dest += str; }
 inline void logFormat(QByteArray & dest, const char * str)      { dest += str; }
 inline void logFormat(QByteArray & dest, const QByteArray & ba) { dest += ba; }
-inline void logFormat(QByteArray & dest, const QChar & c)       { dest += c.toLatin1(); }
-inline void logFormat(QByteArray & dest, const QString & str)   { dest += str.toLatin1(); }
+inline void logFormat(QByteArray & dest, const QChar & c)       { writeUInt(dest, c.unicode()); }
+inline void logFormat(QByteArray & dest, const QString & str)   { dest += str.toUtf8(); }
 
 // Qt classes
-inline void logFormat(QByteArray & dest, const QTime     & ti) { dest += ti.toString().toLatin1(); }
+inline void logFormat(QByteArray & dest, const QTime     & ti) { dest += ti.toString().toUtf8(); }
 inline void logFormat(QByteArray & dest, const QDateTime & dt) {
-	dest += dt.toString("dd.MM.yyyy HH:mm:ss.zzz").toLatin1();
+	dest += dt.toString("dd.MM.yyyy HH:mm:ss.zzz").toUtf8();
 	if (dt.timeSpec() == Qt::UTC) dest += " UTC";
 	else                          dest += " Local";
 }
 
 template<typename T>
-inline void logFormat(QByteArray & dest, const T & val) { dest += val.toString().toLatin1(); }
+inline void logFormat(QByteArray & dest, const T & val) { dest += val.toString().toUtf8(); }
 
 }}}	// namespace

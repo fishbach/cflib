@@ -32,7 +32,7 @@ class Request
 {
 public:
 	typedef QPair<int, int> Id;
-	typedef QHash<QByteArray, QByteArray> KeyVal;
+	typedef QMap<QByteArray, QByteArray> KeyVal;
 	enum Method {
 		NONE = 0,
 		GET,

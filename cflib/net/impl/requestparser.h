@@ -62,7 +62,7 @@ private:
 	QByteArray header_;
 
 	qint64 contentLength_;
-	QHash<QByteArray, QByteArray> headerFields_;
+	QMap<QByteArray, QByteArray> headerFields_;
 	int method_;
 	QByteArray uri_;
 	QByteArray body_;

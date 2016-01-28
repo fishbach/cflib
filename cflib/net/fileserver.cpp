@@ -168,7 +168,7 @@ void FileServer::handleRequest(const Request & request)
 	logFunctionTraceParam("FileServer::handleRequest(%1)", path);
 
 	// remove trailing slash
-	if (path.length() > 1 && path.endsWith('/')) { request.sendRedirect(path.left(path.length() - 1).toLatin1()); return; }
+	if (path.length() > 1 && path.endsWith('/')) { request.sendRedirect(path.left(path.length() - 1).toUtf8()); return; }
 
 	// auto generate partial files
 	bool isPart = false;

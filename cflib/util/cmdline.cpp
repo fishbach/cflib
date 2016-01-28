@@ -30,7 +30,7 @@ bool CmdLine::parse()
 	QListIterator<QByteArray> it(rawArgs_);
 
 	if (!it.hasNext()) return false;
-	executable_ = QFileInfo(it.next()).fileName().toLatin1();
+	executable_ = QFileInfo(it.next()).fileName().toUtf8();
 
 	int argCount = 0;
 	bool parseMoreOptions = true;

@@ -134,10 +134,10 @@ QByteArray encodeAddress(const QString & address, QString & plain)
 	static const QRegExp re("(.+)<(.+)>");
 	if (re.indexIn(address) != -1) {
 		plain = re.cap(2).trimmed();
-		return cflib::util::encodeWord(re.cap(1).trimmed(), true) + " <" + plain.toLatin1() + ">";
+		return cflib::util::encodeWord(re.cap(1).trimmed(), true) + " <" + plain.toUtf8() + ">";
 	} else {
 		plain = address.trimmed();
-		return plain.toLatin1();
+		return plain.toUtf8();
 	}
 }
 
