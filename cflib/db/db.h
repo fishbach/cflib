@@ -20,7 +20,6 @@
 
 #include <cflib/util/log.h>
 
-#include <QtCore>
 #include <QtSql>
 
 #define Transaction cflib::db::ScopedTransaction ta(::cflib_util_logFileInfo, __LINE__)
