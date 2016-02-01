@@ -52,10 +52,11 @@ BOTAN_MINOR_VERSION = 28
 	message(cd Botan-1.11.$${BOTAN_MINOR_VERSION})
 	!win32 {
 		message(./configure.py --disable-shared --disable-modules=rdseed)
+		message("sed -i 's/ -Wpedantic//' Makefile")
 		message(make -j 10 libbotan-1.11.a)
 		message(chmod a-w build/obj/lib)
 	} else {
-		message(python.exe configure.py --disable-shared --disable-modules=rdseed)
+		message(python.exe configure.py --disable-shared)
 		message(nmake botan.lib)
 		message(attrib +r built\obj\lib\*)
 	}
