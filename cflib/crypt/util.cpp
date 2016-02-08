@@ -103,8 +103,8 @@ QByteArray createRSAKey(uint bits)
 	TRY {
 		AutoSeeded_RNG rng;
 		const RSA_PrivateKey key(rng, bits);
-		const secure_vector<byte> bytes = key.pkcs8_private_key();
-		return QByteArray((const char *)bytes.data(), bytes.size());
+		const std::string pem = PKCS8::PEM_encode(key);
+		return QByteArray(pem.c_str(), pem.length());
 	} CATCH
 	return QByteArray();
 }
@@ -112,10 +112,10 @@ QByteArray createRSAKey(uint bits)
 bool checkRSAKey(const QByteArray & key)
 {
 	TRY {
-		secure_vector<byte> bytes(key.begin(), key.end());
+		DataSource_Memory ds((const byte *)key.constData(), key.size());
 		AutoSeeded_RNG rng;
-		const RSA_PrivateKey rsaKey(AlgorithmIdentifier(), bytes, rng);
-		return rsaKey.check_key(rng, true);
+		std::unique_ptr<Private_Key> pk(PKCS8::load_key(ds, rng));
+		return pk && pk->check_key(rng, true);
 	} CATCH
 	return false;
 }
