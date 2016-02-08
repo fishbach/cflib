@@ -33,4 +33,8 @@ bool checkPassword(const QString & password, const QByteArray & hash);
 
 QByteArray sha1(const QByteArray & data);
 
+// PKCS#8 binary encoded
+QByteArray createRSAKey(uint bits);
+bool checkRSAKey(const QByteArray & key);
+
 }}	// namespace

@@ -16,32 +16,47 @@
  * along with cflib. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <cflib/net/fileserver.h>
+#include <cflib/crypt/util.h>
 #include <cflib/net/httpserver.h>
-#include <cflib/net/logservice.h>
-#include <cflib/net/requestlog.h>
-#include <cflib/net/rmiserver.h>
-#include <cflib/net/wscommmanager.h>
+#include <cflib/net/request.h>
+#include <cflib/net/requesthandler.h>
 #include <cflib/util/cmdline.h>
 #include <cflib/util/unixsignal.h>
+#include <cflib/util/util.h>
 
 #include <QtCore>
 
+using namespace cflib::crypt;
 using namespace cflib::net;
 using namespace cflib::util;
-
-USE_LOG(LogCat::Etc)
 
 namespace {
 
 int showUsage(const QByteArray & executable)
 {
 	QTextStream(stderr)
-		<< "Usage: " << executable << " [options]" << endl
-		<< "Options:"                              << endl
-		<< "  -h, --help => this help"             << endl;
+		<< "Usage: " << executable << " [options]"                   << endl
+		<< "Get certificate from letsencrypt.org"                    << endl
+		<< "Options:"                                                << endl
+		<< "  -h, --help           => this help"                     << endl
+		<< "  -k, --key <key file> => private key for Let's Encrypt" << endl;
 	return 1;
 }
+
+class AcmeChallenge : public RequestHandler
+{
+public:
+	AcmeChallenge() {}
+
+protected:
+	virtual void handleRequest(const Request & request)
+	{
+		request.sendText(challenge_);
+	}
+
+private:
+	const QByteArray challenge_;
+};
 
 }
 
@@ -49,12 +64,42 @@ int main(int argc, char *argv[])
 {
 	// parse cmd line
 	CmdLine cmdLine(argc, argv);
-	Option help('h', "help"); cmdLine << help;
+	Option help   ('h', "help"     ); cmdLine << help;
+	Option keyFile('k', "key", true); cmdLine << keyFile;
 	if (!cmdLine.parse() || help.isSet()) return showUsage(cmdLine.executable());
 
 	QCoreApplication a(argc, argv);
 	UnixSignal unixSignal(true);
 
+	// start http server on port 80
+	AcmeChallenge acmeChallenge;
+	HttpServer http(1);
+	http.registerHandler(acmeChallenge);
+	if (!http.start("0.0.0.0", 8080)) {
+		QTextStream(stderr) << "cannot listen on port 80" << endl;
+		return 2;
+	}
 
-	return a.exec();
+	QString keyFilename = QString::fromUtf8(keyFile.value());
+	if (keyFilename.isEmpty()) keyFilename = "letsencrypt.key";
+
+	QByteArray privateKey;
+	if (!QFile::exists(keyFilename)) {
+		QTextStream(stdout) << "creating private key ...";
+		privateKey = createRSAKey(4096);
+		if (!writeFile(keyFilename, privateKey)) {
+			QTextStream(stderr) << "cannot write private key for Let's Encrypt" << endl;
+			return 3;
+		}
+		QTextStream(stdout) << " done" << endl;
+	} else {
+		privateKey = readFile(keyFilename);
+		if (!checkRSAKey(privateKey)) {
+			QTextStream(stderr) << "cannot load private key for Let's Encrypt" << endl;
+			return 4;
+		}
+		QTextStream(stdout) << "private key loaded" << endl;
+	}
+
+//	return a.exec();
 }

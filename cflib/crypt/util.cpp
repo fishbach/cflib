@@ -98,4 +98,26 @@ QByteArray sha1(const QByteArray & data)
 	return QByteArray();
 }
 
+QByteArray createRSAKey(uint bits)
+{
+	TRY {
+		AutoSeeded_RNG rng;
+		const RSA_PrivateKey key(rng, bits);
+		const secure_vector<byte> bytes = key.pkcs8_private_key();
+		return QByteArray((const char *)bytes.data(), bytes.size());
+	} CATCH
+	return QByteArray();
+}
+
+bool checkRSAKey(const QByteArray & key)
+{
+	TRY {
+		secure_vector<byte> bytes(key.begin(), key.end());
+		AutoSeeded_RNG rng;
+		const RSA_PrivateKey rsaKey(AlgorithmIdentifier(), bytes, rng);
+		return rsaKey.check_key(rng, true);
+	} CATCH
+	return false;
+}
+
 }}	// namespace

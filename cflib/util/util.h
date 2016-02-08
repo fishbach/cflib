@@ -44,6 +44,7 @@ void deflateRaw(QByteArray & data, int compressionLevel = -1);
 void inflateRaw(QByteArray & data);
 
 QByteArray readFile(const QString & path);
+bool writeFile(const QString & path, const QByteArray & data);
 QString readTextfile(const QString & path);
 
 inline QChar decomposedBase(const QChar & chr)

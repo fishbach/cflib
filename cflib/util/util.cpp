@@ -297,6 +297,13 @@ QByteArray readFile(const QString & path)
 	return file.readAll();
 }
 
+bool writeFile(const QString & path, const QByteArray & data)
+{
+	QFile file(path);
+	if (!file.open(QIODevice::WriteOnly | QIODevice::Truncate)) return false;
+	return file.write(data) == data.size();
+}
+
 QString readTextfile(const QString & path)
 {
 	QFile file(path);
