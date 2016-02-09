@@ -33,8 +33,7 @@ using namespace cflib::util;
 
 namespace {
 
-const QByteArray LetsencryptCA        = "https://devel.hochreute.net";
-//const QByteArray LetsencryptCA        = "https://acme-staging.api.letsencrypt.org";
+const QByteArray LetsencryptCA        = "https://acme-staging.api.letsencrypt.org";
 //const QByteArray LetsencryptCA        = "https://acme-v01.api.letsencrypt.org";
 const QByteArray LetsencryptAgreement = "https://letsencrypt.org/documents/LE-SA-v1.0.1-July-27-2015.pdf";
 
@@ -55,21 +54,29 @@ class AcmeChallenge : public RequestHandler
 public:
 	AcmeChallenge() {}
 
+	void setFile(const QByteArray & path, const QByteArray & content)
+	{
+		path_ = path;
+		content_ = content;
+	}
+
 protected:
 	virtual void handleRequest(const Request & request)
 	{
-		request.sendText(challenge_);
+		QTextStream(stdout) << "req: " << request.getUri() << endl;
+		if (request.getUri() == path_) request.sendReply(content_, "text/html", false);
 	}
 
 private:
-	const QByteArray challenge_;
+	QByteArray path_;
+	QByteArray content_;
 };
 
 class ReplyHdl : public QObject
 {
 	Q_OBJECT
 public:
-	ReplyHdl(QNetworkReply * reply, std::function<void (const QNetworkReply &)> finishCb) :
+	ReplyHdl(QNetworkReply * reply, std::function<void (QNetworkReply &)> finishCb) :
 		reply_(reply), finishCb_(finishCb)
 	{
 		connect(reply, SIGNAL(finished()), this, SLOT(finished()));
@@ -83,34 +90,52 @@ public:
 public slots:
 	void finished()
 	{
-		deleteLater();
-
-		if (reply_->error() != QNetworkReply::NoError) {
-			QTextStream(stderr) << "network error: " << reply_->errorString() << endl;
-			qApp->exit(5);
-			return;
-		}
-
-		foreach (const QNetworkReply::RawHeaderPair & p, reply_->rawHeaderPairs()) {
-			QTextStream(stdout) << "H: " << p.first << " -> " << p.second << endl;
-		}
-		QTextStream(stdout) << "B: " << reply_->readAll() << endl;
-
 		finishCb_(*reply_);
+		deleteLater();
 	}
 
 private:
 	QNetworkReply * reply_;
-	std::function<void (const QNetworkReply &)> finishCb_;
+	std::function<void (QNetworkReply &)> finishCb_;
 };
 
-void acmeRequest(const QByteArray & path, const QByteArray & msg,
-	const QByteArray & privateKey, QNetworkAccessManager & netMgr,
-	std::function<void (const QNetworkReply &)> finishCb)
+void acmeRequest(const QByteArray & uri, const QByteArray & msg,
+	const QByteArray & privateKey, QNetworkAccessManager * netMgr,
+	std::function<void (QNetworkReply &)> finishCb)
 {
-	QNetworkRequest request;
-	request.setUrl(QUrl(LetsencryptCA/* + path*/));
-	new ReplyHdl(netMgr.get(request), finishCb);
+	new ReplyHdl(netMgr->head(QNetworkRequest(QUrl(LetsencryptCA + "/directory"))), [=](QNetworkReply & reply)
+	{
+		const QByteArray nonce = reply.rawHeader("Replay-Nonce");
+		if (nonce.isEmpty()) {
+			QTextStream(stderr) << "cannot get nonce for request" << endl;
+			qApp->exit(5);
+			return;
+		}
+
+		QByteArray pubMod;
+		QByteArray pubExp;
+		rsaPublicModulusExponent(privateKey, pubMod, pubExp);
+		pubMod = pubMod.toBase64(QByteArray::Base64UrlEncoding | QByteArray::OmitTrailingEquals);
+		pubExp = pubExp.toBase64(QByteArray::Base64UrlEncoding | QByteArray::OmitTrailingEquals);
+
+		QByteArray header =
+			"\"alg\": \"RS256\", \"jwk\": {\"e\": \"" + pubExp + "\", "
+			"\"kty\": \"RSA\", \"n\": \"" + pubMod + "\"}";
+		QByteArray pHeader = "{" + header + ", \"nonce\": \"" + nonce + "\"}";
+		pHeader = pHeader.toBase64(QByteArray::Base64UrlEncoding | QByteArray::OmitTrailingEquals);
+		QByteArray msg64 = msg.toBase64(QByteArray::Base64UrlEncoding | QByteArray::OmitTrailingEquals);
+		QByteArray signature = rsaSign(privateKey, pHeader + "." + msg64);
+		signature = signature.toBase64(QByteArray::Base64UrlEncoding | QByteArray::OmitTrailingEquals);
+
+		QByteArray post =
+			"{\"header\": {" + header + "}, \"protected\": \"" + pHeader + "\", "
+			"\"payload\": \"" + msg64 + "\", \"signature\": \"" + signature + "\"}";
+
+		QNetworkRequest request;
+		request.setUrl(QUrl(uri));
+		request.setHeader(QNetworkRequest::ContentTypeHeader, "application/x-www-form-urlencoded");
+		new ReplyHdl(netMgr->post(request, post), finishCb);
+	});
 }
 
 }
@@ -141,10 +166,11 @@ int main(int argc, char *argv[])
 	QString keyFilename = QString::fromUtf8(keyFile.value());
 	if (keyFilename.isEmpty()) keyFilename = "letsencrypt.key";
 
+	// id 120974 / 120984
 	QByteArray privateKey;
 	if (!QFile::exists(keyFilename)) {
 		QTextStream(stdout) << "creating private key ...";
-		privateKey = createRSAKey(4096);
+		privateKey = rsaCreateKey(4096);
 		if (!writeFile(keyFilename, privateKey)) {
 			QTextStream(stderr) << "cannot write private key for Let's Encrypt" << endl;
 			return 3;
@@ -152,7 +178,7 @@ int main(int argc, char *argv[])
 		QTextStream(stdout) << " done" << endl;
 	} else {
 		privateKey = readFile(keyFilename);
-		if (!checkRSAKey(privateKey)) {
+		if (!rsaCheckKey(privateKey)) {
 			QTextStream(stderr) << "cannot load private key for Let's Encrypt" << endl;
 			return 4;
 		}
@@ -161,11 +187,49 @@ int main(int argc, char *argv[])
 
 	QNetworkAccessManager netMgr;
 
-	acmeRequest("/acme/new-reg",
+	acmeRequest(LetsencryptCA + "/acme/new-reg",
 		"{\"resource\": \"new-reg\", \"contact\": [\"mailto: " + email.value() + "\"], "
 		"\"agreement\": \"" + LetsencryptAgreement + "\"}",
-		privateKey, netMgr, [&](const QNetworkReply & reply)
+		privateKey, &netMgr, [&](QNetworkReply &)
 	{
+		acmeRequest(LetsencryptCA + "/acme/new-authz",
+			"{\"resource\": \"new-authz\", \"identifier\": {\"type\": \"dns\", \"value\": \"" + domain.value() + "\"}}",
+			privateKey, &netMgr, [&](QNetworkReply & reply)
+		{
+			QRegularExpressionMatch match = QRegularExpression(R"(\{[^{]*"type":"http-01"[^}]*\})")
+				.match(QString::fromUtf8(reply.readAll()));
+			if (!match.hasMatch()) {
+				QTextStream(stderr) << "auth challenge not found" << endl;
+				qApp->exit(6);
+			}
+			const QString challenge = match.captured();
+			match = QRegularExpression(R""("uri":"([^"]+)")"").match(challenge);
+			const QByteArray uri = match.captured(1).toUtf8();
+			match = QRegularExpression(R""("token":"([^"]+)")"").match(challenge);
+			const QByteArray token = match.captured(1).toUtf8();
+			QTextStream(stdout) << "ut: " << uri << " / " << token << endl;
+
+			QByteArray pubMod;
+			QByteArray pubExp;
+			rsaPublicModulusExponent(privateKey, pubMod, pubExp);
+			pubMod = pubMod.toBase64(QByteArray::Base64UrlEncoding | QByteArray::OmitTrailingEquals);
+			pubExp = pubExp.toBase64(QByteArray::Base64UrlEncoding | QByteArray::OmitTrailingEquals);
+			QByteArray keyHash = sha256("{\"e\":\"" + pubExp + "\",\"kty\":\"RSA\",\"n\":\"" + pubMod + "\"}");
+			keyHash = keyHash.toBase64(QByteArray::Base64UrlEncoding | QByteArray::OmitTrailingEquals);
+			QByteArray authData = token + "." + keyHash;
+
+			acmeChallenge.setFile("/.well-known/acme-challenge/" + token, authData);
+
+			acmeRequest(uri,
+				"{\"resource\": \"challenge\", \"keyAuthorization\": \"" + authData + "\"}",
+				privateKey, &netMgr, [&privateKey, &netMgr, uri, authData](QNetworkReply & reply)
+			{
+				QTextStream(stdout) << "r: " << reply.readAll() << endl;
+
+
+
+			});
+		});
 	});
 
 	return a.exec();

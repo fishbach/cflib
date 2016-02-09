@@ -32,9 +32,13 @@ QByteArray hashPassword(const QString & password);
 bool checkPassword(const QString & password, const QByteArray & hash);
 
 QByteArray sha1(const QByteArray & data);
+QByteArray sha256(const QByteArray & data);
 
 // PKCS#8 PEM encoded
-QByteArray createRSAKey(uint bits);
-bool checkRSAKey(const QByteArray & key);
+QByteArray rsaCreateKey(uint bits);
+bool rsaCheckKey(const QByteArray & privateKey);
+void rsaPublicModulusExponent(const QByteArray & privateKey, QByteArray & modulus, QByteArray & publicExponent);
+// PKCS#1 v1.5 SHA-256
+QByteArray rsaSign(const QByteArray & privateKey, const QByteArray & msg);
 
 }}	// namespace

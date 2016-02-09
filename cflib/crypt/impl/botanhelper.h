@@ -30,6 +30,7 @@
 #include <botan/filters.h>
 #include <botan/init.h>
 #include <botan/pkcs8.h>
+#include <botan/pubkey.h>
 #include <botan/rsa.h>
 #include <botan/tls_client.h>
 #include <botan/tls_server.h>

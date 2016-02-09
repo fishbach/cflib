@@ -98,7 +98,18 @@ QByteArray sha1(const QByteArray & data)
 	return QByteArray();
 }
 
-QByteArray createRSAKey(uint bits)
+QByteArray sha256(const QByteArray & data)
+{
+	TRY {
+		Pipe pipe(new Hash_Filter("SHA-256"));
+		pipe.process_msg((const byte *)data.constData(), data.size());
+		std::string hash = pipe.read_all_as_string();
+		return QByteArray(hash.c_str(), (int)hash.length());
+	} CATCH
+	return QByteArray();
+}
+
+QByteArray rsaCreateKey(uint bits)
 {
 	TRY {
 		AutoSeeded_RNG rng;
@@ -109,15 +120,49 @@ QByteArray createRSAKey(uint bits)
 	return QByteArray();
 }
 
-bool checkRSAKey(const QByteArray & key)
+bool rsaCheckKey(const QByteArray & privateKey)
 {
 	TRY {
-		DataSource_Memory ds((const byte *)key.constData(), key.size());
+		DataSource_Memory ds((const byte *)privateKey.constData(), privateKey.size());
 		AutoSeeded_RNG rng;
 		std::unique_ptr<Private_Key> pk(PKCS8::load_key(ds, rng));
 		return pk && pk->check_key(rng, true);
 	} CATCH
 	return false;
+}
+
+void rsaPublicModulusExponent(const QByteArray & privateKey, QByteArray & modulus, QByteArray & publicExponent)
+{
+	TRY {
+		DataSource_Memory ds((const byte *)privateKey.constData(), privateKey.size());
+		AutoSeeded_RNG rng;
+		std::unique_ptr<Private_Key> pk(PKCS8::load_key(ds, rng));
+		if (pk) {
+			const IF_Scheme_PublicKey * rsaKey = dynamic_cast<const RSA_PrivateKey *>(pk.get());
+			std::vector<byte> bytes = BigInt::encode(rsaKey->get_n());
+			modulus = QByteArray((const char *)bytes.data(), bytes.size());
+			bytes = BigInt::encode(rsaKey->get_e());
+			publicExponent = QByteArray((const char *)bytes.data(), bytes.size());
+			return;
+		}
+	} CATCH
+	modulus = QByteArray();
+	publicExponent = QByteArray();
+}
+
+QByteArray rsaSign(const QByteArray & privateKey, const QByteArray & msg)
+{
+	TRY {
+		DataSource_Memory ds((const byte *)privateKey.constData(), privateKey.size());
+		AutoSeeded_RNG rng;
+		std::unique_ptr<Private_Key> pk(PKCS8::load_key(ds, rng));
+		if (pk) {
+			PK_Signer signer(*pk, "EMSA3(SHA-256)");
+			std::vector<byte> bytes = signer.sign_message((const byte *)msg.constData(), msg.size(), rng);
+			return QByteArray((const char *)bytes.data(), bytes.size());
+		}
+	} CATCH
+	return QByteArray();
 }
 
 }}	// namespace
