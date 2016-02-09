@@ -63,7 +63,6 @@ public:
 protected:
 	virtual void handleRequest(const Request & request)
 	{
-		QTextStream(stdout) << "req: " << request.getUri() << endl;
 		if (request.getUri() == path_) request.sendReply(content_, "text/html", false);
 	}
 
@@ -193,6 +192,8 @@ int main(int argc, char *argv[])
 		"\"agreement\": \"" + LetsencryptAgreement + "\"}",
 		privateKey, &netMgr, [&](QNetworkReply &)
 	{
+		QTextStream(stdout) << "public key registered" << endl;
+
 		acmeRequest(LetsencryptCA + "/acme/new-authz",
 			"{\"resource\": \"new-authz\", \"identifier\": {\"type\": \"dns\", \"value\": \"" + domain.value() + "\"}}",
 			privateKey, &netMgr, [&](QNetworkReply & reply)
@@ -208,7 +209,6 @@ int main(int argc, char *argv[])
 			const QByteArray uri = match.captured(1).toUtf8();
 			match = QRegularExpression(R""("token":"([^"]+)")"").match(challenge);
 			const QByteArray token = match.captured(1).toUtf8();
-			QTextStream(stdout) << "ut: " << uri << " / " << token << endl;
 
 			QByteArray pubMod;
 			QByteArray pubExp;
@@ -220,6 +220,8 @@ int main(int argc, char *argv[])
 			QByteArray authData = token + "." + keyHash;
 
 			acmeChallenge.setFile("/.well-known/acme-challenge/" + token, authData);
+
+			QTextStream(stdout) << "got auth token" << endl;
 
 			acmeRequest(uri,
 				"{\"resource\": \"challenge\", \"keyAuthorization\": \"" + authData + "\"}",
@@ -233,18 +235,21 @@ int main(int argc, char *argv[])
 						qApp->exit(7);
 					}
 					const QByteArray status = match.captured(1).toUtf8();
-					QTextStream(stdout) << "s: " << status << endl;
 
 					if (status == "pending") {
+						QTextStream(stdout) << "wating for auth challenge ..." << endl;
 						QTimer::singleShot(5000, [&, uri]() {
 							new ReplyHdl(netMgr.get(QNetworkRequest(QUrl(uri))), finishCb);
 						});
 						return;
-					} else if (status != "valid") {
+					}
+					if (status != "valid") {
 						QTextStream(stderr) << "auth challenge failed" << endl;
 						qApp->exit(8);
 						return;
 					}
+
+					QTextStream(stdout) << "auth challenge succeeded" << endl;
 
 
 				};
