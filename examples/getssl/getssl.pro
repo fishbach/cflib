@@ -17,7 +17,7 @@
 
 include(../../include.pri)
 
-QT = core
+QT = core network
 CONFIG += console
 
 TARGET = getssl

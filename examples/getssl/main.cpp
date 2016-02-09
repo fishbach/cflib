@@ -25,6 +25,7 @@
 #include <cflib/util/util.h>
 
 #include <QtCore>
+#include <QtNetwork>
 
 using namespace cflib::crypt;
 using namespace cflib::net;
@@ -32,14 +33,20 @@ using namespace cflib::util;
 
 namespace {
 
+const QByteArray LetsencryptCA        = "https://devel.hochreute.net";
+//const QByteArray LetsencryptCA        = "https://acme-staging.api.letsencrypt.org";
+//const QByteArray LetsencryptCA        = "https://acme-v01.api.letsencrypt.org";
+const QByteArray LetsencryptAgreement = "https://letsencrypt.org/documents/LE-SA-v1.0.1-July-27-2015.pdf";
+
 int showUsage(const QByteArray & executable)
 {
 	QTextStream(stderr)
-		<< "Usage: " << executable << " [options]"                   << endl
-		<< "Get certificate from letsencrypt.org"                    << endl
-		<< "Options:"                                                << endl
-		<< "  -h, --help           => this help"                     << endl
-		<< "  -k, --key <key file> => private key for Let's Encrypt" << endl;
+		<< "Get certificate from letsencrypt.org"                         << endl
+		<< "Usage: " << executable << " [options] -e <email> <domain>"    << endl
+		<< "Options:"                                                     << endl
+		<< "  -h, --help           => this help"                          << endl
+		<< "  -k, --key <key file> => private key file for Let's Encrypt" << endl
+		<< "  -e, --email <email>  => contact email for Let's Encrypt"    << endl;
 	return 1;
 }
 
@@ -58,14 +65,65 @@ private:
 	const QByteArray challenge_;
 };
 
+class ReplyHdl : public QObject
+{
+	Q_OBJECT
+public:
+	ReplyHdl(QNetworkReply * reply, std::function<void (const QNetworkReply &)> finishCb) :
+		reply_(reply), finishCb_(finishCb)
+	{
+		connect(reply, SIGNAL(finished()), this, SLOT(finished()));
+	}
+
+	~ReplyHdl()
+	{
+		delete reply_;
+	}
+
+public slots:
+	void finished()
+	{
+		deleteLater();
+
+		if (reply_->error() != QNetworkReply::NoError) {
+			QTextStream(stderr) << "network error: " << reply_->errorString() << endl;
+			qApp->exit(5);
+			return;
+		}
+
+		foreach (const QNetworkReply::RawHeaderPair & p, reply_->rawHeaderPairs()) {
+			QTextStream(stdout) << "H: " << p.first << " -> " << p.second << endl;
+		}
+		QTextStream(stdout) << "B: " << reply_->readAll() << endl;
+
+		finishCb_(*reply_);
+	}
+
+private:
+	QNetworkReply * reply_;
+	std::function<void (const QNetworkReply &)> finishCb_;
+};
+
+void acmeRequest(const QByteArray & path, const QByteArray & msg,
+	const QByteArray & privateKey, QNetworkAccessManager & netMgr,
+	std::function<void (const QNetworkReply &)> finishCb)
+{
+	QNetworkRequest request;
+	request.setUrl(QUrl(LetsencryptCA/* + path*/));
+	new ReplyHdl(netMgr.get(request), finishCb);
 }
+
+}
+#include "main.moc"
 
 int main(int argc, char *argv[])
 {
 	// parse cmd line
 	CmdLine cmdLine(argc, argv);
-	Option help   ('h', "help"     ); cmdLine << help;
-	Option keyFile('k', "key", true); cmdLine << keyFile;
+	Option help   ('h', "help"              ); cmdLine << help;
+	Option keyFile('k', "key",   true       ); cmdLine << keyFile;
+	Option email  ('e', "email", true, false); cmdLine << email;
+	Arg    domain(                     false); cmdLine << domain;
 	if (!cmdLine.parse() || help.isSet()) return showUsage(cmdLine.executable());
 
 	QCoreApplication a(argc, argv);
@@ -101,5 +159,14 @@ int main(int argc, char *argv[])
 		QTextStream(stdout) << "private key loaded" << endl;
 	}
 
-//	return a.exec();
+	QNetworkAccessManager netMgr;
+
+	acmeRequest("/acme/new-reg",
+		"{\"resource\": \"new-reg\", \"contact\": [\"mailto: " + email.value() + "\"], "
+		"\"agreement\": \"" + LetsencryptAgreement + "\"}",
+		privateKey, netMgr, [&](const QNetworkReply & reply)
+	{
+	});
+
+	return a.exec();
 }

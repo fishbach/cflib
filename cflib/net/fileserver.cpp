@@ -94,6 +94,7 @@ inline void handleVars(QStringList & vars, const QString & path, const QStringLi
 void writeHTMLFile(const QString & file, QString content)
 {
 	content
+		.replace(QRegularExpression("<!--.*?-->"), "")
 		.replace(QRegularExpression("^\\s+|\\s+$"), "")
 		.replace(QRegularExpression("\\s+"), " ");
 
