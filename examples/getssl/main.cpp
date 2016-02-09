@@ -186,6 +186,7 @@ int main(int argc, char *argv[])
 	}
 
 	QNetworkAccessManager netMgr;
+	std::function<void (QNetworkReply &)> finishCb;
 
 	acmeRequest(LetsencryptCA + "/acme/new-reg",
 		"{\"resource\": \"new-reg\", \"contact\": [\"mailto: " + email.value() + "\"], "
@@ -222,12 +223,32 @@ int main(int argc, char *argv[])
 
 			acmeRequest(uri,
 				"{\"resource\": \"challenge\", \"keyAuthorization\": \"" + authData + "\"}",
-				privateKey, &netMgr, [&privateKey, &netMgr, uri, authData](QNetworkReply & reply)
+				privateKey, &netMgr, [&, uri](QNetworkReply &)
 			{
-				QTextStream(stdout) << "r: " << reply.readAll() << endl;
+				finishCb = [&, uri](QNetworkReply & reply) {
+					QRegularExpressionMatch match = QRegularExpression(R""("status":"([^"]+)")"")
+						.match(QString::fromUtf8(reply.readAll()));
+					if (!match.hasMatch()) {
+						QTextStream(stderr) << "cannot read status of challenge" << endl;
+						qApp->exit(7);
+					}
+					const QByteArray status = match.captured(1).toUtf8();
+					QTextStream(stdout) << "s: " << status << endl;
+
+					if (status == "pending") {
+						QTimer::singleShot(5000, [&, uri]() {
+							new ReplyHdl(netMgr.get(QNetworkRequest(QUrl(uri))), finishCb);
+						});
+						return;
+					} else if (status != "valid") {
+						QTextStream(stderr) << "auth challenge failed" << endl;
+						qApp->exit(8);
+						return;
+					}
 
 
-
+				};
+				new ReplyHdl(netMgr.get(QNetworkRequest(QUrl(uri))), finishCb);
 			});
 		});
 	});
