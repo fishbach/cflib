@@ -74,6 +74,8 @@ private:
 	QByteArray content_;
 };
 
+QByteArray nonce;
+
 class ReplyHdl : public QObject
 {
 	Q_OBJECT
@@ -93,6 +95,7 @@ public slots:
 	void finished()
 	{
 		if (exitting) return;
+		if (reply_->hasRawHeader("Replay-Nonce")) nonce = reply_->rawHeader("Replay-Nonce");
 		finishCb_(*reply_);
 		deleteLater();
 	}
@@ -106,39 +109,37 @@ void acmeRequest(const QByteArray & uri, const QByteArray & msg,
 	const QByteArray & privateKey, QNetworkAccessManager * netMgr,
 	std::function<void (QNetworkReply &)> finishCb)
 {
-	new ReplyHdl(netMgr->head(QNetworkRequest(QUrl(LetsencryptCA + "/directory"))), [=](QNetworkReply & reply)
-	{
-		const QByteArray nonce = reply.rawHeader("Replay-Nonce");
-		if (nonce.isEmpty()) {
-			QTextStream(stderr) << "cannot get nonce for request" << endl;
-			qApp->exit(5);
-			return;
-		}
+	if (nonce.isEmpty()) {
+		new ReplyHdl(netMgr->head(QNetworkRequest(QUrl(LetsencryptCA + "/directory"))), [=](QNetworkReply &)
+		{
+			acmeRequest(uri, msg, privateKey, netMgr, finishCb);
+		});
+		return;
+	}
 
-		QByteArray pubMod;
-		QByteArray pubExp;
-		rsaPublicModulusExponent(privateKey, pubMod, pubExp);
-		pubMod = pubMod.toBase64(QByteArray::Base64UrlEncoding | QByteArray::OmitTrailingEquals);
-		pubExp = pubExp.toBase64(QByteArray::Base64UrlEncoding | QByteArray::OmitTrailingEquals);
+	QByteArray pubMod;
+	QByteArray pubExp;
+	rsaPublicModulusExponent(privateKey, pubMod, pubExp);
+	pubMod = pubMod.toBase64(QByteArray::Base64UrlEncoding | QByteArray::OmitTrailingEquals);
+	pubExp = pubExp.toBase64(QByteArray::Base64UrlEncoding | QByteArray::OmitTrailingEquals);
 
-		QByteArray header =
-			"\"alg\": \"RS256\", \"jwk\": {\"e\": \"" + pubExp + "\", "
-			"\"kty\": \"RSA\", \"n\": \"" + pubMod + "\"}";
-		QByteArray pHeader = "{" + header + ", \"nonce\": \"" + nonce + "\"}";
-		pHeader = pHeader.toBase64(QByteArray::Base64UrlEncoding | QByteArray::OmitTrailingEquals);
-		QByteArray msg64 = msg.toBase64(QByteArray::Base64UrlEncoding | QByteArray::OmitTrailingEquals);
-		QByteArray signature = rsaSign(privateKey, pHeader + "." + msg64);
-		signature = signature.toBase64(QByteArray::Base64UrlEncoding | QByteArray::OmitTrailingEquals);
+	QByteArray header =
+		"\"alg\": \"RS256\", \"jwk\": {\"e\": \"" + pubExp + "\", "
+		"\"kty\": \"RSA\", \"n\": \"" + pubMod + "\"}";
+	QByteArray pHeader = "{" + header + ", \"nonce\": \"" + nonce + "\"}";
+	pHeader = pHeader.toBase64(QByteArray::Base64UrlEncoding | QByteArray::OmitTrailingEquals);
+	QByteArray msg64 = msg.toBase64(QByteArray::Base64UrlEncoding | QByteArray::OmitTrailingEquals);
+	QByteArray signature = rsaSign(privateKey, pHeader + "." + msg64);
+	signature = signature.toBase64(QByteArray::Base64UrlEncoding | QByteArray::OmitTrailingEquals);
 
-		QByteArray post =
-			"{\"header\": {" + header + "}, \"protected\": \"" + pHeader + "\", "
-			"\"payload\": \"" + msg64 + "\", \"signature\": \"" + signature + "\"}";
+	QByteArray post =
+		"{\"header\": {" + header + "}, \"protected\": \"" + pHeader + "\", "
+		"\"payload\": \"" + msg64 + "\", \"signature\": \"" + signature + "\"}";
 
-		QNetworkRequest request;
-		request.setUrl(QUrl(uri));
-		request.setHeader(QNetworkRequest::ContentTypeHeader, "application/x-www-form-urlencoded");
-		new ReplyHdl(netMgr->post(request, post), finishCb);
-	});
+	QNetworkRequest request;
+	request.setUrl(QUrl(uri));
+	request.setHeader(QNetworkRequest::ContentTypeHeader, "application/x-www-form-urlencoded");
+	new ReplyHdl(netMgr->post(request, post), finishCb);
 }
 
 }
@@ -217,6 +218,7 @@ int main(int argc, char *argv[])
 			if (!match.hasMatch()) {
 				QTextStream(stderr) << "auth challenge not found" << endl;
 				qApp->exit(6);
+				return;
 			}
 			const QString challenge = match.captured();
 			match = QRegularExpression(R""("uri":"([^"]+)")"").match(challenge);
@@ -247,6 +249,7 @@ int main(int argc, char *argv[])
 					if (!match.hasMatch()) {
 						QTextStream(stderr) << "cannot read status of challenge" << endl;
 						qApp->exit(7);
+						return;
 					}
 					const QByteArray status = match.captured(1).toUtf8();
 
@@ -273,23 +276,55 @@ int main(int argc, char *argv[])
 						"{\"resource\": \"new-cert\", \"csr\": \"" + csr + "\"}",
 						privateKey, &netMgr, [&](QNetworkReply & reply)
 					{
-						if (!writeFile(destDir + domain.value() + "_key.pem", certKey)) {
-							QTextStream(stderr) << "cannot write private key for certificate" << endl;
+						if (reply.error() != QNetworkReply::NoError) {
+							QTextStream(stderr) << "cannot get certifcate" << endl;
 							qApp->exit(9);
 							return;
 						}
-
 						QByteArray crt = der2pem(reply.readAll(), "CERTIFICATE");
-						if (!writeFile(destDir + domain.value() + "_crt.pem", crt)) {
-							QTextStream(stderr) << "cannot write certificate" << endl;
+
+						QTextStream(stdout) << "got certificate" << endl;
+
+						if (!writeFile(destDir + domain.value() + "_key.pem", certKey)) {
+							QTextStream(stderr) << "cannot write private key for certificate" << endl;
 							qApp->exit(10);
 							return;
 						}
 
-						QTextStream(stdout) << "key and certificate written to " <<
-							(destDir.isEmpty() ? "current directory" : destDir) << endl <<
-							"done!" << endl;
-						qApp->quit();
+						if (!writeFile(destDir + domain.value() + "_crt.pem", crt)) {
+							QTextStream(stderr) << "cannot write certificate" << endl;
+							qApp->exit(11);
+							return;
+						}
+
+						QRegularExpressionMatch match = QRegularExpression(R"(<(http.+)>)")
+							.match(QString::fromUtf8(reply.rawHeader("Link")));
+						if (!match.hasMatch()) {
+							QTextStream(stderr) << "issuer not found" << endl;
+							qApp->exit(12);
+							return;
+						}
+
+						new ReplyHdl(netMgr.get(QNetworkRequest(QUrl(match.captured(1)))), [&](QNetworkReply & reply)
+						{
+							if (reply.error() != QNetworkReply::NoError) {
+								QTextStream(stderr) << "cannot get intermediate certificate" << endl;
+								qApp->exit(13);
+								return;
+							}
+							QByteArray crt = der2pem(reply.readAll(), "CERTIFICATE");
+
+							if (!writeFile(destDir + "intermediate_crt.pem", crt)) {
+								QTextStream(stderr) << "cannot write intermediate certificate" << endl;
+								qApp->exit(11);
+								return;
+							}
+
+							QTextStream(stdout) << "key and certificates written to " <<
+								(destDir.isEmpty() ? "current directory" : destDir) << endl <<
+								"done!" << endl;
+							qApp->quit();
+						});
 					});
 				};
 				new ReplyHdl(netMgr.get(QNetworkRequest(QUrl(uri))), finishCb);
