@@ -66,7 +66,6 @@ public:
 protected:
 	virtual void handleRequest(const Request & request)
 	{
-		QTextStream(stdout) << "req: " << request.getUri() << endl;
 		if (request.getUri() == path_) request.sendReply(content_, "text/html", false);
 	}
 
@@ -198,13 +197,6 @@ int main(int argc, char *argv[])
 	QByteArray certKey = rsaCreateKey(2048);
 	QTextStream(stdout) << " done" << endl;
 
-	writeFile(destDir + domain.value() + "_csr.der", x509CreateCertReq(certKey, domain.value(), "DE"));
-
-//	if (!writeFile(destDir + domain.value() + "_key.pem", certKey)) {
-//		QTextStream(stderr) << "cannot write private key for certificate" << endl;
-//		return 5;
-//	}
-
 	// starting http client mgr
 	QNetworkAccessManager netMgr;
 	std::function<void (QNetworkReply &)> finishCb;
@@ -259,7 +251,7 @@ int main(int argc, char *argv[])
 					const QByteArray status = match.captured(1).toUtf8();
 
 					if (status == "pending") {
-						QTextStream(stdout) << "wating for auth challenge ..." << endl;
+						QTextStream(stdout) << "waiting for auth challenge ..." << endl;
 						QTimer::singleShot(5000, [&, uri]() {
 							new ReplyHdl(netMgr.get(QNetworkRequest(QUrl(uri))), finishCb);
 						});
@@ -274,23 +266,30 @@ int main(int argc, char *argv[])
 					QTextStream(stdout) << "auth challenge succeeded" << endl;
 
 					// create csr
-					QByteArray csr = x509CreateCertReq(certKey, domain.value(), "DE");
+					QByteArray csr = x509CreateCertReq(certKey, QList<QByteArray>() << domain.value());
 					csr = csr.toBase64(QByteArray::Base64UrlEncoding | QByteArray::OmitTrailingEquals);
 
 					acmeRequest(LetsencryptCA + "/acme/new-cert",
 						"{\"resource\": \"new-cert\", \"csr\": \"" + csr + "\"}",
 						privateKey, &netMgr, [&](QNetworkReply & reply)
 					{
-						foreach (const QNetworkReply::RawHeaderPair p, reply.rawHeaderPairs()) {
-							QTextStream(stdout) << "h: " << p.first << " -> " << p.second << endl;
-						}
-
-						if (!writeFile(destDir + domain.value() + "_crt.der", reply.readAll())) {
-							QTextStream(stderr) << "cannot write certificate" << endl;
+						if (!writeFile(destDir + domain.value() + "_key.pem", certKey)) {
+							QTextStream(stderr) << "cannot write private key for certificate" << endl;
 							qApp->exit(9);
 							return;
 						}
 
+						QByteArray crt = der2pem(reply.readAll(), "CERTIFICATE");
+						if (!writeFile(destDir + domain.value() + "_crt.pem", crt)) {
+							QTextStream(stderr) << "cannot write certificate" << endl;
+							qApp->exit(10);
+							return;
+						}
+
+						QTextStream(stdout) << "key and certificate written to " <<
+							(destDir.isEmpty() ? "current directory" : destDir) << endl <<
+							"done!" << endl;
+						qApp->quit();
 					});
 				};
 				new ReplyHdl(netMgr.get(QNetworkRequest(QUrl(uri))), finishCb);

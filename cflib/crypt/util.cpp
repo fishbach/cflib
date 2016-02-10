@@ -165,9 +165,7 @@ QByteArray rsaSign(const QByteArray & privateKey, const QByteArray & msg)
 	return QByteArray();
 }
 
-QByteArray x509CreateCertReq(const QByteArray & privateKey,
-	const QByteArray & commonName, const QByteArray & country,
-	const QList<QByteArray> subjectAltNames)
+QByteArray x509CreateCertReq(const QByteArray & privateKey, const QList<QByteArray> subjectAltNames)
 {
 	TRY {
 		AutoSeeded_RNG rng;
@@ -177,14 +175,9 @@ QByteArray x509CreateCertReq(const QByteArray & privateKey,
 
 		const size_t PKCS10_VERSION = 0;
 
-		X509_DN subjectDN;
-//		subjectDN.add_attribute("X520.CommonName", commonName.toStdString());
-//		subjectDN.add_attribute("X520.Country",    country.toUpper().toStdString());
-
 		Extensions extensions;
 		{
 			AlternativeName subjectAN;
-			subjectAN.add_attribute("DNS", commonName.toStdString());
 			foreach (const QByteArray & an, subjectAltNames) subjectAN.add_attribute("DNS", an.toStdString());
 			extensions.add(new Cert_Extension::Subject_Alternative_Name(subjectAN));
 		}
@@ -192,7 +185,7 @@ QByteArray x509CreateCertReq(const QByteArray & privateKey,
 		DER_Encoder der;
 		der.start_cons(SEQUENCE)
 			.encode(PKCS10_VERSION)
-			.encode(subjectDN)
+			.encode(X509_DN())
 			.raw_bytes(X509::BER_encode(*pk))
 			.start_explicit(0)
 			.encode(Attribute("PKCS9.ExtensionRequest", DER_Encoder()
@@ -210,6 +203,15 @@ QByteArray x509CreateCertReq(const QByteArray & privateKey,
 
 		std::vector<byte> bytes = csr.BER_encode();
 		return QByteArray((const char *)bytes.data(), bytes.size());
+	} CATCH
+	return QByteArray();
+}
+
+QByteArray der2pem(const QByteArray & der, const QByteArray & label)
+{
+	TRY {
+		return QByteArray::fromStdString(PEM_Code::encode(
+			(const byte *)der.constData(), der.size(), label.toStdString()));
 	} CATCH
 	return QByteArray();
 }

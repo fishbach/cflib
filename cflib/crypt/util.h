@@ -42,8 +42,8 @@ void rsaPublicModulusExponent(const QByteArray & privateKey, QByteArray & modulu
 QByteArray rsaSign(const QByteArray & privateKey, const QByteArray & msg);
 
 // DER encoded
-QByteArray x509CreateCertReq(const QByteArray & privateKey,
-	const QByteArray & commonName, const QByteArray & country,
-	const QList<QByteArray> subjectAltNames = QList<QByteArray>());
+QByteArray x509CreateCertReq(const QByteArray & privateKey, const QList<QByteArray> subjectAltNames);
+
+QByteArray der2pem(const QByteArray & der, const QByteArray & label);
 
 }}	// namespace

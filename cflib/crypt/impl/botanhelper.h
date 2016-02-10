@@ -30,6 +30,7 @@
 #include <botan/der_enc.h>
 #include <botan/filters.h>
 #include <botan/init.h>
+#include <botan/pem.h>
 #include <botan/pkcs8.h>
 #include <botan/pubkey.h>
 #include <botan/rsa.h>
