@@ -198,13 +198,7 @@ int main(int argc, char *argv[])
 	QByteArray certKey = rsaCreateKey(2048);
 	QTextStream(stdout) << " done" << endl;
 
-	QByteArray csr = x509CreateCertReq(certKey, domain.value(), "DE");
-//	csr = csr.toBase64(QByteArray::Base64UrlEncoding | QByteArray::OmitTrailingEquals);
-	if (!writeFile(destDir + domain.value() + "_csr.pem", csr)) {
-		QTextStream(stderr) << "cannot write csr" << endl;
-		return 5;
-	}
-	return 0;
+	writeFile(destDir + domain.value() + "_csr.der", x509CreateCertReq(certKey, domain.value(), "DE"));
 
 //	if (!writeFile(destDir + domain.value() + "_key.pem", certKey)) {
 //		QTextStream(stderr) << "cannot write private key for certificate" << endl;
@@ -284,15 +278,18 @@ int main(int argc, char *argv[])
 					csr = csr.toBase64(QByteArray::Base64UrlEncoding | QByteArray::OmitTrailingEquals);
 
 					acmeRequest(LetsencryptCA + "/acme/new-cert",
-						"{\"resource\": \"new-cert\", \"identifier\": {\"csr\": \"" + csr + "\"}}",
+						"{\"resource\": \"new-cert\", \"csr\": \"" + csr + "\"}",
 						privateKey, &netMgr, [&](QNetworkReply & reply)
 					{
 						foreach (const QNetworkReply::RawHeaderPair p, reply.rawHeaderPairs()) {
 							QTextStream(stdout) << "h: " << p.first << " -> " << p.second << endl;
 						}
-						QTextStream(stdout) << "r: " << reply.readAll() << endl;
 
-
+						if (!writeFile(destDir + domain.value() + "_crt.der", reply.readAll())) {
+							QTextStream(stderr) << "cannot write certificate" << endl;
+							qApp->exit(9);
+							return;
+						}
 
 					});
 				};

@@ -170,23 +170,47 @@ QByteArray x509CreateCertReq(const QByteArray & privateKey,
 	const QList<QByteArray> subjectAltNames)
 {
 	TRY {
-		X509_Cert_Options opts;
-		opts.common_name = commonName.toStdString();
-		opts.country = country.toUpper().toStdString();
 		AutoSeeded_RNG rng;
 		DataSource_Memory ds((const byte *)privateKey.constData(), privateKey.size());
 		std::unique_ptr<Private_Key> pk(PKCS8::load_key(ds, rng));
-		if (pk) {
-			PKCS10_Request request = X509::create_cert_req(opts, *pk, "SHA-256", rng);
-			std::vector<byte> bytes = request.BER_encode();
-			return QByteArray((const char *)bytes.data(), bytes.size());
-		}
-	} catch (std::exception & e) {
-		QTextStream(stderr) << "Botan exception: " << e.what() << endl;
-	} catch (...) { \
-		QTextStream(stderr) << "unknown Botan exception" << endl;
-	}
+		if (!pk) return QByteArray();
 
+		const size_t PKCS10_VERSION = 0;
+
+		X509_DN subjectDN;
+//		subjectDN.add_attribute("X520.CommonName", commonName.toStdString());
+//		subjectDN.add_attribute("X520.Country",    country.toUpper().toStdString());
+
+		Extensions extensions;
+		{
+			AlternativeName subjectAN;
+			subjectAN.add_attribute("DNS", commonName.toStdString());
+			foreach (const QByteArray & an, subjectAltNames) subjectAN.add_attribute("DNS", an.toStdString());
+			extensions.add(new Cert_Extension::Subject_Alternative_Name(subjectAN));
+		}
+
+		DER_Encoder der;
+		der.start_cons(SEQUENCE)
+			.encode(PKCS10_VERSION)
+			.encode(subjectDN)
+			.raw_bytes(X509::BER_encode(*pk))
+			.start_explicit(0)
+			.encode(Attribute("PKCS9.ExtensionRequest", DER_Encoder()
+				.start_cons(SEQUENCE)
+				.encode(extensions)
+				.end_cons()
+				.get_contents_unlocked()))
+			.end_explicit()
+			.end_cons();
+
+		AlgorithmIdentifier sigAlgo;
+		std::unique_ptr<PK_Signer> signer(choose_sig_format(*pk, "SHA-256", sigAlgo));
+
+		PKCS10_Request csr = PKCS10_Request(X509_Object::make_signed(signer.get(), rng, sigAlgo, der.get_contents()));
+
+		std::vector<byte> bytes = csr.BER_encode();
+		return QByteArray((const char *)bytes.data(), bytes.size());
+	} CATCH
 	return QByteArray();
 }
 
