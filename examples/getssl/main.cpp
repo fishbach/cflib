@@ -16,6 +16,8 @@
  * along with cflib. If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <letsencrypt.h>
+
 #include <cflib/crypt/util.h>
 #include <cflib/net/httpserver.h>
 #include <cflib/net/request.h>
@@ -41,13 +43,14 @@ int showUsage(const QByteArray & executable)
 {
 	QTextStream(stderr)
 		<< "Get certificate from letsencrypt.org"                                  << endl
-		<< "Usage: " << executable << " [options] -e <email> <domain>"             << endl
+		<< "Usage: " << executable << " [options] <domains ...>"                   << endl
 		<< "Options:"                                                              << endl
 		<< "  -h, --help           => this help"                                   << endl
 		<< "  -k, --key <key file> => private key file for Let's Encrypt"          << endl
 		<< "  -e, --email <email>  => contact email for Let's Encrypt"             << endl
 		<< "  -d, --dest <dir>     => certificate destination directory"           << endl
-		<< "  -t, --test           => testmode using Let's Encrypt staging server" << endl;
+		<< "  -t, --test           => testmode using Let's Encrypt staging server" << endl
+		<< "  -f, --force          => forces all registration steps to be done"    << endl;
 	return 1;
 }
 
@@ -140,17 +143,25 @@ int main(int argc, char *argv[])
 {
 	// parse cmd line
 	CmdLine cmdLine(argc, argv);
-	Option help   ('h', "help"              ); cmdLine << help;
-	Option keyFile('k', "key",   true       ); cmdLine << keyFile;
-	Option email  ('e', "email", true, false); cmdLine << email;
-	Option dest   ('d', "dest",  true       ); cmdLine << dest;
-	Option test   ('t', "test"              ); cmdLine << test;
-	Arg    domain(                     false); cmdLine << domain;
+	Option help    ('h', "help"       ); cmdLine << help;
+	Option keyFile ('k', "key",   true); cmdLine << keyFile;
+	Option email   ('e', "email", true); cmdLine << email;
+	Option dest    ('d', "dest",  true); cmdLine << dest;
+	Option test    ('t', "test"       ); cmdLine << test;
+	Option force   ('f', "force"      ); cmdLine << force;
+	Arg    domains (false, true       ); cmdLine << domains;
 	if (!cmdLine.parse() || help.isSet()) return showUsage(cmdLine.executable());
 
 	// create application
 	QCoreApplication a(argc, argv);
 	UnixSignal unixSignal(true);
+
+	LetsEncrypt letsEncrypt(domains.values(), email.value(),
+		keyFile.isSet() ? keyFile.value() : "letsencrypt.key",
+		dest.isSet() ? dest.value() + "/" : "",
+		test.isSet(), force.isSet());
+
+	letsEncrypt.start();
 
 	// start http server on port 80
 	AcmeChallenge acmeChallenge;
@@ -163,6 +174,7 @@ int main(int argc, char *argv[])
 
 	// load / create private key
 	QByteArray privateKey;
+	bool needRegister = force.isSet();
 	{
 		QString keyFilename = QString::fromUtf8(keyFile.value());
 		if (keyFilename.isEmpty()) keyFilename = "letsencrypt.key";
@@ -174,6 +186,7 @@ int main(int argc, char *argv[])
 				return 3;
 			}
 			QTextStream(stdout) << " done" << endl;
+			needRegister = true;
 		} else {
 			privateKey = readFile(keyFilename);
 			if (!rsaCheckKey(privateKey)) {
@@ -198,6 +211,40 @@ int main(int argc, char *argv[])
 		"https://acme-staging.api.letsencrypt.org" :
 		"https://acme-v01.api.letsencrypt.org";
 
+	QList<std::function<void ()> > jobs;
+
+	// get first nonce
+	jobs << [&]() {
+		new ReplyHdl(netMgr.head(QNetworkRequest(QUrl(LetsencryptCA + "/directory"))), [&](QNetworkReply &)
+		{
+			if (nonce.isEmpty()) {
+				QTextStream(stderr) << "cannot get nonce" << endl;
+				qApp->exit(6);
+				return;
+			}
+			QTextStream(stdout) << "communication started" << endl;
+			jobs.takeFirst();
+			jobs.first()();
+		});
+	};
+
+	// register key
+	if (needRegister) {
+		jobs << [&]() {
+			acmeRequest(LetsencryptCA + "/acme/new-reg",
+				"{\"resource\": \"new-reg\", \"contact\": [\"mailto: " + email.value() + "\"], "
+				"\"agreement\": \"" + LetsencryptAgreement + "\"}",
+				privateKey, &netMgr, [&](QNetworkReply &)
+			{
+				QTextStream(stdout) << "public key registered" << endl;
+				jobs.takeFirst();
+				jobs.first()();
+			});
+		};
+	}
+
+
+
 	// get first nonce
 	new ReplyHdl(netMgr.head(QNetworkRequest(QUrl(LetsencryptCA + "/directory"))), [&](QNetworkReply &)
 	{
@@ -211,7 +258,7 @@ int main(int argc, char *argv[])
 
 			// request challenge
 			acmeRequest(LetsencryptCA + "/acme/new-authz",
-				"{\"resource\": \"new-authz\", \"identifier\": {\"type\": \"dns\", \"value\": \"" + domain.value() + "\"}}",
+				"{\"resource\": \"new-authz\", \"identifier\": {\"type\": \"dns\", \"value\": \"" + domains.value() + "\"}}",
 				privateKey, &netMgr, [&](QNetworkReply & reply)
 			{
 				QRegularExpressionMatch match = QRegularExpression(R"(\{[^{]*"type":"http-01"[^}]*\})")
@@ -271,7 +318,7 @@ int main(int argc, char *argv[])
 						QTextStream(stdout) << "auth challenge succeeded" << endl;
 
 						// create csr
-						QByteArray csr = x509CreateCertReq(certKey, QList<QByteArray>() << domain.value());
+						QByteArray csr = x509CreateCertReq(certKey, domains.values());
 						csr = csr.toBase64(QByteArray::Base64UrlEncoding | QByteArray::OmitTrailingEquals);
 
 						// get certificate
@@ -288,13 +335,13 @@ int main(int argc, char *argv[])
 
 							QTextStream(stdout) << "got certificate" << endl;
 
-							if (!writeFile(destDir + domain.value() + "_key.pem", certKey)) {
+							if (!writeFile(destDir + domains.value() + "_key.pem", certKey)) {
 								QTextStream(stderr) << "cannot write private key for certificate" << endl;
 								qApp->exit(10);
 								return;
 							}
 
-							if (!writeFile(destDir + domain.value() + "_crt.pem", crt)) {
+							if (!writeFile(destDir + domains.value() + "_crt.pem", crt)) {
 								QTextStream(stderr) << "cannot write certificate" << endl;
 								qApp->exit(11);
 								return;
