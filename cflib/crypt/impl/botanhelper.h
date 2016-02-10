@@ -34,6 +34,7 @@
 #include <botan/rsa.h>
 #include <botan/tls_client.h>
 #include <botan/tls_server.h>
+#include <botan/x509self.h>
 
 #ifdef Q_OS_WIN32
 	#pragma warning( pop )

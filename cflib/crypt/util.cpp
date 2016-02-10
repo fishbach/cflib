@@ -165,4 +165,29 @@ QByteArray rsaSign(const QByteArray & privateKey, const QByteArray & msg)
 	return QByteArray();
 }
 
+QByteArray x509CreateCertReq(const QByteArray & privateKey,
+	const QByteArray & commonName, const QByteArray & country,
+	const QList<QByteArray> subjectAltNames)
+{
+	TRY {
+		X509_Cert_Options opts;
+		opts.common_name = commonName.toStdString();
+		opts.country = country.toUpper().toStdString();
+		AutoSeeded_RNG rng;
+		DataSource_Memory ds((const byte *)privateKey.constData(), privateKey.size());
+		std::unique_ptr<Private_Key> pk(PKCS8::load_key(ds, rng));
+		if (pk) {
+			PKCS10_Request request = X509::create_cert_req(opts, *pk, "SHA-256", rng);
+			std::vector<byte> bytes = request.BER_encode();
+			return QByteArray((const char *)bytes.data(), bytes.size());
+		}
+	} catch (std::exception & e) {
+		QTextStream(stderr) << "Botan exception: " << e.what() << endl;
+	} catch (...) { \
+		QTextStream(stderr) << "unknown Botan exception" << endl;
+	}
+
+	return QByteArray();
+}
+
 }}	// namespace

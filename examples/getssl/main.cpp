@@ -37,6 +37,8 @@ const QByteArray LetsencryptCA        = "https://acme-staging.api.letsencrypt.or
 //const QByteArray LetsencryptCA        = "https://acme-v01.api.letsencrypt.org";
 const QByteArray LetsencryptAgreement = "https://letsencrypt.org/documents/LE-SA-v1.0.1-July-27-2015.pdf";
 
+bool exitting = false;
+
 int showUsage(const QByteArray & executable)
 {
 	QTextStream(stderr)
@@ -45,7 +47,8 @@ int showUsage(const QByteArray & executable)
 		<< "Options:"                                                     << endl
 		<< "  -h, --help           => this help"                          << endl
 		<< "  -k, --key <key file> => private key file for Let's Encrypt" << endl
-		<< "  -e, --email <email>  => contact email for Let's Encrypt"    << endl;
+		<< "  -e, --email <email>  => contact email for Let's Encrypt"    << endl
+		<< "  -d, --dest <dir>     => certificate destination directory"  << endl;
 	return 1;
 }
 
@@ -63,6 +66,7 @@ public:
 protected:
 	virtual void handleRequest(const Request & request)
 	{
+		QTextStream(stdout) << "req: " << request.getUri() << endl;
 		if (request.getUri() == path_) request.sendReply(content_, "text/html", false);
 	}
 
@@ -89,6 +93,7 @@ public:
 public slots:
 	void finished()
 	{
+		if (exitting) return;
 		finishCb_(*reply_);
 		deleteLater();
 	}
@@ -147,9 +152,11 @@ int main(int argc, char *argv[])
 	Option help   ('h', "help"              ); cmdLine << help;
 	Option keyFile('k', "key",   true       ); cmdLine << keyFile;
 	Option email  ('e', "email", true, false); cmdLine << email;
+	Option dest   ('d', "dest",  true       ); cmdLine << dest;
 	Arg    domain(                     false); cmdLine << domain;
 	if (!cmdLine.parse() || help.isSet()) return showUsage(cmdLine.executable());
 
+	// create application
 	QCoreApplication a(argc, argv);
 	UnixSignal unixSignal(true);
 
@@ -162,28 +169,49 @@ int main(int argc, char *argv[])
 		return 2;
 	}
 
-	QString keyFilename = QString::fromUtf8(keyFile.value());
-	if (keyFilename.isEmpty()) keyFilename = "letsencrypt.key";
-
-	// id 120974 / 120984
+	// load / create private key
 	QByteArray privateKey;
-	if (!QFile::exists(keyFilename)) {
-		QTextStream(stdout) << "creating private key ...";
-		privateKey = rsaCreateKey(4096);
-		if (!writeFile(keyFilename, privateKey)) {
-			QTextStream(stderr) << "cannot write private key for Let's Encrypt" << endl;
-			return 3;
+	{
+		QString keyFilename = QString::fromUtf8(keyFile.value());
+		if (keyFilename.isEmpty()) keyFilename = "letsencrypt.key";
+		if (!QFile::exists(keyFilename)) {
+			QTextStream(stdout) << "creating private key for Let's Encrypt ...";
+			privateKey = rsaCreateKey(4096);
+			if (!writeFile(keyFilename, privateKey)) {
+				QTextStream(stderr) << "cannot write private key for Let's Encrypt" << endl;
+				return 3;
+			}
+			QTextStream(stdout) << " done" << endl;
+		} else {
+			privateKey = readFile(keyFilename);
+			if (!rsaCheckKey(privateKey)) {
+				QTextStream(stderr) << "cannot load private key for Let's Encrypt" << endl;
+				return 4;
+			}
+			QTextStream(stdout) << "private key loaded" << endl;
 		}
-		QTextStream(stdout) << " done" << endl;
-	} else {
-		privateKey = readFile(keyFilename);
-		if (!rsaCheckKey(privateKey)) {
-			QTextStream(stderr) << "cannot load private key for Let's Encrypt" << endl;
-			return 4;
-		}
-		QTextStream(stdout) << "private key loaded" << endl;
 	}
 
+	// creating private key for certificate
+	const QString destDir = dest.isSet() ? dest.value() + "/" : "";
+	QTextStream(stdout) << "creating private key for certificate ...";
+	QByteArray certKey = rsaCreateKey(2048);
+	QTextStream(stdout) << " done" << endl;
+
+	QByteArray csr = x509CreateCertReq(certKey, domain.value(), "DE");
+//	csr = csr.toBase64(QByteArray::Base64UrlEncoding | QByteArray::OmitTrailingEquals);
+	if (!writeFile(destDir + domain.value() + "_csr.pem", csr)) {
+		QTextStream(stderr) << "cannot write csr" << endl;
+		return 5;
+	}
+	return 0;
+
+//	if (!writeFile(destDir + domain.value() + "_key.pem", certKey)) {
+//		QTextStream(stderr) << "cannot write private key for certificate" << endl;
+//		return 5;
+//	}
+
+	// starting http client mgr
 	QNetworkAccessManager netMgr;
 	std::function<void (QNetworkReply &)> finishCb;
 
@@ -251,12 +279,29 @@ int main(int argc, char *argv[])
 
 					QTextStream(stdout) << "auth challenge succeeded" << endl;
 
+					// create csr
+					QByteArray csr = x509CreateCertReq(certKey, domain.value(), "DE");
+					csr = csr.toBase64(QByteArray::Base64UrlEncoding | QByteArray::OmitTrailingEquals);
 
+					acmeRequest(LetsencryptCA + "/acme/new-cert",
+						"{\"resource\": \"new-cert\", \"identifier\": {\"csr\": \"" + csr + "\"}}",
+						privateKey, &netMgr, [&](QNetworkReply & reply)
+					{
+						foreach (const QNetworkReply::RawHeaderPair p, reply.rawHeaderPairs()) {
+							QTextStream(stdout) << "h: " << p.first << " -> " << p.second << endl;
+						}
+						QTextStream(stdout) << "r: " << reply.readAll() << endl;
+
+
+
+					});
 				};
 				new ReplyHdl(netMgr.get(QNetworkRequest(QUrl(uri))), finishCb);
 			});
 		});
 	});
 
-	return a.exec();
+	int rv = a.exec();
+	exitting = true;
+	return rv;
 }
