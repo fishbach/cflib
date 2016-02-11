@@ -44,7 +44,7 @@ public:
 		const QByteArray & privateKeyFile, const QByteArray & destDir,
 		bool test, bool force)
 	:
-		domains_(domains), email_(email),
+		domains_(domains), domainsToBeAuthenticated_(domains), email_(email),
 		privateKeyFile_(privateKeyFile), destDir_(destDir),
 		letsencryptCA_(test ?
 			"https://acme-staging.api.letsencrypt.org" :
@@ -95,7 +95,7 @@ protected:
 	{
 		if (request.getUri() == httpPath_) {
 			request.sendReply(httpContent_, "text/html", false);
-			httpAction_();
+			checkChallenge();
 		}
 	}
 
@@ -104,8 +104,6 @@ private slots:
 	{
 		if (reply_->hasRawHeader("Replay-Nonce")) nonce_ = reply_->rawHeader("Replay-Nonce");
 		finishCb_(*reply_);
-		reply_->deleteLater();
-		reply_ = 0;
 	}
 
 private:
@@ -133,28 +131,176 @@ private:
 			[&](QNetworkReply &)
 		{
 			QTextStream(stdout) << "public key registered" << endl;
-			requestChallenge();
+			startAuth();
 		});
 	}
 
-	void requestChallenge()
+	void startAuth()
 	{
 		if (!http_.start("0.0.0.0", 8080)) {
 			QTextStream(stderr) << "cannot listen on port 80" << endl;
 			qApp->exit(5);
 			return;
 		}
+		requestChallenge();
+	}
 
+	void requestChallenge()
+	{
+		acmeRequest(letsencryptCA_ + "/acme/new-authz",
+			"{\"resource\": \"new-authz\", \"identifier\": {\"type\": \"dns\", "
+			"\"value\": \"" + domainsToBeAuthenticated_.first() + "\"}}",
+			[&](QNetworkReply & reply)
+		{
+			QRegularExpressionMatch match = QRegularExpression(R"(\{[^{]*"type":"http-01"[^}]*\})")
+				.match(QString::fromUtf8(reply.readAll()));
+			if (!match.hasMatch()) {
+				QTextStream(stderr) << "auth challenge not found for domain: " << domainsToBeAuthenticated_.first() << endl;
+				qApp->exit(6);
+				return;
+			}
+			const QString challenge = match.captured();
+			match = QRegularExpression(R"R("uri":"([^"]+)")R").match(challenge);
+			checkUri_ = match.captured(1).toUtf8();
+			match = QRegularExpression(R"R("token":"([^"]+)")R").match(challenge);
+			const QByteArray token = match.captured(1).toUtf8();
+
+			QByteArray pubMod;
+			QByteArray pubExp;
+			rsaPublicModulusExponent(privateKey_, pubMod, pubExp);
+			pubMod = pubMod.toBase64(QByteArray::Base64UrlEncoding | QByteArray::OmitTrailingEquals);
+			pubExp = pubExp.toBase64(QByteArray::Base64UrlEncoding | QByteArray::OmitTrailingEquals);
+			QByteArray keyHash = sha256("{\"e\":\"" + pubExp + "\",\"kty\":\"RSA\",\"n\":\"" + pubMod + "\"}");
+			keyHash = keyHash.toBase64(QByteArray::Base64UrlEncoding | QByteArray::OmitTrailingEquals);
+			QByteArray authData = token + "." + keyHash;
+
+			httpPath_    = "/.well-known/acme-challenge/" + token;
+			httpContent_ = authData;
+
+			QTextStream(stdout) << "got auth token" << endl;
+
+			activateChallenge(authData);
+		});
+	}
+
+	void activateChallenge(const QByteArray & authData)
+	{
+		acmeRequest(checkUri_,
+			"{\"resource\": \"challenge\", \"keyAuthorization\": \"" + authData + "\"}",
+			[&](QNetworkReply &)
+		{
+			// the incoming HTTP request will trigger checkChallenge()
+		});
+	}
+
+	void checkChallenge()
+	{
+		hdl(netMgr_.get(QNetworkRequest(QUrl(checkUri_))), [&](QNetworkReply & reply)
+		{
+				QRegularExpressionMatch match = QRegularExpression("\"status\":\"([^\"]+)\"")
+					.match(QString::fromUtf8(reply.readAll()));
+				if (!match.hasMatch()) {
+					QTextStream(stderr) << "cannot read status of challenge" << endl;
+					qApp->exit(7);
+					return;
+				}
+				const QByteArray status = match.captured(1).toUtf8();
+
+				if (status == "pending") {
+					QTextStream(stdout) << "waiting for auth challenge ..." << endl;
+					QTimer::singleShot(5000, [this]() { checkChallenge(); });
+					return;
+				}
+				if (status != "valid") {
+					QTextStream(stderr) << "auth challenge failed" << endl;
+					qApp->exit(8);
+					return;
+				}
+
+				QTextStream(stdout) << "auth challenge succeeded for: " << domainsToBeAuthenticated_.first() << endl;
+
+				domainsToBeAuthenticated_.takeFirst();
+				if (!domainsToBeAuthenticated_.isEmpty()) {
+					requestChallenge();
+				} else {
+					getCertificate();
+				}
+		});
 	}
 
 	void getCertificate()
 	{
+		// create csr
+		QByteArray csr = x509CreateCertReq(certKey_, domains_);
+		csr = csr.toBase64(QByteArray::Base64UrlEncoding | QByteArray::OmitTrailingEquals);
+
+		// get certificate
+		acmeRequest(letsencryptCA_ + "/acme/new-cert",
+			"{\"resource\": \"new-cert\", \"csr\": \"" + csr + "\"}",
+			[&](QNetworkReply & reply)
+		{
+			if (reply.error() != QNetworkReply::NoError) {
+				QTextStream(stderr) << "cannot get certifcate" << endl;
+				qApp->exit(9);
+				return;
+			}
+			QByteArray crt = der2pem(reply.readAll(), "CERTIFICATE");
+
+			QTextStream(stdout) << "got certificate" << endl;
+
+			if (!writeFile(destDir_ + domains_.first() + "_key.pem", certKey_)) {
+				QTextStream(stderr) << "cannot write private key for certificate" << endl;
+				qApp->exit(10);
+				return;
+			}
+
+			if (!writeFile(destDir_ + domains_.first() + "_crt.pem", crt)) {
+				QTextStream(stderr) << "cannot write certificate" << endl;
+				qApp->exit(11);
+				return;
+			}
+
+			QRegularExpressionMatch match = QRegularExpression(R"(<(http.+)>)")
+				.match(QString::fromUtf8(reply.rawHeader("Link")));
+			if (!match.hasMatch()) {
+				QTextStream(stderr) << "issuer not found" << endl;
+				qApp->exit(12);
+				return;
+			}
+
+			getIntermediateCert(match.captured(1));
+		});
+	}
+
+	void getIntermediateCert(const QString & url)
+	{
+		hdl(netMgr_.get(QNetworkRequest(QUrl(url))), [&](QNetworkReply & reply)
+		{
+			if (reply.error() != QNetworkReply::NoError) {
+				QTextStream(stderr) << "cannot get intermediate certificate" << endl;
+				qApp->exit(13);
+				return;
+			}
+			QByteArray crt = der2pem(reply.readAll(), "CERTIFICATE");
+
+			if (!writeFile(destDir_ + "intermediate_crt.pem", crt)) {
+				QTextStream(stderr) << "cannot write intermediate certificate" << endl;
+				qApp->exit(14);
+				return;
+			}
+
+			QTextStream(stdout) << "key and certificates written to " <<
+				(destDir_.isEmpty() ? "current directory" : destDir_) << endl <<
+				"done!" << endl;
+			qApp->quit();
+		});
 	}
 
 	inline void hdl(QNetworkReply * reply, std::function<void (QNetworkReply &)> cb)
 	{
-		finishCb_ = cb;
+		if (reply_) reply_->deleteLater();
 		reply_ = reply;
+		finishCb_ = cb;
 		connect(reply_, &QNetworkReply::finished, this, &Impl::finished);
 	}
 
@@ -188,6 +334,7 @@ private:
 
 private:
 	const QList<QByteArray> domains_;
+	QList<QByteArray> domainsToBeAuthenticated_;
 	const QByteArray email_;
 	const QByteArray privateKeyFile_;
 	const QByteArray destDir_;
@@ -197,6 +344,7 @@ private:
 	bool needRegister_;
 	QByteArray certKey_;
 	QByteArray nonce_;
+	QByteArray checkUri_;
 
 	QNetworkAccessManager netMgr_;
 	QNetworkReply * reply_;
@@ -205,7 +353,6 @@ private:
 	HttpServer http_;
 	QByteArray httpPath_;
 	QByteArray httpContent_;
-	std::function<void ()> httpAction_;
 };
 #include "letsencrypt.moc"
 
