@@ -154,7 +154,7 @@ private:
 	void startAuth()
 	{
 		authorized_ = true;
-		if (!http_.isRunning() && !http_.start("0.0.0.0", 8080)) {
+		if (!http_.isRunning() && !http_.start("0.0.0.0", 80)) {
 			QTextStream(stderr) << "cannot listen on port 80" << endl;
 			qApp->exit(5);
 			return;
