@@ -24,7 +24,7 @@ class LetsEncrypt
 public:
 	LetsEncrypt(const QList<QByteArray> & domains, const QByteArray & email,
 		const QByteArray & privateKeyFile, const QByteArray & destDir,
-		bool test, bool force);
+		bool test);
 	~LetsEncrypt();
 
 	void start();

@@ -42,14 +42,16 @@ class LetsEncrypt::Impl : public QObject, public RequestHandler
 public:
 	Impl(const QList<QByteArray> & domains, const QByteArray & email,
 		const QByteArray & privateKeyFile, const QByteArray & destDir,
-		bool test, bool force)
+		bool test)
 	:
 		domains_(domains), domainsToBeAuthenticated_(domains), email_(email),
 		privateKeyFile_(privateKeyFile), destDir_(destDir),
 		letsencryptCA_(test ?
 			"https://acme-staging.api.letsencrypt.org" :
 			"https://acme-v01.api.letsencrypt.org"),
-		needRegister_(force),
+		registered_(false),
+		authorized_(false),
+		needRegister_(false),
 		reply_(0),
 		http_(1)
 	{
@@ -132,6 +134,7 @@ private:
 
 	void registerKey()
 	{
+		registered_ = true;
 		acmeRequest(letsencryptCA_ + "/acme/new-reg",
 			"{\"resource\": \"new-reg\", \"contact\": [\"mailto: " + email_ + "\"], "
 			"\"agreement\": \"" + LetsencryptAgreement + "\"}",
@@ -144,7 +147,8 @@ private:
 
 	void startAuth()
 	{
-		if (!http_.start("0.0.0.0", 8080)) {
+		authorized_ = true;
+		if (!http_.isRunning() && !http_.start("0.0.0.0", 8080)) {
 			QTextStream(stderr) << "cannot listen on port 80" << endl;
 			qApp->exit(5);
 			return;
@@ -159,8 +163,14 @@ private:
 			"\"value\": \"" + domainsToBeAuthenticated_.first() + "\"}}",
 			[&](QNetworkReply & reply)
 		{
+			const QByteArray content = reply.readAll();
+			if (content.contains("urn:acme:error:unauthorized") && !registered_) {
+				registerKey();
+				return;
+			}
+
 			QRegularExpressionMatch match = QRegularExpression(R"(\{[^{]*"type":"http-01"[^}]*\})")
-				.match(QString::fromUtf8(reply.readAll()));
+				.match(QString::fromUtf8(content));
 			if (!match.hasMatch()) {
 				QTextStream(stderr) << "auth challenge not found for domain: " << domainsToBeAuthenticated_.first() << endl;
 				qApp->exit(6);
@@ -246,12 +256,18 @@ private:
 			"{\"resource\": \"new-cert\", \"csr\": \"" + csr + "\"}",
 			[&](QNetworkReply & reply)
 		{
+			const QByteArray content = reply.readAll();
+
 			if (reply.error() != QNetworkReply::NoError) {
+				if (content.contains("urn:acme:error:unauthorized") && !authorized_) {
+					startAuth();
+					return;
+				}
 				QTextStream(stderr) << "cannot get certifcate" << endl;
 				qApp->exit(9);
 				return;
 			}
-			QByteArray crt = der2pem(reply.readAll(), "CERTIFICATE");
+			QByteArray crt = der2pem(content, "CERTIFICATE");
 
 			QTextStream(stdout) << "got certificate" << endl;
 
@@ -347,6 +363,9 @@ private:
 	const QByteArray destDir_;
 	const QByteArray letsencryptCA_;
 
+	bool registered_;
+	bool authorized_;
+
 	QByteArray privateKey_;
 	bool needRegister_;
 	QByteArray certKey_;
@@ -365,9 +384,9 @@ private:
 
 LetsEncrypt::LetsEncrypt(const QList<QByteArray> & domains, const QByteArray & email,
 	const QByteArray & privateKeyFile, const QByteArray & destDir,
-	bool test, bool force)
+	bool test)
 :
-	impl_(new Impl(domains, email, privateKeyFile, destDir, test, force))
+	impl_(new Impl(domains, email, privateKeyFile, destDir, test))
 {
 }
 

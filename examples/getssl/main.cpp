@@ -45,8 +45,7 @@ int showUsage(const QByteArray & executable)
 		<< "  -k, --key <key file> => private key file for Let's Encrypt"          << endl
 		<< "  -e, --email <email>  => contact email for Let's Encrypt"             << endl
 		<< "  -d, --dest <dir>     => certificate destination directory"           << endl
-		<< "  -t, --test           => testmode using Let's Encrypt staging server" << endl
-		<< "  -f, --force          => forces all registration steps to be done"    << endl;
+		<< "  -t, --test           => testmode using Let's Encrypt staging server" << endl;
 	return 1;
 }
 
@@ -61,7 +60,6 @@ int main(int argc, char *argv[])
 	Option email   ('e', "email", true); cmdLine << email;
 	Option dest    ('d', "dest",  true); cmdLine << dest;
 	Option test    ('t', "test"       ); cmdLine << test;
-	Option force   ('f', "force"      ); cmdLine << force;
 	Arg    domains (false, true       ); cmdLine << domains;
 	if (!cmdLine.parse() || help.isSet()) return showUsage(cmdLine.executable());
 
@@ -72,7 +70,7 @@ int main(int argc, char *argv[])
 	LetsEncrypt letsEncrypt(domains.values(), email.value(),
 		keyFile.isSet() ? keyFile.value() : "letsencrypt.key",
 		dest.isSet() ? dest.value() + "/" : "",
-		test.isSet(), force.isSet());
+		test.isSet());
 
 	letsEncrypt.start();
 
