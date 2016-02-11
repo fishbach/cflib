@@ -297,10 +297,11 @@ QByteArray readFile(const QString & path)
 	return file.readAll();
 }
 
-bool writeFile(const QString & path, const QByteArray & data)
+bool writeFile(const QString & path, const QByteArray & data, QFile::Permissions perm)
 {
 	QFile file(path);
 	if (!file.open(QIODevice::WriteOnly | QIODevice::Truncate)) return false;
+	file.setPermissions(perm);
 	return file.write(data) == data.size();
 }
 

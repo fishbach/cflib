@@ -68,7 +68,7 @@ public:
 		if (!QFile::exists(privateKeyFile_)) {
 			QTextStream(stdout) << "creating private key for Let's Encrypt ...";
 			privateKey_ = rsaCreateKey(4096);
-			if (!writeFile(privateKeyFile_, privateKey_)) {
+			if (!writeFile(privateKeyFile_, privateKey_, QFile::ReadOwner | QFile::WriteOwner)) {
 				QTextStream(stderr) << "cannot write private key for Let's Encrypt" << endl;
 				qApp->exit(2);
 				return;
@@ -134,6 +134,12 @@ private:
 
 	void registerKey()
 	{
+		if (email_.isEmpty()) {
+			QTextStream(stderr) << "need email parameter to register key" << endl;
+			qApp->exit(15);
+			return;
+		}
+
 		registered_ = true;
 		acmeRequest(letsencryptCA_ + "/acme/new-reg",
 			"{\"resource\": \"new-reg\", \"contact\": [\"mailto: " + email_ + "\"], "
@@ -271,7 +277,7 @@ private:
 
 			QTextStream(stdout) << "got certificate" << endl;
 
-			if (!writeFile(destDir_ + domains_.first() + "_key.pem", certKey_)) {
+			if (!writeFile(destDir_ + domains_.first() + "_key.pem", certKey_, QFile::ReadOwner | QFile::WriteOwner)) {
 				QTextStream(stderr) << "cannot write private key for certificate" << endl;
 				qApp->exit(10);
 				return;

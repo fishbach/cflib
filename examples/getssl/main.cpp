@@ -38,15 +38,34 @@ namespace {
 int showUsage(const QByteArray & executable)
 {
 	QTextStream(stderr)
-		<< "Get certificate from letsencrypt.org"                                  << endl
-		<< "Usage: " << executable << " [options] <domains ...>"                   << endl
-		<< "Options:"                                                              << endl
-		<< "  -h, --help           => this help"                                   << endl
-		<< "  -k, --key <key file> => private key file for Let's Encrypt"          << endl
-		<< "  -e, --email <email>  => contact email for Let's Encrypt"             << endl
-		<< "  -d, --dest <dir>     => certificate destination directory"           << endl
-		<< "  -t, --test           => testmode using Let's Encrypt staging server" << endl;
+		<< ""                                                                        << endl
+		<< "Get certificate from letsencrypt.org"                                    << endl
+		<< "------------------------------------"                                    << endl
+		<< endl
+		<< "For communication with Let's Encrypt a dedicated private key is needed." << endl
+		<< "This key is in RSA PKCS#8 PEM encoded format."                               << endl
+		<< "If you do not have one, a new key will be creatd."                       << endl
+		<< "It's a good idea to backup this key to a secure, protected place."       << endl
+		<< "If a domain validation is necessary, letsencrypt.org will contact"       << endl
+		<< "this client at port 80 (HTTP)." << endl
+		<< endl
+		<< "Usage: " << executable << " [options] <domains ...>"                     << endl
+		<< "Options:"                                                                << endl
+		<< "  -h, --help           => this help"                                     << endl
+		<< "  -k, --key <key file> => private key file for Let's Encrypt"            << endl
+		<< "  -e, --email <email>  => contact email for Let's Encrypt"               << endl
+		<< "  -d, --dest <dir>     => certificate destination directory"             << endl
+		<< "  -t, --test           => testmode using Let's Encrypt staging server"   << endl
+		<< endl;
 	return 1;
+}
+
+void qtMessageHandler(QtMsgType type, const QMessageLogContext & context, const QString & msg)
+{
+	if (type == QtFatalMsg) {
+		QTextStream(stderr) << "fatal Qt error at " << context.file << ":" << context.line << " : " << msg << endl;
+		::abort();
+	}
 }
 
 }
@@ -66,6 +85,8 @@ int main(int argc, char *argv[])
 	// create application
 	QCoreApplication a(argc, argv);
 	UnixSignal unixSignal(true);
+
+	qInstallMessageHandler(&qtMessageHandler);
 
 	LetsEncrypt letsEncrypt(domains.values(), email.value(),
 		keyFile.isSet() ? keyFile.value() : "letsencrypt.key",
