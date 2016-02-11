@@ -90,12 +90,19 @@ public:
 		getNonce();
 	}
 
+	virtual bool event(QEvent * e)
+	{
+		if (e->type() == QEvent::User) QTimer::singleShot(1000, this, &Impl::checkChallenge);
+		return QObject::event(e);
+	}
+
 protected:
 	virtual void handleRequest(const Request & request)
 	{
 		if (request.getUri() == httpPath_) {
 			request.sendReply(httpContent_, "text/html", false);
-			checkChallenge();
+
+			QCoreApplication::postEvent(this, new QEvent(QEvent::User));
 		}
 	}
 
