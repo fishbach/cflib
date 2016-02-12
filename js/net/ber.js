@@ -294,7 +294,7 @@ define(function() {
 
 			var tag = createTag(this.tagNo === 0 ? 0 : this.tagNo++);
 			tag.push(4);
-			this.add(tag);
+			add.call(this, tag);
 			fa32[0] = val;
 			add.call(this, new Uint8Array(fa32.buffer));
 			return this;
@@ -305,7 +305,7 @@ define(function() {
 
 			var tag = createTag(this.tagNo === 0 ? 0 : this.tagNo++);
 			tag.push(8);
-			this.add(tag);
+			add.call(this, tag);
 			fa64[0] = val;
 			add.call(this, new Uint8Array(fa64.buffer));
 			return this;
