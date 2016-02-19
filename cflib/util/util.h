@@ -120,6 +120,7 @@ bool isValidEmail(const QString & str);
 
 bool daemonize();
 bool setProcessOwner(int uid, int gid);
+bool processRestarter(uint msDelay = 1000);
 
 template<typename C> void deleteNext(const C * obj) { Timer::singleShot(0, new Deleter<C>(obj)); }
 

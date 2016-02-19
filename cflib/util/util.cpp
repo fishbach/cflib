@@ -23,7 +23,10 @@
 #include <zlib.h>
 
 #ifdef Q_OS_UNIX
+#include <errno.h>
+#include <signal.h>
 #include <sys/stat.h>
+#include <sys/wait.h>
 #include <unistd.h>
 #endif
 
@@ -470,6 +473,49 @@ void LogProcStatus::timeout()
 	QByteArray stat = readFile("/proc/self/status");
 	stat.replace('\n', " | ").replace('\t', " ");
 	logTrace("proc status: %1", stat);
+#endif
+}
+
+#ifdef Q_OS_UNIX
+namespace {
+
+pid_t childPid = -1;
+bool sigReceived = false;
+
+void signalHandler(int sig)
+{
+	sigReceived = true;
+	if (childPid > 0) kill(childPid, sig);
+}
+
+}
+#endif
+
+bool processRestarter(uint msDelay)
+{
+#ifndef Q_OS_UNIX
+	return false;
+#else
+	forever {
+		childPid = fork();
+		if (childPid < 0)  return false;
+		if (childPid == 0) return true;
+
+		sig_t oldSigH1  = ::signal(1,  signalHandler);
+		sig_t oldSigH2  = ::signal(2,  signalHandler);
+		sig_t oldSigH15 = ::signal(15, signalHandler);
+
+		while (wait(NULL) != -1 && errno != ECHILD);
+		if (sigReceived) exit(0);
+
+		childPid = -1;
+		usleep(msDelay * 2000);
+		if (sigReceived) exit(0);
+
+		::signal(1,  oldSigH1);
+		::signal(2,  oldSigH2);
+		::signal(15, oldSigH15);
+	}
 #endif
 }
 
