@@ -501,7 +501,6 @@ void RMIServerBase::showServices(const Request & request, QString path) const
 
 	info <<
 		"<h3>Service: <b>" << ti.typeName << "</b></h3>\n"
-		"API-URL: <i>/api/rmi/" << path << "</i><br>\n"
 		"JavaScript File: <a href=\"/js/services/" << path << ".js\">/js/services/" << path << ".js</a>\n"
 		"<h4>Methods:</h4>\n"
 		"<ul>\n";
