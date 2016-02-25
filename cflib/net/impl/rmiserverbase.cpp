@@ -45,7 +45,7 @@ const QString HTMLDocHeader =
 const QString footer =
 	"</body></html>\n";
 
-QSet<SerializeTypeInfo> getFunctionClassInfos(const SerializeTypeInfo & ti);
+QSet<SerializeTypeInfo> getFunctionClassInfos(const QList<SerializeFunctionTypeInfo> & functions);
 
 QSet<SerializeTypeInfo> getClassInfos(const SerializeTypeInfo & ti)
 {
@@ -55,7 +55,7 @@ QSet<SerializeTypeInfo> getClassInfos(const SerializeTypeInfo & ti)
 		foreach (const SerializeVariableTypeInfo & member, ti.members) {
 			retval += getClassInfos(member.type);
 		}
-		retval += getFunctionClassInfos(ti);
+		retval += getFunctionClassInfos(ti.functions);
 	}
 	if (ti.type == SerializeTypeInfo::Class || ti.type == SerializeTypeInfo::Container) {
 		foreach (const SerializeTypeInfo & base, ti.bases) {
@@ -65,10 +65,10 @@ QSet<SerializeTypeInfo> getClassInfos(const SerializeTypeInfo & ti)
 	return retval;
 }
 
-QSet<SerializeTypeInfo> getFunctionClassInfos(const SerializeTypeInfo & ti)
+QSet<SerializeTypeInfo> getFunctionClassInfos(const QList<SerializeFunctionTypeInfo> & functions)
 {
 	QSet<SerializeTypeInfo> retval;
-	foreach (const SerializeFunctionTypeInfo & func, ti.functions) {
+	foreach (const SerializeFunctionTypeInfo & func, functions) {
 		retval += getClassInfos(func.returnType);
 		foreach (const SerializeVariableTypeInfo & param, func.parameters) {
 			retval += getClassInfos(param.type);
@@ -355,7 +355,9 @@ void RMIServerBase::registerService(RMIServiceBase & service)
 		sfs.signatures[ti.name] = qMakePair(i, 2);
 	}
 
-	foreach (const SerializeTypeInfo & ti, getFunctionClassInfos(servInfo)) {
+	foreach (const SerializeTypeInfo & ti,
+		getFunctionClassInfos(servInfo.functions) + getFunctionClassInfos(servInfo.cfSignals))
+	{
 		ClassInfoEl * ciEl = &classInfos_;
 		foreach (const QString & ns, ti.getName().split("::")) {
 			ClassInfoEl * & elRef = ciEl->infos[ns.toLower()];
