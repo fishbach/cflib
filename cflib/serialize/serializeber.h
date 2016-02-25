@@ -37,7 +37,10 @@ public:
 	}
 
 	QByteArray data() {
-		if (lenPos_) impl::insertBERLength(data_, lenPos_);
+		if (lenPos_) {
+			impl::insertBERLength(data_, lenPos_);
+			lenPos_ = 0;
+		}
 		return data_;
 	}
 

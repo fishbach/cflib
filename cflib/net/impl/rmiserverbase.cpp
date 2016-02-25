@@ -704,6 +704,7 @@ QString RMIServerBase::generateJSForClass(const SerializeTypeInfo & ti) const
 	js <<
 		"\t}\n"
 		"};\n"
+		<< nsPrefix << typeName << ".prototype.__clone = function() { return new " << nsPrefix << typeName << "(this); };\n"
 		<< nsPrefix << typeName << ".prototype.__serialize = function(__S) {\n"
 		"\t__S";
 	if (!base.isEmpty()) js << ".o(this, " << base << ".prototype.__serialize)";
