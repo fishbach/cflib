@@ -230,6 +230,7 @@ void FileServer::handleRequest(const Request & request)
 	if (match.hasMatch()) {
 		const QString ending = match.captured(1);
 		     if (ending == "htm"  ) { cache = false; compression = true;  contentType = "text/html; charset=utf-8"; }
+		else if (ending == "txt"  ) { cache = false; compression = true;  contentType = "text/plain"; }
 		else if (ending == "ico"  ) { cache = true;  compression = false; contentType = "image/x-icon"; }
 		else if (ending == "gif"  ) { cache = true;  compression = false; contentType = "image/gif"; }
 		else if (ending == "png"  ) { cache = true;  compression = false; contentType = "image/png"; }
