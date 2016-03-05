@@ -25,6 +25,7 @@
 #include <cflib/util/util.h>
 
 #include <QtNetwork>
+#include <functional>
 
 using namespace cflib::crypt;
 using namespace cflib::net;
