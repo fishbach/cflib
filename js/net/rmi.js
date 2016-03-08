@@ -31,6 +31,7 @@ define([
 	var msgHandlers     = {};
 	var rsigHandlers    = {};
 	var waitingRSig     = [];
+	var waitingAsync    = [];
 	var id              = null;
 
 	function checkWaitingRequests()
@@ -65,6 +66,8 @@ define([
 		var id = getId();
 		if (id) ws.send(ber.makeTLV(1, false, id));
 		else    ws.send(ber.makeTLV(1));
+		$.each(waitingAsync, function(data) { ws.send(data); });
+		waitingAsync = [];
 		checkWaitingRequests();
 	}
 
@@ -146,7 +149,10 @@ define([
 
 	rmi.id = getId;
 
-	rmi.sendAsync = function(data) { ws.send(data); };
+	rmi.sendAsync = function(data) {
+		if (ws.readyState != 1) waitingAsync.push(data);
+		else                    ws.send(data);
+	};
 
 	rmi.sendRequest = function(data, callback) {
 		if (requestActive) waitingRequests.push([data, callback]);

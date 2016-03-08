@@ -10,14 +10,15 @@ define([
 	chat.start = function () {
 
 		$("#sendButton").on('click', function () {
-			infoService.talk_String($("#inputText").val());
-			document.getElementById("inputText").value = "";
+			var $input = $('#inputText');
+			infoService.talk_String($input.val());
+			$input.val('');
 		});
 
 		infoService.rsig.newMessage.register().bind(function (connectionId, text) {
-			var chatTextArea = $("#chatTextArea");
-			chatTextArea.html(chatTextArea.val() + connectionId + ":\t" + text + "\n");
-			document.getElementById("chatTextArea").scrollTop = document.getElementById("chatTextArea").scrollHeight;
+			var $textarea = $('#chatTextArea');
+			$textarea.val($textarea.val() + connectionId + ':\t' + text + '\n');
+			$textarea.el.scrollTop = $textarea.el.scrollHeight - $textarea.height();
 		});
 	}
 

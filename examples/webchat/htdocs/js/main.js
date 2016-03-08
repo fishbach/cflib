@@ -39,13 +39,9 @@ rmi.ev.identityReset.bind(function() {
 	location.href = location.href;
 });
 
-rmi.ev.loading.bind(function(isLoading) {
-	$('#loading').html(isLoading ? " (loading)" : "");
-
-	// start chat after all connection stuff is handled
-	if (!isLoading) chat.start();
-});
+rmi.ev.loading.bind(function(isLoading) { $('#loading').html(isLoading ? " (loading)" : ""); });
 
 rmi.start();
+chat.start();
 
 }); }); });
