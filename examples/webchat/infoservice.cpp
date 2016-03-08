@@ -66,3 +66,9 @@ void InfoService::update(Dao3 & dao)
 {
 	dao.timestamp = QDateTime::currentDateTime();
 }
+
+void InfoService::talk(const QString & msg)
+{
+	QTextStream(stdout) << QString("connId:%1\twrote: %2").arg(connId()).arg(msg) << endl;
+	newMessage(connId(), msg);
+}

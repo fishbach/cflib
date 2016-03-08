@@ -35,12 +35,36 @@ using namespace cflib::util;
 
 USE_LOG(LogCat::Etc)
 
+int showUsage(const QByteArray & executable)
+{
+	QTextStream(stderr)
+		<< ""                                                                              << endl
+		<< "Simple Webchat example"                                                        << endl
+		<< "------------------------------------"                                          << endl
+		<< endl
+		<< "To make this example run start the webchat executable and access the url"      << endl
+		<< "http://127.0.0.1:8080/ through your browser."                                  << endl
+		<< "If you have an out of source build you need to redirect the webchat to"        << endl
+		<< "the correct location of the example htdocs directory through:"                 << endl
+		<< "./" <<executable << " --htdocs <path to cflib source>/examples/webchat/htdocs" << endl
+		<< endl
+		<< "Usage: " << executable << " [options]"                                         << endl
+		<< "Options:"                                                                      << endl
+		<< "  -h, --help     => this help"                                                 << endl
+		<< "  -e, --export   => export Classes as Javascrpt classes"                       << endl
+		<< "  -f, --htdocs   => set path to htdocs (default htdocs in current directory)"  << endl
+		<< endl;
+	return 1;
+}
+
 int main(int argc, char *argv[])
 {
 	// parse cmd line
 	CmdLine cmdLine(argc, argv);
-	Option exportOpt('e', "export", true); cmdLine << exportOpt;
-	if (!cmdLine.parse()) return 1;
+	Option helpOpt      ('h', "help",  false); cmdLine << helpOpt;
+	Option exportOpt    ('e', "export", true); cmdLine << exportOpt;
+	Option htdocsPathOpt('f', "htdocs", true); cmdLine << htdocsPathOpt;
+	if (!cmdLine.parse() || helpOpt.isSet()) return showUsage(cmdLine.executable());
 
 	QCoreApplication a(argc, argv);
 	UnixSignal unixSignal(true);
@@ -50,7 +74,7 @@ int main(int argc, char *argv[])
 
 	RequestLog requestLog;
 
-	FileServer fs("htdocs");
+	FileServer fs(htdocsPathOpt.value("htdocs"));
 
 	WSCommManager<QString> commMgr("/ws");
 	RMIServer<QString> rmiServer(commMgr);

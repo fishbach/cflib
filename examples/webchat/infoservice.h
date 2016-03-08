@@ -40,7 +40,10 @@ rmi:
 	void update(Dao3 & dao);
 	void doSignal(int t) { mySig(t); }
 
+	void talk(const QString & msg);
+
 cfsignals:
 	rsig<void (int t)> mySig;
 	rsig<void (int t, const QString & s)> mySig2;
+	rsig<void (int t, const QString & s)> newMessage;
 };
