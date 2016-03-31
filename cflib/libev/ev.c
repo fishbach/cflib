@@ -829,7 +829,7 @@ typedef int ecb_bool;
 
 /* http://msdn.microsoft.com/en-us/library/k6ktzx3s.aspx __declspec(noreturn) */
 #if ECB_C11
-  #define ecb_noreturn   _Noreturn
+  #define ecb_noreturn
 #else
   #define ecb_noreturn   ecb_attribute ((__noreturn__))
 #endif
