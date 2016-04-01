@@ -37,7 +37,7 @@ OTHER_FILES = \
 lib()
 
 # botan
-BOTAN_MINOR_VERSION = 28
+BOTAN_MINOR_VERSION = 29
 !defined(BOTAN_DIR, var) {
 	BOTAN_DIR = $${CFLIB_DIR}/../Botan-1.11.$${BOTAN_MINOR_VERSION}
 }
@@ -53,6 +53,8 @@ BOTAN_MINOR_VERSION = 28
 	!win32 {
 		message(./configure.py --disable-shared --disable-modules=rdseed)
 		message("sed -i 's/ -Wpedantic//' Makefile")
+		message("sed -i 's/m_extensions_raw.emplace(extn->oid_of(), std::make_pair(extn->encode_inner(), critical));/m_extensions_raw[extn->oid_of()] = std::make_pair(extn->encode_inner(), critical);/' src/lib/cert/x509/x509_ext.cpp")
+		message("sed -i 's/m_extensions_raw.emplace(oid, std::make_pair(value, critical));/m_extensions_raw[oid] = std::make_pair(value, critical);/' src/lib/cert/x509/x509_ext.cpp")
 		message(make -j 10 libbotan-1.11.a)
 		message(chmod a-w build/obj/lib)
 	} else {
