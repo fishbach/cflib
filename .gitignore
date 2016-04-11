@@ -27,6 +27,7 @@ build
 build-*
 .DS_Store
 *~
+target_wrapper.sh
 
 config.pri
 bin

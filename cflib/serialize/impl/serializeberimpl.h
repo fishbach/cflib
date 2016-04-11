@@ -88,10 +88,9 @@ inline void deserializeBERInt(T & v, const quint8 * data, int len)
 		return;
 	}
 	const quint8 * b = (const quint8 *)data;
-	quint64 rv = *b;
-	if (rv & 0x80) rv = (-1 & ~0xFF) | rv;
-	while (--len > 0) rv = (rv << 8) | *(++b);
-	v = rv;
+	v = *b;
+	if (v & 0x80) v = ((T)-1 & ~0xFF) | v;
+	while (--len > 0) v = (v << 8) | *(++b);
 }
 
 template<>
