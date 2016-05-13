@@ -570,7 +570,7 @@ void RMIServerBase::showClasses(const Request & request, QString path) const
 void RMIServerBase::classesToHTML(QString & info, const ClassInfoEl & infoEl) const
 {
 	foreach (const QString & ns, infoEl.infos.keys()) {
-		const ClassInfoEl & el = *infoEl.infos[ns];
+		const ClassInfoEl & el = *infoEl.infos.value(ns, nullptr);
 		if (!el.ti.getName().isEmpty()) {
 			QString path = el.ti.getName();
 			path.replace("::", "/");
