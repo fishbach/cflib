@@ -36,7 +36,7 @@ public slots:
 	{
 		(*func_)();
 		delete func_;
-		deleteLater();
+		delete this;
 	}
 
 private:
