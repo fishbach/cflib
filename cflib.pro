@@ -40,7 +40,6 @@ addSubdir(cflib/util/gitversion)
 addSubdir(cflib/util/jscombiner, cflib_util)
 addSubdir(examples/getssl, cflib_net cflib_crypt cflib_util)
 addSubdir(examples/webchat, cflib_net cflib_crypt cflib/serialize/ser cflib_serialize cflib_util)
-addSubdir(examples/webchatclient, cflib_net cflib_crypt cflib/serialize/ser cflib_serialize cflib_util)
 
 OTHER_FILES = \
 	README \
