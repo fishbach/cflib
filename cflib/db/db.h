@@ -55,6 +55,6 @@ bool exec(QSqlQuery & query, const cflib::util::LogFileInfo & lfi, int line);
 
 QDateTime getUTC(const QSqlQuery & query, int index);
 
-quint32 lastInsertId();
+quint64 lastInsertId();
 
 }}	// namespace

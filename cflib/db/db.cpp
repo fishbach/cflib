@@ -196,13 +196,13 @@ QDateTime getUTC(const QSqlQuery & query, int index)
 	return retval;
 }
 
-quint32 lastInsertId()
+quint64 lastInsertId()
 {
 	Transaction;
 	QSqlQuery query(ta.db);
 	query.prepare("SELECT LAST_INSERT_ID()");
 	if (!execQuery(query) || !query.next()) return 0;
-	quint32 rv = query.value(0).toUInt();
+	quint64 rv = query.value(0).toULongLong();
 	ta.commit();
 	return rv;
 }

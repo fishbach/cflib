@@ -417,6 +417,7 @@ inline void serializeBER(const QSet<T> & cl, quint64 tagNo, QByteArray & data, B
 {
 	TLWriter tlw(data, tagNo);
 	BERSerializerBase ser(data, true);
+	if (cl.isEmpty()) return;
 	for (typename QSet<T>::const_iterator it = cl.constBegin() ; it != cl.constEnd() ; ++it) ser << *it;
 }
 
