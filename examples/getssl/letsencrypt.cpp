@@ -176,7 +176,7 @@ private:
 				return;
 			}
 
-			QRegularExpressionMatch match = QRegularExpression(R"(\{[^{]*"type":"http-01"[^}]*\})")
+			QRegularExpressionMatch match = QRegularExpression(R"(\{[^{]*"type"\s*:\s*"http-01"[^}]*\})")
 				.match(QString::fromUtf8(content));
 			if (!match.hasMatch()) {
 				QTextStream(stderr) << "auth challenge not found for domain: " << domainsToBeAuthenticated_.first() << endl;
@@ -184,9 +184,9 @@ private:
 				return;
 			}
 			const QString challenge = match.captured();
-			match = QRegularExpression(R"R("uri":"([^"]+)")R").match(challenge);
+			match = QRegularExpression(R"R("uri"\s*:\s*"([^"]+)")R").match(challenge);
 			checkUri_ = match.captured(1).toUtf8();
-			match = QRegularExpression(R"R("token":"([^"]+)")R").match(challenge);
+			match = QRegularExpression(R"R("token"\s*:\s*"([^"]+)")R").match(challenge);
 			const QByteArray token = match.captured(1).toUtf8();
 
 			QByteArray pubMod;
@@ -221,7 +221,7 @@ private:
 	{
 		hdl(netMgr_.get(QNetworkRequest(QUrl(checkUri_))), [&](QNetworkReply & reply)
 		{
-				QRegularExpressionMatch match = QRegularExpression("\"status\":\"([^\"]+)\"")
+				QRegularExpressionMatch match = QRegularExpression("\"status\"\\s*:\\s*\"([^\"]+)\"")
 					.match(QString::fromUtf8(reply.readAll()));
 				if (!match.hasMatch()) {
 					QTextStream(stderr) << "cannot read status of challenge" << endl;
