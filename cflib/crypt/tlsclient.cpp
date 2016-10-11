@@ -23,13 +23,11 @@
 #include <cflib/crypt/tlscredentials.h>
 #include <cflib/crypt/tlssessions.h>
 
-#include <functional>
-
 USE_LOG(LogCat::Crypt)
 
 namespace cflib { namespace crypt {
 
-class TLSClient::Impl
+class TLSClient::Impl : public TLS::Callbacks
 {
 public:
 	Impl(TLS::Session_Manager & session_manager, Credentials_Manager & creds, const QByteArray & hostname,
@@ -40,33 +38,27 @@ public:
 		isReady(false),
 		hasError(false),
 		policy(highSecurity ? (TLS::Policy *)new TLS::Strict_Policy : (TLS::Policy *)new TLS::TLS12Policy),
-		client(
-			std::bind(&Impl::socket_output_fn, this, std::placeholders::_1, std::placeholders::_2),
-			std::bind(&Impl::data_cb, this, std::placeholders::_1, std::placeholders::_2),
-			std::bind(&Impl::alert_cb, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3),
-			std::bind(&Impl::handshake_cb, this, std::placeholders::_1),
-			session_manager, creds, *policy,
-			rng, hostname.isEmpty() ? std::string() : hostname.toStdString())
+		client(*this, session_manager, creds, *policy, rng, hostname.isEmpty() ? std::string() : hostname.toStdString())
 	{
 	}
 
-	void socket_output_fn(const byte buf[], size_t size)
+	void tls_emit_data(const byte data[], size_t size)
 	{
-		outgoingEncryptedPtr->append((const char *)buf, (int)size);
+		outgoingEncryptedPtr->append((const char *)data, (int)size);
 	}
 
-	void data_cb(const byte buf[], size_t size)
+	void tls_record_received(u64bit, const byte data[], size_t size)
 	{
-		incomingPlainPtr->append((const char *)buf, (int)size);
+		incomingPlainPtr->append((const char *)data, (int)size);
 	}
 
-	void alert_cb(TLS::Alert alert, const byte[], size_t)
+	void tls_alert(TLS::Alert alert)
 	{
 		logInfo("TLS alert: %1", alert.type_string().c_str());
 		hasError = true;
 	}
 
-	bool handshake_cb(const TLS::Session &)
+	bool tls_session_established(const TLS::Session &)
 	{
 		isReady = true;
 		return true;

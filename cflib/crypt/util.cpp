@@ -138,7 +138,7 @@ void rsaPublicModulusExponent(const QByteArray & privateKey, QByteArray & modulu
 		AutoSeeded_RNG rng;
 		std::unique_ptr<Private_Key> pk(PKCS8::load_key(ds, rng));
 		if (pk) {
-			const IF_Scheme_PublicKey * rsaKey = dynamic_cast<const RSA_PrivateKey *>(pk.get());
+			const RSA_PublicKey * rsaKey = dynamic_cast<const RSA_PrivateKey *>(pk.get());
 			std::vector<byte> bytes = BigInt::encode(rsaKey->get_n());
 			modulus = QByteArray((const char *)bytes.data(), bytes.size());
 			bytes = BigInt::encode(rsaKey->get_e());
