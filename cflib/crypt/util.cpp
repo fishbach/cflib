@@ -157,7 +157,7 @@ QByteArray rsaSign(const QByteArray & privateKey, const QByteArray & msg)
 		AutoSeeded_RNG rng;
 		std::unique_ptr<Private_Key> pk(PKCS8::load_key(ds, rng));
 		if (pk) {
-			PK_Signer signer(*pk, "EMSA3(SHA-256)");
+			PK_Signer signer(*pk, rng, "EMSA3(SHA-256)");
 			std::vector<byte> bytes = signer.sign_message((const byte *)msg.constData(), msg.size(), rng);
 			return QByteArray((const char *)bytes.data(), bytes.size());
 		}
@@ -197,7 +197,7 @@ QByteArray x509CreateCertReq(const QByteArray & privateKey, const QList<QByteArr
 			.end_cons();
 
 		AlgorithmIdentifier sigAlgo;
-		std::unique_ptr<PK_Signer> signer(choose_sig_format(*pk, "SHA-256", sigAlgo));
+		std::unique_ptr<PK_Signer> signer(choose_sig_format(*pk, rng, "SHA-256", sigAlgo));
 
 		PKCS10_Request csr = PKCS10_Request(X509_Object::make_signed(signer.get(), rng, sigAlgo, der.get_contents()));
 

@@ -37,7 +37,7 @@ OTHER_FILES = \
 lib()
 
 # botan
-BOTAN_MINOR_VERSION = 32
+BOTAN_MINOR_VERSION = 34
 !defined(BOTAN_DIR, var) {
 	BOTAN_DIR = $${CFLIB_DIR}/../Botan-1.11.$${BOTAN_MINOR_VERSION}
 }
@@ -51,10 +51,7 @@ BOTAN_MINOR_VERSION = 32
 	message(tar zxvf Botan-1.11.$${BOTAN_MINOR_VERSION}.tgz)
 	message(cd Botan-1.11.$${BOTAN_MINOR_VERSION})
 	!win32 {
-		message(./configure.py --disable-shared --disable-modules=rdseed)
-		message("sed -i 's/ -Wpedantic//' Makefile")
-		message("sed -i 's/m_extensions_raw.emplace(extn->oid_of(), std::make_pair(extn->encode_inner(), critical));/m_extensions_raw[extn->oid_of()] = std::make_pair(extn->encode_inner(), critical);/' src/lib/cert/x509/x509_ext.cpp")
-		message("sed -i 's/m_extensions_raw.emplace(oid, std::make_pair(value, critical));/m_extensions_raw[oid] = std::make_pair(value, critical);/' src/lib/cert/x509/x509_ext.cpp")
+		message(./configure.py --disable-shared)
 		message(make -j 10 libbotan-1.11.a)
 		message(chmod a-w build/obj/lib)
 	} else {
