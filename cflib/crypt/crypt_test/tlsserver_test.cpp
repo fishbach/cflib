@@ -42,6 +42,7 @@ private slots:
 
 		TLSCredentials clientCreds;
 		QCOMPARE((int)clientCreds.addCerts(cert3, true), 1);
+		QCOMPARE((int)clientCreds.addRevocationLists(cert2Crl), 1);
 		TLSSessions clientSessions;
 		TLSClient client(clientSessions, clientCreds);
 
@@ -106,6 +107,7 @@ private slots:
 
 		TLSCredentials clientCreds;
 		QCOMPARE((int)clientCreds.addCerts(cert3, true), 1);
+		QCOMPARE((int)clientCreds.addRevocationLists(cert2Crl), 1);
 		TLSSessions clientSessions;
 		TLSClient client(clientSessions, clientCreds);
 
@@ -194,8 +196,9 @@ private slots:
 
 		TLSCredentials clientCreds;
 		QCOMPARE((int)clientCreds.addCerts(cert3, true), 1);
+		QCOMPARE((int)clientCreds.addRevocationLists(cert2Crl), 1);
 		TLSSessions clientSessions;
-		TLSClient client(clientSessions, clientCreds, "server.my");
+		TLSClient client(clientSessions, clientCreds, "server");
 
 		QByteArray enc1;
 		QByteArray enc2;
@@ -286,6 +289,7 @@ private slots:
 
 		TLSCredentials clientCreds;
 		QCOMPARE((int)clientCreds.addCerts(cert3, true), 1);
+		QCOMPARE((int)clientCreds.addRevocationLists(cert2Crl), 1);
 		TLSSessions clientSessions;
 		TLSClient client(clientSessions, clientCreds, QByteArray(), true);
 
@@ -348,6 +352,7 @@ private slots:
 
 		TLSCredentials clientCreds;
 		QCOMPARE((int)clientCreds.addCerts(cert3, true), 1);
+		QCOMPARE((int)clientCreds.addRevocationLists(cert2Crl), 1);
 		TLSSessions clientSessions;
 		TLSClient client(clientSessions, clientCreds);
 

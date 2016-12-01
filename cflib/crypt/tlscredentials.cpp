@@ -109,6 +109,20 @@ uint TLSCredentials::addCerts(const QByteArray & certs, bool isTrustedCA)
 	return rv;
 }
 
+uint TLSCredentials::addRevocationLists(const QByteArray & crls)
+{
+	uint rv = 0;
+	try {
+		DataSource_Memory ds((const byte *)crls.constData(), crls.size());
+		forever {
+			X509_CRL crl(ds);
+			impl_->trustedCAs.add_crl(crl);
+			++rv;
+		}
+	} catch (...) {}
+	return rv;
+}
+
 bool TLSCredentials::addPrivateKey(const QByteArray & privateKey, const QByteArray & password)
 {
 	TRY {

@@ -43,16 +43,16 @@ private slots:
 
 		const QList<TLSCertInfo> infos = creds.getCertInfos();
 		QCOMPARE(infos.size(), 3);
-		QCOMPARE(infos[0].subjectName.constData(), "server.my");
-		QCOMPARE(infos[0].issuerName .constData(), "Intermediate CA");
+		QCOMPARE(infos[0].subjectName.constData(), "server");
+		QCOMPARE(infos[0].issuerName .constData(), "ca");
 		QVERIFY(!infos[0].isCA);
 		QVERIFY(!infos[0].isTrusted);
-		QCOMPARE(infos[1].subjectName.constData(), "Intermediate CA");
-		QCOMPARE(infos[1].issuerName .constData(), "Root CA");
+		QCOMPARE(infos[1].subjectName.constData(), "ca");
+		QCOMPARE(infos[1].issuerName .constData(), "rootca");
 		QVERIFY( infos[1].isCA);
 		QVERIFY(!infos[1].isTrusted);
-		QCOMPARE(infos[2].subjectName.constData(), "Root CA");
-		QCOMPARE(infos[2].issuerName .constData(), "Root CA");
+		QCOMPARE(infos[2].subjectName.constData(), "rootca");
+		QCOMPARE(infos[2].issuerName .constData(), "rootca");
 		QVERIFY( infos[2].isCA);
 		QVERIFY(!infos[2].isTrusted);
 	}
@@ -67,11 +67,11 @@ private slots:
 
 		const QList<TLSCertInfo> infos = creds.getCertInfos();
 		QCOMPARE(infos.size(), 3);
-		QCOMPARE(infos[0].subjectName.constData(), "server.my");
+		QCOMPARE(infos[0].subjectName.constData(), "server");
 		QVERIFY(!infos[0].isTrusted);
-		QCOMPARE(infos[1].subjectName.constData(), "Intermediate CA");
+		QCOMPARE(infos[1].subjectName.constData(), "ca");
 		QVERIFY(!infos[1].isTrusted);
-		QCOMPARE(infos[2].subjectName.constData(), "Root CA");
+		QCOMPARE(infos[2].subjectName.constData(), "rootca");
 		QVERIFY( infos[2].isTrusted);
 	}
 

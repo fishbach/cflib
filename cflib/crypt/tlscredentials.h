@@ -45,6 +45,8 @@ public:
 	uint addCerts(const QByteArray & certs, bool isTrustedCA = false);
 	QList<TLSCertInfo> getCertInfos() const;
 
+	uint addRevocationLists(const QByteArray & crls);
+
 	// private key must be in PKCS8 format
 	// fitting certificate must exist
 	// builds a certificate chain of added certificates
