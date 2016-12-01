@@ -334,6 +334,7 @@ private slots:
 
 		TLSCredentials clientCreds;
 		QCOMPARE((int)clientCreds.addCerts(cert3, true), 1);
+		QCOMPARE((int)clientCreds.addRevocationLists(cert2Crl), 1);
 
 		Server serv(1);
 		QVERIFY(serv.start("127.0.0.1", 12301, serverCreds));
