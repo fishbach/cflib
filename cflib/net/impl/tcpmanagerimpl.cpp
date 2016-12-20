@@ -113,6 +113,18 @@ TCPManagerImpl::TCPManagerImpl(TCPManager & parent, uint tlsThreadCount) :
 	for (uint i = 1 ; i <= tlsThreadCount ; ++i) tlsThreads_.append(new TLSThread(*this, i, tlsThreadCount));
 }
 
+TCPManagerImpl::TCPManagerImpl(TCPManager & parent, uint tlsThreadCount, util::ThreadVerify * other) :
+	ThreadVerify(other),
+	parent(parent),
+	listenSock_(-1),
+	isIPv6Sock_(false),
+	readWatcher_(new ev_io),
+	credentials_(0),
+	tlsConnId_(0)
+{
+	for (uint i = 1 ; i <= tlsThreadCount ; ++i) tlsThreads_.append(new TLSThread(*this, i, tlsThreadCount));
+}
+
 TCPManagerImpl::~TCPManagerImpl()
 {
 	logFunctionTrace

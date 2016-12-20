@@ -22,8 +22,10 @@
 
 namespace cflib { namespace net {
 
-TCPManager::TCPManager(uint tlsThreadCount) :
-	impl_(new impl::TCPManagerImpl(*this, tlsThreadCount))
+TCPManager::TCPManager(uint tlsThreadCount, util::ThreadVerify * other) :
+	impl_(other ?
+		new impl::TCPManagerImpl(*this, tlsThreadCount, other) :
+		new impl::TCPManagerImpl(*this, tlsThreadCount))
 {
 }
 

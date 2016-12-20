@@ -37,6 +37,7 @@ class TCPManagerImpl : public util::ThreadVerify
 {
 public:
 	TCPManagerImpl(TCPManager & parent, uint tlsThreadCount);
+	TCPManagerImpl(TCPManager & parent, uint tlsThreadCount, util::ThreadVerify * other);
 	~TCPManagerImpl();
 
 	bool isRunning() const { return listenSock_ != -1; }
