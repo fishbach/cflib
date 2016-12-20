@@ -1,0 +1,59 @@
+/* Copyright (C) 2013-2016 Christian Fischbach <cf@cflib.de>
+ *
+ * This file is part of cflib.
+ *
+ * cflib is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * cflib is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with cflib. If not, see <http://www.gnu.org/licenses/>.
+ */
+
+#include "dns.h"
+
+#include <cflib/util/log.h>
+
+#include <arpa/inet.h>
+#include <netdb.h>
+#include <sys/socket.h>
+#include <sys/types.h>
+
+USE_LOG(LogCat::Network)
+
+namespace cflib { namespace net {
+
+QList<QByteArray> getIPFromDNS(const QByteArray & name, bool preferIPv6)
+{
+	struct addrinfo * res;
+	int err = getaddrinfo(name.constData(), 0, 0, &res);
+	if (err != 0) {
+		logWarn("getaddrinfo failed with error: %1", err);
+		return QList<QByteArray>();
+	}
+
+	QSet<QByteArray> ipv4;
+	QSet<QByteArray> ipv6;
+	for ( ; res ; res = res->ai_next) {
+		char ip[40];
+		if (res->ai_family == AF_INET) {
+			inet_ntop(AF_INET, &((struct sockaddr_in *)res->ai_addr)->sin_addr, ip, sizeof(ip));
+			ipv4 << ip;
+		} else if (res->ai_family == AF_INET6) {
+			inet_ntop(AF_INET6, &((struct sockaddr_in6 *)res->ai_addr)->sin6_addr, ip, sizeof(ip));
+			ipv6 << ip;
+		}
+	}
+
+	freeaddrinfo(res);
+
+	return ipv4.isEmpty() || (preferIPv6 && !ipv6.isEmpty()) ? ipv6.toList() : ipv4.toList();
+}
+
+}}	// namespace
