@@ -40,6 +40,7 @@ HEADERS = \
 	websocketservice.h \
 	wscommmanager.h \
 	impl/httpthread.h \
+	impl/kafkaraw.h \
 	impl/requestparser.h \
 	impl/rmiserverbase.h \
 	impl/tcpconndata.h \
