@@ -21,6 +21,7 @@
 #include <cflib/crypt/tlsclient.h>
 #include <cflib/crypt/tlsserver.h>
 #include <cflib/crypt/tlssessions.h>
+#include <cflib/net/dns.h>
 #include <cflib/net/impl/tcpconndata.h>
 #include <cflib/net/impl/tlsthread.h>
 #include <cflib/net/tcpmanager.h>
@@ -100,7 +101,7 @@ inline bool callWithSockaddr(const QByteArray & ip, quint16 port, std::function<
 
 }
 
-TCPManagerImpl::TCPManagerImpl(TCPManager & parent, uint tlsThreadCount, uint dnsThreadCount) :
+TCPManagerImpl::TCPManagerImpl(TCPManager & parent, uint tlsThreadCount) :
 	ThreadVerify("TCPManager", ThreadVerify::Net),
 	parent(parent),
 	listenSock_(-1),
@@ -113,7 +114,7 @@ TCPManagerImpl::TCPManagerImpl(TCPManager & parent, uint tlsThreadCount, uint dn
 	for (uint i = 1 ; i <= tlsThreadCount ; ++i) tlsThreads_.append(new TLSThread(*this, i, tlsThreadCount));
 }
 
-TCPManagerImpl::TCPManagerImpl(TCPManager & parent, uint tlsThreadCount, uint dnsThreadCount, util::ThreadVerify * other) :
+TCPManagerImpl::TCPManagerImpl(TCPManager & parent, uint tlsThreadCount, util::ThreadVerify * other) :
 	ThreadVerify(other),
 	parent(parent),
 	listenSock_(-1),
@@ -207,7 +208,15 @@ TCPConnData * TCPManagerImpl::openConnection(
 	}
 
 	// resolve dns
-	const QByteArray destIP = destAddress;
+	QByteArray destIP;
+	{
+		const QList<QByteArray> ips = getIPFromDNS(destAddress, preferIPv6);
+		if (ips.isEmpty()) {
+			logWarn("cannot resolve host: %1", destAddress);
+			return 0;
+		}
+		destIP = ips[qrand() % ips.size()];
+	}
 
 	// create non blocking socket
 	int sock = socket(destIP.indexOf('.') == -1 ? AF_INET6 : AF_INET, SOCK_STREAM, 0);
@@ -240,12 +249,7 @@ TCPConnData * TCPManagerImpl::openConnection(
 
 	logDebug("opened connection %1 to %2:%3", sock, destIP, destPort);
 
-	TCPConnData * conn = credentials ?
-		new TCPConnData(*this, sock, destIP, destPort,
-			new TLSClient(*tlsSessions(), *credentials), ++tlsConnId_ % tlsThreads_.size()) :
-		new TCPConnData(*this, sock, destIP, destPort, 0, 0);
-	connections_ << conn;
-	return conn;
+	return addConnection(sock, destIP, destPort, credentials);
 }
 
 void TCPManagerImpl::startReadWatcher(TCPConnData * conn)
@@ -550,6 +554,19 @@ void TCPManagerImpl::callClosed(TCPConnData * conn)
 	conn->lastInformedCloseType = conn->closeType;
 	if (conn->tlsStream) tlsThreads_[conn->tlsThreadId]->callClosed(conn);
 	else                 execCall(new Functor0<TCPConnData>(conn, &TCPConnData::callClosed));
+}
+
+TCPConnData * TCPManagerImpl::addConnection(int sock, const QByteArray & destIP, quint16 destPort, TLSCredentials * credentials)
+{
+	SyncedThreadCall<TCPConnData *> stc(this);
+	if (!stc.verify(&TCPManagerImpl::addConnection, sock, destIP, destPort, credentials)) return stc.retval();
+
+	TCPConnData * conn = credentials ?
+		new TCPConnData(*this, sock, destIP, destPort,
+			new TLSClient(*tlsSessions(), *credentials), ++tlsConnId_ % tlsThreads_.size()) :
+		new TCPConnData(*this, sock, destIP, destPort, 0, 0);
+	connections_ << conn;
+	return conn;
 }
 
 }}}	// namespace

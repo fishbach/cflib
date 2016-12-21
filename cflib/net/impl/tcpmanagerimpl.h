@@ -36,8 +36,8 @@ class TLSThread;
 class TCPManagerImpl : public util::ThreadVerify
 {
 public:
-	TCPManagerImpl(TCPManager & parent, uint tlsThreadCount, uint dnsThreadCount);
-	TCPManagerImpl(TCPManager & parent, uint tlsThreadCount, uint dnsThreadCount, util::ThreadVerify * other);
+	TCPManagerImpl(TCPManager & parent, uint tlsThreadCount);
+	TCPManagerImpl(TCPManager & parent, uint tlsThreadCount, util::ThreadVerify * other);
 	~TCPManagerImpl();
 
 	bool isRunning() const { return listenSock_ != -1; }
@@ -72,6 +72,7 @@ protected:
 private:
 	static void listenSocketReadable(ev_loop * loop, ev_io * w, int revents);
 	void callClosed(TCPConnData * conn);
+	TCPConnData * addConnection(int sock, const QByteArray & destIP, quint16 destPort, crypt::TLSCredentials * credentials);
 
 private:
 	int listenSock_;

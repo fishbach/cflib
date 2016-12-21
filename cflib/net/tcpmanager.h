@@ -33,8 +33,7 @@ class TCPManager
 	Q_DISABLE_COPY(TCPManager)
 public:
 	// tlsThreadCount must be set > 0 when TLS is used
-	// If dnsThreadCount == 0, one thread is started on demand.
-	TCPManager(uint tlsThreadCount = 0, uint dnsThreadCount = 0, util::ThreadVerify * other = 0);
+	TCPManager(uint tlsThreadCount = 0, util::ThreadVerify * other = 0);
 	virtual ~TCPManager();
 
 	bool start(const QByteArray & ip, quint16 port) { return start(openListenSocket(ip, port)); }

@@ -29,8 +29,19 @@ USE_LOG(LogCat::Network)
 
 namespace cflib { namespace net {
 
+namespace {
+
+const QRegularExpression ipRe("^(?:\\d+\\.\\d+\\.\\d+\\.\\d+|[:0-9A-Fa-f]+)$");
+
+}
+
 QList<QByteArray> getIPFromDNS(const QByteArray & name, bool preferIPv6)
 {
+	if (ipRe.match(name).hasMatch()) {
+		logTrace("getIPFromDNS(\"%1\", %2) -> %1", name, preferIPv6);
+		return QList<QByteArray>() << name;
+	}
+
 	struct addrinfo * res;
 	int err = getaddrinfo(name.constData(), 0, 0, &res);
 	if (err != 0) {
@@ -53,7 +64,10 @@ QList<QByteArray> getIPFromDNS(const QByteArray & name, bool preferIPv6)
 
 	freeaddrinfo(res);
 
-	return ipv4.isEmpty() || (preferIPv6 && !ipv6.isEmpty()) ? ipv6.toList() : ipv4.toList();
+	QList<QByteArray> rv = ipv4.isEmpty() || (preferIPv6 && !ipv6.isEmpty()) ? ipv6.toList() : ipv4.toList();
+	qSort(rv);
+	logTrace("getIPFromDNS(\"%1\", %2) -> %3", name, preferIPv6, rv.join(' '));
+	return rv;
 }
 
 }}	// namespace
