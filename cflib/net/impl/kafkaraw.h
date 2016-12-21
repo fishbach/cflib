@@ -59,39 +59,47 @@ public:
 private:
 	QByteArray data_;
 
-	friend KafkaRawWriter & operator<<(KafkaRawWriter & out, qint8 val);
-	friend KafkaRawWriter & operator<<(KafkaRawWriter & out, qint16 val);
-	friend KafkaRawWriter & operator<<(KafkaRawWriter & out, qint32 val);
-	friend KafkaRawWriter & operator<<(KafkaRawWriter & out, qint64 val);
-	friend KafkaRawWriter & operator<<(KafkaRawWriter & out, const QByteArray & val);
+	friend KafkaRawWriter & operator<<(KafkaRawWriter & out, qint8               val);
+	friend KafkaRawWriter & operator<<(KafkaRawWriter & out, qint16              val);
+	friend KafkaRawWriter & operator<<(KafkaRawWriter & out, qint32              val);
+	friend KafkaRawWriter & operator<<(KafkaRawWriter & out, qint64              val);
+	friend KafkaRawWriter & operator<<(KafkaRawWriter & out, const QByteArray  & val);
 	friend KafkaRawWriter & operator<<(KafkaRawWriter & out, const KafkaString & val);
 };
 
-#define DEFINE_KAFKA_INT_OPERATOR(type) \
+#define DEFINE_KAFKA_WRITE_INT_OPERATOR(type) \
 	inline KafkaRawWriter & operator<<(KafkaRawWriter & out, type val) \
 	{ \
 		const int oldSize = out.data_.size(); \
-		out.data_.resize(oldSize + sizeof(val)); \
+		out.data_.resize(oldSize + sizeof(type)); \
 		qToBigEndian<type>(val, (uchar *)(out.data_.constData() + oldSize)); \
 		return out; \
 	} \
 
-DEFINE_KAFKA_INT_OPERATOR(qint8)
-DEFINE_KAFKA_INT_OPERATOR(qint16)
-DEFINE_KAFKA_INT_OPERATOR(qint32)
-DEFINE_KAFKA_INT_OPERATOR(qint64)
+DEFINE_KAFKA_WRITE_INT_OPERATOR(qint8 )
+DEFINE_KAFKA_WRITE_INT_OPERATOR(qint16)
+DEFINE_KAFKA_WRITE_INT_OPERATOR(qint32)
+DEFINE_KAFKA_WRITE_INT_OPERATOR(qint64)
 
 inline KafkaRawWriter & operator<<(KafkaRawWriter & out, const QByteArray & val)
 {
-	out << (qint32)val.size();
-	out.data_.append(val);
+	if (val.isNull()) {
+		out << (qint32)-1;
+	} else {
+		out << (qint32)val.size();
+		out.data_.append(val);
+	}
 	return out;
 }
 
 inline KafkaRawWriter & operator<<(KafkaRawWriter & out, const KafkaString & val)
 {
-	out << (qint16)val.size();
-	out.data_.append(val);
+	if (val.isNull()) {
+		out << (qint16)-1;
+	} else {
+		out << (qint16)val.size();
+		out.data_.append(val);
+	}
 	return out;
 }
 
@@ -112,5 +120,76 @@ private:
 	static const cflib::net::impl::KafkaString kafkaClientName;
 
 };
+
+
+class KafkaRawReader
+{
+public:
+	KafkaRawReader(const QByteArray & data) :
+		readPtr_(data.constData()),
+		bytesLeft_(data.size())
+	{
+	}
+
+private:
+	const char * readPtr_;
+	quint32 bytesLeft_;
+
+	friend KafkaRawReader & operator>>(KafkaRawReader & in, qint8       & val);
+	friend KafkaRawReader & operator>>(KafkaRawReader & in, qint16      & val);
+	friend KafkaRawReader & operator>>(KafkaRawReader & in, qint32      & val);
+	friend KafkaRawReader & operator>>(KafkaRawReader & in, qint64      & val);
+	friend KafkaRawReader & operator>>(KafkaRawReader & in, QByteArray  & val);
+	friend KafkaRawReader & operator>>(KafkaRawReader & in, KafkaString & val);
+};
+
+#define DEFINE_KAFKA_READ_INT_OPERATOR(type) \
+	inline KafkaRawReader & operator>>(KafkaRawReader & in, type & val) \
+	{ \
+		if (sizeof(type) > in.bytesLeft_) { \
+			val = 0; \
+			in.bytesLeft_ = 0; \
+		} else { \
+			val = qFromBigEndian<type>((const uchar *)in.readPtr_); \
+			in.readPtr_   += sizeof(type); \
+			in.bytesLeft_ -= sizeof(type); \
+		} \
+		return in; \
+	} \
+
+DEFINE_KAFKA_READ_INT_OPERATOR(qint8 )
+DEFINE_KAFKA_READ_INT_OPERATOR(qint16)
+DEFINE_KAFKA_READ_INT_OPERATOR(qint32)
+DEFINE_KAFKA_READ_INT_OPERATOR(qint64)
+
+inline KafkaRawReader & operator>>(KafkaRawReader & in, QByteArray & val)
+{
+	qint32 size;
+	in >> size;
+	if (size < 0) {
+		val = QByteArray();
+	} else {
+		if (size > (qint32)in.bytesLeft_) size = in.bytesLeft_;
+		val = QByteArray(in.readPtr_, size);
+		in.readPtr_   += size;
+		in.bytesLeft_ -= size;
+	}
+	return in;
+}
+
+inline KafkaRawReader & operator>>(KafkaRawReader & in, KafkaString & val)
+{
+	qint16 size;
+	in >> size;
+	if (size < 0) {
+		val = KafkaString();
+	} else {
+		if (size > (qint16)in.bytesLeft_) size = in.bytesLeft_;
+		val = KafkaString(in.readPtr_, size);
+		in.readPtr_   += size;
+		in.bytesLeft_ -= size;
+	}
+	return in;
+}
 
 }}}	// namespace
