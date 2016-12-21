@@ -36,17 +36,17 @@ class TLSThread;
 class TCPManagerImpl : public util::ThreadVerify
 {
 public:
-	TCPManagerImpl(TCPManager & parent, uint tlsThreadCount);
-	TCPManagerImpl(TCPManager & parent, uint tlsThreadCount, util::ThreadVerify * other);
+	TCPManagerImpl(TCPManager & parent, uint tlsThreadCount, uint dnsThreadCount);
+	TCPManagerImpl(TCPManager & parent, uint tlsThreadCount, uint dnsThreadCount, util::ThreadVerify * other);
 	~TCPManagerImpl();
 
 	bool isRunning() const { return listenSock_ != -1; }
 	bool start(int listenSocket, crypt::TLSCredentials * credentials);
 	void stop();
 
-	TCPConnData * openConnection(const QByteArray & destIP, quint16 destPort,
+	TCPConnData * openConnection(const QByteArray & destAddress, quint16 destPort,
 		const QByteArray & sourceIP, quint16 sourcePort,
-		crypt::TLSCredentials * credentials);
+		crypt::TLSCredentials * credentials, bool preferIPv6);
 
 	void startReadWatcher(TCPConnData * conn);
 	void writeToSocket(TCPConnData * conn, const QByteArray & data, bool notifyFinished);

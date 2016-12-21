@@ -32,7 +32,9 @@ class TCPManager
 {
 	Q_DISABLE_COPY(TCPManager)
 public:
-	TCPManager(uint tlsThreadCount = 0, util::ThreadVerify * other = 0);	// must be set > 0 when TLS is used
+	// tlsThreadCount must be set > 0 when TLS is used
+	// If dnsThreadCount == 0, one thread is started on demand.
+	TCPManager(uint tlsThreadCount = 0, uint dnsThreadCount = 0, util::ThreadVerify * other = 0);
 	virtual ~TCPManager();
 
 	bool start(const QByteArray & ip, quint16 port) { return start(openListenSocket(ip, port)); }
@@ -41,14 +43,14 @@ public:
 	void stop();
 	bool isRunning() const;
 
-	TCPConnData * openConnection(const QByteArray & destIP, quint16 destPort);
-	TCPConnData * openConnection(const QByteArray & destIP, quint16 destPort,
-		crypt::TLSCredentials & credentials);
-	TCPConnData * openConnection(const QByteArray & destIP, quint16 destPort,
-		const QByteArray & sourceIP, quint16 sourcePort);
-	TCPConnData * openConnection(const QByteArray & destIP, quint16 destPort,
+	TCPConnData * openConnection(const QByteArray & destAddress, quint16 destPort, bool preferIPv6 = false);
+	TCPConnData * openConnection(const QByteArray & destAddress, quint16 destPort,
+		crypt::TLSCredentials & credentials, bool preferIPv6 = false);
+	TCPConnData * openConnection(const QByteArray & destAddress, quint16 destPort,
+		const QByteArray & sourceIP, quint16 sourcePort, bool preferIPv6 = false);
+	TCPConnData * openConnection(const QByteArray & destAddress, quint16 destPort,
 		const QByteArray & sourceIP, quint16 sourcePort,
-		crypt::TLSCredentials & credentials);
+		crypt::TLSCredentials & credentials, bool preferIPv6 = false);
 
 	static int openListenSocket(const QByteArray & ip, quint16 port);
 	bool start(int listenSocket);

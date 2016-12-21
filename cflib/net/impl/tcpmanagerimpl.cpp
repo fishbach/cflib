@@ -100,7 +100,7 @@ inline bool callWithSockaddr(const QByteArray & ip, quint16 port, std::function<
 
 }
 
-TCPManagerImpl::TCPManagerImpl(TCPManager & parent, uint tlsThreadCount) :
+TCPManagerImpl::TCPManagerImpl(TCPManager & parent, uint tlsThreadCount, uint dnsThreadCount) :
 	ThreadVerify("TCPManager", ThreadVerify::Net),
 	parent(parent),
 	listenSock_(-1),
@@ -113,7 +113,7 @@ TCPManagerImpl::TCPManagerImpl(TCPManager & parent, uint tlsThreadCount) :
 	for (uint i = 1 ; i <= tlsThreadCount ; ++i) tlsThreads_.append(new TLSThread(*this, i, tlsThreadCount));
 }
 
-TCPManagerImpl::TCPManagerImpl(TCPManager & parent, uint tlsThreadCount, util::ThreadVerify * other) :
+TCPManagerImpl::TCPManagerImpl(TCPManager & parent, uint tlsThreadCount, uint dnsThreadCount, util::ThreadVerify * other) :
 	ThreadVerify(other),
 	parent(parent),
 	listenSock_(-1),
@@ -195,9 +195,9 @@ void TCPManagerImpl::stop()
 }
 
 TCPConnData * TCPManagerImpl::openConnection(
-	const QByteArray & destIP, quint16 destPort,
+	const QByteArray & destAddress, quint16 destPort,
 	const QByteArray & sourceIP, quint16 sourcePort,
-	TLSCredentials * credentials)
+	TLSCredentials * credentials, bool preferIPv6)
 {
 	// no thread verify needed here
 
@@ -205,6 +205,9 @@ TCPConnData * TCPManagerImpl::openConnection(
 		logWarn("no TLS threads");
 		return 0;
 	}
+
+	// resolve dns
+	const QByteArray destIP = destAddress;
 
 	// create non blocking socket
 	int sock = socket(destIP.indexOf('.') == -1 ? AF_INET6 : AF_INET, SOCK_STREAM, 0);
@@ -230,7 +233,7 @@ TCPConnData * TCPManagerImpl::openConnection(
 	if (!callWithSockaddr(destIP, destPort, [sock](const struct sockaddr * addr, socklen_t addrlen) {
 		return connect(sock, addr, addrlen) >= 0 || errno == EINPROGRESS; }))
 	{
-		logInfo("cannot connect source %1:%2 (%3 - %4)", destIP, destPort, errno, strerror(errno));
+		logInfo("cannot connect to %1:%2 (%3 - %4)", destIP, destPort, errno, strerror(errno));
 		close(sock);
 		return 0;
 	}
