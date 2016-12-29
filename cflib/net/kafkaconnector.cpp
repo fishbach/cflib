@@ -210,6 +210,11 @@ KafkaConnector::~KafkaConnector()
 	delete impl_;
 }
 
+void KafkaConnector::connect(const QByteArray & destAddress, quint16 destPort)
+{
+	connect(QList<KafkaConnector::Address>() << qMakePair(destAddress, destPort));
+}
+
 void KafkaConnector::connect(const QList<KafkaConnector::Address> & cluster)
 {
 	impl_->connect(cluster);

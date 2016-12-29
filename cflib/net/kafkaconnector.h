@@ -26,6 +26,7 @@ namespace cflib { namespace net {
 
 class KafkaConnector
 {
+	Q_DISABLE_COPY(KafkaConnector)
 public:
 	enum State
 	{
@@ -41,6 +42,7 @@ public:
 	KafkaConnector(util::ThreadVerify * other = 0);
 	virtual ~KafkaConnector();
 
+	void connect(const QByteArray & destAddress, quint16 destPort);
 	void connect(const QList<Address> & cluster);
 
 	void produce();
