@@ -27,6 +27,7 @@ HEADERS = \
 	httpauth.h \
 	httpclient.h \
 	httpserver.h \
+	kafkaconnector.h \
 	logservice.h \
 	redirectserver.h \
 	request.h \
