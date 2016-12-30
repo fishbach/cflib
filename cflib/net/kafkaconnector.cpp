@@ -97,8 +97,14 @@ private:
 		if (++clusterId_ >= cluster_.size()) clusterId_ = 0;
 
 		TCPConnData * data = net_.openConnection(addr.first, addr.second);
+		if (data) {
+			Connection * conn = new Connection(data, *this);
 
-		if (data) new Connection(data, *this);
+			cflib::net::impl::KafkaRequest req(3);
+			req << (qint32)0;	// no topic specified -> get all
+
+			conn->write(req.getData());
+		}
 	}
 
 private:
@@ -120,11 +126,7 @@ KafkaConnector::Connection::Connection(TCPConnData *data, KafkaConnector::Impl &
 	main_(impl.main_),
 	impl_(impl)
 {
-	cflib::net::impl::KafkaRequest req(3);
-	req << (qint32)0;	// no topic specified -> get all
-
-	write(req.getData());
-
+	setNoDelay(true);
 	startReadWatcher();
 }
 
