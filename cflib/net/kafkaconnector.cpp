@@ -32,104 +32,27 @@ namespace cflib { namespace net {
 class KafkaConnector::Connection : public TCPConn
 {
 public:
-	Connection(TCPConnData * data, KafkaConnector::Impl & parent) :
-		TCPConn(data),
-		parent_(parent)
-	{
-		cflib::net::impl::KafkaRequest req(3);
-		req << (qint32)0;
-
-		qDebug() << "S: " << req.getData().toHex();
-
-		write(req.getData());
-
-		startReadWatcher();
-	}
+	Connection(TCPConnData * data, KafkaConnector::Impl & impl);
 
 protected:
-	void newBytesAvailable() override
-	{
-		buffer_ += read();
-		qDebug() << "R: " << buffer_.toHex();
-
-		while (buffer_.size() >= 4) {
-			cflib::net::impl::KafkaRawReader reader(buffer_);
-			qint32 size;
-			reader >> size;
-			if (buffer_.size() < size + 4) break;
-
-			qint32 correlationId;
-			reader >> correlationId;
-
-			qint32 brokerCount;
-			reader >> brokerCount;
-			for (qint32 i = 0 ; i < brokerCount ; ++i) {
-				qint32 nodeId;
-				cflib::net::impl::KafkaString host;
-				qint32 port;
-				reader >> nodeId >> host >> port;
-				qDebug() << "broker: " << nodeId << " / " << host << ":" << port;
-			}
-
-			qint32 topicCount;
-			reader >> topicCount;
-			for (qint32 i = 0 ; i < topicCount ; ++i) {
-
-				qint16 topicErrorCode;
-				cflib::net::impl::KafkaString topic;
-				reader >> topicErrorCode >> topic;
-				qDebug() << "topic: " << topicErrorCode << " / " << topic;
-
-				qint32 partitionCount;
-				reader >> partitionCount;
-				for (qint32 i = 0 ; i < partitionCount ; ++i) {
-
-					qint16 partitionErrorCode;
-					qint32 partitionId;
-					qint32 leader;
-					reader >> partitionErrorCode >> partitionId >> leader;
-					qDebug() << "partition: " << partitionErrorCode << " / " << partitionId << " / " << leader;
-
-					qint32 replicaCount;
-					reader >> replicaCount;
-					for (qint32 i = 0 ; i < replicaCount ; ++i) {
-						qint32 replica;
-						reader >> replica;
-						qDebug() << "replica: " << replica;
-					}
-
-					qint32 isrCount;
-					reader >> isrCount;
-					for (qint32 i = 0 ; i < isrCount ; ++i) {
-						qint32 isr;
-						reader >> isr;
-						qDebug() << "isr: " << isr;
-					}
-				}
-			}
-
-			buffer_.remove(0, size + 4);
-		}
-
-		qDebug() << "rest size: " << buffer_.size();
-
-		startReadWatcher();
-	}
-
+	void newBytesAvailable() override;
 	void closed(CloseType type) override;
 
 private:
-	KafkaConnector::Impl & parent_;
+	KafkaConnector & main_;
+	KafkaConnector::Impl & impl_;
 	QByteArray buffer_;
 };
 
+// ============================================================================
+// ============================================================================
 
 class KafkaConnector::Impl : public util::ThreadVerify
 {
 public:
-	Impl(KafkaConnector & parent) :
+	Impl(KafkaConnector & main) :
 		ThreadVerify("KafkaConnector", ThreadVerify::Net),
-		parent_(parent),
+		main_(main),
 		net_(0, this),
 		clusterId_(0)
 	{
@@ -137,7 +60,7 @@ public:
 
 	Impl(KafkaConnector & parent, util::ThreadVerify * other) :
 		ThreadVerify(other),
-		parent_(parent),
+		main_(parent),
 		net_(0, this),
 		clusterId_(0)
 	{
@@ -162,7 +85,7 @@ public:
 
 		fetchMetaData();
 
-		parent_.stateChanged(cluster_.isEmpty() ? Idle : Connecting);
+		main_.stateChanged(cluster_.isEmpty() ? Idle : Connecting);
 	}
 
 private:
@@ -170,7 +93,7 @@ private:
 	{
 		if (cluster_.isEmpty()) return;
 
-		const Address & addr = cluster_[clusterId_];
+		const KafkaConnector::Address & addr = cluster_[clusterId_];
 		if (++clusterId_ >= cluster_.size()) clusterId_ = 0;
 
 		TCPConnData * data = net_.openConnection(addr.first, addr.second);
@@ -179,24 +102,138 @@ private:
 	}
 
 private:
-	KafkaConnector & parent_;
+	KafkaConnector & main_;
 	cflib::net::TCPManager net_;
 	QList<KafkaConnector::Address> cluster_;
 	int clusterId_;
+	QHash<qint32 /* nodeId */, KafkaConnector::Address> allBrokers_;
+	QMap<QByteArray /* topic */, QMap<qint32 /* partitionId */, qint32 /* nodeId */>> responsibilities_;
 
 	friend class Connection;
 };
 
+// ============================================================================
+// ============================================================================
+
+KafkaConnector::Connection::Connection(TCPConnData *data, KafkaConnector::Impl &impl) :
+	TCPConn(data),
+	main_(impl.main_),
+	impl_(impl)
+{
+	cflib::net::impl::KafkaRequest req(3);
+	req << (qint32)0;	// no topic specified -> get all
+
+	write(req.getData());
+
+	startReadWatcher();
+}
+
+void KafkaConnector::Connection::newBytesAvailable()
+{
+	// enough bytes for size?
+	buffer_ += read();
+	if (buffer_.size() < 4) {
+		startReadWatcher();
+		return;
+	}
+
+	cflib::net::impl::KafkaRawReader reader(buffer_);
+
+	// read size
+	qint32 size;
+	reader >> size;
+	if (size <= 0) {
+		logWarn("funny size of reply: %1", size);
+		close(HardClosed, true);
+		return;
+	}
+
+	// enough bytes?
+	if (buffer_.size() < size + 4) {
+		startReadWatcher();
+		return;
+	}
+
+	qint32 correlationId;
+	reader >> correlationId;
+
+	qint32 brokerCount;
+	reader >> brokerCount;
+	for (qint32 i = 0 ; i < brokerCount ; ++i) {
+		qint32 nodeId;
+		cflib::net::impl::KafkaString host;
+		qint32 port;
+		reader >> nodeId >> host >> port;
+		impl_.allBrokers_[nodeId] = qMakePair(host, port);
+	}
+
+	qint32 topicCount;
+	reader >> topicCount;
+	for (qint32 i = 0 ; i < topicCount ; ++i) {
+
+		qint16 topicErrorCode;
+		cflib::net::impl::KafkaString topic;
+		reader >> topicErrorCode >> topic;
+
+		qint32 partitionCount;
+		reader >> partitionCount;
+		for (qint32 i = 0 ; i < partitionCount ; ++i) {
+
+			qint16 partitionErrorCode;
+			qint32 partitionId;
+			qint32 leader;
+			reader >> partitionErrorCode >> partitionId >> leader;
+			if (topicErrorCode == 0 && partitionErrorCode == 0 && !topic.startsWith("__")) {
+				impl_.responsibilities_[topic][partitionId] = leader;
+			}
+
+			qint32 replicaCount;
+			reader >> replicaCount;
+			for (qint32 i = 0 ; i < replicaCount ; ++i) {
+				qint32 replica;
+				reader >> replica;
+			}
+
+			qint32 isrCount;
+			reader >> isrCount;
+			for (qint32 i = 0 ; i < isrCount ; ++i) {
+				qint32 isr;
+				reader >> isr;
+			}
+		}
+	}
+
+	buffer_.clear();
+	close(ReadWriteClosed, true);
+}
 
 void KafkaConnector::Connection::closed(TCPConn::CloseType type)
 {
-	qDebug() << "closed (" << (int)type << ")";
-
-	parent_.parent_.stateChanged(parent_.cluster_.isEmpty() ? Idle : Connecting);
-
+	logFunctionTraceParam("Connection::closed(%1)", (int)type);
 	util::deleteNext(this);
+
+	for (qint32 nodeId : impl_.allBrokers_.keys()) {
+		const KafkaConnector::Address & addr = impl_.allBrokers_[nodeId];
+		logInfo("found broker with ip %1 (port: %2)", addr.first, addr.second);
+	}
+
+	for (const QByteArray & topic : impl_.responsibilities_.keys()) {
+		QByteArray partitionStr;
+		bool isFirst = true;
+		for (qint32 partitionId : impl_.responsibilities_[topic].keys()) {
+			if (isFirst) isFirst = false;
+			else         partitionStr += ' ';
+			partitionStr += QByteArray::number(partitionId);
+		}
+		logInfo("found topic \"%1\" (partitions: %2)", topic, partitionStr);
+	}
+
+	main_.stateChanged(impl_.cluster_.isEmpty() ? Idle : Connecting);
+
 }
 
+// ============================================================================
+// ============================================================================
 
 KafkaConnector::KafkaConnector(util::ThreadVerify * other) :
 	impl_(other ?

@@ -106,13 +106,13 @@ inline KafkaRawWriter & operator<<(KafkaRawWriter & out, const KafkaString & val
 class KafkaRequest : public KafkaRawWriter
 {
 public:
-	KafkaRequest(qint16 apiKey, qint16 apiVersion = 0) :
+	KafkaRequest(qint16 apiKey, qint16 apiVersion = 0, qint32 correlationId = 1) :
 		KafkaRawWriter(kafkaClientName.size() + 10)
 	{
 		*this
 			<< apiKey
 			<< apiVersion
-			<< (qint32)0	// correlationId
+			<< correlationId
 			<< kafkaClientName;
 	}
 
