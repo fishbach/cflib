@@ -27,6 +27,14 @@ HEADERS = \
 	httpauth.h \
 	httpclient.h \
 	httpserver.h \
+	impl/httpthread.h \
+	impl/kafkaraw.h \
+	impl/kafkarequests.h \
+	impl/requestparser.h \
+	impl/rmiserverbase.h \
+	impl/tcpconndata.h \
+	impl/tcpmanagerimpl.h \
+	impl/tlsthread.h \
 	kafkaconnector.h \
 	logservice.h \
 	redirectserver.h \
@@ -40,13 +48,6 @@ HEADERS = \
 	tcpmanager.h \
 	websocketservice.h \
 	wscommmanager.h \
-	impl/httpthread.h \
-	impl/kafkaraw.h \
-	impl/requestparser.h \
-	impl/rmiserverbase.h \
-	impl/tcpconndata.h \
-	impl/tcpmanagerimpl.h \
-	impl/tlsthread.h \
 
 serializeGen()
 lib()

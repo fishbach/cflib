@@ -18,30 +18,27 @@
 
 #include "kafkaconnector.h"
 
-#include <cflib/net/impl/kafkaraw.h>
-#include <cflib/net/tcpconn.h>
+#include <cflib/net/impl/kafkarequests.h>
 #include <cflib/net/tcpmanager.h>
 #include <cflib/util/log.h>
 #include <cflib/util/threadverify.h>
-#include <cflib/util/util.h>
 
 USE_LOG(LogCat::Network)
 
 namespace cflib { namespace net {
 
-class KafkaConnector::Connection : public TCPConn
+class KafkaConnector::MetadataConnection : public impl::KafkaConnection
 {
 public:
-	Connection(TCPConnData * data, KafkaConnector::Impl & impl);
+	MetadataConnection(TCPConnData * data, KafkaConnector::Impl & impl);
 
 protected:
-	void newBytesAvailable() override;
-	void closed(CloseType type) override;
+	void reply(qint32 correlationId, impl::KafkaRawReader & reader) override;
+	void closed() override;
 
 private:
 	KafkaConnector & main_;
 	KafkaConnector::Impl & impl_;
-	QByteArray buffer_;
 };
 
 // ============================================================================
@@ -97,14 +94,7 @@ private:
 		if (++clusterId_ >= cluster_.size()) clusterId_ = 0;
 
 		TCPConnData * data = net_.openConnection(addr.first, addr.second);
-		if (data) {
-			Connection * conn = new Connection(data, *this);
-
-			cflib::net::impl::KafkaRequest req(3);
-			req << (qint32)0;	// no topic specified -> get all
-
-			conn->write(req.getData());
-		}
+		if (data) new KafkaConnector::MetadataConnection(data, *this);
 	}
 
 private:
@@ -115,50 +105,24 @@ private:
 	QHash<qint32 /* nodeId */, KafkaConnector::Address> allBrokers_;
 	QMap<QByteArray /* topic */, QMap<qint32 /* partitionId */, qint32 /* nodeId */>> responsibilities_;
 
-	friend class Connection;
+	friend class MetadataConnection;
 };
 
 // ============================================================================
 // ============================================================================
 
-KafkaConnector::Connection::Connection(TCPConnData *data, KafkaConnector::Impl &impl) :
-	TCPConn(data),
+KafkaConnector::MetadataConnection::MetadataConnection(TCPConnData * data, KafkaConnector::Impl & impl) :
+	KafkaConnection(data),
 	main_(impl.main_),
 	impl_(impl)
 {
-	setNoDelay(true);
-	startReadWatcher();
+	impl::KafkaRequestWriter req = request(3);
+	req << (qint32)0;	// no topic specified -> get all
+	req.send();
 }
 
-void KafkaConnector::Connection::newBytesAvailable()
+void KafkaConnector::MetadataConnection::reply(qint32, impl::KafkaRawReader & reader)
 {
-	// enough bytes for size?
-	buffer_ += read();
-	if (buffer_.size() < 4) {
-		startReadWatcher();
-		return;
-	}
-
-	cflib::net::impl::KafkaRawReader reader(buffer_);
-
-	// read size
-	qint32 size;
-	reader >> size;
-	if (size <= 0) {
-		logWarn("funny size of reply: %1", size);
-		close(HardClosed, true);
-		return;
-	}
-
-	// enough bytes?
-	if (buffer_.size() < size + 4) {
-		startReadWatcher();
-		return;
-	}
-
-	qint32 correlationId;
-	reader >> correlationId;
-
 	qint32 brokerCount;
 	reader >> brokerCount;
 	for (qint32 i = 0 ; i < brokerCount ; ++i) {
@@ -205,15 +169,11 @@ void KafkaConnector::Connection::newBytesAvailable()
 		}
 	}
 
-	buffer_.clear();
 	close(ReadWriteClosed, true);
 }
 
-void KafkaConnector::Connection::closed(TCPConn::CloseType type)
+void KafkaConnector::MetadataConnection::closed()
 {
-	logFunctionTraceParam("Connection::closed(%1)", (int)type);
-	util::deleteNext(this);
-
 	for (qint32 nodeId : impl_.allBrokers_.keys()) {
 		const KafkaConnector::Address & addr = impl_.allBrokers_[nodeId];
 		logInfo("found broker with ip %1 (port: %2)", addr.first, addr.second);
@@ -231,7 +191,6 @@ void KafkaConnector::Connection::closed(TCPConn::CloseType type)
 	}
 
 	main_.stateChanged(impl_.cluster_.isEmpty() ? Idle : Connecting);
-
 }
 
 // ============================================================================

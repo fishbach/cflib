@@ -103,24 +103,6 @@ inline KafkaRawWriter & operator<<(KafkaRawWriter & out, const KafkaString & val
 	return out;
 }
 
-class KafkaRequest : public KafkaRawWriter
-{
-public:
-	KafkaRequest(qint16 apiKey, qint16 apiVersion = 0, qint32 correlationId = 1) :
-		KafkaRawWriter(kafkaClientName.size() + 10)
-	{
-		*this
-			<< apiKey
-			<< apiVersion
-			<< correlationId
-			<< kafkaClientName;
-	}
-
-private:
-	static const cflib::net::impl::KafkaString kafkaClientName;
-
-};
-
 
 class KafkaRawReader
 {

@@ -53,7 +53,7 @@ protected:
 	virtual void produceReply() {}
 
 private:
-	class Connection;
+	class MetadataConnection;
 	class Impl;
 	Impl * impl_;
 };
