@@ -25,7 +25,19 @@ namespace cflib { namespace util {
 class Timer
 {
 public:
-	static void singleShot(double after, const Functor * func);
+	static void singleShot(double afterSecs, const Functor * func);
+
+	template<typename C>
+	static void singleShot(double afterSecs, C * obj, void (C::*func)())
+	{
+		singleShot(afterSecs, new util::Functor0<C>(obj, func));
+	}
+
+	template<typename C>
+	static void singleShot(double afterSecs, const C * obj, void (C::*func)() const)
+	{
+		singleShot(afterSecs, new util::Functor0C<C>(obj, func));
+	}
 
 private:
 	static void timeout(int revents, void * arg);

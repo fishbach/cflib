@@ -45,11 +45,11 @@ private:
 
 }
 
-void Timer::singleShot(double after, const Functor * func)
+void Timer::singleShot(double afterSecs, const Functor * func)
 {
 	ev_loop * loop = libEVLoopOfThread();
-	if (loop) ev_once(loop, -1, 0, after, &Timer::timeout, (void *)func);
-	else      QTimer::singleShot(after * 1000, new TimerObject(func), SLOT(timeout()));
+	if (loop) ev_once(loop, -1, 0, afterSecs, &Timer::timeout, (void *)func);
+	else      QTimer::singleShot(afterSecs * 1000, new TimerObject(func), SLOT(timeout()));
 }
 
 void Timer::timeout(int, void * arg)
