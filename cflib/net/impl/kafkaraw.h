@@ -56,6 +56,16 @@ public:
 		data_.reserve(data_.size() + count);
 	}
 
+	inline uchar * getCurrentRawData()
+	{
+		return (uchar *)data_.constData();
+	}
+
+	inline int getCurrentSize()
+	{
+		return data_.size();
+	}
+
 private:
 	QByteArray data_;
 

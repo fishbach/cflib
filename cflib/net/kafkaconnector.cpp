@@ -245,52 +245,42 @@ void KafkaConnector::Impl::produce(const QByteArray & topic, qint32 partitionId,
 {
 	if (!verifyThreadCall(&Impl::produce, topic, partitionId, messages, requiredAcks, ackTimeoutMs, correlationId)) return;
 
-	// get connection
+	// get connection of responsible broker
 	KafkaConnector::ProduceConnection *& conn = produceConnections_[topic][partitionId];
 	if (!conn) {
 		if (!responsibilities_.contains(topic) || !responsibilities_[topic].contains(partitionId)) {
+			QHash<qint32, KafkaConnector::ProduceConnection *> & partitions = produceConnections_[topic];
+			partitions.remove(partitionId);
+			if (partitions.isEmpty()) produceConnections_.remove(topic);
+
 			if (requiredAcks != 0) main_.produceReply(correlationId, KafkaConnector::UnknownTopicOrPartition, -1);
+
 			refetchMetaData();
 			return;
 		}
 
 		const KafkaConnector::Address & addr = allBrokers_[responsibilities_[topic][partitionId]];
+
 		TCPConnData * data = net_.openConnection(addr.first, addr.second);
 		if (!data) {
 			if (requiredAcks != 0) main_.produceReply(correlationId, KafkaConnector::BrokerNotAvailable, -1);
 			return;
 		}
+
 		conn = new KafkaConnector::ProduceConnection(data, *this);
 	}
 
 	qint32 messageSetSize = 0;
-	QVector<QPair<qint32 /* size */, qint32 /* crc */>> msgProps;
 	for (const Message & msg : messages) {
-		const qint32 msgSize =
+		messageSetSize +=
+			8 + 4 +					// Offset, MessageSize
 			4 + 1 + 1 +				// Crc, MagicByte, Attributes
 			4 + msg.first.size() +	// Key
 			4 + msg.second.size();	// Value
-
-		quint32 crc = 0xffffffffL;
-
-		quint8 bytes[4] = { 0, 0, 0, 0 };
-		crc = util::calcCRC32Raw(crc, (const char *)bytes, 2);
-
-		qToBigEndian<qint32>(msg.first.size(), bytes);
-		crc = util::calcCRC32Raw(crc, (const char *)bytes, 4);
-		crc = util::calcCRC32Raw(crc, msg.first.constData(), msg.first.size());
-
-		qToBigEndian<qint32>(msg.second.size(), bytes);
-		crc = util::calcCRC32Raw(crc, (const char *)bytes, 4);
-		crc = util::calcCRC32Raw(crc, msg.second.constData(), msg.second.size());
-
-		crc ^= 0xffffffffL;
-
-		msgProps << qMakePair(msgSize, (qint32)crc);
-		messageSetSize += 8 /* Offset */ + 4 /* MessageSize */ + msgSize;
 	}
 
-	impl::KafkaRequestWriter req = conn->request(0, 0, correlationId);
+	impl::KafkaRequestWriter req = conn->request(0, 0, correlationId,
+		2 + 4 + 4 + 2 + topic.size() + 4 + 4 + 4 + messageSetSize);
 	req
 		<< (qint16)requiredAcks
 		<< (qint32)ackTimeoutMs
@@ -299,17 +289,25 @@ void KafkaConnector::Impl::produce(const QByteArray & topic, qint32 partitionId,
 		<< (qint32)1	// just one partition
 		<< partitionId
 		<< messageSetSize;
-	int i = 0;
 	for (const Message & msg : messages) {
-		const QPair<qint32 /* size */, qint32 /* crc */> & prop = msgProps[i++];
 		req
 			<< (qint64)0	// Offset
-			<< prop.first	// MessageSize
-			<< prop.second	// Crc
+			<< (qint32)(	// MessageSize
+				4 + 1 + 1 +				// Crc, MagicByte, Attributes
+				4 + msg.first.size() +	// Key
+				4 + msg.second.size());	// Value
+		const int crcPos = req.getCurrentSize();
+		req
+			<< (qint32)0	// Crc
 			<< (qint8)0		// MagicByte
 			<< (qint8)0		// Attributes
 			<< msg.first	// Key
 			<< msg.second;	// Value
+
+		// calc CRC32
+		qToBigEndian<qint32>(
+			util::calcCRC32((const char *)req.getCurrentRawData() + crcPos + 4, req.getCurrentSize() - crcPos - 4),
+			req.getCurrentRawData() + crcPos);
 	}
 	req.send();
 }
