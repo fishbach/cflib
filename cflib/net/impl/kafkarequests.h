@@ -30,7 +30,7 @@ class KafkaConnection : protected TCPConn
 public:
 	KafkaConnection(TCPConnData * data);
 
-	KafkaRequestWriter request(qint16 apiKey, qint16 apiVersion = 0, qint32 correlationId = 1);
+	KafkaRequestWriter request(qint16 apiKey, qint16 apiVersion = 0, qint32 correlationId = 1, quint32 expectedSize = 0);
 
 protected:
 	virtual void reply(qint32 correlationId, KafkaRawReader & reader) { Q_UNUSED(correlationId) Q_UNUSED(reader) }

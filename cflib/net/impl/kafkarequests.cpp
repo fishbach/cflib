@@ -38,9 +38,9 @@ KafkaConnection::KafkaConnection(TCPConnData * data) :
 	startReadWatcher();
 }
 
-KafkaRequestWriter KafkaConnection::request(qint16 apiKey, qint16 apiVersion, qint32 correlationId)
+KafkaRequestWriter KafkaConnection::request(qint16 apiKey, qint16 apiVersion, qint32 correlationId, quint32 expectedSize)
 {
-	KafkaRequestWriter rv(*this, kafkaClientName.size() + 10);
+	KafkaRequestWriter rv(*this, kafkaClientName.size() + 10 + expectedSize);
 	rv
 		<< apiKey
 		<< apiVersion
@@ -81,7 +81,7 @@ void KafkaConnection::newBytesAvailable()
 	startReadWatcher();
 }
 
-void KafkaConnection::closed(TCPConn::CloseType type)
+void KafkaConnection::closed(TCPConn::CloseType)
 {
 	closed();
 	util::deleteNext(this);

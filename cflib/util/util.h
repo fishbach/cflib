@@ -38,6 +38,10 @@ namespace cflib { namespace util {
 QByteArray weekDay(const QDate & date);
 QByteArray dateTimeForHTTP(const QDateTime & dateTime);
 
+quint32 calcCRC32Raw(quint32 crc, const char * data, quint64 size);
+inline quint32 calcCRC32(const char * data, quint64 size) { return calcCRC32Raw(0xffffffffL, data, size) ^ 0xffffffffL; }
+inline quint32 calcCRC32(const QByteArray & data) { return calcCRC32(data.constData(), data.size()); }
+
 // 0 -> no compression, 1 -> fast, 9 -> small
 void gzip(QByteArray & data, int compressionLevel = -1);
 void deflateRaw(QByteArray & data, int compressionLevel = -1);

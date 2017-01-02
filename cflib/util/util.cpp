@@ -189,6 +189,19 @@ const quint32 CRCData[] = {
 
 }
 
+quint32 calcCRC32Raw(quint32 crc, const char * data, quint64 size)
+{
+	const quint8 * bytes = (const quint8 *)data;
+	while (size--) {
+		#if Q_BYTE_ORDER == Q_LITTLE_ENDIAN
+			crc = CRCData[(crc & 0xff) ^ *(bytes++)] ^ (crc >> 8);
+		#else
+			crc = CRCData[(crc >> 24) ^ *(bytes++)] ^ (crc << 8);
+		#endif
+	}
+	return crc;
+}
+
 void gzip(QByteArray & data, int compressionLevel)
 {
 	if (data.isEmpty()) {
@@ -197,22 +210,7 @@ void gzip(QByteArray & data, int compressionLevel)
 	}
 
 	quint32 len = data.size();
-
-	// calc crc
-	quint32 crc = 0xffffffffL;
-	{
-		const quint8 * bytes = (const quint8 *)data.constData();
-		int size = data.size();
-		while (size--) {
-			#if Q_BYTE_ORDER == Q_LITTLE_ENDIAN
-				crc = CRCData[(crc & 0xff) ^ *(bytes++)] ^ (crc >> 8);
-			#else
-				crc = CRCData[(crc >> 24) ^ *(bytes++)] ^ (crc << 8);
-			#endif
-		}
-		crc ^= 0xffffffffL;
-	}
-
+	const quint32 crc = calcCRC32(data);
 	data = qCompress(data, compressionLevel);
 
 	// reformat
