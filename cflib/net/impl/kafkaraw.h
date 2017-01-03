@@ -123,6 +123,8 @@ public:
 	{
 	}
 
+	inline quint32 bytesLeft() { return bytesLeft_; }
+
 private:
 	const char * readPtr_;
 	quint32 bytesLeft_;

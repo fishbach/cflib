@@ -85,17 +85,29 @@ public:
 	void connect(const QByteArray & destAddress, quint16 destPort);
 	void connect(const QList<Address> & cluster);
 
+	// requiredAcks: 0 -> no response will be send / 1 -> wait for local write / -1 -> wait for all replicas
+	// ackTimeoutMs: 0 -> wait for local write only / >0 -> max wait time for acks of replicas
 	void produce(const QByteArray & topic, qint32 partitionId, const Messages & messages,
 		quint16 requiredAcks = 1, quint32 ackTimeoutMs = 0, quint32 correlationId = 1);
+
+	void fetch(const QByteArray & topic, qint32 partitionId, qint64 offset,
+		quint32 maxWaitTime = 0x7FFFFFFF, quint32 minBytes = 1, quint32 maxBytes = 0x100000 /* 1mb */, quint32 correlationId = 1);
 
 protected:
 	virtual void stateChanged(State state) { Q_UNUSED(state) }
 
-	virtual void produceReply(quint32 correlationId, ErrorCode errorCode, qint64 offset) { Q_UNUSED(correlationId) Q_UNUSED(errorCode) Q_UNUSED(offset) }
+	// offset -> is offset of first message appended to the kafka log
+	virtual void produceResponse(quint32 correlationId, ErrorCode errorCode, qint64 offset) {
+		Q_UNUSED(correlationId) Q_UNUSED(errorCode) Q_UNUSED(offset) }
+
+	virtual void fetchResponse(quint32 correlationId, const Messages & messages,
+		qint64 firstOffset, qint64 highwaterMarkOffset, ErrorCode errorCode) {
+		Q_UNUSED(correlationId) Q_UNUSED(messages) Q_UNUSED(firstOffset) Q_UNUSED(highwaterMarkOffset) Q_UNUSED(errorCode) }
 
 private:
 	class MetadataConnection;
 	class ProduceConnection;
+	class FetchConnection;
 	class Impl;
 	Impl * impl_;
 };

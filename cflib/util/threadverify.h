@@ -314,6 +314,82 @@ protected:
 
 	// ------------------------------------------------------------------------
 
+	template<typename C, typename P1, typename P2, typename P3, typename P4, typename P5, typename P6, typename P7, typename A1, typename A2, typename A3, typename A4, typename A5, typename A6, typename A7>
+	bool verifyThreadCall(void (C::*f)(P1, P2, P3, P4, P5, P6, P7), const A1 & a1, const A2 & a2, const A3 & a3, const A4 & a4, const A5 & a5, const A6 & a6, const A7 & a7)
+	{
+		if (verifyThread_->isOwnThread()) return true;
+		execCall(new Functor7<C, P1, P2, P3, P4, P5, P6, P7>((C *)this, f, a1, a2, a3, a4, a5, a6, a7));
+		return false;
+	}
+
+	template<typename C, typename P1, typename P2, typename P3, typename P4, typename P5, typename P6, typename P7, typename A1, typename A2, typename A3, typename A4, typename A5, typename A6, typename A7>
+	bool verifyThreadCall(void (C::*f)(P1, P2, P3, P4, P5, P6, P7) const, const A1 & a1, const A2 & a2, const A3 & a3, const A4 & a4, const A5 & a5, const A6 & a6, const A7 & a7) const
+	{
+		if (verifyThread_->isOwnThread()) return true;
+		execCall(new Functor7C<C, P1, P2, P3, P4, P5, P6, P7>((const C *)this, f, a1, a2, a3, a4, a5, a6, a7));
+		return false;
+	}
+
+	template<typename C, typename P1, typename P2, typename P3, typename P4, typename P5, typename P6, typename P7, typename A1, typename A2, typename A3, typename A4, typename A5, typename A6, typename A7>
+	bool verifySyncedThreadCall(void (C::*f)(P1, P2, P3, P4, P5, P6, P7), A1 & a1, A2 & a2, A3 & a3, A4 & a4, A5 & a5, A6 & a6, A7 & a7)
+	{
+		if (verifyThread_->isOwnThread()) return true;
+		QSemaphore sem;
+		execCall(new Functor7<C, P1, P2, P3, P4, P5, P6, P7>((C *)this, f, a1, a2, a3, a4, a5, a6, a7, &sem));
+		sem.acquire();
+		return false;
+	}
+
+	template<typename C, typename P1, typename P2, typename P3, typename P4, typename P5, typename P6, typename P7, typename A1, typename A2, typename A3, typename A4, typename A5, typename A6, typename A7>
+	bool verifySyncedThreadCall(void (C::*f)(P1, P2, P3, P4, P5, P6, P7) const, A1 & a1, A2 & a2, A3 & a3, A4 & a4, A5 & a5, A6 & a6, A7 & a7) const
+	{
+		if (verifyThread_->isOwnThread()) return true;
+		QSemaphore sem;
+		execCall(new Functor7C<C, P1, P2, P3, P4, P5, P6, P7>((const C *)this, f, a1, a2, a3, a4, a5, a6, a7, &sem));
+		sem.acquire();
+		return false;
+	}
+
+	// ------------------------------------------------------------------------
+
+	template<typename C, typename P1, typename P2, typename P3, typename P4, typename P5, typename P6, typename P7, typename P8, typename A1, typename A2, typename A3, typename A4, typename A5, typename A6, typename A7, typename A8>
+	bool verifyThreadCall(void (C::*f)(P1, P2, P3, P4, P5, P6, P7, P8), const A1 & a1, const A2 & a2, const A3 & a3, const A4 & a4, const A5 & a5, const A6 & a6, const A7 & a7, const A8 & a8)
+	{
+		if (verifyThread_->isOwnThread()) return true;
+		execCall(new Functor8<C, P1, P2, P3, P4, P5, P6, P7, P8>((C *)this, f, a1, a2, a3, a4, a5, a6, a7, a8));
+		return false;
+	}
+
+	template<typename C, typename P1, typename P2, typename P3, typename P4, typename P5, typename P6, typename P7, typename P8, typename A1, typename A2, typename A3, typename A4, typename A5, typename A6, typename A7, typename A8>
+	bool verifyThreadCall(void (C::*f)(P1, P2, P3, P4, P5, P6, P7, P8) const, const A1 & a1, const A2 & a2, const A3 & a3, const A4 & a4, const A5 & a5, const A6 & a6, const A7 & a7, const A8 & a8) const
+	{
+		if (verifyThread_->isOwnThread()) return true;
+		execCall(new Functor8C<C, P1, P2, P3, P4, P5, P6, P7, P8>((const C *)this, f, a1, a2, a3, a4, a5, a6, a7, a8));
+		return false;
+	}
+
+	template<typename C, typename P1, typename P2, typename P3, typename P4, typename P5, typename P6, typename P7, typename P8, typename A1, typename A2, typename A3, typename A4, typename A5, typename A6, typename A7, typename A8>
+	bool verifySyncedThreadCall(void (C::*f)(P1, P2, P3, P4, P5, P6, P7, P8), A1 & a1, A2 & a2, A3 & a3, A4 & a4, A5 & a5, A6 & a6, A7 & a7, A8 & a8)
+	{
+		if (verifyThread_->isOwnThread()) return true;
+		QSemaphore sem;
+		execCall(new Functor8<C, P1, P2, P3, P4, P5, P6, P7, P8>((C *)this, f, a1, a2, a3, a4, a5, a6, a7, a8, &sem));
+		sem.acquire();
+		return false;
+	}
+
+	template<typename C, typename P1, typename P2, typename P3, typename P4, typename P5, typename P6, typename P7, typename P8, typename A1, typename A2, typename A3, typename A4, typename A5, typename A6, typename A7, typename A8>
+	bool verifySyncedThreadCall(void (C::*f)(P1, P2, P3, P4, P5, P6, P7, P8) const, A1 & a1, A2 & a2, A3 & a3, A4 & a4, A5 & a5, A6 & a6, A7 & a7, A8 & a8) const
+	{
+		if (verifyThread_->isOwnThread()) return true;
+		QSemaphore sem;
+		execCall(new Functor8C<C, P1, P2, P3, P4, P5, P6, P7, P8>((const C *)this, f, a1, a2, a3, a4, a5, a6, a7, a8, &sem));
+		sem.acquire();
+		return false;
+	}
+
+	// ------------------------------------------------------------------------
+
 	template<typename R>
 	class SyncedThreadCall
 	{
@@ -457,6 +533,46 @@ protected:
 			if (tv_->verifyThread_->isOwnThread()) return true;
 			QSemaphore sem;
 			tv_->execCall(new RFunctor6C<C, R, P1, P2, P3, P4, P5, P6>((const C *)tv_, f, retval_, a1, a2, a3, a4, a5, a6, &sem));
+			sem.acquire();
+			return false;
+		}
+
+		template<typename C, typename P1, typename P2, typename P3, typename P4, typename P5, typename P6, typename P7, typename A1, typename A2, typename A3, typename A4, typename A5, typename A6, typename A7>
+		bool verify(R (C::*f)(P1, P2, P3, P4, P5, P6, P7), A1 & a1, A2 & a2, A3 & a3, A4 & a4, A5 & a5, A6 & a6, A7 & a7)
+		{
+			if (tv_->verifyThread_->isOwnThread()) return true;
+			QSemaphore sem;
+			tv_->execCall(new RFunctor7<C, R, P1, P2, P3, P4, P5, P6, P7>((C *)tv_, f, retval_, a1, a2, a3, a4, a5, a6, a7, &sem));
+			sem.acquire();
+			return false;
+		}
+
+		template<typename C, typename P1, typename P2, typename P3, typename P4, typename P5, typename P6, typename P7, typename A1, typename A2, typename A3, typename A4, typename A5, typename A6, typename A7>
+		bool verify(R (C::*f)(P1, P2, P3, P4, P5, P6, P7) const, A1 & a1, A2 & a2, A3 & a3, A4 & a4, A5 & a5, A6 & a6, A7 & a7)
+		{
+			if (tv_->verifyThread_->isOwnThread()) return true;
+			QSemaphore sem;
+			tv_->execCall(new RFunctor7C<C, R, P1, P2, P3, P4, P5, P6, P7>((const C *)tv_, f, retval_, a1, a2, a3, a4, a5, a6, a7, &sem));
+			sem.acquire();
+			return false;
+		}
+
+		template<typename C, typename P1, typename P2, typename P3, typename P4, typename P5, typename P6, typename P7, typename P8, typename A1, typename A2, typename A3, typename A4, typename A5, typename A6, typename A7, typename A8>
+		bool verify(R (C::*f)(P1, P2, P3, P4, P5, P6, P7, P8), A1 & a1, A2 & a2, A3 & a3, A4 & a4, A5 & a5, A6 & a6, A7 & a7, A8 & a8)
+		{
+			if (tv_->verifyThread_->isOwnThread()) return true;
+			QSemaphore sem;
+			tv_->execCall(new RFunctor8<C, R, P1, P2, P3, P4, P5, P6, P7, P8>((C *)tv_, f, retval_, a1, a2, a3, a4, a5, a6, a7, a8, &sem));
+			sem.acquire();
+			return false;
+		}
+
+		template<typename C, typename P1, typename P2, typename P3, typename P4, typename P5, typename P6, typename P7, typename P8, typename A1, typename A2, typename A3, typename A4, typename A5, typename A6, typename A7, typename A8>
+		bool verify(R (C::*f)(P1, P2, P3, P4, P5, P6, P7, P8) const, A1 & a1, A2 & a2, A3 & a3, A4 & a4, A5 & a5, A6 & a6, A7 & a7, A8 & a8)
+		{
+			if (tv_->verifyThread_->isOwnThread()) return true;
+			QSemaphore sem;
+			tv_->execCall(new RFunctor8C<C, R, P1, P2, P3, P4, P5, P6, P7, P8>((const C *)tv_, f, retval_, a1, a2, a3, a4, a5, a6, a7, a8, &sem));
 			sem.acquire();
 			return false;
 		}

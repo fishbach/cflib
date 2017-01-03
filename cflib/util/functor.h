@@ -800,4 +800,292 @@ private:
 	QSemaphore * sem_;
 };
 
+// ============================================================================
+
+template<typename C, typename P1, typename P2, typename P3, typename P4, typename P5, typename P6, typename P7>
+class Functor7 : public Functor
+{
+	typedef void (C::*F)(P1, P2, P3, P4, P5, P6, P7);
+	typedef typename RemoveConstRef<P1>::Type A1;
+	typedef typename RemoveConstRef<P2>::Type A2;
+	typedef typename RemoveConstRef<P3>::Type A3;
+	typedef typename RemoveConstRef<P4>::Type A4;
+	typedef typename RemoveConstRef<P5>::Type A5;
+	typedef typename RemoveConstRef<P6>::Type A6;
+	typedef typename RemoveConstRef<P7>::Type A7;
+public:
+	Functor7(C * o, F f, P1 a1, P2 a2, P3 a3, P4 a4, P5 a5, P6 a6, P7 a7, QSemaphore * sem = 0) :
+		o_(o), f_(f), a1_(a1), a2_(a2), a3_(a3), a4_(a4), a5_(a5), a6_(a6), a7_(a7), sem_(sem) {}
+
+	virtual void operator()() const
+	{
+		(o_->*f_)(a1_, a2_, a3_, a4_, a5_, a6_, a7_);
+		if (sem_) sem_->release();
+	}
+
+private:
+	C * o_;
+	F f_;
+	A1 a1_;
+	A2 a2_;
+	A3 a3_;
+	A4 a4_;
+	A5 a5_;
+	A6 a6_;
+	A7 a7_;
+	QSemaphore * sem_;
+};
+
+template<typename C, typename R, typename P1, typename P2, typename P3, typename P4, typename P5, typename P6, typename P7>
+class RFunctor7 : public Functor
+{
+	typedef R (C::*F)(P1, P2, P3, P4, P5, P6, P7);
+	typedef typename RemoveConstRef<P1>::Type A1;
+	typedef typename RemoveConstRef<P2>::Type A2;
+	typedef typename RemoveConstRef<P3>::Type A3;
+	typedef typename RemoveConstRef<P4>::Type A4;
+	typedef typename RemoveConstRef<P5>::Type A5;
+	typedef typename RemoveConstRef<P6>::Type A6;
+	typedef typename RemoveConstRef<P7>::Type A7;
+public:
+	RFunctor7(C * o, F f, R & r, P1 a1, P2 a2, P3 a3, P4 a4, P5 a5, P6 a6, P7 a7, QSemaphore * sem = 0) :
+		o_(o), f_(f), r_(r), a1_(a1), a2_(a2), a3_(a3), a4_(a4), a5_(a5), a6_(a6), a7_(a7), sem_(sem) {}
+
+	virtual void operator()() const
+	{
+		r_ = (o_->*f_)(a1_, a2_, a3_, a4_, a5_, a6_, a7_);
+		if (sem_) sem_->release();
+	}
+
+private:
+	C * o_;
+	F f_;
+	R & r_;
+	A1 a1_;
+	A2 a2_;
+	A3 a3_;
+	A4 a4_;
+	A5 a5_;
+	A6 a6_;
+	A7 a7_;
+	QSemaphore * sem_;
+};
+
+template<typename C, typename P1, typename P2, typename P3, typename P4, typename P5, typename P6, typename P7>
+class Functor7C : public Functor
+{
+	typedef void (C::*F)(P1, P2, P3, P4, P5, P6, P7) const;
+	typedef typename RemoveConstRef<P1>::Type A1;
+	typedef typename RemoveConstRef<P2>::Type A2;
+	typedef typename RemoveConstRef<P3>::Type A3;
+	typedef typename RemoveConstRef<P4>::Type A4;
+	typedef typename RemoveConstRef<P5>::Type A5;
+	typedef typename RemoveConstRef<P6>::Type A6;
+	typedef typename RemoveConstRef<P7>::Type A7;
+public:
+	Functor7C(const C * o, F f, P1 a1, P2 a2, P3 a3, P4 a4, P5 a5, P6 a6, P7 a7, QSemaphore * sem = 0) :
+		o_(o), f_(f), a1_(a1), a2_(a2), a3_(a3), a4_(a4), a5_(a5), a6_(a6), a7_(a7), sem_(sem) {}
+
+	virtual void operator()() const
+	{
+		(o_->*f_)(a1_, a2_, a3_, a4_, a5_, a6_, a7_);
+		if (sem_) sem_->release();
+	}
+
+private:
+	const C * o_;
+	F f_;
+	A1 a1_;
+	A2 a2_;
+	A3 a3_;
+	A4 a4_;
+	A5 a5_;
+	A6 a6_;
+	A7 a7_;
+	QSemaphore * sem_;
+};
+
+template<typename C, typename R, typename P1, typename P2, typename P3, typename P4, typename P5, typename P6, typename P7>
+class RFunctor7C : public Functor
+{
+	typedef R (C::*F)(P1, P2, P3, P4, P5, P6, P7) const;
+	typedef typename RemoveConstRef<P1>::Type A1;
+	typedef typename RemoveConstRef<P2>::Type A2;
+	typedef typename RemoveConstRef<P3>::Type A3;
+	typedef typename RemoveConstRef<P4>::Type A4;
+	typedef typename RemoveConstRef<P5>::Type A5;
+	typedef typename RemoveConstRef<P6>::Type A6;
+	typedef typename RemoveConstRef<P7>::Type A7;
+public:
+	RFunctor7C(const C * o, F f, R & r, P1 a1, P2 a2, P3 a3, P4 a4, P5 a5, P6 a6, P7 a7, QSemaphore * sem = 0) :
+		o_(o), f_(f), r_(r), a1_(a1), a2_(a2), a3_(a3), a4_(a4), a5_(a5), a6_(a6), a7_(a7), sem_(sem) {}
+
+	virtual void operator()() const
+	{
+		r_ = (o_->*f_)(a1_, a2_, a3_, a4_, a5_, a6_, a7_);
+		if (sem_) sem_->release();
+	}
+
+private:
+	const C * o_;
+	F f_;
+	R & r_;
+	A1 a1_;
+	A2 a2_;
+	A3 a3_;
+	A4 a4_;
+	A5 a5_;
+	A6 a6_;
+	A7 a7_;
+	QSemaphore * sem_;
+};
+
+// ============================================================================
+
+template<typename C, typename P1, typename P2, typename P3, typename P4, typename P5, typename P6, typename P7, typename P8>
+class Functor8 : public Functor
+{
+	typedef void (C::*F)(P1, P2, P3, P4, P5, P6, P7, P8);
+	typedef typename RemoveConstRef<P1>::Type A1;
+	typedef typename RemoveConstRef<P2>::Type A2;
+	typedef typename RemoveConstRef<P3>::Type A3;
+	typedef typename RemoveConstRef<P4>::Type A4;
+	typedef typename RemoveConstRef<P5>::Type A5;
+	typedef typename RemoveConstRef<P6>::Type A6;
+	typedef typename RemoveConstRef<P7>::Type A7;
+	typedef typename RemoveConstRef<P8>::Type A8;
+public:
+	Functor8(C * o, F f, P1 a1, P2 a2, P3 a3, P4 a4, P5 a5, P6 a6, P7 a7, P8 a8, QSemaphore * sem = 0) :
+		o_(o), f_(f), a1_(a1), a2_(a2), a3_(a3), a4_(a4), a5_(a5), a6_(a6), a7_(a7), a8_(a8), sem_(sem) {}
+
+	virtual void operator()() const
+	{
+		(o_->*f_)(a1_, a2_, a3_, a4_, a5_, a6_, a7_, a8_);
+		if (sem_) sem_->release();
+	}
+
+private:
+	C * o_;
+	F f_;
+	A1 a1_;
+	A2 a2_;
+	A3 a3_;
+	A4 a4_;
+	A5 a5_;
+	A6 a6_;
+	A7 a7_;
+	A8 a8_;
+	QSemaphore * sem_;
+};
+
+template<typename C, typename R, typename P1, typename P2, typename P3, typename P4, typename P5, typename P6, typename P7, typename P8>
+class RFunctor8 : public Functor
+{
+	typedef R (C::*F)(P1, P2, P3, P4, P5, P6, P7, P8);
+	typedef typename RemoveConstRef<P1>::Type A1;
+	typedef typename RemoveConstRef<P2>::Type A2;
+	typedef typename RemoveConstRef<P3>::Type A3;
+	typedef typename RemoveConstRef<P4>::Type A4;
+	typedef typename RemoveConstRef<P5>::Type A5;
+	typedef typename RemoveConstRef<P6>::Type A6;
+	typedef typename RemoveConstRef<P7>::Type A7;
+	typedef typename RemoveConstRef<P8>::Type A8;
+public:
+	RFunctor8(C * o, F f, R & r, P1 a1, P2 a2, P3 a3, P4 a4, P5 a5, P6 a6, P7 a7, P8 a8, QSemaphore * sem = 0) :
+		o_(o), f_(f), r_(r), a1_(a1), a2_(a2), a3_(a3), a4_(a4), a5_(a5), a6_(a6), a7_(a7), a8_(a8), sem_(sem) {}
+
+	virtual void operator()() const
+	{
+		r_ = (o_->*f_)(a1_, a2_, a3_, a4_, a5_, a6_, a7_, a8_);
+		if (sem_) sem_->release();
+	}
+
+private:
+	C * o_;
+	F f_;
+	R & r_;
+	A1 a1_;
+	A2 a2_;
+	A3 a3_;
+	A4 a4_;
+	A5 a5_;
+	A6 a6_;
+	A7 a7_;
+	A8 a8_;
+	QSemaphore * sem_;
+};
+
+template<typename C, typename P1, typename P2, typename P3, typename P4, typename P5, typename P6, typename P7, typename P8>
+class Functor8C : public Functor
+{
+	typedef void (C::*F)(P1, P2, P3, P4, P5, P6, P7, P8) const;
+	typedef typename RemoveConstRef<P1>::Type A1;
+	typedef typename RemoveConstRef<P2>::Type A2;
+	typedef typename RemoveConstRef<P3>::Type A3;
+	typedef typename RemoveConstRef<P4>::Type A4;
+	typedef typename RemoveConstRef<P5>::Type A5;
+	typedef typename RemoveConstRef<P6>::Type A6;
+	typedef typename RemoveConstRef<P7>::Type A7;
+	typedef typename RemoveConstRef<P8>::Type A8;
+public:
+	Functor8C(const C * o, F f, P1 a1, P2 a2, P3 a3, P4 a4, P5 a5, P6 a6, P7 a7, P8 a8, QSemaphore * sem = 0) :
+		o_(o), f_(f), a1_(a1), a2_(a2), a3_(a3), a4_(a4), a5_(a5), a6_(a6), a7_(a7), a8_(a8), sem_(sem) {}
+
+	virtual void operator()() const
+	{
+		(o_->*f_)(a1_, a2_, a3_, a4_, a5_, a6_, a7_, a8_);
+		if (sem_) sem_->release();
+	}
+
+private:
+	const C * o_;
+	F f_;
+	A1 a1_;
+	A2 a2_;
+	A3 a3_;
+	A4 a4_;
+	A5 a5_;
+	A6 a6_;
+	A7 a7_;
+	A8 a8_;
+	QSemaphore * sem_;
+};
+
+template<typename C, typename R, typename P1, typename P2, typename P3, typename P4, typename P5, typename P6, typename P7, typename P8>
+class RFunctor8C : public Functor
+{
+	typedef R (C::*F)(P1, P2, P3, P4, P5, P6, P7, P8) const;
+	typedef typename RemoveConstRef<P1>::Type A1;
+	typedef typename RemoveConstRef<P2>::Type A2;
+	typedef typename RemoveConstRef<P3>::Type A3;
+	typedef typename RemoveConstRef<P4>::Type A4;
+	typedef typename RemoveConstRef<P5>::Type A5;
+	typedef typename RemoveConstRef<P6>::Type A6;
+	typedef typename RemoveConstRef<P7>::Type A7;
+	typedef typename RemoveConstRef<P8>::Type A8;
+public:
+	RFunctor8C(const C * o, F f, R & r, P1 a1, P2 a2, P3 a3, P4 a4, P5 a5, P6 a6, P7 a7, P8 a8, QSemaphore * sem = 0) :
+		o_(o), f_(f), r_(r), a1_(a1), a2_(a2), a3_(a3), a4_(a4), a5_(a5), a6_(a6), a7_(a7), a8_(a8), sem_(sem) {}
+
+	virtual void operator()() const
+	{
+		r_ = (o_->*f_)(a1_, a2_, a3_, a4_, a5_, a6_, a7_, a8_);
+		if (sem_) sem_->release();
+	}
+
+private:
+	const C * o_;
+	F f_;
+	R & r_;
+	A1 a1_;
+	A2 a2_;
+	A3 a3_;
+	A4 a4_;
+	A5 a5_;
+	A6 a6_;
+	A7 a7_;
+	A8 a8_;
+	QSemaphore * sem_;
+};
+
 }}	// namespace

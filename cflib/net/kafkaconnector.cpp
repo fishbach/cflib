@@ -78,6 +78,9 @@ public:
 	void produce(const QByteArray & topic, qint32 partitionId, const KafkaConnector::Messages & messages,
 		quint16 requiredAcks, quint32 ackTimeoutMs, quint32 correlationId);
 
+	void fetch(const QByteArray & topic, qint32 partitionId, qint64 offset,
+		quint32 maxWaitTime, quint32 minBytes, quint32 maxBytes, quint32 correlationId);
+
 public:
 	KafkaConnector & main_;
 	TCPManager net_;
@@ -87,6 +90,7 @@ public:
 	QMap<QByteArray /* topic */, QMap<qint32 /* partitionId */, qint32 /* nodeId */>> responsibilities_;
 	KafkaConnector::State currentState_;
 	QMap<QByteArray /* topic */, QHash<qint32 /* partitionId */, KafkaConnector::ProduceConnection *>> produceConnections_;
+	QMap<QByteArray /* topic */, QHash<qint32 /* partitionId */, KafkaConnector::FetchConnection *>> fetchConnections_;
 };
 
 // ============================================================================
@@ -209,12 +213,11 @@ public:
 			qint32 partitionCount;
 			reader >> partitionCount;
 			for (qint32 i = 0 ; i < partitionCount ; ++i) {
-
 				qint32 partitionId;
 				qint16 errorCode;
 				qint64 offset;
 				reader >> partitionId >> errorCode >> offset;
-				impl_.main_.produceReply(correlationId, (KafkaConnector::ErrorCode)errorCode, offset);
+				impl_.main_.produceResponse(correlationId, (KafkaConnector::ErrorCode)errorCode, offset);
 			}
 		}
 	}
@@ -224,6 +227,85 @@ public:
 		QMutableMapIterator<QByteArray, QHash<qint32, KafkaConnector::ProduceConnection *>> topicIt(impl_.produceConnections_);
 		while (topicIt.hasNext()) {
 			QMutableHashIterator<qint32, KafkaConnector::ProduceConnection *> partitionIt(topicIt.next().value());
+			while (partitionIt.hasNext()) {
+				if (partitionIt.next().value() == this) partitionIt.remove();
+			}
+			if (topicIt.value().isEmpty()) topicIt.remove();
+		}
+
+		impl_.refetchMetaData();
+	}
+
+private:
+	KafkaConnector::Impl & impl_;
+};
+
+// ============================================================================
+// ============================================================================
+
+class KafkaConnector::FetchConnection : public impl::KafkaConnection
+{
+public:
+	FetchConnection(TCPConnData * data, KafkaConnector::Impl & impl) :
+		KafkaConnection(data),
+		impl_(impl)
+	{
+	}
+
+	void reply(qint32 correlationId, impl::KafkaRawReader & reader) override
+	{
+		qint32 topicCount;
+		reader >> topicCount;
+		for (qint32 i = 0 ; i < topicCount ; ++i) {
+
+			impl::KafkaString topicName;
+			reader >> topicName;
+
+			qint32 partitionCount;
+			reader >> partitionCount;
+			for (qint32 i = 0 ; i < partitionCount ; ++i) {
+				qint32 partitionId;
+				qint16 errorCode;
+				qint64 highwaterMarkOffset;
+				qint32 messageSetSize;
+				reader >> partitionId >> errorCode >> highwaterMarkOffset >> messageSetSize;
+
+				KafkaConnector::Messages messages;
+				qint64 firstOffset = -1;
+				bool isFirst = true;
+				while (messageSetSize >= 12) {
+					const quint32 startPos = reader.bytesLeft();
+
+					qint64 offset;
+					qint32 messageSize;
+					reader >> offset >> messageSize;
+					if (messageSize + 12 > messageSetSize) break;
+
+					if (isFirst) {
+						isFirst = false;
+						firstOffset = offset;
+					}
+
+					qint32 crc;
+					qint8 magicByte;
+					qint8 attributes;
+					KafkaConnector::Message msg;
+					reader >> crc >> magicByte >> attributes >> msg.first >> msg.second;
+					messages << msg;
+
+					messageSetSize -= startPos - reader.bytesLeft();
+				}
+
+				impl_.main_.fetchResponse(correlationId, messages, firstOffset, highwaterMarkOffset, (KafkaConnector::ErrorCode)errorCode);
+			}
+		}
+	}
+
+	void closed() override
+	{
+		QMutableMapIterator<QByteArray, QHash<qint32, KafkaConnector::FetchConnection *>> topicIt(impl_.fetchConnections_);
+		while (topicIt.hasNext()) {
+			QMutableHashIterator<qint32, KafkaConnector::FetchConnection *> partitionIt(topicIt.next().value());
 			while (partitionIt.hasNext()) {
 				if (partitionIt.next().value() == this) partitionIt.remove();
 			}
@@ -253,7 +335,7 @@ void KafkaConnector::Impl::produce(const QByteArray & topic, qint32 partitionId,
 			partitions.remove(partitionId);
 			if (partitions.isEmpty()) produceConnections_.remove(topic);
 
-			if (requiredAcks != 0) main_.produceReply(correlationId, KafkaConnector::UnknownTopicOrPartition, -1);
+			if (requiredAcks != 0) main_.produceResponse(correlationId, KafkaConnector::UnknownTopicOrPartition, -1);
 
 			refetchMetaData();
 			return;
@@ -263,7 +345,7 @@ void KafkaConnector::Impl::produce(const QByteArray & topic, qint32 partitionId,
 
 		TCPConnData * data = net_.openConnection(addr.first, addr.second);
 		if (!data) {
-			if (requiredAcks != 0) main_.produceReply(correlationId, KafkaConnector::BrokerNotAvailable, -1);
+			if (requiredAcks != 0) main_.produceResponse(correlationId, KafkaConnector::BrokerNotAvailable, -1);
 			return;
 		}
 
@@ -309,6 +391,51 @@ void KafkaConnector::Impl::produce(const QByteArray & topic, qint32 partitionId,
 			util::calcCRC32((const char *)req.getCurrentRawData() + crcPos + 4, req.getCurrentSize() - crcPos - 4),
 			req.getCurrentRawData() + crcPos);
 	}
+	req.send();
+}
+
+void KafkaConnector::Impl::fetch(const QByteArray & topic, qint32 partitionId, qint64 offset,
+	quint32 maxWaitTime, quint32 minBytes, quint32 maxBytes, quint32 correlationId)
+{
+	if (!verifyThreadCall(&Impl::fetch, topic, partitionId, offset, maxWaitTime, minBytes, maxBytes, correlationId)) return;
+
+	// get connection of responsible broker
+	KafkaConnector::FetchConnection *& conn = fetchConnections_[topic][partitionId];
+	if (!conn) {
+		if (!responsibilities_.contains(topic) || !responsibilities_[topic].contains(partitionId)) {
+			QHash<qint32, KafkaConnector::FetchConnection *> & partitions = fetchConnections_[topic];
+			partitions.remove(partitionId);
+			if (partitions.isEmpty()) fetchConnections_.remove(topic);
+
+			main_.fetchResponse(correlationId, KafkaConnector::Messages(), -1, -1, KafkaConnector::UnknownTopicOrPartition);
+
+			refetchMetaData();
+			return;
+		}
+
+		const KafkaConnector::Address & addr = allBrokers_[responsibilities_[topic][partitionId]];
+
+		TCPConnData * data = net_.openConnection(addr.first, addr.second);
+		if (!data) {
+			main_.fetchResponse(correlationId, KafkaConnector::Messages(), -1, -1, KafkaConnector::BrokerNotAvailable);
+			return;
+		}
+
+		conn = new KafkaConnector::FetchConnection(data, *this);
+	}
+
+	impl::KafkaRequestWriter req = conn->request(1, 0, correlationId,
+		4 + 4 + 4 + 4 + 2 + topic.size() + 4 + 4 + 8 + 4);
+	req
+		<< (qint32)-1
+		<< (qint32)maxWaitTime
+		<< (qint32)minBytes
+		<< (qint32)1	// just one topic
+		<< (impl::KafkaString)topic
+		<< (qint32)1	// just one partition
+		<< partitionId
+		<< offset
+		<< (qint32)maxBytes;
 	req.send();
 }
 
@@ -378,6 +505,12 @@ void KafkaConnector::produce(const QByteArray & topic, qint32 partitionId, const
 	quint16 requiredAcks, quint32 ackTimeoutMs, quint32 correlationId)
 {
 	impl_->produce(topic, partitionId, messages, requiredAcks, ackTimeoutMs, correlationId);
+}
+
+void KafkaConnector::fetch(const QByteArray & topic, qint32 partitionId, qint64 offset,
+	quint32 maxWaitTime, quint32 minBytes, quint32 maxBytes, quint32 correlationId)
+{
+	impl_->fetch(topic, partitionId, offset, maxWaitTime, minBytes, maxBytes, correlationId);
 }
 
 }}	// namespace
