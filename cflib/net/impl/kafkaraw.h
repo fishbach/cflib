@@ -163,7 +163,7 @@ inline KafkaRawReader & operator>>(KafkaRawReader & in, QByteArray & val)
 	if (size < 0) {
 		val = QByteArray();
 	} else {
-		if (size > (qint32)in.bytesLeft_) size = in.bytesLeft_;
+		if ((quint32)size > in.bytesLeft_) size = in.bytesLeft_;
 		val = QByteArray(in.readPtr_, size);
 		in.readPtr_   += size;
 		in.bytesLeft_ -= size;
@@ -178,7 +178,7 @@ inline KafkaRawReader & operator>>(KafkaRawReader & in, KafkaString & val)
 	if (size < 0) {
 		val = KafkaString();
 	} else {
-		if (size > (qint16)in.bytesLeft_) size = in.bytesLeft_;
+		if ((quint32)size > in.bytesLeft_) size = in.bytesLeft_;
 		val = KafkaString(in.readPtr_, size);
 		in.readPtr_   += size;
 		in.bytesLeft_ -= size;
