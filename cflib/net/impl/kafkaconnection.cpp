@@ -16,7 +16,7 @@
  * along with cflib. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "kafkarequests.h"
+#include "kafkaconnection.h"
 
 #include <cflib/util/log.h>
 #include <cflib/util/util.h>

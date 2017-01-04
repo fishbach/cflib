@@ -16,299 +16,127 @@
  * along with cflib. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "kafkaconnector.h"
-
-#include <cflib/net/impl/kafkarequests.h>
-#include <cflib/net/tcpmanager.h>
+#include <cflib/net/impl/kafkaconnectorimpl.h>
 #include <cflib/util/log.h>
-#include <cflib/util/threadverify.h>
 #include <cflib/util/timer.h>
 #include <cflib/util/util.h>
 
 USE_LOG(LogCat::Network)
 
+#include <cflib/net/impl/kafkafetch.h>
+#include <cflib/net/impl/kafkametadata.h>
+#include <cflib/net/impl/kafkaproduce.h>
+
 namespace cflib { namespace net {
 
-class KafkaConnector::Impl : public util::ThreadVerify
+KafkaConnector::KafkaConnector(util::ThreadVerify * other) :
+	impl_(other ?
+		new Impl(*this, other) :
+		new Impl(*this))
 {
-public:
-	Impl(KafkaConnector & main) :
-		ThreadVerify("KafkaConnector", ThreadVerify::Net),
-		main_(main),
-		net_(0, this),
-		clusterId_(0),
-		currentState_(KafkaConnector::Idle)
-	{
-	}
+}
 
-	Impl(KafkaConnector & parent, util::ThreadVerify * other) :
-		ThreadVerify(other),
-		main_(parent),
-		net_(0, this),
-		clusterId_(0),
-		currentState_(KafkaConnector::Idle)
-	{
-	}
-
-	~Impl()
-	{
-		logFunctionTrace
-		stopVerifyThread();
-	}
-
-	void setState(KafkaConnector::State newState);
-
-	void connect(const QList<KafkaConnector::Address> & cluster)
-	{
-		if (!verifyThreadCall(&Impl::connect, cluster)) return;
-
-		if (!cluster_.isEmpty()) {
-			/// TODO abort all
-		}
-
-		cluster_ = cluster;
-		clusterId_ = 0;
-
-		fetchMetaData();
-	}
-
-	void fetchMetaData();
-
-	void produce(const QByteArray & topic, qint32 partitionId, const KafkaConnector::Messages & messages,
-		quint16 requiredAcks, quint32 ackTimeoutMs, quint32 correlationId);
-
-	void fetch(const QByteArray & topic, qint32 partitionId, qint64 offset,
-		quint32 maxWaitTime, quint32 minBytes, quint32 maxBytes, quint32 correlationId);
-
-public:
-	KafkaConnector & main_;
-	TCPManager net_;
-	QList<KafkaConnector::Address> cluster_;
-	int clusterId_;
-	QHash<qint32 /* nodeId */, KafkaConnector::Address> allBrokers_;
-	struct NodeId { qint32 id; NodeId() : id(-1) {} };
-	QMap<QByteArray /* topic */, QMap<qint32 /* partitionId */, NodeId>> responsibilities_;
-	KafkaConnector::State currentState_;
-	QHash<qint32 /* nodeId */, KafkaConnector::ProduceConnection *> produceConnections_;
-	QHash<qint32 /* nodeId */, KafkaConnector::FetchConnection   *> fetchConnections_;
-};
-
-// ============================================================================
-// ============================================================================
-
-class KafkaConnector::MetadataConnection : public impl::KafkaConnection
+KafkaConnector::~KafkaConnector()
 {
-public:
-	MetadataConnection(TCPConnData * data, KafkaConnector::Impl & impl) :
-		KafkaConnection(data),
-		impl_(impl)
-	{
-		impl::KafkaRequestWriter req = request(3);
-		req << (qint32)0;	// no topic specified -> get all
-		req.send();
-	}
+	delete impl_;
+}
 
-protected:
-	void reply(qint32, impl::KafkaRawReader & reader) override
-	{
-		impl_.allBrokers_.clear();
-		impl_.responsibilities_.clear();
-
-		qint32 brokerCount;
-		reader >> brokerCount;
-		for (qint32 i = 0 ; i < brokerCount ; ++i) {
-			qint32 nodeId;
-			impl::KafkaString host;
-			qint32 port;
-			reader >> nodeId >> host >> port;
-			impl_.allBrokers_[nodeId] = qMakePair(host, port);
-		}
-
-		qint32 topicCount;
-		reader >> topicCount;
-		for (qint32 i = 0 ; i < topicCount ; ++i) {
-
-			qint16 topicErrorCode;
-			impl::KafkaString topic;
-			reader >> topicErrorCode >> topic;
-
-			qint32 partitionCount;
-			reader >> partitionCount;
-			for (qint32 i = 0 ; i < partitionCount ; ++i) {
-
-				qint16 partitionErrorCode;
-				qint32 partitionId;
-				qint32 leader;
-				reader >> partitionErrorCode >> partitionId >> leader;
-				if (topicErrorCode == KafkaConnector::NoError && partitionErrorCode == KafkaConnector::NoError && !topic.startsWith("__")) {
-					impl_.responsibilities_[topic][partitionId].id = leader;
-				}
-
-				qint32 replicaCount;
-				reader >> replicaCount;
-				for (qint32 i = 0 ; i < replicaCount ; ++i) {
-					qint32 replica;
-					reader >> replica;
-				}
-
-				qint32 isrCount;
-				reader >> isrCount;
-				for (qint32 i = 0 ; i < isrCount ; ++i) {
-					qint32 isr;
-					reader >> isr;
-				}
-			}
-		}
-
-		close(ReadWriteClosed, true);
-	}
-
-	void closed() override
-	{
-		for (qint32 nodeId : impl_.allBrokers_.keys()) {
-			const KafkaConnector::Address & addr = impl_.allBrokers_[nodeId];
-			logInfo("found broker %1 with ip %2 (port: %3)", nodeId, addr.first, addr.second);
-		}
-
-		for (const QByteArray & topic : impl_.responsibilities_.keys()) {
-			QByteArray partitionStr;
-			bool isFirst = true;
-			for (qint32 partitionId : impl_.responsibilities_[topic].keys()) {
-				if (isFirst) isFirst = false;
-				else         partitionStr += ' ';
-				partitionStr += QByteArray::number(partitionId);
-			}
-			logInfo("found topic \"%1\" (partitions: %2)", topic, partitionStr);
-		}
-
-		if (impl_.allBrokers_.isEmpty()) {
-			logWarn("could not retrieve kafka cluster meta data");
-			util::Timer::singleShot(1.0, &impl_, &Impl::fetchMetaData);
-		} else {
-			impl_.setState(Ready);
-		}
-	}
-
-private:
-	KafkaConnector::Impl & impl_;
-};
-
-// ============================================================================
-// ============================================================================
-
-class KafkaConnector::ProduceConnection : public impl::KafkaConnection
+void KafkaConnector::connect(const QByteArray & destAddress, quint16 destPort)
 {
-public:
-	ProduceConnection(TCPConnData * data, KafkaConnector::Impl & impl) :
-		KafkaConnection(data),
-		impl_(impl)
-	{
-	}
+	connect(QList<KafkaConnector::Address>() << qMakePair(destAddress, destPort));
+}
 
-	void reply(qint32 correlationId, impl::KafkaRawReader & reader) override
-	{
-		qint32 topicCount;
-		reader >> topicCount;
-		for (qint32 i = 0 ; i < topicCount ; ++i) {
-
-			impl::KafkaString topicName;
-			reader >> topicName;
-
-			qint32 partitionCount;
-			reader >> partitionCount;
-			for (qint32 i = 0 ; i < partitionCount ; ++i) {
-				qint32 partitionId;
-				qint16 errorCode;
-				qint64 offset;
-				reader >> partitionId >> errorCode >> offset;
-				impl_.main_.produceResponse(correlationId, (KafkaConnector::ErrorCode)errorCode, offset);
-			}
-		}
-	}
-
-	void closed() override
-	{
-		impl_.produceConnections_.remove(impl_.produceConnections_.keys(this).value(0));
-		impl_.fetchMetaData();
-	}
-
-private:
-	KafkaConnector::Impl & impl_;
-};
-
-// ============================================================================
-// ============================================================================
-
-class KafkaConnector::FetchConnection : public impl::KafkaConnection
+void KafkaConnector::connect(const QList<KafkaConnector::Address> & cluster)
 {
-public:
-	FetchConnection(TCPConnData * data, KafkaConnector::Impl & impl) :
-		KafkaConnection(data),
-		impl_(impl)
-	{
+	impl_->connect(cluster);
+}
+
+void KafkaConnector::produce(const QByteArray & topic, qint32 partitionId, const Messages & messages,
+	quint16 requiredAcks, quint32 ackTimeoutMs, quint32 correlationId)
+{
+	impl_->produce(topic, partitionId, messages, requiredAcks, ackTimeoutMs, correlationId);
+}
+
+void KafkaConnector::fetch(const QByteArray & topic, qint32 partitionId, qint64 offset,
+	quint32 maxWaitTime, quint32 minBytes, quint32 maxBytes, quint32 correlationId)
+{
+	impl_->fetch(topic, partitionId, offset, maxWaitTime, minBytes, maxBytes, correlationId);
+}
+
+// ============================================================================
+// ============================================================================
+
+KafkaConnector::Impl::Impl(KafkaConnector &main) :
+	ThreadVerify("KafkaConnector", ThreadVerify::Net),
+	main_(main),
+	net_(0, this),
+	clusterId_(0),
+	currentState_(KafkaConnector::Idle)
+{
+}
+
+KafkaConnector::Impl::Impl(KafkaConnector &parent, util::ThreadVerify *other) :
+	ThreadVerify(other),
+	main_(parent),
+	net_(0, this),
+	clusterId_(0),
+	currentState_(KafkaConnector::Idle)
+{
+}
+
+KafkaConnector::Impl::~Impl()
+{
+	logFunctionTrace
+	stopVerifyThread();
+}
+
+void KafkaConnector::Impl::setState(KafkaConnector::State newState)
+{
+	if (currentState_ == newState) return;
+
+	currentState_ = newState;
+	main_.stateChanged(newState);
+}
+
+void KafkaConnector::Impl::connect(const QList<KafkaConnector::Address> &cluster)
+{
+	if (!verifyThreadCall(&Impl::connect, cluster)) return;
+
+	if (!cluster_.isEmpty()) {
+		/// TODO abort all
 	}
 
-	void reply(qint32 correlationId, impl::KafkaRawReader & reader) override
-	{
-		qint32 topicCount;
-		reader >> topicCount;
-		for (qint32 i = 0 ; i < topicCount ; ++i) {
+	cluster_ = cluster;
+	clusterId_ = 0;
 
-			impl::KafkaString topicName;
-			reader >> topicName;
+	fetchMetaData();
+}
 
-			qint32 partitionCount;
-			reader >> partitionCount;
-			for (qint32 i = 0 ; i < partitionCount ; ++i) {
-				qint32 partitionId;
-				qint16 errorCode;
-				qint64 highwaterMarkOffset;
-				qint32 messageSetSize;
-				reader >> partitionId >> errorCode >> highwaterMarkOffset >> messageSetSize;
+void KafkaConnector::Impl::fetchMetaData()
+{
+	logFunctionTrace
 
-				KafkaConnector::Messages messages;
-				qint64 firstOffset = -1;
-				bool isFirst = true;
-				while (messageSetSize >= 12) {
-					const quint32 startPos = reader.bytesLeft();
+	if (cluster_.isEmpty()) {
+		setState(Idle);
+		return;
+	}
 
-					qint64 offset;
-					qint32 messageSize;
-					reader >> offset >> messageSize;
-					if (messageSize + 12 > messageSetSize) break;
+	setState(Connecting);
 
-					if (isFirst) {
-						isFirst = false;
-						firstOffset = offset;
-					}
-
-					qint32 crc;
-					qint8 magicByte;
-					qint8 attributes;
-					KafkaConnector::Message msg;
-					reader >> crc >> magicByte >> attributes >> msg.first >> msg.second;
-					messages << msg;
-
-					messageSetSize -= startPos - reader.bytesLeft();
-				}
-
-				impl_.main_.fetchResponse(correlationId, messages, firstOffset, highwaterMarkOffset, (KafkaConnector::ErrorCode)errorCode);
-			}
+	const int startId = clusterId_;
+	do {
+		const KafkaConnector::Address & addr = cluster_[clusterId_];
+		if (++clusterId_ >= cluster_.size()) clusterId_ = 0;
+		TCPConnData * data = net_.openConnection(addr.first, addr.second);
+		if (data) {
+			new KafkaConnector::MetadataConnection(data, *this);
+			return;
 		}
-	}
+	} while (clusterId_ != startId);
 
-	void closed() override
-	{
-		impl_.fetchConnections_.remove(impl_.fetchConnections_.keys(this).value(0));
-		impl_.fetchMetaData();
-	}
-
-private:
-	KafkaConnector::Impl & impl_;
-};
-
-// ============================================================================
-// ============================================================================
+	logWarn("could not connect to kafka cluster");
+	util::Timer::singleShot(1.0, this, &Impl::fetchMetaData);
+}
 
 void KafkaConnector::Impl::produce(const QByteArray & topic, qint32 partitionId, const Messages & messages,
 	quint16 requiredAcks, quint32 ackTimeoutMs, quint32 correlationId)
@@ -417,77 +245,6 @@ void KafkaConnector::Impl::fetch(const QByteArray & topic, qint32 partitionId, q
 		<< offset
 		<< (qint32)maxBytes;
 	req.send();
-}
-
-void KafkaConnector::Impl::fetchMetaData()
-{
-	logFunctionTrace
-
-	if (cluster_.isEmpty()) {
-		setState(Idle);
-		return;
-	}
-
-	setState(Connecting);
-
-	const int startId = clusterId_;
-	do {
-		const KafkaConnector::Address & addr = cluster_[clusterId_];
-		if (++clusterId_ >= cluster_.size()) clusterId_ = 0;
-		TCPConnData * data = net_.openConnection(addr.first, addr.second);
-		if (data) {
-			new KafkaConnector::MetadataConnection(data, *this);
-			return;
-		}
-	} while (clusterId_ != startId);
-
-	logWarn("could not connect to kafka cluster");
-	util::Timer::singleShot(1.0, this, &Impl::fetchMetaData);
-}
-
-void KafkaConnector::Impl::setState(KafkaConnector::State newState)
-{
-	if (currentState_ == newState) return;
-
-	currentState_ = newState;
-	main_.stateChanged(newState);
-}
-
-// ============================================================================
-// ============================================================================
-
-KafkaConnector::KafkaConnector(util::ThreadVerify * other) :
-	impl_(other ?
-		new Impl(*this, other) :
-		new Impl(*this))
-{
-}
-
-KafkaConnector::~KafkaConnector()
-{
-	delete impl_;
-}
-
-void KafkaConnector::connect(const QByteArray & destAddress, quint16 destPort)
-{
-	connect(QList<KafkaConnector::Address>() << qMakePair(destAddress, destPort));
-}
-
-void KafkaConnector::connect(const QList<KafkaConnector::Address> & cluster)
-{
-	impl_->connect(cluster);
-}
-
-void KafkaConnector::produce(const QByteArray & topic, qint32 partitionId, const Messages & messages,
-	quint16 requiredAcks, quint32 ackTimeoutMs, quint32 correlationId)
-{
-	impl_->produce(topic, partitionId, messages, requiredAcks, ackTimeoutMs, correlationId);
-}
-
-void KafkaConnector::fetch(const QByteArray & topic, qint32 partitionId, qint64 offset,
-	quint32 maxWaitTime, quint32 minBytes, quint32 maxBytes, quint32 correlationId)
-{
-	impl_->fetch(topic, partitionId, offset, maxWaitTime, minBytes, maxBytes, correlationId);
 }
 
 }}	// namespace

@@ -28,8 +28,12 @@ HEADERS = \
 	httpclient.h \
 	httpserver.h \
 	impl/httpthread.h \
+	impl/kafkaconnection.h \
+	impl/kafkaconnectorimpl.h \
+	impl/kafkafetch.h \
+	impl/kafkametadata.h \
+	impl/kafkaproduce.h \
 	impl/kafkaraw.h \
-	impl/kafkarequests.h \
 	impl/requestparser.h \
 	impl/rmiserverbase.h \
 	impl/tcpconndata.h \
