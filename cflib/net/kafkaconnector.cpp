@@ -73,7 +73,6 @@ public:
 	}
 
 	void fetchMetaData();
-	void refetchMetaData();
 
 	void produce(const QByteArray & topic, qint32 partitionId, const KafkaConnector::Messages & messages,
 		quint16 requiredAcks, quint32 ackTimeoutMs, quint32 correlationId);
@@ -87,10 +86,11 @@ public:
 	QList<KafkaConnector::Address> cluster_;
 	int clusterId_;
 	QHash<qint32 /* nodeId */, KafkaConnector::Address> allBrokers_;
-	QMap<QByteArray /* topic */, QMap<qint32 /* partitionId */, qint32 /* nodeId */>> responsibilities_;
+	struct NodeId { qint32 id; NodeId() : id(-1) {} };
+	QMap<QByteArray /* topic */, QMap<qint32 /* partitionId */, NodeId>> responsibilities_;
 	KafkaConnector::State currentState_;
-	QMap<QByteArray /* topic */, QHash<qint32 /* partitionId */, KafkaConnector::ProduceConnection *>> produceConnections_;
-	QMap<QByteArray /* topic */, QHash<qint32 /* partitionId */, KafkaConnector::FetchConnection *>> fetchConnections_;
+	QHash<qint32 /* nodeId */, KafkaConnector::ProduceConnection *> produceConnections_;
+	QHash<qint32 /* nodeId */, KafkaConnector::FetchConnection   *> fetchConnections_;
 };
 
 // ============================================================================
@@ -111,6 +111,9 @@ public:
 protected:
 	void reply(qint32, impl::KafkaRawReader & reader) override
 	{
+		impl_.allBrokers_.clear();
+		impl_.responsibilities_.clear();
+
 		qint32 brokerCount;
 		reader >> brokerCount;
 		for (qint32 i = 0 ; i < brokerCount ; ++i) {
@@ -138,7 +141,7 @@ protected:
 				qint32 leader;
 				reader >> partitionErrorCode >> partitionId >> leader;
 				if (topicErrorCode == KafkaConnector::NoError && partitionErrorCode == KafkaConnector::NoError && !topic.startsWith("__")) {
-					impl_.responsibilities_[topic][partitionId] = leader;
+					impl_.responsibilities_[topic][partitionId].id = leader;
 				}
 
 				qint32 replicaCount;
@@ -164,7 +167,7 @@ protected:
 	{
 		for (qint32 nodeId : impl_.allBrokers_.keys()) {
 			const KafkaConnector::Address & addr = impl_.allBrokers_[nodeId];
-			logInfo("found broker with ip %1 (port: %2)", addr.first, addr.second);
+			logInfo("found broker %1 with ip %2 (port: %3)", nodeId, addr.first, addr.second);
 		}
 
 		for (const QByteArray & topic : impl_.responsibilities_.keys()) {
@@ -179,7 +182,8 @@ protected:
 		}
 
 		if (impl_.allBrokers_.isEmpty()) {
-			impl_.refetchMetaData();
+			logWarn("could not retrieve kafka cluster meta data");
+			util::Timer::singleShot(1.0, &impl_, &Impl::fetchMetaData);
 		} else {
 			impl_.setState(Ready);
 		}
@@ -224,16 +228,8 @@ public:
 
 	void closed() override
 	{
-		QMutableMapIterator<QByteArray, QHash<qint32, KafkaConnector::ProduceConnection *>> topicIt(impl_.produceConnections_);
-		while (topicIt.hasNext()) {
-			QMutableHashIterator<qint32, KafkaConnector::ProduceConnection *> partitionIt(topicIt.next().value());
-			while (partitionIt.hasNext()) {
-				if (partitionIt.next().value() == this) partitionIt.remove();
-			}
-			if (topicIt.value().isEmpty()) topicIt.remove();
-		}
-
-		impl_.refetchMetaData();
+		impl_.produceConnections_.remove(impl_.produceConnections_.keys(this).value(0));
+		impl_.fetchMetaData();
 	}
 
 private:
@@ -303,16 +299,8 @@ public:
 
 	void closed() override
 	{
-		QMutableMapIterator<QByteArray, QHash<qint32, KafkaConnector::FetchConnection *>> topicIt(impl_.fetchConnections_);
-		while (topicIt.hasNext()) {
-			QMutableHashIterator<qint32, KafkaConnector::FetchConnection *> partitionIt(topicIt.next().value());
-			while (partitionIt.hasNext()) {
-				if (partitionIt.next().value() == this) partitionIt.remove();
-			}
-			if (topicIt.value().isEmpty()) topicIt.remove();
-		}
-
-		impl_.refetchMetaData();
+		impl_.fetchConnections_.remove(impl_.fetchConnections_.keys(this).value(0));
+		impl_.fetchMetaData();
 	}
 
 private:
@@ -327,28 +315,24 @@ void KafkaConnector::Impl::produce(const QByteArray & topic, qint32 partitionId,
 {
 	if (!verifyThreadCall(&Impl::produce, topic, partitionId, messages, requiredAcks, ackTimeoutMs, correlationId)) return;
 
-	// get connection of responsible broker
-	KafkaConnector::ProduceConnection *& conn = produceConnections_[topic][partitionId];
+	// get broker for topic and partition
+	qint32 nodeId = responsibilities_[topic][partitionId].id;
+	if (nodeId == -1) {
+		if (requiredAcks != 0) main_.produceResponse(correlationId, KafkaConnector::UnknownTopicOrPartition, -1);
+		fetchMetaData();
+		return;
+	}
+
+	// get tcp connection of broker
+	KafkaConnector::ProduceConnection *& conn = produceConnections_[nodeId];
 	if (!conn) {
-		if (!responsibilities_.contains(topic) || !responsibilities_[topic].contains(partitionId)) {
-			QHash<qint32, KafkaConnector::ProduceConnection *> & partitions = produceConnections_[topic];
-			partitions.remove(partitionId);
-			if (partitions.isEmpty()) produceConnections_.remove(topic);
-
-			if (requiredAcks != 0) main_.produceResponse(correlationId, KafkaConnector::UnknownTopicOrPartition, -1);
-
-			refetchMetaData();
-			return;
-		}
-
-		const KafkaConnector::Address & addr = allBrokers_[responsibilities_[topic][partitionId]];
-
+		const KafkaConnector::Address & addr = allBrokers_[nodeId];
 		TCPConnData * data = net_.openConnection(addr.first, addr.second);
 		if (!data) {
 			if (requiredAcks != 0) main_.produceResponse(correlationId, KafkaConnector::BrokerNotAvailable, -1);
+			fetchMetaData();
 			return;
 		}
-
 		conn = new KafkaConnector::ProduceConnection(data, *this);
 	}
 
@@ -399,28 +383,24 @@ void KafkaConnector::Impl::fetch(const QByteArray & topic, qint32 partitionId, q
 {
 	if (!verifyThreadCall(&Impl::fetch, topic, partitionId, offset, maxWaitTime, minBytes, maxBytes, correlationId)) return;
 
-	// get connection of responsible broker
-	KafkaConnector::FetchConnection *& conn = fetchConnections_[topic][partitionId];
+	// get broker for topic and partition
+	qint32 nodeId = responsibilities_[topic][partitionId].id;
+	if (nodeId == -1) {
+		main_.fetchResponse(correlationId, KafkaConnector::Messages(), -1, -1, KafkaConnector::UnknownTopicOrPartition);
+		fetchMetaData();
+		return;
+	}
+
+	// get tcp connection of broker
+	KafkaConnector::FetchConnection *& conn = fetchConnections_[nodeId];
 	if (!conn) {
-		if (!responsibilities_.contains(topic) || !responsibilities_[topic].contains(partitionId)) {
-			QHash<qint32, KafkaConnector::FetchConnection *> & partitions = fetchConnections_[topic];
-			partitions.remove(partitionId);
-			if (partitions.isEmpty()) fetchConnections_.remove(topic);
-
-			main_.fetchResponse(correlationId, KafkaConnector::Messages(), -1, -1, KafkaConnector::UnknownTopicOrPartition);
-
-			refetchMetaData();
-			return;
-		}
-
-		const KafkaConnector::Address & addr = allBrokers_[responsibilities_[topic][partitionId]];
-
+		const KafkaConnector::Address & addr = allBrokers_[nodeId];
 		TCPConnData * data = net_.openConnection(addr.first, addr.second);
 		if (!data) {
 			main_.fetchResponse(correlationId, KafkaConnector::Messages(), -1, -1, KafkaConnector::BrokerNotAvailable);
+			fetchMetaData();
 			return;
 		}
-
 		conn = new KafkaConnector::FetchConnection(data, *this);
 	}
 
@@ -441,6 +421,8 @@ void KafkaConnector::Impl::fetch(const QByteArray & topic, qint32 partitionId, q
 
 void KafkaConnector::Impl::fetchMetaData()
 {
+	logFunctionTrace
+
 	if (cluster_.isEmpty()) {
 		setState(Idle);
 		return;
@@ -459,13 +441,8 @@ void KafkaConnector::Impl::fetchMetaData()
 		}
 	} while (clusterId_ != startId);
 
-	refetchMetaData();
-}
-
-void KafkaConnector::Impl::refetchMetaData()
-{
-	logWarn("could not connect to broker");
-	util::Timer::singleShot(10.0, this, &Impl::fetchMetaData);
+	logWarn("could not connect to kafka cluster");
+	util::Timer::singleShot(1.0, this, &Impl::fetchMetaData);
 }
 
 void KafkaConnector::Impl::setState(KafkaConnector::State newState)
