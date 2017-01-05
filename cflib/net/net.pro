@@ -31,6 +31,7 @@ HEADERS = \
 	impl/kafkaconnection.h \
 	impl/kafkaconnectorimpl.h \
 	impl/kafkafetch.h \
+	impl/kafkagroup.h \
 	impl/kafkametadata.h \
 	impl/kafkaproduce.h \
 	impl/kafkaraw.h \

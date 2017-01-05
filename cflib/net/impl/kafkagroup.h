@@ -21,40 +21,24 @@
 
 namespace cflib { namespace net {
 
-class KafkaConnector::ProduceConnection : public impl::KafkaConnection
+class KafkaConnector::GroupConnection : public impl::KafkaConnection
 {
 public:
-	ProduceConnection(TCPConnData * data, KafkaConnector::Impl & impl) :
+	GroupConnection(TCPConnData * data, KafkaConnector::Impl & impl) :
 		KafkaConnection(data),
 		impl_(impl)
 	{
 	}
 
-	void reply(qint32 correlationId, impl::KafkaRawReader & reader) override
+protected:
+	void reply(qint32, impl::KafkaRawReader & reader) override
 	{
-		qint32 topicCount;
-		reader >> topicCount;
-		for (qint32 i = 0 ; i < topicCount ; ++i) {
 
-			impl::KafkaString topicName;
-			reader >> topicName;
-
-			qint32 partitionCount;
-			reader >> partitionCount;
-			for (qint32 i = 0 ; i < partitionCount ; ++i) {
-				qint32 partitionId;
-				qint16 errorCode;
-				qint64 offset;
-				reader >> partitionId >> errorCode >> offset;
-				impl_.main_.produceResponse(correlationId, (KafkaConnector::ErrorCode)errorCode, offset);
-			}
-		}
+		close(ReadWriteClosed, true);
 	}
 
 	void closed() override
 	{
-		impl_.produceConnections_.remove(impl_.produceConnections_.keys(this).value(0));
-		impl_.fetchMetaData();
 	}
 
 private:

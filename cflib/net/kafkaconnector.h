@@ -77,6 +77,7 @@ public:
 
 	typedef QPair<QByteArray /* key */, QByteArray /* value */> Message;
 	typedef QVector<Message> Messages;
+	typedef QList<QByteArray> Topics;
 
 public:
 	KafkaConnector(util::ThreadVerify * other = 0);
@@ -94,9 +95,9 @@ public:
 		quint32 maxWaitTime = 0x7FFFFFFF, quint32 minBytes = 1, quint32 maxBytes = 0x100000 /* 1mb */, quint32 correlationId = 1);
 
 	// only one group can be joined simultaneously
-	void joinGroup(const QByteArray & groupName, const QList<QByteArray> & topics);
+	void joinGroup(const QByteArray & groupId, const Topics & topics);
 	void fetch(quint32 maxWaitTime = 0x7FFFFFFF, quint32 minBytes = 1, quint32 maxBytes = 0x100000 /* 1mb */);
-	void commit();
+	void commit();	// commits last fetchResponse
 	void leaveGroup();
 
 protected:
@@ -118,6 +119,7 @@ private:
 	class MetadataConnection;
 	class ProduceConnection;
 	class FetchConnection;
+	class GroupConnection;
 	class Impl;
 	Impl * impl_;
 };

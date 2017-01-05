@@ -17,23 +17,63 @@
  */
 
 #include <cflib/net/impl/kafkaconnection.h>
+#include <cflib/net/impl/kafkaconnectorimpl.h>
+#include <cflib/net/impl/kafkagroup.h>
+#include <cflib/util/log.h>
 
 namespace cflib { namespace net {
 
 class KafkaConnector::MetadataConnection : public impl::KafkaConnection
 {
 public:
-	MetadataConnection(TCPConnData * data, KafkaConnector::Impl & impl) :
+	MetadataConnection(bool isMetaDataRequest, TCPConnData * data, KafkaConnector::Impl & impl) :
 		KafkaConnection(data),
-		impl_(impl)
+		impl_(impl),
+		isMetaDataRequest_(isMetaDataRequest)
 	{
-		impl::KafkaRequestWriter req = request(3);
-		req << (qint32)0;	// no topic specified -> get all
-		req.send();
 	}
 
 protected:
 	void reply(qint32, impl::KafkaRawReader & reader) override
+	{
+		if (isMetaDataRequest_) readMetaData        (reader);
+		else                    readGroupCoordinator(reader);
+	}
+
+	void closed() override
+	{
+		if (isMetaDataRequest_) {
+			for (qint32 nodeId : impl_.allBrokers_.keys()) {
+				const KafkaConnector::Address & addr = impl_.allBrokers_[nodeId];
+				logInfo("found broker %1 with ip %2 (port: %3)", nodeId, addr.first, addr.second);
+			}
+
+			for (const QByteArray & topic : impl_.responsibilities_.keys()) {
+				QByteArray partitionStr;
+				bool isFirst = true;
+				for (qint32 partitionId : impl_.responsibilities_[topic].keys()) {
+					if (isFirst) isFirst = false;
+					else         partitionStr += ' ';
+					partitionStr += QByteArray::number(partitionId);
+				}
+				logInfo("found topic \"%1\" (partitions: %2)", topic, partitionStr);
+			}
+
+			if (impl_.allBrokers_.isEmpty()) {
+				logWarn("could not retrieve kafka cluster meta data");
+				util::Timer::singleShot(1.0, &impl_, &Impl::fetchMetaData);
+			} else {
+				impl_.setState(Ready);
+			}
+		} else {
+			if (!impl_.groupConnection_) {
+				logWarn("could not retrieve kafka group coordinator");
+			}
+		}
+	}
+
+private:
+	void readMetaData(impl::KafkaRawReader & reader)
 	{
 		impl_.allBrokers_.clear();
 		impl_.responsibilities_.clear();
@@ -87,34 +127,36 @@ protected:
 		close(ReadWriteClosed, true);
 	}
 
-	void closed() override
+	void readGroupCoordinator(impl::KafkaRawReader & reader)
 	{
-		for (qint32 nodeId : impl_.allBrokers_.keys()) {
-			const KafkaConnector::Address & addr = impl_.allBrokers_[nodeId];
-			logInfo("found broker %1 with ip %2 (port: %3)", nodeId, addr.first, addr.second);
+		qint16 errorCode;
+		qint32 coordinatorId;
+		impl::KafkaString coordinatorHost;
+		qint32 coordinatorPort;
+		reader >> errorCode >> coordinatorId >> coordinatorHost >> coordinatorPort;
+
+		if (errorCode != KafkaConnector::NoError) {
+			logInfo("got error %1 in group coordinator request", errorCode);
+			close(ReadWriteClosed, true);
+			return;
 		}
 
-		for (const QByteArray & topic : impl_.responsibilities_.keys()) {
-			QByteArray partitionStr;
-			bool isFirst = true;
-			for (qint32 partitionId : impl_.responsibilities_[topic].keys()) {
-				if (isFirst) isFirst = false;
-				else         partitionStr += ' ';
-				partitionStr += QByteArray::number(partitionId);
-			}
-			logInfo("found topic \"%1\" (partitions: %2)", topic, partitionStr);
-		}
+		logInfo("got group coordinator at ip: %1, port: %2", (QByteArray)coordinatorHost, coordinatorPort);
 
-		if (impl_.allBrokers_.isEmpty()) {
-			logWarn("could not retrieve kafka cluster meta data");
-			util::Timer::singleShot(1.0, &impl_, &Impl::fetchMetaData);
+		TCPConnData * data = impl_.net_.openConnection(coordinatorHost, coordinatorPort);
+		if (!data) {
+			logWarn("could not connect to group coordinator");
 		} else {
-			impl_.setState(Ready);
+			impl_.groupConnection_ = new KafkaConnector::GroupConnection(data, impl_);
+			impl_.doJoin();
 		}
+
+		close(ReadWriteClosed, true);
 	}
 
 private:
 	KafkaConnector::Impl & impl_;
+	const bool isMetaDataRequest_;
 };
 
 }}	// namespace

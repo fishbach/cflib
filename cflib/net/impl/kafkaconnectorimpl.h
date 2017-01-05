@@ -40,22 +40,35 @@ public:
 	void fetch(const QByteArray & topic, qint32 partitionId, qint64 offset,
 		quint32 maxWaitTime, quint32 minBytes, quint32 maxBytes, quint32 correlationId);
 
-	void joinGroup(const QByteArray & groupName, const QList<QByteArray> & topics);
+	void joinGroup(const QByteArray & groupId, const KafkaConnector::Topics & topics);
 	void fetch(quint32 maxWaitTime, quint32 minBytes, quint32 maxBytes);
 	void commit();
 	void leaveGroup();
 
+	TCPConnData * connectToCluster();
+	void doJoin();
+
 public:
 	KafkaConnector & main_;
 	TCPManager net_;
+
 	QList<KafkaConnector::Address> cluster_;
 	int clusterId_;
+
 	QHash<qint32 /* nodeId */, KafkaConnector::Address> allBrokers_;
 	struct NodeId { qint32 id; NodeId() : id(-1) {} };
 	QMap<QByteArray /* topic */, QMap<qint32 /* partitionId */, NodeId>> responsibilities_;
+
 	KafkaConnector::State currentState_;
+
 	QHash<qint32 /* nodeId */, KafkaConnector::ProduceConnection *> produceConnections_;
 	QHash<qint32 /* nodeId */, KafkaConnector::FetchConnection   *> fetchConnections_;
+
+	KafkaConnector::GroupConnection * groupConnection_;
+	QByteArray groupId_;
+	QByteArray groupMemberId_;
+	qint32 generationId_;
+	QList<QByteArray> groupTopics_;
 };
 
 }}	// namespace
