@@ -63,6 +63,26 @@ void KafkaConnector::fetch(const QByteArray & topic, qint32 partitionId, qint64 
 	impl_->fetch(topic, partitionId, offset, maxWaitTime, minBytes, maxBytes, correlationId);
 }
 
+void KafkaConnector::joinGroup(const QByteArray & groupName, const QList<QByteArray> & topics)
+{
+	impl_->joinGroup(groupName, topics);
+}
+
+void KafkaConnector::fetch(quint32 maxWaitTime, quint32 minBytes, quint32 maxBytes)
+{
+	impl_->fetch(maxWaitTime, minBytes, maxBytes);
+}
+
+void KafkaConnector::commit()
+{
+	impl_->commit();
+}
+
+void KafkaConnector::leaveGroup()
+{
+	impl_->leaveGroup();
+}
+
 // ============================================================================
 // ============================================================================
 
@@ -245,6 +265,28 @@ void KafkaConnector::Impl::fetch(const QByteArray & topic, qint32 partitionId, q
 		<< offset
 		<< (qint32)maxBytes;
 	req.send();
+}
+
+void KafkaConnector::Impl::joinGroup(const QByteArray & groupName, const QList<QByteArray> & topics)
+{
+//	Groups
+//	ProtocolType = "consumer"
+//	ProtocolName = "range"
+//	ProtocolVersion = 0
+//  UserData -> empty
+
+}
+
+void KafkaConnector::Impl::fetch(quint32 maxWaitTime, quint32 minBytes, quint32 maxBytes)
+{
+}
+
+void KafkaConnector::Impl::commit()
+{
+}
+
+void KafkaConnector::Impl::leaveGroup()
+{
 }
 
 }}	// namespace

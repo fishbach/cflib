@@ -93,6 +93,12 @@ public:
 	void fetch(const QByteArray & topic, qint32 partitionId, qint64 offset,
 		quint32 maxWaitTime = 0x7FFFFFFF, quint32 minBytes = 1, quint32 maxBytes = 0x100000 /* 1mb */, quint32 correlationId = 1);
 
+	// only one group can be joined simultaneously
+	void joinGroup(const QByteArray & groupName, const QList<QByteArray> & topics);
+	void fetch(quint32 maxWaitTime = 0x7FFFFFFF, quint32 minBytes = 1, quint32 maxBytes = 0x100000 /* 1mb */);
+	void commit();
+	void leaveGroup();
+
 protected:
 	virtual void stateChanged(State state) { Q_UNUSED(state) }
 
@@ -103,6 +109,10 @@ protected:
 	virtual void fetchResponse(quint32 correlationId, const Messages & messages,
 		qint64 firstOffset, qint64 highwaterMarkOffset, ErrorCode errorCode) {
 		Q_UNUSED(correlationId) Q_UNUSED(messages) Q_UNUSED(firstOffset) Q_UNUSED(highwaterMarkOffset) Q_UNUSED(errorCode) }
+
+	virtual void fetchResponse(const QByteArray & topic, const Messages & messages,
+		qint64 firstOffset, qint64 highwaterMarkOffset, ErrorCode errorCode) {
+		Q_UNUSED(topic) Q_UNUSED(messages) Q_UNUSED(firstOffset) Q_UNUSED(highwaterMarkOffset) Q_UNUSED(errorCode) }
 
 private:
 	class MetadataConnection;
