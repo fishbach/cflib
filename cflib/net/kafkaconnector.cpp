@@ -48,6 +48,16 @@ void KafkaConnector::produce(const QByteArray & topic, qint32 partitionId, const
 	impl_->produce(topic, partitionId, messages, requiredAcks, ackTimeoutMs, correlationId);
 }
 
+void KafkaConnector::getFirstOffset(const QByteArray & topic, qint32 partitionId, quint32 correlationId)
+{
+	impl_->getOffsets(topic, partitionId, correlationId, true);
+}
+
+void KafkaConnector::getHighwaterMarkOffset(const QByteArray & topic, qint32 partitionId, quint32 correlationId)
+{
+	impl_->getOffsets(topic, partitionId, correlationId, false);
+}
+
 void KafkaConnector::fetch(const QByteArray & topic, qint32 partitionId, qint64 offset,
 	quint32 maxWaitTime, quint32 minBytes, quint32 maxBytes, quint32 correlationId)
 {

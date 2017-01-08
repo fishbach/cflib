@@ -26,6 +26,7 @@ namespace cflib { namespace net {
 class KafkaConnector::MetadataConnection : public impl::KafkaConnection
 {
 public:
+	// isMetaDataRequest == false -> group coordinator request
 	MetadataConnection(bool isMetaDataRequest, TCPConnData * data, KafkaConnector::Impl & impl) :
 		KafkaConnection(data),
 		impl_(impl),
@@ -61,6 +62,7 @@ protected:
 
 			if (impl_.allBrokers_.isEmpty()) {
 				logWarn("could not retrieve kafka cluster meta data");
+				++impl_.clusterId_;
 				util::Timer::singleShot(1.0, &impl_, &Impl::fetchMetaData);
 			} else {
 				impl_.setState(Ready);
@@ -68,6 +70,7 @@ protected:
 		} else {
 			if (!impl_.groupConnection_) {
 				logWarn("could not retrieve kafka group coordinator");
+				impl_.fetchMetaData();
 			}
 		}
 	}

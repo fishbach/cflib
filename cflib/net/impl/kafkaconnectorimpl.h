@@ -37,6 +37,7 @@ public:
 
 	void produce(const QByteArray & topic, qint32 partitionId, const KafkaConnector::Messages & messages,
 		quint16 requiredAcks, quint32 ackTimeoutMs, quint32 correlationId);
+	void getOffsets(const QByteArray & topic, qint32 partitionId, quint32 correlationId, bool first);
 	void fetch(const QByteArray & topic, qint32 partitionId, qint64 offset,
 		quint32 maxWaitTime, quint32 minBytes, quint32 maxBytes, quint32 correlationId);
 

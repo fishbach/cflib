@@ -31,7 +31,7 @@ public:
 	}
 
 protected:
-	void reply(qint32, impl::KafkaRawReader & reader) override
+	void reply(qint32 correlationId, impl::KafkaRawReader & reader) override
 	{
 
 		close(ReadWriteClosed, true);
@@ -39,6 +39,8 @@ protected:
 
 	void closed() override
 	{
+		impl_.groupConnection_ = 0;
+		/// todo: reconnect
 	}
 
 private:

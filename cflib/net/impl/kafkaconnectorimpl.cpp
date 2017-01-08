@@ -26,6 +26,7 @@ USE_LOG(LogCat::Network)
 
 #include <cflib/net/impl/kafkafetch.h>
 #include <cflib/net/impl/kafkametadata.h>
+#include <cflib/net/impl/kafkaoffset.h>
 #include <cflib/net/impl/kafkaproduce.h>
 
 namespace cflib { namespace net {
@@ -169,6 +170,40 @@ void KafkaConnector::Impl::produce(const QByteArray & topic, qint32 partitionId,
 	req.send();
 }
 
+void KafkaConnector::Impl::getOffsets(const QByteArray & topic, qint32 partitionId, quint32 correlationId, bool first)
+{
+	if (!verifyThreadCall(&Impl::getOffsets, topic, partitionId, correlationId, first)) return;
+
+	// get broker for topic and partition
+	qint32 nodeId = responsibilities_[topic][partitionId].id;
+	if (nodeId == -1) {
+		main_.offsetResponse(correlationId, -1);
+		fetchMetaData();
+		return;
+	}
+
+	// get tcp connection of broker
+	const KafkaConnector::Address & addr = allBrokers_[nodeId];
+	TCPConnData * data = net_.openConnection(addr.first, addr.second);
+	if (!data) {
+		main_.offsetResponse(correlationId, -1);
+		fetchMetaData();
+		return;
+	}
+
+	KafkaConnector::OffsetConnection * conn = new KafkaConnector::OffsetConnection(data, *this);
+	impl::KafkaRequestWriter req = conn->request(2, 1, correlationId,
+		4 + 2 + topic.size() + 4 + 8 + 4);
+	req
+		<< (qint32)-1
+		<< (qint32)1	// just one topic
+		<< (impl::KafkaString)topic
+		<< (qint32)1	// just one partition
+		<< (qint32)partitionId
+		<< (qint64)(first ? -2 : -1);	// first or last offset
+	req.send();
+}
+
 void KafkaConnector::Impl::fetch(const QByteArray & topic, qint32 partitionId, qint64 offset,
 	quint32 maxWaitTime, quint32 minBytes, quint32 maxBytes, quint32 correlationId)
 {
@@ -262,14 +297,15 @@ void KafkaConnector::Impl::leaveGroup()
 TCPConnData * KafkaConnector::Impl::connectToCluster()
 {
 	if (cluster_.isEmpty()) return 0;
+	if (clusterId_ >= cluster_.size()) clusterId_ = 0;
 
 	const int startId = clusterId_;
 	do {
 		const KafkaConnector::Address & addr = cluster_[clusterId_];
-		if (++clusterId_ >= cluster_.size()) clusterId_ = 0;
-
 		TCPConnData * data = net_.openConnection(addr.first, addr.second);
 		if (data) return data;
+
+		if (++clusterId_ >= cluster_.size()) clusterId_ = 0;
 	} while (clusterId_ != startId);
 
 	return 0;

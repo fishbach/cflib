@@ -33,6 +33,7 @@ HEADERS = \
 	impl/kafkafetch.h \
 	impl/kafkagroup.h \
 	impl/kafkametadata.h \
+	impl/kafkaoffset.h \
 	impl/kafkaproduce.h \
 	impl/kafkaraw.h \
 	impl/requestparser.h \
