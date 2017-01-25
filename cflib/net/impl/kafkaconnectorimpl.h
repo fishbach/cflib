@@ -43,6 +43,7 @@ public:
 		quint32 maxWaitTime, quint32 minBytes, quint32 maxBytes, quint32 correlationId);
 
 	void joinGroup(const QByteArray & groupId, const KafkaConnector::Topics & topics, KafkaConnector::GroupAssignmentStrategy preferredStrategy);
+	void rejoinGroup();
 	void fetch(quint32 maxWaitTime, quint32 minBytes, quint32 maxBytes);
 	void commit();
 	void leaveGroup();

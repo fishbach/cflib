@@ -38,6 +38,7 @@ KafkaConnector::Impl::Impl(KafkaConnector &main) :
 	clusterId_(0),
 	currentState_(KafkaConnector::Idle),
 	groupConnection_(0),
+	groupMemberId_(""),
 	generationId_(0),
 	groupHeartbeatTimer_(this, &Impl::sendGroupHeartBeat)
 {
@@ -50,6 +51,7 @@ KafkaConnector::Impl::Impl(KafkaConnector &parent, util::ThreadVerify *other) :
 	clusterId_(0),
 	currentState_(KafkaConnector::Idle),
 	groupConnection_(0),
+	groupMemberId_(""),
 	generationId_(0),
 	groupHeartbeatTimer_(this, &Impl::sendGroupHeartBeat)
 {
@@ -176,6 +178,8 @@ void KafkaConnector::Impl::getOffsets(const QByteArray & topic, qint32 partition
 {
 	if (!verifyThreadCall(&Impl::getOffsets, topic, partitionId, correlationId, first)) return;
 
+	logFunctionTrace
+
 	// get broker for topic and partition
 	qint32 nodeId = responsibilities_[topic][partitionId].id;
 	if (nodeId == -1) {
@@ -210,6 +214,8 @@ void KafkaConnector::Impl::fetch(const QByteArray & topic, qint32 partitionId, q
 	quint32 maxWaitTime, quint32 minBytes, quint32 maxBytes, quint32 correlationId)
 {
 	if (!verifyThreadCall(&Impl::fetch, topic, partitionId, offset, maxWaitTime, minBytes, maxBytes, correlationId)) return;
+
+	logFunctionTrace
 
 	// get broker for topic and partition
 	qint32 nodeId = responsibilities_[topic][partitionId].id;
@@ -251,12 +257,13 @@ void KafkaConnector::Impl::joinGroup(const QByteArray & groupId, const Topics & 
 {
 	if (!verifyThreadCall(&Impl::joinGroup, groupId, topics, preferredStrategy)) return;
 
+	logFunctionTrace
+
 	if (groupId != groupId_) leaveGroup();
 	groupId_ = groupId;
 	groupTopicPartitions_.clear();
 	for (const QByteArray & topic : topics) groupTopicPartitions_[topic].clear();
 	preferredStrategy_ = preferredStrategy;
-	groupMemberId_ = "";
 
 	if (!groupConnection_) {
 		TCPConnData * data = connectToCluster();
@@ -275,9 +282,16 @@ void KafkaConnector::Impl::joinGroup(const QByteArray & groupId, const Topics & 
 	}
 }
 
+void KafkaConnector::Impl::rejoinGroup()
+{
+	joinGroup(groupId_, groupTopicPartitions_.keys(), preferredStrategy_);
+}
+
 void KafkaConnector::Impl::fetch(quint32 maxWaitTime, quint32 minBytes, quint32 maxBytes)
 {
 	if (!verifyThreadCall(&Impl::fetch, maxWaitTime, minBytes, maxBytes)) return;
+
+	// todo: ensure that join / sync has finished
 
 }
 
@@ -295,6 +309,8 @@ void KafkaConnector::Impl::leaveGroup()
 
 TCPConnData * KafkaConnector::Impl::connectToCluster()
 {
+	logFunctionTrace
+
 	if (cluster_.isEmpty()) return 0;
 	if (clusterId_ >= cluster_.size()) clusterId_ = 0;
 
@@ -312,6 +328,8 @@ TCPConnData * KafkaConnector::Impl::connectToCluster()
 
 void KafkaConnector::Impl::doJoin()
 {
+	logFunctionTrace
+
 	qint32 metaDataSize = 2 + 4 + 4;
 	for (const QByteArray & topic : groupTopicPartitions_.keys()) metaDataSize += 2 + topic.size();
 
@@ -342,11 +360,13 @@ void KafkaConnector::Impl::doJoin()
 
 void KafkaConnector::Impl::sendGroupHeartBeat()
 {
+	logFunctionTrace
+
 	impl::KafkaRequestWriter req = groupConnection_->request(12, 0, 2);
 	req
 		<< (impl::KafkaString)groupId_
 		<< generationId_
-		<< groupMemberId_;
+		<< (impl::KafkaString)groupMemberId_;
 	req.send();
 }
 
@@ -454,7 +474,6 @@ void KafkaConnector::Impl::computeGroupAssignment(const QByteArray & protocol, Q
 	} else {
 		logWarn("unknown protocol: %1", protocol);
 		generationId_ = 0;
-		groupMemberId_ = "";
 		groupConnection_->abort();
 	}
 }

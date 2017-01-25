@@ -69,7 +69,6 @@ protected:
 			if (errorCode != KafkaConnector::NoError) {
 				logWarn("cannot join group: %1", errorCode);
 				impl_.generationId_ = 0;
-				impl_.groupMemberId_ = "";
 				impl_.groupAssignment_.clear();
 				close();
 			} else {
@@ -84,6 +83,11 @@ protected:
 
 			qint16 errorCode;
 			reader >> errorCode;
+			if (errorCode == KafkaConnector::IllegalGenerationCode) {
+				impl_.doJoin();
+			} else if (errorCode != KafkaConnector::NoError) {
+				logWarn("got heartbeat error: %1", errorCode);
+			}
 
 		} else if (correlationId == 3) {
 			// sync
@@ -114,13 +118,20 @@ protected:
 
 			QByteArray userData;
 			reader >> userData;
+
+			for (const QByteArray & topic : impl_.groupTopicPartitions_.keys()) {
+				for (qint32 partition : impl_.groupTopicPartitions_[topic]) {
+					logInfo("got assignment: %1 %2", topic, partition);
+				}
+			}
 		}
 	}
 
 	void closed() override
 	{
+		impl_.groupHeartbeatTimer_.stop();
 		impl_.groupConnection_ = 0;
-		impl_.joinGroup(impl_.groupId_, impl_.groupTopicPartitions_.keys(), impl_.preferredStrategy_);
+		impl_.rejoinGroup();
 	}
 
 private:

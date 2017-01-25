@@ -49,10 +49,13 @@ public:
 				qint64 offset;
 				reader >> partitionId >> errorCode >> timestamp >> offset;
 
-				impl_.main_.offsetResponse(correlationId, offset);
-				ok_ = true;
+				if (errorCode == KafkaConnector::NoError) {
+					impl_.main_.offsetResponse(correlationId, offset);
+					ok_ = true;
+				}
 			}
 		}
+		close();
 	}
 
 	void closed() override

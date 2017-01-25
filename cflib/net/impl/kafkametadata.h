@@ -70,7 +70,7 @@ protected:
 		} else {
 			if (!impl_.groupConnection_) {
 				logWarn("could not retrieve kafka group coordinator");
-				impl_.fetchMetaData();
+				util::Timer::singleShot(1.0, &impl_, &KafkaConnector::Impl::rejoinGroup);
 			}
 		}
 	}
@@ -151,11 +151,13 @@ private:
 			logWarn("could not connect to group coordinator");
 		} else {
 			impl_.groupConnection_ = new KafkaConnector::GroupConnection(data, impl_);
+			impl_.groupHeartbeatTimer_.start(1.0);
 			impl_.doJoin();
 		}
 
 		close();
 	}
+
 
 private:
 	KafkaConnector::Impl & impl_;
