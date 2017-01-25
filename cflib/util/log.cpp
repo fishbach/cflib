@@ -163,7 +163,7 @@ void Log::writeLog(const char * filename, int lineNo, LogCategory category, cons
 	char * pos = (char *)line.constData();	// constData for performance
 
 	// timestamp
-	const QDateTime now = QDateTime::currentDateTime();
+	const QDateTime now = QDateTime::currentDateTimeUtc();
 	writeInt(pos, now.date().year(),  4); pos += 4;
 	writeInt(pos, now.date().month(), 2); pos += 2;
 	writeInt(pos, now.date().day(),   2); pos += 2;

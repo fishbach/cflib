@@ -62,7 +62,7 @@ void KafkaConnection::newBytesAvailable()
 		reader >> size;
 		if (size <= 0) {
 			logWarn("funny size of reply: %1", size);
-			close(HardClosed, true);
+			abort();
 			buffer_.clear();
 			return;
 		}

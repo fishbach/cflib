@@ -20,6 +20,7 @@
 
 #include <cflib/net/kafkaconnector.h>
 #include <cflib/net/tcpmanager.h>
+#include <cflib/util/evtimer.h>
 #include <cflib/util/threadverify.h>
 
 namespace cflib { namespace net {
@@ -41,13 +42,16 @@ public:
 	void fetch(const QByteArray & topic, qint32 partitionId, qint64 offset,
 		quint32 maxWaitTime, quint32 minBytes, quint32 maxBytes, quint32 correlationId);
 
-	void joinGroup(const QByteArray & groupId, const KafkaConnector::Topics & topics);
+	void joinGroup(const QByteArray & groupId, const KafkaConnector::Topics & topics, KafkaConnector::GroupAssignmentStrategy preferredStrategy);
 	void fetch(quint32 maxWaitTime, quint32 minBytes, quint32 maxBytes);
 	void commit();
 	void leaveGroup();
 
 	TCPConnData * connectToCluster();
 	void doJoin();
+	void sendGroupHeartBeat();
+	void doSync();
+	void computeGroupAssignment(const QByteArray & protocol, QMap<QByteArray, QSet<QByteArray>> memberTopics);
 
 public:
 	KafkaConnector & main_;
@@ -67,9 +71,12 @@ public:
 
 	KafkaConnector::GroupConnection * groupConnection_;
 	QByteArray groupId_;
+	QMap<QByteArray, QList<qint32>> groupTopicPartitions_;
+	KafkaConnector::GroupAssignmentStrategy preferredStrategy_;
 	QByteArray groupMemberId_;
 	qint32 generationId_;
-	QList<QByteArray> groupTopics_;
+	util::EVTimer groupHeartbeatTimer_;
+	QMap<QByteArray, QMap<QByteArray, QList<qint32>>> groupAssignment_;
 };
 
 }}	// namespace

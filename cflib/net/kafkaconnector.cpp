@@ -64,9 +64,9 @@ void KafkaConnector::fetch(const QByteArray & topic, qint32 partitionId, qint64 
 	impl_->fetch(topic, partitionId, offset, maxWaitTime, minBytes, maxBytes, correlationId);
 }
 
-void KafkaConnector::joinGroup(const QByteArray & groupId, const Topics & topics)
+void KafkaConnector::joinGroup(const QByteArray & groupId, const Topics & topics, GroupAssignmentStrategy preferredStrategy)
 {
-	impl_->joinGroup(groupId, topics);
+	impl_->joinGroup(groupId, topics, preferredStrategy);
 }
 
 void KafkaConnector::fetch(quint32 maxWaitTime, quint32 minBytes, quint32 maxBytes)

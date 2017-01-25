@@ -38,7 +38,8 @@ KafkaConnector::Impl::Impl(KafkaConnector &main) :
 	clusterId_(0),
 	currentState_(KafkaConnector::Idle),
 	groupConnection_(0),
-	generationId_(0)
+	generationId_(0),
+	groupHeartbeatTimer_(this, &Impl::sendGroupHeartBeat)
 {
 }
 
@@ -49,7 +50,8 @@ KafkaConnector::Impl::Impl(KafkaConnector &parent, util::ThreadVerify *other) :
 	clusterId_(0),
 	currentState_(KafkaConnector::Idle),
 	groupConnection_(0),
-	generationId_(0)
+	generationId_(0),
+	groupHeartbeatTimer_(this, &Impl::sendGroupHeartBeat)
 {
 }
 
@@ -245,19 +247,16 @@ void KafkaConnector::Impl::fetch(const QByteArray & topic, qint32 partitionId, q
 	req.send();
 }
 
-//	Groups
-//	ProtocolType = "consumer"
-//	ProtocolName = "range"
-//	ProtocolVersion = 0
-//  UserData -> empty
-
-void KafkaConnector::Impl::joinGroup(const QByteArray & groupId, const Topics & topics)
+void KafkaConnector::Impl::joinGroup(const QByteArray & groupId, const Topics & topics, GroupAssignmentStrategy preferredStrategy)
 {
-	if (!verifyThreadCall(&Impl::joinGroup, groupId, topics)) return;
+	if (!verifyThreadCall(&Impl::joinGroup, groupId, topics, preferredStrategy)) return;
 
 	if (groupId != groupId_) leaveGroup();
 	groupId_ = groupId;
-	groupTopics_ = topics;
+	groupTopicPartitions_.clear();
+	for (const QByteArray & topic : topics) groupTopicPartitions_[topic].clear();
+	preferredStrategy_ = preferredStrategy;
+	groupMemberId_ = "";
 
 	if (!groupConnection_) {
 		TCPConnData * data = connectToCluster();
@@ -313,6 +312,151 @@ TCPConnData * KafkaConnector::Impl::connectToCluster()
 
 void KafkaConnector::Impl::doJoin()
 {
+	qint32 metaDataSize = 2 + 4 + 4;
+	for (const QByteArray & topic : groupTopicPartitions_.keys()) metaDataSize += 2 + topic.size();
+
+	impl::KafkaRequestWriter req = groupConnection_->request(11, 1, 1);
+	req
+		<< (impl::KafkaString)groupId_
+		<< (qint32)10000							// SessionTimeout (ms)
+		<< (qint32)10000							// RebalanceTimeout (ms)
+		<< (impl::KafkaString)groupMemberId_
+		<< (impl::KafkaString)"consumer"
+		<< (qint32)2								// two protocols
+		<< (impl::KafkaString)(preferredStrategy_ == RangeAssignment ? "range" : "roundrobin")
+		<< metaDataSize
+		<< (qint16)0								// Version
+		<< (qint32)groupTopicPartitions_.size();	// Topics
+	for (const QByteArray & topic : groupTopicPartitions_.keys()) req << (impl::KafkaString)topic;
+	req
+		<< QByteArray()								// UserData
+		<< (impl::KafkaString)(preferredStrategy_ != RangeAssignment ? "range" : "roundrobin")
+		<< metaDataSize
+		<< (qint16)0								// Version
+		<< (qint32)groupTopicPartitions_.size();	// Topics
+	for (const QByteArray & topic : groupTopicPartitions_.keys()) req << (impl::KafkaString)topic;
+	req
+		<< QByteArray();							// UserData
+	req.send();
+}
+
+void KafkaConnector::Impl::sendGroupHeartBeat()
+{
+	impl::KafkaRequestWriter req = groupConnection_->request(12, 0, 2);
+	req
+		<< (impl::KafkaString)groupId_
+		<< generationId_
+		<< groupMemberId_;
+	req.send();
+}
+
+void KafkaConnector::Impl::doSync()
+{
+	QMap<QByteArray, QByteArray> rawAssignment;
+	for (const QByteArray & member : groupAssignment_.keys()) {
+		const QMap<QByteArray, QList<qint32>> & topics = groupAssignment_[member];
+
+		impl::KafkaRawWriter writer;
+		writer
+			<< (qint16)0	// Version
+			<< (qint32)topics.size();
+
+		for (const QByteArray & topic : topics.keys()) {
+			const QList<qint32> & partitions = topics[topic];
+
+			writer
+				<< (impl::KafkaString)topic
+				<< (qint32)partitions.size();
+			for (qint32 partition : partitions) writer << partition;
+		}
+		writer
+			<< QByteArray();	// UserData
+
+		rawAssignment[member] = writer.getRawContent();
+	}
+
+	impl::KafkaRequestWriter req = groupConnection_->request(14, 0, 3);
+	req
+		<< (impl::KafkaString)groupId_
+		<< generationId_
+		<< (impl::KafkaString)groupMemberId_
+		<< (qint32)rawAssignment.size();
+	for (const QByteArray & member : rawAssignment.keys()) {
+		const QByteArray & assignment = rawAssignment[member];
+		req
+			<< (impl::KafkaString)member
+			<< assignment;
+	}
+	req.send();
+}
+
+void KafkaConnector::Impl::computeGroupAssignment(const QByteArray & protocol, QMap<QByteArray, QSet<QByteArray>> memberTopics)
+{
+	// QMap<QByteArray, QMap<QByteArray, QList<qint32>>> groupAssignment_
+	groupAssignment_.clear();
+	if (memberTopics.isEmpty()) return;
+
+	if (protocol == "range") {
+
+		QMap<QByteArray, QList<QByteArray>> topicMembers;
+		for (const QByteArray & member : memberTopics.keys()) {
+			for (const QByteArray & topic : memberTopics[member]) {
+				if (!responsibilities_.value(topic).isEmpty()) topicMembers[topic] << member;
+			}
+		}
+
+		for (const QByteArray & topic : topicMembers.keys()) {
+			QList<QByteArray> & members = topicMembers[topic];
+			qSort(members);
+
+			int partitionCount = responsibilities_[topic].size();
+			int partitionsPerMember  = partitionCount / members.size();
+			int unassignedPartitions = partitionCount % members.size();
+			int pId = 0;
+			for (const QByteArray & member : members) {
+				for (int j = 0 ; j < partitionsPerMember ; ++j) {
+					groupAssignment_[member][topic] << pId++;
+				}
+				if (unassignedPartitions > 0) {
+					--unassignedPartitions;
+					groupAssignment_[member][topic] << pId++;
+				}
+			}
+		}
+
+	} else if (protocol == "roundrobin") {
+
+		QMap<QByteArray, int> topicPartitionCounts;
+		for (const QByteArray & member : memberTopics.keys()) {
+			for (const QByteArray & topic : memberTopics[member]) {
+				if (!topicPartitionCounts.contains(topic)) {
+					topicPartitionCounts[topic] = responsibilities_.value(topic).size();
+				}
+			}
+		}
+
+		QList<QByteArray> members = memberTopics.keys();
+		int memberId = -1;
+		for (const QByteArray & topic : topicPartitionCounts.keys()) {
+			int partitionCount = topicPartitionCounts[topic];
+			for (int i = 0 ; i < partitionCount ; ++i) {
+
+				// find next member for topic
+				do {
+					++memberId;
+					if (memberId >= members.size()) memberId = 0;
+				} while (!memberTopics[members[memberId]].contains(topic));
+
+				groupAssignment_[members[memberId]][topic] << i;
+			}
+		}
+
+	} else {
+		logWarn("unknown protocol: %1", protocol);
+		generationId_ = 0;
+		groupMemberId_ = "";
+		groupConnection_->abort();
+	}
 }
 
 }}	// namespace

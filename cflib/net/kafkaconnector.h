@@ -73,6 +73,12 @@ public:
 		ClusterAuthorizationFailedCode   = 31
 	};
 
+	enum GroupAssignmentStrategy
+	{
+		RangeAssignment      = 1,
+		RoundRobinAssignment = 2
+	};
+
 	typedef QPair<QByteArray /* ip */, quint16 /* port */> Address;
 
 	typedef QPair<QByteArray /* key */, QByteArray /* value */> Message;
@@ -91,15 +97,15 @@ public:
 	void produce(const QByteArray & topic, qint32 partitionId, const Messages & messages,
 		quint16 requiredAcks = 1, quint32 ackTimeoutMs = 0, quint32 correlationId = 1);
 
+	// highwaterMarkOffset -> last offset + 1
 	void getFirstOffset(const QByteArray & topic, qint32 partitionId, quint32 correlationId = 1);
-	// last offset + 1
 	void getHighwaterMarkOffset(const QByteArray & topic, qint32 partitionId, quint32 correlationId = 1);
 
 	void fetch(const QByteArray & topic, qint32 partitionId, qint64 offset,
 		quint32 maxWaitTime = 0x7FFFFFFF, quint32 minBytes = 1, quint32 maxBytes = 0x100000 /* 1mb */, quint32 correlationId = 1);
 
 	// only one group can be joined simultaneously
-	void joinGroup(const QByteArray & groupId, const Topics & topics);
+	void joinGroup(const QByteArray & groupId, const Topics & topics, GroupAssignmentStrategy preferredStrategy = RangeAssignment);
 	void fetch(quint32 maxWaitTime = 0x7FFFFFFF, quint32 minBytes = 1, quint32 maxBytes = 0x100000 /* 1mb */);
 	void commit();	// commits last fetchResponse
 	void leaveGroup();

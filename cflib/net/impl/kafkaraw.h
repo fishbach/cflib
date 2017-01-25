@@ -66,6 +66,11 @@ public:
 		return data_.size();
 	}
 
+	inline QByteArray getRawContent()
+	{
+		return data_.mid(4);
+	}
+
 private:
 	QByteArray data_;
 

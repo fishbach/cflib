@@ -127,7 +127,7 @@ private:
 			}
 		}
 
-		close(ReadWriteClosed, true);
+		close();
 	}
 
 	void readGroupCoordinator(impl::KafkaRawReader & reader)
@@ -140,7 +140,7 @@ private:
 
 		if (errorCode != KafkaConnector::NoError) {
 			logInfo("got error %1 in group coordinator request", errorCode);
-			close(ReadWriteClosed, true);
+			close();
 			return;
 		}
 
@@ -154,7 +154,7 @@ private:
 			impl_.doJoin();
 		}
 
-		close(ReadWriteClosed, true);
+		close();
 	}
 
 private:

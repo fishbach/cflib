@@ -31,6 +31,8 @@ public:
 	KafkaConnection(TCPConnData * data);
 
 	KafkaRequestWriter request(qint16 apiKey, qint16 apiVersion = 0, qint32 correlationId = 1, quint32 expectedSize = 0);
+	void close() { TCPConn::close(ReadWriteClosed, true); }
+	void abort() { TCPConn::close(HardClosed, true); }
 
 protected:
 	virtual void reply(qint32 correlationId, KafkaRawReader & reader) { Q_UNUSED(correlationId) Q_UNUSED(reader) }
