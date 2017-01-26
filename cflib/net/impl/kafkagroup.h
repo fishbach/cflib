@@ -33,8 +33,7 @@ public:
 protected:
 	void reply(qint32 correlationId, impl::KafkaRawReader & reader) override
 	{
-		if (correlationId == 1) {
-			// join
+		if (correlationId == Impl::JoinGroup) {
 
 			qint16 errorCode;
 			qint32 generationId;
@@ -78,8 +77,7 @@ protected:
 				impl_.doSync();
 			}
 
-		} else if (correlationId == 2) {
-			// heartbeat
+		} else if (correlationId == Impl::Heartbeat) {
 
 			qint16 errorCode;
 			reader >> errorCode;
@@ -89,8 +87,7 @@ protected:
 				logWarn("got heartbeat error: %1", errorCode);
 			}
 
-		} else if (correlationId == 3) {
-			// sync
+		} else if (correlationId == Impl::SyncGroup) {
 
 			qint16 errorCode;
 			qint32 memberAssignmentSize;
@@ -124,6 +121,7 @@ protected:
 					logInfo("got assignment: %1 %2", topic, partition);
 				}
 			}
+
 		}
 	}
 

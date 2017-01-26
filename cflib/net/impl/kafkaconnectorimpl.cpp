@@ -101,7 +101,7 @@ void KafkaConnector::Impl::fetchMetaData()
 	}
 
 	KafkaConnector::MetadataConnection * conn = new KafkaConnector::MetadataConnection(true, data, *this);
-	impl::KafkaRequestWriter req = conn->request(3, 0, 1, 4);
+	impl::KafkaRequestWriter req = conn->request(Metadata, 0, 1, 4);
 	req << (qint32)0;	// no topic specified -> get all
 	req.send();
 }
@@ -141,7 +141,7 @@ void KafkaConnector::Impl::produce(const QByteArray & topic, qint32 partitionId,
 			4 + msg.second.size();	// Value
 	}
 
-	impl::KafkaRequestWriter req = conn->request(0, 0, correlationId,
+	impl::KafkaRequestWriter req = conn->request(Produce, 0, correlationId,
 		2 + 4 + 4 + 2 + topic.size() + 4 + 4 + 4 + messageSetSize);
 	req
 		<< (qint16)requiredAcks
@@ -198,7 +198,7 @@ void KafkaConnector::Impl::getOffsets(const QByteArray & topic, qint32 partition
 	}
 
 	KafkaConnector::OffsetConnection * conn = new KafkaConnector::OffsetConnection(data, *this);
-	impl::KafkaRequestWriter req = conn->request(2, 1, correlationId,
+	impl::KafkaRequestWriter req = conn->request(Offsets, 1, correlationId,
 		4 + 2 + topic.size() + 4 + 8 + 4);
 	req
 		<< (qint32)-1
@@ -238,7 +238,7 @@ void KafkaConnector::Impl::fetch(const QByteArray & topic, qint32 partitionId, q
 		conn = new KafkaConnector::FetchConnection(data, *this);
 	}
 
-	impl::KafkaRequestWriter req = conn->request(1, 0, correlationId,
+	impl::KafkaRequestWriter req = conn->request(Fetch, 0, correlationId,
 		4 + 4 + 4 + 4 + 2 + topic.size() + 4 + 4 + 8 + 4);
 	req
 		<< (qint32)-1
@@ -274,7 +274,7 @@ void KafkaConnector::Impl::joinGroup(const QByteArray & groupId, const Topics & 
 		}
 
 		KafkaConnector::MetadataConnection * conn = new KafkaConnector::MetadataConnection(false, data, *this);
-		impl::KafkaRequestWriter req = conn->request(10, 0, 1, 2 + groupId.size());
+		impl::KafkaRequestWriter req = conn->request(GroupCoordinator, 0, 1, 2 + groupId.size());
 		req << (impl::KafkaString)groupId;
 		req.send();
 	} else {
@@ -333,7 +333,7 @@ void KafkaConnector::Impl::doJoin()
 	qint32 metaDataSize = 2 + 4 + 4;
 	for (const QByteArray & topic : groupTopicPartitions_.keys()) metaDataSize += 2 + topic.size();
 
-	impl::KafkaRequestWriter req = groupConnection_->request(11, 1, 1);
+	impl::KafkaRequestWriter req = groupConnection_->request(JoinGroup, 1, JoinGroup);
 	req
 		<< (impl::KafkaString)groupId_
 		<< (qint32)10000							// SessionTimeout (ms)
@@ -362,7 +362,7 @@ void KafkaConnector::Impl::sendGroupHeartBeat()
 {
 	logFunctionTrace
 
-	impl::KafkaRequestWriter req = groupConnection_->request(12, 0, 2);
+	impl::KafkaRequestWriter req = groupConnection_->request(Heartbeat, 0, Heartbeat);
 	req
 		<< (impl::KafkaString)groupId_
 		<< generationId_
@@ -395,7 +395,7 @@ void KafkaConnector::Impl::doSync()
 		rawAssignment[member] = writer.getRawContent();
 	}
 
-	impl::KafkaRequestWriter req = groupConnection_->request(14, 0, 3);
+	impl::KafkaRequestWriter req = groupConnection_->request(SyncGroup, 0, SyncGroup);
 	req
 		<< (impl::KafkaString)groupId_
 		<< generationId_
