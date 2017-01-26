@@ -347,8 +347,8 @@ void KafkaConnector::Impl::doJoin()
 	impl::KafkaRequestWriter req = groupConnection_->request(JoinGroup, 1, JoinGroup);
 	req
 		<< (impl::KafkaString)groupId_
-		<< (qint32)10000							// SessionTimeout (ms)
-		<< (qint32)10000							// RebalanceTimeout (ms)
+		<< (qint32)6000								// SessionTimeout   (see group.min.session.timeout.ms)
+		<< (qint32)6000								// RebalanceTimeout (see group.min.session.timeout.ms)
 		<< (impl::KafkaString)groupMemberId_
 		<< (impl::KafkaString)"consumer"
 		<< (qint32)2								// two protocols
