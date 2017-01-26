@@ -80,10 +80,9 @@ void KafkaConnector::GroupConnection::reply(qint32 correlationId, impl::KafkaRaw
 
 		qint16 errorCode;
 		reader >> errorCode;
-		if (errorCode == KafkaConnector::IllegalGenerationCode) {
-			impl_.doJoin();
-		} else if (errorCode != KafkaConnector::NoError) {
-			logWarn("got heartbeat error: %1", errorCode);
+		if (errorCode != KafkaConnector::NoError) {
+			logInfo("got heartbeat error: %1", errorCode);
+			impl_.rejoinGroup();
 		}
 
 	} else if (correlationId == Impl::SyncGroup) {
@@ -100,14 +99,11 @@ void KafkaConnector::GroupConnection::reply(qint32 correlationId, impl::KafkaRaw
 			reader >> topic;
 
 			QList<qint32> & partitions = impl_.groupTopicPartitions_[topic];
-			partitions.clear();
-
 			qint32 partitionCount;
 			reader >> partitionCount;
 			for (qint32 i = 0 ; i < partitionCount ; ++i) {
 				qint32 partition;
 				reader >> partition;
-
 				partitions << partition;
 			}
 		}
@@ -115,12 +111,7 @@ void KafkaConnector::GroupConnection::reply(qint32 correlationId, impl::KafkaRaw
 		QByteArray userData;
 		reader >> userData;
 
-		for (const QByteArray & topic : impl_.groupTopicPartitions_.keys()) {
-			for (qint32 partition : impl_.groupTopicPartitions_[topic]) {
-				logInfo("got assignment: %1 %2", topic, partition);
-			}
-		}
-
+		impl_.main_.groupStateChanged(impl_.groupTopicPartitions_);
 	}
 }
 

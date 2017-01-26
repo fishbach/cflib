@@ -105,13 +105,14 @@ public:
 		quint32 maxWaitTime = 0x7FFFFFFF, quint32 minBytes = 1, quint32 maxBytes = 0x100000 /* 1mb */, quint32 correlationId = 1);
 
 	// only one group can be joined simultaneously
-	void joinGroup(const QByteArray & groupId, const Topics & topics, GroupAssignmentStrategy preferredStrategy = RangeAssignment);
+	void joinGroup(const QByteArray & groupId, const Topics & topics, GroupAssignmentStrategy preferredStrategy = RoundRobinAssignment);
 	void fetch(quint32 maxWaitTime = 0x7FFFFFFF, quint32 minBytes = 1, quint32 maxBytes = 0x100000 /* 1mb */);
 	void commit();	// commits last fetchResponse
 	void leaveGroup();
 
 protected:
 	virtual void stateChanged(State state) { Q_UNUSED(state) }
+	virtual void groupStateChanged(const QMap<QByteArray, QList<qint32>> & responsibility) { Q_UNUSED(responsibility) }
 
 	// offset -> is offset of first message appended to the kafka log
 	virtual void produceResponse(quint32 correlationId, ErrorCode errorCode, qint64 offset) {

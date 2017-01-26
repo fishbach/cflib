@@ -263,27 +263,14 @@ void KafkaConnector::Impl::joinGroup(const QByteArray & groupId, const Topics & 
 	groupTopicPartitions_.clear();
 	for (const QByteArray & topic : topics) groupTopicPartitions_[topic].clear();
 	preferredStrategy_ = preferredStrategy;
-
-	if (!groupConnection_) {
-		TCPConnData * data = connectToCluster();
-		if (!data) {
-			groupId_.clear();
-			logWarn("could not get group coordinator");
-			return;
-		}
-
-		KafkaConnector::MetadataConnection * conn = new KafkaConnector::MetadataConnection(false, data, *this);
-		impl::KafkaRequestWriter req = conn->request(GroupCoordinator, 0, 1, 2 + groupId.size());
-		req << (impl::KafkaString)groupId;
-		req.send();
-	} else {
-		doJoin();
-	}
+	doJoin();
 }
 
 void KafkaConnector::Impl::rejoinGroup()
 {
-	joinGroup(groupId_, groupTopicPartitions_.keys(), preferredStrategy_);
+	QMutableMapIterator<QByteArray, QList<qint32>> it(groupTopicPartitions_);
+	while (it.hasNext()) it.next().value().clear();
+	doJoin();
 }
 
 void KafkaConnector::Impl::fetch(quint32 maxWaitTime, quint32 minBytes, quint32 maxBytes)
@@ -329,6 +316,22 @@ void KafkaConnector::Impl::doJoin()
 {
 	logFunctionTrace
 
+	// ensure group connection is available
+	if (!groupConnection_) {
+		TCPConnData * data = connectToCluster();
+		if (!data) {
+			groupId_.clear();
+			logWarn("could not get group coordinator");
+			return;
+		}
+
+		KafkaConnector::MetadataConnection * conn = new KafkaConnector::MetadataConnection(false, data, *this);
+		impl::KafkaRequestWriter req = conn->request(GroupCoordinator, 0, 1, 2 + groupId_.size());
+		req << (impl::KafkaString)groupId_;
+		req.send();
+		return;
+	}
+
 	qint32 metaDataSize = 2 + 4 + 4;
 	for (const QByteArray & topic : groupTopicPartitions_.keys()) metaDataSize += 2 + topic.size();
 
@@ -371,6 +374,8 @@ void KafkaConnector::Impl::sendGroupHeartBeat()
 
 void KafkaConnector::Impl::doSync()
 {
+	logFunctionTrace
+
 	QMap<QByteArray, QByteArray> rawAssignment;
 	for (const QByteArray & member : groupAssignment_.keys()) {
 		const QMap<QByteArray, QList<qint32>> & topics = groupAssignment_[member];
@@ -411,9 +416,10 @@ void KafkaConnector::Impl::doSync()
 
 void KafkaConnector::Impl::computeGroupAssignment(const QByteArray & protocol, QMap<QByteArray, QSet<QByteArray>> memberTopics)
 {
-	// QMap<QByteArray, QMap<QByteArray, QList<qint32>>> groupAssignment_
 	groupAssignment_.clear();
 	if (memberTopics.isEmpty()) return;
+
+	logFunctionTraceParam("computeGroupAssignment with %1", protocol);
 
 	if (protocol == "range") {
 
@@ -445,29 +451,34 @@ void KafkaConnector::Impl::computeGroupAssignment(const QByteArray & protocol, Q
 
 	} else if (protocol == "roundrobin") {
 
-		QMap<QByteArray, int> topicPartitionCounts;
-		for (const QByteArray & member : memberTopics.keys()) {
-			for (const QByteArray & topic : memberTopics[member]) {
-				if (!topicPartitionCounts.contains(topic)) {
-					topicPartitionCounts[topic] = responsibilities_.value(topic).size();
-				}
+		QSet<QByteArray> allTopics;
+		for (const QSet<QByteArray> & topics : memberTopics.values()) allTopics += topics;
+
+		QVector<QPair<QByteArray, qint32>> allTopicPartitions;
+		for (const QByteArray & topic : allTopics) {
+			for (qint32 i = 0 ; i < responsibilities_.value(topic).size() ; ++i) {
+				allTopicPartitions << qMakePair(topic, i);
 			}
 		}
+		qSort(allTopicPartitions);
 
 		QList<QByteArray> members = memberTopics.keys();
-		int memberId = -1;
-		for (const QByteArray & topic : topicPartitionCounts.keys()) {
-			int partitionCount = topicPartitionCounts[topic];
-			for (int i = 0 ; i < partitionCount ; ++i) {
-
-				// find next member for topic
-				do {
-					++memberId;
-					if (memberId >= members.size()) memberId = 0;
-				} while (!memberTopics[members[memberId]].contains(topic));
-
-				groupAssignment_[members[memberId]][topic] << i;
+		int memberId = 0;
+		QMutableVectorIterator<QPair<QByteArray, qint32>> it(allTopicPartitions);
+		while (it.hasNext()) {
+			const QPair<QByteArray, qint32> & el = it.next();
+			const QByteArray & member = members[memberId];
+			if (memberTopics[member].contains(el.first)) {
+				groupAssignment_[member][el.first] << el.second;
+				logInfo("assigning %1/%2 to %3", el.first, el.second, member);
+				it.remove();
+			} else if (it.hasNext()) {
+				// try next (topic, partition) for member
+				continue;
 			}
+
+			if (++memberId >= members.size()) memberId = 0;
+			it.toFront();
 		}
 
 	} else {
