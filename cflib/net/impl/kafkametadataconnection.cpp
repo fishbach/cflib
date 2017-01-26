@@ -148,7 +148,6 @@ void KafkaConnector::MetadataConnection::readGroupCoordinator(impl::KafkaRawRead
 		logWarn("could not connect to group coordinator");
 	} else {
 		impl_.groupConnection_ = new KafkaConnector::GroupConnection(data, impl_);
-		impl_.groupHeartbeatTimer_.start(1.0);
 		impl_.doJoin();
 	}
 

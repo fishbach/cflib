@@ -96,6 +96,7 @@ public:
 	QHash<qint32 /* nodeId */, KafkaConnector::FetchConnection   *> fetchConnections_;
 
 	KafkaConnector::GroupConnection * groupConnection_;
+	bool joinInProgress_;
 	QByteArray groupId_;
 	QMap<QByteArray, QList<qint32>> groupTopicPartitions_;
 	KafkaConnector::GroupAssignmentStrategy preferredStrategy_;

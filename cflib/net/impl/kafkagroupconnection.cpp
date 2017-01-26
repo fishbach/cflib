@@ -74,6 +74,7 @@ void KafkaConnector::GroupConnection::reply(qint32 correlationId, impl::KafkaRaw
 			impl_.groupMemberId_ = ownMemberId;
 			impl_.computeGroupAssignment(groupProtocol, memberTopics);
 			impl_.doSync();
+			impl_.groupHeartbeatTimer_.start(1.0);
 		}
 
 	} else if (correlationId == Impl::Heartbeat) {
@@ -112,6 +113,7 @@ void KafkaConnector::GroupConnection::reply(qint32 correlationId, impl::KafkaRaw
 		reader >> userData;
 
 		impl_.main_.groupStateChanged(impl_.groupTopicPartitions_);
+		impl_.joinInProgress_ = false;
 	}
 }
 

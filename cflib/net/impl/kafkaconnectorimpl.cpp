@@ -37,6 +37,7 @@ KafkaConnector::Impl::Impl(KafkaConnector &main) :
 	clusterId_(0),
 	currentState_(KafkaConnector::Idle),
 	groupConnection_(0),
+	joinInProgress_(false),
 	groupMemberId_(""),
 	generationId_(0),
 	groupHeartbeatTimer_(this, &Impl::sendGroupHeartBeat)
@@ -50,6 +51,7 @@ KafkaConnector::Impl::Impl(KafkaConnector &parent, util::ThreadVerify *other) :
 	clusterId_(0),
 	currentState_(KafkaConnector::Idle),
 	groupConnection_(0),
+	joinInProgress_(false),
 	groupMemberId_(""),
 	generationId_(0),
 	groupHeartbeatTimer_(this, &Impl::sendGroupHeartBeat)
@@ -258,6 +260,11 @@ void KafkaConnector::Impl::joinGroup(const QByteArray & groupId, const Topics & 
 
 	logFunctionTrace
 
+	if (joinInProgress_) {
+		logWarn("cannot join twice");
+		return;
+	}
+
 	if (groupId != groupId_) leaveGroup();
 	groupId_ = groupId;
 	groupTopicPartitions_.clear();
@@ -268,6 +275,9 @@ void KafkaConnector::Impl::joinGroup(const QByteArray & groupId, const Topics & 
 
 void KafkaConnector::Impl::rejoinGroup()
 {
+	if (joinInProgress_) return;
+	joinInProgress_ = true;
+
 	QMutableMapIterator<QByteArray, QList<qint32>> it(groupTopicPartitions_);
 	while (it.hasNext()) it.next().value().clear();
 	doJoin();
@@ -290,7 +300,6 @@ void KafkaConnector::Impl::commit()
 void KafkaConnector::Impl::leaveGroup()
 {
 	if (!verifyThreadCall(&Impl::leaveGroup)) return;
-
 }
 
 TCPConnData * KafkaConnector::Impl::connectToCluster()
