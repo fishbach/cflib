@@ -20,6 +20,7 @@
 
 #include <cflib/net/impl/kafkagroupconnection.h>
 #include <cflib/util/log.h>
+#include <cflib/util/timer.h>
 
 USE_LOG(LogCat::Network)
 
