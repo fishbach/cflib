@@ -18,16 +18,15 @@
 
 #include "kafkaconnectorimpl.h"
 
+#include <cflib/net/impl/kafkafetchconnection.h>
+#include <cflib/net/impl/kafkagroupconnection.h>
+#include <cflib/net/impl/kafkametadataconnection.h>
+#include <cflib/net/impl/kafkaoffsetconnection.h>
+#include <cflib/net/impl/kafkaproduceconnection.h>
 #include <cflib/util/log.h>
-#include <cflib/util/timer.h>
 #include <cflib/util/util.h>
 
 USE_LOG(LogCat::Network)
-
-#include <cflib/net/impl/kafkafetch.h>
-#include <cflib/net/impl/kafkametadata.h>
-#include <cflib/net/impl/kafkaoffset.h>
-#include <cflib/net/impl/kafkaproduce.h>
 
 namespace cflib { namespace net {
 

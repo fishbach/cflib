@@ -21,44 +21,23 @@
 
 namespace cflib { namespace net {
 
-class KafkaConnector::ProduceConnection : public impl::KafkaConnection
+class KafkaConnector::MetadataConnection : public impl::KafkaConnection
 {
 public:
-	ProduceConnection(TCPConnData * data, KafkaConnector::Impl & impl) :
-		KafkaConnection(data),
-		impl_(impl)
-	{
-	}
+	// isMetaDataRequest == false -> group coordinator request
+	MetadataConnection(bool isMetaDataRequest, TCPConnData * data, KafkaConnector::Impl & impl);
 
-	void reply(qint32 correlationId, impl::KafkaRawReader & reader) override
-	{
-		qint32 topicCount;
-		reader >> topicCount;
-		for (qint32 i = 0 ; i < topicCount ; ++i) {
+protected:
+	void reply(qint32, impl::KafkaRawReader & reader) override;
+	void closed() override;
 
-			impl::KafkaString topicName;
-			reader >> topicName;
-
-			qint32 partitionCount;
-			reader >> partitionCount;
-			for (qint32 i = 0 ; i < partitionCount ; ++i) {
-				qint32 partitionId;
-				qint16 errorCode;
-				qint64 offset;
-				reader >> partitionId >> errorCode >> offset;
-				impl_.main_.produceResponse(correlationId, (KafkaConnector::ErrorCode)errorCode, offset);
-			}
-		}
-	}
-
-	void closed() override
-	{
-		impl_.produceConnections_.remove(impl_.produceConnections_.keys(this).value(0));
-		impl_.fetchMetaData();
-	}
+private:
+	void readMetaData(impl::KafkaRawReader & reader);
+	void readGroupCoordinator(impl::KafkaRawReader & reader);
 
 private:
 	KafkaConnector::Impl & impl_;
+	const bool isMetaDataRequest_;
 };
 
 }}	// namespace

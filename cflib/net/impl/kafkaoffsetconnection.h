@@ -24,44 +24,11 @@ namespace cflib { namespace net {
 class KafkaConnector::OffsetConnection : public impl::KafkaConnection
 {
 public:
-	OffsetConnection(TCPConnData * data, KafkaConnector::Impl & impl) :
-		KafkaConnection(data),
-		impl_(impl),
-		ok_(false)
-	{
-	}
+	OffsetConnection(TCPConnData * data, KafkaConnector::Impl & impl);
 
-	void reply(qint32 correlationId, impl::KafkaRawReader & reader) override
-	{
-		qint32 topicCount;
-		reader >> topicCount;
-		for (qint32 i = 0 ; i < topicCount ; ++i) {
-
-			impl::KafkaString topicName;
-			reader >> topicName;
-
-			qint32 partitionCount;
-			reader >> partitionCount;
-			for (qint32 i = 0 ; i < partitionCount ; ++i) {
-				qint32 partitionId;
-				qint16 errorCode;
-				qint64 timestamp;
-				qint64 offset;
-				reader >> partitionId >> errorCode >> timestamp >> offset;
-
-				if (errorCode == KafkaConnector::NoError) {
-					impl_.main_.offsetResponse(correlationId, offset);
-					ok_ = true;
-				}
-			}
-		}
-		close();
-	}
-
-	void closed() override
-	{
-		if (!ok_) impl_.fetchMetaData();
-	}
+protected:
+	void reply(qint32 correlationId, impl::KafkaRawReader & reader) override;
+	void closed() override;
 
 private:
 	KafkaConnector::Impl & impl_;

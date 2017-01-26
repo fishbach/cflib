@@ -30,11 +30,11 @@ HEADERS = \
 	impl/httpthread.h \
 	impl/kafkaconnection.h \
 	impl/kafkaconnectorimpl.h \
-	impl/kafkafetch.h \
-	impl/kafkagroup.h \
-	impl/kafkametadata.h \
-	impl/kafkaoffset.h \
-	impl/kafkaproduce.h \
+	impl/kafkafetchconnection.h \
+	impl/kafkagroupconnection.h \
+	impl/kafkametadataconnection.h \
+	impl/kafkaoffsetconnection.h \
+	impl/kafkaproduceconnection.h \
 	impl/kafkaraw.h \
 	impl/requestparser.h \
 	impl/rmiserverbase.h \
