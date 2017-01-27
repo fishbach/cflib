@@ -32,6 +32,7 @@ protected:
 
 private:
 	KafkaConnector::Impl & impl_;
+	bool leaving_;
 };
 
 }}	// namespace

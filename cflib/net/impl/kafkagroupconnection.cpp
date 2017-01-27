@@ -19,6 +19,7 @@
 #include "kafkagroupconnection.h"
 
 #include <cflib/util/log.h>
+#include <cflib/util/timer.h>
 
 USE_LOG(LogCat::Network)
 
@@ -26,7 +27,8 @@ namespace cflib { namespace net {
 
 KafkaConnector::GroupConnection::GroupConnection(TCPConnData * data, KafkaConnector::Impl & impl) :
 	KafkaConnection(data),
-	impl_(impl)
+	impl_(impl),
+	leaving_(false)
 {
 }
 
@@ -67,13 +69,11 @@ void KafkaConnector::GroupConnection::reply(qint32 correlationId, impl::KafkaRaw
 		if (errorCode != KafkaConnector::NoError) {
 			logWarn("cannot join group: %1", errorCode);
 			impl_.generationId_ = 0;
-			impl_.groupAssignment_.clear();
 			close();
 		} else {
 			impl_.generationId_ = generationId;
 			impl_.groupMemberId_ = ownMemberId;
-			impl_.computeGroupAssignment(groupProtocol, memberTopics);
-			impl_.doSync();
+			impl_.doSync(groupProtocol, memberTopics);
 			impl_.groupHeartbeatTimer_.start(1.0);
 		}
 
@@ -87,6 +87,9 @@ void KafkaConnector::GroupConnection::reply(qint32 correlationId, impl::KafkaRaw
 		}
 
 	} else if (correlationId == Impl::SyncGroup) {
+
+		QMutableMapIterator<QByteArray, QList<qint32>> it(impl_.groupTopicPartitions_);
+		while (it.hasNext()) it.next().value().clear();
 
 		qint16 errorCode;
 		qint32 memberAssignmentSize;
@@ -105,7 +108,7 @@ void KafkaConnector::GroupConnection::reply(qint32 correlationId, impl::KafkaRaw
 			for (qint32 i = 0 ; i < partitionCount ; ++i) {
 				qint32 partition;
 				reader >> partition;
-				partitions << partition;
+				if (errorCode == KafkaConnector::NoError) partitions << partition;
 			}
 		}
 
@@ -114,14 +117,31 @@ void KafkaConnector::GroupConnection::reply(qint32 correlationId, impl::KafkaRaw
 
 		impl_.main_.groupStateChanged(impl_.groupTopicPartitions_);
 		impl_.joinInProgress_ = false;
+		if (errorCode != KafkaConnector::NoError) close();
+
+	} else if (correlationId == Impl::LeaveGroup) {
+
+		qint16 errorCode;
+		reader >> errorCode;
+		if (errorCode != KafkaConnector::NoError) {
+			logWarn("group leave error: %1", errorCode);
+		}
+
+		leaving_ = true;
+		close();
+
 	}
 }
 
 void KafkaConnector::GroupConnection::closed()
 {
+	if (leaving_) return;
+
 	impl_.groupHeartbeatTimer_.stop();
 	impl_.groupConnection_ = 0;
-	impl_.rejoinGroup();
+	if (!impl_.groupId_.isEmpty()) {
+		util::Timer::singleShot(1.0, &impl_, &KafkaConnector::Impl::rejoinGroup);
+	}
 }
 
 }}	// namespace

@@ -75,6 +75,7 @@ public:
 
 	enum GroupAssignmentStrategy
 	{
+		UnknownAssignment    = -1,
 		RangeAssignment      = 1,
 		RoundRobinAssignment = 2
 	};
@@ -126,9 +127,8 @@ protected:
 		qint64 firstOffset, qint64 highwaterMarkOffset, ErrorCode errorCode) {
 		Q_UNUSED(correlationId) Q_UNUSED(messages) Q_UNUSED(firstOffset) Q_UNUSED(highwaterMarkOffset) Q_UNUSED(errorCode) }
 
-	virtual void fetchResponse(const QByteArray & topic, const Messages & messages,
-		qint64 firstOffset, qint64 highwaterMarkOffset, ErrorCode errorCode) {
-		Q_UNUSED(topic) Q_UNUSED(messages) Q_UNUSED(firstOffset) Q_UNUSED(highwaterMarkOffset) Q_UNUSED(errorCode) }
+	virtual void fetchResponse(const QMap<QByteArray, Messages> & messagesPerTopic, ErrorCode errorCode) {
+		Q_UNUSED(messagesPerTopic) Q_UNUSED(errorCode) }
 
 private:
 	class MetadataConnection;

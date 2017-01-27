@@ -36,6 +36,8 @@ KafkaConnector::Impl::Impl(KafkaConnector &main) :
 	net_(0, this),
 	clusterId_(0),
 	currentState_(KafkaConnector::Idle),
+	preferredStrategy_(UnknownAssignment),
+	groupCoordinatorRequest_(0),
 	groupConnection_(0),
 	joinInProgress_(false),
 	groupMemberId_(""),
@@ -50,6 +52,8 @@ KafkaConnector::Impl::Impl(KafkaConnector &parent, util::ThreadVerify *other) :
 	net_(0, this),
 	clusterId_(0),
 	currentState_(KafkaConnector::Idle),
+	preferredStrategy_(UnknownAssignment),
+	groupCoordinatorRequest_(0),
 	groupConnection_(0),
 	joinInProgress_(false),
 	groupMemberId_(""),
@@ -260,27 +264,12 @@ void KafkaConnector::Impl::joinGroup(const QByteArray & groupId, const Topics & 
 
 	logFunctionTrace
 
-	if (joinInProgress_) {
-		logWarn("cannot join twice");
-		return;
-	}
-
-	if (groupId != groupId_) leaveGroup();
+	if (groupId_ != groupId) leaveGroup();
 	groupId_ = groupId;
 	groupTopicPartitions_.clear();
-	for (const QByteArray & topic : topics) groupTopicPartitions_[topic].clear();
+	for (const QByteArray & topic : topics) groupTopicPartitions_[topic] = QList<qint32>();
 	preferredStrategy_ = preferredStrategy;
-	doJoin();
-}
-
-void KafkaConnector::Impl::rejoinGroup()
-{
-	if (joinInProgress_) return;
-	joinInProgress_ = true;
-
-	QMutableMapIterator<QByteArray, QList<qint32>> it(groupTopicPartitions_);
-	while (it.hasNext()) it.next().value().clear();
-	doJoin();
+	rejoinGroup();
 }
 
 void KafkaConnector::Impl::fetch(quint32 maxWaitTime, quint32 minBytes, quint32 maxBytes)
@@ -300,6 +289,22 @@ void KafkaConnector::Impl::commit()
 void KafkaConnector::Impl::leaveGroup()
 {
 	if (!verifyThreadCall(&Impl::leaveGroup)) return;
+
+	// send clean leave
+	if (groupConnection_ && !groupId_.isEmpty() && !groupMemberId_.isEmpty()) {
+		impl::KafkaRequestWriter req = groupConnection_->request(LeaveGroup, 0, LeaveGroup);
+		req
+			<< (impl::KafkaString)groupId_
+			<< (impl::KafkaString)groupMemberId_;
+		req.send();
+		groupHeartbeatTimer_.stop();
+		groupConnection_ = 0;
+	}
+
+	groupId_.clear();
+	if (groupCoordinatorRequest_) groupCoordinatorRequest_->close();
+	if (groupConnection_) groupConnection_->close();
+	joinInProgress_ = false;
 }
 
 TCPConnData * KafkaConnector::Impl::connectToCluster()
@@ -321,11 +326,13 @@ TCPConnData * KafkaConnector::Impl::connectToCluster()
 	return 0;
 }
 
-void KafkaConnector::Impl::doJoin()
+void KafkaConnector::Impl::rejoinGroup()
 {
 	logFunctionTrace
 
-	// ensure group connection is available
+	if (joinInProgress_ || groupId_.isEmpty()) return;
+	joinInProgress_ = true;
+
 	if (!groupConnection_) {
 		TCPConnData * data = connectToCluster();
 		if (!data) {
@@ -334,12 +341,18 @@ void KafkaConnector::Impl::doJoin()
 			return;
 		}
 
-		KafkaConnector::MetadataConnection * conn = new KafkaConnector::MetadataConnection(false, data, *this);
-		impl::KafkaRequestWriter req = conn->request(GroupCoordinator, 0, 1, 2 + groupId_.size());
+		groupCoordinatorRequest_ = new KafkaConnector::MetadataConnection(false, data, *this);
+		impl::KafkaRequestWriter req = groupCoordinatorRequest_->request(GroupCoordinator);
 		req << (impl::KafkaString)groupId_;
 		req.send();
-		return;
+	} else {
+		doJoin();
 	}
+}
+
+void KafkaConnector::Impl::doJoin()
+{
+	logFunctionTrace
 
 	qint32 metaDataSize = 2 + 4 + 4;
 	for (const QByteArray & topic : groupTopicPartitions_.keys()) metaDataSize += 2 + topic.size();
@@ -381,13 +394,14 @@ void KafkaConnector::Impl::sendGroupHeartBeat()
 	req.send();
 }
 
-void KafkaConnector::Impl::doSync()
+void KafkaConnector::Impl::doSync(const QByteArray & protocol, QMap<QByteArray, QSet<QByteArray>> memberTopics)
 {
 	logFunctionTrace
 
+	QMap<QByteArray, QMap<QByteArray, QList<qint32>>> groupAssignment = computeGroupAssignment(protocol, memberTopics);
 	QMap<QByteArray, QByteArray> rawAssignment;
-	for (const QByteArray & member : groupAssignment_.keys()) {
-		const QMap<QByteArray, QList<qint32>> & topics = groupAssignment_[member];
+	for (const QByteArray & member : groupAssignment.keys()) {
+		const QMap<QByteArray, QList<qint32>> & topics = groupAssignment[member];
 
 		impl::KafkaRawWriter writer;
 		writer
@@ -423,10 +437,11 @@ void KafkaConnector::Impl::doSync()
 	req.send();
 }
 
-void KafkaConnector::Impl::computeGroupAssignment(const QByteArray & protocol, QMap<QByteArray, QSet<QByteArray>> memberTopics)
+QMap<QByteArray, QMap<QByteArray, QList<qint32>>> KafkaConnector::Impl::computeGroupAssignment(
+	const QByteArray & protocol, QMap<QByteArray, QSet<QByteArray>> memberTopics)
 {
-	groupAssignment_.clear();
-	if (memberTopics.isEmpty()) return;
+	QMap<QByteArray, QMap<QByteArray, QList<qint32>>> rv;
+	if (memberTopics.isEmpty()) return rv;
 
 	logFunctionTraceParam("computeGroupAssignment with %1", protocol);
 
@@ -449,11 +464,11 @@ void KafkaConnector::Impl::computeGroupAssignment(const QByteArray & protocol, Q
 			int pId = 0;
 			for (const QByteArray & member : members) {
 				for (int j = 0 ; j < partitionsPerMember ; ++j) {
-					groupAssignment_[member][topic] << pId++;
+					rv[member][topic] << pId++;
 				}
 				if (unassignedPartitions > 0) {
 					--unassignedPartitions;
-					groupAssignment_[member][topic] << pId++;
+					rv[member][topic] << pId++;
 				}
 			}
 		}
@@ -478,7 +493,7 @@ void KafkaConnector::Impl::computeGroupAssignment(const QByteArray & protocol, Q
 			const QPair<QByteArray, qint32> & el = it.next();
 			const QByteArray & member = members[memberId];
 			if (memberTopics[member].contains(el.first)) {
-				groupAssignment_[member][el.first] << el.second;
+				rv[member][el.first] << el.second;
 				logInfo("assigning %1/%2 to %3", el.first, el.second, member);
 				it.remove();
 			} else if (it.hasNext()) {
@@ -492,9 +507,9 @@ void KafkaConnector::Impl::computeGroupAssignment(const QByteArray & protocol, Q
 
 	} else {
 		logWarn("unknown protocol: %1", protocol);
-		generationId_ = 0;
-		groupConnection_->abort();
 	}
+
+	return rv;
 }
 
 }}	// namespace

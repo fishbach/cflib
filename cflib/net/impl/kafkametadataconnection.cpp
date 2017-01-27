@@ -66,7 +66,8 @@ void KafkaConnector::MetadataConnection::closed()
 			impl_.setState(Ready);
 		}
 	} else {
-		if (!impl_.groupConnection_) {
+		impl_.groupCoordinatorRequest_ = 0;
+		if (!impl_.groupId_.isEmpty() && !impl_.groupConnection_) {
 			logWarn("could not retrieve kafka group coordinator");
 			util::Timer::singleShot(1.0, &impl_, &KafkaConnector::Impl::rejoinGroup);
 		}

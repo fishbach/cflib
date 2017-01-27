@@ -68,16 +68,17 @@ public:
 		quint32 maxWaitTime, quint32 minBytes, quint32 maxBytes, quint32 correlationId);
 
 	void joinGroup(const QByteArray & groupId, const KafkaConnector::Topics & topics, KafkaConnector::GroupAssignmentStrategy preferredStrategy);
-	void rejoinGroup();
 	void fetch(quint32 maxWaitTime, quint32 minBytes, quint32 maxBytes);
 	void commit();
 	void leaveGroup();
 
 	TCPConnData * connectToCluster();
+	void rejoinGroup();
 	void doJoin();
 	void sendGroupHeartBeat();
-	void doSync();
-	void computeGroupAssignment(const QByteArray & protocol, QMap<QByteArray, QSet<QByteArray>> memberTopics);
+	void doSync(const QByteArray & protocol, QMap<QByteArray, QSet<QByteArray>> memberTopics);
+	QMap<QByteArray, QMap<QByteArray, QList<qint32>>> computeGroupAssignment(
+		const QByteArray & protocol, QMap<QByteArray, QSet<QByteArray>> memberTopics);
 
 public:
 	KafkaConnector & main_;
@@ -95,15 +96,16 @@ public:
 	QHash<qint32 /* nodeId */, KafkaConnector::ProduceConnection *> produceConnections_;
 	QHash<qint32 /* nodeId */, KafkaConnector::FetchConnection   *> fetchConnections_;
 
-	KafkaConnector::GroupConnection * groupConnection_;
-	bool joinInProgress_;
 	QByteArray groupId_;
 	QMap<QByteArray, QList<qint32>> groupTopicPartitions_;
 	KafkaConnector::GroupAssignmentStrategy preferredStrategy_;
+
+	KafkaConnector::MetadataConnection * groupCoordinatorRequest_;
+	KafkaConnector::GroupConnection * groupConnection_;
+	bool joinInProgress_;
 	QByteArray groupMemberId_;
 	qint32 generationId_;
 	util::EVTimer groupHeartbeatTimer_;
-	QMap<QByteArray, QMap<QByteArray, QList<qint32>>> groupAssignment_;
 };
 
 }}	// namespace
