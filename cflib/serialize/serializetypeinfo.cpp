@@ -102,13 +102,14 @@ QString SerializeFunctionTypeInfo::signature(bool withParamNames) const
 	return retval;
 }
 
-bool SerializeFunctionTypeInfo::hasReturnValues() const
+uint SerializeFunctionTypeInfo::returnValueCount() const
 {
-	if (returnType.type != SerializeTypeInfo::Null) return true;
+	uint rv = 0;
+	if (returnType.type != SerializeTypeInfo::Null) ++rv;
 	foreach (const SerializeVariableTypeInfo & inf, parameters) {
-		if (inf.isRef) return true;
+		if (inf.isRef) ++rv;
 	}
-	return false;
+	return rv;
 }
 
 }}	// namespace

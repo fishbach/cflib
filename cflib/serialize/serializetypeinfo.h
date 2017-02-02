@@ -78,7 +78,8 @@ public:
 public:
 	QString toString() const;
 	QString signature(bool withParamNames = false) const;
-	bool hasReturnValues() const;
+	bool hasReturnValues() const { return returnValueCount() > 0; }
+	uint returnValueCount() const;
 };
 
 }}	// namespace

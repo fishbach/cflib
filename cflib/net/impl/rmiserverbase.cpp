@@ -147,11 +147,11 @@ QString formatJSTypeConstruction(const SerializeTypeInfo & ti, const QString & r
 				<< formatJSTypeConstruction(ti.bases[1], raw + "[1]") << "])";
 		} else if (ti.typeName.startsWith("List<")) {
 			if (raw == "null") js << "[]";
-			else js << "__inherit.map(" << raw << ", function(__e) { return "
+			else js << "(" << raw << " || []).map(function(__e) { return "
 				<< formatJSTypeConstruction(ti.bases[0], "__e") << "; })";
 		} else if (ti.typeName.startsWith("Map<")) {
 			if (raw == "null") js << "[]";
-			else js << "__inherit.map(" << raw << ", function(__e) { return ["
+			else js << "(" << raw << " || []).map(function(__e) { return ["
 				<< formatJSTypeConstruction(ti.bases[0], "__e[0]")
 				<< ", "
 				<< formatJSTypeConstruction(ti.bases[1], "__e[1]") << "]; })";
@@ -180,6 +180,35 @@ QString formatJSTypeConstruction(const SerializeTypeInfo & ti, const QString & r
 	return js;
 }
 
+QString getTSTypename(const SerializeTypeInfo & ti)
+{
+	QString ts;
+	if (ti.type == SerializeTypeInfo::Class) {
+		ts << formatClassnameForJS(ti);
+	} else if (ti.type == SerializeTypeInfo::Container) {
+		if (ti.typeName.startsWith("Pair<")) {
+			ts << "[" << getTSTypename(ti.bases[0]) << ", " << getTSTypename(ti.bases[1]) << "]";
+		} else if (ti.typeName.startsWith("List<")) {
+			ts << "Array<" << getTSTypename(ti.bases[0]) << ">";
+		} else if (ti.typeName.startsWith("Map<")) {
+			ts << "Array<[" << getTSTypename(ti.bases[0]) << ", " << getTSTypename(ti.bases[1]) << "]>";
+		}
+	} else if (ti.type == SerializeTypeInfo::Basic) {
+		if (ti.typeName == "DateTime") {
+			ts << "Date";
+		} else if (ti.typeName == "String") {
+			ts << "string";
+		} else if (ti.typeName == "ByteArray") {
+			ts << "Uint8Array";
+		} else if (ti.typeName.indexOf("int") != -1 || ti.typeName.indexOf("float") != -1) {
+			ts << "number";
+		} else if (ti.typeName == "bool" || ti.typeName == "tribool") {
+			ts << "boolean";
+		}
+	}
+	return ts;
+}
+
 QString getJSFunctionName(const QRegularExpression & containerRE, const SerializeFunctionTypeInfo & func)
 {
 	QString js = func.name;
@@ -196,7 +225,7 @@ QString getJSFunctionName(const QRegularExpression & containerRE, const Serializ
 	return js;
 }
 
-QString getJSParameters(const SerializeFunctionTypeInfo & func)
+QString getJSParameters(const SerializeFunctionTypeInfo & func, bool withType)
 {
 	QString js;
 	bool isFirst = true;
@@ -206,6 +235,7 @@ QString getJSParameters(const SerializeFunctionTypeInfo & func)
 		else js << ", ";
 		if (p.name.isEmpty()) js << "__param_" << QString::number(++id);
 		else js << p.name;
+		if (withType) js << ": " << getTSTypename(p.type);
 	}
 	return js;
 }
@@ -373,11 +403,13 @@ void RMIServerBase::exportTo(const QString & dest) const
 	// write services
 	QDir().mkpath(dest + "/js/services");
 	foreach (const QString & name, services_.keys()) {
-		QString service = "services/" + name + ".js";
-		QString js = generateJS(service);
-		QFile f(dest + "/js/" + service);
-		f.open(QFile::WriteOnly | QFile::Truncate);
-		f.write(js.toUtf8());
+		for (const QString & suffix : QStringList{".js", ".ts"}) {
+			QString service = "services/" + name + suffix;
+			QString js = generateJSOrTS(service);
+			QFile f(dest + "/js/" + service);
+			f.open(QFile::WriteOnly | QFile::Truncate);
+			f.write(js.toUtf8());
+		}
 	}
 
 	// write classes (recursive)
@@ -400,7 +432,7 @@ void RMIServerBase::handleRequest(const Request & request)
 		else request.sendNotFound();
 	} else {
 		if (path.startsWith("/js/")) {
-			QString js = generateJS(path.mid(4));
+			QString js = generateJSOrTS(path.mid(4));
 			if (!js.isNull()) request.sendText(js, "application/javascript");
 		} else if (path == "/api") {
 			QString info = HTMLDocHeader;
@@ -503,7 +535,8 @@ void RMIServerBase::showServices(const Request & request, QString path) const
 
 	info <<
 		"<h3>Service: <b>" << ti.typeName << "</b></h3>\n"
-		"JavaScript File: <a href=\"/js/services/" << path << ".js\">/js/services/" << path << ".js</a>\n"
+		"JavaScript File: <a href=\"/js/services/" << path << ".js\">/js/services/" << path << ".js</a><br>\n"
+		"TypeScript File: <a href=\"/js/services/" << path << ".ts\">/js/services/" << path << ".ts</a>\n"
 		"<h4>Methods:</h4>\n"
 		"<ul>\n";
 	foreach (const SerializeFunctionTypeInfo & func, ti.functions) {
@@ -546,6 +579,7 @@ void RMIServerBase::showClasses(const Request & request, QString path) const
 	info <<
 		"<h3>Class: <b>" << ti.getName() << "</b></h3>\n"
 		"JavaScript File: <a href=\"/js/" << path << ".js\">/js/" << path << ".js</a><br>\n"
+		"TypeScript File: <a href=\"/js/" << path << ".ts\">/js/" << path << ".ts</a><br>\n"
 		"<br>\n"
 		"Base: ";
 	if (ti.bases.isEmpty()) {
@@ -586,19 +620,31 @@ void RMIServerBase::classesToHTML(QString & info, const ClassInfoEl & infoEl) co
 	}
 }
 
-QString RMIServerBase::generateJS(const QString & path) const
+QString RMIServerBase::generateJSOrTS(const QString & path) const
 {
-	if (!path.endsWith(".js")) return QString();
+	if (!path.endsWith(".js") && !path.endsWith(".ts")) return QString();
 	const SerializeTypeInfo ti = getTypeInfo(path.left(path.length() - 3));
 	if (ti.getName().isEmpty()) return QString();
 
-	const bool isService = !ti.functions.isEmpty();
-	QString js;
-	js <<
+	QString rv;
+	rv <<
 		"// ============================================================================\n"
 		"// Generated by CFLib\n"
 		"// ============================================================================\n"
-		"\n"
+		"\n";
+
+	if (path.endsWith(".js")) rv << generateJS(ti);
+	else                      rv << generateTS(ti);
+
+	return rv;
+}
+
+QString RMIServerBase::generateJS(const SerializeTypeInfo ti) const
+{
+	const bool isService = !ti.functions.isEmpty();
+
+	QString js;
+	js <<
 		"define(['cflib/net/ber', 'cflib/" << (isService ? "net/rmi'" : "util/inherit'") <<
 		(ti.cfSignals.isEmpty() ? "" : ", 'cflib/net/rsig'");
 	foreach (QString type, getMemberTypes(ti)) {
@@ -621,6 +667,30 @@ QString RMIServerBase::generateJS(const QString & path) const
 		"\n"
 		"});\n";
 	return js;
+}
+
+QString RMIServerBase::generateTS(const SerializeTypeInfo ti) const
+{
+	const bool isService = !ti.functions.isEmpty();
+
+	QString ts;
+	ts << "import {ber as __ber} from '../cflib/net/ber';\n";
+	if (isService) ts << "import {rmi as __rmi} from '../cflib/net/rmi';\n";
+	if (!ti.cfSignals.isEmpty()) ts << "import {RemoteSignal as __RSig} from '../cflib/net/rsig';\n";
+	foreach (QString type, getMemberTypes(ti)) {
+		QString typePath = type.toLower();
+		QString typeName = type;
+		typePath.replace("::", "/").replace(QRegExp("^dao/"), "models/");
+		typeName.replace("::", "__");
+		if (type.contains("::")) type = type.mid(type.lastIndexOf("::") + 2);
+		ts << "import {" << type << " as " << typeName << "} from '../" << typePath << "';\n";
+	}
+	ts << "\n";
+
+	if (isService) ts << generateTSForService(ti);
+	else           ts << generateTSForClass(ti);
+
+	return ts;
 }
 
 SerializeTypeInfo RMIServerBase::getTypeInfo(const QString & path) const
@@ -738,7 +808,7 @@ QString RMIServerBase::generateJSForService(const SerializeTypeInfo & ti) const
 			if (func.parameters.isEmpty()) {
 				js << ") {})";
 			} else {
-				js << "__S, " << getJSParameters(func) << ") { __S" << getSerializeJSParameters(func) << "; })";
+				js << "__S, " << getJSParameters(func, false) << ") { __S" << getSerializeJSParameters(func) << "; })";
 			}
 		}
 		js << "\n"
@@ -772,7 +842,7 @@ QString RMIServerBase::generateJSForService(const SerializeTypeInfo & ti) const
 				<< ti.typeName.toLower() << "').s('" << func.signature() << "').box(2)";
 		} else {
 			js << objName << '.' << getJSFunctionName(containerRE_, func) << " = function("
-				<< getJSParameters(func) << (hasRV ? ", callback, context" : "") << ") {\n"
+				<< getJSParameters(func, false) << (hasRV ? ", callback, context" : "") << ") {\n"
 				"\t__rmi.send" << (hasRV ? "Request" : "Async") << "(__ber.S().s('"
 				<< ti.typeName.toLower() << "').s('" << func.signature() << "')" << getSerializeJSParameters(func) << ".box(2)";
 		}
@@ -807,14 +877,217 @@ QString RMIServerBase::generateJSForService(const SerializeTypeInfo & ti) const
 	return js;
 }
 
+QString RMIServerBase::generateTSForClass(const SerializeTypeInfo & ti) const
+{
+	QString base;
+	if (!ti.bases.isEmpty()) {
+		base = ti.bases[0].getName();
+		base.replace("::", "__");
+	}
+
+	QString typeName = ti.typeName;
+	if (typeName.contains("::")) typeName = typeName.mid(typeName.lastIndexOf("::") + 2);
+
+	QString ts;
+
+	ts << "export class " << typeName << "Dao";
+	if (!base.isEmpty()) ts << " extends " << base;
+	ts << " {\n";
+
+	if (!ti.members.isEmpty()) {
+		ts << "\n";
+		foreach (const SerializeVariableTypeInfo & vti, ti.members) {
+			ts << "\t" << formatMembernameForJS(vti) << ": " << getTSTypename(vti.type) << ";\n";
+		}
+	}
+
+	ts <<
+		"\n"
+		"\tconstructor(param?) {\n"
+		"\t\tif (param instanceof Uint8Array) {\n"
+		"\t\t\tvar __D = __ber.D(param);\n";
+	if (!base.isEmpty()) ts << "\t\t\tsuper(__D.a());\n";
+	foreach (const SerializeVariableTypeInfo & vti, ti.members) {
+		ts << "\t\t\tthis." << formatMembernameForJS(vti) << " = " << getDeserializeCode(vti.type) << ";\n";
+	}
+	ts << "\t\t} else {\n";
+	if (!base.isEmpty()) ts <<"\t\t\tsuper(param);\n";
+	ts << "\t\t\tif (!param || typeof param != 'object') param = {};\n";
+	foreach (const SerializeVariableTypeInfo & vti, ti.members) {
+		const QString name = formatMembernameForJS(vti);
+		ts << "\t\t\tthis." << name << " = " << formatJSTypeConstruction(vti.type, "param." + name) << ";\n";
+	}
+	ts <<
+		"\t\t}\n"
+		"\t}\n"
+		"\n"
+		"\t__serialize(__S): void {\n"
+		"\t\t__S";
+	if (!base.isEmpty()) ts << ".o(this, super.__serialize)";
+	foreach (const SerializeVariableTypeInfo & vti, ti.members) {
+		ts << getSerializeCode(vti.type, "this." + formatMembernameForJS(vti));
+	}
+	ts << ".data();\n"
+		"\t}\n"
+		"\n"
+		"}\n";
+
+	return ts;
+}
+
+QString RMIServerBase::generateTSForService(const SerializeTypeInfo & ti) const
+{
+	QString objName = ti.typeName;
+	objName[0] = ti.typeName[0].toLower();
+	QString ts;
+
+	foreach (const SerializeFunctionTypeInfo & func, ti.cfSignals) {
+		QString funcTypename = func.name;
+		funcTypename[0] = func.name[0].toUpper();
+		ts << "interface __" << funcTypename << " {\n"
+			"\tregister(): Observable<";
+		if (func.parameters.size() > 1) ts << "[";
+		bool isFirst = true;
+		foreach (const SerializeVariableTypeInfo & p, func.parameters) {
+			if (isFirst) isFirst = false;
+			else         ts << ", ";
+			ts << getTSTypename(p.type);
+		}
+		if (func.parameters.size() > 1) ts << "]";
+		ts << ">;\n"
+			"}\n"
+			"\n";
+	}
+
+	ts <<
+		"class " << ti.typeName << " {\n"
+		"\n";
+
+	if (!ti.cfSignals.isEmpty()) {
+		ts << "\trsig: {\n";
+		bool isFirst = true;
+		foreach (const SerializeFunctionTypeInfo & func, ti.cfSignals) {
+			if (isFirst) isFirst = false;
+			else         ts << ",\n";
+			QString funcTypename = func.name;
+			funcTypename[0] = func.name[0].toUpper();
+			ts << "\t\t" << func.name << ": __" << funcTypename;
+		}
+		ts << "\n"
+			"\t};\n"
+			"\n"
+			"\tconstructor() {\n"
+			"\t\tthis.rsig = {};\n";
+
+		foreach (const SerializeFunctionTypeInfo & func, ti.cfSignals) {
+			ts << "\t\tthis.rsig." << func.name << " = new __RSig(\n"
+				"\t\t\t'" << ti.typeName.toLower() << "', '" << func.name << "',\n"
+				"\t\t\tfunction(";
+			if (func.parameters.isEmpty()) {
+				ts << ") {},\n";
+			} else {
+				ts << "__S, " << getJSParameters(func, false) << ") {\n"
+					"\t\t\t\t__S" << getSerializeJSParameters(func) << ";\n"
+					"\t\t\t},\n";
+			}
+
+			ts << "\t\t\tfunction(__D) {\n"
+				"\t\t\t\treturn ";
+			if (func.parameters.size() > 1) ts << "[";
+
+			bool isFirst = true;
+			foreach (const SerializeVariableTypeInfo & p, func.parameters) {
+				if (isFirst) isFirst = false;
+				else          ts << ", ";
+				ts << getDeserializeCode(p.type);
+			}
+
+			if (func.parameters.size() > 1) ts << "]";
+			ts << ";\n"
+				"\t\t\t}\n"
+				"\t\t);\n";
+		}
+
+		ts << "\t}\n"
+			"\n";
+	}
+
+	foreach (const SerializeFunctionTypeInfo & func, ti.functions) {
+		const uint rvCount = func.returnValueCount();
+
+		ts << "\t" << func.name << "(" << getJSParameters(func, true) << "): ";
+		if (rvCount == 0) {
+			ts << "void";
+		} else {
+			ts << "Promise<";
+			if (rvCount > 1) ts << "[";
+			bool isFirst = true;
+			if (func.returnType.type != SerializeTypeInfo::Null) {
+				ts << getTSTypename(func.returnType);
+				isFirst = false;
+			}
+			foreach (const SerializeVariableTypeInfo & p, func.parameters) {
+				if (!p.isRef) continue;
+				if (isFirst) isFirst = false;
+				else         ts << ", ";
+				ts << getTSTypename(p.type);
+			}
+			if (rvCount > 1) ts << "]";
+			ts << ">";
+		}
+		ts << " {\n"
+			"\t\t__rmi.send" << (rvCount > 0 ? "Request" : "Async") << "(__ber.S().s('"
+			<< ti.typeName.toLower() << "').s('" << func.signature() << "')" << getSerializeJSParameters(func) << ".box(2)";
+
+		if (rvCount == 0) {
+			ts << ");\n"
+				"\t}\n"
+				"\n";
+			continue;
+		}
+
+		ts <<
+			",\n"
+			"\t\t\tfunction(__data) {\n"
+			"\t\t\t\tvar __D = __ber.D(__data);\n"
+			"\t\t\t\treturn ";
+		if (rvCount > 1) ts << "[";
+		bool isFirst = true;
+		if (func.returnType.type != SerializeTypeInfo::Null) {
+			ts << getDeserializeCode(func.returnType);
+			isFirst = false;
+		}
+		foreach (const SerializeVariableTypeInfo & p, func.parameters) {
+			if (!p.isRef) continue;
+			if (isFirst) isFirst = false;
+			else         ts << ", ";
+			ts << getDeserializeCode(p.type);
+		}
+		if (rvCount > 1) ts << "]";
+		ts << ";\n"
+			"\t\t\t});\n"
+			"\t}\n"
+			"\n";
+	}
+
+	ts <<
+		"}\n"
+		"\n"
+		"export const " << objName << ": " << ti.typeName << " = new " << ti.typeName << "();";
+
+	return ts;
+}
+
 void RMIServerBase::exportClass(const ClassInfoEl & cl, const QString & path, const QString & dest) const
 {
 	if (cl.infos.isEmpty()) {
-		QString cl = path + ".js";
-		QString js = generateJS(cl);
-		QFile f(dest + "/js/" + cl);
-		f.open(QFile::WriteOnly | QFile::Truncate);
-		f.write(js.toUtf8());
+		for (const QString & suffix : QStringList{".js", ".ts"}) {
+			QString cl = path + suffix;
+			QString js = generateJSOrTS(cl);
+			QFile f(dest + "/js/" + cl);
+			f.open(QFile::WriteOnly | QFile::Truncate);
+			f.write(js.toUtf8());
+		}
 	} else {
 		QDir().mkpath(dest + "/js/" + path);
 		QString p = path;
