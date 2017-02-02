@@ -674,7 +674,10 @@ QString RMIServerBase::generateTS(const SerializeTypeInfo ti) const
 	const bool isService = !ti.functions.isEmpty();
 
 	QString ts;
-	ts << "import {ber as __ber} from '../cflib/net/ber';\n";
+	ts <<
+		"/* tslint:disable */\n"
+		"\n"
+		"import {ber as __ber} from '../cflib/net/ber';\n";
 	if (isService) ts << "import {rmi as __rmi} from '../cflib/net/rmi';\n";
 	if (!ti.cfSignals.isEmpty()) ts << "import {RemoteSignal as __RSig} from '../cflib/net/rsig';\n";
 	foreach (QString type, getMemberTypes(ti)) {
