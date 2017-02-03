@@ -43,16 +43,16 @@ private slots:
 		BERSerializer ser;
 		ser << gt1 << gt3;
 		QCOMPARE(ser.data(), QByteArray::fromHex(
-			"     E10A C10103 C30104 C4027879"
-			"E212 E10A C10105 C30106 C4026162 C20107 C30108"
+			"                    E10A C20103 C40104 C5027879"
+			"E219 C10500E4440B6F E20A C20105 C40106 C5026162 C30107 C40108"
 		));
 	}
 
 	void deserialize()
 	{
 		BERDeserializer ser(QByteArray::fromHex(
-			"     E10A C10103 C30104 C4027879"
-			"E212 E10A C10105 C30106 C4026162 C20107 C30108"
+			"                    E10A C20103 C40104 C5027879"
+			"E219 C10500E4440B6F E20A C20105 C40106 C5026162 C30107 C40108"
 		));
 		GenTest1 gt1;
 		gentest::GenTest3 gt3;
@@ -77,20 +77,22 @@ private slots:
 		BERSerializer ser;
 		ser << gt4;
 		QCOMPARE(ser.data(), QByteArray::fromHex(
-			"E113"
-			"E106 C0024142 C000"
-			"C20107"
-			"E306 C0010D C00111"
+			"E11A"
+			"C10500FEDBD07E"
+			"E206 C0024142 C000"
+			"C30107"
+			"E406 C0010D C00111"
 		));
 	}
 
 	void template_deser()
 	{
 		BERDeserializer ser(QByteArray::fromHex(
-			"E113"
-			"E106 C0024142 C000"
-			"C20107"
-			"E306 C0010D C00111"
+			"E11A"
+			"C10500FEDBD07E"
+			"E206 C0024142 C000"
+			"C30107"
+			"E406 C0010D C00111"
 		));
 		gentest::gentest2::GenTest4 gt4;
 		ser >> gt4;

@@ -17,8 +17,14 @@
  */
 
 #include <cflib/serialize/ser/headerparser.h>
+#include <cflib/util/util.h>
 
 namespace {
+
+QByteArray calcClassHash(const HeaderParser::Class & cl)
+{
+	return QByteArray::number(cflib::util::calcCRC32((cl.ns + "::" + cl.name).toUtf8()));
+}
 
 void writeMethods(QTextStream & out, const HeaderParser::Class & cl)
 {
@@ -29,9 +35,11 @@ void writeMethods(QTextStream & out, const HeaderParser::Class & cl)
 	} else {
 		out <<
 			"template<typename T> void " << cl.name << "::serialize(T & ser) const {\n"
-			"\tser";
+			"\tser << (quint32)";
 		if (cl.doBaseSerialize) {
-			out << " << (const " << cl.base << " &)*this";
+			out << calcClassHash(cl) << " << (const " << cl.base << " &)*this";
+		} else {
+			out << "0";
 		}
 		foreach (const HeaderParser::Variable & m, cl.members) {
 			out << " << " << (m.name.isEmpty() ? "cflib::serialize::Placeholder()" : m.name);
@@ -40,7 +48,7 @@ void writeMethods(QTextStream & out, const HeaderParser::Class & cl)
 			";\n"
 			"}\n"
 			"template<typename T> void " << cl.name << "::deserialize(T & ser) {\n"
-			"\tser";
+			"\tser >> cflib::serialize::Placeholder()";
 		if (cl.doBaseSerialize) {
 			out << " >> (" << cl.base << " &)*this";
 		}
@@ -166,6 +174,7 @@ int genSerialize(const QString & headerName, const HeaderParser & hp, QIODevice 
 			"cflib::serialize::SerializeTypeInfo " << cl.name << "::serializeTypeInfo() {\n"
 			"\tcflib::serialize::SerializeTypeInfo retval;\n"
 			"\tretval.type = cflib::serialize::SerializeTypeInfo::Class;\n"
+			"\tretval.classId = " << (cl.doBaseSerialize ? calcClassHash(cl) : "0") << ";\n"
 			"\tretval.ns = \"" << cl.ns << "\";\n"
 			"\tretval.typeName = \"" << cl.name << "\";\n";
 		if (cl.doBaseSerialize) {

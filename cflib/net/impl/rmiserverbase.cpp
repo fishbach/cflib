@@ -672,18 +672,19 @@ QString RMIServerBase::generateJS(const SerializeTypeInfo ti) const
 QString RMIServerBase::generateTS(const SerializeTypeInfo ti) const
 {
 	const bool isService = !ti.functions.isEmpty();
+	const QString cflibPath = ti.ns.startsWith("cflib::") ? "../" : "../cflib/";
 
 	QString ts;
 	ts <<
 		"/* tslint:disable */\n"
 		"\n"
-		"import {ber as __ber} from '../cflib/net/ber';\n";
-	if (isService) ts << "import {rmi as __rmi} from '../cflib/net/rmi';\n";
-	if (!ti.cfSignals.isEmpty()) ts << "import {RemoteSignal as __RSig} from '../cflib/net/rsig';\n";
+		"import {ber as __ber} from '" << cflibPath << "net/ber';\n";
+	if (isService) ts << "import {rmi as __rmi} from '" << cflibPath << "net/rmi';\n";
+	if (!ti.cfSignals.isEmpty()) ts << "import {RemoteSignal as __RSig} from '" << cflibPath << "net/rsig';\n";
 	foreach (QString type, getMemberTypes(ti)) {
 		QString typePath = type.toLower();
 		QString typeName = type;
-		typePath.replace("::", "/").replace(QRegExp("^dao/"), "models/");
+		typePath.replace("::", "/").replace(QRegExp("^dao/"), "models/").replace(QRegExp("^cflib/dao/"), "models/cflib/");
 		typeName.replace("::", "__");
 		if (type.contains("::")) type = type.mid(type.lastIndexOf("::") + 2);
 		ts << "import {" << type << " as " << typeName << "} from '../" << typePath << "';\n";
@@ -963,7 +964,7 @@ QString RMIServerBase::generateTSForService(const SerializeTypeInfo & ti) const
 	}
 
 	ts <<
-		"class " << ti.typeName << " {\n"
+		"export class " << ti.typeName << " {\n"
 		"\n";
 
 	if (!ti.cfSignals.isEmpty()) {
@@ -980,22 +981,26 @@ QString RMIServerBase::generateTSForService(const SerializeTypeInfo & ti) const
 			"\t};\n"
 			"\n"
 			"\tconstructor() {\n"
-			"\t\tthis.rsig = {};\n";
+			"\t\tthis.rsig = {\n";
 
+		isFirst = true;
 		foreach (const SerializeFunctionTypeInfo & func, ti.cfSignals) {
-			ts << "\t\tthis.rsig." << func.name << " = new __RSig(\n"
-				"\t\t\t'" << ti.typeName.toLower() << "', '" << func.name << "',\n"
-				"\t\t\tfunction(";
+			if (isFirst) isFirst = false;
+			else         ts << ",\n";
+
+			ts << "\t\t\t" << func.name << ": new __RSig(\n"
+				"\t\t\t\t'" << ti.typeName.toLower() << "', '" << func.name << "',\n"
+				"\t\t\t\tfunction(";
 			if (func.parameters.isEmpty()) {
 				ts << ") {},\n";
 			} else {
 				ts << "__S, " << getJSParameters(func, false) << ") {\n"
-					"\t\t\t\t__S" << getSerializeJSParameters(func) << ";\n"
-					"\t\t\t},\n";
+					"\t\t\t\t\t__S" << getSerializeJSParameters(func) << ";\n"
+					"\t\t\t\t},\n";
 			}
 
-			ts << "\t\t\tfunction(__D) {\n"
-				"\t\t\t\treturn ";
+			ts << "\t\t\t\tfunction(__D) {\n"
+				"\t\t\t\t\treturn ";
 			if (func.parameters.size() > 1) ts << "[";
 
 			bool isFirst = true;
@@ -1007,11 +1012,13 @@ QString RMIServerBase::generateTSForService(const SerializeTypeInfo & ti) const
 
 			if (func.parameters.size() > 1) ts << "]";
 			ts << ";\n"
-				"\t\t\t}\n"
-				"\t\t);\n";
+				"\t\t\t\t}\n"
+				"\t\t\t)";
 		}
 
-		ts << "\t}\n"
+		ts << "\n"
+			"\t\t};\n"
+			"\t}\n"
 			"\n";
 	}
 

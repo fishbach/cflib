@@ -31,4 +31,5 @@ SOURCES = \
 	headerparser.cpp \
 	main.cpp \
 
+useLibs(cflib_util)
 app()

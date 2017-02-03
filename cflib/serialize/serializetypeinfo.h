@@ -36,6 +36,7 @@ public:
 	};
 
 	Type type;
+	quint32 classId;
 	QString ns;
 	QString typeName;
 	QList<SerializeTypeInfo> bases;
@@ -44,7 +45,7 @@ public:
 	QList<SerializeFunctionTypeInfo> cfSignals;
 
 public:
-	SerializeTypeInfo() : type(Null) {}
+	SerializeTypeInfo() : type(Null), classId(0) {}
 	bool operator==(const SerializeTypeInfo & rhs) const { return getName() == rhs.getName(); }
 	QString toString() const;
 	QString getName() const;
