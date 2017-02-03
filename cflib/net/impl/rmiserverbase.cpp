@@ -403,7 +403,7 @@ void RMIServerBase::exportTo(const QString & dest) const
 	// write services
 	QDir().mkpath(dest + "/js/services");
 	foreach (const QString & name, services_.keys()) {
-		for (const QString & suffix : QStringList{".js", ".ts"}) {
+		for (const QString & suffix : QStringList{".js", "api.ts"}) {
 			QString service = "services/" + name + suffix;
 			QString js = generateJSOrTS(service);
 			QFile f(dest + "/js/" + service);
@@ -536,7 +536,7 @@ void RMIServerBase::showServices(const Request & request, QString path) const
 	info <<
 		"<h3>Service: <b>" << ti.typeName << "</b></h3>\n"
 		"JavaScript File: <a href=\"/js/services/" << path << ".js\">/js/services/" << path << ".js</a><br>\n"
-		"TypeScript File: <a href=\"/js/services/" << path << ".ts\">/js/services/" << path << ".ts</a>\n"
+		"TypeScript File: <a href=\"/js/services/" << path << "api.ts\">/js/services/" << path << "api.ts</a>\n"
 		"<h4>Methods:</h4>\n"
 		"<ul>\n";
 	foreach (const SerializeFunctionTypeInfo & func, ti.functions) {
@@ -579,7 +579,7 @@ void RMIServerBase::showClasses(const Request & request, QString path) const
 	info <<
 		"<h3>Class: <b>" << ti.getName() << "</b></h3>\n"
 		"JavaScript File: <a href=\"/js/" << path << ".js\">/js/" << path << ".js</a><br>\n"
-		"TypeScript File: <a href=\"/js/" << path << ".ts\">/js/" << path << ".ts</a><br>\n"
+		"TypeScript File: <a href=\"/js/" << path << "dao.ts\">/js/" << path << "dao.ts</a><br>\n"
 		"<br>\n"
 		"Base: ";
 	if (ti.bases.isEmpty()) {
@@ -622,8 +622,9 @@ void RMIServerBase::classesToHTML(QString & info, const ClassInfoEl & infoEl) co
 
 QString RMIServerBase::generateJSOrTS(const QString & path) const
 {
-	if (!path.endsWith(".js") && !path.endsWith(".ts")) return QString();
-	const SerializeTypeInfo ti = getTypeInfo(path.left(path.length() - 3));
+	const bool isTS = path.endsWith(".ts");
+	if (!path.endsWith(".js") && !isTS) return QString();
+	const SerializeTypeInfo ti = getTypeInfo(path.left(path.length() - (isTS ? 6 : 3)));
 	if (ti.getName().isEmpty()) return QString();
 
 	QString rv;
@@ -633,13 +634,13 @@ QString RMIServerBase::generateJSOrTS(const QString & path) const
 		"// ============================================================================\n"
 		"\n";
 
-	if (path.endsWith(".js")) rv << generateJS(ti);
-	else                      rv << generateTS(ti);
+	if (isTS) rv << generateTS(ti);
+	else      rv << generateJS(ti);
 
 	return rv;
 }
 
-QString RMIServerBase::generateJS(const SerializeTypeInfo ti) const
+QString RMIServerBase::generateJS(const SerializeTypeInfo & ti) const
 {
 	const bool isService = !ti.functions.isEmpty();
 
@@ -669,7 +670,7 @@ QString RMIServerBase::generateJS(const SerializeTypeInfo ti) const
 	return js;
 }
 
-QString RMIServerBase::generateTS(const SerializeTypeInfo ti) const
+QString RMIServerBase::generateTS(const SerializeTypeInfo & ti) const
 {
 	const bool isService = !ti.functions.isEmpty();
 	const QString cflibPath = ti.ns.startsWith("cflib::") ? "../" : "../cflib/";
@@ -677,7 +678,11 @@ QString RMIServerBase::generateTS(const SerializeTypeInfo ti) const
 	QString ts;
 	ts <<
 		"/* tslint:disable */\n"
-		"\n"
+		"\n";
+
+	if (!ti.cfSignals.isEmpty()) ts << "import {Observable} from 'rxjs/Observable';\n";
+
+	ts <<
 		"import {ber as __ber} from '" << cflibPath << "net/ber';\n";
 	if (isService) ts << "import {rmi as __rmi} from '" << cflibPath << "net/rmi';\n";
 	if (!ti.cfSignals.isEmpty()) ts << "import {RemoteSignal as __RSig} from '" << cflibPath << "net/rsig';\n";
@@ -925,7 +930,7 @@ QString RMIServerBase::generateTSForClass(const SerializeTypeInfo & ti) const
 		"\t\t}\n"
 		"\t}\n"
 		"\n"
-		"\t__serialize(__S): void {\n"
+		"\tprotected __serialize(__S): void {\n"
 		"\t\t__S";
 	if (!base.isEmpty()) ts << ".o(this, super.__serialize)";
 	foreach (const SerializeVariableTypeInfo & vti, ti.members) {
@@ -964,7 +969,7 @@ QString RMIServerBase::generateTSForService(const SerializeTypeInfo & ti) const
 	}
 
 	ts <<
-		"export class " << ti.typeName << " {\n"
+		"export class " << ti.typeName << "Api {\n"
 		"\n";
 
 	if (!ti.cfSignals.isEmpty()) {
@@ -1046,7 +1051,7 @@ QString RMIServerBase::generateTSForService(const SerializeTypeInfo & ti) const
 			ts << ">";
 		}
 		ts << " {\n"
-			"\t\t__rmi.send" << (rvCount > 0 ? "Request" : "Async") << "(__ber.S().s('"
+			"\t\t" << (rvCount > 0 ? "return " : "") << "__rmi.send" << (rvCount > 0 ? "Request" : "Async") << "(__ber.S().s('"
 			<< ti.typeName.toLower() << "').s('" << func.signature() << "')" << getSerializeJSParameters(func) << ".box(2)";
 
 		if (rvCount == 0) {
@@ -1083,7 +1088,7 @@ QString RMIServerBase::generateTSForService(const SerializeTypeInfo & ti) const
 	ts <<
 		"}\n"
 		"\n"
-		"export const " << objName << ": " << ti.typeName << " = new " << ti.typeName << "();";
+		"export const " << objName << "Api: " << ti.typeName << " = new " << ti.typeName << "Api();";
 
 	return ts;
 }
@@ -1091,7 +1096,7 @@ QString RMIServerBase::generateTSForService(const SerializeTypeInfo & ti) const
 void RMIServerBase::exportClass(const ClassInfoEl & cl, const QString & path, const QString & dest) const
 {
 	if (cl.infos.isEmpty()) {
-		for (const QString & suffix : QStringList{".js", ".ts"}) {
+		for (const QString & suffix : QStringList{".js", "dao.ts"}) {
 			QString cl = path + suffix;
 			QString js = generateJSOrTS(cl);
 			QFile f(dest + "/js/" + cl);

@@ -98,8 +98,8 @@ private:
 	void showClasses(const Request & request, QString path) const;
 	void classesToHTML(QString & info, const ClassInfoEl & infoEl) const;
 	QString generateJSOrTS(const QString & path) const;
-	QString generateJS(const serialize::SerializeTypeInfo ti) const;
-	QString generateTS(const serialize::SerializeTypeInfo ti) const;
+	QString generateJS(const serialize::SerializeTypeInfo & ti) const;
+	QString generateTS(const serialize::SerializeTypeInfo & ti) const;
 	cflib::serialize::SerializeTypeInfo getTypeInfo(const QString & path) const;
 	QString generateJSForClass(const cflib::serialize::SerializeTypeInfo & ti) const;
 	QString generateJSForService(const cflib::serialize::SerializeTypeInfo & ti) const;
