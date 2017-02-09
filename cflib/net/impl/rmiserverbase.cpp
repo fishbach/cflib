@@ -673,7 +673,7 @@ QString RMIServerBase::generateJS(const SerializeTypeInfo & ti) const
 QString RMIServerBase::generateTS(const SerializeTypeInfo & ti) const
 {
 	const bool isService = !ti.functions.isEmpty();
-	const QString cflibPath = ti.ns.startsWith("cflib::") ? "../" : "../cflib/";
+	const QString cflibPath = ti.ns.startsWith("cflib::") && !isService ? "../" : "../cflib/";
 
 	QString ts;
 	ts <<
@@ -783,7 +783,6 @@ QString RMIServerBase::generateJSForClass(const SerializeTypeInfo & ti) const
 	js <<
 		"\t}\n"
 		"};\n"
-		<< nsPrefix << typeName << ".prototype.__clone = function() { return new " << nsPrefix << typeName << "(this); };\n"
 		<< nsPrefix << typeName << ".prototype.__serialize = function(__S) {\n"
 		"\t__S";
 	if (!base.isEmpty()) js << ".o(this, " << base << ".prototype.__serialize)";
@@ -915,6 +914,13 @@ QString RMIServerBase::generateTSForClass(const SerializeTypeInfo & ti) const
 		"\tconstructor(param?) {\n"
 		"\t\tif (param instanceof Uint8Array) {\n"
 		"\t\t\tvar __D = __ber.D(param);\n";
+	if (ti.classId == 0) {
+		ts << "\t\t\t__D.n();\n";
+	} else {
+		ts << "\t\t\tthis.__classId = __D.i();\n";
+//		dao/daofactory.ts
+	}
+
 	if (!base.isEmpty()) ts << "\t\t\tsuper(__D.a());\n";
 	foreach (const SerializeVariableTypeInfo & vti, ti.members) {
 		ts << "\t\t\tthis." << formatMembernameForJS(vti) << " = " << getDeserializeCode(vti.type) << ";\n";
@@ -931,7 +937,9 @@ QString RMIServerBase::generateTSForClass(const SerializeTypeInfo & ti) const
 		"\t}\n"
 		"\n"
 		"\tprotected __serialize(__S): void {\n"
-		"\t\t__S";
+		"\t\t__S.";
+	if (ti.classId != 0) ts << "i(" << QString::number(ti.classId) << ")";
+	else                 ts << "n()";
 	if (!base.isEmpty()) ts << ".o(this, super.__serialize)";
 	foreach (const SerializeVariableTypeInfo & vti, ti.members) {
 		ts << getSerializeCode(vti.type, "this." + formatMembernameForJS(vti));
@@ -1088,7 +1096,7 @@ QString RMIServerBase::generateTSForService(const SerializeTypeInfo & ti) const
 	ts <<
 		"}\n"
 		"\n"
-		"export const " << objName << "Api: " << ti.typeName << " = new " << ti.typeName << "Api();";
+		"export const " << objName << "Api: " << ti.typeName << "Api = new " << ti.typeName << "Api();";
 
 	return ts;
 }

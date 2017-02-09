@@ -16,7 +16,6 @@
  * along with cflib. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <cflib/serialize/serializeber.h>
 #include <cflib/serialize/serialize_test/gentest.h>
 #include <cflib/serialize/serialize_test/test/gentest2.h>
 #include <cflib/util/test.h>

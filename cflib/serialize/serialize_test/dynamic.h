@@ -18,98 +18,48 @@
 
 #pragma once
 
-#include <cflib/net/rsig.h>
 #include <cflib/serialize/serialize.h>
 
-class GenTest1
+class DynamicBase
 {
 	SERIALIZE_CLASS
-public:
-	void f1(int) {}
-	int f2() { return 4; }
-
-rmi:
-	void f3(int, QString) {}
-	QList<int> f4() { return QList<int>(); }
-	int f5(int x, int y);
-	void f6();
-
-public:
+public serialized:
 	int x;
 
-public serialized:
-	int a;
-	SERIALIZE_SKIP(int b)
-	int c;
-	QString d;
-
 public:
-	int y;
+	DynamicBase() : x(0) {}
 };
 
-inline int GenTest1::f5(int x, int y)
-{
-	return x + y;
-}
-
-inline void GenTest1::f6()
-{
-}
-
-class GenTest2
+class DynamicA : public DynamicBase
 {
 	SERIALIZE_CLASS
+	SERIALIZE_BASE
 public serialized:
-	GenTest1 a;
+	int a;
+
+public:
+	DynamicA() : a(0) {}
+};
+
+class DynamicB : public DynamicBase
+{
+	SERIALIZE_CLASS
+	SERIALIZE_BASE
+public serialized:
 	int b;
-};
-
-namespace gentest {
-
-class GenTest3 : public GenTest1
-{
-	SERIALIZE_CLASS
-	SERIALIZE_BASE
-public serialized:
-	int e;
-
-	class Inner1 {
-		SERIALIZE_CLASS
-	public serialized:
-		int a;
-	};
-	struct Inner2 {
-		SERIALIZE_CLASS
-	};
-	struct Inner3 {};
-
-	int f;
-
-private:
-	int z2;
 
 public:
-	int func() const { return z2; }
+	DynamicB() : b(0) {}
 };
 
-namespace gentest2 {
-
-class GenTest4 : public QList<QString>
+class DynamicUse
 {
 	SERIALIZE_CLASS
-	SERIALIZE_BASE
 public serialized:
-	int a;
-	QList<int> b;
-	QList<GenTest2> c;
-};
+	int y;
+//	DynamicBase d;
 
-}
-
-}
-
-class GenTest5
-{
-public serialized:
-	int a;
+public:
+	DynamicUse() : y(0) {}
+//	~DynamicUse() { delete d; }
 };

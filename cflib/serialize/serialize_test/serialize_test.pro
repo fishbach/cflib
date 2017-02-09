@@ -22,11 +22,13 @@ QT = core
 TARGET = serialize_test
 
 HEADERS = \
+	dynamic.h \
 	gentest.h \
 	test.h \
 	test/gentest2.h \
 
 SOURCES = \
+	dynamic_test.cpp \
 	gen_ber_test.cpp \
 	serializeber_test.cpp \
 	typeinfo_test.cpp \

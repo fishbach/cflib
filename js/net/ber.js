@@ -416,6 +416,10 @@ define(function() {
 			return null;
 		},
 
+		n: function() {
+			++this.tagNo;
+		},
+
 		i: function() {
 			var raw = this.read();
 			if (!raw) return 0;

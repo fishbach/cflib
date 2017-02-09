@@ -35,11 +35,11 @@ void writeMethods(QTextStream & out, const HeaderParser::Class & cl)
 	} else {
 		out <<
 			"template<typename T> void " << cl.name << "::serialize(T & ser) const {\n"
-			"\tser << (quint32)";
+			"\tser << ";
 		if (cl.doBaseSerialize) {
-			out << calcClassHash(cl) << " << (const " << cl.base << " &)*this";
+			out << "(quint32)" << calcClassHash(cl) << " << (const " << cl.base << " &)*this";
 		} else {
-			out << "0";
+			out << "cflib::serialize::Placeholder()";
 		}
 		foreach (const HeaderParser::Variable & m, cl.members) {
 			out << " << " << (m.name.isEmpty() ? "cflib::serialize::Placeholder()" : m.name);
@@ -126,14 +126,14 @@ void writeFunction(const HeaderParser::Function & f, QTextStream & out)
 		"\t\tcflib::serialize::SerializeFunctionTypeInfo func;\n"
 		"\t\tfunc.name = \"" << f.name << "\";\n";
 	if (f.returnType != "void") {
-		out << "\t\tfunc.returnType = cflib::serialize::impl::fromType<" << f.returnType << " >();\n";
+		out << "\t\tfunc.returnType = cflib::serialize::impl::fromType<" << f.returnType << ">();\n";
 	}
 	if (!f.parameters.isEmpty()) {
 		out << "\t\tfunc.parameters";
 		foreach (const HeaderParser::Variable & m, f.parameters) {
 			out <<
 				"\n\t\t\t<< cflib::serialize::SerializeVariableTypeInfo(\""
-				<< m.name << "\", cflib::serialize::impl::fromType<" << m.type << " >(), "
+				<< m.name << "\", cflib::serialize::impl::fromType<" << m.type << ">(), "
 				<< (m.isRef ? "true" : "false") << ")";
 		}
 		out << ";\n";
@@ -173,12 +173,13 @@ int genSerialize(const QString & headerName, const HeaderParser & hp, QIODevice 
 		out <<
 			"cflib::serialize::SerializeTypeInfo " << cl.name << "::serializeTypeInfo() {\n"
 			"\tcflib::serialize::SerializeTypeInfo retval;\n"
-			"\tretval.type = cflib::serialize::SerializeTypeInfo::Class;\n"
-			"\tretval.classId = " << (cl.doBaseSerialize ? calcClassHash(cl) : "0") << ";\n"
+			"\tretval.type = cflib::serialize::SerializeTypeInfo::Class;\n";
+		if (cl.doBaseSerialize) out << "\tretval.classId = " << calcClassHash(cl) << ";\n";
+		out <<
 			"\tretval.ns = \"" << cl.ns << "\";\n"
 			"\tretval.typeName = \"" << cl.name << "\";\n";
 		if (cl.doBaseSerialize) {
-			out << "\tretval.bases << cflib::serialize::impl::fromType<" << cl.base << " >();\n";
+			out << "\tretval.bases << cflib::serialize::impl::fromType<" << cl.base << ">();\n";
 		}
 		if (!cl.members.isEmpty()) {
 			out << "\tretval.members";
@@ -187,7 +188,9 @@ int genSerialize(const QString & headerName, const HeaderParser & hp, QIODevice 
 					out << "\n\t\t<< cflib::serialize::SerializeVariableTypeInfo()";
 				} else {
 					out << "\n\t\t<< cflib::serialize::SerializeVariableTypeInfo(\"" << m.name
-						<< "\", cflib::serialize::impl::fromType<" << m.type << " >())";
+						<< "\", cflib::serialize::impl::fromType<" << m.type << ">()";
+					if (m.isDynamic) out << ", false, true";
+					out << ")";
 				}
 			}
 			out << ";\n";

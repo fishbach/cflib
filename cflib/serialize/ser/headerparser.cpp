@@ -57,13 +57,14 @@ int findClosingBrace(const QString & in, int startPos, char brOpen, char brClose
 
 bool HeaderParser::getVariables(const QString & in, int start, int end, Class & cl)
 {
-	static const QRegExp varRE("(?:^|\n)\\s*([:\\w]+(?:\\s*<[^>]+>)?)\\s+(\\w+)\\s*;|SERIALIZE_SKIP");
+	static const QRegExp varRE("(?:^|\n)\\s*([:\\w]+(?:\\s*<[^>]+>)?)([\\s\\*]+)(\\w+)\\s*;|SERIALIZE_SKIP");
 
 	int pos = varRE.indexIn(in, start, QRegExp::CaretAtOffset);
 	while (pos != -1 && pos < end) {
 		HeaderParser::Variable var;
 		var.type = varRE.cap(1);
-		var.name = varRE.cap(2);
+		var.name = varRE.cap(3);
+		var.isDynamic = !varRE.cap(2).trimmed().isEmpty();
 		cl.members << var;
 		pos = varRE.indexIn(in, pos + varRE.matchedLength(), QRegExp::CaretAtOffset);
 	}

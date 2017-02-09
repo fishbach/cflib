@@ -28,8 +28,9 @@ public:
 		QString name;
 		QString type;
 		bool isRef;
+		bool isDynamic;
 
-		Variable() : isRef(false) {}
+		Variable() : isRef(false), isDynamic(false) {}
 	};
 	typedef QList<Variable> Variables;
 
