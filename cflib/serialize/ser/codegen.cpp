@@ -28,6 +28,12 @@ QByteArray calcClassHash(const HeaderParser::Class & cl)
 
 void writeMethods(QTextStream & out, const HeaderParser::Class & cl)
 {
+	if (cl.doBaseSerialize) {
+		out <<
+			"const cflib::serialize::impl::RegisterClass<" << cl.name << "> " << cl.name << "::cflib_serialize_impl_registerClass;\n"
+			"\n";
+	}
+
 	if (cl.members.isEmpty() && !cl.doBaseSerialize) {
 		out <<
 			"template<typename T> void " << cl.name << "::serialize(T &) const {}\n"
@@ -188,9 +194,7 @@ int genSerialize(const QString & headerName, const HeaderParser & hp, QIODevice 
 					out << "\n\t\t<< cflib::serialize::SerializeVariableTypeInfo()";
 				} else {
 					out << "\n\t\t<< cflib::serialize::SerializeVariableTypeInfo(\"" << m.name
-						<< "\", cflib::serialize::impl::fromType<" << m.type << ">()";
-					if (m.isDynamic) out << ", false, true";
-					out << ")";
+						<< "\", cflib::serialize::impl::fromType<" << m.type << ">())";
 				}
 			}
 			out << ";\n";

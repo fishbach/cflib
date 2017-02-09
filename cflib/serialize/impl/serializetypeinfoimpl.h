@@ -148,4 +148,14 @@ inline void serializeTypeInfo(SerializeTypeInfoImpl & si, T *)
 }
 
 
+// ============================================================================
+// dynamic classes
+// ============================================================================
+
+template<typename T>
+inline void serializeTypeInfo(SerializeTypeInfoImpl & si, QSharedPointer<T> *)
+{
+	(SerializeTypeInfo &)si = T::serializeTypeInfo();
+}
+
 }}}	// namespace

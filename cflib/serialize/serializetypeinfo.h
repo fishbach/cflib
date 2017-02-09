@@ -62,12 +62,11 @@ public:
 	QString name;
 	SerializeTypeInfo type;
 	bool isRef;
-	bool isDynamic;
 
 public:
 	SerializeVariableTypeInfo() : isRef(false) {}
-	SerializeVariableTypeInfo(const QString & name, const SerializeTypeInfo & type, bool isRef = false, bool isDynamic = false) :
-		name(name), type(type), isRef(isRef), isDynamic(isDynamic) {}
+	SerializeVariableTypeInfo(const QString & name, const SerializeTypeInfo & type, bool isRef = false) :
+		name(name), type(type), isRef(isRef) {}
 };
 
 class SerializeFunctionTypeInfo
@@ -83,5 +82,6 @@ public:
 	bool hasReturnValues() const { return returnValueCount() > 0; }
 	uint returnValueCount() const;
 };
+
 
 }}	// namespace

@@ -16,34 +16,20 @@
  * along with cflib. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#pragma once
+#include "registerclass.h"
 
-#include <cflib/serialize/serialize.h>
+namespace cflib { namespace serialize { namespace impl {
 
-class Dao
+namespace {
+
+typedef QHash<quint32, const RegisterClassBase *> Registry;
+Q_GLOBAL_STATIC(Registry, getRegistry)
+
+}
+
+QHash<quint32, const RegisterClassBase *> & RegisterClassBase::registry()
 {
-	SERIALIZE_CLASS
-public serialized:
-	QString name;
-	quint32 number;
-	typedef QList<quint32> List;
-	typedef QPair<List, QDateTime> Pair;
-	QPair<quint8, Pair> pair;
-};
+	return *getRegistry();
+}
 
-class Dao2
-{
-	SERIALIZE_CLASS
-public serialized:
-	Dao dao;
-	QList<int> numbers;
-	double f;
-};
-
-class Dao3 : public Dao2
-{
-	SERIALIZE_CLASS
-	SERIALIZE_BASE(Dao3)
-public serialized:
-	QDateTime timestamp;
-};
+}}}	// namespace

@@ -18,6 +18,7 @@
 
 #pragma once
 
+#include <cflib/serialize/impl/registerclass.h>
 #include <cflib/serialize/serializeber.h>
 #include <cflib/serialize/serializetypeinfo.h>
 
@@ -39,7 +40,18 @@
 		template<typename T> void deserialize(T & ser); \
 		static cflib::serialize::SerializeTypeInfo serializeTypeInfo(); \
 
+#define SERIALIZE_IS_BASE(Class) \
+	public: \
+		virtual ~Class() {} \
+		virtual cflib::serialize::SerializeTypeInfo getSerializeTypeInfo() const { return serializeTypeInfo(); } \
+
+#define SERIALIZE_BASE(Class) \
+	private: \
+		static const cflib::serialize::impl::RegisterClass<Class> cflib_serialize_impl_registerClass; \
+		virtual cflib::serialize::SerializeTypeInfo getSerializeTypeInfo() const { return serializeTypeInfo(); } \
+
 #define serialized
+
 #define rmi \
 	public: \
 		virtual cflib::serialize::SerializeTypeInfo getServiceInfo() { return serializeTypeInfo(); } \
@@ -47,5 +59,5 @@
 		virtual void processRMIServiceCallImpl(cflib::serialize::BERDeserializer & deser, uint callNo, cflib::serialize::BERSerializer & ser); \
 		virtual cflib::net::RSigBase * getCfSignal(uint sigNo); \
 	public
-#define SERIALIZE_BASE
+
 #define SERIALIZE_SKIP(member)

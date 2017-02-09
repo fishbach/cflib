@@ -23,6 +23,7 @@
 class DynamicBase
 {
 	SERIALIZE_CLASS
+	SERIALIZE_IS_BASE(DynamicBase)
 public serialized:
 	int x;
 
@@ -33,7 +34,7 @@ public:
 class DynamicA : public DynamicBase
 {
 	SERIALIZE_CLASS
-	SERIALIZE_BASE
+	SERIALIZE_BASE(DynamicA)
 public serialized:
 	int a;
 
@@ -44,9 +45,9 @@ public:
 class DynamicB : public DynamicBase
 {
 	SERIALIZE_CLASS
-	SERIALIZE_BASE
+	SERIALIZE_BASE(DynamicB)
 public serialized:
-	int b;
+	double b;
 
 public:
 	DynamicB() : b(0) {}
@@ -57,9 +58,11 @@ class DynamicUse
 	SERIALIZE_CLASS
 public serialized:
 	int y;
-//	DynamicBase d;
+	QSharedPointer<DynamicBase> d;
+	typedef QSharedPointer<DynamicBase> DBase;
+	QList<DBase> e;
+	int z;
 
 public:
-	DynamicUse() : y(0) {}
-//	~DynamicUse() { delete d; }
+	DynamicUse() : y(0), z(0) {}
 };

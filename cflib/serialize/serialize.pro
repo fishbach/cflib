@@ -23,16 +23,17 @@ TARGET = cflib_serialize
 
 HEADERS = \
 	common.h \
+	impl/ber.h \
+	impl/readandcall.h \
+	impl/registerclass.h \
+	impl/serializebaseber.h \
+	impl/serializeberimpl.h \
+	impl/serializetypeinfoimpl.h \
 	serialize.h \
 	serializeber.h \
 	serializetypeinfo.h \
 	tribool.h \
 	util.h \
-	impl/ber.h \
-	impl/readandcall.h \
-	impl/serializebaseber.h \
-	impl/serializeberimpl.h \
-	impl/serializetypeinfoimpl.h \
 
 SOURCES = \
 	serializetypeinfo.cpp \

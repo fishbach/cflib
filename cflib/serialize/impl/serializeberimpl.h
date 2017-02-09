@@ -18,6 +18,7 @@
 
 #pragma once
 
+#include <cflib/serialize/impl/registerclass.h>
 #include <cflib/serialize/impl/serializebaseber.h>
 
 namespace cflib { namespace serialize { namespace impl {
@@ -510,6 +511,27 @@ inline void deserializeBER(T & cl, const quint8 * data, int len, BERDeserializer
 {
 	BERDeserializerBase ser(data, len);
 	cl.deserialize(ser);
+}
+
+
+// ============================================================================
+// dynamic classes
+// ============================================================================
+
+template<typename T>
+inline void serializeBER(const QSharedPointer<T> & cl, quint64 tagNo, QByteArray & data, BERSerializerBase &)
+{
+	if (!cl.isNull()) {
+		TLWriter tlw(data, tagNo);
+		BERSerializerBase ser(data);
+		RegisterClassBase::serialize(cl, ser);
+	}
+}
+
+template<typename T>
+inline void deserializeBER(QSharedPointer<T> & cl, const quint8 * data, int len, BERDeserializerBase &)
+{
+	RegisterClassBase::deserialize(cl, data, len);
 }
 
 

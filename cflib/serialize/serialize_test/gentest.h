@@ -69,7 +69,7 @@ namespace gentest {
 class GenTest3 : public GenTest1
 {
 	SERIALIZE_CLASS
-	SERIALIZE_BASE
+	SERIALIZE_BASE(GenTest3)
 public serialized:
 	int e;
 
@@ -97,7 +97,7 @@ namespace gentest2 {
 class GenTest4 : public QList<QString>
 {
 	SERIALIZE_CLASS
-	SERIALIZE_BASE
+	SERIALIZE_BASE(GenTest4)
 public serialized:
 	int a;
 	QList<int> b;
