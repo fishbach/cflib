@@ -21,6 +21,7 @@
 #include <cflib/net/request.h>
 #include <cflib/net/rmiservice.h>
 #include <cflib/net/wscommmanager.h>
+#include <cflib/serialize/impl/registerclass.h>
 #include <cflib/util/log.h>
 #include <cflib/util/util.h>
 
@@ -385,16 +386,37 @@ void RMIServerBase::registerService(RMIServiceBase & service)
 		sfs.signatures[ti.name] = qMakePair(i, 2);
 	}
 
-	foreach (const SerializeTypeInfo & ti,
+	for (const SerializeTypeInfo & ti :
 		getFunctionClassInfos(servInfo.functions) + getFunctionClassInfos(servInfo.cfSignals))
 	{
 		ClassInfoEl * ciEl = &classInfos_;
 		foreach (const QString & ns, ti.getName().split("::")) {
-			ClassInfoEl * & elRef = ciEl->infos[ns.toLower()];
+			ClassInfoEl *& elRef = ciEl->infos[ns.toLower()];
 			if (!elRef) elRef = new ClassInfoEl;
 			ciEl = elRef;
 		}
 		ciEl->ti = ti;
+
+		// add all derived classes
+		for (const SerializeTypeInfo & derived : serialize::impl::RegisterClassBase::getAllSerializeTypeInfos()) {
+			// check all bases
+			bool found = false;
+			for (const SerializeTypeInfo & base : derived.bases) {
+				if (base.getName() == ti.getName()) {
+					found = true;
+					break;
+				}
+			}
+			if (!found) continue;
+
+			ciEl = &classInfos_;
+			foreach (const QString & ns, derived.getName().split("::")) {
+				ClassInfoEl *& elRef = ciEl->infos[ns.toLower()];
+				if (!elRef) elRef = new ClassInfoEl;
+				ciEl = elRef;
+			}
+			ciEl->ti = derived;
+		}
 	}
 }
 
@@ -673,7 +695,7 @@ QString RMIServerBase::generateJS(const SerializeTypeInfo & ti) const
 QString RMIServerBase::generateTS(const SerializeTypeInfo & ti) const
 {
 	const bool isService = !ti.functions.isEmpty();
-	const QString cflibPath = ti.ns.startsWith("cflib::") && !isService ? "../" : "../cflib/";
+	const QString cflibPath = ti.ns.startsWith("cflib::") && !isService ? "../../cflib/" : "../cflib/";
 
 	QString ts;
 	ts <<
@@ -945,7 +967,7 @@ QString RMIServerBase::generateTSForClass(const SerializeTypeInfo & ti) const
 		"\n"
 		"\tprotected __serialize(__S): void {\n"
 		"\t\t__S.";
-	if (ti.classId != 0) ts << "i(" << typeName << ".__classId)";
+	if (ti.classId != 0) ts << "i(" << typeName << "Dao.__classId)";
 	else                 ts << "n()";
 	if (!base.isEmpty()) ts << ".o(this, super.__serialize)";
 	foreach (const SerializeVariableTypeInfo & vti, ti.members) {

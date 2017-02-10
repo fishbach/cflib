@@ -19,6 +19,7 @@
 #pragma once
 
 #include <cflib/serialize/impl/serializebaseber.h>
+#include <cflib/serialize/serializetypeinfo.h>
 
 namespace cflib { namespace serialize { namespace impl {
 
@@ -45,11 +46,22 @@ public:
 		cl.reset((T *)registry()[classId]->deserialize(ser));
 	}
 
+	static QSet<SerializeTypeInfo> getAllSerializeTypeInfos()
+	{
+		QSet<SerializeTypeInfo> rv;
+		for (const RegisterClassBase * cl : registry().values()) {
+			rv << cl->serializeTypeInfo();
+		}
+		return rv;
+	}
+
 protected:
 	static QHash<quint32, const RegisterClassBase *> & registry();
 	void duplicateId(quint32 classId);
 	virtual void serialize(const void * cl, BERSerializerBase & ser) const = 0;
 	virtual void * deserialize(BERDeserializerBase & ser) const = 0;
+	virtual SerializeTypeInfo serializeTypeInfo() const = 0;
+
 };
 
 template<typename T>
@@ -71,6 +83,11 @@ public:
 		T * cl = new T();
 		cl->deserialize(ser);
 		return cl;
+	}
+
+	SerializeTypeInfo serializeTypeInfo() const override
+	{
+		return T::serializeTypeInfo();
 	}
 
 };
