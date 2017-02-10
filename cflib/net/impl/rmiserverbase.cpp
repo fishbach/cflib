@@ -916,9 +916,9 @@ QString RMIServerBase::generateTSForClass(const SerializeTypeInfo & ti) const
 		"\t\t\tvar __D = __ber.D(param);\n"
 		"\t\t\tvar classId = __D.i();\n";
 	if (ti.classId == 0) {
-		ts << "\t\t\tif (classId != 0) return new __ber.ClassRegistry.get(classId)(param);\n";
+		ts << "\t\t\tif (classId != 0) return new (__ber.ClassRegistry.get(classId))(param);\n";
 	} else {
-		ts << "\t\t\tif (classId != " << typeName << "Dao.__classId) return new __ber.ClassRegistry.get(classId)(param);\n";
+		ts << "\t\t\tif (classId != " << typeName << "Dao.__classId) return new (__ber.ClassRegistry.get(classId))(param);\n";
 	}
 
 	if (!base.isEmpty()) ts << "\t\t\tsuper(__D.a());\n";
@@ -930,9 +930,9 @@ QString RMIServerBase::generateTSForClass(const SerializeTypeInfo & ti) const
 	ts << "\t\t\tif (!param || typeof param != 'object') param = {};\n";
 
 	if (ti.classId == 0) {
-		ts << "\t\t\tif (param.constructor.__classId) return new __ber.ClassRegistry.get(param.constructor.__classId)(param);\n";
+		ts << "\t\t\tif (param.constructor.__classId) return new (__ber.ClassRegistry.get(param.constructor.__classId))(param);\n";
 	} else {
-		ts << "\t\t\tif (param.constructor.__classId != " << typeName << "Dao.__classId) return new __ber.ClassRegistry.get(param.constructor.__classId)(param);\n";
+		ts << "\t\t\tif (param.constructor.__classId != " << typeName << "Dao.__classId) return new (__ber.ClassRegistry.get(param.constructor.__classId))(param);\n";
 	}
 
 	foreach (const SerializeVariableTypeInfo & vti, ti.members) {
