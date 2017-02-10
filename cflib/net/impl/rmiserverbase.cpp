@@ -897,13 +897,13 @@ QString RMIServerBase::generateTSForClass(const SerializeTypeInfo & ti) const
 	if (typeName.contains("::")) typeName = typeName.mid(typeName.lastIndexOf("::") + 2);
 
 	QString ts;
-
 	ts << "export class " << typeName << "Dao";
 	if (!base.isEmpty()) ts << " extends " << base;
 	ts << " {\n";
 
 	if (!ti.members.isEmpty()) {
 		ts << "\n";
+		if (ti.classId != 0) ts << "\t__classId: number;\n";
 		foreach (const SerializeVariableTypeInfo & vti, ti.members) {
 			ts << "\t" << formatMembernameForJS(vti) << ": " << getTSTypename(vti.type) << ";\n";
 		}
@@ -918,7 +918,6 @@ QString RMIServerBase::generateTSForClass(const SerializeTypeInfo & ti) const
 		ts << "\t\t\t__D.n();\n";
 	} else {
 		ts << "\t\t\tthis.__classId = __D.i();\n";
-//		dao/daofactory.ts
 	}
 
 	if (!base.isEmpty()) ts << "\t\t\tsuper(__D.a());\n";
@@ -948,6 +947,12 @@ QString RMIServerBase::generateTSForClass(const SerializeTypeInfo & ti) const
 		"\t}\n"
 		"\n"
 		"}\n";
+
+	if (ti.classId != 0) {
+		ts <<
+			"\n"
+			"__ber.ClassRegistry.set(" << QString::number(ti.classId) << ", " << typeName << ");\n";
+	}
 
 	return ts;
 }

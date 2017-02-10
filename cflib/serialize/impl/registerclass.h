@@ -47,6 +47,7 @@ public:
 
 protected:
 	static QHash<quint32, const RegisterClassBase *> & registry();
+	void duplicateId(quint32 classId);
 	virtual void serialize(const void * cl, BERSerializerBase & ser) const = 0;
 	virtual void * deserialize(BERDeserializerBase & ser) const = 0;
 };
@@ -56,6 +57,7 @@ class RegisterClass : public RegisterClassBase
 {
 public:
 	RegisterClass() {
+		if (registry().contains(T::serializeTypeInfo().classId)) duplicateId(T::serializeTypeInfo().classId);
 		registry()[T::serializeTypeInfo().classId] = this;
 	}
 

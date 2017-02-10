@@ -521,11 +521,11 @@ inline void deserializeBER(T & cl, const quint8 * data, int len, BERDeserializer
 template<typename T>
 inline void serializeBER(const QSharedPointer<T> & cl, quint64 tagNo, QByteArray & data, BERSerializerBase &)
 {
-	if (!cl.isNull()) {
-		TLWriter tlw(data, tagNo);
-		BERSerializerBase ser(data);
-		RegisterClassBase::serialize(cl, ser);
-	}
+	if (cl.isNull()) return;
+
+	TLWriter tlw(data, tagNo);
+	BERSerializerBase ser(data);
+	RegisterClassBase::serialize(cl, ser);
 }
 
 template<typename T>
