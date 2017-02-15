@@ -131,31 +131,32 @@ QStringList getMemberTypes(const SerializeTypeInfo & ti)
 	return retval;
 }
 
-QString formatJSTypeConstruction(const SerializeTypeInfo & ti, const QString & raw)
+QString formatJSTypeConstruction(const SerializeTypeInfo & ti, const QString & raw, bool useFactory)
 {
 	QString js;
 	if (ti.type == SerializeTypeInfo::Class) {
-		js << "new " << formatClassnameForJS(ti) << "(" << (raw == "null" ? "" : raw) << ")";
+		if (useFactory) js << formatClassnameForJS(ti) << ".new(" << (raw == "null" ? "" : raw) << ")";
+		else            js << "new " << formatClassnameForJS(ti) << "(" << (raw == "null" ? "" : raw) << ")";
 	} else if (ti.type == SerializeTypeInfo::Container) {
 		if (ti.typeName.startsWith("Pair<")) {
 			if (raw == "null") js << "["
-				<< formatJSTypeConstruction(ti.bases[0], "null") << ", "
-				<< formatJSTypeConstruction(ti.bases[1], "null") << "]";
+				<< formatJSTypeConstruction(ti.bases[0], "null", useFactory) << ", "
+				<< formatJSTypeConstruction(ti.bases[1], "null", useFactory) << "]";
 			else js << "(!" << raw << " ? ["
-				<< formatJSTypeConstruction(ti.bases[0], "null") << ", "
-				<< formatJSTypeConstruction(ti.bases[1], "null") << "] : ["
-				<< formatJSTypeConstruction(ti.bases[0], raw + "[0]") << ", "
-				<< formatJSTypeConstruction(ti.bases[1], raw + "[1]") << "])";
+				<< formatJSTypeConstruction(ti.bases[0], "null", useFactory) << ", "
+				<< formatJSTypeConstruction(ti.bases[1], "null", useFactory) << "] : ["
+				<< formatJSTypeConstruction(ti.bases[0], raw + "[0]", useFactory) << ", "
+				<< formatJSTypeConstruction(ti.bases[1], raw + "[1]", useFactory) << "])";
 		} else if (ti.typeName.startsWith("List<")) {
 			if (raw == "null") js << "[]";
 			else js << "(" << raw << " || []).map(function(__e) { return "
-				<< formatJSTypeConstruction(ti.bases[0], "__e") << "; })";
+				<< formatJSTypeConstruction(ti.bases[0], "__e", useFactory) << "; })";
 		} else if (ti.typeName.startsWith("Map<")) {
 			if (raw == "null") js << "[]";
 			else js << "(" << raw << " || []).map(function(__e) { return ["
-				<< formatJSTypeConstruction(ti.bases[0], "__e[0]")
+				<< formatJSTypeConstruction(ti.bases[0], "__e[0]", useFactory)
 				<< ", "
-				<< formatJSTypeConstruction(ti.bases[1], "__e[1]") << "]; })";
+				<< formatJSTypeConstruction(ti.bases[1], "__e[1]", useFactory) << "]; })";
 		}
 	} else if (ti.type == SerializeTypeInfo::Basic) {
 		if (ti.typeName == "DateTime") {
@@ -289,25 +290,26 @@ QString getSerializeCode(const SerializeTypeInfo & ti, const QString & name)
 	return js;
 }
 
-QString getDeserializeCode(const SerializeTypeInfo & ti)
+QString getDeserializeCode(const SerializeTypeInfo & ti, bool useFactory)
 {
 	QString js;
 	if (ti.type == SerializeTypeInfo::Class) {
 		QString cl = ti.getName();
 		cl.replace("::", "__");
-		js << "new " << cl << "(__D.a())";
+		if (useFactory) js << cl << ".new(__D.a())";
+		else            js << "new " << cl << "(__D.a())";
 	} else if (ti.type == SerializeTypeInfo::Container) {
 		if (ti.typeName.startsWith("Pair<")) {
 			js	<< "(function(__data) { var __D = __ber.D(__data); return ["
-				<< getDeserializeCode(ti.bases[0]) << ", "
-				<< getDeserializeCode(ti.bases[1]) << "]; })(__D.a())";
+				<< getDeserializeCode(ti.bases[0], useFactory) << ", "
+				<< getDeserializeCode(ti.bases[1], useFactory) << "]; })(__D.a())";
 		} else if (ti.typeName.startsWith("List<")) {
 			js	<< "__D.map(function(__D) { return "
-				<< getDeserializeCode(ti.bases[0]) << "; })";
+				<< getDeserializeCode(ti.bases[0], useFactory) << "; })";
 		} else if (ti.typeName.startsWith("Map<")) {
 			js	<< "__D.map(function(__D) { return ["
-				<< getDeserializeCode(ti.bases[0]) << ", "
-				<< getDeserializeCode(ti.bases[1]) << "]; })";
+				<< getDeserializeCode(ti.bases[0], useFactory) << ", "
+				<< getDeserializeCode(ti.bases[1], useFactory) << "]; })";
 		} else {
 			logWarn("no code for Container type '%1'", ti.typeName);
 		}
@@ -706,7 +708,8 @@ QString RMIServerBase::generateTS(const SerializeTypeInfo & ti) const
 
 	ts <<
 		"import {ber as __ber} from '" << cflibPath << "net/ber';\n";
-	if (isService) ts << "import {rmi as __rmi} from '" << cflibPath << "net/rmi';\n";
+	if (isService)               ts << "import {rmi as __rmi} from '" << cflibPath << "net/rmi';\n";
+	else if (ti.bases.isEmpty()) ts << "import {ModelBase as __modelBase} from '../models/modelbase';\n";
 	if (!ti.cfSignals.isEmpty()) ts << "import {RemoteSignal as __RSig} from '" << cflibPath << "net/rsig';\n";
 	foreach (QString type, getMemberTypes(ti)) {
 		QString typePath = type.toLower();
@@ -791,7 +794,7 @@ QString RMIServerBase::generateJSForClass(const SerializeTypeInfo & ti) const
 		"\t\tvar __D = __ber.D(param);\n";
 	if (!base.isEmpty()) js << "\t\t" << nsPrefix << typeName << ".__super.call(this, __D.a());\n";
 	foreach (const SerializeVariableTypeInfo & vti, ti.members) {
-		js << "\t\tthis." << formatMembernameForJS(vti) << " = " << getDeserializeCode(vti.type) << ";\n";
+		js << "\t\tthis." << formatMembernameForJS(vti) << " = " << getDeserializeCode(vti.type, false) << ";\n";
 	}
 	js <<
 		"\t} else {\n";
@@ -800,7 +803,7 @@ QString RMIServerBase::generateJSForClass(const SerializeTypeInfo & ti) const
 		"\t\tif (!param || typeof param != 'object') param = {};\n";
 	foreach (const SerializeVariableTypeInfo & vti, ti.members) {
 		const QString name = formatMembernameForJS(vti);
-		js << "\t\tthis." << name << " = " << formatJSTypeConstruction(vti.type, "param." + name) << ";\n";
+		js << "\t\tthis." << name << " = " << formatJSTypeConstruction(vti.type, "param." + name, false) << ";\n";
 	}
 	js <<
 		"\t}\n"
@@ -855,7 +858,7 @@ QString RMIServerBase::generateJSForService(const SerializeTypeInfo & ti) const
 			foreach (const SerializeVariableTypeInfo & p, func.parameters) {
 				if (isFirst2) isFirst2 = false;
 				else          js << ", ";
-				js << getDeserializeCode(p.type);
+				js << getDeserializeCode(p.type, false);
 			}
 			js << ");\n";
 		}
@@ -890,11 +893,11 @@ QString RMIServerBase::generateJSForService(const SerializeTypeInfo & ti) const
 			"\t\t\tvar __D = __ber.D(__data);\n"
 			"\t\t\tcallback.call(context";
 		if (func.returnType.type != SerializeTypeInfo::Null) {
-			js << ", " << getDeserializeCode(func.returnType);
+			js << ", " << getDeserializeCode(func.returnType, false);
 		}
 		foreach (const SerializeVariableTypeInfo & p, func.parameters) {
 			if (!p.isRef) continue;
-			js << ", " << getDeserializeCode(p.type);
+			js << ", " << getDeserializeCode(p.type, false);
 		}
 		js <<
 			");\n"
@@ -919,10 +922,7 @@ QString RMIServerBase::generateTSForClass(const SerializeTypeInfo & ti) const
 	if (typeName.contains("::")) typeName = typeName.mid(typeName.lastIndexOf("::") + 2);
 
 	QString ts;
-	ts << "export abstract class " << typeName << "Dao";
-	if (!base.isEmpty()) ts << " extends " << base;
-	ts <<
-		" {\n"
+	ts << "export abstract class " << typeName << "Dao extends " << (!base.isEmpty() ? base : "__modelBase") << " {\n"
 		"\n";
 
 	if (ti.classId != 0) ts << "\tstatic __classId: number = " << QString::number(ti.classId) << ";\n";
@@ -937,30 +937,20 @@ QString RMIServerBase::generateTSForClass(const SerializeTypeInfo & ti) const
 		"\tconstructor(param?) {\n"
 		"\t\tif (param instanceof Uint8Array) {\n"
 		"\t\t\tvar __D = __ber.D(param);\n"
-		"\t\t\tvar classId = __D.i();\n";
-	if (ti.classId == 0) {
-		ts << "\t\t\tif (classId != 0) return new (__ber.ClassRegistry.get(classId))(param);\n";
-	} else {
-		ts << "\t\t\tif (classId != " << typeName << "Dao.__classId) return new (__ber.ClassRegistry.get(classId))(param);\n";
-	}
-
-	if (!base.isEmpty()) ts << "\t\t\tsuper(__D.a());\n";
+		"\t\t\t__D.n();\n"
+		"\t\t\tsuper(__D.a());\n";
 	foreach (const SerializeVariableTypeInfo & vti, ti.members) {
-		ts << "\t\t\tthis." << formatMembernameForJS(vti) << " = " << getDeserializeCode(vti.type) << ";\n";
+		ts << "\t\t\tthis." << formatMembernameForJS(vti) << " = " << getDeserializeCode(vti.type, true) << ";\n";
 	}
-	ts << "\t\t} else {\n";
-	if (!base.isEmpty()) ts <<"\t\t\tsuper(param);\n";
-	ts << "\t\t\tif (!param || typeof param != 'object') param = {};\n";
 
-	if (ti.classId == 0) {
-		ts << "\t\t\tif (param.constructor.__classId) return new (__ber.ClassRegistry.get(param.constructor.__classId))(param);\n";
-	} else {
-		ts << "\t\t\tif (param.constructor.__classId > 0 && param.constructor.__classId != " << typeName << "Dao.__classId) return new (__ber.ClassRegistry.get(param.constructor.__classId))(param);\n";
-	}
+	ts <<
+		"\t\t} else {\n"
+		"\t\t\tsuper(param);\n"
+		"\t\t\tif (!param || typeof param != 'object') param = {};\n";
 
 	foreach (const SerializeVariableTypeInfo & vti, ti.members) {
 		const QString name = formatMembernameForJS(vti);
-		ts << "\t\t\tthis." << name << " = " << formatJSTypeConstruction(vti.type, "param." + name) << ";\n";
+		ts << "\t\t\tthis." << name << " = " << formatJSTypeConstruction(vti.type, "param." + name, true) << ";\n";
 	}
 	ts <<
 		"\t\t}\n"
@@ -984,7 +974,9 @@ QString RMIServerBase::generateTSForClass(const SerializeTypeInfo & ti) const
 	ts <<
 		"\t}\n"
 		"\n"
-		"}\n";
+		"}\n"
+		"\n"
+		"export const dynamicCreate = __ber.dynamicCreate\n";
 
 	return ts;
 }
@@ -1057,7 +1049,7 @@ QString RMIServerBase::generateTSForService(const SerializeTypeInfo & ti) const
 			foreach (const SerializeVariableTypeInfo & p, func.parameters) {
 				if (isFirst) isFirst = false;
 				else          ts << ", ";
-				ts << getDeserializeCode(p.type);
+				ts << getDeserializeCode(p.type, true);
 			}
 
 			if (func.parameters.size() > 1) ts << "]";
@@ -1114,14 +1106,14 @@ QString RMIServerBase::generateTSForService(const SerializeTypeInfo & ti) const
 		if (rvCount > 1) ts << "[";
 		bool isFirst = true;
 		if (func.returnType.type != SerializeTypeInfo::Null) {
-			ts << getDeserializeCode(func.returnType);
+			ts << getDeserializeCode(func.returnType, true);
 			isFirst = false;
 		}
 		foreach (const SerializeVariableTypeInfo & p, func.parameters) {
 			if (!p.isRef) continue;
 			if (isFirst) isFirst = false;
 			else         ts << ", ";
-			ts << getDeserializeCode(p.type);
+			ts << getDeserializeCode(p.type, true);
 		}
 		if (rvCount > 1) ts << "]";
 		ts << ";\n"
