@@ -709,7 +709,7 @@ QString RMIServerBase::generateTS(const SerializeTypeInfo & ti) const
 	ts <<
 		"import {ber as __ber} from '" << cflibPath << "net/ber';\n";
 	if (isService)               ts << "import {rmi as __rmi} from '" << cflibPath << "net/rmi';\n";
-	else if (ti.bases.isEmpty()) ts << "import {ModelBase as __modelBase} from '../models/modelbase';\n";
+	else if (ti.bases.isEmpty()) ts << "import {ModelBase as __modelBase} from '" << (ti.ns.startsWith("cflib::") ? "../" : "") << "../models/modelbase';\n";
 	if (!ti.cfSignals.isEmpty()) ts << "import {RemoteSignal as __RSig} from '" << cflibPath << "net/rsig';\n";
 	foreach (QString type, getMemberTypes(ti)) {
 		QString typePath = type.toLower();
@@ -934,18 +934,21 @@ QString RMIServerBase::generateTSForClass(const SerializeTypeInfo & ti) const
 	if (ti.classId != 0 || !ti.members.isEmpty()) ts << "\n";
 
 	ts <<
-		"\tconstructor(param?) {\n"
+		"\tconstructor(param?) {\n";
+	if (base.isEmpty()) ts << "\t\tsuper(param);\n";
+	ts <<
 		"\t\tif (param instanceof Uint8Array) {\n"
 		"\t\t\tvar __D = __ber.D(param);\n"
-		"\t\t\t__D.n();\n"
-		"\t\t\tsuper(__D.a());\n";
+		"\t\t\t__D.n();\n";
+	if (!base.isEmpty()) ts << "\t\t\tsuper(__D.a());\n";
 	foreach (const SerializeVariableTypeInfo & vti, ti.members) {
 		ts << "\t\t\tthis." << formatMembernameForJS(vti) << " = " << getDeserializeCode(vti.type, true) << ";\n";
 	}
 
 	ts <<
-		"\t\t} else {\n"
-		"\t\t\tsuper(param);\n"
+		"\t\t} else {\n";
+	if (!base.isEmpty()) ts << "\t\t\tsuper(param);\n";
+	ts <<
 		"\t\t\tif (!param || typeof param != 'object') param = {};\n";
 
 	foreach (const SerializeVariableTypeInfo & vti, ti.members) {
@@ -969,14 +972,13 @@ QString RMIServerBase::generateTSForClass(const SerializeTypeInfo & ti) const
 		"\n";
 
 	ts <<
-		"\tstatic setModel(model): void {\n";
+		"\tstatic new(model): any {\n";
 	if (ti.classId != 0) ts << "\t\t__ber.ClassRegistry.set(" << typeName << "Dao.__classId, model);\n";
 	ts <<
+		"\t\treturn __ber.dynamicCreate(model);\n"
 		"\t}\n"
 		"\n"
-		"}\n"
-		"\n"
-		"export const dynamicCreate = __ber.dynamicCreate\n";
+		"}\n";
 
 	return ts;
 }
