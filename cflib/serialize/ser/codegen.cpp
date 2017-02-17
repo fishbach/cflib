@@ -272,7 +272,7 @@ int genSerialize(const QString & headerName, const HeaderParser & hp, QIODevice 
 				}
 				out <<
 					"\t}\n"
-					"\t return 0;\n"
+					"\treturn 0;\n"
 					"}\n";
 			}
 		}

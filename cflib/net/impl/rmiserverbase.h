@@ -91,8 +91,9 @@ public:
 			RMIService<C> * service = dynamic_cast<RMIService<C> *>(serviceBase);
 
 			// remove rsig clients
-			for (int i = 0 ; i < serviceBase->getServiceInfo().cfSignals.size() ; ++i) {
-				QMutableVectorIterator<net::RSigBase::ConnIdRegId> listenerIt(serviceBase->getCfSignal(i)->defaultListeners);
+			int i = serviceBase->getServiceInfo().cfSignals.size();
+			while (i > 0) {
+				QMutableVectorIterator<net::RSigBase::ConnIdRegId> listenerIt(serviceBase->getCfSignal(i--)->defaultListeners);
 				while (listenerIt.hasNext()) if (listenerIt.next().first == connId) listenerIt.remove();
 			}
 
