@@ -990,7 +990,7 @@ QString RMIServerBase::generateTSForService(const SerializeTypeInfo & ti) const
 		QString funcTypename = func.name;
 		funcTypename[0] = func.name[0].toUpper();
 		ts << "interface __" << funcTypename << " {\n"
-			"\tregister(): Observable<";
+			"\tregister(" << getJSParameters(func.registerParameters, true) << "): Observable<";
 		if (func.parameters.size() > 1) ts << "[";
 		bool isFirst = true;
 		foreach (const SerializeVariableTypeInfo & p, func.parameters) {
