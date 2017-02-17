@@ -144,6 +144,16 @@ void writeFunction(const HeaderParser::Function & f, QTextStream & out)
 		}
 		out << ";\n";
 	}
+	if (!f.registerParameters.isEmpty()) {
+		out << "\t\tfunc.registerParameters";
+		foreach (const HeaderParser::Variable & m, f.registerParameters) {
+			out <<
+				"\n\t\t\t<< cflib::serialize::SerializeVariableTypeInfo(\""
+				<< m.name << "\", cflib::serialize::impl::fromType<" << m.type << ">(), "
+				<< (m.isRef ? "true" : "false") << ")";
+		}
+		out << ";\n";
+	}
 }
 
 }

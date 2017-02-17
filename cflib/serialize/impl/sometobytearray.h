@@ -42,4 +42,22 @@ struct SomeToByteArray<I>
 	void operator()(BERSerializer &, size_t, size_t) {}
 };
 
+template <typename... P> struct ToByteArray;
+
+template <typename P, typename... PN>
+struct ToByteArray<P, PN...>
+{
+	void operator()(BERSerializer & ser, P p, PN... pn)
+	{
+		ser << p;
+		ToByteArray<PN...>()(ser, std::forward<PN>(pn)...);
+	}
+};
+
+template <>
+struct ToByteArray<>
+{
+	void operator()(BERSerializer &) {}
+};
+
 }}}	// namespace

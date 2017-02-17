@@ -43,7 +43,7 @@ rmi:
 	void talk(const QString & msg);
 
 cfsignals:
-	rsig<void (int t)> mySig;
-	rsig<void (int t, const QString & s)> mySig2;
-	rsig<void (int t, const QString & s)> newMessage;
+	rsig<void (int t), void()> mySig;
+	rsig<void (int t, const QString & s), void()> mySig2;
+	rsig<void (int t, const QString & s), void()> newMessage;
 };

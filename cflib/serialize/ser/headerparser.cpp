@@ -113,6 +113,7 @@ bool HeaderParser::getFunctions(const QString & in, int start, int end, Class & 
 bool HeaderParser::getCfSignals(const QString & in, int start, int end, Class & cl)
 {
 	static const QRegExp sigRE("(?:^|;)\\s*rsig\\s*<\\s*([:\\w]+(?:\\s*<[^>]+>)?)\\s*\\(");
+	static const QRegExp sigRegisterRE("\\)\\s*,\\s*([:\\w]+(?:\\s*<[^>]+>)?)\\s*\\(");
 	static const QRegExp sigNameRE("\\)\\s*>\\s*(\\w+)\\s*;");
 
 	int pos = sigRE.indexIn(in, start, QRegExp::CaretAtOffset);
@@ -120,13 +121,23 @@ bool HeaderParser::getCfSignals(const QString & in, int start, int end, Class & 
 		HeaderParser::Function func;
 		func.returnType = sigRE.cap(1);
 		pos += sigRE.matchedLength();
-		const int paramEnd = findClosingBrace(in, pos, '(', ')');
+		int paramEnd = findClosingBrace(in, pos, '(', ')');
 		if (paramEnd == -1 || paramEnd >= end) {
 			lastError_ = QString("cannot find closing brace at line: %1").arg(lineNr(in, pos - 1));
 			return false;
 		}
 
 		if (!getParameters(in, pos, paramEnd, func.parameters)) return false;
+
+		if (sigRegisterRE.indexIn(in, paramEnd) == -1) return false;
+		pos = paramEnd + sigRegisterRE.matchedLength();
+		paramEnd = findClosingBrace(in, pos, '(', ')');
+		if (paramEnd == -1 || paramEnd >= end) {
+			lastError_ = QString("cannot find closing brace at line: %1").arg(lineNr(in, pos - 1));
+			return false;
+		}
+
+		if (!getParameters(in, pos, paramEnd, func.registerParameters)) return false;
 
 		if (sigNameRE.indexIn(in, paramEnd) == -1) return false;
 		func.name = sigNameRE.cap(1);

@@ -54,9 +54,15 @@ inline QByteArray toByteArray(const T & v, quint64 tagNo = 1)
 }
 
 template<typename... P>
+inline void toByteArray(BERSerializer & ser, P... p)
+{
+	impl::ToByteArray<P...>()(ser, std::forward<P>(p)...);
+}
+
+template<typename... P>
 inline void someToByteArray(BERSerializer & ser, uint start, uint count, P... p)
 {
-	impl::SomeToByteArray<0, P...>()(ser, start, count, p...);
+	impl::SomeToByteArray<0, P...>()(ser, start, count, std::forward<P>(p)...);
 }
 
 template<typename T>

@@ -75,6 +75,7 @@ public:
 	QString name;
 	SerializeTypeInfo returnType;
 	QList<SerializeVariableTypeInfo> parameters;
+	QList<SerializeVariableTypeInfo> registerParameters;
 
 public:
 	QString toString() const;

@@ -31,17 +31,18 @@ namespace impl { class RMIServerBase; }
 class RSigBase
 {
 public:
+	typedef QPair<uint, uint> ConnIdRegId;
+	typedef QVector<ConnIdRegId> Listeners;
+
+public:
 	RSigBase() : server_(0) {}
 
 	virtual void regClient(uint connId, serialize::BERDeserializer & deser) = 0;
 	virtual void unregClient(uint connId, serialize::BERDeserializer & deser) = 0;
-	virtual void unregClient(uint connId) = 0;
-	virtual void checkClient(uint connId) = 0;
+
+	Listeners defaultListeners;
 
 protected:
-	QString serviceName_;
-	QString sigName_;
-
 	void send(uint connId, const QByteArray & data);
 
 private:
@@ -49,13 +50,14 @@ private:
 	friend class impl::RMIServerBase;
 };
 
-template<typename> class RSig;
+template<typename F, typename R> class RSig;
 
-template<typename... P>
-class RSig<void (P...)> : public RSigBase, public util::Sig<void (P...)>
+template<typename... P, typename... R>
+class RSig<void (P...), void (R...)> : public RSigBase, public util::Sig<void (P...)>
 {
 public:
 	typedef util::Sig<void (P...)> Base;
+
 public:
 	RSig()
 	{
@@ -70,110 +72,100 @@ public:
 
 	virtual void regClient(uint connId, serialize::BERDeserializer & deser)
 	{
-		RSig<void (P...)> * that = this;	// workaround for g++ 4.7.2 bug
-		serialize::readAndCall<uint, P...>(deser, [that, connId](uint checkCount, P... p) {
-			that->regClient(connId, checkCount, std::forward<P>(p)...);
+		uint regId; deser >> regId;
+		if (!registerFunc_) {
+			defaultListeners << qMakePair(connId, regId);
+			return;
+		}
+		serialize::readAndCall<R...>(deser, [this, connId, regId](R... r) {
+			registerFunc_(connId, regId, std::forward<R>(r)...);
 		});
-	}
-
-	void regClient(uint connId, uint checkCount, P... p)
-	{
-		uint retStart = 0;
-		uint retCount = sizeof...(P);
-		if (checkRegister_ && !checkRegister_(retStart, retCount, checkCount, p...)) return;
-		clients_ << ClData(connId, retStart, retCount, checkCount, std::forward<P>(p)...);
 	}
 
 	virtual void unregClient(uint connId, serialize::BERDeserializer & deser)
 	{
-		RSig<void (P...)> * that = this;	// workaround for g++ 4.7.2 bug
-		serialize::readAndCall<uint, P...>(deser, [that, connId](uint checkCount, P... p) {
-			that->unregClient(connId, checkCount, std::forward<P>(p)...);
-		});
-	}
-
-	void unregClient(uint connId, uint checkCount, P... p)
-	{
-		QMutableVectorIterator<ClData> it(clients_);
-		while (it.hasNext()) {
-			const ClData & d = it.next();
-			if (d.connId == connId && d.checkCount == checkCount &&
-				util::partialEqual(d.params, d.checkCount, p...)) it.remove();
+		uint regId; deser >> regId;
+		if (!unregisterFunc_) {
+			defaultListeners.removeAll(qMakePair(connId, regId));
+			return;
 		}
-	}
-
-	virtual void unregClient(uint connId)
-	{
-		QMutableVectorIterator<ClData> it(clients_);
-		while (it.hasNext()) {
-			if (it.next().connId == connId) it.remove();
-		}
-	}
-
-	virtual void checkClient(uint connId)
-	{
-		if (!checkRegister_) return;
-		QMutableVectorIterator<ClData> it(clients_);
-		while (it.hasNext()) {
-			ClData & d = it.next();
-			if (d.connId != connId) continue;
-			if (!util::callWithTupleParams<bool>(checkRegister_, d.params, d.retStart, d.retCount, d.checkCount)) it.remove();
-		}
+		unregisterFunc_(connId, regId);
 	}
 
 	template<typename F>
-	void setRegisterCheck(F func)
+	void setRegisterFunction(F func)
 	{
-		checkRegister_ = func;
+		registerFunc_ = func;
 	}
 
-	template<typename... A, typename C>
-	void setRegisterCheck(C * obj, bool (C::*func)(A...))
+	template<typename C>
+	void setRegisterFunction(C * obj, void (C::*func)(uint connId, uint regId, R...))
 	{
-		checkRegister_ = util::Delegate<C *, bool, A...>(obj, func);
+		registerFunc_ = util::Delegate<C *, void, uint, uint, R...>(obj, func);
 	}
 
-	template<typename... A, typename C>
-	void setRegisterCheck(const C * obj, bool (C::*func)(A...) const)
+	template<typename C>
+	void setRegisterFunction(const C * obj, void (C::*func)(uint connId, uint regId, R...) const)
 	{
-		checkRegister_ = util::Delegate<const C *, bool, A...>(obj, func);
+		registerFunc_ = util::Delegate<const C *, void, uint, uint, R...>(obj, func);
+	}
+
+	template<typename F>
+	void setUnregisterFunction(F func)
+	{
+		unregisterFunc_ = func;
+	}
+
+	template<typename C>
+	void setUnregisterFunction(C * obj, void (C::*func)(uint connId, uint regId))
+	{
+		unregisterFunc_ = util::Delegate<C *, void, uint, uint>(obj, func);
+	}
+
+	template<typename C>
+	void setUnregisterFunction(const C * obj, bool (C::*func)(uint connId, uint regId) const)
+	{
+		unregisterFunc_ = util::Delegate<const C *, void, uint, uint>(obj, func);
+	}
+
+	template<typename F>
+	void setFilterFunction(F func)
+	{
+		filterFunc_ = func;
+	}
+
+	template<typename C>
+	void setFilterFunction(C * obj, Listeners (C::*func)(P...))
+	{
+		filterFunc_ = util::Delegate<C *, Listeners, P...>(obj, func);
+	}
+
+	template<typename C>
+	void setFilterFunction(const C * obj, Listeners (C::*func)(P...) const)
+	{
+		filterFunc_ = util::Delegate<const C *, Listeners, P...>(obj, func);
 	}
 
 private:
 	void handleRemote(P... p)
 	{
-		QMap<QPair<uint, uint>, QByteArray> partials;
-		QVectorIterator<ClData> it(clients_);
-		while (it.hasNext()) {
-			const ClData & d = it.next();
-			if (!util::partialEqual(d.params, d.checkCount, p...)) continue;
-
-			QByteArray & ba = partials[qMakePair(d.retStart, d.retCount)];
-			if (ba.isNull()) {
-				serialize::BERSerializer ser(3);
-				ser << serviceName_ << sigName_;
-				serialize::someToByteArray(ser, d.retStart, d.retCount, p...);
-				ba = ser.data();
-			}
-			send(d.connId, ba);
+		QByteArray encodedParams;
+		{
+			serialize::BERSerializer ser;
+			serialize::toByteArray(ser, std::forward<P>(p)...);
+			encodedParams = ser.data();
+		}
+		for (const ConnIdRegId & dest : (filterFunc_ ? filterFunc_(std::forward<P>(p)...) : defaultListeners)) {
+			serialize::BERSerializer ser(3);
+			ser << dest.second << encodedParams;
+			send(dest.first, ser.data());
 		}
 	}
 
 private:
-	struct ClData {
-		uint connId;
-		uint retStart;
-		uint retCount;
-		uint checkCount;
-		std::tuple<typename std::decay<P>::type ...> params;
-
-		ClData() : connId(0), retStart(0), retCount(0), checkCount(0) {}
-		ClData(uint connId, uint retStart, uint retCount, uint checkCount, P... p) :
-			connId(connId), retStart(retStart), retCount(retCount), checkCount(checkCount),
-			params(std::forward<P>(p)...) {}
-	};
-	QVector<ClData> clients_;
-	std::function<bool (uint & retStart, uint & retCount, uint & checkCount, P&... p)> checkRegister_;
+	std::function<void (uint connId, uint regId, R... r)> registerFunc_;
+	std::function<void (uint connId, uint regId)> unregisterFunc_;
+	std::function<Listeners (P... p)> filterFunc_;
 };
 
 }}	// namespace

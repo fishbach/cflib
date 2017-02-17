@@ -227,12 +227,12 @@ QString getJSFunctionName(const QRegularExpression & containerRE, const Serializ
 	return js;
 }
 
-QString getJSParameters(const SerializeFunctionTypeInfo & func, bool withType)
+QString getJSParameters(const QList<SerializeVariableTypeInfo> & parameters, bool withType)
 {
 	QString js;
 	bool isFirst = true;
 	int id = 0;
-	foreach (const SerializeVariableTypeInfo & p, func.parameters) {
+	foreach (const SerializeVariableTypeInfo & p, parameters) {
 		if (isFirst) isFirst = false;
 		else js << ", ";
 		if (p.name.isEmpty()) js << "__param_" << QString::number(++id);
@@ -240,6 +240,11 @@ QString getJSParameters(const SerializeFunctionTypeInfo & func, bool withType)
 		if (withType) js << ": " << getTSTypename(p.type);
 	}
 	return js;
+}
+
+QString getJSParameters(const SerializeFunctionTypeInfo & func, bool withType)
+{
+	return getJSParameters(func.parameters, withType);
 }
 
 QString getSerializeCode(const SerializeTypeInfo & ti, const QString & name)
@@ -339,16 +344,21 @@ QString getDeserializeCode(const SerializeTypeInfo & ti, bool useFactory)
 	return js;
 }
 
-QString getSerializeJSParameters(const SerializeFunctionTypeInfo & func)
+QString getSerializeJSParameters(const QList<SerializeVariableTypeInfo> & parameters)
 {
 	QString js;
 	int id = 0;
-	foreach (const SerializeVariableTypeInfo & p, func.parameters) {
+	foreach (const SerializeVariableTypeInfo & p, parameters) {
 		QString name = p.name;
 		if (name.isEmpty()) name << "__param_" << QString::number(++id);
 		js << getSerializeCode(p.type, name);
 	}
 	return js;
+}
+
+QString getSerializeJSParameters(const SerializeFunctionTypeInfo & func)
+{
+	return getSerializeJSParameters(func.parameters);
 }
 
 }
@@ -383,8 +393,6 @@ void RMIServerBase::registerService(RMIServiceBase & service)
 	foreach (const SerializeFunctionTypeInfo & ti, servInfo.cfSignals) {
 		RSigBase & sig = *service.getCfSignal(++i);
 		sig.server_ = this;
-		sig.serviceName_ = servInfo.typeName.toLower();
-		sig.sigName_ = ti.name;
 		sfs.signatures[ti.name] = qMakePair(i, 2);
 	}
 
@@ -480,17 +488,6 @@ void RMIServerBase::send(uint connId, const QByteArray & data)
 QByteArray RMIServerBase::getRemoteIP(uint connId)
 {
 	return wsService_.getRemoteIP(connId);
-}
-
-void RMIServerBase::connectionClosed(uint connId)
-{
-	if (!verifyThreadCall(&RMIServerBase::connectionClosed, connId)) return;
-
-	QMapIterator<QString, ServiceFunctions> it(services_);
-	while (it.hasNext()) {
-		RMIServiceBase & service = *it.next().value().service;
-		service.connectionClosed(connId);
-	}
 }
 
 RMIServiceBase * RMIServerBase::checkServiceCall(serialize::BERDeserializer & deser, uint connId,
@@ -1035,15 +1032,16 @@ QString RMIServerBase::generateTSForService(const SerializeTypeInfo & ti) const
 			ts << "\t\t\t" << func.name << ": new __RSig(\n"
 				"\t\t\t\t'" << ti.typeName.toLower() << "', '" << func.name << "',\n"
 				"\t\t\t\tfunction(";
-			if (func.parameters.isEmpty()) {
+			if (func.registerParameters.isEmpty()) {
 				ts << ") {},\n";
 			} else {
-				ts << "__S, " << getJSParameters(func, false) << ") {\n"
-					"\t\t\t\t\t__S" << getSerializeJSParameters(func) << ";\n"
+				ts << "__S, " << getJSParameters(func.registerParameters, false) << ") {\n"
+					"\t\t\t\t\t__S" << getSerializeJSParameters(func.registerParameters) << ";\n"
 					"\t\t\t\t},\n";
 			}
 
-			ts << "\t\t\t\tfunction(__D) {\n"
+			ts << "\t\t\t\tfunction(__data) {\n"
+				"\t\t\t\t\tvar __D = __ber.D(__data);\n"
 				"\t\t\t\t\treturn ";
 			if (func.parameters.size() > 1) ts << "[";
 

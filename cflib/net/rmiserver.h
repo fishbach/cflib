@@ -53,7 +53,10 @@ public:
 		RMIServerBase::connDataChange(newConnData, connDataId, connIds);
 	}
 
-	virtual void connectionClosed(const C &, uint, uint connId, bool) { RMIServerBase::connectionClosed(connId); }
+	virtual void connectionClosed(const C & connData, uint connDataId, uint connId, bool isLast)
+	{
+		RMIServerBase::connectionClosed(connData, connDataId, connId, isLast);
+	}
 
 protected:
 	virtual void handleRequest(const Request & request) { RMIServerBase::handleRequest(request); }

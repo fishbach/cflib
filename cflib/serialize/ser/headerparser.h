@@ -38,6 +38,7 @@ public:
 		QString returnType;
 		QString name;
 		Variables parameters;
+		Variables registerParameters;
 
 		bool hasReturnValues() const;
 	};

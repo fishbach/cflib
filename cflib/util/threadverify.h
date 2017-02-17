@@ -593,7 +593,7 @@ protected:
 			objs_(tv->verifyThread_->threadCount(), obj), objPtr_((C *)objs_.constData()) {}
 
 		inline C & operator=(const C & obj) { return threadObj() = obj; }
-		inline operator C () const          { return threadObj(); }
+		inline operator const C & () const  { return threadObj(); }
 		inline operator C & ()              { return threadObj(); }
 
 	private:
