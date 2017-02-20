@@ -206,7 +206,7 @@ bool HeaderParser::getMemberBlocks(const QString & in, int start, int end, Class
 	}
 
 	// serialize base?
-	const int serializeBasePos = in.indexOf("SERIALIZE_BASE", start);
+	const int serializeBasePos = in.indexOf(QRegExp("SERIALIZE_(STD)?BASE"), start);
 	if (serializeBasePos != -1 && serializeBasePos < end) cl.doBaseSerialize = true;
 
 	// skip blocks

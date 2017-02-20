@@ -31,23 +31,21 @@ private slots:
 
 	void toString()
 	{
+		QCOMPARE(GenTestRMI::serializeTypeInfo().toString(), QString(
+			"GenTestRMI{void f3(int32,String),List<int32> f4(),int32 f5(int32 x,int32 y),void f6()}"));
 		QCOMPARE(GenTest1::serializeTypeInfo().toString(), QString(
-			"GenTest1{int32 a,,int32 c,String d,"
-			"void f3(int32,String),List<int32> f4(),int32 f5(int32 x,int32 y),void f6()}"));
+			"GenTest1{int32 a,,int32 c,String d}"));
 		QCOMPARE(GenTest2::serializeTypeInfo().toString(), QString(
-			"GenTest2{GenTest1{int32 a,,int32 c,String d,"
-			"void f3(int32,String),List<int32> f4(),int32 f5(int32 x,int32 y),void f6()} a,int32 b}"));
+			"GenTest2{GenTest1{int32 a,,int32 c,String d} a,int32 b}"));
 		QCOMPARE(gentest::GenTest3::serializeTypeInfo().toString(), QString(
-			"gentest::GenTest3[GenTest1{int32 a,,int32 c,String d"
-			",void f3(int32,String),List<int32> f4(),int32 f5(int32 x,int32 y),void f6()}]{int32 e,int32 f}"));
+			"gentest::GenTest3[GenTest1{int32 a,,int32 c,String d}]{int32 e,int32 f}"));
 		QCOMPARE(gentest::GenTest3::Inner1::serializeTypeInfo().toString(), QString(
 			"gentest::GenTest3::Inner1{int32 a}"));
 		QCOMPARE(gentest::GenTest3::Inner2::serializeTypeInfo().toString(), QString(
 			"gentest::GenTest3::Inner2{}"));
 		QCOMPARE(gentest::gentest2::GenTest4::serializeTypeInfo().toString(), QString(
 			"gentest::gentest2::GenTest4[List<String>]"
-			"{int32 a,List<int32> b,List<GenTest2{GenTest1{int32 a,,int32 c,String d,"
-			"void f3(int32,String),List<int32> f4(),int32 f5(int32 x,int32 y),void f6()} a,int32 b}> c}"));
+			"{int32 a,List<int32> b,List<GenTest2{GenTest1{int32 a,,int32 c,String d} a,int32 b}> c}"));
 		QCOMPARE(GenTest6::serializeTypeInfo().toString(), QString(
 			"GenTest6{int32 a}"));
 	}
