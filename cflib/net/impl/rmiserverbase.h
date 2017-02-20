@@ -64,19 +64,8 @@ public:
 
 		QMapIterator<QString, ServiceFunctions> it(services_);
 		while (it.hasNext()) {
-			RMIServiceBase * serviceBase = it.next().value().service;
-			RMIService<C> * service = dynamic_cast<RMIService<C> *>(serviceBase);
-			if (service) {
-				service->connData_   = connData;
-				service->connDataId_ = connDataId;
-				for (uint connId : connIds) {
-					serviceBase->connId_ = connId;
-					service->connDataChange();
-				}
-				serviceBase->connId_ = 0;
-				service->connData_   = C();
-				service->connDataId_ = 0;
-			}
+			RMIService<C> * service = dynamic_cast<RMIService<C> *>(it.next().value().service);
+			if (service) service->connDataChange(connData, connDataId, connIds);
 		}
 	}
 
@@ -89,26 +78,8 @@ public:
 		while (it.hasNext()) {
 			RMIServiceBase * serviceBase = it.next().value().service;
 			RMIService<C> * service = dynamic_cast<RMIService<C> *>(serviceBase);
-
-			// remove rsig clients
-			int i = serviceBase->getServiceInfo().cfSignals.size();
-			while (i > 0) {
-				QMutableVectorIterator<net::RSigBase::ConnIdRegId> listenerIt(serviceBase->getCfSignal(i--)->defaultListeners);
-				while (listenerIt.hasNext()) if (listenerIt.next().first == connId) listenerIt.remove();
-			}
-
-			// call connectionClosed on service
-			serviceBase->connId_ = connId;
-			if (service) {
-				service->connData_   = connData;
-				service->connDataId_ = connDataId;
-				serviceBase->connectionClosed(isLast);
-				service->connData_   = C();
-				service->connDataId_ = 0;
-			} else {
-				serviceBase->connectionClosed(isLast);
-			}
-			serviceBase->connId_ = 0;
+			if (service) service    ->connectionClosed(connData, connDataId, connId, isLast);
+			else         serviceBase->connectionClosed(connId, isLast);
 		}
 	}
 

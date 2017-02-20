@@ -57,6 +57,22 @@ void RMIServiceBase::processRMIServiceCall(serialize::BERDeserializer deser, uin
 	connId_ = 0;
 }
 
+void RMIServiceBase::connectionClosed(uint connId, bool isLast)
+{
+	if (!verifyThreadCall(&RMIServiceBase::connectionClosed, connId, isLast)) return;
+
+	// remove rsig clients
+	int i = getServiceInfo().cfSignals.size();
+	while (i > 0) {
+		QMutableVectorIterator<net::RSigBase::ConnIdRegId> listenerIt(getCfSignal(i--)->defaultListeners);
+		while (listenerIt.hasNext()) if (listenerIt.next().first == connId) listenerIt.remove();
+	}
+
+	connId_ = connId;
+	connectionClosed(isLast);
+	connId_ = 0;
+}
+
 RMIReplier RMIServiceBase::delayReply()
 {
 	delayedReply_ = true;
