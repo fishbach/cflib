@@ -24,6 +24,7 @@ namespace cflib { namespace util {
 
 class ThreadVerify
 {
+	Q_DISABLE_COPY(ThreadVerify)
 public:
 	enum LoopType {
 		Qt     = 1,

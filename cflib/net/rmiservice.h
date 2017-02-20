@@ -46,7 +46,7 @@ public:
 	template<typename F, typename R> class rsig : public cflib::net::RSig<F, R> {};
 
 public:
-	virtual cflib::serialize::SerializeTypeInfo getServiceInfo() = 0;
+	virtual cflib::serialize::SerializeTypeInfo getServiceInfo() const = 0;
 
 protected:
 	RMIServiceBase(const QString & threadName, uint threadCount = 1, LoopType loopType = Worker);

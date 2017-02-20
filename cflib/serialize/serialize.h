@@ -48,16 +48,21 @@
 #define SERIALIZE_BASE(Class) \
 	private: \
 		static const cflib::serialize::impl::RegisterClass<Class> cflib_serialize_impl_registerClass; \
+		cflib::serialize::SerializeTypeInfo getSerializeTypeInfo() const override { return serializeTypeInfo(); } \
+
+#define SERIALIZE_STDBASE(Class) \
+	private: \
+		static const cflib::serialize::impl::RegisterClass<Class> cflib_serialize_impl_registerClass; \
 		virtual cflib::serialize::SerializeTypeInfo getSerializeTypeInfo() const { return serializeTypeInfo(); } \
 
 #define serialized
 
 #define rmi \
 	public: \
-		virtual cflib::serialize::SerializeTypeInfo getServiceInfo() { return serializeTypeInfo(); } \
-		virtual void processRMIServiceCallImpl(cflib::serialize::BERDeserializer & deser, uint callNo); \
-		virtual void processRMIServiceCallImpl(cflib::serialize::BERDeserializer & deser, uint callNo, cflib::serialize::BERSerializer & ser); \
-		virtual cflib::net::RSigBase * getCfSignal(uint sigNo); \
+		cflib::serialize::SerializeTypeInfo getServiceInfo() const override { return serializeTypeInfo(); } \
+		void processRMIServiceCallImpl(cflib::serialize::BERDeserializer & deser, uint callNo) override; \
+		void processRMIServiceCallImpl(cflib::serialize::BERDeserializer & deser, uint callNo, cflib::serialize::BERSerializer & ser) override; \
+		cflib::net::RSigBase * getCfSignal(uint sigNo) override; \
 	public
 
 #define SERIALIZE_SKIP(member)

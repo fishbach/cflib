@@ -18,10 +18,11 @@
 
 #pragma once
 
+#include <cflib/net/rmiservice.h>
 #include <cflib/net/rsig.h>
 #include <cflib/serialize/serialize.h>
 
-class GenTest1
+class GenTestRMI : public cflib::net::RMIServiceBase
 {
 	SERIALIZE_CLASS
 public:
@@ -36,6 +37,18 @@ rmi:
 
 public:
 	int x;
+};
+
+class GenTest1
+{
+	SERIALIZE_CLASS
+	SERIALIZE_IS_BASE(GenTest1)
+public:
+	void f1(int) {}
+	int f2() { return 4; }
+
+public:
+	int x;
 
 public serialized:
 	int a;
@@ -47,12 +60,12 @@ public:
 	int y;
 };
 
-inline int GenTest1::f5(int x, int y)
+inline int GenTestRMI::f5(int x, int y)
 {
 	return x + y;
 }
 
-inline void GenTest1::f6()
+inline void GenTestRMI::f6()
 {
 }
 
@@ -97,7 +110,7 @@ namespace gentest2 {
 class GenTest4 : public QList<QString>
 {
 	SERIALIZE_CLASS
-	SERIALIZE_BASE(GenTest4)
+	SERIALIZE_STDBASE(GenTest4)
 public serialized:
 	int a;
 	QList<int> b;

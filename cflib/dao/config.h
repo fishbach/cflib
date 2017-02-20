@@ -25,6 +25,7 @@ namespace cflib { namespace dao {
 class Config
 {
 	SERIALIZE_CLASS
+	SERIALIZE_IS_BASE(Config)
 public:
 	Config();
 

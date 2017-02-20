@@ -34,6 +34,7 @@ public serialized:
 class Dao2
 {
 	SERIALIZE_CLASS
+	SERIALIZE_IS_BASE(Dao2)
 public serialized:
 	Dao dao;
 	QList<int> numbers;
