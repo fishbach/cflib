@@ -84,7 +84,7 @@ ThreadHolderLibEV::ThreadHolderLibEV(const QString & threadName, bool isWorkerOn
 {
 	ev_async_init(wakeupWatcher_, &ThreadHolderLibEV::asyncCallback);
 	wakeupWatcher_->data = this;
-    ev_async_start(loop_, wakeupWatcher_);
+	ev_async_start(loop_, wakeupWatcher_);
 }
 
 ThreadHolderLibEV::~ThreadHolderLibEV()
@@ -124,7 +124,7 @@ ThreadHolderWorkerPool::ThreadHolderWorkerPool(const QString & threadName, bool 
 	externalCalls_(1024),
 	stopLoop_(false)
 {
-    start();
+	start();
 	for (uint i = 2 ; i <= threadCount ; ++i) {
 		Worker * thread = new Worker(QString("%1 %2/%3").arg(threadName).arg(i).arg(threadCount), i - 1, externalCalls_);
 		workers_ << thread;
@@ -194,7 +194,7 @@ ThreadHolderWorkerPool::Worker::Worker(const QString & threadName, uint threadNo
 	externalCalls_(externalCalls),
 	stopLoop_(false)
 {
-    start();
+	start();
 }
 
 void ThreadHolderWorkerPool::Worker::stopLoop()
