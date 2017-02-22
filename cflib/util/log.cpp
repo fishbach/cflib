@@ -125,6 +125,8 @@ inline void writeMsg(QByteArray & out, const QByteArray & msg)
 
 }
 
+LogCategory Log::logLevelCategory_ = 0;
+
 void Log::start(const QString & fileName)
 {
 	if (active) {
@@ -139,8 +141,6 @@ void Log::start(const QString & fileName)
 	}
 	file.setPermissions(QFile::ReadOwner | QFile::WriteOwner | QFile::ReadGroup);
 	active = true;
-
-	writeLog(__FILE__, __LINE__, LogCat::Info, "started ...", 0);
 
 	qInstallMessageHandler(&Log::qtMessageHandler);
 }

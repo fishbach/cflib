@@ -79,6 +79,7 @@ class Log
 public:
 	static void start(const QString & fileName);
 	static void setLevelCallback(LogCategory level, LogLevelCallback callback);
+	static void setLogLevel(LogCategory category) { logLevelCategory_ = category; }
 
 public:
 	Log(LogFileInfo fi, int line, LogCategory category)
@@ -273,7 +274,7 @@ public:
 
 private:
 	inline bool check() const {
-		return true;
+		return (category_ & 0x0F) >= logLevelCategory_;
 	}
 
 	virtual void writeLog(const QByteArray & msg) const {
@@ -289,6 +290,7 @@ private:
 	const LogFileInfo fi_;
 	const int line_;
 	const LogCategory category_;
+	static LogCategory logLevelCategory_;
 	friend class LogFunctionTrace;
 };
 
