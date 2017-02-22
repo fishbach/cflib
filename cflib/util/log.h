@@ -305,11 +305,11 @@ public:
 	LogFunctionTrace(LogFileInfo fi, int line, const char * funcName) :
 		Log(fi, line, LogCat::FuncTrace)
 	{
-		writeLog(funcName);
+		if (check()) writeLog(funcName);
 	}
 
 	~LogFunctionTrace() {
-		Log::writeLog(fi_.file, line_, fi_.category | category_, QByteArray(), -2);
+		if (check()) Log::writeLog(fi_.file, line_, fi_.category | category_, QByteArray(), -2);
 	}
 
 private:
