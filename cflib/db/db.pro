@@ -17,12 +17,16 @@
 
 include(../../include.pri)
 
-QT = core sql
+QT = core
+!no_mysql: QT += sql
 
 TARGET = cflib_db
 
-HEADERS = \
+!no_mysql: HEADERS = \
 	db.h \
 	dbconfig.h \
+
+postgresql: HEADERS += \
+	psql.h \
 
 lib()
