@@ -20,9 +20,47 @@
 
 #include <cflib/util/log.h>
 
+#include <libpq-fe.h>
+
 USE_LOG(LogCat::Db)
 
 namespace cflib { namespace db {
 
+namespace {
+
+QString connInfo;
+
+}
+
+bool PSql::setParameter(const QString & connectionParameter)
+{
+	connInfo = QString();
+
+	PGconn * conn = PQconnectdb(connectionParameter.toUtf8().constData());
+	if (PQstatus(conn) != CONNECTION_OK) {
+		logWarn("cannot connect to database (error: %1)", PQerrorMessage(conn));
+		PQfinish(conn);
+		return false;
+	}
+
+	PGresult * res = PQexec(conn, "SELECT 'char'::regtype::oid, 'bigint'::regtype::oid");
+	if (PQresultStatus(res) != PGRES_TUPLES_OK) {
+		logWarn("cannot get oids (error: %1)", PQerrorMessage(conn));
+		PQclear(res);
+		PQfinish(conn);
+		return false;
+	}
+
+	for (int i = 0 ; i < PQntuples(res) ; i++) {
+		QTextStream(stdout) << "r: " << PQgetvalue(res, i, 0) << ", " << PQgetvalue(res, i, 1) << endl;
+	}
+
+	PQclear(res);
+
+	PQfinish(conn);
+
+	connInfo = connectionParameter;
+	return true;
+}
 
 }}	// namespace

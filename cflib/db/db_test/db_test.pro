@@ -15,22 +15,23 @@
 # You should have received a copy of the GNU General Public License
 # along with cflib. If not, see <http://www.gnu.org/licenses/>.
 
-include(../../include.pri)
+include(../../../include.pri)
 
 QT = core
-!no_mysql: QT += sql
 
-TARGET = cflib_db
+TARGET = db_test
 
-!no_mysql: HEADERS = \
-	db.h \
-	dbconfig.h \
+HEADERS = \
 
-postgresql: HEADERS += \
-	psql.h \
+SOURCES = \
 
-lib()
+postgresql: SOURCES += \
+	psql_test.cpp \
+
+useLibs(cflib_db cflib_util)
+test()
 
 postgresql {
-	macx: INCLUDEPATH += /usr/local/include
+	macx: LIBS += -L/usr/local/lib
+	LIBS += -lpq
 }
