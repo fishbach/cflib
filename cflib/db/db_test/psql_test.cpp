@@ -21,6 +21,8 @@
 
 using namespace cflib::db;
 
+USE_LOG(LogCat::Db)
+
 class PSql_test : public QObject
 {
 	Q_OBJECT
@@ -33,7 +35,10 @@ private slots:
 
 	void some_test()
 	{
-		QVERIFY(true);
+		PSqlConn;
+		QVERIFY( sql.exec("SELECT 42"));
+		QVERIFY(!sql.exec("SULICT 42"));
+		QVERIFY(sql.commit());
 	}
 
 };

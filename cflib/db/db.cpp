@@ -19,7 +19,6 @@
 #include "db.h"
 
 #include <cflib/util/evtimer.h>
-#include <cflib/util/log.h>
 #include <cflib/util/threadverify.h>
 
 USE_LOG(LogCat::Db)
@@ -84,7 +83,7 @@ public:
 private slots:
 	void checkConnection()
 	{
-		QTime watch;
+		QElapsedTimer watch;
 		watch.start();
 		QSqlQuery query(*db);
 		if (!query.exec("SELECT 1") || !query.next()) {

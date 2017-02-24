@@ -18,15 +18,35 @@
 
 #pragma once
 
-#include <QtCore>
+#include <cflib/util/log.h>
+
+#define PSqlConn cflib::db::PSql sql(::cflib_util_logFileInfo, __LINE__)
 
 namespace cflib { namespace db {
+
+namespace { class ThreadData; }
 
 class PSql
 {
 public:
 	static bool setParameter(const QString & connectionParameter);
+	static void closeConnection();
 
+public:
+	PSql(const cflib::util::LogFileInfo & lfi, int line);
+	~PSql();
+
+	bool commit();
+
+	bool exec(const QString & query);
+
+private:
+	ThreadData & td_;
+	const cflib::util::LogFileInfo & lfi_;
+	const int line_;
+	bool nested_;
+	bool committed_;
+	QElapsedTimer watch_;
 };
 
 }}	// namespace

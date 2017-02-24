@@ -44,7 +44,7 @@ private:
 	const int line_;
 	bool nested_;
 	bool committed_;
-	QTime watch_;
+	QElapsedTimer watch_;
 };
 
 void closeDBConnection();
