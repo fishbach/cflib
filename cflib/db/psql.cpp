@@ -28,6 +28,19 @@ namespace cflib { namespace db {
 
 namespace {
 
+enum PostgresTypes {
+	PSql_int16 = 1,
+	PSql_int32,
+	PSql_int64,
+	PSql_float,
+	PSql_double,
+	PSql_string,
+	PSql_binary,
+	PSql_timestamp
+};
+
+QHash<PostgresTypes, Oid> typeOids;
+
 QString connInfo;
 
 }
@@ -43,7 +56,17 @@ bool PSql::setParameter(const QString & connectionParameter)
 		return false;
 	}
 
-	PGresult * res = PQexec(conn, "SELECT 'char'::regtype::oid, 'bigint'::regtype::oid");
+	PGresult * res = PQexec(conn,
+		"SELECT "
+			"'smallint'::regtype::oid, "
+			"'integer'::regtype::oid, "
+			"'bigint'::regtype::oid, "
+			"'real'::regtype::oid,"
+			"'double precision'::regtype::oid,"
+			"'text'::regtype::oid, "
+			"'bytea'::regtype::oid, "
+			"'timestamp with time zone'::regtype::oid"
+	);
 	if (PQresultStatus(res) != PGRES_TUPLES_OK) {
 		logWarn("cannot get oids (error: %1)", PQerrorMessage(conn));
 		PQclear(res);
@@ -51,9 +74,21 @@ bool PSql::setParameter(const QString & connectionParameter)
 		return false;
 	}
 
-	for (int i = 0 ; i < PQntuples(res) ; i++) {
-		QTextStream(stdout) << "r: " << PQgetvalue(res, i, 0) << ", " << PQgetvalue(res, i, 1) << endl;
+	if (PQntuples(res) != 1) {
+		logWarn("funny result count");
+		PQclear(res);
+		PQfinish(conn);
+		return false;
 	}
+
+	typeOids[PSql_int16    ] = (Oid)QByteArray(PQgetvalue(res, 0, 0)).toUInt();
+	typeOids[PSql_int32    ] = (Oid)QByteArray(PQgetvalue(res, 0, 1)).toUInt();
+	typeOids[PSql_int64    ] = (Oid)QByteArray(PQgetvalue(res, 0, 2)).toUInt();
+	typeOids[PSql_float    ] = (Oid)QByteArray(PQgetvalue(res, 0, 3)).toUInt();
+	typeOids[PSql_double   ] = (Oid)QByteArray(PQgetvalue(res, 0, 4)).toUInt();
+	typeOids[PSql_string   ] = (Oid)QByteArray(PQgetvalue(res, 0, 5)).toUInt();
+	typeOids[PSql_binary   ] = (Oid)QByteArray(PQgetvalue(res, 0, 6)).toUInt();
+	typeOids[PSql_timestamp] = (Oid)QByteArray(PQgetvalue(res, 0, 7)).toUInt();
 
 	PQclear(res);
 
