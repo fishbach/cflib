@@ -83,7 +83,8 @@ private slots:
 				"id, x16, x32, x64, t, a, s, r, d"
 			") VALUES ("
 				"1, 2, 3, 4, '2017-02-27T14:47:34.123Z', E'\\x41\\x30', E'ABC\\xC3\\xB6\\xC3\\x9F', 1.23, 3.45"
-			")"));
+			")"
+		));
 		QVERIFY(!sql.next());
 
 		QVERIFY(sql.exec(
@@ -93,9 +94,24 @@ private slots:
 				"id, x16, x32, x64, t, a, s, r, d"
 			") VALUES ("
 				"2, 5, 6, 7, '2017-01-12T11:17:24.253Z', '', '', 0, 'NaN'"
-			")"));
+			")"
+		));
 
-		QVERIFY( sql.exec("SELECT id, x16, x32, x64, t, a, s, r, d FROM cflib_db_test"));
+		sql.prepare(
+			"INSERT INTO "
+				"cflib_db_test "
+			"("
+				"id, x16, x32, x64, t"
+			") VALUES ("
+				"$1, $2, $3, $4, $5"
+			")"
+		);
+		sql << 3 << 45 << 67 << 89 << QDateTime(QDate(2016, 2, 27), QTime(10, 47, 34, 123), Qt::UTC);
+		QVERIFY(sql.exec());
+		sql << 4 << (qint8)-45 << sql.null << (qint32)-89 << sql.null;
+		QVERIFY(sql.exec());
+
+		QVERIFY(sql.exec("SELECT id, x16, x32, x64, t, a, s, r, d FROM cflib_db_test"));
 
 		quint32 id;
 		quint16 x16;
@@ -120,7 +136,7 @@ private slots:
 		QVERIFY(qFuzzyCompare(d, 3.45));
 
 		QVERIFY(sql.next());
-		sql >> id >> x16 >> Skip >> x64 >> t >> a >> s >> f >> d;
+		sql >> id >> x16 >> sql.null >> x64 >> t >> a >> s >> f >> d;
 		QCOMPARE(id,  (quint32)2);
 		QCOMPARE(x16, (quint16)5);
 		QCOMPARE(x64, (quint64)7);
@@ -129,6 +145,46 @@ private slots:
 		QCOMPARE(s, QString(""));
 		QCOMPARE(f, 0.0f);
 		QVERIFY(isnan(d));
+
+		QVERIFY(sql.next());
+		QVERIFY(!sql.isNull());
+		sql >> id >> x16 >> x32 >> x64;
+		QCOMPARE(id,  (quint32)3);
+		QCOMPARE(x16, (quint16)45);
+		QCOMPARE(x32, (quint32)67);
+		QCOMPARE(x64, (quint64)89);
+		QVERIFY(!sql.isNull());
+		sql >> t;
+		QCOMPARE(t, QDateTime(QDate(2016, 2, 27), QTime(10, 47, 34, 123), Qt::UTC));
+		QVERIFY(!sql.lastFieldIsNull());
+		QVERIFY(sql.isNull());
+		sql >> sql.null;
+		QVERIFY(sql.lastFieldIsNull());
+		QVERIFY(sql.isNull());
+		sql >> sql.null;
+		QVERIFY(sql.lastFieldIsNull());
+		QVERIFY(sql.isNull());
+		sql >> sql.null;
+		QVERIFY(sql.lastFieldIsNull());
+		QVERIFY(sql.isNull());
+		sql >> sql.null;
+		QVERIFY(sql.lastFieldIsNull());
+
+		qint16 sx16;
+		qint32 sx32;
+		qint64 sx64;
+
+		QVERIFY(sql.next());
+		QVERIFY(!sql.isNull(1));
+		QVERIFY( sql.isNull(2));
+		sql >> id >> sx16;
+		QCOMPARE(id,  (quint32)4);
+		QCOMPARE(sx16, (qint16)-45);
+		QVERIFY(sql.isNull());
+		sql >> sx32;
+		QVERIFY(sql.lastFieldIsNull());
+		sql >> sx64;
+		QCOMPARE(sx64, (qint64)-89);
 
 		QVERIFY(!sql.next());
 	}

@@ -31,10 +31,12 @@ namespace {
 
 QAtomicInt connIdCounter(1);
 
-// select 21::oid::regtype -> smallint
+// SELECT 21::oid::regtype         -> smallint
+// SELECT 'smallint'::regtype::oid -> 21
 
 enum PostgresTypes {
-	PSql_int16 = 1,
+	PSql_null = 0,
+	PSql_int16,
 	PSql_int32,
 	PSql_int64,
 	PSql_float,
@@ -179,6 +181,7 @@ bool PSql::setParameter(const QString & connectionParameter)
 		PQfinish(conn);
 		return false;
 	}
+	typeOids[PSql_null                    ] = (Oid)0;
 	typeOids[PSql_int16                   ] = (Oid)QByteArray(PQgetvalue(res, 0, 0)).toUInt();
 	typeOids[PSql_int32                   ] = (Oid)QByteArray(PQgetvalue(res, 0, 1)).toUInt();
 	typeOids[PSql_int64                   ] = (Oid)QByteArray(PQgetvalue(res, 0, 2)).toUInt();
@@ -212,10 +215,14 @@ PSql::PSql(const util::LogFileInfo & lfi, int line) :
 	resultFieldCount_(-1),
 	resultFieldTypes_{},
 	currentFieldId_(-1),
+	lastFieldIsNull_(false),
 	isPrepared_(false),
 	prepareParamCount_(-1),
-	prepareParamTypes_{}
+	prepareParamTypes_{},
+	prepareParamLengths_{},
+	prepareParamIsNull_(PSql::MAX_FIELD_COUNT, false)
 {
+	prepareData_.reserve(1024);
 }
 
 PSql::~PSql()
@@ -321,96 +328,66 @@ bool PSql::exec(const QString & query)
 
 	clearResult();
 
-	if (!PQsendQueryParams(td_.conn, query.toUtf8().constData(), 0, NULL, NULL, NULL, NULL, 1)) {
-		cflib::util::Log(lfi_, line_, LogCat::Debug | LogCat::Db)("query: %1", query);
+	lastQuery_ = query.toUtf8();
+	if (!PQsendQueryParams(td_.conn, lastQuery_.constData(), 0, NULL, NULL, NULL, NULL, 1)) {
+		cflib::util::Log(lfi_, line_, LogCat::Debug | LogCat::Db)("query: %1", lastQuery_);
 		cflib::util::Log(lfi_, line_, LogCat::Warn  | LogCat::Db)("cannot send query: %1", PQerrorMessage(td_.conn));
 		return false;
 	}
 
-	if (!PQsetSingleRowMode(td_.conn)) {
-		cflib::util::Log(lfi_, line_, LogCat::Warn  | LogCat::Db)("cannot set single row mode: %1", PQerrorMessage(td_.conn));
-		return false;
-	}
-
-	isFirstResult_ = true;
-	haveResultInfo_ = false;
-	res_ = PQgetResult(td_.conn);
-	const ExecStatusType status = PQresultStatus((PGresult *)res_);
-	logDebug("res status a: %1", (int)status);
-
-	if (status == PGRES_SINGLE_TUPLE) return true;
-
-	clearResult();
-
-	if (status != PGRES_COMMAND_OK && status != PGRES_TUPLES_OK) {
-		cflib::util::Log(lfi_, line_, LogCat::Debug | LogCat::Db)("query: %1", query);
-		cflib::util::Log(lfi_, line_, LogCat::Warn  | LogCat::Db)("cannot send query: %1", PQerrorMessage(td_.conn));
-		return false;
-	}
-	return true;
+	return initResult();
 }
 
 void PSql::prepare(const QByteArray & query)
 {
-	if (!prepareQuery_.isNull()) {
-		cflib::util::Log(lfi_, line_, LogCat::Warn | LogCat::Db)(
-			"prepare called twice");
-		return;
-	}
-
-	prepareQuery_ = query;
+	lastQuery_ = query;
 	isPrepared_ = false;
 	prepareParamCount_ = 0;
+	prepareData_.clear();
 }
 
 bool PSql::exec()
 {
-	if (prepareQuery_.isNull()) {
+	if (lastQuery_.isNull()) {
 		cflib::util::Log(lfi_, line_, LogCat::Warn | LogCat::Db)(
 			"exec called without prepare");
 		return false;
 	}
 
-	if (td_.doRollback) {
-		prepareQuery_ = QByteArray();
-		return false;
-	}
+	if (td_.doRollback) return false;
 
 	clearResult();
 
 	if (!isPrepared_) {
 		isPrepared_ = true;
 
-		PGresult * res = PQprepare(td_.conn, "", prepareQuery_.constData(), prepareParamCount_, prepareParamTypes_);
+		PGresult * res = PQprepare(td_.conn, "", lastQuery_.constData(), prepareParamCount_, prepareParamTypes_);
 		if (PQresultStatus(res) != PGRES_COMMAND_OK) {
-			cflib::util::Log(lfi_, line_, LogCat::Debug | LogCat::Db)("query: %1", prepareQuery_);
+			cflib::util::Log(lfi_, line_, LogCat::Debug | LogCat::Db)("query: %1", lastQuery_);
 			cflib::util::Log(lfi_, line_, LogCat::Warn  | LogCat::Db)("cannot prepare query: %1", PQerrorMessage(td_.conn));
 			PQclear(res);
-			prepareQuery_ = QByteArray();
 			return false;
 		}
 		PQclear(res);
 	}
 
-	if (!PQsendQueryPrepared(td_.conn, "", prepareParamCount_, prepareParamValues_, prepareParamLengths_, ParamFormats.constData(), 1)) {
-//		err << "send failed: " << PQerrorMessage(conn) << endl;
-//		doExit(conn);
+	const char * prepareParamValues[MAX_FIELD_COUNT];
+	const char * pos = prepareData_.constData();
+	for (int i = 0 ; i < prepareParamCount_ ; ++i) {
+		prepareParamValues[i] = prepareParamIsNull_[i] ? 0 : pos;
+		pos += prepareParamLengths_[i];
 	}
 
-//	if (!PQsendQueryParams(td_.conn, query.toUtf8().constData(), 0, NULL, NULL, NULL, NULL, 1)) {
-//		cflib::util::Log(lfi_, line_, LogCat::Debug | LogCat::Db)("query: %1", query);
-//		cflib::util::Log(lfi_, line_, LogCat::Warn  | LogCat::Db)("cannot send query: %1", PQerrorMessage(td_.conn));
-//		return false;
-//	}
-
-	if (!PQsetSingleRowMode(td_.conn)) {
-		cflib::util::Log(lfi_, line_, LogCat::Warn  | LogCat::Db)("cannot set single row mode: %1", PQerrorMessage(td_.conn));
+	if (!PQsendQueryPrepared(td_.conn, "", prepareParamCount_, prepareParamValues, prepareParamLengths_, ParamFormats.constData(), 1)) {
+		cflib::util::Log(lfi_, line_, LogCat::Debug | LogCat::Db)("query: %1", lastQuery_);
+		cflib::util::Log(lfi_, line_, LogCat::Warn  | LogCat::Db)("cannot send query: %1", PQerrorMessage(td_.conn));
 		return false;
 	}
 
+	prepareParamCount_ = 0;
+	prepareData_.clear();
 
-
-	return true;
+	return initResult();
 }
 
 bool PSql::next()
@@ -451,13 +428,68 @@ bool PSql::next()
 	return false;
 }
 
+PSql & PSql::operator<<(float val)
+{
+	uchar * dest = setParamType(PSql_float, sizeof(float), false);
+	if (!dest) return *this;
+	qToBigEndian<quint32>(FloatInt{val}.f, dest);
+	++prepareParamCount_;
+	return *this;
+}
+
+PSql & PSql::operator<<(double val)
+{
+	uchar * dest = setParamType(PSql_double, sizeof(double), false);
+	if (!dest) return *this;
+	qToBigEndian<quint64>(DoubleInt{val}.d, dest);
+	++prepareParamCount_;
+	return *this;
+}
+
+PSql & PSql::operator<<(const QDateTime & val)
+{
+	uchar * dest = setParamType(PSql_timestampWithoutTimeZone, val.isNull() ? 0 : sizeof(qint64), val.isNull());
+	if (!dest) return *this;
+	if (!val.isNull()) {
+		qint64 rawTime = (val.toMSecsSinceEpoch() + MsecDelta) * 1000;
+		qToBigEndian<qint64>(rawTime, dest);
+	}
+	++prepareParamCount_;
+	return *this;
+}
+
+PSql & PSql::operator<<(const QByteArray & val)
+{
+	uchar * dest = setParamType(PSql_binary, val.size(), val.isNull());
+	if (!dest) return *this;
+	if (!val.isNull()) {
+		memcpy(dest, val.constData(), val.size());
+	}
+	++prepareParamCount_;
+	return *this;
+}
+
+PSql & PSql::operator<<(const QString & val)
+{
+	return operator<<(val.toUtf8());
+}
+
+PSql & PSql::operator<<(Null)
+{
+	if (!setParamType(PSql_null, 0, true)) return *this;
+	++prepareParamCount_;
+	return *this;
+}
+
 PSql & PSql::operator>>(float & val)
 {
 	val = 0.0;
-	if (!checkField((int[]){ PSql_float }, 1, 4)) return *this;
-	FloatInt fi;
-	fi.i = qFromBigEndian<quint32>((const uchar *)PQgetvalue((PGresult *)res_, 0, currentFieldId_));
-	val = fi.f;
+	if (!checkField((int[]){ PSql_float }, 1, sizeof(float))) return *this;
+	if (!lastFieldIsNull_) {
+		FloatInt fi;
+		fi.i = qFromBigEndian<quint32>((const uchar *)PQgetvalue((PGresult *)res_, 0, currentFieldId_));
+		val = fi.f;
+	}
 	++currentFieldId_;
 	return *this;
 }
@@ -465,10 +497,12 @@ PSql & PSql::operator>>(float & val)
 PSql & PSql::operator>>(double & val)
 {
 	val = 0.0;
-	if (!checkField((int[]){ PSql_double }, 1, 8)) return *this;
-	DoubleInt di;
-	di.i = qFromBigEndian<quint64>((const uchar *)PQgetvalue((PGresult *)res_, 0, currentFieldId_));
-	val = di.d;
+	if (!checkField((int[]){ PSql_double }, 1, sizeof(double))) return *this;
+	if (!lastFieldIsNull_) {
+		DoubleInt di;
+		di.i = qFromBigEndian<quint64>((const uchar *)PQgetvalue((PGresult *)res_, 0, currentFieldId_));
+		val = di.d;
+	}
 	++currentFieldId_;
 	return *this;
 }
@@ -477,7 +511,7 @@ PSql & PSql::operator>>(QDateTime & val)
 {
 	val = QDateTime();
 	if (!checkField((int[]){ PSql_timestampWithTimeZone, PSql_timestampWithoutTimeZone }, 2, sizeof(qint64))) return *this;
-	if (PQgetisnull((PGresult *)res_, 0, currentFieldId_) == 0) {
+	if (!lastFieldIsNull_) {
 		qint64 rawTime = qFromBigEndian<qint64>((const uchar *)PQgetvalue((PGresult *)res_, 0, currentFieldId_));
 		val = QDateTime::fromMSecsSinceEpoch(rawTime / 1000 - MsecDelta, Qt::UTC);
 	}
@@ -489,7 +523,7 @@ PSql & PSql::operator>>(QByteArray & val)
 {
 	val = QByteArray();
 	if (!checkField((int[]){ PSql_binary }, 1, 0)) return *this;
-	if (PQgetisnull((PGresult *)res_, 0, currentFieldId_) == 0) {
+	if (!lastFieldIsNull_) {
 		val = QByteArray(PQgetvalue((PGresult *)res_, 0, currentFieldId_), PQgetlength((PGresult *)res_, 0, currentFieldId_));
 	}
 	++currentFieldId_;
@@ -500,29 +534,60 @@ PSql & PSql::operator>>(QString & val)
 {
 	val = QString();
 	if (!checkField((int[]){ PSql_string }, 1, 0)) return *this;
-	if (PQgetisnull((PGresult *)res_, 0, currentFieldId_) == 0) {
+	if (!lastFieldIsNull_) {
 		val = QString::fromUtf8(PQgetvalue((PGresult *)res_, 0, currentFieldId_), PQgetlength((PGresult *)res_, 0, currentFieldId_));
 	}
 	++currentFieldId_;
 	return *this;
 }
 
-PSql & PSql::operator>>(SkipField)
+PSql & PSql::operator>>(Null)
 {
+	if (!checkField(0, 0, 0)) return *this;
 	++currentFieldId_;
 	return *this;
 }
 
-bool PSql::isNull()
+bool PSql::isNull(uint fieldId)
 {
-	return PQgetisnull((PGresult *)res_, 0, currentFieldId_) == 1;
+	const int oldCurrentFieldId_ = currentFieldId_;
+	currentFieldId_ = fieldId;
+	const bool rv = checkField(0, 0, 0) && lastFieldIsNull_;
+	currentFieldId_ = oldCurrentFieldId_;
+	return rv;
+}
+
+void PSql::setInt16(qint16 val)
+{
+	uchar * dest = setParamType(PSql_int16, sizeof(qint16), false);
+	if (!dest) return;
+	qToBigEndian<qint16>(val, dest);
+	++prepareParamCount_;
+}
+
+void PSql::setInt32(qint32 val)
+{
+	uchar * dest = setParamType(PSql_int32, sizeof(qint32), false);
+	if (!dest) return;
+	qToBigEndian<qint32>(val, dest);
+	++prepareParamCount_;
+}
+
+void PSql::setInt64(qint64 val)
+{
+	uchar * dest = setParamType(PSql_int64, sizeof(qint64), false);
+	if (!dest) return;
+	qToBigEndian<qint64>(val, dest);
+	++prepareParamCount_;
 }
 
 void PSql::getInt16(qint16 & val)
 {
 	val = 0;
 	if (!checkField((int[]){ PSql_int16 }, 1, sizeof(qint16))) return;
-	val = qFromBigEndian<qint16>((const uchar *)PQgetvalue((PGresult *)res_, 0, currentFieldId_));
+	if (!lastFieldIsNull_) {
+		val = qFromBigEndian<qint16>((const uchar *)PQgetvalue((PGresult *)res_, 0, currentFieldId_));
+	}
 	++currentFieldId_;
 }
 
@@ -530,7 +595,9 @@ void PSql::getInt32(qint32 & val)
 {
 	val = 0;
 	if (!checkField((int[]){ PSql_int32 }, 1, sizeof(qint32))) return;
-	val = qFromBigEndian<qint32>((const uchar *)PQgetvalue((PGresult *)res_, 0, currentFieldId_));
+	if (!lastFieldIsNull_) {
+		val = qFromBigEndian<qint32>((const uchar *)PQgetvalue((PGresult *)res_, 0, currentFieldId_));
+	}
 	++currentFieldId_;
 }
 
@@ -538,8 +605,35 @@ void PSql::getInt64(qint64 & val)
 {
 	val = 0;
 	if (!checkField((int[]){ PSql_int64 }, 1, sizeof(qint64))) return;
-	val = qFromBigEndian<qint64>((const uchar *)PQgetvalue((PGresult *)res_, 0, currentFieldId_));
+	if (!lastFieldIsNull_) {
+		val = qFromBigEndian<qint64>((const uchar *)PQgetvalue((PGresult *)res_, 0, currentFieldId_));
+	}
 	++currentFieldId_;
+}
+
+bool PSql::initResult()
+{
+	if (!PQsetSingleRowMode(td_.conn)) {
+		cflib::util::Log(lfi_, line_, LogCat::Warn  | LogCat::Db)("cannot set single row mode: %1", PQerrorMessage(td_.conn));
+		return false;
+	}
+
+	isFirstResult_ = true;
+	haveResultInfo_ = false;
+	res_ = PQgetResult(td_.conn);
+	const ExecStatusType status = PQresultStatus((PGresult *)res_);
+	logTrace("result status: %1", (int)status);
+
+	if (status == PGRES_SINGLE_TUPLE) return true;
+
+	clearResult();
+
+	if (status != PGRES_COMMAND_OK && status != PGRES_TUPLES_OK) {
+		cflib::util::Log(lfi_, line_, LogCat::Debug | LogCat::Db)("query: %1", lastQuery_);
+		cflib::util::Log(lfi_, line_, LogCat::Warn  | LogCat::Db)("cannot send query: %1", PQerrorMessage(td_.conn));
+		return false;
+	}
+	return true;
 }
 
 void PSql::clearResult()
@@ -565,29 +659,36 @@ bool PSql::checkField(int fieldType[], int typeCount, int fieldSize)
 		return false;
 	}
 
-	bool found = false;
-	for (int i = 0 ; i < typeCount ; ++i) {
-		if (resultFieldTypes_[currentFieldId_] == typeOids[fieldType[i]]) {
-			found = true;
-			break;
+	if (typeCount > 0) {
+		bool found = false;
+		for (int i = 0 ; i < typeCount ; ++i) {
+			if (resultFieldTypes_[currentFieldId_] == typeOids[fieldType[i]]) {
+				found = true;
+				break;
+			}
+		}
+		if (!found) {
+			QByteArray types;
+			bool first = true;
+			for (int i = 0 ; i < typeCount ; ++i) {
+				if (first) first = false;
+				else       types += '/';
+				types += QByteArray::number(typeOids[fieldType[i]]);
+			}
+			cflib::util::Log(lfi_, line_, LogCat::Warn | LogCat::Db)(
+				"wrong result type (got: %1, want: %2)", resultFieldTypes_[currentFieldId_], types);
+			clearResult();
+			return false;
 		}
 	}
-	if (!found) {
-		QByteArray types;
-		bool first = true;
-		for (int i = 0 ; i < typeCount ; ++i) {
-			if (first) first = false;
-			else       types += '/';
-			types += QByteArray::number(typeOids[fieldType[i]]);
-		}
-		cflib::util::Log(lfi_, line_, LogCat::Warn | LogCat::Db)(
-			"wrong result type (got: %1, want: %2)", resultFieldTypes_[currentFieldId_], types);
-		clearResult();
-		return false;
+
+	if (PQgetisnull((PGresult *)res_, 0, currentFieldId_) == 1) {
+		lastFieldIsNull_ = true;
+		return true;
 	}
 
 	if (fieldSize > 0) {
-		int len = PQgetlength((PGresult *)res_, 0, currentFieldId_);
+		const int len = PQgetlength((PGresult *)res_, 0, currentFieldId_);
 		if (len != fieldSize) {
 			cflib::util::Log(lfi_, line_, LogCat::Warn | LogCat::Db)(
 				"wrong result size (got: %1, want: %2)", len, fieldSize);
@@ -596,7 +697,34 @@ bool PSql::checkField(int fieldType[], int typeCount, int fieldSize)
 		}
 	}
 
+	lastFieldIsNull_ = false;
 	return true;
+}
+
+uchar * PSql::setParamType(int fieldType, int fieldSize, bool isNull)
+{
+	if (prepareParamCount_ >= MAX_FIELD_COUNT) {
+		cflib::util::Log(lfi_, line_, LogCat::Warn | LogCat::Db)(
+			"too many fields for prepare statement (max: %1)", MAX_FIELD_COUNT);
+		return 0;
+	}
+
+	const Oid srcTypeId = typeOids[fieldType];
+	Oid & destTypeId = prepareParamTypes_[prepareParamCount_];
+	if (!isPrepared_) {
+		destTypeId = srcTypeId;
+	} else if (destTypeId != srcTypeId) {
+		destTypeId = srcTypeId;
+		isPrepared_ = false;
+	}
+
+	prepareParamLengths_[prepareParamCount_] = fieldSize;
+
+	prepareParamIsNull_[prepareParamCount_] = isNull;
+
+	const int oldSize = prepareData_.size();
+	prepareData_.resize(oldSize + fieldSize);
+	return (uchar *)prepareData_.constData() + oldSize;
 }
 
 }}	// namespace

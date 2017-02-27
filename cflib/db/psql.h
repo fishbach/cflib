@@ -21,7 +21,6 @@
 #include <cflib/util/log.h>
 
 #define PSqlConn cflib::db::PSql sql(::cflib_util_logFileInfo, __LINE__)
-#define Skip cflib::db::PSql::SkipField()
 
 namespace cflib { namespace db {
 
@@ -32,7 +31,7 @@ class PSql
 public:
 	static const int MAX_FIELD_COUNT = 64;
 
-	struct SkipField {};
+	struct Null {} null;
 
 public:
 	static bool setParameter(const QString & connectionParameter);
@@ -53,6 +52,23 @@ public:
 
 	bool next();
 
+	inline PSql & operator<<(qint8   val) { setInt16(        val); return *this; }
+	inline PSql & operator<<(quint8  val) { setInt16((qint8 )val); return *this; }
+	inline PSql & operator<<(qint16  val) { setInt16(        val); return *this; }
+	inline PSql & operator<<(quint16 val) { setInt16((qint16)val); return *this; }
+	inline PSql & operator<<(qint32  val) { setInt32(        val); return *this; }
+	inline PSql & operator<<(quint32 val) { setInt32((qint32)val); return *this; }
+	inline PSql & operator<<(qint64  val) { setInt64(        val); return *this; }
+	inline PSql & operator<<(quint64 val) { setInt64((qint64)val); return *this; }
+
+	PSql & operator<<(float  val);
+	PSql & operator<<(double val);
+	PSql & operator<<(const QDateTime  & val);
+	PSql & operator<<(const QByteArray & val);
+	PSql & operator<<(const QString    & val);
+
+	PSql & operator<<(Null);
+
 	inline PSql & operator>>(qint8   & val) { qint16  val16; getInt16(          val16); val = val16; return *this; }
 	inline PSql & operator>>(quint8  & val) { quint16 val16; getInt16((qint16 &)val16); val = val16; return *this; }
 	inline PSql & operator>>(qint16  & val) { getInt16(          val); return *this; }
@@ -68,16 +84,23 @@ public:
 	PSql & operator>>(QByteArray & val);
 	PSql & operator>>(QString    & val);
 
-	PSql & operator>>(SkipField);
+	PSql & operator>>(Null);
 
-	bool isNull();
+	inline bool lastFieldIsNull() const { return lastFieldIsNull_; }
+	inline bool isNull() { return isNull(currentFieldId_); }
+	bool isNull(uint fieldId);
 
 private:
+	void setInt16(qint16 val);
+	void setInt32(qint32 val);
+	void setInt64(qint64 val);
 	void getInt16(qint16 & val);
 	void getInt32(qint32 & val);
 	void getInt64(qint64 & val);
+	bool initResult();
 	void clearResult();
 	bool checkField(int fieldType[], int typeCount, int fieldSize);
+	uchar * setParamType(int fieldType, int fieldSize, bool isNull);
 
 private:
 	ThreadData & td_;
@@ -93,12 +116,17 @@ private:
 	int resultFieldCount_;
 	uint resultFieldTypes_[MAX_FIELD_COUNT];
 	int currentFieldId_;
-	QByteArray prepareQuery_;
+	QByteArray lastQuery_;
+	bool lastFieldIsNull_;
+
 	bool isPrepared_;
+
 	int prepareParamCount_;
 	uint prepareParamTypes_[MAX_FIELD_COUNT];
-	const char * prepareParamValues_[MAX_FIELD_COUNT];
 	int prepareParamLengths_[MAX_FIELD_COUNT];
+	QVector<bool> prepareParamIsNull_;
+
+	QByteArray prepareData_;
 };
 
 }}	// namespace
