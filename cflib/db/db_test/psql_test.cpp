@@ -31,14 +31,103 @@ private slots:
 	void initTestCase()
 	{
 		QVERIFY(PSql::setParameter("host=127.0.0.1 port=5432"));
+		PSqlConn;
+
+		// drop any old exisiting table
+		sql.exec("DROP TABLE cflib_db_test");
+
+		QVERIFY(sql.exec(
+			"CREATE TABLE cflib_db_test ("
+				"id integer NOT NULL,"
+				"x integer,"
+				"t varchar(255),"
+				"PRIMARY KEY (id)"
+			")"));
 	}
 
-	void some_test()
+	void cleanupTestCase()
 	{
 		PSqlConn;
+		QVERIFY(sql.exec("DROP TABLE cflib_db_test"));
+	}
+
+	void simple_test()
+	{
+		PSqlConn;
+
 		QVERIFY( sql.exec("SELECT 42"));
+		QVERIFY( sql.next());
+		QVERIFY(!sql.next());
+
+		QVERIFY( sql.exec("SELECT 23;"));
+		QVERIFY( sql.next());
+
 		QVERIFY(!sql.exec("SULICT 42"));
+		QVERIFY(!sql.next());
+	}
+
+	void table_test()
+	{
+		PSqlConn;
+
+		QVERIFY(sql.exec(
+			"INSERT INTO "
+				"cflib_db_test "
+			"("
+				"id, x, t"
+			") VALUES ("
+				"1, 2, 't'"
+			")"));
+		QVERIFY(!sql.next());
+
+		QVERIFY(sql.exec(
+			"INSERT INTO "
+				"cflib_db_test "
+			"("
+				"id, x, t"
+			") VALUES ("
+				"2, 3, 'v'"
+			")"));
+
+		QVERIFY( sql.exec("SELECT * FROM cflib_db_test"));
+		QVERIFY( sql.next());
+		QVERIFY( sql.next());
+		QVERIFY(!sql.next());
+	}
+
+	void transaction_test()
+	{
+		PSqlConn;
+
+		QVERIFY(!sql.commit());
+
+		sql.begin();
 		QVERIFY(sql.commit());
+
+		sql.begin();
+		sql.rollback();
+		QVERIFY(!sql.commit());
+
+		sql.begin();
+		{
+			PSqlConn;
+
+			QVERIFY(!sql.commit());
+
+			sql.begin();
+			QVERIFY(sql.commit());
+		}
+		QVERIFY(sql.commit());
+
+		sql.begin();
+		{
+			PSqlConn;
+
+			sql.begin();
+			sql.rollback();
+			QVERIFY(!sql.commit());
+		}
+		QVERIFY(!sql.commit());
 	}
 
 };

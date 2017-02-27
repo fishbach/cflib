@@ -36,17 +36,27 @@ public:
 	PSql(const cflib::util::LogFileInfo & lfi, int line);
 	~PSql();
 
+	void begin();
 	bool commit();
+	void rollback();
 
 	bool exec(const QString & query);
+
+	bool next();
+
+private:
+	void clearResult();
 
 private:
 	ThreadData & td_;
 	const cflib::util::LogFileInfo & lfi_;
 	const int line_;
-	bool nested_;
-	bool committed_;
+	const bool nestedTransaction_;
+	bool localTransactionActive_;
 	QElapsedTimer watch_;
+
+	bool isFirstResult_;
+	void * res_;
 };
 
 }}	// namespace

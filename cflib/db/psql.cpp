@@ -29,7 +29,7 @@ namespace cflib { namespace db {
 
 namespace {
 
-QAtomicInt connIdCounter;
+QAtomicInt connIdCounter(1);
 
 enum PostgresTypes {
 	PSql_int16 = 1,
@@ -39,10 +39,11 @@ enum PostgresTypes {
 	PSql_double,
 	PSql_string,
 	PSql_binary,
-	PSql_timestamp
+	PSql_timestamp,
+	PSql_lastEntry = PSql_timestamp
 };
 
-QHash<PostgresTypes, Oid> typeOids;
+Oid typeOids[PSql_lastEntry + 1];
 
 QString connInfo;
 
@@ -184,58 +185,60 @@ void PSql::closeConnection()
 PSql::PSql(const util::LogFileInfo & lfi, int line) :
 	td_(getThreadData()),
 	lfi_(lfi), line_(line),
-	committed_(false)
+	nestedTransaction_(td_.transactionActive),
+	localTransactionActive_(false),
+	isFirstResult_(true),
+	res_(0)
 {
-	nested_ = td_.transactionActive;
-	if (nested_) {
+}
+
+PSql::~PSql()
+{
+	clearResult();
+	if (localTransactionActive_) rollback();
+}
+
+void PSql::begin()
+{
+	if (localTransactionActive_) {
+		cflib::util::Log(lfi_, line_, LogCat::Warn | LogCat::Db)(
+			"begin called with active transaction");
+		return;
+	}
+	localTransactionActive_ = true;
+
+	if (nestedTransaction_) {
 		cflib::util::Log(lfi_, line_, LogCat::Debug | LogCat::Db)("DB sub-transaction start");
 		return;
 	}
-	td_.transactionActive = true;
 
 	cflib::util::Log(lfi_, line_, LogCat::Debug | LogCat::Db)("DB transaction start");
+	td_.transactionActive = true;
+	watch_.start();
+
 	PGresult * res = PQexec(td_.conn, "BEGIN");
 	if (PQresultStatus(res) != PGRES_COMMAND_OK) {
 		cflib::util::Log(lfi_, line_, LogCat::Critical | LogCat::Db)(
 			"starting DB transaction failed: %1", PQerrorMessage(td_.conn));
 	}
 	PQclear(res);
-
-	watch_.start();
-}
-
-PSql::~PSql()
-{
-	if (!committed_) td_.doRollback = true;
-	if (!td_.doRollback) return;
-
-	if (nested_) {
-		cflib::util::Log(lfi_, line_, LogCat::Info | LogCat::Db)("DB sub-tansaction rollback");
-		return;
-	}
-
-	cflib::util::Log(lfi_, line_, LogCat::Info | LogCat::Db)("DB tansaction rollback");
-	PGresult * res = PQexec(td_.conn, "ROLLBACK");
-	if (PQresultStatus(res) != PGRES_COMMAND_OK) {
-		cflib::util::Log(lfi_, line_, LogCat::Warn | LogCat::Db)(
-			"DB transaction rollback failed: %1", PQerrorMessage(td_.conn));
-	}
-	PQclear(res);
-	td_.doRollback = false;
-	td_.transactionActive = false;
 }
 
 bool PSql::commit()
 {
-	if (committed_) {
-		cflib::util::Log(lfi_, line_, LogCat::Critical | LogCat::Db)("DB transaction committed twice");
+	if (td_.doRollback) {
+		rollback();
 		return false;
 	}
-	committed_ = true;
 
-	if (td_.doRollback) return false;
+	if (!localTransactionActive_) {
+		cflib::util::Log(lfi_, line_, LogCat::Warn | LogCat::Db)(
+			"commit called without active transaction");
+		return false;
+	}
+	localTransactionActive_ = false;
 
-	if (nested_) {
+	if (nestedTransaction_) {
 		cflib::util::Log(lfi_, line_, LogCat::Debug | LogCat::Db)("DB sub-transaction commit");
 		return true;
 	}
@@ -259,19 +262,93 @@ bool PSql::commit()
 	return ok;
 }
 
+void PSql::rollback()
+{
+	if (!localTransactionActive_) {
+		cflib::util::Log(lfi_, line_, LogCat::Warn | LogCat::Db)(
+			"rollback called without active transaction");
+		return;
+	}
+	localTransactionActive_ = false;
+
+	if (nestedTransaction_) {
+		cflib::util::Log(lfi_, line_, LogCat::Info | LogCat::Db)("DB sub-tansaction rollback");
+		td_.doRollback = true;
+		return;
+	}
+
+	cflib::util::Log(lfi_, line_, LogCat::Info | LogCat::Db)("DB tansaction rollback");
+	PGresult * res = PQexec(td_.conn, "ROLLBACK");
+	if (PQresultStatus(res) != PGRES_COMMAND_OK) {
+		cflib::util::Log(lfi_, line_, LogCat::Warn | LogCat::Db)(
+			"DB transaction rollback failed: %1", PQerrorMessage(td_.conn));
+	}
+	PQclear(res);
+
+	td_.doRollback = false;
+	td_.transactionActive = false;
+}
+
 bool PSql::exec(const QString & query)
 {
-	PGresult * res = PQexec(td_.conn, query.toUtf8().constData());
-	ExecStatusType status = PQresultStatus(res);
-	if (status == PGRES_COMMAND_OK || status == PGRES_TUPLES_OK) {
-		PQclear(res);
+	if (td_.doRollback) return false;
+
+	clearResult();
+
+	if (!PQsendQuery(td_.conn, query.toUtf8().constData())) {
+		cflib::util::Log(lfi_, line_, LogCat::Debug | LogCat::Db)("query: %1", query);
+		cflib::util::Log(lfi_, line_, LogCat::Warn  | LogCat::Db)("cannot send query: %1", PQerrorMessage(td_.conn));
+		return false;
+	}
+
+	if (!PQsetSingleRowMode(td_.conn)) {
+		cflib::util::Log(lfi_, line_, LogCat::Warn  | LogCat::Db)("cannot set single row mode: %1", PQerrorMessage(td_.conn));
+		return false;
+	}
+
+	isFirstResult_ = true;
+	res_ = PQgetResult(td_.conn);
+	const ExecStatusType status = PQresultStatus((PGresult *)res_);
+	logDebug("res status a: %1", (int)status);
+
+	if (status == PGRES_SINGLE_TUPLE) return true;
+
+	clearResult();
+
+	if (status != PGRES_COMMAND_OK && status != PGRES_TUPLES_OK) {
+		cflib::util::Log(lfi_, line_, LogCat::Debug | LogCat::Db)("query: %1", query);
+		cflib::util::Log(lfi_, line_, LogCat::Warn  | LogCat::Db)("cannot send query: %1", PQerrorMessage(td_.conn));
+		return false;
+	}
+	return true;
+}
+
+bool PSql::next()
+{
+	if (!res_) return false;
+
+	if (isFirstResult_) {
+		isFirstResult_ = false;
 		return true;
 	}
 
-	cflib::util::Log(lfi_, line_, LogCat::Debug | LogCat::Db)("Query: %1", query);
-	cflib::util::Log(lfi_, line_, LogCat::Warn  | LogCat::Db)("SQL error: %1", PQerrorMessage(td_.conn));
-	PQclear(res);
+	PQclear((PGresult *)res_);
+	res_ = PQgetResult(td_.conn);
+	const ExecStatusType status = PQresultStatus((PGresult *)res_);
+	logDebug("res status b: %1", (int)status);
+
+	if (status == PGRES_SINGLE_TUPLE) return true;
+
+	clearResult();
 	return false;
+}
+
+void PSql::clearResult()
+{
+	while (res_) {
+		PQclear((PGresult *)res_);
+		res_ = PQgetResult(td_.conn);
+	}
 }
 
 }}	// namespace
