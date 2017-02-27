@@ -29,6 +29,9 @@ namespace { class ThreadData; }
 class PSql
 {
 public:
+	static const int MAX_FIELD_COUNT = 64;
+
+public:
 	static bool setParameter(const QString & connectionParameter);
 	static void closeConnection();
 
@@ -44,6 +47,8 @@ public:
 
 	bool next();
 
+	PSql & operator>>(quint32 val);
+
 private:
 	void clearResult();
 
@@ -57,6 +62,10 @@ private:
 
 	bool isFirstResult_;
 	void * res_;
+	bool haveResultInfo_;
+	int resultFieldCount_;
+	uint resultFieldTypes_[MAX_FIELD_COUNT];
+	int currentFieldId_;
 };
 
 }}	// namespace

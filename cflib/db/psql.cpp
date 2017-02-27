@@ -44,7 +44,6 @@ enum PostgresTypes {
 };
 
 Oid typeOids[PSql_lastEntry + 1];
-
 QString connInfo;
 
 class ThreadData : public QObject
@@ -126,6 +125,8 @@ inline ThreadData & getThreadData()
 
 }
 
+const int PSql::MAX_FIELD_COUNT;
+
 bool PSql::setParameter(const QString & connectionParameter)
 {
 	connInfo = QString();
@@ -188,7 +189,12 @@ PSql::PSql(const util::LogFileInfo & lfi, int line) :
 	nestedTransaction_(td_.transactionActive),
 	localTransactionActive_(false),
 	isFirstResult_(true),
-	res_(0)
+	res_(0),
+	haveResultInfo_(false),
+	resultFieldCount_(-1),
+	resultFieldTypes_{},
+	currentFieldId_(-1)
+
 {
 }
 
@@ -295,7 +301,7 @@ bool PSql::exec(const QString & query)
 
 	clearResult();
 
-	if (!PQsendQuery(td_.conn, query.toUtf8().constData())) {
+	if (!PQsendQueryParams(td_.conn, query.toUtf8().constData(), 0, NULL, NULL, NULL, NULL, 1)) {
 		cflib::util::Log(lfi_, line_, LogCat::Debug | LogCat::Db)("query: %1", query);
 		cflib::util::Log(lfi_, line_, LogCat::Warn  | LogCat::Db)("cannot send query: %1", PQerrorMessage(td_.conn));
 		return false;
@@ -307,6 +313,7 @@ bool PSql::exec(const QString & query)
 	}
 
 	isFirstResult_ = true;
+	haveResultInfo_ = false;
 	res_ = PQgetResult(td_.conn);
 	const ExecStatusType status = PQresultStatus((PGresult *)res_);
 	logDebug("res status a: %1", (int)status);
@@ -327,6 +334,24 @@ bool PSql::next()
 {
 	if (!res_) return false;
 
+	if (!haveResultInfo_) {
+		haveResultInfo_ = true;
+
+		resultFieldCount_ = PQnfields((PGresult *)res_);
+		if (resultFieldCount_ > MAX_FIELD_COUNT) {
+			cflib::util::Log(lfi_, line_, LogCat::Warn | LogCat::Db)(
+				"too many columns in result set (got: %1, max: %2)", resultFieldCount_, MAX_FIELD_COUNT);
+			clearResult();
+			return false;
+		}
+
+		for (int i = 0 ; i < resultFieldCount_; ++i) {
+			resultFieldTypes_[i] = PQftype((PGresult *)res_, i);
+		}
+	}
+
+	currentFieldId_ = 0;
+
 	if (isFirstResult_) {
 		isFirstResult_ = false;
 		return true;
@@ -341,6 +366,21 @@ bool PSql::next()
 
 	clearResult();
 	return false;
+}
+
+PSql & PSql::operator>>(quint32 val)
+{
+	QTextStream out(stdout);
+	out << "type: " << resultFieldTypes_[currentFieldId_] << endl;
+	int len = PQgetlength((PGresult *)res_, 0, currentFieldId_);
+	out << "len: " << len << endl;
+
+	if (len == 4) {
+		val = qFromBigEndian<quint32>((const uchar *)PQgetvalue((PGresult *)res_, 0, currentFieldId_));
+	}
+
+	++currentFieldId_;
+	return *this;
 }
 
 void PSql::clearResult()

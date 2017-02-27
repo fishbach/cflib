@@ -130,6 +130,11 @@ private slots:
 		QVERIFY(!sql.commit());
 	}
 
+	void select_test()
+	{
+	}
+
+
 };
 #include "psql_test.moc"
 ADD_TEST(PSql_test)
