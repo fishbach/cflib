@@ -47,9 +47,19 @@ public:
 
 	bool next();
 
-	PSql & operator>>(quint32 val);
+	inline PSql & operator>>(qint8   & val) { qint16  val16; getInt16(          val16); val = val16; return *this; }
+	inline PSql & operator>>(quint8  & val) { quint16 val16; getInt16((qint16 &)val16); val = val16; return *this; }
+	inline PSql & operator>>(qint16  & val) { getInt16(          val); return *this; }
+	inline PSql & operator>>(quint16 & val) { getInt16((qint16 &)val); return *this; }
+	inline PSql & operator>>(qint32  & val) { getInt32(          val); return *this; }
+	inline PSql & operator>>(quint32 & val) { getInt32((qint32 &)val); return *this; }
+	inline PSql & operator>>(qint64  & val) { getInt64(          val); return *this; }
+	inline PSql & operator>>(quint64 & val) { getInt64((qint64 &)val); return *this; }
 
 private:
+	void getInt16(qint16 & val);
+	void getInt32(qint32 & val);
+	void getInt64(qint64 & val);
 	void clearResult();
 
 private:

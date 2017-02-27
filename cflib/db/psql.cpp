@@ -31,6 +31,8 @@ namespace {
 
 QAtomicInt connIdCounter(1);
 
+// select 21::oid::regtype -> smallint
+
 enum PostgresTypes {
 	PSql_int16 = 1,
 	PSql_int32,
@@ -340,7 +342,7 @@ bool PSql::next()
 		resultFieldCount_ = PQnfields((PGresult *)res_);
 		if (resultFieldCount_ > MAX_FIELD_COUNT) {
 			cflib::util::Log(lfi_, line_, LogCat::Warn | LogCat::Db)(
-				"too many columns in result set (got: %1, max: %2)", resultFieldCount_, MAX_FIELD_COUNT);
+				"too many fields in result set (got: %1, max: %2)", resultFieldCount_, MAX_FIELD_COUNT);
 			clearResult();
 			return false;
 		}
@@ -368,19 +370,115 @@ bool PSql::next()
 	return false;
 }
 
-PSql & PSql::operator>>(quint32 val)
+void PSql::getInt16(qint16 & val)
 {
-	QTextStream out(stdout);
-	out << "type: " << resultFieldTypes_[currentFieldId_] << endl;
-	int len = PQgetlength((PGresult *)res_, 0, currentFieldId_);
-	out << "len: " << len << endl;
+	val = 0;
 
-	if (len == 4) {
-		val = qFromBigEndian<quint32>((const uchar *)PQgetvalue((PGresult *)res_, 0, currentFieldId_));
+	if (!res_) {
+		cflib::util::Log(lfi_, line_, LogCat::Warn | LogCat::Db)(
+			"no result available");
+		return;
 	}
 
+	if (currentFieldId_ >= resultFieldCount_) {
+		cflib::util::Log(lfi_, line_, LogCat::Warn | LogCat::Db)(
+			"not enough fields in result (got: %1)", resultFieldCount_);
+		clearResult();
+		return;
+	}
+
+	if (resultFieldTypes_[currentFieldId_] != typeOids[PSql_int16]) {
+		cflib::util::Log(lfi_, line_, LogCat::Warn | LogCat::Db)(
+			"wrong result type (got: %1, want: %2)", resultFieldTypes_[currentFieldId_], typeOids[PSql_int16]);
+		clearResult();
+		return;
+	}
+
+	int len = PQgetlength((PGresult *)res_, 0, currentFieldId_);
+	if (len != sizeof(qint16)) {
+		cflib::util::Log(lfi_, line_, LogCat::Warn | LogCat::Db)(
+			"wrong result size (got: %1, want: %2)", len, (int)sizeof(qint16));
+		clearResult();
+		return;
+	}
+
+	val = qFromBigEndian<qint16>((const uchar *)PQgetvalue((PGresult *)res_, 0, currentFieldId_));
+
 	++currentFieldId_;
-	return *this;
+}
+
+void PSql::getInt32(qint32 & val)
+{
+	val = 0;
+
+	if (!res_) {
+		cflib::util::Log(lfi_, line_, LogCat::Warn | LogCat::Db)(
+			"no result available");
+		return;
+	}
+
+	if (currentFieldId_ >= resultFieldCount_) {
+		cflib::util::Log(lfi_, line_, LogCat::Warn | LogCat::Db)(
+			"not enough fields in result (got: %1)", resultFieldCount_);
+		clearResult();
+		return;
+	}
+
+	if (resultFieldTypes_[currentFieldId_] != typeOids[PSql_int32]) {
+		cflib::util::Log(lfi_, line_, LogCat::Warn | LogCat::Db)(
+			"wrong result type (got: %1, want: %2)", resultFieldTypes_[currentFieldId_], typeOids[PSql_int32]);
+		clearResult();
+		return;
+	}
+
+	int len = PQgetlength((PGresult *)res_, 0, currentFieldId_);
+	if (len != sizeof(qint32)) {
+		cflib::util::Log(lfi_, line_, LogCat::Warn | LogCat::Db)(
+			"wrong result size (got: %1, want: %2)", len, (int)sizeof(qint32));
+		clearResult();
+		return;
+	}
+
+	val = qFromBigEndian<qint32>((const uchar *)PQgetvalue((PGresult *)res_, 0, currentFieldId_));
+
+	++currentFieldId_;
+}
+
+void PSql::getInt64(qint64 & val)
+{
+	val = 0;
+
+	if (!res_) {
+		cflib::util::Log(lfi_, line_, LogCat::Warn | LogCat::Db)(
+			"no result available");
+		return;
+	}
+
+	if (currentFieldId_ >= resultFieldCount_) {
+		cflib::util::Log(lfi_, line_, LogCat::Warn | LogCat::Db)(
+			"not enough fields in result (got: %1)", resultFieldCount_);
+		clearResult();
+		return;
+	}
+
+	if (resultFieldTypes_[currentFieldId_] != typeOids[PSql_int64]) {
+		cflib::util::Log(lfi_, line_, LogCat::Warn | LogCat::Db)(
+			"wrong result type (got: %1, want: %2)", resultFieldTypes_[currentFieldId_], typeOids[PSql_int64]);
+		clearResult();
+		return;
+	}
+
+	int len = PQgetlength((PGresult *)res_, 0, currentFieldId_);
+	if (len != sizeof(qint64)) {
+		cflib::util::Log(lfi_, line_, LogCat::Warn | LogCat::Db)(
+			"wrong result size (got: %1, want: %2)", len, (int)sizeof(qint64));
+		clearResult();
+		return;
+	}
+
+	val = qFromBigEndian<qint64>((const uchar *)PQgetvalue((PGresult *)res_, 0, currentFieldId_));
+
+	++currentFieldId_;
 }
 
 void PSql::clearResult()

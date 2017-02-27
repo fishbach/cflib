@@ -39,7 +39,9 @@ private slots:
 		QVERIFY(sql.exec(
 			"CREATE TABLE cflib_db_test ("
 				"id integer NOT NULL,"
-				"x integer,"
+				"x16 smallint,"
+				"x32 integer,"
+				"x64 bigint,"
 				"t varchar(255),"
 				"PRIMARY KEY (id)"
 			")"));
@@ -74,9 +76,9 @@ private slots:
 			"INSERT INTO "
 				"cflib_db_test "
 			"("
-				"id, x, t"
+				"id, x16, x32, x64, t"
 			") VALUES ("
-				"1, 2, 't'"
+				"1, 2, 3, 4, 't'"
 			")"));
 		QVERIFY(!sql.next());
 
@@ -84,14 +86,32 @@ private slots:
 			"INSERT INTO "
 				"cflib_db_test "
 			"("
-				"id, x, t"
+				"id, x16, x32, x64, t"
 			") VALUES ("
-				"2, 3, 'v'"
+				"2, 5, 6, 7, 't'"
 			")"));
 
-		QVERIFY( sql.exec("SELECT * FROM cflib_db_test"));
-		QVERIFY( sql.next());
-		QVERIFY( sql.next());
+		QVERIFY( sql.exec("SELECT id, x16, x32, x64, t FROM cflib_db_test"));
+
+		quint32 id;
+		quint16 x16;
+		quint32 x32;
+		quint64 x64;
+
+		QVERIFY(sql.next());
+		sql >> id >> x16 >> x32 >> x64;
+		QCOMPARE(id,  (quint32)1);
+		QCOMPARE(x16, (quint16)2);
+		QCOMPARE(x32, (quint32)3);
+		QCOMPARE(x64, (quint64)4);
+
+		QVERIFY(sql.next());
+		sql >> id >> x16 >> x32 >> x64;
+		QCOMPARE(id,  (quint32)2);
+		QCOMPARE(x16, (quint16)5);
+		QCOMPARE(x32, (quint32)6);
+		QCOMPARE(x64, (quint64)7);
+
 		QVERIFY(!sql.next());
 	}
 
@@ -132,8 +152,9 @@ private slots:
 
 	void select_test()
 	{
-	}
+		PSqlConn;
 
+	}
 
 };
 #include "psql_test.moc"
