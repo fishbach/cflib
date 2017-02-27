@@ -50,6 +50,7 @@ Oid typeOids[PSql_lastEntry];
 QString connInfo;
 
 const qint64 MsecDelta = -QDateTime::fromMSecsSinceEpoch(0).msecsTo(QDateTime(QDate(2000, 1, 1), QTime(0, 0), Qt::UTC));
+const QVector<int> ParamFormats(PSql::MAX_FIELD_COUNT, 1);
 
 union FloatInt {
 	float f;
@@ -210,8 +211,10 @@ PSql::PSql(const util::LogFileInfo & lfi, int line) :
 	haveResultInfo_(false),
 	resultFieldCount_(-1),
 	resultFieldTypes_{},
-	currentFieldId_(-1)
-
+	currentFieldId_(-1),
+	isPrepared_(false),
+	prepareParamCount_(-1),
+	prepareParamTypes_{}
 {
 }
 
@@ -344,6 +347,69 @@ bool PSql::exec(const QString & query)
 		cflib::util::Log(lfi_, line_, LogCat::Warn  | LogCat::Db)("cannot send query: %1", PQerrorMessage(td_.conn));
 		return false;
 	}
+	return true;
+}
+
+void PSql::prepare(const QByteArray & query)
+{
+	if (!prepareQuery_.isNull()) {
+		cflib::util::Log(lfi_, line_, LogCat::Warn | LogCat::Db)(
+			"prepare called twice");
+		return;
+	}
+
+	prepareQuery_ = query;
+	isPrepared_ = false;
+	prepareParamCount_ = 0;
+}
+
+bool PSql::exec()
+{
+	if (prepareQuery_.isNull()) {
+		cflib::util::Log(lfi_, line_, LogCat::Warn | LogCat::Db)(
+			"exec called without prepare");
+		return false;
+	}
+
+	if (td_.doRollback) {
+		prepareQuery_ = QByteArray();
+		return false;
+	}
+
+	clearResult();
+
+	if (!isPrepared_) {
+		isPrepared_ = true;
+
+		PGresult * res = PQprepare(td_.conn, "", prepareQuery_.constData(), prepareParamCount_, prepareParamTypes_);
+		if (PQresultStatus(res) != PGRES_COMMAND_OK) {
+			cflib::util::Log(lfi_, line_, LogCat::Debug | LogCat::Db)("query: %1", prepareQuery_);
+			cflib::util::Log(lfi_, line_, LogCat::Warn  | LogCat::Db)("cannot prepare query: %1", PQerrorMessage(td_.conn));
+			PQclear(res);
+			prepareQuery_ = QByteArray();
+			return false;
+		}
+		PQclear(res);
+	}
+
+	if (!PQsendQueryPrepared(td_.conn, "", prepareParamCount_, prepareParamValues_, prepareParamLengths_, ParamFormats.constData(), 1)) {
+//		err << "send failed: " << PQerrorMessage(conn) << endl;
+//		doExit(conn);
+	}
+
+//	if (!PQsendQueryParams(td_.conn, query.toUtf8().constData(), 0, NULL, NULL, NULL, NULL, 1)) {
+//		cflib::util::Log(lfi_, line_, LogCat::Debug | LogCat::Db)("query: %1", query);
+//		cflib::util::Log(lfi_, line_, LogCat::Warn  | LogCat::Db)("cannot send query: %1", PQerrorMessage(td_.conn));
+//		return false;
+//	}
+
+	if (!PQsetSingleRowMode(td_.conn)) {
+		cflib::util::Log(lfi_, line_, LogCat::Warn  | LogCat::Db)("cannot set single row mode: %1", PQerrorMessage(td_.conn));
+		return false;
+	}
+
+
+
 	return true;
 }
 

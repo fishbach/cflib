@@ -48,6 +48,9 @@ public:
 
 	bool exec(const QString & query);
 
+	void prepare(const QByteArray & query);
+	bool exec();
+
 	bool next();
 
 	inline PSql & operator>>(qint8   & val) { qint16  val16; getInt16(          val16); val = val16; return *this; }
@@ -90,6 +93,12 @@ private:
 	int resultFieldCount_;
 	uint resultFieldTypes_[MAX_FIELD_COUNT];
 	int currentFieldId_;
+	QByteArray prepareQuery_;
+	bool isPrepared_;
+	int prepareParamCount_;
+	uint prepareParamTypes_[MAX_FIELD_COUNT];
+	const char * prepareParamValues_[MAX_FIELD_COUNT];
+	int prepareParamLengths_[MAX_FIELD_COUNT];
 };
 
 }}	// namespace
