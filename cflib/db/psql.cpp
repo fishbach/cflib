@@ -41,12 +41,25 @@ enum PostgresTypes {
 	PSql_double,
 	PSql_string,
 	PSql_binary,
-	PSql_timestamp,
-	PSql_lastEntry = PSql_timestamp
+	PSql_timestampWithTimeZone,
+	PSql_timestampWithoutTimeZone,
+	PSql_lastEntry
 };
 
-Oid typeOids[PSql_lastEntry + 1];
+Oid typeOids[PSql_lastEntry];
 QString connInfo;
+
+const qint64 MsecDelta = -QDateTime::fromMSecsSinceEpoch(0).msecsTo(QDateTime(QDate(2000, 1, 1), QTime(0, 0), Qt::UTC));
+
+union FloatInt {
+	float f;
+	quint32 i;
+};
+
+union DoubleInt {
+	double d;
+	quint64 i;
+};
 
 class ThreadData : public QObject
 {
@@ -149,7 +162,8 @@ bool PSql::setParameter(const QString & connectionParameter)
 			"'double precision'::regtype::oid,"
 			"'text'::regtype::oid, "
 			"'bytea'::regtype::oid, "
-			"'timestamp with time zone'::regtype::oid"
+			"'timestamp with time zone'::regtype::oid, "
+			"'timestamp without time zone'::regtype::oid"
 	);
 	if (PQresultStatus(res) != PGRES_TUPLES_OK) {
 		logWarn("cannot get oids (error: %1)", PQerrorMessage(conn));
@@ -164,14 +178,15 @@ bool PSql::setParameter(const QString & connectionParameter)
 		PQfinish(conn);
 		return false;
 	}
-	typeOids[PSql_int16    ] = (Oid)QByteArray(PQgetvalue(res, 0, 0)).toUInt();
-	typeOids[PSql_int32    ] = (Oid)QByteArray(PQgetvalue(res, 0, 1)).toUInt();
-	typeOids[PSql_int64    ] = (Oid)QByteArray(PQgetvalue(res, 0, 2)).toUInt();
-	typeOids[PSql_float    ] = (Oid)QByteArray(PQgetvalue(res, 0, 3)).toUInt();
-	typeOids[PSql_double   ] = (Oid)QByteArray(PQgetvalue(res, 0, 4)).toUInt();
-	typeOids[PSql_string   ] = (Oid)QByteArray(PQgetvalue(res, 0, 5)).toUInt();
-	typeOids[PSql_binary   ] = (Oid)QByteArray(PQgetvalue(res, 0, 6)).toUInt();
-	typeOids[PSql_timestamp] = (Oid)QByteArray(PQgetvalue(res, 0, 7)).toUInt();
+	typeOids[PSql_int16                   ] = (Oid)QByteArray(PQgetvalue(res, 0, 0)).toUInt();
+	typeOids[PSql_int32                   ] = (Oid)QByteArray(PQgetvalue(res, 0, 1)).toUInt();
+	typeOids[PSql_int64                   ] = (Oid)QByteArray(PQgetvalue(res, 0, 2)).toUInt();
+	typeOids[PSql_float                   ] = (Oid)QByteArray(PQgetvalue(res, 0, 3)).toUInt();
+	typeOids[PSql_double                  ] = (Oid)QByteArray(PQgetvalue(res, 0, 4)).toUInt();
+	typeOids[PSql_string                  ] = (Oid)QByteArray(PQgetvalue(res, 0, 5)).toUInt();
+	typeOids[PSql_binary                  ] = (Oid)QByteArray(PQgetvalue(res, 0, 6)).toUInt();
+	typeOids[PSql_timestampWithTimeZone   ] = (Oid)QByteArray(PQgetvalue(res, 0, 7)).toUInt();
+	typeOids[PSql_timestampWithoutTimeZone] = (Oid)QByteArray(PQgetvalue(res, 0, 8)).toUInt();
 
 	PQclear(res);
 	PQfinish(conn);
@@ -370,114 +385,94 @@ bool PSql::next()
 	return false;
 }
 
+PSql & PSql::operator>>(float & val)
+{
+	val = 0.0;
+	if (!checkField((int[]){ PSql_float }, 1, 4)) return *this;
+	FloatInt fi;
+	fi.i = qFromBigEndian<quint32>((const uchar *)PQgetvalue((PGresult *)res_, 0, currentFieldId_));
+	val = fi.f;
+	++currentFieldId_;
+	return *this;
+}
+
+PSql & PSql::operator>>(double & val)
+{
+	val = 0.0;
+	if (!checkField((int[]){ PSql_double }, 1, 8)) return *this;
+	DoubleInt di;
+	di.i = qFromBigEndian<quint64>((const uchar *)PQgetvalue((PGresult *)res_, 0, currentFieldId_));
+	val = di.d;
+	++currentFieldId_;
+	return *this;
+}
+
+PSql & PSql::operator>>(QDateTime & val)
+{
+	val = QDateTime();
+	if (!checkField((int[]){ PSql_timestampWithTimeZone, PSql_timestampWithoutTimeZone }, 2, sizeof(qint64))) return *this;
+	if (PQgetisnull((PGresult *)res_, 0, currentFieldId_) == 0) {
+		qint64 rawTime = qFromBigEndian<qint64>((const uchar *)PQgetvalue((PGresult *)res_, 0, currentFieldId_));
+		val = QDateTime::fromMSecsSinceEpoch(rawTime / 1000 - MsecDelta, Qt::UTC);
+	}
+	++currentFieldId_;
+	return *this;
+}
+
+PSql & PSql::operator>>(QByteArray & val)
+{
+	val = QByteArray();
+	if (!checkField((int[]){ PSql_binary }, 1, 0)) return *this;
+	if (PQgetisnull((PGresult *)res_, 0, currentFieldId_) == 0) {
+		val = QByteArray(PQgetvalue((PGresult *)res_, 0, currentFieldId_), PQgetlength((PGresult *)res_, 0, currentFieldId_));
+	}
+	++currentFieldId_;
+	return *this;
+}
+
+PSql & PSql::operator>>(QString & val)
+{
+	val = QString();
+	if (!checkField((int[]){ PSql_string }, 1, 0)) return *this;
+	if (PQgetisnull((PGresult *)res_, 0, currentFieldId_) == 0) {
+		val = QString::fromUtf8(PQgetvalue((PGresult *)res_, 0, currentFieldId_), PQgetlength((PGresult *)res_, 0, currentFieldId_));
+	}
+	++currentFieldId_;
+	return *this;
+}
+
+PSql & PSql::operator>>(SkipField)
+{
+	++currentFieldId_;
+	return *this;
+}
+
+bool PSql::isNull()
+{
+	return PQgetisnull((PGresult *)res_, 0, currentFieldId_) == 1;
+}
+
 void PSql::getInt16(qint16 & val)
 {
 	val = 0;
-
-	if (!res_) {
-		cflib::util::Log(lfi_, line_, LogCat::Warn | LogCat::Db)(
-			"no result available");
-		return;
-	}
-
-	if (currentFieldId_ >= resultFieldCount_) {
-		cflib::util::Log(lfi_, line_, LogCat::Warn | LogCat::Db)(
-			"not enough fields in result (got: %1)", resultFieldCount_);
-		clearResult();
-		return;
-	}
-
-	if (resultFieldTypes_[currentFieldId_] != typeOids[PSql_int16]) {
-		cflib::util::Log(lfi_, line_, LogCat::Warn | LogCat::Db)(
-			"wrong result type (got: %1, want: %2)", resultFieldTypes_[currentFieldId_], typeOids[PSql_int16]);
-		clearResult();
-		return;
-	}
-
-	int len = PQgetlength((PGresult *)res_, 0, currentFieldId_);
-	if (len != sizeof(qint16)) {
-		cflib::util::Log(lfi_, line_, LogCat::Warn | LogCat::Db)(
-			"wrong result size (got: %1, want: %2)", len, (int)sizeof(qint16));
-		clearResult();
-		return;
-	}
-
+	if (!checkField((int[]){ PSql_int16 }, 1, sizeof(qint16))) return;
 	val = qFromBigEndian<qint16>((const uchar *)PQgetvalue((PGresult *)res_, 0, currentFieldId_));
-
 	++currentFieldId_;
 }
 
 void PSql::getInt32(qint32 & val)
 {
 	val = 0;
-
-	if (!res_) {
-		cflib::util::Log(lfi_, line_, LogCat::Warn | LogCat::Db)(
-			"no result available");
-		return;
-	}
-
-	if (currentFieldId_ >= resultFieldCount_) {
-		cflib::util::Log(lfi_, line_, LogCat::Warn | LogCat::Db)(
-			"not enough fields in result (got: %1)", resultFieldCount_);
-		clearResult();
-		return;
-	}
-
-	if (resultFieldTypes_[currentFieldId_] != typeOids[PSql_int32]) {
-		cflib::util::Log(lfi_, line_, LogCat::Warn | LogCat::Db)(
-			"wrong result type (got: %1, want: %2)", resultFieldTypes_[currentFieldId_], typeOids[PSql_int32]);
-		clearResult();
-		return;
-	}
-
-	int len = PQgetlength((PGresult *)res_, 0, currentFieldId_);
-	if (len != sizeof(qint32)) {
-		cflib::util::Log(lfi_, line_, LogCat::Warn | LogCat::Db)(
-			"wrong result size (got: %1, want: %2)", len, (int)sizeof(qint32));
-		clearResult();
-		return;
-	}
-
+	if (!checkField((int[]){ PSql_int32 }, 1, sizeof(qint32))) return;
 	val = qFromBigEndian<qint32>((const uchar *)PQgetvalue((PGresult *)res_, 0, currentFieldId_));
-
 	++currentFieldId_;
 }
 
 void PSql::getInt64(qint64 & val)
 {
 	val = 0;
-
-	if (!res_) {
-		cflib::util::Log(lfi_, line_, LogCat::Warn | LogCat::Db)(
-			"no result available");
-		return;
-	}
-
-	if (currentFieldId_ >= resultFieldCount_) {
-		cflib::util::Log(lfi_, line_, LogCat::Warn | LogCat::Db)(
-			"not enough fields in result (got: %1)", resultFieldCount_);
-		clearResult();
-		return;
-	}
-
-	if (resultFieldTypes_[currentFieldId_] != typeOids[PSql_int64]) {
-		cflib::util::Log(lfi_, line_, LogCat::Warn | LogCat::Db)(
-			"wrong result type (got: %1, want: %2)", resultFieldTypes_[currentFieldId_], typeOids[PSql_int64]);
-		clearResult();
-		return;
-	}
-
-	int len = PQgetlength((PGresult *)res_, 0, currentFieldId_);
-	if (len != sizeof(qint64)) {
-		cflib::util::Log(lfi_, line_, LogCat::Warn | LogCat::Db)(
-			"wrong result size (got: %1, want: %2)", len, (int)sizeof(qint64));
-		clearResult();
-		return;
-	}
-
+	if (!checkField((int[]){ PSql_int64 }, 1, sizeof(qint64))) return;
 	val = qFromBigEndian<qint64>((const uchar *)PQgetvalue((PGresult *)res_, 0, currentFieldId_));
-
 	++currentFieldId_;
 }
 
@@ -487,6 +482,55 @@ void PSql::clearResult()
 		PQclear((PGresult *)res_);
 		res_ = PQgetResult(td_.conn);
 	}
+}
+
+bool PSql::checkField(int fieldType[], int typeCount, int fieldSize)
+{
+	if (!res_) {
+		cflib::util::Log(lfi_, line_, LogCat::Warn | LogCat::Db)(
+			"no result available");
+		return false;
+	}
+
+	if (currentFieldId_ >= resultFieldCount_) {
+		cflib::util::Log(lfi_, line_, LogCat::Warn | LogCat::Db)(
+			"not enough fields in result (got: %1)", resultFieldCount_);
+		clearResult();
+		return false;
+	}
+
+	bool found = false;
+	for (int i = 0 ; i < typeCount ; ++i) {
+		if (resultFieldTypes_[currentFieldId_] == typeOids[fieldType[i]]) {
+			found = true;
+			break;
+		}
+	}
+	if (!found) {
+		QByteArray types;
+		bool first = true;
+		for (int i = 0 ; i < typeCount ; ++i) {
+			if (first) first = false;
+			else       types += '/';
+			types += QByteArray::number(typeOids[fieldType[i]]);
+		}
+		cflib::util::Log(lfi_, line_, LogCat::Warn | LogCat::Db)(
+			"wrong result type (got: %1, want: %2)", resultFieldTypes_[currentFieldId_], types);
+		clearResult();
+		return false;
+	}
+
+	if (fieldSize > 0) {
+		int len = PQgetlength((PGresult *)res_, 0, currentFieldId_);
+		if (len != fieldSize) {
+			cflib::util::Log(lfi_, line_, LogCat::Warn | LogCat::Db)(
+				"wrong result size (got: %1, want: %2)", len, fieldSize);
+			clearResult();
+			return false;
+		}
+	}
+
+	return true;
 }
 
 }}	// namespace

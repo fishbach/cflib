@@ -38,11 +38,15 @@ private slots:
 
 		QVERIFY(sql.exec(
 			"CREATE TABLE cflib_db_test ("
-				"id integer NOT NULL,"
-				"x16 smallint,"
-				"x32 integer,"
-				"x64 bigint,"
-				"t varchar(255),"
+				"id integer NOT NULL, "
+				"x16 smallint, "
+				"x32 integer, "
+				"x64 bigint, "
+				"t timestamp, "
+				"a bytea, "
+				"s text, "
+				"r real, "
+				"d double precision, "
 				"PRIMARY KEY (id)"
 			")"));
 	}
@@ -50,7 +54,7 @@ private slots:
 	void cleanupTestCase()
 	{
 		PSqlConn;
-		QVERIFY(sql.exec("DROP TABLE cflib_db_test"));
+//		QVERIFY(sql.exec("DROP TABLE cflib_db_test"));
 	}
 
 	void simple_test()
@@ -76,9 +80,9 @@ private slots:
 			"INSERT INTO "
 				"cflib_db_test "
 			"("
-				"id, x16, x32, x64, t"
+				"id, x16, x32, x64, t, a, s, r, d"
 			") VALUES ("
-				"1, 2, 3, 4, 't'"
+				"1, 2, 3, 4, '2017-02-27T14:47:34.123Z', E'\\x41\\x30', E'ABC\\xC3\\xB6\\xC3\\x9F', 1.23, 3.45"
 			")"));
 		QVERIFY(!sql.next());
 
@@ -86,31 +90,45 @@ private slots:
 			"INSERT INTO "
 				"cflib_db_test "
 			"("
-				"id, x16, x32, x64, t"
+				"id, x16, x32, x64, t, a, s, r, d"
 			") VALUES ("
-				"2, 5, 6, 7, 't'"
+				"2, 5, 6, 7, '2017-01-12T11:17:24.253Z', '', '', 0, 'NaN'"
 			")"));
 
-		QVERIFY( sql.exec("SELECT id, x16, x32, x64, t FROM cflib_db_test"));
+		QVERIFY( sql.exec("SELECT id, x16, x32, x64, t, a, s, r, d FROM cflib_db_test"));
 
 		quint32 id;
 		quint16 x16;
 		quint32 x32;
 		quint64 x64;
+		QDateTime t;
+		QByteArray a;
+		QString s;
+		float f;
+		double d;
 
 		QVERIFY(sql.next());
-		sql >> id >> x16 >> x32 >> x64;
+		sql >> id >> x16 >> x32 >> x64 >> t >> a >> s >> f >> d;
 		QCOMPARE(id,  (quint32)1);
 		QCOMPARE(x16, (quint16)2);
 		QCOMPARE(x32, (quint32)3);
 		QCOMPARE(x64, (quint64)4);
+		QCOMPARE(t, QDateTime(QDate(2017, 2, 27), QTime(14, 47, 34, 123), Qt::UTC));
+		QCOMPARE(a, QByteArray("A0"));
+		QCOMPARE(s, QString::fromUtf8("ABC\xC3\xB6\xC3\x9F"));
+		QVERIFY(qFuzzyCompare(f, 1.23f));
+		QVERIFY(qFuzzyCompare(d, 3.45));
 
 		QVERIFY(sql.next());
-		sql >> id >> x16 >> x32 >> x64;
+		sql >> id >> x16 >> Skip >> x64 >> t >> a >> s >> f >> d;
 		QCOMPARE(id,  (quint32)2);
 		QCOMPARE(x16, (quint16)5);
-		QCOMPARE(x32, (quint32)6);
 		QCOMPARE(x64, (quint64)7);
+		QCOMPARE(t, QDateTime(QDate(2017, 1, 12), QTime(11, 17, 24, 253), Qt::UTC));
+		QCOMPARE(a, QByteArray(""));
+		QCOMPARE(s, QString(""));
+		QCOMPARE(f, 0.0f);
+		QVERIFY(isnan(d));
 
 		QVERIFY(!sql.next());
 	}

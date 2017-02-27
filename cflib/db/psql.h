@@ -21,6 +21,7 @@
 #include <cflib/util/log.h>
 
 #define PSqlConn cflib::db::PSql sql(::cflib_util_logFileInfo, __LINE__)
+#define Skip cflib::db::PSql::SkipField()
 
 namespace cflib { namespace db {
 
@@ -30,6 +31,8 @@ class PSql
 {
 public:
 	static const int MAX_FIELD_COUNT = 64;
+
+	struct SkipField {};
 
 public:
 	static bool setParameter(const QString & connectionParameter);
@@ -56,11 +59,22 @@ public:
 	inline PSql & operator>>(qint64  & val) { getInt64(          val); return *this; }
 	inline PSql & operator>>(quint64 & val) { getInt64((qint64 &)val); return *this; }
 
+	PSql & operator>>(float      & val);
+	PSql & operator>>(double     & val);
+	PSql & operator>>(QDateTime  & val);
+	PSql & operator>>(QByteArray & val);
+	PSql & operator>>(QString    & val);
+
+	PSql & operator>>(SkipField);
+
+	bool isNull();
+
 private:
 	void getInt16(qint16 & val);
 	void getInt32(qint32 & val);
 	void getInt64(qint64 & val);
 	void clearResult();
+	bool checkField(int fieldType[], int typeCount, int fieldSize);
 
 private:
 	ThreadData & td_;
