@@ -37,7 +37,9 @@ QSqlDatabase createNewConnection()
 	return QSqlDatabase::addDatabase("QMYSQL", "DB-" + QString::number(dbNameId.fetchAndAddRelaxed(1)));
 }
 
-class ThreadData : public QObject
+}
+
+class ScopedTransaction::ThreadData : public QObject
 {
 	Q_OBJECT
 public:
@@ -95,26 +97,20 @@ private slots:
 		}
 	}
 };
-QThreadStorage<ThreadData *> threadData;
 
-inline ThreadData & getThreadData()
-{
-	if (!threadData.hasLocalData()) threadData.setLocalData(new ThreadData());
-	return *(threadData.localData());
-}
-
-}
+QThreadStorage<ScopedTransaction::ThreadData *> ScopedTransaction::threadData_;
 
 ScopedTransaction::ScopedTransaction(const util::LogFileInfo & lfi, int line) :
-	db(*getThreadData().db),
+	td_(threadData_.hasLocalData() ? *(threadData_.localData()) : (
+		threadData_.setLocalData(new ThreadData()), *(threadData_.localData()))),
+	db(*td_.db),
 	lfi_(lfi), line_(line),
 	committed_(false)
 {
-	ThreadData & td = getThreadData();
-	nested_ = td.transactionActive;
+	nested_ = td_.transactionActive;
 	cflib::util::Log(lfi_, line_, LogCat::Debug | LogCat::Db)("DB %1transaction start", nested_ ? "sub-" : "");
 	if (!nested_) {
-		td.transactionActive = true;
+		td_.transactionActive = true;
 		if (!db.transaction()) logCritical("starting DB transaction failed: %1", db.lastError().text());
 		watch_.start();
 	}
@@ -122,14 +118,13 @@ ScopedTransaction::ScopedTransaction(const util::LogFileInfo & lfi, int line) :
 
 ScopedTransaction::~ScopedTransaction()
 {
-	ThreadData & td = getThreadData();
-	if (!committed_) td.doRollback = true;
-	if (td.doRollback) {
+	if (!committed_) td_.doRollback = true;
+	if (td_.doRollback) {
 		cflib::util::Log(lfi_, line_, LogCat::Info | LogCat::Db)("DB %1tansaction rollback", nested_ ? "sub-" : "");
 		if (!nested_) {
 			if (!db.rollback()) logWarn("DB transaction rollback failed: %1", db.lastError().text());
-			td.doRollback = false;
-			td.transactionActive = false;
+			td_.doRollback = false;
+			td_.transactionActive = false;
 		}
 	}
 }
@@ -142,9 +137,7 @@ bool ScopedTransaction::commit()
 	}
 	committed_ = true;
 
-	ThreadData & td = getThreadData();
-
-	if (td.doRollback) return false;
+	if (td_.doRollback) return false;
 
 	if (nested_) {
 		cflib::util::Log(lfi_, line_, LogCat::Debug | LogCat::Db)("DB sub-transaction commit");
@@ -162,7 +155,7 @@ bool ScopedTransaction::commit()
 			"DB transaction commit (%1/%2 msec)", watch.elapsed(), watch_.elapsed());
 	}
 
-	td.transactionActive = false;
+	td_.transactionActive = false;
 	return ok;
 }
 
@@ -185,7 +178,7 @@ bool exec(QSqlQuery & query, const cflib::util::LogFileInfo & lfi, int line)
 
 void closeDBConnection()
 {
-	threadData.setLocalData(0);
+	ScopedTransaction::threadData_.setLocalData(0);
 }
 
 QDateTime getUTC(const QSqlQuery & query, int index)
