@@ -50,7 +50,6 @@ protected:
 	{
 		parent_.reply(QByteArray());
 		if (!parent_.keepAlive_) {
-			parent_.conn_ = 0;
 			delete this;
 		}
 	}
@@ -90,6 +89,7 @@ void HttpClient::get(const QByteArray & ip, quint16 port, const QByteArray & url
 	conn_->write(request);
 	if (!keepAlive_) conn_->close(TCPConn::WriteClosed);
 	conn_->startReadWatcher();
+	if (!keepAlive_) conn_ = 0;
 }
 
 }}	// namespace
