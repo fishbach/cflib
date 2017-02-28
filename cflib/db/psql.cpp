@@ -428,36 +428,35 @@ bool PSql::next()
 PSql & PSql::operator<<(float val)
 {
 	uchar * dest = setParamType(PSql_float, sizeof(float), false);
-	if (!dest) return *this;
-	qToBigEndian<quint32>(FloatInt{val}.f, dest);
+	if (dest) qToBigEndian<quint32>(FloatInt{val}.f, dest);
 	return *this;
 }
 
 PSql & PSql::operator<<(double val)
 {
 	uchar * dest = setParamType(PSql_double, sizeof(double), false);
-	if (!dest) return *this;
-	qToBigEndian<quint64>(DoubleInt{val}.d, dest);
+	if (dest) qToBigEndian<quint64>(DoubleInt{val}.d, dest);
 	return *this;
 }
 
 PSql & PSql::operator<<(const QDateTime & val)
 {
-	uchar * dest = setParamType(PSql_timestampWithoutTimeZone, val.isNull() ? 0 : sizeof(qint64), val.isNull());
-	if (!dest) return *this;
-	if (!val.isNull()) {
-		qint64 rawTime = (val.toMSecsSinceEpoch() + MsecDelta) * 1000;
-		qToBigEndian<qint64>(rawTime, dest);
+	if (val.isNull()) {
+		setParamType(PSql_timestampWithoutTimeZone, 0, true);
+	} else {
+		uchar * dest = setParamType(PSql_timestampWithoutTimeZone, sizeof(qint64), false);
+		if (dest) qToBigEndian<qint64>((val.toMSecsSinceEpoch() + MsecDelta) * 1000, dest);
 	}
 	return *this;
 }
 
 PSql & PSql::operator<<(const QByteArray & val)
 {
-	uchar * dest = setParamType(PSql_binary, val.size(), val.isNull());
-	if (!dest) return *this;
-	if (!val.isNull()) {
-		memcpy(dest, val.constData(), val.size());
+	if (val.isNull()) {
+		setParamType(PSql_binary, 0, true);
+	} else {
+		uchar * dest = setParamType(PSql_binary, val.size(), false);
+		if (dest) memcpy(dest, val.constData(), val.size());
 	}
 	return *this;
 }
@@ -469,7 +468,7 @@ PSql & PSql::operator<<(const QString & val)
 
 PSql & PSql::operator<<(Null)
 {
-	if (!setParamType(PSql_null, 0, true)) return *this;
+	setParamType(PSql_null, 0, true);
 	return *this;
 }
 
@@ -557,22 +556,19 @@ bool PSql::isNull(uint fieldId)
 void PSql::setInt16(qint16 val)
 {
 	uchar * dest = setParamType(PSql_int16, sizeof(qint16), false);
-	if (!dest) return;
-	qToBigEndian<qint16>(val, dest);
+	if (dest) qToBigEndian<qint16>(val, dest);
 }
 
 void PSql::setInt32(qint32 val)
 {
 	uchar * dest = setParamType(PSql_int32, sizeof(qint32), false);
-	if (!dest) return;
-	qToBigEndian<qint32>(val, dest);
+	if (dest) qToBigEndian<qint32>(val, dest);
 }
 
 void PSql::setInt64(qint64 val)
 {
 	uchar * dest = setParamType(PSql_int64, sizeof(qint64), false);
-	if (!dest) return;
-	qToBigEndian<qint64>(val, dest);
+	if (dest) qToBigEndian<qint64>(val, dest);
 }
 
 void PSql::getInt16(qint16 & val)
