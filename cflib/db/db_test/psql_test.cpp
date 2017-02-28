@@ -28,8 +28,9 @@ USE_LOG(LogCat::Db)
 class PSql_test : public QObject
 {
 	Q_OBJECT
+private:
 
-	struct StructTestTypes
+	struct TestTypes
 	{
 		quint32 id;
 		quint16 x16;
@@ -41,6 +42,7 @@ class PSql_test : public QObject
 		float f;
 		double d;
 	};
+	TestTypes tt;
 
 private slots:
 
@@ -108,21 +110,20 @@ private slots:
 	void select_test_01()
 	{
 		PSqlConn;
-		StructTestTypes ts;
 
 		QVERIFY(sql.exec("SELECT id, x16, x32, x64, t, a, s, r, d FROM cflib_db_test"));
 
 		QVERIFY(sql.next());
-		sql >> ts.id >> ts.x16 >> ts.x32 >> ts.x64 >> ts.t >> ts.a >> ts.s >> ts.f >> ts.d;
-		QCOMPARE(ts.id,  (quint32)1);
-		QCOMPARE(ts.x16, (quint16)2);
-		QCOMPARE(ts.x32, (quint32)3);
-		QCOMPARE(ts.x64, (quint64)4);
-		QCOMPARE(ts.t, QDateTime(QDate(2017, 2, 27), QTime(14, 47, 34, 123), Qt::UTC));
-		QCOMPARE(ts.a, QByteArray("A0"));
-		QCOMPARE(ts.s, QString::fromUtf8("ABC\xC3\xB6\xC3\x9F"));
-		QVERIFY(qFuzzyCompare(ts.f, 1.23f));
-		QVERIFY(qFuzzyCompare(ts.d, 3.45));
+		sql >> tt.id >> tt.x16 >> tt.x32 >> tt.x64 >> tt.t >> tt.a >> tt.s >> tt.f >> tt.d;
+		QCOMPARE(tt.id,  (quint32)1);
+		QCOMPARE(tt.x16, (quint16)2);
+		QCOMPARE(tt.x32, (quint32)3);
+		QCOMPARE(tt.x64, (quint64)4);
+		QCOMPARE(tt.t, QDateTime(QDate(2017, 2, 27), QTime(14, 47, 34, 123), Qt::UTC));
+		QCOMPARE(tt.a, QByteArray("A0"));
+		QCOMPARE(tt.s, QString::fromUtf8("ABC\xC3\xB6\xC3\x9F"));
+		QVERIFY(qFuzzyCompare(tt.f, 1.23f));
+		QVERIFY(qFuzzyCompare(tt.d, 3.45));
 		// no futher lines
 		QVERIFY(!sql.next());
 		// leave table empty
@@ -148,20 +149,19 @@ private slots:
 	void select_test_02()
 	{
 		PSqlConn;
-		StructTestTypes ts;
 
 		QVERIFY(sql.exec("SELECT id, x16, x32, x64, t, a, s, r, d FROM cflib_db_test"));
 
 		QVERIFY(sql.next());
-		sql >> ts.id >> ts.x16 >> ts.x32 >> ts.x64 >> ts.t >> ts.a >> ts.s >> ts.f >> ts.d;
-		QCOMPARE(ts.id,  (quint32)2);
-		QCOMPARE(ts.x16, (quint16)5);
-		QCOMPARE(ts.x64, (quint64)7);
-		QCOMPARE(ts.t, QDateTime(QDate(2017, 1, 12), QTime(11, 17, 24, 253), Qt::UTC));
-		QCOMPARE(ts.a, QByteArray(""));
-		QCOMPARE(ts.s, QString(""));
-		QCOMPARE(ts.f, 0.0f);
-		QVERIFY(std::isnan(ts.d));
+		sql >> tt.id >> tt.x16 >> tt.x32 >> tt.x64 >> tt.t >> tt.a >> tt.s >> tt.f >> tt.d;
+		QCOMPARE(tt.id,  (quint32)2);
+		QCOMPARE(tt.x16, (quint16)5);
+		QCOMPARE(tt.x64, (quint64)7);
+		QCOMPARE(tt.t, QDateTime(QDate(2017, 1, 12), QTime(11, 17, 24, 253), Qt::UTC));
+		QCOMPARE(tt.a, QByteArray(""));
+		QCOMPARE(tt.s, QString(""));
+		QCOMPARE(tt.f, 0.0f);
+		QVERIFY(std::isnan(tt.d));
 		// no further lines
 		QVERIFY(!sql.next());
 		// leave talbe empty
@@ -193,20 +193,19 @@ private slots:
 	void select_prepared_insert_test()
 	{
 		PSqlConn;
-		StructTestTypes ts;
 
 		QVERIFY(sql.exec("SELECT id, x16, x32, x64, t, a, s, r, d FROM cflib_db_test"));
 
 		QVERIFY(sql.next());
 		QVERIFY(!sql.isNull());
-		sql >> ts.id >> ts.x16 >> ts.x32 >> ts.x64;
-		QCOMPARE(ts.id,  (quint32)3);
-		QCOMPARE(ts.x16, (quint16)45);
-		QCOMPARE(ts.x32, (quint32)67);
-		QCOMPARE(ts.x64, (quint64)89);
+		sql >> tt.id >> tt.x16 >> tt.x32 >> tt.x64;
+		QCOMPARE(tt.id,  (quint32)3);
+		QCOMPARE(tt.x16, (quint16)45);
+		QCOMPARE(tt.x32, (quint32)67);
+		QCOMPARE(tt.x64, (quint64)89);
 		QVERIFY(!sql.isNull());
-		sql >> ts.t;
-		QCOMPARE(ts.t, QDateTime(QDate(2016, 2, 27), QTime(10, 47, 34, 123), Qt::UTC));
+		sql >> tt.t;
+		QCOMPARE(tt.t, QDateTime(QDate(2016, 2, 27), QTime(10, 47, 34, 123), Qt::UTC));
 		QVERIFY(!sql.lastFieldIsNull());
 	}
 
@@ -214,7 +213,6 @@ private slots:
 	void select_NULLs_test()
 	{
 		PSqlConn;
-		StructTestTypes ts;
 
 		QVERIFY(sql.exec("SELECT id, x16, x32, x64, t, a, s, r, d FROM cflib_db_test"));
 		QVERIFY(sql.next());
@@ -245,8 +243,8 @@ private slots:
 		QVERIFY(sql.next());
 		QVERIFY(!sql.isNull(1));
 		QVERIFY( sql.isNull(2));
-		sql >> ts.id >> sx16;
-		QCOMPARE(ts.id,  (quint32)4);
+		sql >> tt.id >> sx16;
+		QCOMPARE(tt.id,  (quint32)4);
 		QCOMPARE(sx16, (qint16)-45);
 		QVERIFY(sql.isNull());
 		sql >> sx32;
@@ -281,21 +279,20 @@ private slots:
 	void select_special_symbols_test()
 	{
 		PSqlConn;
-		StructTestTypes ts;
 
 		QVERIFY(sql.exec("SELECT id, x16, x32, x64, t, a, s, r, d FROM cflib_db_test"));
 
 		QVERIFY(sql.next());
-		sql >> ts.id >> ts.x16 >> ts.x32 >> ts.x64 >> ts.t >> ts.a >> ts.s >> ts.f >> ts.d;
-		QCOMPARE(ts.id,  (quint32)1);
-		QCOMPARE(ts.x16, (quint16)2);
-		QCOMPARE(ts.x32, (quint32)3);
-		QCOMPARE(ts.x64, (quint64)4);
-		QCOMPARE(ts.t, QDateTime(QDate(2017, 2, 27), QTime(14, 47, 34, 123), Qt::UTC));
-		QCOMPARE(ts.a, QByteArray("ÖÄÜ"));
-		QCOMPARE(ts.s, QString::fromUtf8("ÖÄÜ"));
-		QVERIFY(qFuzzyCompare(ts.f, 1.23f));
-		QVERIFY(qFuzzyCompare(ts.d, 3.45));
+		sql >> tt.id >> tt.x16 >> tt.x32 >> tt.x64 >> tt.t >> tt.a >> tt.s >> tt.f >> tt.d;
+		QCOMPARE(tt.id,  (quint32)1);
+		QCOMPARE(tt.x16, (quint16)2);
+		QCOMPARE(tt.x32, (quint32)3);
+		QCOMPARE(tt.x64, (quint64)4);
+		QCOMPARE(tt.t, QDateTime(QDate(2017, 2, 27), QTime(14, 47, 34, 123), Qt::UTC));
+		QCOMPARE(tt.a, QByteArray("ÖÄÜ"));
+		QCOMPARE(tt.s, QString::fromUtf8("ÖÄÜ"));
+		QVERIFY(qFuzzyCompare(tt.f, 1.23f));
+		QVERIFY(qFuzzyCompare(tt.d, 3.45));
 		// no futher lines
 		QVERIFY(!sql.next());
 		// leave table empty
@@ -333,21 +330,20 @@ private slots:
 	void select_time_with_time_zone_test()
 	{
 		PSqlConn;
-		StructTestTypes ts;
 
 		QVERIFY(sql.exec("SELECT id, x16, x32, x64, a, s, r, d, t FROM cflib_db_test"));
 
 		QVERIFY(sql.next());
-		sql >> ts.id >> ts.x16 >> ts.x32 >> ts.x64 >> ts.a >> ts.s >> ts.f >> ts.d >> ts.t;
-		QCOMPARE(ts.id,  (quint32)1);
-		QCOMPARE(ts.x16, (quint16)2);
-		QCOMPARE(ts.x32, (quint32)3);
-		QCOMPARE(ts.x64, (quint64)4);
-		QCOMPARE(ts.t, QDateTime(QDate(2017, 2, 27), QTime(14, 47, 34, 123), Qt::UTC)); // or 15:47:27 without UTC
-		QCOMPARE(ts.a, QByteArray("漢字"));
-		QCOMPARE(ts.s, QString::fromUtf8("Hello World!"));
-		QVERIFY(qFuzzyCompare(ts.f, 1.23f));
-		QVERIFY(qFuzzyCompare(ts.d, 3.45));
+		sql >> tt.id >> tt.x16 >> tt.x32 >> tt.x64 >> tt.a >> tt.s >> tt.f >> tt.d >> tt.t;
+		QCOMPARE(tt.id,  (quint32)1);
+		QCOMPARE(tt.x16, (quint16)2);
+		QCOMPARE(tt.x32, (quint32)3);
+		QCOMPARE(tt.x64, (quint64)4);
+		QCOMPARE(tt.t, QDateTime(QDate(2017, 2, 27), QTime(14, 47, 34, 123), Qt::UTC)); // or 15:47:27 without UTC
+		QCOMPARE(tt.a, QByteArray("漢字"));
+		QCOMPARE(tt.s, QString::fromUtf8("Hello World!"));
+		QVERIFY(qFuzzyCompare(tt.f, 1.23f));
+		QVERIFY(qFuzzyCompare(tt.d, 3.45));
 		// no futher lines
 		QVERIFY(!sql.next());
 	}
@@ -371,21 +367,20 @@ private slots:
 	void select_updated_table_test()
 	{
 		PSqlConn;
-		StructTestTypes ts;
 
 		QVERIFY(sql.exec("SELECT id, x16, x32, x64, a, s, r, d, t FROM cflib_db_test"));
 
 		QVERIFY(sql.next());
-		sql >> ts.id >> ts.x16 >> ts.x32 >> ts.x64 >> ts.a >> ts.s >> ts.f >> ts.d >> ts.t;
-		QCOMPARE(ts.id,  (quint32)2);
-		QCOMPARE(ts.x16, (quint16)123);
-		QCOMPARE(ts.x32, (quint32)345);
-		QCOMPARE(ts.x64, (quint64)1234567);
-		QCOMPARE(ts.t, QDateTime(QDate(2017, 2, 27), QTime(14, 47, 34, 123), Qt::UTC)); // or 15:47:27 without UTC
-		QCOMPARE(ts.a, QByteArray("2017-02-27T14:47:34.123Z"));
-		QCOMPARE(ts.s, QString::fromUtf8("Hello again"));
-		QVERIFY(qFuzzyCompare(ts.f, 123.456f));
-		QVERIFY(qFuzzyCompare(ts.d, 12345.6789));
+		sql >> tt.id >> tt.x16 >> tt.x32 >> tt.x64 >> tt.a >> tt.s >> tt.f >> tt.d >> tt.t;
+		QCOMPARE(tt.id,  (quint32)2);
+		QCOMPARE(tt.x16, (quint16)123);
+		QCOMPARE(tt.x32, (quint32)345);
+		QCOMPARE(tt.x64, (quint64)1234567);
+		QCOMPARE(tt.t, QDateTime(QDate(2017, 2, 27), QTime(14, 47, 34, 123), Qt::UTC)); // or 15:47:27 without UTC
+		QCOMPARE(tt.a, QByteArray("2017-02-27T14:47:34.123Z"));
+		QCOMPARE(tt.s, QString::fromUtf8("Hello again"));
+		QVERIFY(qFuzzyCompare(tt.f, 123.456f));
+		QVERIFY(qFuzzyCompare(tt.d, 12345.6789));
 		// no futher lines
 		QVERIFY(!sql.next());
 	}
@@ -395,18 +390,23 @@ private slots:
 	void select_error_test()
 	{
 		PSqlConn;
-		StructTestTypes ts;
+		QVERIFY(sql.lastFieldIsNull());
 
 		QVERIFY(sql.exec("SELECT id, x16, x32, x64, a, s, r, d, t FROM cflib_db_test"));
+		QVERIFY(sql.lastFieldIsNull());
 
 		QVERIFY(sql.next());
+		QVERIFY(sql.lastFieldIsNull());
 
-		sql >> ts.x16;
+		sql >> tt.x16;
 		QVERIFY(sql.lastFieldIsNull());
+
+		sql >> tt.t;
+		QVERIFY(tt.t.isNull());
+		QVERIFY(sql.lastFieldIsNull());
+
 		QVERIFY(!sql.next());
-		sql >> ts.t;
 		QVERIFY(sql.lastFieldIsNull());
-		QVERIFY(ts.t.isNull());
 	}
 
 	void transaction_test()
@@ -443,6 +443,7 @@ private slots:
 		}
 		QVERIFY(!sql.commit());
 	}
+
 };
 #include "psql_test.moc"
 ADD_TEST(PSql_test)
