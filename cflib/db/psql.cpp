@@ -430,7 +430,6 @@ PSql & PSql::operator<<(float val)
 	uchar * dest = setParamType(PSql_float, sizeof(float), false);
 	if (!dest) return *this;
 	qToBigEndian<quint32>(FloatInt{val}.f, dest);
-	++prepareParamCount_;
 	return *this;
 }
 
@@ -439,7 +438,6 @@ PSql & PSql::operator<<(double val)
 	uchar * dest = setParamType(PSql_double, sizeof(double), false);
 	if (!dest) return *this;
 	qToBigEndian<quint64>(DoubleInt{val}.d, dest);
-	++prepareParamCount_;
 	return *this;
 }
 
@@ -451,7 +449,6 @@ PSql & PSql::operator<<(const QDateTime & val)
 		qint64 rawTime = (val.toMSecsSinceEpoch() + MsecDelta) * 1000;
 		qToBigEndian<qint64>(rawTime, dest);
 	}
-	++prepareParamCount_;
 	return *this;
 }
 
@@ -462,7 +459,6 @@ PSql & PSql::operator<<(const QByteArray & val)
 	if (!val.isNull()) {
 		memcpy(dest, val.constData(), val.size());
 	}
-	++prepareParamCount_;
 	return *this;
 }
 
@@ -474,7 +470,6 @@ PSql & PSql::operator<<(const QString & val)
 PSql & PSql::operator<<(Null)
 {
 	if (!setParamType(PSql_null, 0, true)) return *this;
-	++prepareParamCount_;
 	return *this;
 }
 
@@ -564,7 +559,6 @@ void PSql::setInt16(qint16 val)
 	uchar * dest = setParamType(PSql_int16, sizeof(qint16), false);
 	if (!dest) return;
 	qToBigEndian<qint16>(val, dest);
-	++prepareParamCount_;
 }
 
 void PSql::setInt32(qint32 val)
@@ -572,7 +566,6 @@ void PSql::setInt32(qint32 val)
 	uchar * dest = setParamType(PSql_int32, sizeof(qint32), false);
 	if (!dest) return;
 	qToBigEndian<qint32>(val, dest);
-	++prepareParamCount_;
 }
 
 void PSql::setInt64(qint64 val)
@@ -580,7 +573,6 @@ void PSql::setInt64(qint64 val)
 	uchar * dest = setParamType(PSql_int64, sizeof(qint64), false);
 	if (!dest) return;
 	qToBigEndian<qint64>(val, dest);
-	++prepareParamCount_;
 }
 
 void PSql::getInt16(qint16 & val)
@@ -726,6 +718,8 @@ uchar * PSql::setParamType(int fieldType, int fieldSize, bool isNull)
 	prepareParamLengths_[prepareParamCount_] = fieldSize;
 
 	prepareParamIsNull_[prepareParamCount_] = isNull;
+
+	++prepareParamCount_;
 
 	const int oldSize = prepareData_.size();
 	prepareData_.resize(oldSize + fieldSize);
