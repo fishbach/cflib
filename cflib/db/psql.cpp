@@ -212,7 +212,7 @@ PSql::PSql(const util::LogFileInfo & lfi, int line) :
 	resultFieldCount_(-1),
 	resultFieldTypes_{},
 	currentFieldId_(-1),
-	lastFieldIsNull_(false),
+	lastFieldIsNull_(true),
 	isPrepared_(false),
 	prepareParamCount_(-1),
 	prepareParamTypes_{},
@@ -639,6 +639,8 @@ void PSql::clearResult()
 
 bool PSql::checkField(int fieldType[], int typeCount, int fieldSize)
 {
+	lastFieldIsNull_ = true;
+
 	if (!res_) {
 		cflib::util::Log(lfi_, line_, LogCat::Warn | LogCat::Db)(
 			"no result available");
@@ -675,10 +677,7 @@ bool PSql::checkField(int fieldType[], int typeCount, int fieldSize)
 		}
 	}
 
-	if (PQgetisnull((PGresult *)res_, 0, currentFieldId_) == 1) {
-		lastFieldIsNull_ = true;
-		return true;
-	}
+	if (PQgetisnull((PGresult *)res_, 0, currentFieldId_) == 1) return true;
 
 	if (fieldSize > 0) {
 		const int len = PQgetlength((PGresult *)res_, 0, currentFieldId_);
