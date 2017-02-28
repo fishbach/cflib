@@ -24,8 +24,6 @@
 
 namespace cflib { namespace db {
 
-namespace { class ThreadData; }
-
 class PSql
 {
 public:
@@ -103,7 +101,10 @@ private:
 	uchar * setParamType(int fieldType, int fieldSize, bool isNull);
 
 private:
+	class ThreadData;
+	static QThreadStorage<ThreadData *> threadData_;
 	ThreadData & td_;
+
 	const cflib::util::LogFileInfo & lfi_;
 	const int line_;
 	const bool nestedTransaction_;

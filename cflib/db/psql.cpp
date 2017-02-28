@@ -64,7 +64,9 @@ union DoubleInt {
 	quint64 i;
 };
 
-class ThreadData : public QObject
+}
+
+class PSql::ThreadData : public QObject
 {
 	Q_OBJECT
 public:
@@ -133,15 +135,8 @@ private slots:
 	}
 
 };
-QThreadStorage<ThreadData *> threadData;
 
-inline ThreadData & getThreadData()
-{
-	if (!threadData.hasLocalData()) threadData.setLocalData(new ThreadData());
-	return *(threadData.localData());
-}
-
-}
+QThreadStorage<PSql::ThreadData *> PSql::threadData_;
 
 const int PSql::MAX_FIELD_COUNT;
 
@@ -201,11 +196,12 @@ bool PSql::setParameter(const QString & connectionParameter)
 
 void PSql::closeConnection()
 {
-	threadData.setLocalData(0);
+	threadData_.setLocalData(0);
 }
 
 PSql::PSql(const util::LogFileInfo & lfi, int line) :
-	td_(getThreadData()),
+	td_(threadData_.hasLocalData() ? *(threadData_.localData()) : (
+		threadData_.setLocalData(new ThreadData()), *(threadData_.localData()))),
 	lfi_(lfi), line_(line),
 	nestedTransaction_(td_.transactionActive),
 	localTransactionActive_(false),
@@ -484,7 +480,8 @@ PSql & PSql::operator<<(Null)
 PSql & PSql::operator>>(float & val)
 {
 	val = 0.0;
-	if (!checkField((int[]){ PSql_float }, 1, sizeof(float))) return *this;
+	int types[] = { PSql_float };
+	if (!checkField(types, 1, sizeof(float))) return *this;
 	if (!lastFieldIsNull_) {
 		FloatInt fi;
 		fi.i = qFromBigEndian<quint32>((const uchar *)PQgetvalue((PGresult *)res_, 0, currentFieldId_));
@@ -497,7 +494,8 @@ PSql & PSql::operator>>(float & val)
 PSql & PSql::operator>>(double & val)
 {
 	val = 0.0;
-	if (!checkField((int[]){ PSql_double }, 1, sizeof(double))) return *this;
+	int types[] = { PSql_double };
+	if (!checkField(types, 1, sizeof(double))) return *this;
 	if (!lastFieldIsNull_) {
 		DoubleInt di;
 		di.i = qFromBigEndian<quint64>((const uchar *)PQgetvalue((PGresult *)res_, 0, currentFieldId_));
@@ -510,7 +508,8 @@ PSql & PSql::operator>>(double & val)
 PSql & PSql::operator>>(QDateTime & val)
 {
 	val = QDateTime();
-	if (!checkField((int[]){ PSql_timestampWithTimeZone, PSql_timestampWithoutTimeZone }, 2, sizeof(qint64))) return *this;
+	int types[] = { PSql_timestampWithTimeZone, PSql_timestampWithoutTimeZone };
+	if (!checkField(types, 2, sizeof(qint64))) return *this;
 	if (!lastFieldIsNull_) {
 		qint64 rawTime = qFromBigEndian<qint64>((const uchar *)PQgetvalue((PGresult *)res_, 0, currentFieldId_));
 		val = QDateTime::fromMSecsSinceEpoch(rawTime / 1000 - MsecDelta, Qt::UTC);
@@ -522,7 +521,8 @@ PSql & PSql::operator>>(QDateTime & val)
 PSql & PSql::operator>>(QByteArray & val)
 {
 	val = QByteArray();
-	if (!checkField((int[]){ PSql_binary }, 1, 0)) return *this;
+	int types[] = { PSql_binary };
+	if (!checkField(types, 1, 0)) return *this;
 	if (!lastFieldIsNull_) {
 		val = QByteArray(PQgetvalue((PGresult *)res_, 0, currentFieldId_), PQgetlength((PGresult *)res_, 0, currentFieldId_));
 	}
@@ -533,7 +533,8 @@ PSql & PSql::operator>>(QByteArray & val)
 PSql & PSql::operator>>(QString & val)
 {
 	val = QString();
-	if (!checkField((int[]){ PSql_string }, 1, 0)) return *this;
+	int types[] = { PSql_string };
+	if (!checkField(types, 1, 0)) return *this;
 	if (!lastFieldIsNull_) {
 		val = QString::fromUtf8(PQgetvalue((PGresult *)res_, 0, currentFieldId_), PQgetlength((PGresult *)res_, 0, currentFieldId_));
 	}
@@ -584,7 +585,8 @@ void PSql::setInt64(qint64 val)
 void PSql::getInt16(qint16 & val)
 {
 	val = 0;
-	if (!checkField((int[]){ PSql_int16 }, 1, sizeof(qint16))) return;
+	int types[] = { PSql_int16 };
+	if (!checkField(types, 1, sizeof(qint16))) return;
 	if (!lastFieldIsNull_) {
 		val = qFromBigEndian<qint16>((const uchar *)PQgetvalue((PGresult *)res_, 0, currentFieldId_));
 	}
@@ -594,7 +596,8 @@ void PSql::getInt16(qint16 & val)
 void PSql::getInt32(qint32 & val)
 {
 	val = 0;
-	if (!checkField((int[]){ PSql_int32 }, 1, sizeof(qint32))) return;
+	int types[] = { PSql_int32 };
+	if (!checkField(types, 1, sizeof(qint32))) return;
 	if (!lastFieldIsNull_) {
 		val = qFromBigEndian<qint32>((const uchar *)PQgetvalue((PGresult *)res_, 0, currentFieldId_));
 	}
@@ -604,7 +607,8 @@ void PSql::getInt32(qint32 & val)
 void PSql::getInt64(qint64 & val)
 {
 	val = 0;
-	if (!checkField((int[]){ PSql_int64 }, 1, sizeof(qint64))) return;
+	int types[] = { PSql_int64 };
+	if (!checkField(types, 1, sizeof(qint64))) return;
 	if (!lastFieldIsNull_) {
 		val = qFromBigEndian<qint64>((const uchar *)PQgetvalue((PGresult *)res_, 0, currentFieldId_));
 	}

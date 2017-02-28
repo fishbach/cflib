@@ -19,6 +19,8 @@
 #include <cflib/db/psql.h>
 #include <cflib/util/test.h>
 
+#include <cmath>
+
 using namespace cflib::db;
 
 USE_LOG(LogCat::Db)
@@ -54,7 +56,7 @@ private slots:
 	void cleanupTestCase()
 	{
 		PSqlConn;
-//		QVERIFY(sql.exec("DROP TABLE cflib_db_test"));
+		QVERIFY(sql.exec("DROP TABLE cflib_db_test"));
 	}
 
 	void simple_test()
@@ -144,7 +146,7 @@ private slots:
 		QCOMPARE(a, QByteArray(""));
 		QCOMPARE(s, QString(""));
 		QCOMPARE(f, 0.0f);
-		QVERIFY(isnan(d));
+		QVERIFY(std::isnan(d));
 
 		QVERIFY(sql.next());
 		QVERIFY(!sql.isNull());
