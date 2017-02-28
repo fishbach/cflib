@@ -89,6 +89,7 @@ public:
 		if (PQstatus(conn) != CONNECTION_OK) {
 			logWarn("cannot connect to database (error: %1)", PQerrorMessage(conn));
 			PQfinish(conn);
+			conn = 0;
 			return;
 		}
 
