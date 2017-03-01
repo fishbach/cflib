@@ -30,8 +30,3 @@ postgresql: SOURCES += \
 
 useLibs(cflib_db cflib_util)
 test()
-
-postgresql {
-	macx: LIBS += -L/usr/local/lib
-	LIBS += -lpq
-}

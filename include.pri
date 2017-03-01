@@ -189,6 +189,12 @@ defineTest(app) {
 		export(LIBS)
 	}
 
+	postgresql {
+		macx: LIBS += -L/usr/local/lib
+		LIBS += -lpq
+		export(LIBS)
+	}
+
 	setBuildPaths()
 }
 
