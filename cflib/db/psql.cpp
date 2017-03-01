@@ -202,10 +202,10 @@ void PSql::closeConnection()
 	threadData_.setLocalData(0);
 }
 
-PSql::PSql(const util::LogFileInfo & lfi, int line) :
+PSql::PSql(const util::LogFileInfo * lfi, int line) :
 	td_(threadData_.hasLocalData() ? *(threadData_.localData()) : (
 		threadData_.setLocalData(new ThreadData()), *(threadData_.localData()))),
-	lfi_(lfi), line_(line),
+	lfi_(lfi ? *lfi : ::cflib_util_logFileInfo), line_(line),
 	instanceName_("i" + QByteArray::number(++td_.instanceCount_)),
 	nestedTransaction_(false),
 	localTransactionActive_(false),

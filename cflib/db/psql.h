@@ -20,13 +20,13 @@
 
 #include <cflib/util/log.h>
 
-#define PSqlConn  cflib::db::PSql sql (::cflib_util_logFileInfo, __LINE__)
-#define PSqlConn2 cflib::db::PSql sql2(::cflib_util_logFileInfo, __LINE__)
-#define PSqlConn3 cflib::db::PSql sql3(::cflib_util_logFileInfo, __LINE__)
-#define PSqlConn4 cflib::db::PSql sql4(::cflib_util_logFileInfo, __LINE__)
-#define PSqlConn5 cflib::db::PSql sql5(::cflib_util_logFileInfo, __LINE__)
+#define PSqlConn  cflib::db::PSql sql(&::cflib_util_logFileInfo, __LINE__)
 
 namespace cflib { namespace db {
+
+// Attention:
+// PSql uses one DB connection per thread.
+// Therefore it is not possible to have two instances of PSql in one thread having both simultaneous acivate queries!
 
 class PSql
 {
@@ -40,7 +40,7 @@ public:
 	static void closeConnection();
 
 public:
-	PSql(const cflib::util::LogFileInfo & lfi, int line);
+	PSql(const cflib::util::LogFileInfo * lfi = 0, int line = 0);
 	~PSql();
 
 	void begin();

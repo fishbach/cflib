@@ -509,7 +509,7 @@ private slots:
 			")"
 		);
 
-		PSqlConn2;
+		PSql sql2;
 
 		sql2.prepare("SELECT id FROM cflib_db_test WHERE id = $1");
 
@@ -530,6 +530,36 @@ private slots:
 		sql2 >> tt.id;
 		QCOMPARE(tt.id, (quint32)7);
 		QVERIFY(!sql2.next());
+	}
+
+	void cascading_multi_prepare_test()
+	{
+		PSqlConn;
+
+		QVERIFY(sql.exec("SELECT COUNT(*) FROM cflib_db_test"));
+		QVERIFY(sql.next());
+		sql >> tt.x64;
+		QVERIFY(tt.x64 > (quint32)1);
+
+		sql.prepare("SELECT id FROM cflib_db_test ORDER BY id");
+		QVERIFY(sql.exec());
+
+		PSql sql2;
+		sql2.prepare("SELECT x32 FROM cflib_db_test WHERE id = $1");
+
+		QVERIFY(sql.next());
+		sql >> tt.id;
+		QCOMPARE(tt.id, (quint32)2);
+
+		sql2 << tt.id;
+		QVERIFY(sql2.exec());
+		QVERIFY(sql2.next());
+		sql2 >> tt.x32;
+		QCOMPARE(tt.x32, (quint32)345);
+		QVERIFY(!sql2.next());
+
+		// cascading queries do not work
+		QVERIFY(!sql.next());
 	}
 
 };
