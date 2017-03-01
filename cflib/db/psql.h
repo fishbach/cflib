@@ -46,7 +46,7 @@ public:
 	bool exec(const QString & query);
 
 	void prepare(const QByteArray & query);
-	bool exec();
+	bool exec(uint keepFields = 0);
 
 	bool next();
 

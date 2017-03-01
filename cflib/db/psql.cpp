@@ -343,7 +343,7 @@ void PSql::prepare(const QByteArray & query)
 	prepareData_.clear();
 }
 
-bool PSql::exec()
+bool PSql::exec(uint keepFields)
 {
 	if (lastQuery_.isNull()) {
 		cflib::util::Log(lfi_, line_, LogCat::Warn | LogCat::Db)(
@@ -381,8 +381,10 @@ bool PSql::exec()
 		return false;
 	}
 
-	prepareParamCount_ = 0;
-	prepareData_.clear();
+	prepareParamCount_ = keepFields;
+	int size = 0;
+	for (int i = 0 ; i < prepareParamCount_ ; ++i) size += prepareParamLengths_[i];
+	prepareData_.resize(size);
 
 	return initResult();
 }

@@ -189,7 +189,6 @@ private slots:
 		QVERIFY(sql.exec());
 	}
 
-
 	void select_prepared_insert_test()
 	{
 		PSqlConn;
@@ -265,7 +264,7 @@ private slots:
 	{
 		PSqlConn;
 
-		QVERIFY(sql.exec(
+		QVERIFY(sql.exec(QString::fromUtf8(
 			"INSERT INTO "
 				"cflib_db_test "
 			"("
@@ -273,7 +272,7 @@ private slots:
 			") VALUES ("
 				"1.0, 2.0, 3.0, 4.0, '2017-02-27T14:47:34.123Z', 'ÖÄÜ', 'ÖÄÜ', 1.23, 3.45"
 			")"
-		));
+		)));
 	}
 
 	void select_special_symbols_test()
@@ -385,8 +384,6 @@ private slots:
 		QVERIFY(!sql.next());
 	}
 
-	// -----------------------------------------------------------
-
 	void select_error_test()
 	{
 		PSqlConn;
@@ -442,6 +439,39 @@ private slots:
 			QVERIFY(!sql.commit());
 		}
 		QVERIFY(!sql.commit());
+	}
+
+	void keepFields_test()
+	{
+		PSqlConn;
+
+		sql.prepare(
+			"INSERT INTO "
+				"cflib_db_test "
+			"("
+				"id, x32"
+			") VALUES ("
+				"$2, $1"
+			")"
+		);
+		sql << 123 << 5;
+		QVERIFY(sql.exec(1));
+		sql << 6;
+		QVERIFY(sql.exec());
+
+		sql.prepare("SELECT x32 FROM cflib_db_test WHERE id = $1");
+
+		sql << 5;
+		QVERIFY(sql.exec());
+		QVERIFY(sql.next());
+		sql >> tt.x32;
+		QCOMPARE(tt.x32, (quint32)123);
+
+		sql << 6;
+		QVERIFY(sql.exec());
+		QVERIFY(sql.next());
+		sql >> tt.x32;
+		QCOMPARE(tt.x32, (quint32)123);
 	}
 
 };
