@@ -54,6 +54,7 @@ public:
 
 	bool next();
 
+	inline PSql & operator<<(bool    val) { setInt16(        val); return *this; }
 	inline PSql & operator<<(qint8   val) { setInt16(        val); return *this; }
 	inline PSql & operator<<(quint8  val) { setInt16((qint8 )val); return *this; }
 	inline PSql & operator<<(qint16  val) { setInt16(        val); return *this; }
@@ -71,8 +72,9 @@ public:
 
 	PSql & operator<<(Null);
 
-	inline PSql & operator>>(qint8   & val) { qint16  val16; getInt16(          val16); val = val16; return *this; }
-	inline PSql & operator>>(quint8  & val) { quint16 val16; getInt16((qint16 &)val16); val = val16; return *this; }
+	inline PSql & operator>>(bool    & val) { qint16 val16; getInt16(val16); val = val16; return *this; }
+	inline PSql & operator>>(qint8   & val) { qint16 val16; getInt16(val16); val = val16; return *this; }
+	inline PSql & operator>>(quint8  & val) { qint16 val16; getInt16(val16); val = val16; return *this; }
 	inline PSql & operator>>(qint16  & val) { getInt16(          val); return *this; }
 	inline PSql & operator>>(quint16 & val) { getInt16((qint16 &)val); return *this; }
 	inline PSql & operator>>(qint32  & val) { getInt32(          val); return *this; }
