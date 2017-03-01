@@ -75,13 +75,15 @@ public:
 	bool transactionActive;
 	bool doRollback;
 	util::EVTimer * evTimer_;
+	uint instanceCount_;
 
 public:
 	ThreadData() :
 		connId(connIdCounter.fetchAndAddRelaxed(1)),
 		transactionActive(false),
 		doRollback(false),
-		evTimer_(0)
+		evTimer_(0),
+		instanceCount_(0)
 	{
 		logDebug("new DB connection: %1", connId);
 
@@ -204,7 +206,8 @@ PSql::PSql(const util::LogFileInfo & lfi, int line) :
 	td_(threadData_.hasLocalData() ? *(threadData_.localData()) : (
 		threadData_.setLocalData(new ThreadData()), *(threadData_.localData()))),
 	lfi_(lfi), line_(line),
-	nestedTransaction_(td_.transactionActive),
+	instanceName_("i" + QByteArray::number(++td_.instanceCount_)),
+	nestedTransaction_(false),
 	localTransactionActive_(false),
 	isFirstResult_(true),
 	res_(0),
@@ -213,6 +216,7 @@ PSql::PSql(const util::LogFileInfo & lfi, int line) :
 	resultFieldTypes_{},
 	currentFieldId_(-1),
 	lastFieldIsNull_(true),
+	prepareUsed_(false),
 	isPrepared_(false),
 	prepareParamCount_(-1),
 	prepareParamTypes_{},
@@ -226,6 +230,8 @@ PSql::~PSql()
 {
 	clearResult();
 	if (localTransactionActive_) rollback();
+	--td_.instanceCount_;
+	removePreparedStatement();
 }
 
 void PSql::begin()
@@ -237,6 +243,7 @@ void PSql::begin()
 	}
 	localTransactionActive_ = true;
 
+	nestedTransaction_ = td_.transactionActive;
 	if (nestedTransaction_) {
 		cflib::util::Log(lfi_, line_, LogCat::Debug | LogCat::Db)("DB sub-transaction start");
 		return;
@@ -358,7 +365,9 @@ bool PSql::exec(uint keepFields)
 	if (!isPrepared_) {
 		isPrepared_ = true;
 
-		PGresult * res = PQprepare(td_.conn, "", lastQuery_.constData(), prepareParamCount_, prepareParamTypes_);
+		removePreparedStatement();
+		PGresult * res = PQprepare(td_.conn, instanceName_.constData(),
+			lastQuery_.constData(), prepareParamCount_, prepareParamTypes_);
 		if (PQresultStatus(res) != PGRES_COMMAND_OK) {
 			cflib::util::Log(lfi_, line_, LogCat::Debug | LogCat::Db)("query: %1", lastQuery_);
 			cflib::util::Log(lfi_, line_, LogCat::Warn  | LogCat::Db)("cannot prepare query: %1", PQerrorMessage(td_.conn));
@@ -366,6 +375,7 @@ bool PSql::exec(uint keepFields)
 			return false;
 		}
 		PQclear(res);
+		prepareUsed_ = true;
 	}
 
 	const char * prepareParamValues[MAX_FIELD_COUNT];
@@ -375,7 +385,9 @@ bool PSql::exec(uint keepFields)
 		pos += prepareParamLengths_[i];
 	}
 
-	if (!PQsendQueryPrepared(td_.conn, "", prepareParamCount_, prepareParamValues, prepareParamLengths_, ParamFormats.constData(), 1)) {
+	if (!PQsendQueryPrepared(td_.conn, instanceName_.constData(),
+		prepareParamCount_, prepareParamValues, prepareParamLengths_, ParamFormats.constData(), 1))
+	{
 		cflib::util::Log(lfi_, line_, LogCat::Debug | LogCat::Db)("query: %1", lastQuery_);
 		cflib::util::Log(lfi_, line_, LogCat::Warn  | LogCat::Db)("cannot send query: %1", PQerrorMessage(td_.conn));
 		return false;
@@ -625,7 +637,7 @@ bool PSql::initResult()
 
 	if (status != PGRES_COMMAND_OK && status != PGRES_TUPLES_OK) {
 		cflib::util::Log(lfi_, line_, LogCat::Debug | LogCat::Db)("query: %1", lastQuery_);
-		cflib::util::Log(lfi_, line_, LogCat::Warn  | LogCat::Db)("cannot send query: %1", PQerrorMessage(td_.conn));
+		cflib::util::Log(lfi_, line_, LogCat::Warn  | LogCat::Db)("cannot get result: %1", PQerrorMessage(td_.conn));
 		return false;
 	}
 	return true;
@@ -721,6 +733,15 @@ uchar * PSql::setParamType(int fieldType, int fieldSize, bool isNull)
 	const int oldSize = prepareData_.size();
 	prepareData_.resize(oldSize + fieldSize);
 	return (uchar *)prepareData_.constData() + oldSize;
+}
+
+void PSql::removePreparedStatement()
+{
+	if (!prepareUsed_) return;
+
+	QByteArray query = "DEALLOCATE ";
+	query += instanceName_;
+	PQclear(PQexec(td_.conn, query.constData()));
 }
 
 }}	// namespace

@@ -20,7 +20,11 @@
 
 #include <cflib/util/log.h>
 
-#define PSqlConn cflib::db::PSql sql(::cflib_util_logFileInfo, __LINE__)
+#define PSqlConn  cflib::db::PSql sql (::cflib_util_logFileInfo, __LINE__)
+#define PSqlConn2 cflib::db::PSql sql2(::cflib_util_logFileInfo, __LINE__)
+#define PSqlConn3 cflib::db::PSql sql3(::cflib_util_logFileInfo, __LINE__)
+#define PSqlConn4 cflib::db::PSql sql4(::cflib_util_logFileInfo, __LINE__)
+#define PSqlConn5 cflib::db::PSql sql5(::cflib_util_logFileInfo, __LINE__)
 
 namespace cflib { namespace db {
 
@@ -99,6 +103,7 @@ private:
 	void clearResult();
 	bool checkField(int fieldType[], int typeCount, int fieldSize);
 	uchar * setParamType(int fieldType, int fieldSize, bool isNull);
+	void removePreparedStatement();
 
 private:
 	class ThreadData;
@@ -107,7 +112,8 @@ private:
 
 	const cflib::util::LogFileInfo & lfi_;
 	const int line_;
-	const bool nestedTransaction_;
+	const QByteArray instanceName_;
+	bool nestedTransaction_;
 	bool localTransactionActive_;
 	QElapsedTimer watch_;
 
@@ -120,8 +126,8 @@ private:
 	QByteArray lastQuery_;
 	bool lastFieldIsNull_;
 
+	bool prepareUsed_;
 	bool isPrepared_;
-
 	int prepareParamCount_;
 	uint prepareParamTypes_[MAX_FIELD_COUNT];
 	int prepareParamLengths_[MAX_FIELD_COUNT];

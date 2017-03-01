@@ -75,6 +75,8 @@ private slots:
 		QVERIFY(sql.exec("DROP TABLE cflib_db_test"));
 	}
 
+	// -----------------------------------------------------------
+
 	void simple_test()
 	{
 		PSqlConn;
@@ -102,7 +104,7 @@ private slots:
 			"("
 				"id, x16, x32, x64, t, a, s, r, d"
 			") VALUES ("
-				"1, 2, 3, 4, '2017-02-27T14:47:34.123Z', E'\\x41\\x30', E'ABC\\xC3\\xB6\\xC3\\x9F', 1.23, 3.45"
+				"1, 2, -1, 4, '2017-02-27T14:47:34.123Z', E'\\x41\\x30', E'ABC\\xC3\\xB6\\xC3\\x9F', 1.23, 3.45"
 			")"
 		));
 	}
@@ -117,7 +119,7 @@ private slots:
 		sql >> tt.id >> tt.x16 >> tt.x32 >> tt.x64 >> tt.t >> tt.a >> tt.s >> tt.f >> tt.d;
 		QCOMPARE(tt.id,  (quint32)1);
 		QCOMPARE(tt.x16, (quint16)2);
-		QCOMPARE(tt.x32, (quint32)3);
+		QCOMPARE(tt.x32, (quint32)0xFFFFFFFF);
 		QCOMPARE(tt.x64, (quint64)4);
 		QCOMPARE(tt.t, QDateTime(QDate(2017, 2, 27), QTime(14, 47, 34, 123), Qt::UTC));
 		QCOMPARE(tt.a, QByteArray("A0"));
@@ -126,7 +128,12 @@ private slots:
 		QVERIFY(qFuzzyCompare(tt.d, 3.45));
 		// no futher lines
 		QVERIFY(!sql.next());
+	}
+
+	void clean_test_01()
+	{
 		// leave table empty
+		PSqlConn;
 		QVERIFY(sql.exec("DELETE FROM cflib_db_test WHERE id=1;"));
 	}
 
@@ -164,7 +171,12 @@ private slots:
 		QVERIFY(std::isnan(tt.d));
 		// no further lines
 		QVERIFY(!sql.next());
-		// leave talbe empty
+	}
+
+	void clean_test_02()
+	{
+		// leave table empty
+		PSqlConn;
 		QVERIFY(sql.exec("DELETE FROM cflib_db_test WHERE id=2;"));
 	}
 
@@ -183,7 +195,7 @@ private slots:
 				"$1, $2, $3, $4, $5"
 			")"
 		);
-		sql << 3 << 45 << 67 << 89 << QDateTime(QDate(2016, 2, 27), QTime(10, 47, 34, 123), Qt::UTC);
+		sql << 3 << (quint16)0xFFFA << 67 << 89 << QDateTime(QDate(2016, 2, 27), QTime(10, 47, 34, 123), Qt::UTC);
 		QVERIFY(sql.exec());
 		sql << 4 << (qint8)-45 << sql.null << (qint32)-89 << sql.null;
 		QVERIFY(sql.exec());
@@ -199,7 +211,7 @@ private slots:
 		QVERIFY(!sql.isNull());
 		sql >> tt.id >> tt.x16 >> tt.x32 >> tt.x64;
 		QCOMPARE(tt.id,  (quint32)3);
-		QCOMPARE(tt.x16, (quint16)45);
+		QCOMPARE(tt.x16, (quint16)0xFFFA);
 		QCOMPARE(tt.x32, (quint32)67);
 		QCOMPARE(tt.x64, (quint64)89);
 		QVERIFY(!sql.isNull());
@@ -208,6 +220,7 @@ private slots:
 		QVERIFY(!sql.lastFieldIsNull());
 	}
 
+	// -----------------------------------------------------------
 
 	void select_NULLs_test()
 	{
@@ -384,6 +397,8 @@ private slots:
 		QVERIFY(!sql.next());
 	}
 
+	// -----------------------------------------------------------
+
 	void select_error_test()
 	{
 		PSqlConn;
@@ -405,6 +420,8 @@ private slots:
 		QVERIFY(!sql.next());
 		QVERIFY(sql.lastFieldIsNull());
 	}
+
+	// -----------------------------------------------------------
 
 	void transaction_test()
 	{
@@ -441,6 +458,8 @@ private slots:
 		QVERIFY(!sql.commit());
 	}
 
+	// -----------------------------------------------------------
+
 	void keepFields_test()
 	{
 		PSqlConn;
@@ -472,6 +491,45 @@ private slots:
 		QVERIFY(sql.next());
 		sql >> tt.x32;
 		QCOMPARE(tt.x32, (quint32)123);
+	}
+
+	// -----------------------------------------------------------
+
+	void multi_prepare_test()
+	{
+		PSqlConn;
+
+		sql.prepare(
+			"INSERT INTO "
+				"cflib_db_test "
+			"("
+				"id"
+			") VALUES ("
+				"$1"
+			")"
+		);
+
+		PSqlConn2;
+
+		sql2.prepare("SELECT id FROM cflib_db_test WHERE id = $1");
+
+		sql << 7;
+		sql2 << 6;
+		QVERIFY(sql.exec());
+		QVERIFY(sql2.exec());
+		QVERIFY(sql2.next());
+		sql2 >> tt.id;
+		QCOMPARE(tt.id, (quint32)6);
+		QVERIFY(!sql2.next());
+
+		sql << 8;
+		sql2 << 7;
+		QVERIFY(sql.exec());
+		QVERIFY(sql2.exec());
+		QVERIFY(sql2.next());
+		sql2 >> tt.id;
+		QCOMPARE(tt.id, (quint32)7);
+		QVERIFY(!sql2.next());
 	}
 
 };
