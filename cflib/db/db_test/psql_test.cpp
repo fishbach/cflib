@@ -562,6 +562,46 @@ private slots:
 		QVERIFY(!sql.next());
 	}
 
+	void two_connections_test()
+	{
+		PSqlConn;
+
+		QVERIFY(sql.exec("SELECT COUNT(*) FROM cflib_db_test"));
+		QVERIFY(sql.next());
+		sql >> tt.x64;
+		QVERIFY(tt.x64 > (quint32)2);
+
+		sql.prepare("SELECT id FROM cflib_db_test ORDER BY id");
+		QVERIFY(sql.exec());
+
+		PSql sql2("");
+		sql2.prepare("SELECT x32 FROM cflib_db_test WHERE id = $1");
+
+		QVERIFY(sql.next());
+		sql >> tt.id;
+		QCOMPARE(tt.id, (quint32)2);
+
+		sql2 << tt.id;
+		QVERIFY(sql2.exec());
+		QVERIFY(sql2.next());
+		sql2 >> tt.x32;
+		QCOMPARE(tt.x32, (quint32)345);
+		QVERIFY(!sql2.next());
+
+		QVERIFY(sql.next());
+		sql >> tt.id;
+		QCOMPARE(tt.id, (quint32)5);
+
+		sql2 << tt.id;
+		QVERIFY(sql2.exec());
+		QVERIFY(sql2.next());
+		sql2 >> tt.x32;
+		QCOMPARE(tt.x32, (quint32)123);
+		QVERIFY(!sql2.next());
+
+		QVERIFY(sql.next());
+	}
+
 };
 #include "psql_test.moc"
 ADD_TEST(PSql_test)

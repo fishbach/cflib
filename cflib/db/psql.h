@@ -20,7 +20,7 @@
 
 #include <cflib/util/log.h>
 
-#define PSqlConn  cflib::db::PSql sql(&::cflib_util_logFileInfo, __LINE__)
+#define PSqlConn cflib::db::PSql sql(&::cflib_util_logFileInfo, __LINE__)
 
 namespace cflib { namespace db {
 
@@ -30,17 +30,25 @@ namespace cflib { namespace db {
 
 class PSql
 {
+	Q_DISABLE_COPY(PSql)
+private:
+	class ThreadData;
+
 public:
 	static const int MAX_FIELD_COUNT = 64;
-
 	struct Null {} null;
 
-public:
 	static bool setParameter(const QString & connectionParameter);
 	static void closeConnection();
 
 public:
+	// This constructor uses the thread specific DB-connection.
 	PSql(const cflib::util::LogFileInfo * lfi = 0, int line = 0);
+
+	// This constructor opens an own DB-connection.
+	// If connectionParameter is empty, the default parameters will be used.
+	PSql(const QString & connectionParameter);
+
 	~PSql();
 
 	void begin();
@@ -95,6 +103,7 @@ public:
 	bool isNull(uint fieldId);
 
 private:
+	PSql(ThreadData & td, const cflib::util::LogFileInfo & lfi, int line);
 	void setInt16(qint16 val);
 	void setInt32(qint32 val);
 	void setInt64(qint64 val);
@@ -108,7 +117,6 @@ private:
 	void removePreparedStatement();
 
 private:
-	class ThreadData;
 	static QThreadStorage<ThreadData *> threadData_;
 	ThreadData & td_;
 

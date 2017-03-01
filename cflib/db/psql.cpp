@@ -70,6 +70,7 @@ class PSql::ThreadData : public QObject
 {
 	Q_OBJECT
 public:
+	const bool isDedicated;
 	const int connId;
 	PGconn * conn;
 	bool transactionActive;
@@ -78,7 +79,8 @@ public:
 	uint instanceCount_;
 
 public:
-	ThreadData() :
+	ThreadData(const QString & connectionParameter = QString(), bool isDedicated = false) :
+		isDedicated(isDedicated),
 		connId(connIdCounter.fetchAndAddRelaxed(1)),
 		transactionActive(false),
 		doRollback(false),
@@ -87,7 +89,7 @@ public:
 	{
 		logDebug("new DB connection: %1", connId);
 
-		conn = PQconnectdb(connInfo.toUtf8().constData());
+		conn = PQconnectdb(!connectionParameter.isEmpty() ? connectionParameter.toUtf8().constData() : connInfo.toUtf8().constData());
 		if (PQstatus(conn) != CONNECTION_OK) {
 			logWarn("cannot connect to database (error: %1)", PQerrorMessage(conn));
 			PQfinish(conn);
@@ -203,9 +205,20 @@ void PSql::closeConnection()
 }
 
 PSql::PSql(const util::LogFileInfo * lfi, int line) :
-	td_(threadData_.hasLocalData() ? *(threadData_.localData()) : (
-		threadData_.setLocalData(new ThreadData()), *(threadData_.localData()))),
-	lfi_(lfi ? *lfi : ::cflib_util_logFileInfo), line_(line),
+	PSql(threadData_.hasLocalData() ? *(threadData_.localData()) : (
+		threadData_.setLocalData(new ThreadData()), *(threadData_.localData())),
+		lfi ? *lfi : ::cflib_util_logFileInfo, line)
+{
+}
+
+PSql::PSql(const QString & connectionParameter) :
+	PSql(*(new ThreadData(connectionParameter, true)), ::cflib_util_logFileInfo, 0)
+{
+}
+
+PSql::PSql(ThreadData & td, const util::LogFileInfo & lfi, int line) :
+	td_(td),
+	lfi_(lfi), line_(line),
 	instanceName_("i" + QByteArray::number(++td_.instanceCount_)),
 	nestedTransaction_(false),
 	localTransactionActive_(false),
@@ -232,6 +245,7 @@ PSql::~PSql()
 	if (localTransactionActive_) rollback();
 	--td_.instanceCount_;
 	removePreparedStatement();
+	if (td_.isDedicated) delete &td_;
 }
 
 void PSql::begin()
