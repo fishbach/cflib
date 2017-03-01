@@ -237,7 +237,7 @@ PSql::~PSql()
 void PSql::begin()
 {
 	if (localTransactionActive_) {
-		cflib::util::Log(lfi_, line_, LogCat::Warn | LogCat::Db)(
+		cflib::util::Log(lfi_, line_ ? line_ : __LINE__, LogCat::Warn | LogCat::Db)(
 			"begin called with active transaction");
 		return;
 	}
@@ -245,17 +245,17 @@ void PSql::begin()
 
 	nestedTransaction_ = td_.transactionActive;
 	if (nestedTransaction_) {
-		cflib::util::Log(lfi_, line_, LogCat::Debug | LogCat::Db)("DB sub-transaction start");
+		cflib::util::Log(lfi_, line_ ? line_ : __LINE__, LogCat::Debug | LogCat::Db)("DB sub-transaction start");
 		return;
 	}
 
-	cflib::util::Log(lfi_, line_, LogCat::Debug | LogCat::Db)("DB transaction start");
+	cflib::util::Log(lfi_, line_ ? line_ : __LINE__, LogCat::Debug | LogCat::Db)("DB transaction start");
 	td_.transactionActive = true;
 	watch_.start();
 
 	PGresult * res = PQexec(td_.conn, "BEGIN");
 	if (PQresultStatus(res) != PGRES_COMMAND_OK) {
-		cflib::util::Log(lfi_, line_, LogCat::Critical | LogCat::Db)(
+		cflib::util::Log(lfi_, line_ ? line_ : __LINE__, LogCat::Critical | LogCat::Db)(
 			"starting DB transaction failed: %1", PQerrorMessage(td_.conn));
 	}
 	PQclear(res);
@@ -269,14 +269,14 @@ bool PSql::commit()
 	}
 
 	if (!localTransactionActive_) {
-		cflib::util::Log(lfi_, line_, LogCat::Warn | LogCat::Db)(
+		cflib::util::Log(lfi_, line_ ? line_ : __LINE__, LogCat::Warn | LogCat::Db)(
 			"commit called without active transaction");
 		return false;
 	}
 	localTransactionActive_ = false;
 
 	if (nestedTransaction_) {
-		cflib::util::Log(lfi_, line_, LogCat::Debug | LogCat::Db)("DB sub-transaction commit");
+		cflib::util::Log(lfi_, line_ ? line_ : __LINE__, LogCat::Debug | LogCat::Db)("DB sub-transaction commit");
 		return true;
 	}
 
@@ -286,11 +286,11 @@ bool PSql::commit()
 	PGresult * res = PQexec(td_.conn, "COMMIT");
 	if (PQresultStatus(res) != PGRES_COMMAND_OK) {
 		ok = false;
-		cflib::util::Log(lfi_, line_, LogCat::Warn | LogCat::Db)(
+		cflib::util::Log(lfi_, line_ ? line_ : __LINE__, LogCat::Warn | LogCat::Db)(
 			"DB transaction commit failed: %1", PQerrorMessage(td_.conn));
 	} else {
 		ok = true;
-		cflib::util::Log(lfi_, line_, LogCat::Debug | LogCat::Db)(
+		cflib::util::Log(lfi_, line_ ? line_ : __LINE__, LogCat::Debug | LogCat::Db)(
 			"DB transaction commit (%1/%2 msec)", watch.elapsed(), watch_.elapsed());
 	}
 	PQclear(res);
@@ -302,22 +302,22 @@ bool PSql::commit()
 void PSql::rollback()
 {
 	if (!localTransactionActive_) {
-		cflib::util::Log(lfi_, line_, LogCat::Warn | LogCat::Db)(
+		cflib::util::Log(lfi_, line_ ? line_ : __LINE__, LogCat::Warn | LogCat::Db)(
 			"rollback called without active transaction");
 		return;
 	}
 	localTransactionActive_ = false;
 
 	if (nestedTransaction_) {
-		cflib::util::Log(lfi_, line_, LogCat::Info | LogCat::Db)("DB sub-tansaction rollback");
+		cflib::util::Log(lfi_, line_ ? line_ : __LINE__, LogCat::Info | LogCat::Db)("DB sub-tansaction rollback");
 		td_.doRollback = true;
 		return;
 	}
 
-	cflib::util::Log(lfi_, line_, LogCat::Info | LogCat::Db)("DB tansaction rollback");
+	cflib::util::Log(lfi_, line_ ? line_ : __LINE__, LogCat::Info | LogCat::Db)("DB tansaction rollback");
 	PGresult * res = PQexec(td_.conn, "ROLLBACK");
 	if (PQresultStatus(res) != PGRES_COMMAND_OK) {
-		cflib::util::Log(lfi_, line_, LogCat::Warn | LogCat::Db)(
+		cflib::util::Log(lfi_, line_ ? line_ : __LINE__, LogCat::Warn | LogCat::Db)(
 			"DB transaction rollback failed: %1", PQerrorMessage(td_.conn));
 	}
 	PQclear(res);
@@ -334,8 +334,8 @@ bool PSql::exec(const QString & query)
 
 	lastQuery_ = query.toUtf8();
 	if (!PQsendQueryParams(td_.conn, lastQuery_.constData(), 0, NULL, NULL, NULL, NULL, 1)) {
-		cflib::util::Log(lfi_, line_, LogCat::Debug | LogCat::Db)("query: %1", lastQuery_);
-		cflib::util::Log(lfi_, line_, LogCat::Warn  | LogCat::Db)("cannot send query: %1", PQerrorMessage(td_.conn));
+		cflib::util::Log(lfi_, line_ ? line_ : __LINE__, LogCat::Debug | LogCat::Db)("query: %1", lastQuery_);
+		cflib::util::Log(lfi_, line_ ? line_ : __LINE__, LogCat::Warn  | LogCat::Db)("cannot send query: %1", PQerrorMessage(td_.conn));
 		return false;
 	}
 
@@ -353,7 +353,7 @@ void PSql::prepare(const QByteArray & query)
 bool PSql::exec(uint keepFields)
 {
 	if (lastQuery_.isNull()) {
-		cflib::util::Log(lfi_, line_, LogCat::Warn | LogCat::Db)(
+		cflib::util::Log(lfi_, line_ ? line_ : __LINE__, LogCat::Warn | LogCat::Db)(
 			"exec called without prepare");
 		return false;
 	}
@@ -369,8 +369,8 @@ bool PSql::exec(uint keepFields)
 		PGresult * res = PQprepare(td_.conn, instanceName_.constData(),
 			lastQuery_.constData(), prepareParamCount_, prepareParamTypes_);
 		if (PQresultStatus(res) != PGRES_COMMAND_OK) {
-			cflib::util::Log(lfi_, line_, LogCat::Debug | LogCat::Db)("query: %1", lastQuery_);
-			cflib::util::Log(lfi_, line_, LogCat::Warn  | LogCat::Db)("cannot prepare query: %1", PQerrorMessage(td_.conn));
+			cflib::util::Log(lfi_, line_ ? line_ : __LINE__, LogCat::Debug | LogCat::Db)("query: %1", lastQuery_);
+			cflib::util::Log(lfi_, line_ ? line_ : __LINE__, LogCat::Warn  | LogCat::Db)("cannot prepare query: %1", PQerrorMessage(td_.conn));
 			PQclear(res);
 			return false;
 		}
@@ -388,8 +388,8 @@ bool PSql::exec(uint keepFields)
 	if (!PQsendQueryPrepared(td_.conn, instanceName_.constData(),
 		prepareParamCount_, prepareParamValues, prepareParamLengths_, ParamFormats.constData(), 1))
 	{
-		cflib::util::Log(lfi_, line_, LogCat::Debug | LogCat::Db)("query: %1", lastQuery_);
-		cflib::util::Log(lfi_, line_, LogCat::Warn  | LogCat::Db)("cannot send query: %1", PQerrorMessage(td_.conn));
+		cflib::util::Log(lfi_, line_ ? line_ : __LINE__, LogCat::Debug | LogCat::Db)("query: %1", lastQuery_);
+		cflib::util::Log(lfi_, line_ ? line_ : __LINE__, LogCat::Warn  | LogCat::Db)("cannot send query: %1", PQerrorMessage(td_.conn));
 		return false;
 	}
 
@@ -410,7 +410,7 @@ bool PSql::next()
 
 		resultFieldCount_ = PQnfields((PGresult *)res_);
 		if (resultFieldCount_ > MAX_FIELD_COUNT) {
-			cflib::util::Log(lfi_, line_, LogCat::Warn | LogCat::Db)(
+			cflib::util::Log(lfi_, line_ ? line_ : __LINE__, LogCat::Warn | LogCat::Db)(
 				"too many fields in result set (got: %1, max: %2)", resultFieldCount_, MAX_FIELD_COUNT);
 			clearResult();
 			return false;
@@ -621,7 +621,7 @@ void PSql::getInt64(qint64 & val)
 bool PSql::initResult()
 {
 	if (!PQsetSingleRowMode(td_.conn)) {
-		cflib::util::Log(lfi_, line_, LogCat::Warn  | LogCat::Db)("cannot set single row mode: %1", PQerrorMessage(td_.conn));
+		cflib::util::Log(lfi_, line_ ? line_ : __LINE__, LogCat::Warn  | LogCat::Db)("cannot set single row mode: %1", PQerrorMessage(td_.conn));
 		return false;
 	}
 
@@ -636,8 +636,8 @@ bool PSql::initResult()
 	clearResult();
 
 	if (status != PGRES_COMMAND_OK && status != PGRES_TUPLES_OK) {
-		cflib::util::Log(lfi_, line_, LogCat::Debug | LogCat::Db)("query: %1", lastQuery_);
-		cflib::util::Log(lfi_, line_, LogCat::Warn  | LogCat::Db)("cannot get result: %1", PQerrorMessage(td_.conn));
+		cflib::util::Log(lfi_, line_ ? line_ : __LINE__, LogCat::Debug | LogCat::Db)("query: %1", lastQuery_);
+		cflib::util::Log(lfi_, line_ ? line_ : __LINE__, LogCat::Warn  | LogCat::Db)("cannot get result: %1", PQerrorMessage(td_.conn));
 		return false;
 	}
 	return true;
@@ -656,13 +656,13 @@ bool PSql::checkField(int fieldType[], int typeCount, int fieldSize)
 	lastFieldIsNull_ = true;
 
 	if (!res_) {
-		cflib::util::Log(lfi_, line_, LogCat::Warn | LogCat::Db)(
+		cflib::util::Log(lfi_, line_ ? line_ : __LINE__, LogCat::Warn | LogCat::Db)(
 			"no result available");
 		return false;
 	}
 
 	if (currentFieldId_ >= resultFieldCount_) {
-		cflib::util::Log(lfi_, line_, LogCat::Warn | LogCat::Db)(
+		cflib::util::Log(lfi_, line_ ? line_ : __LINE__, LogCat::Warn | LogCat::Db)(
 			"not enough fields in result (got: %1)", resultFieldCount_);
 		clearResult();
 		return false;
@@ -684,7 +684,7 @@ bool PSql::checkField(int fieldType[], int typeCount, int fieldSize)
 				else       types += '/';
 				types += QByteArray::number(typeOids[fieldType[i]]);
 			}
-			cflib::util::Log(lfi_, line_, LogCat::Warn | LogCat::Db)(
+			cflib::util::Log(lfi_, line_ ? line_ : __LINE__, LogCat::Warn | LogCat::Db)(
 				"wrong result type (got: %1, want: %2)", resultFieldTypes_[currentFieldId_], types);
 			clearResult();
 			return false;
@@ -696,7 +696,7 @@ bool PSql::checkField(int fieldType[], int typeCount, int fieldSize)
 	if (fieldSize > 0) {
 		const int len = PQgetlength((PGresult *)res_, 0, currentFieldId_);
 		if (len != fieldSize) {
-			cflib::util::Log(lfi_, line_, LogCat::Warn | LogCat::Db)(
+			cflib::util::Log(lfi_, line_ ? line_ : __LINE__, LogCat::Warn | LogCat::Db)(
 				"wrong result size (got: %1, want: %2)", len, fieldSize);
 			clearResult();
 			return false;
@@ -710,7 +710,7 @@ bool PSql::checkField(int fieldType[], int typeCount, int fieldSize)
 uchar * PSql::setParamType(int fieldType, int fieldSize, bool isNull)
 {
 	if (prepareParamCount_ >= MAX_FIELD_COUNT) {
-		cflib::util::Log(lfi_, line_, LogCat::Warn | LogCat::Db)(
+		cflib::util::Log(lfi_, line_ ? line_ : __LINE__, LogCat::Warn | LogCat::Db)(
 			"too many fields for prepare statement (max: %1)", MAX_FIELD_COUNT);
 		return 0;
 	}
