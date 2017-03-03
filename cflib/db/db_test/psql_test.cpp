@@ -32,15 +32,16 @@ private:
 
 	struct TestTypes
 	{
-		quint32 id;
-		quint16 x16;
-		quint32 x32;
-		quint64 x64;
-		QDateTime t;
-		QByteArray a;
-		QString s;
-		float f;
-		double d;
+		quint32		id;
+		quint16		x16;
+		quint32		x32;
+		quint64		x64;
+		QDateTime	t;
+		QByteArray	a;
+		QString		s;
+		float		f;
+		double		d;
+		bool		b;
 	};
 	TestTypes tt;
 
@@ -67,6 +68,7 @@ private slots:
 				"s text, "
 				"r real, "
 				"d double precision, "
+				"b smallint, "
 				"PRIMARY KEY (id)"
 			")"));
 		QVERIFY(sql.exec(
@@ -118,9 +120,9 @@ private slots:
 			"INSERT INTO "
 				"cflib_db_test "
 			"("
-				"id, x16, x32, x64, t, a, s, r, d"
+				"id, x16, x32, x64, t, a, s, r, d, b"
 			") VALUES ("
-				"1, 2, -1, 4, '2017-02-27T14:47:34.123Z', E'\\x41\\x30', E'ABC\\xC3\\xB6\\xC3\\x9F', 1.23, 3.45"
+				"1, 2, -1, 4, '2017-02-27T14:47:34.123Z', E'\\x41\\x30', E'ABC\\xC3\\xB6\\xC3\\x9F', 1.23, 3.45, 1"
 			")"
 		));
 	}
@@ -129,10 +131,10 @@ private slots:
 	{
 		PSqlConn;
 
-		QVERIFY(sql.exec("SELECT id, x16, x32, x64, t, a, s, r, d FROM cflib_db_test"));
+		QVERIFY(sql.exec("SELECT id, x16, x32, x64, t, a, s, r, d, b FROM cflib_db_test"));
 
 		QVERIFY(sql.next());
-		sql >> tt.id >> tt.x16 >> tt.x32 >> tt.x64 >> tt.t >> tt.a >> tt.s >> tt.f >> tt.d;
+		sql >> tt.id >> tt.x16 >> tt.x32 >> tt.x64 >> tt.t >> tt.a >> tt.s >> tt.f >> tt.d >> tt.b;
 		QCOMPARE(tt.id,  (quint32)1);
 		QCOMPARE(tt.x16, (quint16)2);
 		QCOMPARE(tt.x32, (quint32)0xFFFFFFFF);
@@ -142,6 +144,7 @@ private slots:
 		QCOMPARE(tt.s, QString::fromUtf8("ABC\xC3\xB6\xC3\x9F"));
 		QVERIFY(qFuzzyCompare(tt.f, 1.23f));
 		QVERIFY(qFuzzyCompare(tt.d, 3.45));
+		QVERIFY(tt.b);
 		// no futher lines
 		QVERIFY(!sql.next());
 	}
@@ -173,10 +176,10 @@ private slots:
 	{
 		PSqlConn;
 
-		QVERIFY(sql.exec("SELECT id, x16, x32, x64, t, a, s, r, d FROM cflib_db_test"));
+		QVERIFY(sql.exec("SELECT id, x16, x32, x64, t, a, s, r, d, b FROM cflib_db_test"));
 
 		QVERIFY(sql.next());
-		sql >> tt.id >> tt.x16 >> tt.x32 >> tt.x64 >> tt.t >> tt.a >> tt.s >> tt.f >> tt.d;
+		sql >> tt.id >> tt.x16 >> tt.x32 >> tt.x64 >> tt.t >> tt.a >> tt.s >> tt.f >> tt.d >> tt.b;
 		QCOMPARE(tt.id,  (quint32)2);
 		QCOMPARE(tt.x16, (quint16)5);
 		QCOMPARE(tt.x64, (quint64)7);
@@ -186,6 +189,7 @@ private slots:
 		QCOMPARE(tt.s, QString(""));
 		QCOMPARE(tt.f, 0.0f);
 		QVERIFY(std::isnan(tt.d));
+		QVERIFY(!tt.b);
 		// no further lines
 		QVERIFY(!sql.next());
 	}
@@ -703,6 +707,160 @@ private slots:
 		QVERIFY(!sql2.next());
 
 		QVERIFY(sql.next());
+	}
+
+	// -----------------------------------------------------------
+
+	void transaction_isolation_test()
+	{
+		PSqlConn;
+		sql.begin();
+		sql.prepare(
+			"INSERT INTO "
+				"cflib_db_test "
+			"("
+				"id"
+			") VALUES ("
+				"$1"
+			")"
+		);
+		sql  << 9;
+		QVERIFY(sql.exec());
+
+		PSql sql2("");
+		sql2.prepare("SELECT id FROM cflib_db_test WHERE id = $1");
+		sql2 << 9;
+		QVERIFY(sql2.exec(1));
+		QVERIFY(!sql2.next());
+
+		sql.commit();
+
+		QVERIFY(sql2.exec(1));
+		QVERIFY(sql2.next());
+	}
+
+	// -----------------------------------------------------------
+
+	void transaction_blocking_commit_test()
+	{
+		class Thread : public QThread
+		{
+		public:
+			QSemaphore sem;
+			bool result;
+
+		protected:
+			void run() override
+			{
+				PSqlConn;
+				sql.prepare(
+					"INSERT INTO "
+						"cflib_db_test "
+					"("
+						"id"
+					") VALUES ("
+						"$1"
+					")"
+				);
+
+				sql << 11;
+				result = sql.exec();
+				sem.release();
+
+				sql << 10;
+				result = sql.exec();
+				sem.release();
+			}
+		};
+
+		PSqlConn;
+		sql.begin();
+		sql.prepare(
+			"INSERT INTO "
+				"cflib_db_test "
+			"("
+				"id"
+			") VALUES ("
+				"$1"
+			")"
+		);
+		sql << 10;
+		QVERIFY(sql.exec());
+
+		Thread thread;
+		thread.start();
+
+		// Insert of different key works.
+		thread.sem.acquire();
+		QVERIFY(thread.result);
+
+		// Insert of same key blocks until our transaction has finished.
+		QThread::sleep(1);
+		QVERIFY(thread.sem.available() == 0);
+
+		QVERIFY(sql.commit());
+
+		thread.sem.acquire();
+		QVERIFY(!thread.result);
+
+		thread.wait();
+	}
+
+	void transaction_blocking_rollback_test()
+	{
+		class Thread : public QThread
+		{
+		public:
+			QSemaphore sem;
+			bool result;
+
+		protected:
+			void run() override
+			{
+				PSqlConn;
+				sql.prepare(
+					"INSERT INTO "
+						"cflib_db_test "
+					"("
+						"id"
+					") VALUES ("
+						"$1"
+					")"
+				);
+
+				sql << 12;
+				result = sql.exec();
+				sem.release();
+			}
+		};
+
+		PSqlConn;
+		sql.begin();
+		sql.prepare(
+			"INSERT INTO "
+				"cflib_db_test "
+			"("
+				"id"
+			") VALUES ("
+				"$1"
+			")"
+		);
+		sql << 12;
+		QVERIFY(sql.exec());
+
+		Thread thread;
+		thread.start();
+
+		// Insert of same key blocks until our transaction has finished.
+		QThread::sleep(1);
+		QVERIFY(thread.sem.available() == 0);
+
+		sql.rollback();
+
+		thread.sem.acquire();
+		QVERIFY(thread.result);
+
+		thread.wait();
 	}
 
 };
