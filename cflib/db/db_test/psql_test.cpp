@@ -285,14 +285,22 @@ private slots:
 			"INSERT INTO "
 				"cflib_db_test "
 			"("
-				"id, x16, x32, x64, t"
+				"id, x16, x32, x64, t, a, s, r, d"
 			") VALUES ("
-				"$1, $2, $3, $4, $5"
+				"$1, $2, $3, $4, $5, $6, $7, $8, $9"
 			")"
 		);
-		sql << 3 << (quint16)0xFFFA << 67 << 89 << QDateTime(QDate(2016, 2, 27), QTime(10, 47, 34, 123), Qt::UTC);
+		sql << 3
+			<< (quint16)0xFFFA << 67 << 89
+			<< QDateTime(QDate(2016, 2, 27), QTime(10, 47, 34, 123), Qt::UTC)
+			<< sql.null << sql.null
+			<< 123.456f << 789.123;
 		QVERIFY(sql.exec());
-		sql << 4 << (qint8)-45 << sql.null << (qint32)-89 << sql.null;
+		sql << 4
+			<< (qint8)-45 << sql.null << (qint32)-89
+			<< sql.null
+			<< sql.null << sql.null
+			<< sql.null << sql.null;
 		QVERIFY(sql.exec());
 	}
 
@@ -313,6 +321,9 @@ private slots:
 		sql >> tt.t;
 		QCOMPARE(tt.t, QDateTime(QDate(2016, 2, 27), QTime(10, 47, 34, 123), Qt::UTC));
 		QVERIFY(!sql.lastFieldIsNull());
+		sql >> tt.a >> tt.s >> tt.f >> tt.d;
+		QCOMPARE(tt.f, 123.456f);
+		QCOMPARE(tt.d, 789.123);
 	}
 
 	// -----------------------------------------------------------
@@ -336,20 +347,15 @@ private slots:
 		QVERIFY(sql.isNull());
 		sql >> sql.null;
 		QVERIFY(sql.lastFieldIsNull());
-		QVERIFY(sql.isNull());
+		QVERIFY(!sql.isNull());
 		sql >> sql.null;
-		QVERIFY(sql.lastFieldIsNull());
-		QVERIFY(sql.isNull());
-		sql >> sql.null;
-		QVERIFY(sql.lastFieldIsNull());
+		QVERIFY(!sql.lastFieldIsNull());
 
 		qint16 sx16;
 		qint32 sx32;
 		qint64 sx64;
 
 		QVERIFY(sql.next());
-		QVERIFY(!sql.isNull(1));
-		QVERIFY( sql.isNull(2));
 		sql >> tt.id >> sx16;
 		QCOMPARE(tt.id,  (quint32)4);
 		QCOMPARE(sx16, (qint16)-45);
@@ -358,6 +364,8 @@ private slots:
 		QVERIFY(sql.lastFieldIsNull());
 		sql >> sx64;
 		QCOMPARE(sx64, (qint64)-89);
+		QVERIFY(!sql.isNull(1));
+		QVERIFY( sql.isNull(2));
 
 		QVERIFY(!sql.next());
 

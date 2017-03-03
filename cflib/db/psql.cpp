@@ -453,14 +453,14 @@ bool PSql::next()
 PSql & PSql::operator<<(float val)
 {
 	uchar * dest = setParamType(PSql_float, sizeof(float), false);
-	if (dest) qToBigEndian<quint32>(FloatInt{val}.f, dest);
+	if (dest) qToBigEndian<quint32>(FloatInt{val}.i, dest);
 	return *this;
 }
 
 PSql & PSql::operator<<(double val)
 {
 	uchar * dest = setParamType(PSql_double, sizeof(double), false);
-	if (dest) qToBigEndian<quint64>(DoubleInt{val}.d, dest);
+	if (dest) qToBigEndian<quint64>(DoubleInt{val}.i, dest);
 	return *this;
 }
 
@@ -488,7 +488,14 @@ PSql & PSql::operator<<(const QByteArray & val)
 
 PSql & PSql::operator<<(const QString & val)
 {
-	return operator<<(val.toUtf8());
+	if (val.isNull()) {
+		setParamType(PSql_binary, 0, true);
+	} else {
+		const QByteArray utf8 = val.toUtf8();
+		uchar * dest = setParamType(PSql_string, utf8.size(), false);
+		if (dest) memcpy(dest, utf8.constData(), utf8.size());
+	}
+	return *this;
 }
 
 PSql & PSql::operator<<(Null)
@@ -566,11 +573,8 @@ PSql & PSql::operator>>(Null)
 
 bool PSql::isNull(uint fieldId)
 {
-	const int oldCurrentFieldId_ = currentFieldId_;
 	currentFieldId_ = fieldId;
-	const bool rv = checkField(PSql_null, 0) && lastFieldIsNull_;
-	currentFieldId_ = oldCurrentFieldId_;
-	return rv;
+	return checkField(PSql_null, 0) && lastFieldIsNull_;
 }
 
 void PSql::setInt16(qint16 val)
