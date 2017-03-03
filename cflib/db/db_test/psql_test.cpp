@@ -210,12 +210,20 @@ private slots:
 				"x32"
 			") VALUES ("
 				"$1"
-			")"
+			") RETURNING id"
 		);
+
 		sql << 42;
 		QVERIFY(sql.exec());
+		QVERIFY(sql.next());
+		sql >> tt.id;
+		QCOMPARE(tt.id,  (quint32)1);
+
 		sql << 23;
 		QVERIFY(sql.exec());
+		QVERIFY(sql.next());
+		sql >> tt.id;
+		QCOMPARE(tt.id,  (quint32)2);
 
 		QVERIFY(sql.exec("SELECT id, x32 FROM cflib_db_test_2"));
 		QVERIFY(sql.next());
@@ -240,12 +248,20 @@ private slots:
 				"x32"
 			") VALUES ("
 				"$1"
-			")"
+			") RETURNING id"
 		);
+
 		sql << 456;
 		QVERIFY(sql.exec());
+		QVERIFY(sql.next());
+		sql >> tt.x64;
+		QCOMPARE(tt.x64,  (quint32)1);
+
 		sql << 765;
 		QVERIFY(sql.exec());
+		QVERIFY(sql.next());
+		sql >> tt.x64;
+		QCOMPARE(tt.x64,  (quint32)2);
 
 		QVERIFY(sql.exec("SELECT id, x32 FROM cflib_db_test_3"));
 		QVERIFY(sql.next());
