@@ -18,7 +18,11 @@
 
 #include "dbconfig.h"
 
-#include <cflib/db/db.h>
+#ifdef CFLIB_POSTGRESQL
+	#include <cflib/db/psql.h>
+#else
+	#include <cflib/db/db.h>
+#endif
 
 USE_LOG(LogCat::Db)
 
@@ -27,6 +31,23 @@ namespace cflib { namespace db {
 QMap<QString, QString> getConfig()
 {
 	QMap<QString, QString> retval;
+
+#ifdef CFLIB_POSTGRESQL
+
+	PSqlConn;
+	sql.begin();
+	if (!sql.exec(
+		"SELECT "
+			"key, value "
+		"FROM "
+			"config"
+		)) return retval;
+	while (sql.next()) {
+		retval[sql.get<QString>(0)] = sql.get<QString>(1);
+	}
+	sql.commit();
+
+#else
 
 	Transaction;
 	QSqlQuery query(ta.db);
@@ -43,11 +64,36 @@ QMap<QString, QString> getConfig()
 	}
 
 	ta.commit();
+
+#endif
+
 	return retval;
 }
 
 cflib::util::Mail getMailTemplate(const QString & name, const QString & lang)
 {
+	cflib::util::Mail retval;
+
+#ifdef CFLIB_POSTGRESQL
+
+	PSqlConn;
+	sql.begin();
+	sql.prepare(
+		"SELECT "
+			"subject, text "
+		"FROM "
+			"mailTemplates "
+		"WHERE "
+			"name = $1 AND lang = $2"
+	);
+	sql << name << lang;
+	if (!sql.exec()) return retval;
+	if (sql.next()) {
+		sql >> retval.subject >> retval.text;
+	}
+
+#else
+
 	Transaction;
 	QSqlQuery query(ta.db);
 	query.prepare(
@@ -60,15 +106,17 @@ cflib::util::Mail getMailTemplate(const QString & name, const QString & lang)
 	);
 	query.bindValue(":name", name);
 	query.bindValue(":lang", lang);
-	if (!execQuery(query)) return cflib::util::Mail();
+	if (!execQuery(query)) return retval;
 
-	cflib::util::Mail retval;
 	if (query.next()) {
 		retval.subject = query.value(0).toString();
 		retval.text    = query.value(1).toString();
 	}
 
 	ta.commit();
+
+#endif
+
 	return retval;
 }
 

@@ -22,9 +22,11 @@ QT = core
 
 TARGET = cflib_db
 
-!no_mysql: HEADERS = \
-	db.h \
+HEADERS = \
 	dbconfig.h \
+
+!no_mysql: HEADERS += \
+	db.h \
 
 postgresql: HEADERS += \
 	psql.h \
@@ -33,4 +35,5 @@ lib()
 
 postgresql {
 	macx: INCLUDEPATH += /usr/local/include
+	DEFINES += CFLIB_POSTGRESQL
 }

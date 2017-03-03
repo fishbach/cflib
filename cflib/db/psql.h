@@ -98,6 +98,13 @@ public:
 
 	PSql & operator>>(Null);
 
+	template<typename T>
+	inline T get(uint field) {
+		currentFieldId_ = field;
+		T val; operator>>(val);
+		return val;
+	}
+
 	inline bool lastFieldIsNull() const { return lastFieldIsNull_; }
 	inline bool isNull() { return isNull(currentFieldId_); }
 	bool isNull(uint fieldId);
