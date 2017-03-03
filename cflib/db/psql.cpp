@@ -500,8 +500,7 @@ PSql & PSql::operator<<(Null)
 PSql & PSql::operator>>(float & val)
 {
 	val = 0.0;
-	int types[] = { PSql_float };
-	if (!checkField(types, 1, sizeof(float))) return *this;
+	if (!checkField(PSql_float, sizeof(float))) return *this;
 	if (!lastFieldIsNull_) {
 		FloatInt fi;
 		fi.i = qFromBigEndian<quint32>((const uchar *)PQgetvalue((PGresult *)res_, 0, currentFieldId_));
@@ -514,8 +513,7 @@ PSql & PSql::operator>>(float & val)
 PSql & PSql::operator>>(double & val)
 {
 	val = 0.0;
-	int types[] = { PSql_double };
-	if (!checkField(types, 1, sizeof(double))) return *this;
+	if (!checkField(PSql_double, sizeof(double))) return *this;
 	if (!lastFieldIsNull_) {
 		DoubleInt di;
 		di.i = qFromBigEndian<quint64>((const uchar *)PQgetvalue((PGresult *)res_, 0, currentFieldId_));
@@ -528,8 +526,7 @@ PSql & PSql::operator>>(double & val)
 PSql & PSql::operator>>(QDateTime & val)
 {
 	val = QDateTime();
-	int types[] = { PSql_timestampWithTimeZone };
-	if (!checkField(types, 1, sizeof(qint64))) return *this;
+	if (!checkField(PSql_timestampWithTimeZone, sizeof(qint64))) return *this;
 	if (!lastFieldIsNull_) {
 		qint64 rawTime = qFromBigEndian<qint64>((const uchar *)PQgetvalue((PGresult *)res_, 0, currentFieldId_));
 		val = QDateTime::fromMSecsSinceEpoch(rawTime / 1000 - MsecDelta, Qt::UTC);
@@ -541,8 +538,7 @@ PSql & PSql::operator>>(QDateTime & val)
 PSql & PSql::operator>>(QByteArray & val)
 {
 	val = QByteArray();
-	int types[] = { PSql_binary };
-	if (!checkField(types, 1, 0)) return *this;
+	if (!checkField(PSql_binary, 0)) return *this;
 	if (!lastFieldIsNull_) {
 		val = QByteArray(PQgetvalue((PGresult *)res_, 0, currentFieldId_), PQgetlength((PGresult *)res_, 0, currentFieldId_));
 	}
@@ -553,8 +549,7 @@ PSql & PSql::operator>>(QByteArray & val)
 PSql & PSql::operator>>(QString & val)
 {
 	val = QString();
-	int types[] = { PSql_string };
-	if (!checkField(types, 1, 0)) return *this;
+	if (!checkField(PSql_string, 0)) return *this;
 	if (!lastFieldIsNull_) {
 		val = QString::fromUtf8(PQgetvalue((PGresult *)res_, 0, currentFieldId_), PQgetlength((PGresult *)res_, 0, currentFieldId_));
 	}
@@ -564,7 +559,7 @@ PSql & PSql::operator>>(QString & val)
 
 PSql & PSql::operator>>(Null)
 {
-	if (!checkField(0, 0, 0)) return *this;
+	if (!checkField(PSql_null, 0)) return *this;
 	++currentFieldId_;
 	return *this;
 }
@@ -573,7 +568,7 @@ bool PSql::isNull(uint fieldId)
 {
 	const int oldCurrentFieldId_ = currentFieldId_;
 	currentFieldId_ = fieldId;
-	const bool rv = checkField(0, 0, 0) && lastFieldIsNull_;
+	const bool rv = checkField(PSql_null, 0) && lastFieldIsNull_;
 	currentFieldId_ = oldCurrentFieldId_;
 	return rv;
 }
@@ -599,8 +594,7 @@ void PSql::setInt64(qint64 val)
 void PSql::getInt16(qint16 & val)
 {
 	val = 0;
-	int types[] = { PSql_int16 };
-	if (!checkField(types, 1, sizeof(qint16))) return;
+	if (!checkField(PSql_int16, sizeof(qint16))) return;
 	if (!lastFieldIsNull_) {
 		val = qFromBigEndian<qint16>((const uchar *)PQgetvalue((PGresult *)res_, 0, currentFieldId_));
 	}
@@ -610,8 +604,7 @@ void PSql::getInt16(qint16 & val)
 void PSql::getInt32(qint32 & val)
 {
 	val = 0;
-	int types[] = { PSql_int32 };
-	if (!checkField(types, 1, sizeof(qint32))) return;
+	if (!checkField(PSql_int32, sizeof(qint32))) return;
 	if (!lastFieldIsNull_) {
 		val = qFromBigEndian<qint32>((const uchar *)PQgetvalue((PGresult *)res_, 0, currentFieldId_));
 	}
@@ -621,8 +614,7 @@ void PSql::getInt32(qint32 & val)
 void PSql::getInt64(qint64 & val)
 {
 	val = 0;
-	int types[] = { PSql_int64 };
-	if (!checkField(types, 1, sizeof(qint64))) return;
+	if (!checkField(PSql_int64, sizeof(qint64))) return;
 	if (!lastFieldIsNull_) {
 		val = qFromBigEndian<qint64>((const uchar *)PQgetvalue((PGresult *)res_, 0, currentFieldId_));
 	}
@@ -662,7 +654,7 @@ void PSql::clearResult()
 	}
 }
 
-bool PSql::checkField(int fieldType[], int typeCount, int fieldSize)
+bool PSql::checkField(int fieldType, int fieldSize)
 {
 	lastFieldIsNull_ = true;
 
@@ -679,27 +671,11 @@ bool PSql::checkField(int fieldType[], int typeCount, int fieldSize)
 		return false;
 	}
 
-	if (typeCount > 0) {
-		bool found = false;
-		for (int i = 0 ; i < typeCount ; ++i) {
-			if (resultFieldTypes_[currentFieldId_] == typeOids[fieldType[i]]) {
-				found = true;
-				break;
-			}
-		}
-		if (!found) {
-			QByteArray types;
-			bool first = true;
-			for (int i = 0 ; i < typeCount ; ++i) {
-				if (first) first = false;
-				else       types += '/';
-				types += QByteArray::number(typeOids[fieldType[i]]);
-			}
-			cflib::util::Log(lfi_, line_ ? line_ : __LINE__, LogCat::Warn | LogCat::Db)(
-				"wrong result type (got: %1, want: %2)", resultFieldTypes_[currentFieldId_], types);
-			clearResult();
-			return false;
-		}
+	if (fieldType != PSql_null && resultFieldTypes_[currentFieldId_] != typeOids[fieldType]) {
+		cflib::util::Log(lfi_, line_ ? line_ : __LINE__, LogCat::Warn | LogCat::Db)(
+			"wrong result type (got: %1, want: %2)", resultFieldTypes_[currentFieldId_], typeOids[fieldType]);
+		clearResult();
+		return false;
 	}
 
 	if (PQgetisnull((PGresult *)res_, 0, currentFieldId_) == 1) return true;

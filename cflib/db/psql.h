@@ -112,7 +112,7 @@ private:
 	void getInt64(qint64 & val);
 	bool initResult();
 	void clearResult();
-	bool checkField(int fieldType[], int typeCount, int fieldSize);
+	bool checkField(int fieldType, int fieldSize);
 	uchar * setParamType(int fieldType, int fieldSize, bool isNull);
 	void removePreparedStatement();
 
