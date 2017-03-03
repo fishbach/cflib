@@ -53,6 +53,8 @@ private slots:
 
 		// drop any old exisiting table
 		sql.exec("DROP TABLE cflib_db_test");
+		sql.exec("DROP TABLE cflib_db_test_2");
+		sql.exec("DROP TABLE cflib_db_test_3");
 
 		QVERIFY(sql.exec(
 			"CREATE TABLE cflib_db_test ("
@@ -67,17 +69,31 @@ private slots:
 				"d double precision, "
 				"PRIMARY KEY (id)"
 			")"));
+		QVERIFY(sql.exec(
+			"CREATE TABLE cflib_db_test_2 ("
+				"id serial NOT NULL, "
+				"x32 integer, "
+				"PRIMARY KEY (id)"
+			")"));
+		QVERIFY(sql.exec(
+			"CREATE TABLE cflib_db_test_3 ("
+				"id bigserial NOT NULL, "
+				"x32 integer, "
+				"PRIMARY KEY (id)"
+			")"));
 	}
 
 	void cleanupTestCase()
 	{
 		PSqlConn;
 		QVERIFY(sql.exec("DROP TABLE cflib_db_test"));
+		QVERIFY(sql.exec("DROP TABLE cflib_db_test_2"));
+		QVERIFY(sql.exec("DROP TABLE cflib_db_test_3"));
 	}
 
 	// -----------------------------------------------------------
 
-	void simple_test()
+	void result_test()
 	{
 		PSqlConn;
 
@@ -179,6 +195,68 @@ private slots:
 		// leave table empty
 		PSqlConn;
 		QVERIFY(sql.exec("DELETE FROM cflib_db_test WHERE id=2;"));
+	}
+
+	// -----------------------------------------------------------
+
+	void serial_test()
+	{
+		PSqlConn;
+
+		sql.prepare(
+			"INSERT INTO "
+				"cflib_db_test_2 "
+			"("
+				"x32"
+			") VALUES ("
+				"$1"
+			")"
+		);
+		sql << 42;
+		QVERIFY(sql.exec());
+		sql << 23;
+		QVERIFY(sql.exec());
+
+		QVERIFY(sql.exec("SELECT id, x32 FROM cflib_db_test_2"));
+		QVERIFY(sql.next());
+		sql >> tt.id >> tt.x32;
+		QCOMPARE(tt.id,  (quint32)1);
+		QCOMPARE(tt.x32, (quint32)42);
+		QVERIFY(sql.next());
+		sql >> tt.id >> tt.x32;
+		QCOMPARE(tt.id,  (quint32)2);
+		QCOMPARE(tt.x32, (quint32)23);
+		QVERIFY(!sql.next());
+	}
+
+	void bigserial_test()
+	{
+		PSqlConn;
+
+		sql.prepare(
+			"INSERT INTO "
+				"cflib_db_test_3 "
+			"("
+				"x32"
+			") VALUES ("
+				"$1"
+			")"
+		);
+		sql << 456;
+		QVERIFY(sql.exec());
+		sql << 765;
+		QVERIFY(sql.exec());
+
+		QVERIFY(sql.exec("SELECT id, x32 FROM cflib_db_test_3"));
+		QVERIFY(sql.next());
+		sql >> tt.x64 >> tt.x32;
+		QCOMPARE(tt.x64,  (quint32)1);
+		QCOMPARE(tt.x32, (quint32)456);
+		QVERIFY(sql.next());
+		sql >> tt.x64 >> tt.x32;
+		QCOMPARE(tt.x64,  (quint32)2);
+		QCOMPARE(tt.x32, (quint32)765);
+		QVERIFY(!sql.next());
 	}
 
 	// -----------------------------------------------------------

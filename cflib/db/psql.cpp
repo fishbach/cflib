@@ -44,7 +44,6 @@ enum PostgresTypes {
 	PSql_string,
 	PSql_binary,
 	PSql_timestampWithTimeZone,
-	PSql_timestampWithoutTimeZone,
 	PSql_lastEntry
 };
 
@@ -165,8 +164,7 @@ bool PSql::setParameter(const QString & connectionParameter)
 			"'double precision'::regtype::oid,"
 			"'text'::regtype::oid, "
 			"'bytea'::regtype::oid, "
-			"'timestamp with time zone'::regtype::oid, "
-			"'timestamp without time zone'::regtype::oid"
+			"'timestamp with time zone'::regtype::oid"
 	);
 	if (PQresultStatus(res) != PGRES_TUPLES_OK) {
 		logWarn("cannot get oids (error: %1)", PQerrorMessage(conn));
@@ -181,16 +179,15 @@ bool PSql::setParameter(const QString & connectionParameter)
 		PQfinish(conn);
 		return false;
 	}
-	typeOids[PSql_null                    ] = (Oid)0;
-	typeOids[PSql_int16                   ] = (Oid)QByteArray(PQgetvalue(res, 0, 0)).toUInt();
-	typeOids[PSql_int32                   ] = (Oid)QByteArray(PQgetvalue(res, 0, 1)).toUInt();
-	typeOids[PSql_int64                   ] = (Oid)QByteArray(PQgetvalue(res, 0, 2)).toUInt();
-	typeOids[PSql_float                   ] = (Oid)QByteArray(PQgetvalue(res, 0, 3)).toUInt();
-	typeOids[PSql_double                  ] = (Oid)QByteArray(PQgetvalue(res, 0, 4)).toUInt();
-	typeOids[PSql_string                  ] = (Oid)QByteArray(PQgetvalue(res, 0, 5)).toUInt();
-	typeOids[PSql_binary                  ] = (Oid)QByteArray(PQgetvalue(res, 0, 6)).toUInt();
-	typeOids[PSql_timestampWithTimeZone   ] = (Oid)QByteArray(PQgetvalue(res, 0, 7)).toUInt();
-	typeOids[PSql_timestampWithoutTimeZone] = (Oid)QByteArray(PQgetvalue(res, 0, 8)).toUInt();
+	typeOids[PSql_null                 ] = (Oid)0;
+	typeOids[PSql_int16                ] = (Oid)QByteArray(PQgetvalue(res, 0, 0)).toUInt();
+	typeOids[PSql_int32                ] = (Oid)QByteArray(PQgetvalue(res, 0, 1)).toUInt();
+	typeOids[PSql_int64                ] = (Oid)QByteArray(PQgetvalue(res, 0, 2)).toUInt();
+	typeOids[PSql_float                ] = (Oid)QByteArray(PQgetvalue(res, 0, 3)).toUInt();
+	typeOids[PSql_double               ] = (Oid)QByteArray(PQgetvalue(res, 0, 4)).toUInt();
+	typeOids[PSql_string               ] = (Oid)QByteArray(PQgetvalue(res, 0, 5)).toUInt();
+	typeOids[PSql_binary               ] = (Oid)QByteArray(PQgetvalue(res, 0, 6)).toUInt();
+	typeOids[PSql_timestampWithTimeZone] = (Oid)QByteArray(PQgetvalue(res, 0, 7)).toUInt();
 
 	PQclear(res);
 	PQfinish(conn);
@@ -531,8 +528,8 @@ PSql & PSql::operator>>(double & val)
 PSql & PSql::operator>>(QDateTime & val)
 {
 	val = QDateTime();
-	int types[] = { PSql_timestampWithTimeZone, PSql_timestampWithoutTimeZone };
-	if (!checkField(types, 2, sizeof(qint64))) return *this;
+	int types[] = { PSql_timestampWithTimeZone };
+	if (!checkField(types, 1, sizeof(qint64))) return *this;
 	if (!lastFieldIsNull_) {
 		qint64 rawTime = qFromBigEndian<qint64>((const uchar *)PQgetvalue((PGresult *)res_, 0, currentFieldId_));
 		val = QDateTime::fromMSecsSinceEpoch(rawTime / 1000 - MsecDelta, Qt::UTC);
