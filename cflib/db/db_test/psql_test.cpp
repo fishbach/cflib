@@ -60,7 +60,7 @@ private slots:
 				"x16 smallint, "
 				"x32 integer, "
 				"x64 bigint, "
-				"t timestamp, "
+				"t timestamp with time zone, "
 				"a bytea, "
 				"s text, "
 				"r real, "
@@ -148,7 +148,7 @@ private slots:
 			"("
 				"id, x16, x32, x64, t, a, s, r, d"
 			") VALUES ("
-				"2, 5, 6, 7, '2017-01-12T11:17:24.253Z', '', '', 0, 'NaN'"
+				"2, 5, 6, 7, CURRENT_TIMESTAMP, '', '', 0, 'NaN'"
 			")"
 		));
 	}
@@ -164,7 +164,8 @@ private slots:
 		QCOMPARE(tt.id,  (quint32)2);
 		QCOMPARE(tt.x16, (quint16)5);
 		QCOMPARE(tt.x64, (quint64)7);
-		QCOMPARE(tt.t, QDateTime(QDate(2017, 1, 12), QTime(11, 17, 24, 253), Qt::UTC));
+		QVERIFY(QDateTime::currentDateTimeUtc().addSecs(-30) < tt.t);
+		QVERIFY(QDateTime::currentDateTimeUtc().addSecs( 30) > tt.t);
 		QCOMPARE(tt.a, QByteArray(""));
 		QCOMPARE(tt.s, QString(""));
 		QCOMPARE(tt.f, 0.0f);

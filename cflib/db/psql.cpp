@@ -470,9 +470,9 @@ PSql & PSql::operator<<(double val)
 PSql & PSql::operator<<(const QDateTime & val)
 {
 	if (val.isNull()) {
-		setParamType(PSql_timestampWithoutTimeZone, 0, true);
+		setParamType(PSql_timestampWithTimeZone, 0, true);
 	} else {
-		uchar * dest = setParamType(PSql_timestampWithoutTimeZone, sizeof(qint64), false);
+		uchar * dest = setParamType(PSql_timestampWithTimeZone, sizeof(qint64), false);
 		if (dest) qToBigEndian<qint64>((val.toMSecsSinceEpoch() + MsecDelta) * 1000, dest);
 	}
 	return *this;
