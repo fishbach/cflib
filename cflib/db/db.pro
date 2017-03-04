@@ -17,23 +17,19 @@
 
 include(../../include.pri)
 
-QT = core
-!no_mysql: QT += sql
+QT = core sql
 
 TARGET = cflib_db
 
 HEADERS = \
+	db.h \
 	dbconfig.h \
 
-!no_mysql: HEADERS += \
-	db.h \
+postgresql {
+	HEADERS += \
+		psql.h \
 
-postgresql: HEADERS += \
-	psql.h \
+	macx: INCLUDEPATH += /usr/local/include
+}
 
 lib()
-
-postgresql {
-	macx: INCLUDEPATH += /usr/local/include
-	DEFINES += CFLIB_POSTGRESQL
-}

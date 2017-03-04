@@ -29,7 +29,13 @@ class Config
 public:
 	Config();
 
-	void loadFromDB();
+	inline void loadFromDB() {
+		#ifdef CFLIB_POSTGRESQL
+			loadFromDBMySql();
+		#else
+			loadFromDBPSql();
+		#endif
+	}
 	static const Config & instance() { return *instance_; }
 
 public serialized:
@@ -39,6 +45,10 @@ public serialized:
 
 protected:
 	virtual void init(const QMap<QString, QString> &) {}
+
+private:
+	void loadFromDBMySql();
+	void loadFromDBPSql();
 
 private:
 	static Config * instance_;

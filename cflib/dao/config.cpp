@@ -31,9 +31,20 @@ Config::Config() :
 	if (instance_ == 0) instance_ = this;
 }
 
-void Config::loadFromDB()
+void Config::loadFromDBMySql()
 {
 	const QMap<QString, QString> vals = cflib::db::getConfig();
+
+	isProduction  = vals["isProduction"] == "true";
+	emailsEnabled = vals["emailsEnabled"] == "true";
+	baseURL       = vals["baseURL"];
+
+	init(vals);
+}
+
+void Config::loadFromDBPSql()
+{
+	const QMap<QString, QString> vals = cflib::db::getConfigPSql();
 
 	isProduction  = vals["isProduction"] == "true";
 	emailsEnabled = vals["emailsEnabled"] == "true";
