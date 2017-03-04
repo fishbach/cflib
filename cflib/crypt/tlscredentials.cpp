@@ -137,16 +137,16 @@ bool TLSCredentials::addPrivateKey(const QByteArray & privateKey, const QByteArr
 		if (!pk) return false;
 
 		// Does key exist?
-		const std::vector<byte> pubKey = pk->x509_subject_public_key();
+		const std::vector<byte> pubKey = pk->subject_public_key();
 		foreach (const Impl::CertsPrivKey & ck, impl_->chains) {
-			if (pubKey == ck.privateKey->x509_subject_public_key()) return false;
+			if (pubKey == ck.privateKey->subject_public_key()) return false;
 		}
 
 		// search cert
 		std::vector<X509_Certificate> certs;
 		foreach (const X509_Certificate & crt, impl_->allCerts) {
 			std::unique_ptr<Public_Key> certPubKey(crt.subject_public_key());
-			if (pubKey == certPubKey->x509_subject_public_key()) {
+			if (pubKey == certPubKey->subject_public_key()) {
 				certs.push_back(crt);
 				break;
 			}
