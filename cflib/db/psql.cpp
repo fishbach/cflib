@@ -93,6 +93,7 @@ public:
 	ThreadData(const QString & connectionParameter = QString(), bool isDedicated = false) :
 		isDedicated(isDedicated),
 		connId(connIdCounter.fetchAndAddRelaxed(1)),
+		conn(0),
 		transactionActive(false),
 		doRollback(false),
 		evTimer_(0),

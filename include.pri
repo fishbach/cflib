@@ -170,9 +170,14 @@ defineTest(app) {
 	}
 	export(DESTDIR)
 
-	!win32:release:!no_strip:console {
-		QMAKE_POST_LINK = strip $${DESTDIR}/$${TARGET}
-		export(QMAKE_POST_LINK)
+	release {
+		QMAKE_LFLAGS_RPATH =
+		export(QMAKE_LFLAGS_RPATH)
+
+		!win32:!no_strip:console {
+			QMAKE_POST_LINK = strip $${DESTDIR}/$${TARGET}
+			export(QMAKE_POST_LINK)
+		}
 	}
 
 	macx {
