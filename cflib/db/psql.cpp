@@ -47,6 +47,18 @@ enum PostgresTypes {
 	PSql_lastEntry
 };
 
+const char * PostgresTypeNames[] = {
+	0,
+	"smallint",
+	"integer",
+	"bigint",
+	"real",
+	"double precision",
+	"text",
+	"bytea",
+	"timestamp with time zone",
+};
+
 Oid typeOids[PSql_lastEntry];
 QString connInfo;
 
@@ -155,41 +167,28 @@ bool PSql::setParameter(const QString & connectionParameter)
 		return false;
 	}
 
-	PGresult * res = PQexec(conn,
-		"SELECT "
-			"'smallint'::regtype::oid, "
-			"'integer'::regtype::oid, "
-			"'bigint'::regtype::oid, "
-			"'real'::regtype::oid,"
-			"'double precision'::regtype::oid,"
-			"'text'::regtype::oid, "
-			"'bytea'::regtype::oid, "
-			"'timestamp with time zone'::regtype::oid"
-	);
-	if (PQresultStatus(res) != PGRES_TUPLES_OK) {
-		logWarn("cannot get oids (error: %1)", PQerrorMessage(conn));
+	typeOids[PSql_null] = (Oid)0;
+	for (Oid oid = PSql_null + 1 ; oid < PSql_lastEntry ; ++oid) {
+		PGresult * res = PQexec(conn, QByteArray("SELECT '") + PostgresTypeNames[oid] + "'::regtype::oid");
+		if (PQresultStatus(res) != PGRES_TUPLES_OK) {
+			logWarn("cannot get oids (error: %1)", PQerrorMessage(conn));
+			PQclear(res);
+			PQfinish(conn);
+			return false;
+		}
+
+		if (PQntuples(res) != 1) {
+			logWarn("funny result count");
+			PQclear(res);
+			PQfinish(conn);
+			return false;
+		}
+
+		typeOids[oid] = (Oid)QByteArray(PQgetvalue(res, 0, 0)).toUInt();
+
 		PQclear(res);
-		PQfinish(conn);
-		return false;
 	}
 
-	if (PQntuples(res) != 1) {
-		logWarn("funny result count");
-		PQclear(res);
-		PQfinish(conn);
-		return false;
-	}
-	typeOids[PSql_null                 ] = (Oid)0;
-	typeOids[PSql_int16                ] = (Oid)QByteArray(PQgetvalue(res, 0, 0)).toUInt();
-	typeOids[PSql_int32                ] = (Oid)QByteArray(PQgetvalue(res, 0, 1)).toUInt();
-	typeOids[PSql_int64                ] = (Oid)QByteArray(PQgetvalue(res, 0, 2)).toUInt();
-	typeOids[PSql_float                ] = (Oid)QByteArray(PQgetvalue(res, 0, 3)).toUInt();
-	typeOids[PSql_double               ] = (Oid)QByteArray(PQgetvalue(res, 0, 4)).toUInt();
-	typeOids[PSql_string               ] = (Oid)QByteArray(PQgetvalue(res, 0, 5)).toUInt();
-	typeOids[PSql_binary               ] = (Oid)QByteArray(PQgetvalue(res, 0, 6)).toUInt();
-	typeOids[PSql_timestampWithTimeZone] = (Oid)QByteArray(PQgetvalue(res, 0, 7)).toUInt();
-
-	PQclear(res);
 	PQfinish(conn);
 
 	connInfo = connectionParameter;

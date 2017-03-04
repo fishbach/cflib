@@ -24,9 +24,20 @@
 
 namespace cflib { namespace db {
 
-// Attention:
-// PSql uses one DB connection per thread.
-// Therefore it is not possible to have two instances of PSql in one thread having both simultaneous acivate queries!
+/* Attention:
+ * PSql uses one DB connection per thread.
+ * Therefore it is not possible to have two instances of PSql in one thread having both simultaneous acivate queries!
+ *
+ * PostgreSQL type mapping:
+ * smallint                  <->  bool, qint8, quint8, qint16, quint16
+ * integer (serial)          <->  qint32, quint32
+ * bigint  (bigserial)       <->  qint64, quint64
+ * real                      <->  float
+ * double precision          <->  double
+ * text                      <->  QString
+ * bytea                     <->  QByteArray
+ * timestamp with time zone  <->  QDateTime (UTC)
+ */
 
 class PSql
 {
