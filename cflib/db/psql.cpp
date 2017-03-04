@@ -100,6 +100,11 @@ public:
 	{
 		logDebug("new DB connection: %1", connId);
 
+		if (connectionParameter.isNull() && connInfo.isNull()) {
+			logWarn("no connection parameters");
+			return;
+		}
+
 		conn = PQconnectdb(!connectionParameter.isEmpty() ? connectionParameter.toUtf8().constData() : connInfo.toUtf8().constData());
 		if (PQstatus(conn) != CONNECTION_OK) {
 			logWarn("cannot connect to database (error: %1)", PQerrorMessage(conn));
