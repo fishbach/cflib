@@ -193,8 +193,6 @@ defineTest(app) {
 		macx: LIBS += -L/usr/local/lib
 		LIBS += -lpq
 		export(LIBS)
-		DEFINES += CFLIB_POSTGRESQL
-		export(DEFINES)
 	}
 
 	setBuildPaths()

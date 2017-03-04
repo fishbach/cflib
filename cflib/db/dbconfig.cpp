@@ -43,7 +43,6 @@ QMap<QString, QString> getConfig()
 	}
 
 	ta.commit();
-
 	return retval;
 }
 
@@ -71,7 +70,6 @@ cflib::util::Mail getMailTemplate(const QString & name, const QString & lang)
 	}
 
 	ta.commit();
-
 	return retval;
 }
 
