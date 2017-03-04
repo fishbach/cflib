@@ -863,6 +863,28 @@ private slots:
 		thread.wait();
 	}
 
+	void transaction_failing_exec_test()
+	{
+		PSqlConn;
+		sql.begin();
+		sql.prepare(
+			"INSERT INTO "
+				"cflib_db_test "
+			"("
+				"id"
+			") VALUES ("
+				"$1"
+			")"
+		);
+		sql << 13;
+		QVERIFY(sql.exec());
+		sql << 13;
+		QVERIFY(!sql.exec());
+		sql << 14;
+		QVERIFY(!sql.exec());
+		QVERIFY(sql.commit());
+	}
+
 };
 #include "psql_test.moc"
 ADD_TEST(PSql_test)
