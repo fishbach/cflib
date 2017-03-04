@@ -22,15 +22,15 @@
 
 namespace cflib { namespace dao {
 
-class Config
+class ConfigPSql
 {
 	SERIALIZE_CLASS
-	SERIALIZE_IS_BASE(Config)
+	SERIALIZE_IS_BASE(ConfigPSql)
 public:
-	Config();
+	ConfigPSql();
 
 	void loadFromDB();
-	static const Config & instance() { return *instance_; }
+	static const ConfigPSql & instance() { return *instance_; }
 
 public serialized:
 	bool isProduction;
@@ -41,7 +41,7 @@ protected:
 	virtual void init(const QMap<QString, QString> &) {}
 
 private:
-	static Config * instance_;
+	static ConfigPSql * instance_;
 };
 
 }}	// namespace

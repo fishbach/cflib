@@ -25,5 +25,11 @@ HEADERS = \
 	config.h \
 	version.h \
 
+postgresql {
+	HEADERS += \
+		configpsql.h \
+
+}
+
 serializeGen()
 lib()

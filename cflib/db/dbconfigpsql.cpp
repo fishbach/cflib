@@ -16,61 +16,53 @@
  * along with cflib. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "dbconfig.h"
+#include "dbconfigpsql.h"
 
-#include <cflib/db/db.h>
+#include <cflib/db/psql.h>
 
 USE_LOG(LogCat::Db)
 
 namespace cflib { namespace db {
 
-QMap<QString, QString> getConfig()
+QMap<QString, QString> getConfigPSql()
 {
 	QMap<QString, QString> retval;
 
-	Transaction;
-	QSqlQuery query(ta.db);
-	query.prepare(
+	PSqlConn;
+	sql.begin();
+	if (!sql.exec(
 		"SELECT "
-			"`key`, `value` "
+			"key, value "
 		"FROM "
-			"`config`"
-	);
-	if (!execQuery(query)) return retval;
-
-	while (query.next()) {
-		retval[query.value(0).toString()] = query.value(1).toString();
+			"config"
+		)) return retval;
+	while (sql.next()) {
+		retval[sql.get<QString>(0)] = sql.get<QString>(1);
 	}
-
-	ta.commit();
+	sql.commit();
 
 	return retval;
 }
 
-cflib::util::Mail getMailTemplate(const QString & name, const QString & lang)
+cflib::util::Mail getMailTemplatePSql(const QString & name, const QString & lang)
 {
 	cflib::util::Mail retval;
 
-	Transaction;
-	QSqlQuery query(ta.db);
-	query.prepare(
+	PSqlConn;
+	sql.begin();
+	sql.prepare(
 		"SELECT "
-			"`subject`, `text` "
+			"subject, text "
 		"FROM "
 			"mailTemplates "
 		"WHERE "
-			"name = :name AND lang = :lang"
+			"name = $1 AND lang = $2"
 	);
-	query.bindValue(":name", name);
-	query.bindValue(":lang", lang);
-	if (!execQuery(query)) return retval;
-
-	if (query.next()) {
-		retval.subject = query.value(0).toString();
-		retval.text    = query.value(1).toString();
+	sql << name << lang;
+	if (!sql.exec()) return retval;
+	if (sql.next()) {
+		sql >> retval.subject >> retval.text;
 	}
-
-	ta.commit();
 
 	return retval;
 }

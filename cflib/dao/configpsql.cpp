@@ -16,32 +16,30 @@
  * along with cflib. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#pragma once
+#include "configpsql.h"
 
-#include <cflib/serialize/serialize.h>
+#include <cflib/db/dbconfigpsql.h>
 
 namespace cflib { namespace dao {
 
-class Config
+ConfigPSql * ConfigPSql::instance_ = 0;
+
+ConfigPSql::ConfigPSql() :
+	isProduction(false),
+	emailsEnabled(false)
 {
-	SERIALIZE_CLASS
-	SERIALIZE_IS_BASE(Config)
-public:
-	Config();
+	if (instance_ == 0) instance_ = this;
+}
 
-	void loadFromDB();
-	static const Config & instance() { return *instance_; }
+void ConfigPSql::loadFromDB()
+{
+	const QMap<QString, QString> vals = cflib::db::getConfigPSql();
 
-public serialized:
-	bool isProduction;
-	bool emailsEnabled;
-	QString baseURL;
+	isProduction  = vals["isProduction"] == "true";
+	emailsEnabled = vals["emailsEnabled"] == "true";
+	baseURL       = vals["baseURL"];
 
-protected:
-	virtual void init(const QMap<QString, QString> &) {}
+	init(vals);
+}
 
-private:
-	static Config * instance_;
-};
-
-}}	// namespace
+}}

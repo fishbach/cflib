@@ -18,30 +18,11 @@
 
 #pragma once
 
-#include <cflib/serialize/serialize.h>
+#include <cflib/util/mailer.h>
 
-namespace cflib { namespace dao {
+namespace cflib { namespace db {
 
-class Config
-{
-	SERIALIZE_CLASS
-	SERIALIZE_IS_BASE(Config)
-public:
-	Config();
-
-	void loadFromDB();
-	static const Config & instance() { return *instance_; }
-
-public serialized:
-	bool isProduction;
-	bool emailsEnabled;
-	QString baseURL;
-
-protected:
-	virtual void init(const QMap<QString, QString> &) {}
-
-private:
-	static Config * instance_;
-};
+QMap<QString, QString> getConfigPSql();
+cflib::util::Mail getMailTemplatePSql(const QString & name, const QString & lang);
 
 }}	// namespace
