@@ -530,7 +530,7 @@ private slots:
 
 	// -----------------------------------------------------------
 
-	void transaction_test()
+	void cascading_transaction_test()
 	{
 		PSqlConn;
 

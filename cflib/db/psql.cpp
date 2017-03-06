@@ -31,9 +31,6 @@ namespace {
 
 QAtomicInt connIdCounter(1);
 
-// SELECT 21::oid::regtype         -> smallint
-// SELECT 'smallint'::regtype::oid -> 21
-
 enum PostgresTypes {
 	PSql_null = 0,
 	PSql_int16,
@@ -641,13 +638,13 @@ bool PSql::initResult()
 	haveResultInfo_ = false;
 	res_ = PQgetResult(td_.conn);
 	const ExecStatusType status = PQresultStatus((PGresult *)res_);
-	logTrace("result status: %1", (int)status);
 
 	if (status == PGRES_SINGLE_TUPLE) return true;
 
 	clearResult();
 
 	if (status != PGRES_COMMAND_OK && status != PGRES_TUPLES_OK) {
+		logDebug("result status: %1", (int)status);
 		cflib::util::Log(lfi_, line_ ? line_ : __LINE__, LogCat::Debug | LogCat::Db)("query: %1", lastQuery_);
 		cflib::util::Log(lfi_, line_ ? line_ : __LINE__, LogCat::Warn  | LogCat::Db)("cannot get result: %1", PQerrorMessage(td_.conn));
 		return false;

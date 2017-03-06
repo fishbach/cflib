@@ -37,6 +37,9 @@ namespace cflib { namespace db {
  * text                      <->  QString
  * bytea                     <->  QByteArray
  * timestamp with time zone  <->  QDateTime (UTC)
+ *
+ * SELECT 21::oid::regtype         -> smallint
+ * SELECT 'smallint'::regtype::oid -> 21
  */
 
 class PSql
