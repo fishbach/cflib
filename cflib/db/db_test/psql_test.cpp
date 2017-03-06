@@ -1,4 +1,4 @@
-/* Copyright (C) 2013-2016 Christian Fischbach <cf@cflib.de>
+/* Copyright (C) 2013-2017 Christian Fischbach <cf@cflib.de>
  *
  * This file is part of cflib.
  *
@@ -296,7 +296,7 @@ private slots:
 		);
 		sql << 3
 			<< (quint16)0xFFFA << 67 << 89
-			<< QDateTime(QDate(2016, 2, 27), QTime(10, 47, 34, 123), Qt::UTC)
+			<< QDateTime(QDate(2017, 2, 27), QTime(10, 47, 34, 123), Qt::UTC)
 			<< sql.null << sql.null
 			<< 123.456f << 789.123;
 		QVERIFY(sql.exec());
@@ -323,7 +323,7 @@ private slots:
 		QCOMPARE(tt.x64, (quint64)89);
 		QVERIFY(!sql.isNull());
 		sql >> tt.t;
-		QCOMPARE(tt.t, QDateTime(QDate(2016, 2, 27), QTime(10, 47, 34, 123), Qt::UTC));
+		QCOMPARE(tt.t, QDateTime(QDate(2017, 2, 27), QTime(10, 47, 34, 123), Qt::UTC));
 		QVERIFY(!sql.lastFieldIsNull());
 		sql >> tt.a >> tt.s >> tt.f >> tt.d;
 		QCOMPARE(tt.f, 123.456f);
