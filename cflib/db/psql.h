@@ -20,7 +20,10 @@
 
 #include <cflib/util/log.h>
 
-#define PSqlConn cflib::db::PSql sql(&::cflib_util_logFileInfo, __LINE__)
+#define PSqlConn  cflib::db::PSql sql (&::cflib_util_logFileInfo, __LINE__)
+#define PSqlConn2 cflib::db::PSql sql2(&::cflib_util_logFileInfo, __LINE__)
+#define PSqlConn3 cflib::db::PSql sql3(&::cflib_util_logFileInfo, __LINE__)
+#define PSqlConn4 cflib::db::PSql sql4(&::cflib_util_logFileInfo, __LINE__)
 
 namespace cflib { namespace db {
 
@@ -57,7 +60,7 @@ public:
 
 public:
 	// This constructor uses the thread specific DB-connection.
-	PSql(const cflib::util::LogFileInfo * lfi = 0, int line = 0);
+	PSql(const cflib::util::LogFileInfo * lfi, int line);
 
 	// This constructor opens an own DB-connection.
 	// If connectionParameter is empty, the default parameters will be used.
