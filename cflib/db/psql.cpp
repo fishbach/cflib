@@ -491,7 +491,7 @@ PSql & PSql::operator<<(const QByteArray & val)
 PSql & PSql::operator<<(const QString & val)
 {
 	if (val.isNull()) {
-		setParamType(PSql_binary, 0, true);
+		setParamType(PSql_string, 0, true);
 	} else {
 		const QByteArray utf8 = val.toUtf8();
 		uchar * dest = setParamType(PSql_string, utf8.size(), false);
@@ -503,7 +503,7 @@ PSql & PSql::operator<<(const QString & val)
 PSql & PSql::operator<<(const char * val)
 {
 	if (!val) {
-		setParamType(PSql_binary, 0, true);
+		setParamType(PSql_string, 0, true);
 	} else {
 		uint len = qstrlen(val);
 		uchar * dest = setParamType(PSql_string, len, false);
