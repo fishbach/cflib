@@ -500,6 +500,18 @@ PSql & PSql::operator<<(const QString & val)
 	return *this;
 }
 
+PSql & PSql::operator<<(const char * val)
+{
+	if (!val) {
+		setParamType(PSql_binary, 0, true);
+	} else {
+		uint len = qstrlen(val);
+		uchar * dest = setParamType(PSql_string, len, false);
+		if (dest) memcpy(dest, val, len);
+	}
+	return *this;
+}
+
 PSql & PSql::operator<<(Null)
 {
 	setParamType(PSql_null, 0, true);

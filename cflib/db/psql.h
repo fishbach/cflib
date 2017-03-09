@@ -94,6 +94,7 @@ public:
 	PSql & operator<<(const QDateTime  & val);
 	PSql & operator<<(const QByteArray & val);
 	PSql & operator<<(const QString    & val);
+	PSql & operator<<(const char * val);
 
 	PSql & operator<<(Null);
 

@@ -297,7 +297,7 @@ private slots:
 		sql << 3
 			<< (quint16)0xFFFA << 67 << 89
 			<< QDateTime(QDate(2017, 2, 27), QTime(10, 47, 34, 123), Qt::UTC)
-			<< sql.null << sql.null
+			<< sql.null << "dödïdüß"
 			<< 123.456f << 789.123;
 		QVERIFY(sql.exec());
 		sql << 4
@@ -348,9 +348,10 @@ private slots:
 		QVERIFY(sql.isNull());
 		sql >> sql.null;
 		QVERIFY(sql.lastFieldIsNull());
-		QVERIFY(sql.isNull());
-		sql >> sql.null;
-		QVERIFY(sql.lastFieldIsNull());
+		QVERIFY(!sql.isNull());
+		sql >> tt.s;
+		QVERIFY(!sql.lastFieldIsNull());
+		QCOMPARE(tt.s, QString::fromUtf8("dödïdüß"));
 		QVERIFY(!sql.isNull());
 		sql >> sql.null;
 		QVERIFY(!sql.lastFieldIsNull());
