@@ -382,6 +382,7 @@ void RMIServerBase::registerService(RMIServiceBase & service)
 	service.server_ = this;
 	SerializeTypeInfo servInfo = service.getServiceInfo();
 
+	// register functions
 	ServiceFunctions & sfs = services_[servInfo.typeName.toLower()];
 	sfs.service = &service;
 	uint i = 0;
@@ -389,6 +390,7 @@ void RMIServerBase::registerService(RMIServiceBase & service)
 		sfs.signatures[ti.signature()] = qMakePair(++i, ti.hasReturnValues() ? 1 : 0);
 	}
 
+	// register rsigs
 	i = 0;
 	foreach (const SerializeFunctionTypeInfo & ti, servInfo.cfSignals) {
 		RSigBase & sig = *service.getCfSignal(++i);
@@ -396,6 +398,7 @@ void RMIServerBase::registerService(RMIServiceBase & service)
 		sfs.signatures[ti.name] = qMakePair(i, 2);
 	}
 
+	// add type infos
 	for (const SerializeTypeInfo & ti :
 		getFunctionClassInfos(servInfo.functions) + getFunctionClassInfos(servInfo.cfSignals))
 	{
@@ -408,10 +411,10 @@ void RMIServerBase::registerService(RMIServiceBase & service)
 		ciEl->ti = ti;
 
 		// add all derived classes
-		for (const SerializeTypeInfo & derived : serialize::impl::RegisterClassBase::getAllSerializeTypeInfos()) {
+		for (const SerializeTypeInfo & derivedClass : serialize::impl::RegisterClassBase::getAllSerializeTypeInfos()) {
 			// check all bases
 			bool found = false;
-			for (const SerializeTypeInfo & base : derived.bases) {
+			for (const SerializeTypeInfo & base : derivedClass.bases) {
 				if (base.getName() == ti.getName()) {
 					found = true;
 					break;
@@ -419,13 +422,15 @@ void RMIServerBase::registerService(RMIServiceBase & service)
 			}
 			if (!found) continue;
 
-			ciEl = &classInfos_;
-			foreach (const QString & ns, derived.getName().split("::")) {
-				ClassInfoEl *& elRef = ciEl->infos[ns.toLower()];
-				if (!elRef) elRef = new ClassInfoEl;
-				ciEl = elRef;
+			for (const SerializeTypeInfo & memberClass : getClassInfos(derivedClass)) {
+				ciEl = &classInfos_;
+				foreach (const QString & ns, memberClass.getName().split("::")) {
+					ClassInfoEl *& elRef = ciEl->infos[ns.toLower()];
+					if (!elRef) elRef = new ClassInfoEl;
+					ciEl = elRef;
+				}
+				ciEl->ti = memberClass;
 			}
-			ciEl->ti = derived;
 		}
 	}
 }
