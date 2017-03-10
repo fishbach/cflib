@@ -355,6 +355,20 @@ bool PSql::exec(const QString & query)
 	return initResult();
 }
 
+bool PSql::execMultiple(const QString & query)
+{
+	const QByteArray utf8 = query.toUtf8();
+	PGresult * res = PQexec(td_.conn, utf8.constData());
+	if (PQresultStatus(res) != PGRES_TUPLES_OK) {
+		cflib::util::Log(lfi_, line_ ? line_ : __LINE__, LogCat::Debug | LogCat::Db)("query: %1", lastQuery_);
+		cflib::util::Log(lfi_, line_ ? line_ : __LINE__, LogCat::Warn  | LogCat::Db)("cannot send query: %1", PQerrorMessage(td_.conn));
+		PQclear(res);
+		return false;
+	}
+	PQclear(res);
+	return true;
+}
+
 void PSql::prepare(const QByteArray & query)
 {
 	lastQuery_ = query;

@@ -49,7 +49,7 @@ private slots:
 
 	void initTestCase()
 	{
-		QVERIFY(PSql::setParameter("host=127.0.0.1 port=5432"));
+		QVERIFY(PSql::setParameter("host=127.0.0.1"));
 		PSqlConn;
 
 		// drop any old exisiting table

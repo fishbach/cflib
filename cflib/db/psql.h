@@ -74,6 +74,9 @@ public:
 
 	bool exec(const QString & query);
 
+	// This can be used to execute many statements in one string.
+	bool execMultiple(const QString & query);
+
 	void prepare(const QByteArray & query);
 	bool exec(uint keepFields = 0);
 
