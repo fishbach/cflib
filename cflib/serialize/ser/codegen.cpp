@@ -225,7 +225,7 @@ int genSerialize(const QString & headerName, const HeaderParser & hp, QIODevice 
 			"\treturn retval;\n"
 			"}\n";
 
-		if (!cl.functions.isEmpty()) {
+		if (!cl.functions.isEmpty() || !cl.cfSignals.isEmpty()) {
 			bool existsWithReturnValues                 = false;
 			bool existsWithoutReturnValues              = false;
 			bool existsWithReturnValuesAndParameters    = false;
