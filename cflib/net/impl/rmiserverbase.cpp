@@ -668,7 +668,7 @@ QString RMIServerBase::generateJSOrTS(const QString & path) const
 
 QString RMIServerBase::generateJS(const SerializeTypeInfo & ti) const
 {
-	const bool isService = !ti.functions.isEmpty();
+	const bool isService = !ti.functions.isEmpty() || !ti.cfSignals.isEmpty();
 
 	QString js;
 	js <<
@@ -698,7 +698,7 @@ QString RMIServerBase::generateJS(const SerializeTypeInfo & ti) const
 
 QString RMIServerBase::generateTS(const SerializeTypeInfo & ti) const
 {
-	const bool isService = !ti.functions.isEmpty();
+	const bool isService = !ti.functions.isEmpty() || !ti.cfSignals.isEmpty();
 	const QString cflibPath = ti.ns.startsWith("cflib::") && !isService ? "../../cflib/" : "../cflib/";
 
 	QString ts;
