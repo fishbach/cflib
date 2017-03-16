@@ -440,7 +440,7 @@ void RMIServerBase::exportTo(const QString & dest) const
 	// write services
 	QDir().mkpath(dest + "/js/services");
 	foreach (const QString & name, services_.keys()) {
-		for (const QString & suffix : QStringList{".js", "api.ts"}) {
+		for (const QString & suffix : QStringList{".js", ".ts"}) {
 			QString service = "services/" + name + suffix;
 			QString js = generateJSOrTS(service);
 			QFile f(dest + "/js/" + service);
@@ -562,7 +562,7 @@ void RMIServerBase::showServices(const Request & request, QString path) const
 	info <<
 		"<h3>Service: <b>" << ti.typeName << "</b></h3>\n"
 		"JavaScript File: <a href=\"/js/services/" << path << ".js\">/js/services/" << path << ".js</a><br>\n"
-		"TypeScript File: <a href=\"/js/services/" << path << "api.ts\">/js/services/" << path << "api.ts</a>\n"
+		"TypeScript File: <a href=\"/js/services/" << path << ".ts\">/js/services/" << path << ".ts</a>\n"
 		"<h4>Methods:</h4>\n"
 		"<ul>\n";
 	foreach (const SerializeFunctionTypeInfo & func, ti.functions) {
@@ -650,7 +650,7 @@ QString RMIServerBase::generateJSOrTS(const QString & path) const
 {
 	const bool isTS = path.endsWith(".ts");
 	if (!path.endsWith(".js") && !isTS) return QString();
-	const SerializeTypeInfo ti = getTypeInfo(path.left(path.length() - (isTS ? 6 : 3)));
+	const SerializeTypeInfo ti = getTypeInfo(path.left(path.length() - (isTS && path.endsWith("dao.ts") ? 6 : 3)));
 	if (ti.getName().isEmpty()) return QString();
 
 	QString rv;
@@ -1010,7 +1010,7 @@ QString RMIServerBase::generateTSForService(const SerializeTypeInfo & ti) const
 	}
 
 	ts <<
-		"export class " << ti.typeName << "Api {\n"
+		"export class " << ti.typeName << " {\n"
 		"\n";
 
 	if (!ti.cfSignals.isEmpty()) {
@@ -1130,7 +1130,7 @@ QString RMIServerBase::generateTSForService(const SerializeTypeInfo & ti) const
 	ts <<
 		"}\n"
 		"\n"
-		"export const " << objName << "Api: " << ti.typeName << "Api = new " << ti.typeName << "Api();";
+		"export const " << objName << ": " << ti.typeName << " = new " << ti.typeName << "();";
 
 	return ts;
 }
