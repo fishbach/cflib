@@ -458,7 +458,6 @@ bool PSql::next()
 	PQclear((PGresult *)res_);
 	res_ = PQgetResult(td_.conn);
 	const ExecStatusType status = PQresultStatus((PGresult *)res_);
-	logDebug("res status b: %1", (int)status);
 
 	if (status == PGRES_SINGLE_TUPLE) return true;
 
