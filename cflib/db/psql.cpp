@@ -83,6 +83,7 @@ public:
 	PGconn * conn;
 	bool transactionActive;
 	bool doRollback;
+	QList<QByteArray> preparedStatements;
 	util::EVTimer * evTimer_;
 	uint instanceCount_;
 
@@ -308,6 +309,12 @@ bool PSql::commit()
 	}
 	PQclear(res);
 
+	// try again to remove prepared statements
+	for (const QByteArray & in : td_.preparedStatements) {
+		PQclear(PQexec(td_.conn, "DEALLOCATE " + in));
+	}
+	td_.preparedStatements.clear();
+
 	td_.transactionActive = false;
 	return ok;
 }
@@ -334,6 +341,12 @@ void PSql::rollback()
 			"DB transaction rollback failed: %1", PQerrorMessage(td_.conn));
 	}
 	PQclear(res);
+
+	// try again to remove prepared statements
+	for (const QByteArray & in : td_.preparedStatements) {
+		PQclear(PQexec(td_.conn, "DEALLOCATE " + in));
+	}
+	td_.preparedStatements.clear();
 
 	td_.doRollback = false;
 	td_.transactionActive = false;
@@ -756,10 +769,13 @@ uchar * PSql::setParamType(int fieldType, int fieldSize, bool isNull)
 void PSql::removePreparedStatement()
 {
 	if (!prepareUsed_) return;
+	prepareUsed_ = false;
 
-	QByteArray query = "DEALLOCATE ";
-	query += instanceName_;
-	PQclear(PQexec(td_.conn, query.constData()));
+	PGresult * res = PQexec(td_.conn, "DEALLOCATE " + instanceName_);
+	if (PQresultStatus(res) != PGRES_TUPLES_OK) {
+		td_.preparedStatements << instanceName_;
+	}
+	PQclear(res);
 }
 
 }}	// namespace

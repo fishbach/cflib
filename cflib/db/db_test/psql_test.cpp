@@ -640,6 +640,43 @@ private slots:
 		QVERIFY(!sql2.next());
 	}
 
+	void multi_prepare_transaction_test()
+	{
+		{
+			PSqlConn;
+			sql.begin();
+			{
+				PSqlConn;
+				sql.begin();
+				sql.prepare(
+					"INSERT INTO "
+						"cflib_db_test "
+					"("
+						"id"
+					") VALUES ("
+						"$1"
+					")"
+				);
+				sql << 7;
+				QVERIFY(!sql.exec());
+				QVERIFY(sql.commit());
+			}
+			QVERIFY(sql.commit());
+		}
+		{
+			PSqlConn;
+			sql.begin();
+			{
+				PSqlConn;
+				sql.begin();
+				sql.prepare("SELECT id FROM cflib_db_test");
+				QVERIFY(sql.exec());
+				QVERIFY(sql.commit());
+			}
+			QVERIFY(sql.commit());
+		}
+	}
+
 	void cascading_multi_prepare_test()
 	{
 		PSqlConn;
