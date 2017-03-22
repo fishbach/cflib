@@ -42,8 +42,13 @@ public:
 			}
 			ser >> classId;
 		}
+		const RegisterClassBase * basePtr = registry().value(classId);
+		if (!basePtr) {
+			cl.reset();
+			return;
+		}
 		BERDeserializerBase ser(data, len);
-		cl.reset((T *)registry()[classId]->deserialize(ser));
+		cl.reset((T *)basePtr->deserialize(ser));
 	}
 
 	static QSet<SerializeTypeInfo> getAllSerializeTypeInfos()
