@@ -36,8 +36,8 @@ bool ThreadObject::event(QEvent * event)
 	return QObject::event(event);
 }
 
-ThreadHolder::ThreadHolder(const QString & threadName) :
-	threadName(threadName), isActive_(true)
+ThreadHolder::ThreadHolder(const QString & threadName, bool disable) :
+	threadName(threadName), disabled_(disable), isActive_(true)
 {
 	setObjectName(threadName);
 }
@@ -47,12 +47,14 @@ ThreadHolder::~ThreadHolder()
 	logTrace("~ThreadHolder()");
 }
 
-ThreadHolderQt::ThreadHolderQt(const QString & threadName) :
-	ThreadHolder(threadName)
+ThreadHolderQt::ThreadHolderQt(const QString & threadName, bool disable) :
+	ThreadHolder(threadName, disable)
 {
 	threadObject_ = new ThreadObject();
-	threadObject_->moveToThread(this);
-	start();
+	if (!disable) {
+		threadObject_->moveToThread(this);
+		start();
+	}
 }
 
 bool ThreadHolderQt::doCall(const Functor * func)
@@ -63,7 +65,13 @@ bool ThreadHolderQt::doCall(const Functor * func)
 
 void ThreadHolderQt::stopLoop()
 {
-	quit();
+	if (!disabled_) {
+		quit();
+	} else {
+		isActive_ = false;
+		delete threadObject_;
+		threadObject_ = 0;
+	}
 }
 
 void ThreadHolderQt::run()
@@ -77,8 +85,8 @@ void ThreadHolderQt::run()
 	logDebug("thread %1 stopped", threadName);
 }
 
-ThreadHolderLibEV::ThreadHolderLibEV(const QString & threadName, bool isWorkerOnly) :
-	ThreadHolder(threadName),
+ThreadHolderLibEV::ThreadHolderLibEV(const QString & threadName, bool isWorkerOnly, bool disable) :
+	ThreadHolder(threadName, disable),
 	loop_(ev_loop_new(EVFLAG_NOSIGMASK | (isWorkerOnly ? EVBACKEND_SELECT : EVBACKEND_ALL))),
 	wakeupWatcher_(new ev_async)
 {
@@ -120,11 +128,11 @@ void ThreadHolderLibEV::asyncCallback(ev_loop *, ev_async * w, int)
 
 ThreadHolderWorkerPool::ThreadHolderWorkerPool(const QString & threadName, bool isWorkerOnly, uint threadCount)
 :
-	ThreadHolderLibEV(threadCount > 1 ? QString("%1 1/%2").arg(threadName).arg(threadCount) : threadName, isWorkerOnly),
+	ThreadHolderLibEV(threadCount > 1 ? QString("%1 1/%2").arg(threadName).arg(threadCount) : threadName, isWorkerOnly, threadCount == 0),
 	externalCalls_(1024),
 	stopLoop_(false)
 {
-	start();
+	if (!disabled_) start();
 	for (uint i = 2 ; i <= threadCount ; ++i) {
 		Worker * thread = new Worker(QString("%1 %2/%3").arg(threadName).arg(i).arg(threadCount), i - 1, externalCalls_);
 		workers_ << thread;
@@ -150,9 +158,13 @@ bool ThreadHolderWorkerPool::doCall(const Functor * func)
 
 void ThreadHolderWorkerPool::stopLoop()
 {
-	stopLoop_ = true;
-	wakeUp();
-	foreach (Worker * w, workers_) w->stopLoop();
+	if (!disabled_) {
+		stopLoop_ = true;
+		wakeUp();
+		foreach (Worker * w, workers_) w->stopLoop();
+	} else {
+		isActive_ = false;
+	}
 }
 
 bool ThreadHolderWorkerPool::isOwnThread() const
@@ -189,7 +201,7 @@ void ThreadHolderWorkerPool::run()
 
 ThreadHolderWorkerPool::Worker::Worker(const QString & threadName, uint threadNo, ThreadFifo<const Functor *> & externalCalls)
 :
-	ThreadHolderLibEV(threadName, true),
+	ThreadHolderLibEV(threadName, true, false),
 	threadNo_(threadNo),
 	externalCalls_(externalCalls),
 	stopLoop_(false)

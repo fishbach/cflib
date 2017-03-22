@@ -46,7 +46,7 @@ public:
 class ThreadHolder : public QThread
 {
 public:
-	ThreadHolder(const QString & threadName);
+	ThreadHolder(const QString & threadName, bool disable);
 	~ThreadHolder();
 
 	const QString threadName;
@@ -58,20 +58,21 @@ public:
 	virtual uint threadNo() const    { return 0; }
 
 protected:
+	const bool disabled_;
 	bool isActive_;
 };
 
 class ThreadHolderQt : public ThreadHolder
 {
 public:
-	ThreadHolderQt(const QString & threadName);
+	ThreadHolderQt(const QString & threadName, bool disable);
 
 	ThreadObject * threadObject() const { return threadObject_; }
 	virtual bool doCall(const Functor * func);
 	virtual void stopLoop();
 
 protected:
-    virtual void run();
+	virtual void run();
 
 private:
 	ThreadObject * threadObject_;
@@ -87,9 +88,9 @@ public:
 	void wakeUp();
 
 protected:
-	ThreadHolderLibEV(const QString & threadName, bool isWorkerOnly);
-    virtual void run();
-    virtual void wokeUp() = 0;
+	ThreadHolderLibEV(const QString & threadName, bool isWorkerOnly, bool disable);
+	virtual void run();
+	virtual void wokeUp() = 0;
 
 private:
 	static void asyncCallback(ev_loop * loop, ev_async * w, int revents);
@@ -102,7 +103,7 @@ private:
 class ThreadHolderWorkerPool : public ThreadHolderLibEV
 {
 public:
-	ThreadHolderWorkerPool(const QString & threadName, bool isWorkerOnly, uint threadCount = 1);
+	ThreadHolderWorkerPool(const QString & threadName, bool isWorkerOnly, uint threadCount);
 	~ThreadHolderWorkerPool();
 
 	virtual bool doCall(const Functor * func);
@@ -111,7 +112,7 @@ public:
 	virtual uint threadCount() const;
 
 protected:
-    virtual void run();
+	virtual void run();
 	virtual void wokeUp();
 
 private:

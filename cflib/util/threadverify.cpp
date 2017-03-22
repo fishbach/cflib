@@ -29,13 +29,12 @@ ThreadVerify::ThreadVerify(const QString & threadName, LoopType loopType, uint t
 	ownerOfVerifyThread_(true)
 {
 	if (loopType == Qt) {
-		if (threadCount != 1) logCritical("thread count must be 1 for Qt thread %1", threadName);
-		verifyThread_ = new impl::ThreadHolderQt(threadName);
+		if (threadCount > 1) logCritical("thread count must be >1 for Qt thread %1", threadName);
+		verifyThread_ = new impl::ThreadHolderQt(threadName, threadCount == 0);
 	} else if (loopType == Net) {
-		if (threadCount != 1) logCritical("thread count must be 1 for network thread %1", threadName);
-		verifyThread_ = new impl::ThreadHolderWorkerPool(threadName, false);
+		if (threadCount > 1) logCritical("thread count must be >1 for network thread %1", threadName);
+		verifyThread_ = new impl::ThreadHolderWorkerPool(threadName, false, threadCount);
 	} else {
-		if (threadCount == 0) logCritical("thread count cannot be 0 for worker thread %1", threadName);
 		verifyThread_ = new impl::ThreadHolderWorkerPool(threadName, true, threadCount);
 	}
 }
