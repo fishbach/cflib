@@ -170,7 +170,7 @@ void ThreadHolderWorkerPool::stopLoop()
 bool ThreadHolderWorkerPool::isOwnThread() const
 {
 	QThread * current = QThread::currentThread();
-	if (current == this) return true;
+	if (current == this || disabled_) return true;
 	foreach (QThread * w, workers_) if (current == w) return true;
 	return false;
 }
