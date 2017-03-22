@@ -86,8 +86,8 @@ public:
 	TCPManager & manager() const;
 
 protected:
-	virtual void newBytesAvailable() = 0;
-	virtual void closed(CloseType type) = 0;
+	virtual void newBytesAvailable() {}
+	virtual void closed(CloseType type) { Q_UNUSED(type); }
 	virtual void writeFinished() {}
 	virtual void someBytesWritten(quint64 count) { Q_UNUSED(count) }
 
