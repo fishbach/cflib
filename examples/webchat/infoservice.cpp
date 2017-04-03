@@ -64,7 +64,7 @@ void InfoService::update(Dao2 & dao)
 
 void InfoService::update(Dao3 & dao)
 {
-	dao.timestamp = QDateTime::currentDateTime();
+	dao.timestamp = QDateTime::currentDateTimeUtc();
 }
 
 void InfoService::talk(const QString & msg)

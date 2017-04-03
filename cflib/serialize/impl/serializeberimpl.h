@@ -23,7 +23,6 @@
 
 namespace cflib { namespace serialize { namespace impl {
 
-
 // ============================================================================
 // integer
 // ============================================================================
@@ -279,6 +278,7 @@ inline void deserializeBER(QDateTime & dt, const quint8 * data, int len, BERDese
 {
 	qint64 msec;
 	deserializeBERInt(msec, data, len);
+	dt.setTimeSpec(Qt::UTC);
 	dt.setMSecsSinceEpoch(msec);
 }
 

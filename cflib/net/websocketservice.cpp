@@ -54,8 +54,8 @@ public:
 		setNoDelay(true);
 		startReadWatcher();
 		if (connectionTimeoutSec > 0) {
-			lastRead_  = QDateTime::currentDateTime();
-			lastWrite_ = QDateTime::currentDateTime();
+			lastRead_  = QDateTime::currentDateTimeUtc();
+			lastWrite_ = QDateTime::currentDateTimeUtc();
 		}
 		if (deflateEnabled_) logDebug("using deflate on connection: %1", connId);
 	}
@@ -134,7 +134,7 @@ protected:
 		if (!verifyThreadCall(&WSConnHandler::newBytesAvailable)) return;
 
 		buf_ += read();
-		if (connectionDataTimeout_ > 0) lastRead_ = QDateTime::currentDateTime();
+		if (connectionDataTimeout_ > 0) lastRead_ = QDateTime::currentDateTimeUtc();
 		continueRead();
 	}
 
@@ -152,7 +152,7 @@ protected:
 	virtual void someBytesWritten(quint64 count)
 	{
 		if (!verifyThreadCall(&WSConnHandler::someBytesWritten, count)) return;
-		lastWrite_ = QDateTime::currentDateTime();
+		lastWrite_ = QDateTime::currentDateTimeUtc();
 	}
 
 private:
@@ -376,7 +376,7 @@ void WebSocketService::startTimer()
 
 void WebSocketService::checkTimeout()
 {
-	const QDateTime now = QDateTime::currentDateTime();
+	const QDateTime now = QDateTime::currentDateTimeUtc();
 	QHashIterator<uint, WSConnHandler *> it(connections_);
 	while (it.hasNext()) it.next().value()->checkTimeout(now);
 }

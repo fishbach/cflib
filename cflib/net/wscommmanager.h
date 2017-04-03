@@ -340,7 +340,7 @@ void WSCommManager<C>::closed(uint connId, TCPConn::CloseType)
 	const bool isLast = info.connIds.isEmpty();
 	if (isLast) {
 		info.connDataVerified = false;
-		info.lastClosed = QDateTime::currentDateTime();
+		info.lastClosed = QDateTime::currentDateTimeUtc();
 	}
 
 	// inform state listener
@@ -381,7 +381,7 @@ void WSCommManager<C>::checkTimeout()
 
 	QSet<uint> removedIds;
 	{
-		const QDateTime now = QDateTime::currentDateTime();
+		const QDateTime now = QDateTime::currentDateTimeUtc();
 		QMutableHashIterator<uint, ConnInfo> it(connData_);
 		while (it.hasNext()) {
 			ConnInfo & info = it.next().value();

@@ -151,7 +151,7 @@ public:
 	inline QByteArray defaultHeaders()
 	{
 		return
-			"Date: " << cflib::util::dateTimeForHTTP(QDateTime::currentDateTime()) << "\r\n"
+			"Date: " << cflib::util::dateTimeForHTTP(QDateTime::currentDateTimeUtc()) << "\r\n"
 			"Connection: keep-alive\r\n"
 			"Server: cflib/0.9\r\n";
 	}

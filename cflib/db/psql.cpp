@@ -576,7 +576,8 @@ PSql & PSql::operator>>(QDateTime & val)
 	if (!checkField(PSql_timestampWithTimeZone, sizeof(qint64))) return *this;
 	if (!lastFieldIsNull_) {
 		qint64 rawTime = qFromBigEndian<qint64>((const uchar *)PQgetvalue((PGresult *)res_, 0, currentFieldId_));
-		val = QDateTime::fromMSecsSinceEpoch(rawTime / 1000 - MsecDelta, Qt::UTC);
+		val.setTimeSpec(Qt::UTC);
+		val.setMSecsSinceEpoch(rawTime / 1000 - MsecDelta);
 	}
 	++currentFieldId_;
 	return *this;
