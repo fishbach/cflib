@@ -25,12 +25,8 @@ HEADERS = \
 	db.h \
 	dbconfig.h \
 
-postgresql {
-	HEADERS += \
-		dbconfigpsql.h \
-		psql.h \
-
-	macx: INCLUDEPATH += /usr/local/include
-}
+postgresql: HEADERS += \
+	dbconfigpsql.h \
+	psql.h \
 
 lib()

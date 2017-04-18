@@ -94,6 +94,7 @@ protected:
  * 1 : client id (s <-> c)
  * 2 : rmi       (s <-> c)
  * 3 : rsig      (s  -> c)
+ * 4 : ping      (s <-> c)
  */
 
 template<typename C>
@@ -311,6 +312,12 @@ void WSCommManager<C>::newMsg(uint connId, const QByteArray & data, bool isBinar
 			close(connId, TCPConn::HardClosed);
 			logInfo("request without clientId from %1", connId);
 		}
+		return;
+	}
+
+	// ping
+	if (tag == 4) {
+		send(connId, data, true);
 		return;
 	}
 
