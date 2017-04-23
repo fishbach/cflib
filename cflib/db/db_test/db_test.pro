@@ -25,8 +25,15 @@ HEADERS = \
 
 SOURCES = \
 
+OTHER_FILES = \
+	structure.sql \
+
+postgresql: RESOURCES += \
+	db_test.qrc \
+
 postgresql: SOURCES += \
 	psql_test.cpp \
+	structure_test.cpp \
 
 useLibs(cflib_db cflib_util)
 test()
