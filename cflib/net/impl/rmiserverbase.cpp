@@ -361,6 +361,15 @@ QString getSerializeJSParameters(const SerializeFunctionTypeInfo & func)
 	return getSerializeJSParameters(func.parameters);
 }
 
+bool isDerivedFrom(const SerializeTypeInfo & derived, const SerializeTypeInfo & base)
+{
+	for (const SerializeTypeInfo & ti : derived.bases) {
+		if (ti.getName() == base.getName()) return true;
+		if (isDerivedFrom(ti, base)) return true;
+	}
+	return false;
+}
+
 }
 
 // ============================================================================
@@ -402,34 +411,14 @@ void RMIServerBase::registerService(RMIServiceBase & service)
 	for (const SerializeTypeInfo & ti :
 		getFunctionClassInfos(servInfo.functions) + getFunctionClassInfos(servInfo.cfSignals))
 	{
-		ClassInfoEl * ciEl = &classInfos_;
-		foreach (const QString & ns, ti.getName().split("::")) {
-			ClassInfoEl *& elRef = ciEl->infos[ns.toLower()];
-			if (!elRef) elRef = new ClassInfoEl;
-			ciEl = elRef;
-		}
-		ciEl->ti = ti;
+		addClassInfo(ti);
 
 		// add all derived classes
 		for (const SerializeTypeInfo & derivedClass : serialize::impl::RegisterClassBase::getAllSerializeTypeInfos()) {
-			// check all bases
-			bool found = false;
-			for (const SerializeTypeInfo & base : derivedClass.bases) {
-				if (base.getName() == ti.getName()) {
-					found = true;
-					break;
-				}
-			}
-			if (!found) continue;
+			if (!isDerivedFrom(derivedClass, ti)) continue;
 
 			for (const SerializeTypeInfo & memberClass : getClassInfos(derivedClass)) {
-				ciEl = &classInfos_;
-				foreach (const QString & ns, memberClass.getName().split("::")) {
-					ClassInfoEl *& elRef = ciEl->infos[ns.toLower()];
-					if (!elRef) elRef = new ClassInfoEl;
-					ciEl = elRef;
-				}
-				ciEl->ti = memberClass;
+				addClassInfo(memberClass);
 			}
 		}
 	}
@@ -1153,6 +1142,17 @@ void RMIServerBase::exportClass(const ClassInfoEl & cl, const QString & path, co
 			exportClass(*cl.infos[ns], p + ns, dest);
 		}
 	}
+}
+
+void RMIServerBase::addClassInfo(const SerializeTypeInfo & ti)
+{
+	ClassInfoEl * ciEl = &classInfos_;
+	foreach (const QString & ns, ti.getName().split("::")) {
+		ClassInfoEl *& elRef = ciEl->infos[ns.toLower()];
+		if (!elRef) elRef = new ClassInfoEl;
+		ciEl = elRef;
+	}
+	ciEl->ti = ti;
 }
 
 }}}	// namespace

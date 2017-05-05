@@ -116,6 +116,7 @@ private:
 	QString generateTSForClass(const cflib::serialize::SerializeTypeInfo & ti) const;
 	QString generateTSForService(const cflib::serialize::SerializeTypeInfo & ti) const;
 	void exportClass(const ClassInfoEl & cl, const QString & path, const QString & dest) const;
+	void addClassInfo(const cflib::serialize::SerializeTypeInfo & ti);
 
 private:
 	WSCommManagerBase & wsService_;
