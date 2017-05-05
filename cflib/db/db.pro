@@ -28,5 +28,6 @@ HEADERS = \
 postgresql: HEADERS += \
 	dbconfigpsql.h \
 	psql.h \
+	schema.h \
 
 lib()

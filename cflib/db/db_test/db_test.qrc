@@ -1,6 +1,5 @@
 <RCC>
     <qresource prefix="/">
-        <file>structure.sql</file>
+        <file>schema.sql</file>
     </qresource>
 </RCC>
-

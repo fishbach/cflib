@@ -17,24 +17,39 @@
  */
 
 #include <cflib/db/psql.h>
+#include <cflib/db/schema.h>
 #include <cflib/util/test.h>
-
-#include <cmath>
+#include <cflib/util/log.h>
 
 using namespace cflib::db;
 
 USE_LOG(LogCat::Db)
 
-class Structure_test : public QObject
+class Schema_test : public QObject
 {
 	Q_OBJECT
 private slots:
 
-	void bla()
+	void initTestCase()
 	{
-		QVERIFY(true);
+		QVERIFY(PSql::setParameter("host=127.0.0.1 dbname=postgres"));
+		PSqlConn;
+		sql.exec("DROP DATABASE cflib_db_test");
+		QVERIFY(sql.exec("CREATE DATABASE cflib_db_test"));
+		QVERIFY(PSql::setParameter("host=127.0.0.1 dbname=cflib_db_test"));
+	}
+
+	void cleanupTestCase()
+	{
+		PSqlConn;
+//		QVERIFY(sql.exec("DROP DATABASE cflib_db_test"));
+	}
+
+	void basic_test()
+	{
+//		QVERIFY(updateSchema());
 	}
 
 };
-#include "structure_test.moc"
-ADD_TEST(Structure_test)
+#include "schema_test.moc"
+ADD_TEST(Schema_test)

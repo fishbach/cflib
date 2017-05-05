@@ -48,11 +48,13 @@
 #define SERIALIZE_BASE(Class) \
 	private: \
 		static const cflib::serialize::impl::RegisterClass<Class> cflib_serialize_impl_registerClass; \
+	public: \
 		cflib::serialize::SerializeTypeInfo getSerializeTypeInfo() const override { return serializeTypeInfo(); } \
 
 #define SERIALIZE_STDBASE(Class) \
 	private: \
 		static const cflib::serialize::impl::RegisterClass<Class> cflib_serialize_impl_registerClass; \
+	public: \
 		virtual cflib::serialize::SerializeTypeInfo getSerializeTypeInfo() const { return serializeTypeInfo(); } \
 
 #define serialized

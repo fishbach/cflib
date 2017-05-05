@@ -33,7 +33,7 @@ postgresql: RESOURCES += \
 
 postgresql: SOURCES += \
 	psql_test.cpp \
-	structure_test.cpp \
+	schema_test.cpp \
 
 useLibs(cflib_db cflib_util)
 test()
