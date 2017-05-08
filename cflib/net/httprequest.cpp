@@ -120,7 +120,7 @@ protected:
 
 		const int status = match.captured(1).toInt();
 
-		parent_->reply(status, buf_.mid(headerEndPos + 4, length));
+		if (parent_) parent_->reply(status, buf_.mid(headerEndPos + 4, length));
 		gotReply_ = true;
 		timeout_.stop();
 		close();
@@ -164,6 +164,7 @@ HttpRequest::HttpRequest(TCPManager & mgr) :
 
 HttpRequest::~HttpRequest()
 {
+	logFunctionTrace
 	destroy();
 }
 
