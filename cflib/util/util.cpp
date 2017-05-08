@@ -517,4 +517,37 @@ bool processRestarter(uint msDelay)
 #endif
 }
 
+namespace {
+
+class ThreadSafeExitHelperEvent : public QEvent
+{
+public:
+	ThreadSafeExitHelperEvent(int returnCode) :
+		QEvent(QEvent::User),
+		returnCode(returnCode)
+	{}
+
+	const int returnCode;
+};
+
+class ThreadSafeExitHelper : public QObject
+{
+public:
+	bool event(QEvent * event) override {
+		if (event->type() == QEvent::User) {
+			QCoreApplication::exit(((ThreadSafeExitHelperEvent *)event)->returnCode);
+			return true;
+		}
+		return QObject::event(event);
+	}
+};
+ThreadSafeExitHelper threadSafeExitHelper;
+
+}
+
+void threadSafeExit(int returnCode)
+{
+	QCoreApplication::postEvent(&threadSafeExitHelper, new ThreadSafeExitHelperEvent(returnCode));
+}
+
 }}	// namespace

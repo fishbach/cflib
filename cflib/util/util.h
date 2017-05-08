@@ -142,4 +142,6 @@ private slots:
 	void timeout();
 };
 
+void threadSafeExit(int returnCode);
+
 }}	// namespace
