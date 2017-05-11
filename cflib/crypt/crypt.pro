@@ -37,9 +37,9 @@ OTHER_FILES = \
 lib()
 
 # botan
-BOTAN_MINOR_VERSION = 1
+BOTAN_MINOR_VERSION = 0
 !defined(BOTAN_DIR, var) {
-	BOTAN_DIR = $${CFLIB_DIR}/../Botan-2.0.$${BOTAN_MINOR_VERSION}
+	BOTAN_DIR = $${CFLIB_DIR}/../Botan-2.1.$${BOTAN_MINOR_VERSION}
 }
 !exists($$BOTAN_DIR/build/obj/lib/tls_server.*) {
 	warning("=======================================================================")
@@ -47,9 +47,9 @@ BOTAN_MINOR_VERSION = 1
 	message("TODO: ... or adjust variable BOTAN_DIR in config.pri")
 	message("-----------------------------------------------------------------------")
 	message(cd $$shell_path($${CFLIB_DIR}/..))
-	message(wget http://botan.randombit.net/releases/Botan-2.0.$${BOTAN_MINOR_VERSION}.tgz)
-	message(tar zxvf Botan-2.0.$${BOTAN_MINOR_VERSION}.tgz)
-	message(cd Botan-2.0.$${BOTAN_MINOR_VERSION})
+	message(wget http://botan.randombit.net/releases/Botan-2.1.$${BOTAN_MINOR_VERSION}.tgz)
+	message(tar zxvf Botan-2.1.$${BOTAN_MINOR_VERSION}.tgz)
+	message(cd Botan-2.1.$${BOTAN_MINOR_VERSION})
 	!win32 {
 		message(./configure.py --disable-shared)
 		message(make -j 10 libbotan-2.a)
