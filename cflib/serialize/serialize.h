@@ -44,6 +44,8 @@
 	public: \
 		virtual ~Class() {} \
 		virtual cflib::serialize::SerializeTypeInfo getSerializeTypeInfo() const { return serializeTypeInfo(); } \
+		static inline QSharedPointer<Class> createByClassId(quint32 classId) { \
+			return cflib::serialize::impl::RegisterClassBase::create<Class>(classId); } \
 
 #define SERIALIZE_BASE(Class) \
 	private: \

@@ -27,12 +27,14 @@ class RegisterClassBase
 {
 public:
 	template<typename T>
-	static inline void serialize(const QSharedPointer<T> & cl, BERSerializerBase & ser) {
+	static inline void serialize(const QSharedPointer<T> & cl, BERSerializerBase & ser)
+	{
 		registry()[cl->getSerializeTypeInfo().classId]->serialize(cl.data(), ser);
 	}
 
 	template<typename T>
-	static inline void deserialize(QSharedPointer<T> & cl, const quint8 * data, int len) {
+	static inline void deserialize(QSharedPointer<T> & cl, const quint8 * data, int len)
+	{
 		quint32 classId;
 		{
 			BERDeserializerBase ser(data, len);
@@ -51,6 +53,15 @@ public:
 		cl.reset((T *)basePtr->deserialize(ser));
 	}
 
+	template<typename T>
+	static inline QSharedPointer<T> create(quint32 classId)
+	{
+		QSharedPointer<T> rv;
+		const RegisterClassBase * basePtr = registry().value(classId);
+		if (basePtr) rv.reset((T *)basePtr->create());
+		return rv;
+	}
+
 	static QSet<SerializeTypeInfo> getAllSerializeTypeInfos()
 	{
 		QSet<SerializeTypeInfo> rv;
@@ -66,14 +77,15 @@ protected:
 	virtual void serialize(const void * cl, BERSerializerBase & ser) const = 0;
 	virtual void * deserialize(BERDeserializerBase & ser) const = 0;
 	virtual SerializeTypeInfo serializeTypeInfo() const = 0;
-
+	virtual void * create() const = 0;
 };
 
 template<typename T>
 class RegisterClass : public RegisterClassBase
 {
 public:
-	RegisterClass() {
+	RegisterClass()
+	{
 		if (registry().contains(T::serializeTypeInfo().classId)) duplicateId(T::serializeTypeInfo().classId);
 		registry()[T::serializeTypeInfo().classId] = this;
 	}
@@ -95,6 +107,10 @@ public:
 		return T::serializeTypeInfo();
 	}
 
+	void * create() const override
+	{
+		return new T();
+	}
 };
 
 }}}	// namespace
