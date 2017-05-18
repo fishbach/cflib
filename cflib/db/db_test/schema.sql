@@ -8,21 +8,21 @@ CREATE TABLE config (
 -- EXEC test1()
 
 ALTER TABLE config
-  ADD value2 int
+  ADD value2 integer NOT NULL DEFAULT 0
 ;
 
 -- EXEC test2()
 -- EXEC test3()
 
 ALTER TABLE config
-  ADD value3 int
+  ADD value3 integer NOT NULL DEFAULT 0
 ;
 
 -- EXEC test4 ()
 -- REVISION dudi hick
 
 ALTER TABLE config
-  ADD value4 int
+  ADD value4 integer NOT NULL DEFAULT 0
 ;
 
 -- REVISION t1

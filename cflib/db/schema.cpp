@@ -68,8 +68,8 @@ bool execSql(const QString & query)
 	cleanQuery = cleanQuery.trimmed();
 	if (cleanQuery.isEmpty()) return true;
 
-	logDebug("sql: %1", cleanQuery);
 	PSqlConn;
+	logDebug("executing: %1", cleanQuery);
 	return sql.execMultiple(cleanQuery);
 }
 

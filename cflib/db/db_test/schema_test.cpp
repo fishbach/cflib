@@ -33,32 +33,32 @@ class Migrator : public QObject
 public slots:
 	bool test1()
 	{
-		QTextStream(stdout) << "test1 !!!!!!!!!!!\n";
-		return true;
+		PSqlConn;
+		return sql.exec("INSERT INTO config (key, value) VALUES ('test1', 'val1')");
 	}
 
 	bool test2()
 	{
-		QTextStream(stdout) << "test2 !!!!!!!!!!!\n";
-		return true;
+		PSqlConn;
+		return sql.exec("INSERT INTO config (key, value, value2) VALUES ('test2', 'val2', 2)");
 	}
 
 	bool test3()
 	{
-		QTextStream(stdout) << "test3 !!!!!!!!!!!\n";
-		return true;
+		PSqlConn;
+		return sql.exec("INSERT INTO config (key, value, value2) VALUES ('test3', 'val3', 3)");
 	}
 
 	bool test4()
 	{
-		QTextStream(stdout) << "test4 !!!!!!!!!!!\n";
-		return true;
+		PSqlConn;
+		return sql.exec("INSERT INTO config (key, value, value2, value3) VALUES ('test4', 'val4', 4, 4)");
 	}
 
 	bool test5()
 	{
-		QTextStream(stdout) << "test5 !!!!!!!!!!!\n";
-		return true;
+		PSqlConn;
+		return sql.exec("INSERT INTO config (key, value, value2, value3, value4) VALUES ('test5', 'val5', 5, 5, 5)");
 	}
 };
 
@@ -81,13 +81,41 @@ private slots:
 
 	void cleanupTestCase()
 	{
-		PSqlConn;
-//		QVERIFY(sql.exec("DROP DATABASE cflib_db_test"));
+		PSql::closeConnection();
+		{
+			PSql sql("host=127.0.0.1 dbname=postgres");
+			QVERIFY(sql.exec("DROP DATABASE cflib_db_test"));
+		}
 	}
 
 	void basic_test()
 	{
 		QVERIFY(updateSchema<Migrator>());
+
+		PSqlConn;
+		QVERIFY(sql.exec("SELECT key, value, value2, value3, value4 FROM config ORDER BY key"));
+		QString key, value;
+		qint32 value2, value3, value4;
+
+		QVERIFY(sql.next());
+		sql >> key >> value >> value2 >> value3 >> value4;
+		QCOMPARE(key, QString("test1"));
+		QCOMPARE(value, QString("val1"));
+		QCOMPARE(value2, 0);
+		QCOMPARE(value3, 0);
+		QCOMPARE(value4, 0);
+
+		QVERIFY(sql.next());
+		sql >> key >> value >> value2 >> value3 >> value4;
+		QCOMPARE(key, QString("test2"));
+		QCOMPARE(value, QString("val2"));
+		QCOMPARE(value2, 2);
+		QCOMPARE(value3, 0);
+		QCOMPARE(value4, 0);
+
+		QVERIFY(sql.next());
+		QVERIFY(sql.next());
+		QVERIFY(sql.next());
 	}
 
 };
