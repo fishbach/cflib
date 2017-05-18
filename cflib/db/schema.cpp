@@ -37,15 +37,90 @@ bool insertRevision(const QString & rev)
 		"("
 			"rev, applied"
 		") VALUES ("
-			"?, ?"
-		")");
+			"$1, $2"
+		")"
+	);
 	sql << rev << QDateTime::currentDateTimeUtc();
 	return sql.exec();
 }
 
+bool confirmRevision(const QString & rev)
+{
+	PSqlConn;
+	sql.prepare(
+		"UPDATE "
+			"__scheme_revisions__ "
+		"SET "
+			"applied = $1, success = 1 "
+		"WHERE "
+			"rev = $2"
+	);
+	sql << QDateTime::currentDateTimeUtc() << rev;
+	return sql.exec();
 }
 
-bool updateSchema(const QString & filename, QObject * migrator)
+bool execSql(const QString & query)
+{
+	static const QRegularExpression commentRe("(?:^|\n)--.+");
+
+	QString cleanQuery = query;
+	cleanQuery.replace(commentRe, "");
+	cleanQuery = cleanQuery.trimmed();
+	if (cleanQuery.isEmpty()) return true;
+
+	logDebug("sql: %1", cleanQuery);
+	PSqlConn;
+	return sql.execMultiple(cleanQuery);
+}
+
+bool execRevision(const QString & query, QObject * migrator)
+{
+	static const QRegularExpression execRe("(?:^|\n)-- EXEC (.+)\\s*\\(.*\\)\\s*(?:\n|$)");
+
+	int start = 0;
+	QRegularExpressionMatch match = execRe.match(query, start);
+	while (match.hasMatch()) {
+		QByteArray method = match.captured(1).toUtf8().trimmed();
+		method += "()";
+
+		if (!execSql(query.mid(start, match.capturedStart() - start))) return false;
+
+		if (!migrator) {
+			logWarn("found EXEC in SQL, but no migrator given");
+			return false;
+		}
+		const QMetaObject * meta = migrator->metaObject();
+		if (!meta) {
+			logWarn("migrator has no meta Object");
+			return false;
+		}
+
+		int methodId = meta->indexOfMethod(method);
+		if (methodId == -1) {
+			logWarn("method void %1 not found in migrator", method);
+			return false;
+		}
+		bool ok = false;
+		if (!meta->method(methodId).invoke(migrator, Q_RETURN_ARG(bool, ok))) {
+			logWarn("could not invoke method void %1 of migrator", method);
+			return false;
+		}
+		if (!ok) {
+			logWarn("migration method %1 failed", method);
+			return false;
+		}
+
+		logInfo("migration method %1 finished successfully", method);
+
+		start = match.capturedEnd() - 1;
+		match = execRe.match(query, start);
+	}
+	return execSql(query.mid(start));
+}
+
+}
+
+bool updateSchema(QObject * migrator, const QString & filename)
 {
 	return updateSchema(util::readFile(filename), migrator);
 }
@@ -57,15 +132,16 @@ bool updateSchema(const QByteArray & schema, QObject * migrator)
 	// get existing revisions
 	QSet<QString> existingRevisions;
 	bool isInitial = false;
-	if (!sql.exec("SELECT rev FROM __scheme_revisions__")) {
+	if (!sql.exec("SELECT rev FROM __scheme_revisions__ WHERE success = 1")) {
+		logInfo("creating table __scheme_revisions__");
 		if (!sql.exec(
 			"CREATE TABLE __scheme_revisions__ ("
 				"rev text NOT NULL, "
-				"applied timestamp with time zone NOT NULL"
-			")"))
-		{
-			return false;
-		}
+				"applied timestamp with time zone NOT NULL, "
+				"success smallint NOT NULL DEFAULT 0, "
+				"PRIMARY KEY (rev)"
+			")"
+		)) return false;
 		isInitial = true;
 	} else {
 		while (sql.next()) {
@@ -79,21 +155,25 @@ bool updateSchema(const QByteArray & schema, QObject * migrator)
 
 	int start = 0;
 	QRegularExpressionMatch match = revRe.match(utf8Schema, start);
-	QString lastRev;
+	QString lastRev = "__initial__";
 	while (match.hasMatch()) {
-		if (lastRev.isNull()) lastRev = "__initial__";
 		if (!existingRevisions.contains(lastRev)) {
-			QTextStream(stdout) << "==>" << utf8Schema.mid(start, match.capturedStart()) << "<==" << endl;
+			logInfo("applying revision %1", lastRev);
 			if (!insertRevision(lastRev)) return false;
+			if (!execRevision(utf8Schema.mid(start, match.capturedStart() - start + 1), migrator)) return false;
+			if (!confirmRevision(lastRev)) return false;
 		}
+
 		lastRev = match.captured(1);
-		start = match.capturedEnd();
+		start = match.capturedEnd() - 1;
 		match = revRe.match(utf8Schema, start);
 	}
-	if (lastRev.isNull()) lastRev = "__initial__";
+
 	if (!existingRevisions.contains(lastRev)) {
-		QTextStream(stdout) << "===\n" << utf8Schema.mid(start, match.capturedStart()) << endl;
+		logInfo("applying revision %1", lastRev);
 		if (!insertRevision(lastRev)) return false;
+		if (!execRevision(utf8Schema.mid(start), migrator)) return false;
+		if (!confirmRevision(lastRev)) return false;
 	}
 
 	return true;

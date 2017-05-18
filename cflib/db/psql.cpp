@@ -162,6 +162,8 @@ const int PSql::MAX_FIELD_COUNT;
 
 bool PSql::setParameter(const QString & connectionParameter)
 {
+	if (threadData_.hasLocalData()) threadData_.setLocalData(0);
+
 	connInfo = QString();
 
 	PGconn * conn = PQconnectdb(connectionParameter.toUtf8().constData());

@@ -25,6 +25,45 @@ using namespace cflib::db;
 
 USE_LOG(LogCat::Db)
 
+namespace {
+
+class Migrator : public QObject
+{
+	Q_OBJECT
+public slots:
+	bool test1()
+	{
+		QTextStream(stdout) << "test1 !!!!!!!!!!!\n";
+		return true;
+	}
+
+	bool test2()
+	{
+		QTextStream(stdout) << "test2 !!!!!!!!!!!\n";
+		return true;
+	}
+
+	bool test3()
+	{
+		QTextStream(stdout) << "test3 !!!!!!!!!!!\n";
+		return true;
+	}
+
+	bool test4()
+	{
+		QTextStream(stdout) << "test4 !!!!!!!!!!!\n";
+		return true;
+	}
+
+	bool test5()
+	{
+		QTextStream(stdout) << "test5 !!!!!!!!!!!\n";
+		return true;
+	}
+};
+
+}
+
 class Schema_test : public QObject
 {
 	Q_OBJECT
@@ -32,10 +71,11 @@ private slots:
 
 	void initTestCase()
 	{
-		QVERIFY(PSql::setParameter("host=127.0.0.1 dbname=postgres"));
-		PSqlConn;
-		sql.exec("DROP DATABASE cflib_db_test");
-		QVERIFY(sql.exec("CREATE DATABASE cflib_db_test"));
+		{
+			PSql sql("host=127.0.0.1 dbname=postgres");
+			sql.exec("DROP DATABASE cflib_db_test");
+			QVERIFY(sql.exec("CREATE DATABASE cflib_db_test"));
+		}
 		QVERIFY(PSql::setParameter("host=127.0.0.1 dbname=cflib_db_test"));
 	}
 
@@ -47,7 +87,7 @@ private slots:
 
 	void basic_test()
 	{
-//		QVERIFY(updateSchema());
+		QVERIFY(updateSchema<Migrator>());
 	}
 
 };

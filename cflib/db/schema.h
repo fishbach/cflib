@@ -22,7 +22,14 @@
 
 namespace cflib { namespace db {
 
-bool updateSchema(const QString & filename = ":/schema.sql", QObject * migrator = 0);
+bool updateSchema(QObject * migrator = 0, const QString & filename = ":/schema.sql");
 bool updateSchema(const QByteArray & schema, QObject * migrator);
+
+template<typename M>
+bool updateSchema(const QString & filename = ":/schema.sql")
+{
+	M migrator;
+	return updateSchema(&migrator, filename);
+}
 
 }}	// namespace
