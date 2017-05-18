@@ -131,7 +131,6 @@ bool updateSchema(const QByteArray & schema, QObject * migrator)
 
 	// get existing revisions
 	QSet<QString> existingRevisions;
-	bool isInitial = false;
 	if (!sql.exec("SELECT rev FROM __scheme_revisions__ WHERE success = 1")) {
 		logInfo("creating table __scheme_revisions__");
 		if (!sql.exec(
@@ -142,7 +141,6 @@ bool updateSchema(const QByteArray & schema, QObject * migrator)
 				"PRIMARY KEY (rev)"
 			")"
 		)) return false;
-		isInitial = true;
 	} else {
 		while (sql.next()) {
 			existingRevisions << sql.get<QString>(0);
