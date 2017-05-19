@@ -18,10 +18,12 @@
 
 #include <cflib/db/psql.h>
 #include <cflib/db/schema.h>
-#include <cflib/util/test.h>
 #include <cflib/util/log.h>
+#include <cflib/util/test.h>
+#include <cflib/util/util.h>
 
 using namespace cflib::db;
+using namespace cflib::util;
 
 USE_LOG(LogCat::Db)
 
@@ -116,6 +118,26 @@ private slots:
 		QVERIFY(sql.next());
 		QVERIFY(sql.next());
 		QVERIFY(sql.next());
+		QVERIFY(!sql.next());
+	}
+
+	void update_test()
+	{
+		QByteArray schema = readFile(":/schema.sql");
+		QVERIFY(updateSchema(schema, 0));
+
+		schema +=
+			"-- REVISION neu\n"
+			"\n"
+			"INSERT INTO config (key) VALUES ('neu')\n"
+		;
+		QVERIFY(updateSchema(schema, 0));
+		PSqlConn;
+		QVERIFY(sql.exec("SELECT COUNT(*) FROM config WHERE key = 'neu'"));
+		QVERIFY(sql.next());
+		QCOMPARE(sql.get<qint64>(0), 1);
+
+
 	}
 
 };

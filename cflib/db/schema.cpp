@@ -158,8 +158,11 @@ bool updateSchema(const QByteArray & schema, QObject * migrator)
 		if (!existingRevisions.contains(lastRev)) {
 			logInfo("applying revision %1", lastRev);
 			if (!insertRevision(lastRev)) return false;
+			PSqlConn;
+			sql.begin();
 			if (!execRevision(utf8Schema.mid(start, match.capturedStart() - start + 1), migrator)) return false;
 			if (!confirmRevision(lastRev)) return false;
+			if (!sql.commit()) return false;
 		}
 
 		lastRev = match.captured(1);
@@ -170,8 +173,11 @@ bool updateSchema(const QByteArray & schema, QObject * migrator)
 	if (!existingRevisions.contains(lastRev)) {
 		logInfo("applying revision %1", lastRev);
 		if (!insertRevision(lastRev)) return false;
+		PSqlConn;
+		sql.begin();
 		if (!execRevision(utf8Schema.mid(start), migrator)) return false;
 		if (!confirmRevision(lastRev)) return false;
+		if (!sql.commit()) return false;
 	}
 
 	return true;
