@@ -31,11 +31,12 @@ public:
 	{
 		QString name;
 		qint64 current;
-		qint64 avg;
-		qint64 peaks;
 		qint64 total;
+		qint64 peaks;
+		qint64 overflows;
+		qint64 avg;
 
-		ThreadInfo() : current(0), avg(0), peaks(0), total(0) {}
+		ThreadInfo() : current(0), total(0), peaks(0), overflows(0), avg(0) {}
 	};
 	typedef QVector<ThreadInfo> ThreadInfos;
 
@@ -56,6 +57,12 @@ public:
 	{
 		if (!verifyThreadCall(&ThreadStats::externNewCallTime, threadId, nsecs)) return;
 		infos_[threadId].current += nsecs;
+	}
+
+	inline void externOverflow(int threadId)
+	{
+		if (!verifyThreadCall(&ThreadStats::externOverflow, threadId)) return;
+		++infos_[threadId].overflows;
 	}
 
 	int externNewId(const QString & threadName)

@@ -160,6 +160,7 @@ ThreadHolderWorkerPool::~ThreadHolderWorkerPool()
 bool ThreadHolderWorkerPool::doCall(const Functor * func)
 {
 	if (!externalCalls_.put(func)) {
+		if (stats_) stats_->externOverflow(threadId_);
 		const impl::ThreadHolder * thread = dynamic_cast<const impl::ThreadHolder *>(QThread::currentThread());
 		logWarn("queue of thread %1 full (called by %2)", threadName, thread ? thread->threadName : "?");
 		return false;
