@@ -20,24 +20,35 @@
 
 #include <cflib/util/libev.h>
 #include <cflib/util/log.h>
+#include <cflib/util/threadstats.h>
 
 USE_LOG(LogCat::Etc)
 
 namespace cflib { namespace util { namespace impl {
 
+ThreadObject::ThreadObject(int threadId, ThreadStats * stats) :
+	threadId_(threadId), stats_(stats)
+{
+}
+
 bool ThreadObject::event(QEvent * event)
 {
 	if (event->type() == QEvent::User) {
+		QElapsedTimer elapsed;
+		if (stats_) elapsed.start();
 		const Functor * func = ((ThreadHolderEvent *)event)->func;
 		(*func)();
 		delete func;
+		if (stats_) stats_->externNewCallTime(threadId_, elapsed.nsecsElapsed());
 		return true;
 	}
 	return QObject::event(event);
 }
 
-ThreadHolder::ThreadHolder(const QString & threadName, bool disable) :
-	threadName(threadName), disabled_(disable), isActive_(true)
+ThreadHolder::ThreadHolder(const QString & threadName, int threadId, ThreadStats * stats, bool disable) :
+	threadName(threadName),
+	threadId_(threadId), stats_(stats),
+	disabled_(disable), isActive_(true)
 {
 	setObjectName(threadName);
 }
@@ -47,10 +58,10 @@ ThreadHolder::~ThreadHolder()
 	logTrace("~ThreadHolder()");
 }
 
-ThreadHolderQt::ThreadHolderQt(const QString & threadName, bool disable) :
-	ThreadHolder(threadName, disable)
+ThreadHolderQt::ThreadHolderQt(const QString & threadName, int threadId, ThreadStats * stats, bool disable) :
+	ThreadHolder(threadName, threadId, stats, disable)
 {
-	threadObject_ = new ThreadObject();
+	threadObject_ = new ThreadObject(threadId, stats);
 	if (!disable) {
 		threadObject_->moveToThread(this);
 		start();
@@ -85,8 +96,8 @@ void ThreadHolderQt::run()
 	logDebug("thread %1 stopped", threadName);
 }
 
-ThreadHolderLibEV::ThreadHolderLibEV(const QString & threadName, bool isWorkerOnly, bool disable) :
-	ThreadHolder(threadName, disable),
+ThreadHolderLibEV::ThreadHolderLibEV(const QString & threadName, int threadId, ThreadStats * stats, bool isWorkerOnly, bool disable) :
+	ThreadHolder(threadName, threadId, stats, disable),
 	loop_(ev_loop_new(EVFLAG_NOSIGMASK | (isWorkerOnly ? EVBACKEND_SELECT : EVBACKEND_ALL))),
 	wakeupWatcher_(new ev_async)
 {
@@ -126,15 +137,17 @@ void ThreadHolderLibEV::asyncCallback(ev_loop *, ev_async * w, int)
 	((ThreadHolderLibEV *)w->data)->wokeUp();
 }
 
-ThreadHolderWorkerPool::ThreadHolderWorkerPool(const QString & threadName, bool isWorkerOnly, uint threadCount)
+ThreadHolderWorkerPool::ThreadHolderWorkerPool(const QString & threadName,
+	int threadId, ThreadStats * stats, bool isWorkerOnly, uint threadCount)
 :
-	ThreadHolderLibEV(threadCount > 1 ? QString("%1 1/%2").arg(threadName).arg(threadCount) : threadName, isWorkerOnly, threadCount == 0),
+	ThreadHolderLibEV(threadCount > 1 ? QString("%1 1/%2").arg(threadName).arg(threadCount) : threadName,
+		threadId, stats, isWorkerOnly, threadCount == 0),
 	externalCalls_(1024),
 	stopLoop_(false)
 {
 	if (!disabled_) start();
 	for (uint i = 2 ; i <= threadCount ; ++i) {
-		Worker * thread = new Worker(QString("%1 %2/%3").arg(threadName).arg(i).arg(threadCount), i - 1, externalCalls_);
+		Worker * thread = new Worker(QString("%1 %2/%3").arg(threadName).arg(i).arg(threadCount), threadId, stats, i - 1, externalCalls_);
 		workers_ << thread;
 	}
 }
@@ -187,10 +200,13 @@ void ThreadHolderWorkerPool::wokeUp()
 		return;
 	}
 
+	QElapsedTimer elapsed;
+	if (stats_) elapsed.start();
 	while (const Functor * func = externalCalls_.take()) {
 		(*func)();
 		delete func;
 	}
+	if (stats_) stats_->externNewCallTime(threadId_, elapsed.nsecsElapsed());
 }
 
 void ThreadHolderWorkerPool::run()
@@ -199,9 +215,10 @@ void ThreadHolderWorkerPool::run()
 	foreach (Worker * w, workers_) w->wait();
 }
 
-ThreadHolderWorkerPool::Worker::Worker(const QString & threadName, uint threadNo, ThreadFifo<const Functor *> & externalCalls)
+ThreadHolderWorkerPool::Worker::Worker(const QString & threadName,
+	int threadId, ThreadStats * stats, uint threadNo, ThreadFifo<const Functor *> & externalCalls)
 :
-	ThreadHolderLibEV(threadName, true, false),
+	ThreadHolderLibEV(threadName, threadId, stats, true, false),
 	threadNo_(threadNo),
 	externalCalls_(externalCalls),
 	stopLoop_(false)

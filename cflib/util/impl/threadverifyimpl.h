@@ -24,7 +24,11 @@
 struct ev_async;
 struct ev_loop;
 
-namespace cflib { namespace util { namespace impl {
+namespace cflib { namespace util {
+
+class ThreadStats;
+
+namespace impl {
 
 class ThreadHolderEvent : public QEvent
 {
@@ -40,13 +44,18 @@ public:
 class ThreadObject : public QObject
 {
 public:
+	ThreadObject(int threadId, ThreadStats * stats);
 	virtual bool event(QEvent * event);
+
+private:
+	const int threadId_;
+	ThreadStats * const stats_;
 };
 
 class ThreadHolder : public QThread
 {
 public:
-	ThreadHolder(const QString & threadName, bool disable);
+	ThreadHolder(const QString & threadName, int threadId, ThreadStats * stats, bool disable);
 	~ThreadHolder();
 
 	const QString threadName;
@@ -58,6 +67,8 @@ public:
 	virtual uint threadNo() const    { return 0; }
 
 protected:
+	const int threadId_;
+	ThreadStats * const stats_;
 	const bool disabled_;
 	bool isActive_;
 };
@@ -65,7 +76,7 @@ protected:
 class ThreadHolderQt : public ThreadHolder
 {
 public:
-	ThreadHolderQt(const QString & threadName, bool disable);
+	ThreadHolderQt(const QString & threadName, int threadId, ThreadStats * stats, bool disable);
 
 	ThreadObject * threadObject() const { return threadObject_; }
 	virtual bool doCall(const Functor * func);
@@ -88,7 +99,7 @@ public:
 	void wakeUp();
 
 protected:
-	ThreadHolderLibEV(const QString & threadName, bool isWorkerOnly, bool disable);
+	ThreadHolderLibEV(const QString & threadName, int threadId, ThreadStats * stats, bool isWorkerOnly, bool disable);
 	virtual void run();
 	virtual void wokeUp() = 0;
 
@@ -103,7 +114,7 @@ private:
 class ThreadHolderWorkerPool : public ThreadHolderLibEV
 {
 public:
-	ThreadHolderWorkerPool(const QString & threadName, bool isWorkerOnly, uint threadCount);
+	ThreadHolderWorkerPool(const QString & threadName, int threadId, ThreadStats * stats, bool isWorkerOnly, uint threadCount);
 	~ThreadHolderWorkerPool();
 
 	virtual bool doCall(const Functor * func);
@@ -119,7 +130,8 @@ private:
 	class Worker : public ThreadHolderLibEV
 	{
 	public:
-		Worker(const QString & threadName, uint threadNo, ThreadFifo<const Functor *> & externalCalls);
+		Worker(const QString & threadName,
+			int threadId, ThreadStats * stats, uint threadNo, ThreadFifo<const Functor *> & externalCalls);
 
 		virtual bool doCall(const Functor *) { return false; }
 		virtual void stopLoop();

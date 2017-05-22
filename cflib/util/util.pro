@@ -33,6 +33,7 @@ HEADERS = \
 	sig.h \
 	test.h \
 	threadfifo.h \
+	threadstats.h \
 	threadverify.h \
 	timer.h \
 	timeshifter.h \

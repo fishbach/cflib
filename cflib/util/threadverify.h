@@ -22,6 +22,8 @@
 
 namespace cflib { namespace util {
 
+class ThreadStats;
+
 class ThreadVerify
 {
 	Q_DISABLE_COPY(ThreadVerify)
@@ -608,11 +610,15 @@ protected:
 	};
 
 private:
+	ThreadVerify();
+	void setStats(ThreadStats * stats);
 	void shutdownThread();
 
 private:
 	impl::ThreadHolder * verifyThread_;
 	const bool ownerOfVerifyThread_;
+
+	friend class ThreadStats;
 };
 
 inline ev_loop * libEVLoopOfThread()

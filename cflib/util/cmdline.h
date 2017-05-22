@@ -56,7 +56,8 @@ public:
 class Option : public ArgBase
 {
 public:
-	Option(const QByteArray & optionName, bool hasValue = false, bool isOptional = true, bool isRepeatable = false) :
+	Option(const QByteArray & optionName, bool hasValue = false,
+		bool isOptional = true, bool isRepeatable = false) :
 		ArgBase(0, optionName, hasValue, isOptional, isRepeatable) {}
 	Option(char optionChar, const QByteArray & optionName = QByteArray(), bool hasValue = false,
 		bool isOptional = true, bool isRepeatable = false) :
