@@ -38,7 +38,7 @@ bool insertRevision(const QString & rev)
 			"rev, applied"
 		") VALUES ("
 			"$1, $2"
-		")"
+		") ON CONFLICT DO NOTHING"
 	);
 	sql << rev << QDateTime::currentDateTimeUtc();
 	return sql.exec();
