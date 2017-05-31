@@ -73,21 +73,17 @@ private slots:
 
 	void initTestCase()
 	{
-		{
-			PSql sql("host=127.0.0.1 dbname=postgres");
-			sql.exec("DROP DATABASE cflib_db_test");
-			QVERIFY(sql.exec("CREATE DATABASE cflib_db_test"));
-		}
+		PSql sql("host=127.0.0.1 dbname=postgres");
+		sql.exec("DROP DATABASE cflib_db_test");
+		QVERIFY(sql.exec("CREATE DATABASE cflib_db_test"));
 		QVERIFY(PSql::setParameter("host=127.0.0.1 dbname=cflib_db_test"));
 	}
 
 	void cleanupTestCase()
 	{
 		PSql::closeConnection();
-		{
-			PSql sql("host=127.0.0.1 dbname=postgres");
-			QVERIFY(sql.exec("DROP DATABASE cflib_db_test"));
-		}
+		PSql sql("host=127.0.0.1 dbname=postgres");
+		QVERIFY(sql.exec("DROP DATABASE cflib_db_test"));
 	}
 
 	void basic_test()
