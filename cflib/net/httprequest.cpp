@@ -39,7 +39,9 @@ class HttpRequest::Conn : public TCPConn
 {
 public:
 	Conn(HttpRequest * parent, TCPConnData * data,
-		const QUrl & url, const QByteArray & postData, uint timeoutMs)
+		const QUrl & url,
+		const QByteArray & postData, const QByteArray & contentType,
+		uint timeoutMs)
 	:
 		TCPConn(data),
 		timeout_(this, &Conn::timeout),
@@ -63,11 +65,17 @@ public:
 
 		// login / password
 		if (!url.userInfo().isEmpty()) {
-			request += "Authorization: Basic " + url.userInfo().toUtf8().toBase64() +"\r\n";
+			request += "Authorization: Basic " + url.userInfo().toUtf8().toBase64() + "\r\n";
 		}
 
-		// header end
-		request += "\r\n";
+		if (postData.isNull()) {
+			request += "\r\n";
+		} else {
+			request += "Content-Length: " + QByteArray::number(postData.size()) + "\r\n";
+			request += "Content-Type: " + contentType + "\r\n";
+			request += "\r\n";
+			request += postData;
+		}
 
 		logTrace("sending: %1", request);
 		write(request);
@@ -168,9 +176,11 @@ HttpRequest::~HttpRequest()
 	destroy();
 }
 
-void HttpRequest::start(const QUrl & url, const QByteArray & postData, uint timeoutMs)
+void HttpRequest::start(const QUrl & url,
+	const QByteArray & postData, const QByteArray & contentType,
+	uint timeoutMs)
 {
-	if (!verifyThreadCall(&HttpRequest::start, url, postData, timeoutMs)) return;
+	if (!verifyThreadCall(&HttpRequest::start, url, postData, contentType, timeoutMs)) return;
 
 	if (conn_) {
 		logWarn("cannot handle to simultaneous requests");
@@ -185,7 +195,7 @@ void HttpRequest::start(const QUrl & url, const QByteArray & postData, uint time
 		reply(503, "Service Unavailable");
 		return;
 	}
-	conn_ = new Conn(this, cd, url, postData, timeoutMs);
+	conn_ = new Conn(this, cd, url, postData, contentType, timeoutMs);
 }
 
 void HttpRequest::destroy()

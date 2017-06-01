@@ -32,7 +32,9 @@ public:
 	HttpRequest(TCPManager & mgr);
 	~HttpRequest();
 
-	void start(const QUrl & url, const QByteArray & postData = QByteArray(), uint timeoutMs = 10000);
+	void start(const QUrl & url,
+		const QByteArray & postData = QByteArray(), const QByteArray & contentType = "application/octet-stream",
+		uint timeoutMs = 10000);
 
 cfsignals:
 	sig<void (int status, const QByteArray & reply)> reply;
