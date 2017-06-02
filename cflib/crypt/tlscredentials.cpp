@@ -211,28 +211,29 @@ bool TLSCredentials::loadFromDir(const QString & path)
 
 bool TLSCredentials::activateLoaded(bool isTrustedCA)
 {
+	bool ok = true;
 	foreach (const QByteArray & data, impl_->loadedCerts) {
 		if (addCerts(data, isTrustedCA) == 0) {
-			logCritical("could not handle certificate: %1", data);
-			return false;
+			logWarn("could not handle certificate: %1", data);
+			ok = false;
 		}
 	}
 	impl_->loadedCerts.clear();
 	foreach (const QByteArray & data, impl_->loadedKeys) {
 		if (!addPrivateKey(data)) {
-			logCritical("could not handle key: %1", data);
-			return false;
+			logWarn("could not handle key: %1", data);
+			ok = false;
 		}
 	}
 	impl_->loadedKeys.clear();
 	foreach (const QByteArray & data, impl_->loadedCrls) {
 		if (addRevocationLists(data) == 0) {
-			logCritical("could not handle revocation list: %1", data);
-			return false;
+			logWarn("could not handle revocation list: %1", data);
+			ok = false;
 		}
 	}
 	impl_->loadedCrls.clear();
-	return true;
+	return ok;
 }
 
 QList<TLSCertInfo> TLSCredentials::getCertInfos() const
