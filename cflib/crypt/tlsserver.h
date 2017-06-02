@@ -31,9 +31,9 @@ public:
 	TLSServer(TLSSessions & sessions, TLSCredentials & credentials, bool highSecurity = false);
 	~TLSServer();
 
-	virtual QByteArray initialSend() { return QByteArray(); }
-	virtual bool received(const QByteArray & encrypted, QByteArray & plain, QByteArray & sendBack);
-	virtual bool send(const QByteArray & plain, QByteArray & encrypted);
+	QByteArray initialSend() override { return QByteArray(); }
+	bool received(const QByteArray & encrypted, QByteArray & plain, QByteArray & sendBack) override;
+	bool send(const QByteArray & plain, QByteArray & encrypted) override;
 
 private:
 	class Impl;

@@ -72,7 +72,8 @@ protected:
 private:
 	static void listenSocketReadable(ev_loop * loop, ev_io * w, int revents);
 	void callClosed(TCPConnData * conn);
-	TCPConnData * addConnection(int sock, const QByteArray & destIP, quint16 destPort, crypt::TLSCredentials * credentials);
+	TCPConnData * addConnection(int sock, const QByteArray & destIP, quint16 destPort,
+		crypt::TLSCredentials * credentials, const QByteArray & destAddress);
 
 private:
 	int listenSock_;

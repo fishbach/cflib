@@ -43,7 +43,7 @@ private slots:
 
 		const QList<TLSCertInfo> infos = creds.getCertInfos();
 		QCOMPARE(infos.size(), 3);
-		QCOMPARE(infos[0].subjectName.constData(), "server");
+		QCOMPARE(infos[0].subjectName.constData(), "127.0.0.1");
 		QCOMPARE(infos[0].issuerName .constData(), "ca");
 		QVERIFY(!infos[0].isCA);
 		QVERIFY(!infos[0].isTrusted);
@@ -67,7 +67,7 @@ private slots:
 
 		const QList<TLSCertInfo> infos = creds.getCertInfos();
 		QCOMPARE(infos.size(), 3);
-		QCOMPARE(infos[0].subjectName.constData(), "server");
+		QCOMPARE(infos[0].subjectName.constData(), "127.0.0.1");
 		QVERIFY(!infos[0].isTrusted);
 		QCOMPARE(infos[1].subjectName.constData(), "ca");
 		QVERIFY(!infos[1].isTrusted);

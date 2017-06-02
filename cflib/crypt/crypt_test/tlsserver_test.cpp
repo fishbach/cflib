@@ -198,7 +198,7 @@ private slots:
 		QCOMPARE((int)clientCreds.addCerts(cert3, true), 1);
 		QCOMPARE((int)clientCreds.addRevocationLists(cert2Crl), 1);
 		TLSSessions clientSessions;
-		TLSClient client(clientSessions, clientCreds, "server");
+		TLSClient client(clientSessions, clientCreds, "127.0.0.1");
 
 		QByteArray enc1;
 		QByteArray enc2;

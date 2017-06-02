@@ -32,9 +32,9 @@ public:
 		bool highSecurity = false);
 	~TLSClient();
 
-	virtual QByteArray initialSend();
-	virtual bool received(const QByteArray & encrypted, QByteArray & plain, QByteArray & sendBack);
-	virtual bool send(const QByteArray & plain, QByteArray & encrypted);
+	QByteArray initialSend() override;
+	bool received(const QByteArray & encrypted, QByteArray & plain, QByteArray & sendBack) override;
+	bool send(const QByteArray & plain, QByteArray & encrypted) override;
 
 private:
 	class Impl;

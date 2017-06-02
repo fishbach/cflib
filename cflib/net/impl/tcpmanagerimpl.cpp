@@ -249,7 +249,7 @@ TCPConnData * TCPManagerImpl::openConnection(
 
 	logDebug("opened connection %1 to %2:%3", sock, destIP, destPort);
 
-	return addConnection(sock, destIP, destPort, credentials);
+	return addConnection(sock, destIP, destPort, credentials, destAddress);
 }
 
 void TCPManagerImpl::startReadWatcher(TCPConnData * conn)
@@ -556,14 +556,15 @@ void TCPManagerImpl::callClosed(TCPConnData * conn)
 	else                 execCall(new Functor0<TCPConnData>(conn, &TCPConnData::callClosed));
 }
 
-TCPConnData * TCPManagerImpl::addConnection(int sock, const QByteArray & destIP, quint16 destPort, TLSCredentials * credentials)
+TCPConnData * TCPManagerImpl::addConnection(int sock, const QByteArray & destIP, quint16 destPort,
+	TLSCredentials * credentials, const QByteArray & destAddress)
 {
 	SyncedThreadCall<TCPConnData *> stc(this);
-	if (!stc.verify(&TCPManagerImpl::addConnection, sock, destIP, destPort, credentials)) return stc.retval();
+	if (!stc.verify(&TCPManagerImpl::addConnection, sock, destIP, destPort, credentials, destAddress)) return stc.retval();
 
 	TCPConnData * conn = credentials ?
 		new TCPConnData(*this, sock, destIP, destPort,
-			new TLSClient(*tlsSessions(), *credentials), ++tlsConnId_ % tlsThreads_.size()) :
+			new TLSClient(*tlsSessions(), *credentials, destAddress), ++tlsConnId_ % tlsThreads_.size()) :
 		new TCPConnData(*this, sock, destIP, destPort, 0, 0);
 	connections_ << conn;
 	return conn;
