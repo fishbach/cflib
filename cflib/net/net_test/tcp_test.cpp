@@ -332,14 +332,14 @@ private slots:
 		QCOMPARE((int)serverCreds.addCerts(cert1 + cert2 + cert3), 3);
 		QVERIFY(serverCreds.addPrivateKey(detach(cert1PrivateKey), "SuperSecure123"));
 
-		TLSCredentials clientCreds;
-		QCOMPARE((int)clientCreds.addCerts(cert3, true), 1);
-		QCOMPARE((int)clientCreds.addRevocationLists(cert2Crl), 1);
-
 		Server serv(1);
 		QVERIFY(serv.start("127.0.0.1", 12301, serverCreds));
+
 		TCPManager cli(1);
-		TCPConnData * data = cli.openConnection("127.0.0.1", 12301, clientCreds);
+		QCOMPARE((int)cli.clientCredentials().addCerts(cert3, true), 1);
+		QCOMPARE((int)cli.clientCredentials().addRevocationLists(cert2Crl), 1);
+
+		TCPConnData * data = cli.openTLSConnection("127.0.0.1", 12301);
 		QVERIFY(data != 0);
 		ClientConn * conn = new ClientConn(data);
 

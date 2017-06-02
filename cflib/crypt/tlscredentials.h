@@ -53,13 +53,15 @@ public:
 	// destroys data in parameters
 	bool addPrivateKey(const QByteArray & privateKey, const QByteArray & password = QByteArray());
 
-	// loads all certificates ending with: _crt.pem
-	// and all keys ending with: _key.pem
+	// Loads all
+	//   certificates ending with: _crt.pem
+	//   keys         ending with: _key.pem
+	//   revocations  ending with: _crl.pem
 	// After load activate has to be called.
 	// This is necessary when you do a procsess owner change in between.
 	// Otherwise the secure memory of botan will not make the move to the new owner.
 	bool loadFromDir(const QString & path);
-	bool activateLoaded();
+	bool activateLoaded(bool isTrustedCA = false);
 
 private:
 	class Impl;

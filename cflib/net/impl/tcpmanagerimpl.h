@@ -18,12 +18,11 @@
 
 #pragma once
 
+#include <cflib/crypt/tlscredentials.h>
 #include <cflib/net/tcpconn.h>
 #include <cflib/util/threadverify.h>
 
 struct ev_io;
-
-namespace cflib { namespace crypt { class TLSCredentials; }}
 
 namespace cflib { namespace net {
 
@@ -65,6 +64,8 @@ public:
 	static void writeable(ev_loop * loop, ev_io * w, int revents);
 
 	TCPManager & parent;
+
+	crypt::TLSCredentials clientCredentials;
 
 protected:
 	virtual void deleteThreadData();

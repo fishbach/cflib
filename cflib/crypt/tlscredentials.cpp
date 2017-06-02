@@ -81,6 +81,7 @@ public:
 	Certificate_Store_In_Memory trustedCAs;
 	QList<QByteArray> loadedCerts;
 	QList<QByteArray> loadedKeys;
+	QList<QByteArray> loadedCrls;
 };
 
 TLSCredentials::TLSCredentials() :
@@ -182,9 +183,8 @@ bool TLSCredentials::loadFromDir(const QString & path)
 		const QString file = fi.absoluteFilePath();
 		const QByteArray data = util::readFile(file);
 		if (data.isEmpty()) {
-			logCritical("could not read certificate: %1", file);
-			QTextStream(stderr) << "could not read certificate: " << file << endl;
-			return false;
+			logWarn("could not read certificate: %1", file);
+			continue;
 		}
 		impl_->loadedCerts << data;
 	}
@@ -192,21 +192,28 @@ bool TLSCredentials::loadFromDir(const QString & path)
 		const QString file = fi.absoluteFilePath();
 		const QByteArray data = util::readFile(file);
 		if (data.isEmpty()) {
-			logCritical("could not read key: %1", file);
-			QTextStream(stderr) << "could not read key: " << file << endl;
-			return false;
+			logWarn("could not read key: %1", file);
+			continue;
 		}
 		impl_->loadedKeys << data;
+	}
+	foreach (const QFileInfo & fi, dir.entryInfoList(QStringList() << "*_crl.pem", QDir::Readable | QDir::Files)) {
+		const QString file = fi.absoluteFilePath();
+		const QByteArray data = util::readFile(file);
+		if (data.isEmpty()) {
+			logWarn("could not read revocation list: %1", file);
+			continue;
+		}
+		impl_->loadedCrls << data;
 	}
 	return true;
 }
 
-bool TLSCredentials::activateLoaded()
+bool TLSCredentials::activateLoaded(bool isTrustedCA)
 {
 	foreach (const QByteArray & data, impl_->loadedCerts) {
-		if (!addCerts(data)) {
+		if (addCerts(data, isTrustedCA) == 0) {
 			logCritical("could not handle certificate: %1", data);
-			QTextStream(stderr) << "could not handle certificate: " << data << endl;
 			return false;
 		}
 	}
@@ -214,11 +221,17 @@ bool TLSCredentials::activateLoaded()
 	foreach (const QByteArray & data, impl_->loadedKeys) {
 		if (!addPrivateKey(data)) {
 			logCritical("could not handle key: %1", data);
-			QTextStream(stderr) << "could not handle key: " << data << endl;
 			return false;
 		}
 	}
 	impl_->loadedKeys.clear();
+	foreach (const QByteArray & data, impl_->loadedCrls) {
+		if (addRevocationLists(data) == 0) {
+			logCritical("could not handle revocation list: %1", data);
+			return false;
+		}
+	}
+	impl_->loadedCrls.clear();
 	return true;
 }
 

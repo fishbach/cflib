@@ -44,18 +44,19 @@ public:
 
 	TCPConnData * openConnection(const QByteArray & destAddress, quint16 destPort, bool preferIPv6 = false);
 	TCPConnData * openConnection(const QByteArray & destAddress, quint16 destPort,
-		crypt::TLSCredentials & credentials, bool preferIPv6 = false);
-	TCPConnData * openConnection(const QByteArray & destAddress, quint16 destPort,
 		const QByteArray & sourceIP, quint16 sourcePort, bool preferIPv6 = false);
-	TCPConnData * openConnection(const QByteArray & destAddress, quint16 destPort,
-		const QByteArray & sourceIP, quint16 sourcePort,
-		crypt::TLSCredentials & credentials, bool preferIPv6 = false);
+
+	TCPConnData * openTLSConnection(const QByteArray & destAddress, quint16 destPort, bool preferIPv6 = false);
+	TCPConnData * openTLSConnection(const QByteArray & destAddress, quint16 destPort,
+		const QByteArray & sourceIP, quint16 sourcePort, bool preferIPv6 = false);
 
 	static int openListenSocket(const QByteArray & ip, quint16 port);
 	bool start(int listenSocket);
 	bool start(int listenSocket, crypt::TLSCredentials & credentials);
 
 	util::ThreadVerify * networkThread();
+
+	crypt::TLSCredentials & clientCredentials();
 
 protected:
 	virtual void newConnection(TCPConnData * data);

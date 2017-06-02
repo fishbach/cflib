@@ -35,7 +35,7 @@ const QRegularExpression statusRE("^HTTP/1.[01] (\\d+)");
 
 }
 
-class HttpRequest::Conn : public TCPConn
+class HttpRequest::Conn : public TCPConn, public util::ThreadVerify
 {
 public:
 	Conn(HttpRequest * parent, TCPConnData * data,
@@ -44,6 +44,7 @@ public:
 		uint timeoutMs)
 	:
 		TCPConn(data),
+		ThreadVerify(manager().networkThread()),
 		timeout_(this, &Conn::timeout),
 		parent_(parent),
 		gotReply_(false)
@@ -99,6 +100,8 @@ public:
 protected:
 	void newBytesAvailable() override
 	{
+		if (!verifyThreadCall(&Conn::newBytesAvailable)) return;
+
 		buf_ += read();
 		logTrace("received: %1", buf_);
 
@@ -131,11 +134,15 @@ protected:
 		if (parent_) parent_->reply(status, buf_.mid(headerEndPos + 4, length));
 		gotReply_ = true;
 		timeout_.stop();
-		close();
+		close(ReadWriteClosed, true);
 	}
 
-	void closed(CloseType) override
+	void closed(CloseType type) override
 	{
+		if (!verifyThreadCall(&Conn::closed, type)) return;
+
+		logFunctionTrace
+
 		if (parent_) {
 			if (!gotReply_) parent_->reply(503, "Service Unavailable");
 			parent_->conn_ = 0;
@@ -188,9 +195,17 @@ void HttpRequest::start(const QUrl & url,
 		return;
 	}
 
-	TCPConnData * cd = mgr_.openConnection(
+	TCPConnData * cd;
+	if (url.scheme() == "http") {
+		cd = mgr_.openConnection(
+			url.host(QUrl::FullyEncoded).toUtf8(),
+			url.port() != -1 ? url.port() : 80);
+	} else {
+		cd = mgr_.openTLSConnection(
 		url.host(QUrl::FullyEncoded).toUtf8(),
-		url.port() != -1 ? url.port() : url.scheme() == "http" ? 80 : 443);
+		url.port() != -1 ? url.port() : 443);
+	}
+
 	if (!cd) {
 		reply(503, "Service Unavailable");
 		return;

@@ -47,18 +47,17 @@ void TLSThread::read(TCPConnData * conn)
 
 	QByteArray sendBack;
 	QByteArray plain;
-	if (!conn->tlsStream->received(conn->readData, plain, sendBack)) {
-		conn->readData.resize(0);
-		impl_.closeConn(conn, TCPConn::ReadWriteClosed, true);
-		return;
-	}
+	bool ok = conn->tlsStream->received(conn->readData, plain, sendBack);
 	if (!sendBack.isEmpty()) impl_.writeToSocket(conn, sendBack, false);
+
 	if (plain.isEmpty()) {
 		conn->readData.resize(0);
-		impl_.startReadWatcher(conn);
+		if (ok) impl_.startReadWatcher(conn);
+		else    impl_.closeConn(conn, TCPConn::ReadWriteClosed, true);
 	} else {
 		conn->readData = plain;
 		conn->conn->newBytesAvailable();
+		if (!ok) impl_.closeConn(conn, TCPConn::ReadWriteClosed, false);
 	}
 }
 

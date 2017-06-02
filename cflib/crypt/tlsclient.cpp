@@ -42,26 +42,31 @@ public:
 	{
 	}
 
-	void tls_emit_data(const byte data[], size_t size)
+	void tls_emit_data(const byte data[], size_t size) override
 	{
 		outgoingEncryptedPtr->append((const char *)data, (int)size);
 	}
 
-	void tls_record_received(u64bit, const byte data[], size_t size)
+	void tls_record_received(u64bit, const byte data[], size_t size) override
 	{
 		incomingPlainPtr->append((const char *)data, (int)size);
 	}
 
-	void tls_alert(TLS::Alert alert)
+	void tls_alert(TLS::Alert alert) override
 	{
 		logInfo("TLS alert: %1", alert.type_string().c_str());
 		hasError = true;
 	}
 
-	bool tls_session_established(const TLS::Session &)
+	bool tls_session_established(const TLS::Session &) override
 	{
 		isReady = true;
 		return true;
+	}
+
+	std::chrono::milliseconds tls_verify_cert_chain_ocsp_timeout() const override
+	{
+		return std::chrono::milliseconds(1000);
 	}
 
 public:
