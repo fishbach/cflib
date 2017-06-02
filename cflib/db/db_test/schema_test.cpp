@@ -88,7 +88,7 @@ private slots:
 
 	void basic_test()
 	{
-		QVERIFY(updateSchema<Migrator>());
+		QVERIFY(schema::update<Migrator>());
 
 		PSqlConn;
 		QVERIFY(sql.exec("SELECT key, value, value2, value3, value4 FROM config ORDER BY key"));
@@ -120,14 +120,14 @@ private slots:
 	void update_test()
 	{
 		QByteArray schema = readFile(":/schema.sql");
-		QVERIFY(updateSchema(schema, 0));
+		QVERIFY(schema::update(schema, 0));
 
 		schema +=
 			"-- REVISION neu\n"
 			"\n"
 			"INSERT INTO config (key) VALUES ('neu')\n"
 		;
-		QVERIFY(updateSchema(schema, 0));
+		QVERIFY(schema::update(schema, 0));
 		PSqlConn;
 		QVERIFY(sql.exec("SELECT COUNT(*) FROM config WHERE key = 'neu'"));
 		QVERIFY(sql.next());

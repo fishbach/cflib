@@ -24,9 +24,18 @@
 
 USE_LOG(LogCat::Db)
 
-namespace cflib { namespace db {
+namespace cflib { namespace db { namespace schema {
 
 namespace {
+
+class MigratorObject : public QObject
+{
+public:
+	MigratorObject(Migrator migrator) : migrator_(migrator) {}
+	bool migrate(const QByteArray & name) { return migrator_(name); }
+private:
+	const Migrator migrator_;
+};
 
 bool insertRevision(const QString & rev)
 {
@@ -89,28 +98,36 @@ bool execRevision(const QString & query, QObject * migrator)
 			logWarn("found EXEC in SQL, but no migrator given");
 			return false;
 		}
-		const QMetaObject * meta = migrator->metaObject();
-		if (!meta) {
-			logWarn("migrator has no meta Object");
-			return false;
+
+		MigratorObject * migratorObject = dynamic_cast<MigratorObject *>(migrator);
+		if (migratorObject) {
+			if (!migratorObject->migrate(method)) {
+				logWarn("migration %1 failed", method);
+				return false;
+			}
+		} else {
+			const QMetaObject * meta = migrator->metaObject();
+			if (!meta) {
+				logWarn("migrator has no meta Object");
+				return false;
+			}
+			int methodId = meta->indexOfMethod(method);
+			if (methodId == -1) {
+				logWarn("method void %1 not found in migrator", method);
+				return false;
+			}
+			bool ok = false;
+			if (!meta->method(methodId).invoke(migrator, Q_RETURN_ARG(bool, ok))) {
+				logWarn("could not invoke method void %1 of migrator", method);
+				return false;
+			}
+			if (!ok) {
+				logWarn("migration method %1 failed", method);
+				return false;
+			}
 		}
 
-		int methodId = meta->indexOfMethod(method);
-		if (methodId == -1) {
-			logWarn("method void %1 not found in migrator", method);
-			return false;
-		}
-		bool ok = false;
-		if (!meta->method(methodId).invoke(migrator, Q_RETURN_ARG(bool, ok))) {
-			logWarn("could not invoke method void %1 of migrator", method);
-			return false;
-		}
-		if (!ok) {
-			logWarn("migration method %1 failed", method);
-			return false;
-		}
-
-		logInfo("migration method %1 finished successfully", method);
+		logInfo("migration %1 finished successfully", method);
 
 		start = match.capturedEnd() - 1;
 		match = execRe.match(query, start);
@@ -120,12 +137,12 @@ bool execRevision(const QString & query, QObject * migrator)
 
 }
 
-bool updateSchema(QObject * migrator, const QString & filename)
+bool update(QObject * migrator, const QString & filename)
 {
-	return updateSchema(util::readFile(filename), migrator);
+	return update(util::readFile(filename), migrator);
 }
 
-bool updateSchema(const QByteArray & schema, QObject * migrator)
+bool update(const QByteArray & schema, QObject * migrator)
 {
 	PSqlConn;
 
@@ -183,4 +200,11 @@ bool updateSchema(const QByteArray & schema, QObject * migrator)
 	return true;
 }
 
-}}	// namespace
+bool update(const QByteArray & schema, Migrator migrator)
+{
+	if (!migrator) return update(schema);
+	MigratorObject migratorObject(migrator);
+	return update(schema, &migratorObject);
+}
+
+}}}	// namespace

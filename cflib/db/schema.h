@@ -19,17 +19,21 @@
 #pragma once
 
 #include <QtCore>
+#include <functional>
 
-namespace cflib { namespace db {
+namespace cflib { namespace db { namespace schema {
 
-bool updateSchema(QObject * migrator = 0, const QString & filename = ":/schema.sql");
-bool updateSchema(const QByteArray & schema, QObject * migrator);
+typedef std::function<bool (const QByteArray & name)> Migrator;
+
+bool update(QObject * migrator = 0, const QString & filename = ":/schema.sql");
+bool update(const QByteArray & schema, QObject * migrator = 0);
+bool update(const QByteArray & schema, Migrator migrator);
 
 template<typename M>
-bool updateSchema(const QString & filename = ":/schema.sql")
+bool update(const QString & filename = ":/schema.sql")
 {
 	M migrator;
-	return updateSchema(&migrator, filename);
+	return update(&migrator, filename);
 }
 
-}}	// namespace
+}}}	// namespace
