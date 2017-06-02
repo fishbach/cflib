@@ -26,6 +26,7 @@ namespace cflib { namespace db { namespace schema {
 typedef std::function<bool (const QByteArray & name)> Migrator;
 
 bool update(QObject * migrator = 0, const QString & filename = ":/schema.sql");
+bool update(Migrator migrator     , const QString & filename = ":/schema.sql");
 bool update(const QByteArray & schema, QObject * migrator = 0);
 bool update(const QByteArray & schema, Migrator migrator);
 

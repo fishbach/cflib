@@ -84,13 +84,12 @@ bool execSql(const QString & query)
 
 bool execRevision(const QString & query, QObject * migrator)
 {
-	static const QRegularExpression execRe("(?:^|\n)-- EXEC (.+)\\s*\\(.*\\)\\s*(?:\n|$)");
+	static const QRegularExpression execRe("(?:^|\n)-- EXEC (.+)(?:\n|$)");
 
 	int start = 0;
 	QRegularExpressionMatch match = execRe.match(query, start);
 	while (match.hasMatch()) {
 		QByteArray method = match.captured(1).toUtf8().trimmed();
-		method += "()";
 
 		if (!execSql(query.mid(start, match.capturedStart() - start))) return false;
 
@@ -111,7 +110,7 @@ bool execRevision(const QString & query, QObject * migrator)
 				logWarn("migrator has no meta Object");
 				return false;
 			}
-			int methodId = meta->indexOfMethod(method);
+			int methodId = meta->indexOfMethod(method + "()");
 			if (methodId == -1) {
 				logWarn("method void %1 not found in migrator", method);
 				return false;
@@ -138,6 +137,11 @@ bool execRevision(const QString & query, QObject * migrator)
 }
 
 bool update(QObject * migrator, const QString & filename)
+{
+	return update(util::readFile(filename), migrator);
+}
+
+bool update(Migrator migrator, const QString & filename)
 {
 	return update(util::readFile(filename), migrator);
 }

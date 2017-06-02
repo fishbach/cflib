@@ -62,10 +62,10 @@ int main(int argc, char *argv[])
 	}
 
 	PSql::setParameter(dbOpt.isSet() ? dbOpt.value() : "");
-	if (!schema::update(schemaArg.value(), migratorOpt.isSet() ?
+	if (!schema::update(!migratorOpt.isSet() ? schema::Migrator() :
 		[&](const QByteArray & name) {
-			return QProcess::execute(QString::fromUtf8(migratorOpt.value()) + " '" + name + "'") == 0;
-		} : schema::Migrator()))
+			return QProcess::execute(QString::fromUtf8(migratorOpt.value()), QStringList() << QString::fromUtf8(name)) == 0;
+		}, QString::fromUtf8(schemaArg.value())))
 	{
 		logCritical("could not update db schema");
 		QTextStream(stderr) << "could not update db schema" << endl;
