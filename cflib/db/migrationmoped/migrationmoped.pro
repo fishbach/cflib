@@ -20,7 +20,7 @@ include(../../../include.pri)
 QT = core
 CONFIG += console
 
-TARGET = migrationmopped
+TARGET = migrationmoped
 
 HEADERS = \
 

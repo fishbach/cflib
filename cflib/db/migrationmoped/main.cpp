@@ -56,8 +56,8 @@ int main(int argc, char *argv[])
 
 	// start logging
 	if (logOpt.isSet()) {
-		Log::start("migrationmopped.log");
-		logInfo("migrationmopped started");
+		Log::start("migrationmoped.log");
+		logInfo("migrationmoped started");
 		Log::setLogLevel(logOpt.value().toUInt());
 	}
 
