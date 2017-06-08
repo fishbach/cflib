@@ -120,20 +120,42 @@ private slots:
 	void update_test()
 	{
 		QByteArray schema = readFile(":/schema.sql");
-		QVERIFY(schema::update(schema, 0));
+		QVERIFY(schema::update(schema));
 
 		schema +=
 			"-- REVISION neu\n"
 			"\n"
 			"INSERT INTO config (key) VALUES ('neu')\n"
 		;
-		QVERIFY(schema::update(schema, 0));
+		QVERIFY(schema::update(schema));
 		PSqlConn;
 		QVERIFY(sql.exec("SELECT COUNT(*) FROM config WHERE key = 'neu'"));
 		QVERIFY(sql.next());
 		QCOMPARE(sql.get<qint64>(0), 1);
+	}
 
+	void resetDB()
+	{
+		PSql::closeConnection();
+		PSql sql("host=127.0.0.1 dbname=postgres");
+		QVERIFY(sql.exec("DROP DATABASE cflib_db_test"));
+		QVERIFY(sql.exec("CREATE DATABASE cflib_db_test"));
+		QVERIFY(PSql::setParameter("host=127.0.0.1 dbname=cflib_db_test"));
+	}
 
+	void empty_head_test()
+	{
+		QVERIFY(schema::update(
+			"-- REVISION first\n"
+			"CREATE TABLE config (\n"
+			"  key   text NOT NULL, \n"
+			"  value text, \n"
+			"  PRIMARY KEY (key)\n"
+			");\n"
+		));
+
+		PSqlConn;
+		QVERIFY(sql.exec("SELECT key, value FROM config"));
 	}
 
 };

@@ -84,7 +84,7 @@ bool execSql(const QString & query)
 
 bool execRevision(const QString & query, QObject * migrator)
 {
-	static const QRegularExpression execRe("(?:^|\n)-- EXEC (.+)(?:\n|$)");
+	static const QRegularExpression execRe("^-- EXEC (.+)$", QRegularExpression::MultilineOption);
 
 	int start = 0;
 	QRegularExpressionMatch match = execRe.match(query, start);
@@ -128,7 +128,7 @@ bool execRevision(const QString & query, QObject * migrator)
 
 		logInfo("migration %1 finished successfully", method);
 
-		start = match.capturedEnd() - 1;
+		start = match.capturedEnd();
 		match = execRe.match(query, start);
 	}
 	return execSql(query.mid(start));
@@ -168,7 +168,7 @@ bool update(const QByteArray & schema, QObject * migrator)
 		}
 	}
 
-	const QRegularExpression revRe("(?:^|\n)-- REVISION (.+)(?:\n|$)");
+	const QRegularExpression revRe("^-- REVISION (.+)$", QRegularExpression::MultilineOption);
 
 	const QString utf8Schema = QString::fromUtf8(schema);
 
@@ -181,13 +181,13 @@ bool update(const QByteArray & schema, QObject * migrator)
 			if (!insertRevision(lastRev)) return false;
 			PSqlConn;
 			sql.begin();
-			if (!execRevision(utf8Schema.mid(start, match.capturedStart() - start + 1), migrator)) return false;
+			if (!execRevision(utf8Schema.mid(start, match.capturedStart() - start), migrator)) return false;
 			if (!confirmRevision(lastRev)) return false;
 			if (!sql.commit()) return false;
 		}
 
 		lastRev = match.captured(1);
-		start = match.capturedEnd() - 1;
+		start = match.capturedEnd();
 		match = revRe.match(utf8Schema, start);
 	}
 
