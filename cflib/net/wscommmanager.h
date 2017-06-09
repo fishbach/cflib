@@ -110,7 +110,7 @@ public:
 
 public:
 	WSCommManager(const QString & path, const QRegularExpression & allowedOrigin = QRegularExpression(),
-		uint connectionTimeoutSec = 30, uint sessionTimeoutSec = 86400);
+		uint connectionTimeoutSec = 10, uint sessionTimeoutSec = 86400);
 	~WSCommManager();
 
 	void setConnDataChecker(ConnDataChecker & checker)     { connDataChecker_ = &checker; checker.mgr_ = this; }

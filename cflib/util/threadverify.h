@@ -42,10 +42,10 @@ public:
 	QObject * threadObject() const;
 	void stopVerifyThread();
 	ev_loop * libEVLoop() const;
-	void execCall(const Functor * func) const;
 	void setThreadPrio(QThread::Priority prio);
 
 protected:
+	void execLater(const Functor * func) const;
 	virtual void deleteThreadData() {}
 
 	// ------------------------------------------------------------------------
@@ -613,6 +613,7 @@ private:
 	ThreadVerify();
 	void setStats(ThreadStats * stats);
 	void shutdownThread();
+	void execCall(const Functor * func) const;
 
 private:
 	impl::ThreadHolder * verifyThread_;

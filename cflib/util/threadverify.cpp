@@ -106,6 +106,11 @@ void ThreadVerify::execCall(const Functor * func) const
 	while (!verifyThread_->doCall(func)) QThread::msleep(1000);
 }
 
+void ThreadVerify::execLater(const Functor * func) const
+{
+	((const impl::ThreadHolder *)QThread::currentThread())->execLater(func);
+}
+
 void ThreadVerify::setThreadPrio(QThread::Priority prio)
 {
 	verifyThread_->setPriority(prio);

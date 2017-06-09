@@ -105,7 +105,7 @@ void Mailer::finished(int exitCode, QProcess::ExitStatus exitStatus)
 
 	// more mails?
 	queue_.removeFirst();
-	if (!queue_.isEmpty()) execCall(new Functor0<Mailer>(this, &Mailer::startProcess));
+	if (!queue_.isEmpty()) execLater(new Functor0<Mailer>(this, &Mailer::startProcess));
 }
 
 void Mailer::error(QProcess::ProcessError error)

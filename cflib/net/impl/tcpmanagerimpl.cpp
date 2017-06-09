@@ -270,7 +270,7 @@ void TCPManagerImpl::writeToSocket(TCPConnData * conn, const QByteArray & data, 
 	conn->writeBuf += data;
 
 	if (conn->writeBuf.isEmpty()) {
-		if (notifyFinished) execCall(new Functor0<TCPConn>(conn->conn, &TCPConn::writeFinished));
+		if (notifyFinished) execLater(new Functor0<TCPConn>(conn->conn, &TCPConn::writeFinished));
 		return;
 	}
 
@@ -483,7 +483,7 @@ void TCPManagerImpl::writeable(ev_loop * loop, ev_io * w, int)
 		if (count > 0) {
 			buf.remove(0, count);
 			if (conn->notifySomeBytesWritten) {
-				impl.execCall(new Functor1<TCPConn, quint64>(conn->conn, &TCPConn::someBytesWritten, (quint64)count));
+				impl.execLater(new Functor1<TCPConn, quint64>(conn->conn, &TCPConn::someBytesWritten, (quint64)count));
 			}
 		}
 		if (!ev_is_active(w)) ev_io_start(loop, w);
@@ -498,11 +498,11 @@ void TCPManagerImpl::writeable(ev_loop * loop, ev_io * w, int)
 		} else {
 			if (ev_is_active(w)) ev_io_stop(loop, w);
 			if (conn->notifySomeBytesWritten) {
-				impl.execCall(new Functor1<TCPConn, quint64>(conn->conn, &TCPConn::someBytesWritten, (quint64)count));
+				impl.execLater(new Functor1<TCPConn, quint64>(conn->conn, &TCPConn::someBytesWritten, (quint64)count));
 			}
 			if (conn->notifyWrite) {
 				conn->notifyWrite = false;
-				impl.execCall(new Functor0<TCPConn>(conn->conn, &TCPConn::writeFinished));
+				impl.execLater(new Functor0<TCPConn>(conn->conn, &TCPConn::writeFinished));
 			}
 		}
 	}
@@ -553,7 +553,7 @@ void TCPManagerImpl::callClosed(TCPConnData * conn)
 	if (conn->lastInformedCloseType == conn->closeType) return;
 	conn->lastInformedCloseType = conn->closeType;
 	if (conn->tlsStream) tlsThreads_[conn->tlsThreadId]->callClosed(conn);
-	else                 execCall(new Functor0<TCPConnData>(conn, &TCPConnData::callClosed));
+	else                 execLater(new Functor0<TCPConnData>(conn, &TCPConnData::callClosed));
 }
 
 TCPConnData * TCPManagerImpl::addConnection(int sock, const QByteArray & destIP, quint16 destPort,

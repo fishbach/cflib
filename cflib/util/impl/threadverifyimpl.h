@@ -45,7 +45,7 @@ class ThreadObject : public QObject
 {
 public:
 	ThreadObject(int threadId, ThreadStats * stats);
-	virtual bool event(QEvent * event);
+	bool event(QEvent * event) override;
 
 private:
 	const int threadId_;
@@ -65,6 +65,7 @@ public:
 	virtual bool isOwnThread() const { return QThread::currentThread() == this || disabled_; }
 	virtual uint threadCount() const { return 1; }
 	virtual uint threadNo() const    { return 0; }
+	virtual void execLater(const Functor * func) const = 0;
 
 protected:
 	const int threadId_;
@@ -79,11 +80,12 @@ public:
 	ThreadHolderQt(const QString & threadName, int threadId, ThreadStats * stats, bool disable);
 
 	ThreadObject * threadObject() const { return threadObject_; }
-	virtual bool doCall(const Functor * func);
-	virtual void stopLoop();
+	bool doCall(const Functor * func) override;
+	void stopLoop() override;
+	void execLater(const Functor * func) const override;
 
 protected:
-	virtual void run();
+	void run() override;
 
 private:
 	ThreadObject * threadObject_;
@@ -92,19 +94,21 @@ private:
 class ThreadHolderLibEV : public ThreadHolder
 {
 public:
-	virtual ~ThreadHolderLibEV();
+	~ThreadHolderLibEV();
 
-	virtual void stopLoop();
+	void stopLoop() override;
+	void execLater(const Functor * func) const override;
 	ev_loop * loop() const { return loop_; }
 	void wakeUp();
 
 protected:
 	ThreadHolderLibEV(const QString & threadName, int threadId, ThreadStats * stats, bool isWorkerOnly, bool disable);
-	virtual void run();
+	void run() override;
 	virtual void wokeUp() = 0;
 
 private:
 	static void asyncCallback(ev_loop * loop, ev_async * w, int revents);
+	static void execLaterCall(int revents, void * arg);
 
 private:
 	ev_loop * loop_;
@@ -117,14 +121,14 @@ public:
 	ThreadHolderWorkerPool(const QString & threadName, int threadId, ThreadStats * stats, bool isWorkerOnly, uint threadCount);
 	~ThreadHolderWorkerPool();
 
-	virtual bool doCall(const Functor * func);
-	virtual void stopLoop();
-	virtual bool isOwnThread() const;
-	virtual uint threadCount() const;
+	bool doCall(const Functor * func) override;
+	void stopLoop() override;
+	bool isOwnThread() const override;
+	uint threadCount() const override;
 
 protected:
-	virtual void run();
-	virtual void wokeUp();
+	void run() override;
+	void wokeUp() override;
 
 private:
 	class Worker : public ThreadHolderLibEV
@@ -133,12 +137,12 @@ private:
 		Worker(const QString & threadName,
 			int threadId, ThreadStats * stats, uint threadNo, ThreadFifo<const Functor *> & externalCalls);
 
-		virtual bool doCall(const Functor *) { return false; }
-		virtual void stopLoop();
-		virtual uint threadNo() const { return threadNo_; }
+		bool doCall(const Functor *) override { return false; }
+		void stopLoop() override;
+		uint threadNo() const override { return threadNo_; }
 
 	protected:
-		virtual void wokeUp();
+		void wokeUp() override;
 
 	private:
 		const uint threadNo_;

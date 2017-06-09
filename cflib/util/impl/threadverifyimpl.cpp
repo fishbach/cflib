@@ -74,6 +74,11 @@ bool ThreadHolderQt::doCall(const Functor * func)
 	return true;
 }
 
+void ThreadHolderQt::execLater(const Functor * func) const
+{
+	QCoreApplication::postEvent(threadObject_, new impl::ThreadHolderEvent(func));
+}
+
 void ThreadHolderQt::stopLoop()
 {
 	if (!disabled_) {
@@ -117,6 +122,18 @@ ThreadHolderLibEV::~ThreadHolderLibEV()
 void ThreadHolderLibEV::stopLoop()
 {
 	ev_break(loop_, EVBREAK_ALL);
+}
+
+void ThreadHolderLibEV::execLater(const Functor * func) const
+{
+	ev_once(loop_, -1, 0, 0.0, &ThreadHolderLibEV::execLaterCall, (void *)func);
+}
+
+void ThreadHolderLibEV::execLaterCall(int, void * arg)
+{
+	const Functor * func = (const Functor *)arg;
+	(*func)();
+	delete func;
 }
 
 void ThreadHolderLibEV::wakeUp()
