@@ -94,7 +94,7 @@ public:
 	void destory()
 	{
 		parent_ = 0;
-		close(HardClosed, true);
+		close(HardClosed);
 	}
 
 protected:
