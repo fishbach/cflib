@@ -71,6 +71,8 @@ public:
 	template<typename T>
 	inline T get() { T retval; base_ >> retval; return std::move(retval); }
 
+	inline bool isAnyAvailable() const { return base_.isAnyAvailable(); }
+
 private:
 	const QByteArray data_;
 	impl::BERDeserializerBase base_;

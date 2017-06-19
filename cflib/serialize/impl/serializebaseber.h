@@ -101,7 +101,7 @@ public:
 		return *this;
 	}
 
-	bool isAnyAvailable() const { return bytesAvailable_ > 0; }
+	inline bool isAnyAvailable() const { return bytesAvailable_ > 0; }
 
 private:
 	const quint8 * readPos_;
