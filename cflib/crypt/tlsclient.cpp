@@ -31,13 +31,13 @@ class TLSClient::Impl : public TLS::Callbacks
 {
 public:
 	Impl(TLS::Session_Manager & session_manager, Credentials_Manager & creds, const QByteArray & hostname,
-		bool highSecurity)
+		bool highSecurity, bool requireRevocationInfo)
 	:
 		outgoingEncryptedPtr(&outgoingEncrypteedTmpBuf),
 		incomingPlainPtr(0),
 		isReady(false),
 		hasError(false),
-		policy(highSecurity ? (TLS::Policy *)new TLS::Strict_Policy : (TLS::Policy *)new TLS::TLS12Policy),
+		policy(highSecurity ? (TLS::Policy *)new TLS::Strict_Policy : (TLS::Policy *)new TLS::TLS12Policy(requireRevocationInfo)),
 		client(*this, session_manager, creds, *policy, rng, hostname.isEmpty() ? std::string() : hostname.toStdString())
 	{
 	}
@@ -82,12 +82,12 @@ public:
 };
 
 TLSClient::TLSClient(TLSSessions & sessions, TLSCredentials & credentials, const QByteArray & hostname,
-	bool highSecurity)
+	bool highSecurity, bool requireRevocationInfo)
 :
 	impl_(0)
 {
 	TRY {
-		impl_ = new Impl(sessions.session_Manager(), credentials.credentials_Manager(), hostname, highSecurity);
+		impl_ = new Impl(sessions.session_Manager(), credentials.credentials_Manager(), hostname, highSecurity, requireRevocationInfo);
 	} CATCH
 }
 

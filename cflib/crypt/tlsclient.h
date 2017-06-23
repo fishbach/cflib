@@ -29,7 +29,7 @@ class TLSClient : public TLSStream
 {
 public:
 	TLSClient(TLSSessions & sessions, TLSCredentials & credentials, const QByteArray & hostname = QByteArray(),
-		bool highSecurity = false);
+		bool highSecurity = false, bool requireRevocationInfo = false);
 	~TLSClient();
 
 	QByteArray initialSend() override;

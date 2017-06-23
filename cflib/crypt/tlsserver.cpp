@@ -30,12 +30,12 @@ namespace cflib { namespace crypt {
 class TLSServer::Impl : public TLS::Callbacks
 {
 public:
-	Impl(TLS::Session_Manager & session_manager, Credentials_Manager & creds, bool highSecurity) :
+	Impl(TLS::Session_Manager & session_manager, Credentials_Manager & creds, bool highSecurity, bool requireRevocationInfo) :
 		outgoingEncryptedPtr(0),
 		incomingPlainPtr(0),
 		isReady(false),
 		hasError(false),
-		policy(highSecurity ? (TLS::Policy *)new TLS::Strict_Policy : (TLS::Policy *)new TLS::TLS12Policy),
+		policy(highSecurity ? (TLS::Policy *)new TLS::Strict_Policy : (TLS::Policy *)new TLS::TLS12Policy(requireRevocationInfo)),
 		server(*this, session_manager, creds, *policy, rng)
 	{
 	}
@@ -73,11 +73,11 @@ public:
 	TLS::Server server;
 };
 
-TLSServer::TLSServer(TLSSessions & sessions, TLSCredentials & credentials, bool highSecurity) :
+TLSServer::TLSServer(TLSSessions & sessions, TLSCredentials & credentials, bool highSecurity, bool requireRevocationInfo) :
 	impl_(0)
 {
 	TRY {
-		impl_ = new Impl(sessions.session_Manager(), credentials.credentials_Manager(), highSecurity);
+		impl_ = new Impl(sessions.session_Manager(), credentials.credentials_Manager(), highSecurity, requireRevocationInfo);
 	} CATCH
 }
 

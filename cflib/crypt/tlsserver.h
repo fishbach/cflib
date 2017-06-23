@@ -28,7 +28,8 @@ class TLSSessions;
 class TLSServer : public TLSStream
 {
 public:
-	TLSServer(TLSSessions & sessions, TLSCredentials & credentials, bool highSecurity = false);
+	TLSServer(TLSSessions & sessions, TLSCredentials & credentials,
+		bool highSecurity = false, bool requireRevocationInfo = false);
 	~TLSServer();
 
 	QByteArray initialSend() override { return QByteArray(); }

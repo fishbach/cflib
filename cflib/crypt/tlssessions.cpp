@@ -27,15 +27,18 @@ namespace cflib { namespace crypt {
 class TLSSessions::Impl
 {
 public:
-	Impl() : mgr(rng) {}
+	Impl(bool enable) :
+		mgr(enable ?
+			(TLS::Session_Manager *)new TLS::Session_Manager_In_Memory(rng) :
+			(TLS::Session_Manager *)new TLS::Session_Manager_Noop) {}
 
 public:
 	AutoSeeded_RNG rng;
-	TLS::Session_Manager_In_Memory mgr;
+	QSharedPointer<TLS::Session_Manager> mgr;
 };
 
-TLSSessions::TLSSessions() :
-	impl_(new Impl)
+TLSSessions::TLSSessions(bool enable) :
+	impl_(new Impl(enable))
 {
 }
 
@@ -46,7 +49,7 @@ TLSSessions::~TLSSessions()
 
 Botan::TLS::Session_Manager & TLSSessions::session_Manager()
 {
-	return impl_->mgr;
+	return *impl_->mgr;
 }
 
 }}	// namespace

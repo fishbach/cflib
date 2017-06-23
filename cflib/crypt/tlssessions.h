@@ -28,7 +28,7 @@ class TLSSessions
 {
 	Q_DISABLE_COPY(TLSSessions)
 public:
-	TLSSessions();
+	TLSSessions(bool enable = false);
 	~TLSSessions();
 
 private:
