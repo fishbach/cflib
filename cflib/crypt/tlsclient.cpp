@@ -54,7 +54,11 @@ public:
 
 	void tls_alert(TLS::Alert alert) override
 	{
-		logInfo("TLS alert: %1", alert.type_string().c_str());
+		if (alert.type() != TLS::Alert::CLOSE_NOTIFY) {
+			logWarn("TLS alert: %1", alert.type_string().c_str());
+		} else {
+			logTrace("TLS alert: %1", alert.type_string().c_str());
+		}
 		hasError = true;
 	}
 
