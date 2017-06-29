@@ -39,7 +39,7 @@ class HttpRequest::Conn : public TCPConn, public util::ThreadVerify
 {
 public:
 	Conn(HttpRequest * parent, TCPConnData * data,
-		const QUrl & url,
+		const QUrl & url, const QList<QByteArray> & headers,
 		const QByteArray & postData, const QByteArray & contentType,
 		uint timeoutMs)
 	:
@@ -68,6 +68,9 @@ public:
 		if (!url.userInfo().isEmpty()) {
 			request += "Authorization: Basic " + url.userInfo().toUtf8().toBase64() + "\r\n";
 		}
+
+		// additional headers
+		for (const QByteArray & header : headers) request += header.trimmed() + "\r\n";
 
 		if (postData.isNull()) {
 			request += "\r\n";
@@ -183,7 +186,7 @@ HttpRequest::~HttpRequest()
 	destroy();
 }
 
-void HttpRequest::start(const QUrl & url,
+void HttpRequest::start(const QUrl & url, const QList<QByteArray> & headers,
 	const QByteArray & postData, const QByteArray & contentType,
 	uint timeoutMs)
 {
@@ -210,7 +213,7 @@ void HttpRequest::start(const QUrl & url,
 		reply(503, "Service Unavailable");
 		return;
 	}
-	conn_ = new Conn(this, cd, url, postData, contentType, timeoutMs);
+	conn_ = new Conn(this, cd, url, headers, postData, contentType, timeoutMs);
 }
 
 void HttpRequest::destroy()
