@@ -73,6 +73,28 @@ public:
 		return std::chrono::milliseconds(1000);
 	}
 
+	void tls_verify_cert_chain(
+		const std::vector<X509_Certificate> & cert_chain,
+		const std::vector<std::shared_ptr<const OCSP::Response>> & ocsp_responses,
+		const std::vector<Certificate_Store *> & trusted_roots,
+		Usage_Type usage,
+		const std::string & hostname,
+		const TLS::Policy & policy) override
+	{
+		try {
+			Callbacks::tls_verify_cert_chain(cert_chain, ocsp_responses, trusted_roots, usage, hostname, policy);
+		} catch(Exception & e) {
+			// handle self signed certificates
+			if (cert_chain.empty()) throw e;
+			const X509_Certificate & crt = cert_chain[0];
+			if (!crt.is_self_signed()) throw e;
+			for (Certificate_Store * cs : trusted_roots) {
+				if (cs->find_cert(crt.subject_dn(), crt.subject_key_id())) return;
+			}
+			throw e;
+		}
+	}
+
 public:
 	QByteArray outgoingEncrypteedTmpBuf;
 	QByteArray outgoingPlainTmpBuf;

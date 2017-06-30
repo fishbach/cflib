@@ -35,6 +35,12 @@ QByteArray fromStdVector(const std::vector<std::string> & vec)
 
 }
 
+QString TLSCertInfo::toString() const
+{
+	return QString("subject: \"%1\", issuer: \"%2\", isCA: %3, isTrusted: %4")
+		.arg(QString::fromUtf8(subjectName)).arg(QString::fromUtf8(issuerName)).arg(isCA).arg(isTrusted);
+}
+
 class TLSCredentials::Impl : public Credentials_Manager
 {
 public:
@@ -233,29 +239,52 @@ bool TLSCredentials::activateLoaded(bool isTrustedCA)
 		}
 	}
 	impl_->loadedCrls.clear();
+
+	const QList<TLSCertInfo> infos = getAllCertInfos();
+	logInfo("loaded %1 certifices:", infos.size());
+	for (const TLSCertInfo & info : infos) {
+		logInfo("  cert: %1", info);
+	}
+
 	return ok;
 }
 
-QList<TLSCertInfo> TLSCredentials::getCertInfos() const
+TLSCertInfo TLSCredentials::getInfo(const X509_Certificate & crt) const
+{
+	TRY {
+		TLSCertInfo info;
+		info.subjectName = fromStdVector(crt.subject_dn().get_attribute("X520.CommonName"));
+		info.issuerName  = fromStdVector(crt.issuer_dn ().get_attribute("X520.CommonName"));
+		info.isCA        = crt.is_CA_cert();
+		for (Certificate_Store * cs : impl_->trusted_certificate_authorities("", "")) {
+			if (cs->find_cert(crt.subject_dn(), crt.subject_key_id())) {
+				info.isTrusted = true;
+				break;
+			}
+		}
+		return info;
+	} CATCH
+	return TLSCertInfo();
+}
+
+QList<TLSCertInfo> TLSCredentials::getCertChainInfos() const
 {
 	QList<TLSCertInfo> rv;
-	std::vector<Certificate_Store *> trusted = impl_->trusted_certificate_authorities("", "");
-	foreach (const Impl::CertsPrivKey & ck, impl_->chains) {
-		foreach (const X509_Certificate & crt, ck.certs) {
-			TRY {
-				TLSCertInfo info;
-				info.subjectName = fromStdVector(crt.subject_dn().get_attribute("X520.CommonName"));
-				info.issuerName  = fromStdVector(crt.issuer_dn ().get_attribute("X520.CommonName"));
-				info.isCA        = crt.is_CA_cert();
-				foreach (Certificate_Store * cs, trusted) {
-					if (cs->find_cert(crt.subject_dn(), crt.subject_key_id())) {
-						info.isTrusted = true;
-						break;
-					}
-				}
-				rv << info;
-			} CATCH
+	for (const Impl::CertsPrivKey & ck : impl_->chains) {
+		for (const X509_Certificate & crt : ck.certs) {
+			TLSCertInfo info = getInfo(crt);
+			if (!info.isNull()) rv << info;
 		}
+	}
+	return rv;
+}
+
+QList<TLSCertInfo> TLSCredentials::getAllCertInfos() const
+{
+	QList<TLSCertInfo> rv;
+	for (const X509_Certificate & crt : impl_->allCerts) {
+		TLSCertInfo info = getInfo(crt);
+		if (!info.isNull()) rv << info;
 	}
 	return rv;
 }

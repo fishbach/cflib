@@ -21,6 +21,7 @@
 #include <QtCore>
 
 namespace Botan { class Credentials_Manager; }
+namespace Botan { class X509_Certificate; }
 
 namespace cflib { namespace crypt {
 
@@ -31,6 +32,8 @@ struct TLSCertInfo
 	bool isCA;
 	bool isTrusted;
 
+	QString toString() const;
+	bool isNull() const { return subjectName.isNull(); }
 	TLSCertInfo() : isCA(false), isTrusted(false) {}
 };
 
@@ -43,7 +46,8 @@ public:
 
 	// certificates can be added in arbitrary order
 	uint addCerts(const QByteArray & certs, bool isTrustedCA = false);
-	QList<TLSCertInfo> getCertInfos() const;
+	QList<TLSCertInfo> getCertChainInfos() const;
+	QList<TLSCertInfo> getAllCertInfos() const;
 
 	uint addRevocationLists(const QByteArray & crls);
 
@@ -62,6 +66,9 @@ public:
 	// Otherwise the secure memory of botan will not make the move to the new owner.
 	bool loadFromDir(const QString & path);
 	bool activateLoaded(bool isTrustedCA = false);
+
+private:
+	TLSCertInfo getInfo(const Botan::X509_Certificate & crt) const;
 
 private:
 	class Impl;

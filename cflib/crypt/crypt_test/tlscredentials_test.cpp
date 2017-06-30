@@ -41,7 +41,7 @@ private slots:
 		QVERIFY(!creds.addPrivateKey(detach(cert1PrivateKey), "wrong"));
 		QVERIFY(creds.addPrivateKey(detach(cert1PrivateKey), "SuperSecure123"));
 
-		const QList<TLSCertInfo> infos = creds.getCertInfos();
+		const QList<TLSCertInfo> infos = creds.getCertChainInfos();
 		QCOMPARE(infos.size(), 3);
 		QCOMPARE(infos[0].subjectName.constData(), "127.0.0.1");
 		QCOMPARE(infos[0].issuerName .constData(), "ca");
@@ -65,7 +65,7 @@ private slots:
 		QCOMPARE((int)creds.addCerts(cert3, true), 1);
 		QVERIFY(creds.addPrivateKey(detach(cert1PrivateKey), "SuperSecure123"));
 
-		const QList<TLSCertInfo> infos = creds.getCertInfos();
+		const QList<TLSCertInfo> infos = creds.getCertChainInfos();
 		QCOMPARE(infos.size(), 3);
 		QCOMPARE(infos[0].subjectName.constData(), "127.0.0.1");
 		QVERIFY(!infos[0].isTrusted);
