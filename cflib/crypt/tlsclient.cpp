@@ -85,12 +85,16 @@ public:
 			Callbacks::tls_verify_cert_chain(cert_chain, ocsp_responses, trusted_roots, usage, hostname, policy);
 		} catch(Exception & e) {
 			// handle self signed certificates
-			if (cert_chain.empty()) throw e;
+			if (usage != Usage_Type::TLS_SERVER_AUTH || cert_chain.empty()) throw e;
+
 			const X509_Certificate & crt = cert_chain[0];
-			if (!crt.is_self_signed()) throw e;
+			if (!crt.is_self_signed() || !crt.matches_dns_name(hostname)) throw e;
+
 			for (Certificate_Store * cs : trusted_roots) {
-				if (cs->find_cert(crt.subject_dn(), crt.subject_key_id())) return;
+				std::shared_ptr<const X509_Certificate> trusted = cs->find_cert(crt.subject_dn(), crt.subject_key_id());
+				if (trusted && trusted->subject_public_key_bits() == crt.subject_public_key_bits()) return;
 			}
+
 			throw e;
 		}
 	}
