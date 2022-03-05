@@ -1,6 +1,6 @@
 #!/usr/bin/env perl
 
-# Copyright (C) 2013-2017 Christian Fischbach <cf@cflib.de>
+# Copyright (C) 2013-2022 Christian Fischbach <cf@cflib.de>
 #
 # This file is part of cflib.
 #
