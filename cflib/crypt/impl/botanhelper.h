@@ -29,14 +29,16 @@
 #include <botan/bcrypt.h>
 #include <botan/der_enc.h>
 #include <botan/filters.h>
-#include <botan/init.h>
 #include <botan/pem.h>
+#include <botan/pkcs10.h>
 #include <botan/pkcs8.h>
 #include <botan/pubkey.h>
 #include <botan/rsa.h>
 #include <botan/tls_client.h>
 #include <botan/tls_server.h>
 #include <botan/x509_ca.h>
+#include <botan/x509_ext.h>
+#include <botan/x509_key.h>
 
 #ifdef Q_OS_WIN32
 	#pragma warning( pop )
