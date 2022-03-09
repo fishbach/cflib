@@ -2,7 +2,7 @@
 #
 # This file is part of cflib.
 #
-# cflib is free software: you can redistribute it and/or modify
+# Licensed under the MIT License.
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
