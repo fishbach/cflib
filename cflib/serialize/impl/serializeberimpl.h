@@ -39,8 +39,12 @@ inline void serializeBERInt(T v, quint64 tagNo, QByteArray & data, bool isMaxUIn
 	p += len;
 	*p = (quint8)v;
 	while (--len > 0) {
-		v >>= 8;
-		*(--p) = (quint8)v;
+		if (sizeof(v) == 1) {
+			*(--p) = 0;
+		} else {
+			v >>= 8;
+			*(--p) = (quint8)v;
+		}
 	}
 }
 
