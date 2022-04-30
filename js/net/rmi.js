@@ -76,6 +76,7 @@ define([
 			return;
 		}
 		data = new Uint8Array(data);
+		// console.log("msg: ", [...data].map(x => x.toString(16).padStart(2, '0')).join(''));
 		var tlv = ber.decodeTLV(data, 0, data.length);
 		var tagNo = tlv[1];
 		var value = new Uint8Array(data.buffer, tlv[2] + tlv[3], tlv[0]);

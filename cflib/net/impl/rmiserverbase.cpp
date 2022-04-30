@@ -773,6 +773,7 @@ QString RMIServerBase::generateJSForClass(const SerializeTypeInfo & ti) const
 	js	<< "\tif (param instanceof Uint8Array) {\n"
 		"\t\tvar __D = __ber.D(param);\n";
 	if (!base.isEmpty()) js << "\t\t" << nsPrefix << typeName << ".__super.call(this, __D.a());\n";
+	else                 js << "\t\t__D.n();\n";
 	foreach (const SerializeVariableTypeInfo & vti, ti.members) {
 		js << "\t\tthis." << formatMembernameForJS(vti) << " = " << getDeserializeCode(vti.type, false) << ";\n";
 	}
