@@ -21,14 +21,14 @@ namespace cflib { namespace db {
  * Therefore it is not possible to have two instances of PSql in one thread having both simultaneous acivate queries!
  *
  * PostgreSQL type mapping:
- * smallint                  <->  bool, qint8, quint8, qint16, quint16
- * integer (serial)          <->  qint32, quint32
- * bigint  (bigserial)       <->  qint64, quint64
- * real                      <->  float
- * double precision          <->  double
- * text                      <->  QString
- * bytea                     <->  QByteArray
- * timestamp with time zone  <->  QDateTime (UTC)
+ *   21 : smallint                  <->  bool, qint8, quint8, qint16, quint16
+ *   23 : integer (serial)          <->  qint32, quint32
+ *   20 : bigint  (bigserial)       <->  qint64, quint64
+ *  700 : real                      <->  float
+ *  701 : double precision          <->  double
+ *   25 : text                      <->  QString
+ *   17 : bytea                     <->  QByteArray
+ * 1184 : timestamp with time zone  <->  QDateTime (UTC)
  *
  * SELECT 21::oid::regtype         -> smallint
  * SELECT 'smallint'::regtype::oid -> 21
