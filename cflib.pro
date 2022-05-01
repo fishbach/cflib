@@ -18,10 +18,10 @@ addSubdir(cflib/crypt/pwhash, cflib/crypt cflib/util)
 addSubdir(cflib/dao, cflib/serialize/ser)
 addSubdir(cflib/db)
 addSubdir(cflib/db/db_test, cflib/db cflib/util)
-postgresql: addSubdir(cflib/db/migrationmoped, cflib/db cflib/util)
 addSubdir(cflib/net, cflib/serialize/ser)
 addSubdir(cflib/net/net_test, cflib_net cflib_crypt cflib_util)
 addSubdir(cflib/serialize)
+addSubdir(cflib/serialize/asn1dump, cflib/serialize cflib/util)
 addSubdir(cflib/serialize/ser, cflib/util)
 addSubdir(cflib/serialize/serialize_test, cflib/serialize/ser cflib/serialize cflib/util)
 addSubdir(cflib/util)
@@ -33,7 +33,10 @@ addSubdir(examples/getssl, cflib_net cflib_crypt cflib_util)
 addSubdir(examples/request, cflib_net cflib_crypt cflib_util)
 addSubdir(examples/webchat, cflib_net cflib_crypt cflib/serialize/ser cflib_serialize cflib_util)
 
-postgresql: addSubdir(examples/pgtest, cflib_db cflib_util)
+postgresql {
+	addSubdir(cflib/db/migrationmoped, cflib/db cflib/util)
+	addSubdir(examples/pgtest, cflib_db cflib_util)
+}
 
 OTHER_FILES = \
 	README \

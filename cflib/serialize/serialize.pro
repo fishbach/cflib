@@ -11,6 +11,7 @@ QT = core
 TARGET = cflib_serialize
 
 HEADERS = \
+	asn1dump.h \
 	common.h \
 	impl/ber.h \
 	impl/readandcall.h \
