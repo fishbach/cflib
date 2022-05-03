@@ -791,6 +791,8 @@ QString RMIServerBase::generateJSForClass(const SerializeTypeInfo & ti) const
 		"};\n"
 		<< nsPrefix << typeName << ".prototype.__serialize = function(__S) {\n"
 		"\t__S";
+	if (ti.classId != 0) js << ".i(" << nsPrefix << typeName << ".__classId)";
+	else                 js << ".n()";
 	if (!base.isEmpty()) js << ".o(this, " << base << ".prototype.__serialize)";
 	foreach (const SerializeVariableTypeInfo & vti, ti.members) {
 		js << getSerializeCode(vti.type, "this." + formatMembernameForJS(vti));
