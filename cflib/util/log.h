@@ -74,6 +74,10 @@ public:
 	Log(LogFileInfo fi, int line, LogCategory category)
 	: fi_(fi), line_(line), category_(category) {}
 
+	inline operator bool() const {
+		return check();
+	}
+
 	inline void operator()(const char * str) const {
 		if (check()) writeLog(str);
 	}

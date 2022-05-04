@@ -816,37 +816,26 @@ QString RMIServerBase::generateJSForService(const SerializeTypeInfo & ti) const
 	if (!ti.cfSignals.isEmpty()) {
 		js << objName << ".rsig = {\n";
 		bool isFirst = true;
-		foreach (const SerializeFunctionTypeInfo & func, ti.cfSignals) {
+		for (const SerializeFunctionTypeInfo & func : ti.cfSignals) {
 			if (isFirst) isFirst = false;
 			else         js << ",\n";
 			js << '\t' << func.name << ": new __RSig(" << objName << ", '" << func.name << "', '" <<
-				ti.typeName.toLower() << "', function(";
+				ti.typeName.toLower() << "', '" << func.name << "', function(";
 			if (func.parameters.isEmpty()) {
-				js << ") {})";
+				js << ") { " << objName << ".rsig." << func.name << ".fire(); })";
 			} else {
-				js << "__S, " << getJSParameters(func, false) << ") { __S" << getSerializeJSParameters(func) << "; })";
+				js << "__D) { " << objName << ".rsig." << func.name << ".fire(";
+				bool isFirst2 = true;
+				for (const SerializeVariableTypeInfo & p : func.parameters) {
+					if (isFirst2) isFirst2 = false;
+					else          js << ", ";
+					js << getDeserializeCode(p.type, false);
+				}
+				js << "); })";
 			}
 		}
 		js << "\n"
 			"};\n"
-			"__rmi.registerRSig('" << ti.typeName.toLower() << "', function(__D) {\n"
-			"\tvar __rsig = __D.s();\n";
-		isFirst = true;
-		foreach (const SerializeFunctionTypeInfo & func, ti.cfSignals) {
-			js << '\t';
-			if (isFirst) isFirst = false;
-			else         js << "else ";
-			js << "if (__rsig == '" << func.name << "') " << objName << ".rsig." << func.name << ".fire(";
-			bool isFirst2 = true;
-			foreach (const SerializeVariableTypeInfo & p, func.parameters) {
-				if (isFirst2) isFirst2 = false;
-				else          js << ", ";
-				js << getDeserializeCode(p.type, false);
-			}
-			js << ");\n";
-		}
-		js <<
-			"});\n"
 			"\n";
 	}
 

@@ -19,6 +19,7 @@ define([
 	var ws              = null;
 	var msgHandlers     = {};
 	var rsigHandlers    = {};
+	var rsigId          = 0;
 	var waitingRSig     = [];
 	var waitingAsync    = [];
 	var id              = null;
@@ -93,8 +94,9 @@ define([
 				return;
 			case 3:
 				var deser = ber.D(value);
-				var func = rsigHandlers[deser.s()];
+				var func = rsigHandlers[deser.i()];
 				if (func) {
+					deser = ber.D(deser.a());
 					if (waitingRequests.length > 0) waitingRSig.push([func, deser]);
 					else                            func(deser);
 				}
@@ -155,7 +157,7 @@ define([
 	};
 
 	rmi.register     = function(tagNo, func) { msgHandlers [tagNo] = func; };
-	rmi.registerRSig = function(name,  func) { rsigHandlers[name]  = func; };
+	rmi.registerRSig = function(func) { rsigHandlers[++rsigId] = func; return rsigId; };
 
 	return rmi;
 });

@@ -66,6 +66,11 @@ public:
 
 	void send(const QByteArray & data, bool isBinary)
 	{
+		if (logTrace) {
+			if (isBinary) logTrace("binary out %1: %2", connId_, data.toHex());
+			else          logTrace("text out %1: %2",   connId_, data);
+		}
+
 		bool deflate = false;
 		QByteArray deflateBuf;
 		if (deflateEnabled_ && data.size() > 256) {
@@ -197,6 +202,10 @@ private:
 			fragmentBuf_.append((const char *)data, len);
 			if (fin) {
 				if (isDeflated_) util::inflateRaw(fragmentBuf_);
+				if (logTrace) {
+					if (isBinary_) logTrace("binary in %1: %2", connId_, fragmentBuf_.toHex());
+					else           logTrace("text in %1: %2",   connId_, fragmentBuf_);
+				}
 				service_.newMsg(connId_, fragmentBuf_, isBinary_, stopRead);
 				fragmentBuf_.clear();
 			}
@@ -208,6 +217,10 @@ private:
 			} else {
 				QByteArray msg((const char *)data, len);
 				if (deflate) util::inflateRaw(msg);
+				if (logTrace) {
+					if (opcode == 2) logTrace("binary in %1: %2", connId_, msg.toHex());
+					else             logTrace("text in %1: %2",   connId_, msg);
+				}
 				service_.newMsg(connId_, msg, opcode == 2, stopRead);
 			}
 		} else if (opcode == 0x8) {	// connection close
