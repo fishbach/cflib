@@ -109,7 +109,7 @@ FileServer::FileServer(const QString & path, bool parseHtml, uint threadCount) :
 	ThreadVerify("FileServer", Worker, threadCount),
 	path_(path),
 	parseHtml_(parseHtml),
-	pathRE_("^(/(?:[_\\-\\w][._\\-\\w]*(?:/[_\\-\\w][._\\-\\w]*)*/?)?)(?:\\?.*)?$"),
+	pathRE_("^(/(?:(?:.well-known|[_\\-\\w][._\\-\\w]*)(?:/[_\\-\\w][._\\-\\w]*)*/?)?)(?:\\?.*)?$"),
 	endingRE_("\\.(\\w+)$"),
 	elementRE_("<!\\s*(\\$|inc |if |else|end)(.*?)!>")
 {
