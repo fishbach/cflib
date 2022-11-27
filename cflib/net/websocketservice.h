@@ -15,8 +15,6 @@ namespace cflib { namespace util { class EVTimer; }}
 
 namespace cflib { namespace net {
 
-class ApiServer;
-
 class WebSocketService : public RequestHandler, public util::ThreadVerify
 {
 public:
