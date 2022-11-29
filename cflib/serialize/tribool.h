@@ -27,6 +27,13 @@ public:
 	quint8 toInt() const { return state_; }
 	static TriBool fromInt(quint8 state) { TriBool b; b.state_ = state; return b; }
 
+	template<typename T> void serialize(T & ser) const {
+		ser << state_;
+	}
+	template<typename T> void deserialize(T & ser) {
+		ser >> state_;
+	}
+
 private:
 	quint8 state_;
 };
