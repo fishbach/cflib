@@ -9,7 +9,7 @@ find_package(
   REQUIRED)
 find_package(PkgConfig REQUIRED)
 
-pkg_check_modules(Botan2 REQUIRED IMPORTED_TARGET botan-2) # brew install botan
+pkg_check_modules(Botan2 REQUIRED IMPORTED_TARGET botan-2)
 
 add_library(${PROJECT_NAME} tlsclient.cpp tlscredentials.cpp tlsserver.cpp
                             tlssessions.cpp util.cpp)

@@ -11,7 +11,7 @@ find_package(
   Qt5
   COMPONENTS Sql
   REQUIRED)
-find_package(PostgreSQL REQUIRED) # brew install postgresql
+find_package(PostgreSQL REQUIRED)
 
 add_library(${PROJECT_NAME} db.cpp dbconfig.cpp dbconfigpsql.cpp psql.cpp
                             schema.cpp)
