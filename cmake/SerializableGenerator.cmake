@@ -88,4 +88,4 @@ function(__filename_from_header header filename)
 
     set(filename ${file_stem}_ser.cpp PARENT_SCOPE)
 
-endfunction(__filter_serializeable_headers)
+endfunction(__filename_from_header)
