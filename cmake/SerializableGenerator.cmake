@@ -1,5 +1,11 @@
 #
-# generate_implementations_for( TARGET target )
+# PUBLIC interface
+#
+
+# This function generates implementations for serializable classes (see the sub-project `cflib/serialize`).
+#
+# :param TARGET: The target that holds serializable classes.
+# :type TARGET: CMake target.
 #
 function(generate_implementations_for)
 
@@ -7,30 +13,30 @@ function(generate_implementations_for)
 
     __find_headers(${__TARGET} headers)
     __filter_serializeable_headers("${headers}")
-    __generate_implementations(${__TARGET} "${headers}")
+    __generate_implementations(${__TARGET} "${headers}" implementations)
+    __register_implementations(${__TARGET} "${implementations}")
 
 endfunction(generate_implementations_for)
 
 #
-# PRIVATE
+# PRIVATE implementations
 #
+
 function(__find_headers target headers)
 
     get_target_property(dir ${target} SOURCE_DIR)
 
-    file(GLOB_RECURSE findings
-        CONFIGURE_DEPENDS
+    file(
+        GLOB_RECURSE findings CONFIGURE_DEPENDS
         RELATIVE ${dir}
-        *.h
-    )
+        *.h)
 
-    set(headers ${findings} PARENT_SCOPE)
+    set(headers
+        ${findings}
+        PARENT_SCOPE)
 
 endfunction(__find_headers)
 
-#
-# PRIVATE
-#
 function(__filter_serializeable_headers headers)
 
     set(findings)
@@ -43,14 +49,13 @@ function(__filter_serializeable_headers headers)
         endif()
     endforeach()
 
-    set(headers ${findings} PARENT_SCOPE)
+    set(headers
+        ${findings}
+        PARENT_SCOPE)
 
 endfunction(__filter_serializeable_headers)
 
-#
-# PRIVATE
-#
-function(__generate_implementations target headers)
+function(__generate_implementations target headers implementations)
 
     get_target_property(binary_dir ${target} BINARY_DIR)
     get_target_property(source_dir ${target} SOURCE_DIR)
@@ -64,28 +69,32 @@ function(__generate_implementations target headers)
         __filename_from_header(${header} filename)
         set(file ${target_folder}/${filename})
         add_custom_command(
-            OUTPUT   ${file}
-            COMMAND  ser serialize ${source_dir}/${header} ${file}
-            DEPENDS  ${source_dir}/${header}
-            VERBATIM
-        )
+            OUTPUT ${file}
+            COMMAND ser serialize ${source_dir}/${header} ${file}
+            DEPENDS ${source_dir}/${header}
+            VERBATIM)
         list(APPEND files ${file})
     endforeach()
 
-    target_sources(${target}
-        PRIVATE ${files}
-    )
+    set(implementations
+        ${files}
+        PARENT_SCOPE)
 
 endfunction(__generate_implementations)
 
-#
-# PRIVATE
-#
 function(__filename_from_header header filename)
 
     string(REPLACE "/" "_" file_stem ${header})
     string(REPLACE ".h" "" file_stem ${file_stem})
 
-    set(filename ${file_stem}_ser.cpp PARENT_SCOPE)
+    set(filename
+        ${file_stem}_ser.cpp
+        PARENT_SCOPE)
 
 endfunction(__filename_from_header)
+
+function(__register_implementations target implementations)
+
+    target_sources(${target} PRIVATE ${implementations})
+
+endfunction(__register_implementations)
