@@ -23,7 +23,8 @@ add_library(
     timeshifter.cpp
     unixsignal.cpp
     util.cpp
-    impl/threadverifyimpl.cpp)
+    impl/threadverifyimpl.cpp
+    impl/util_mac.mm)
 add_library(cflib::util ALIAS ${PROJECT_NAME})
 
 target_include_directories(
