@@ -7,6 +7,7 @@ find_package(
     Qt5
     COMPONENTS Core
     REQUIRED)
+
 find_package(PkgConfig REQUIRED)
 
 pkg_check_modules(Botan2 REQUIRED IMPORTED_TARGET botan-2)

@@ -5,12 +5,9 @@ project(
 
 find_package(
     Qt5
-    COMPONENTS Core
+    COMPONENTS Core Sql
     REQUIRED)
-find_package(
-    Qt5
-    COMPONENTS Sql
-    REQUIRED)
+
 find_package(PostgreSQL REQUIRED)
 
 add_library(${PROJECT_NAME} db.cpp dbconfig.cpp dbconfigpsql.cpp psql.cpp schema.cpp)
