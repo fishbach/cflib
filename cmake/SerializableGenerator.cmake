@@ -1,8 +1,11 @@
-#
-# PUBLIC interface
-#
-
 # This function generates implementations for serializable classes (see the sub-project `cflib/serialize`).
+#
+# The generation is comprised of:
+#
+#   1. Find all header files under the specified `TARGET`.
+#   2. Filter all header files that have the string "SERIALIZE_CLASS".
+#   3. Execute the `ser` application to generate implementations.
+#   4. Register the implementation files to the specified `TARGET`.
 #
 # :param TARGET: The target that holds serializable classes.
 # :type TARGET: CMake target.
