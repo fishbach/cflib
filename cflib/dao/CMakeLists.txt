@@ -1,16 +1,15 @@
 project(
-  cflib_dao
-  VERSION ${CFLIB_SUPERPROJECT_VERSION}
-  LANGUAGES CXX)
+    cflib_dao
+    VERSION ${CFLIB_SUPERPROJECT_VERSION}
+    LANGUAGES CXX)
 
 find_package(
-  Qt5
-  COMPONENTS Core
-  REQUIRED)
+    Qt5
+    COMPONENTS Core
+    REQUIRED)
 
 add_library(${PROJECT_NAME} config.cpp configpsql.cpp version.cpp)
 
-target_include_directories(
-  ${PROJECT_NAME} PRIVATE $<BUILD_INTERFACE:${CFLIB_SUPERPROJECT_SOURCE_DIR}>)
+target_include_directories(${PROJECT_NAME} PRIVATE $<BUILD_INTERFACE:${CFLIB_SUPERPROJECT_SOURCE_DIR}>)
 
 target_link_libraries(${PROJECT_NAME} PRIVATE Qt5::Core)
