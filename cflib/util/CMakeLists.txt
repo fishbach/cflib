@@ -25,7 +25,10 @@ add_library(
     util.cpp
     impl/threadverifyimpl.cpp)
 
-target_include_directories(${PROJECT_NAME} PRIVATE $<BUILD_INTERFACE:${CFLIB_SUPERPROJECT_SOURCE_DIR}>)
+target_include_directories(
+    ${PROJECT_NAME}
+    PRIVATE $<BUILD_INTERFACE:${CFLIB_SUPERPROJECT_SOURCE_DIR}>
+    INTERFACE .)
 
 target_link_libraries(
     ${PROJECT_NAME}

@@ -2,7 +2,8 @@ find_package(
     Qt5
     COMPONENTS Test
     REQUIRED)
-include(SerializableGenerator REQUIRED)
+
+include(SerializableGenerator)
 
 set(ALL_TESTS dynamic_test gen_ber_test serializeber_test typeinfo_test util_test)
 
