@@ -20,6 +20,7 @@ build-*
 target_wrapper.sh
 moc_wrapper.sh
 rcc_wrapper.sh
+CMakeLists.txt.user
 
 config.pri
 bin
