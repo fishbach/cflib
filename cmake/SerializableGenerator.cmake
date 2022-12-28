@@ -1,5 +1,18 @@
 #
-# __find_headers( target headers )
+# generate_implementations_for( TARGET target )
+#
+function(generate_implementations_for)
+
+    cmake_parse_arguments(_ "" "TARGET" "" ${ARGN})
+
+    __find_headers(${__TARGET} headers)
+    __filter_serializeable_headers("${headers}")
+    __generate_implementations(${__TARGET} "${headers}")
+
+endfunction(generate_implementations_for)
+
+#
+# PRIVATE
 #
 function(__find_headers target headers)
 
@@ -16,7 +29,7 @@ function(__find_headers target headers)
 endfunction(__find_headers)
 
 #
-# __filter_serializeable_headers( headers )
+# PRIVATE
 #
 function(__filter_serializeable_headers headers)
 
@@ -35,7 +48,7 @@ function(__filter_serializeable_headers headers)
 endfunction(__filter_serializeable_headers)
 
 #
-# __generate_implementations( target headers )
+# PRIVATE
 #
 function(__generate_implementations target headers)
 
@@ -48,14 +61,12 @@ function(__generate_implementations target headers)
     file(MAKE_DIRECTORY ${target_folder})
 
     foreach(header ${headers})
-        string(REPLACE "/" "_" file_stem ${header})
-        string(REPLACE ".h" "" file_stem ${file_stem})
-        set(file ${target_folder}/${file_stem}_ser.cpp)
+        __filename_from_header(${header} filename)
+        set(file ${target_folder}/${filename})
         add_custom_command(
-            OUTPUT     ${file}
-            COMMAND    ser serialize ${source_dir}/${header} ${file}
-            COMMENT    "Generate implementation for ${header}"
-            DEPENDS    ${source_dir}/${header}
+            OUTPUT   ${file}
+            COMMAND  ser serialize ${source_dir}/${header} ${file}
+            DEPENDS  ${source_dir}/${header}
             VERBATIM
         )
         list(APPEND files ${file})
@@ -65,19 +76,16 @@ function(__generate_implementations target headers)
         PRIVATE ${files}
     )
 
-endfunction()
+endfunction(__generate_implementations)
 
 #
-# generate_implementations_for( TARGET target )
+# PRIVATE
 #
-function(generate_implementations_for)
+function(__filename_from_header header filename)
 
-    cmake_parse_arguments(_ "" "TARGET" "" ${ARGN})
+    string(REPLACE "/" "_" file_stem ${header})
+    string(REPLACE ".h" "" file_stem ${file_stem})
 
-    __find_headers(${__TARGET} headers)
+    set(filename ${file_stem}_ser.cpp PARENT_SCOPE)
 
-    __filter_serializeable_headers("${headers}")
-
-    __generate_implementations(${__TARGET} "${headers}")
-
-endfunction(generate_implementations_for)
+endfunction(__filter_serializeable_headers)
