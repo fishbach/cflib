@@ -28,7 +28,7 @@ add_library(
 target_include_directories(
     ${PROJECT_NAME}
     PRIVATE $<BUILD_INTERFACE:${CFLIB_SUPERPROJECT_SOURCE_DIR}>
-    INTERFACE .)
+    INTERFACE ${CFLIB_SUPERPROJECT_SOURCE_DIR})
 
 target_link_libraries(
     ${PROJECT_NAME}
