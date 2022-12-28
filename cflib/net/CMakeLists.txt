@@ -8,6 +8,8 @@ find_package(
     COMPONENTS Core
     REQUIRED)
 
+include(SerializableGenerator)
+
 add_library(
     ${PROJECT_NAME}
     impl/kafkaconnection.cpp
@@ -41,6 +43,8 @@ add_library(
     websocketservice.cpp
     wscommmanager.cpp)
 add_library(cflib::net ALIAS ${PROJECT_NAME})
+
+generate_implementations_for(TARGET ${PROJECT_NAME})
 
 target_include_directories(${PROJECT_NAME} PRIVATE $<BUILD_INTERFACE:${CFLIB_SUPERPROJECT_SOURCE_DIR}>)
 
