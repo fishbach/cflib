@@ -5,7 +5,7 @@
  * Licensed under the MIT License.
  */
 
-#include "psql.h"
+#include <cflib/db/psql.h>
 
 #include <cflib/util/evtimer.h>
 #include <cflib/util/threadverify.h>
