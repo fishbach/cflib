@@ -15,6 +15,9 @@ add_library(cflib::dao ALIAS ${PROJECT_NAME})
 
 generate_implementations_for(TARGET ${PROJECT_NAME})
 
-target_include_directories(${PROJECT_NAME} PRIVATE $<BUILD_INTERFACE:${CFLIB_SUPERPROJECT_SOURCE_DIR}>)
+target_include_directories(
+    ${PROJECT_NAME}
+    PRIVATE $<BUILD_INTERFACE:${CFLIB_SUPERPROJECT_SOURCE_DIR}>
+    INTERFACE $<BUILD_INTERFACE:${CFLIB_SUPERPROJECT_SOURCE_DIR}>)
 
 target_link_libraries(${PROJECT_NAME} PRIVATE Qt5::Core)
