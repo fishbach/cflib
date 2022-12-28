@@ -15,4 +15,4 @@ target_include_directories(${PROJECT_NAME} PRIVATE $<BUILD_INTERFACE:${CFLIB_SUP
 target_link_libraries(
     ${PROJECT_NAME}
     PRIVATE Qt5::Core
-    PRIVATE cflib_util)
+    PRIVATE cflib::util)

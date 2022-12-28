@@ -16,8 +16,8 @@ foreach(test ${ALL_TESTS})
     target_link_libraries(
         ${target}
         PRIVATE Qt5::Test
-        PRIVATE cflib_crypt
-        PRIVATE cflib_util)
+        PRIVATE cflib::crypt
+        PRIVATE cflib::util)
 
     add_test(NAME ${target} COMMAND ${target})
 
