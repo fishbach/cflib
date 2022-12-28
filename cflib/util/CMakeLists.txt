@@ -24,6 +24,7 @@ add_library(
     unixsignal.cpp
     util.cpp
     impl/threadverifyimpl.cpp)
+add_library(cflib::util ALIAS ${PROJECT_NAME})
 
 target_include_directories(
     ${PROJECT_NAME}

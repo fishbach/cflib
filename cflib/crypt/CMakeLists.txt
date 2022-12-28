@@ -12,6 +12,7 @@ find_package(PkgConfig REQUIRED)
 pkg_check_modules(Botan2 REQUIRED IMPORTED_TARGET botan-2)
 
 add_library(${PROJECT_NAME} tlsclient.cpp tlscredentials.cpp tlsserver.cpp tlssessions.cpp util.cpp)
+add_library(cflib::crypt ALIAS ${PROJECT_NAME})
 
 target_include_directories(${PROJECT_NAME} PRIVATE $<BUILD_INTERFACE:${CFLIB_SUPERPROJECT_SOURCE_DIR}>)
 

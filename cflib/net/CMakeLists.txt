@@ -40,6 +40,7 @@ add_library(
     tcpmanager.cpp
     websocketservice.cpp
     wscommmanager.cpp)
+add_library(cflib::net ALIAS ${PROJECT_NAME})
 
 target_include_directories(${PROJECT_NAME} PRIVATE $<BUILD_INTERFACE:${CFLIB_SUPERPROJECT_SOURCE_DIR}>)
 

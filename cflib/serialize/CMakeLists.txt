@@ -9,6 +9,7 @@ find_package(
     REQUIRED)
 
 add_library(${PROJECT_NAME} STATIC asn1dump.cpp serializetypeinfo.cpp tribool.cpp impl/registerclass.cpp)
+add_library(cflib::serialize ALIAS ${PROJECT_NAME})
 
 target_include_directories(${PROJECT_NAME} PRIVATE $<BUILD_INTERFACE:${CFLIB_SUPERPROJECT_SOURCE_DIR}>)
 

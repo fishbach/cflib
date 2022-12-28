@@ -14,6 +14,7 @@ find_package(
 find_package(PostgreSQL REQUIRED)
 
 add_library(${PROJECT_NAME} db.cpp dbconfig.cpp dbconfigpsql.cpp psql.cpp schema.cpp)
+add_library(cflib::db ALIAS ${PROJECT_NAME})
 
 target_include_directories(${PROJECT_NAME} PRIVATE $<BUILD_INTERFACE:${CFLIB_SUPERPROJECT_SOURCE_DIR}>)
 
