@@ -23,7 +23,8 @@ target_include_directories(
 target_link_libraries(
     ${PROJECT_NAME}
     PRIVATE Qt5::Core
-    PRIVATE PkgConfig::Botan2)
+    PRIVATE PkgConfig::Botan2
+    PRIVATE cflib::util)
 
 add_subdirectory(crypt_test)
 add_subdirectory(pwhash)

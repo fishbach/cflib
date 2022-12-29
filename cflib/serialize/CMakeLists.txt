@@ -16,7 +16,11 @@ target_include_directories(
     PRIVATE $<BUILD_INTERFACE:${CFLIB_SUPERPROJECT_SOURCE_DIR}>
     INTERFACE $<BUILD_INTERFACE:${CFLIB_SUPERPROJECT_SOURCE_DIR}>)
 
-target_link_libraries(${PROJECT_NAME} PRIVATE Qt5::Core)
+target_link_libraries(
+    ${PROJECT_NAME}
+    PRIVATE Qt5::Core
+    PRIVATE cflib::util
+    PRIVATE cflib::net)
 
 add_subdirectory(asn1dump)
 add_subdirectory(ser)

@@ -23,9 +23,12 @@ add_library(
     timeshifter.cpp
     unixsignal.cpp
     util.cpp
-    impl/threadverifyimpl.cpp
-    impl/util_mac.mm)
+    impl/threadverifyimpl.cpp)
 add_library(cflib::util ALIAS ${PROJECT_NAME})
+
+if(APPLE)
+    target_sources(${PROJECT_NAME} PRIVATE impl/util_mac.mm)
+endif()
 
 target_include_directories(
     ${PROJECT_NAME}

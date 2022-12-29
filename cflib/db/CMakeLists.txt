@@ -22,7 +22,8 @@ target_link_libraries(
     ${PROJECT_NAME}
     PRIVATE Qt5::Core
     PRIVATE Qt5::Sql
-    PRIVATE PostgreSQL::PostgreSQL)
+    PRIVATE PostgreSQL::PostgreSQL
+    PRIVATE cflib::util)
 
 add_subdirectory(db_test)
 add_subdirectory(migrationmoped)

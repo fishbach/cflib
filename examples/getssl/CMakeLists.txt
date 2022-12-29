@@ -17,6 +17,6 @@ target_link_libraries(
     ${PROJECT_NAME}
     PRIVATE Qt5::Core
     PRIVATE Qt5::Network
-    PRIVATE cflib::net
     PRIVATE cflib::crypt
+    PRIVATE cflib::net
     PRIVATE cflib::util)
