@@ -12,6 +12,6 @@ WORKDIR /cflib
 
 COPY . .
 
-RUN rm -rf build && mkdir build
+WORKDIR /cflib-build
 
-CMD cd build && cmake -GNinja .. && cmake --build .
+CMD cmake -GNinja /cflib && cmake --build . && ctest
