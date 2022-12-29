@@ -25,7 +25,7 @@ public:
 	inline bool put(T data) {
 		while (!sl_.testAndSetAcquire(0, 1));
 		if (count_ == max_) { sl_.storeRelease(0); return false; }
-		++count_;
+		count_ = count_ + 1;
 		buffer_[writer_] = data;
 		writer_ = (writer_ + 1) % max_;
 		sl_.storeRelease(0);
@@ -35,7 +35,7 @@ public:
 	inline T take() {
 		while (!sl_.testAndSetAcquire(0, 1));
 		if (count_ == 0) { sl_.storeRelease(0); return T(); }
-		--count_;
+		count_ = count_ - 1;
 		T rv = buffer_[reader_];
 		reader_ = (reader_ + 1) % max_;
 		sl_.storeRelease(0);

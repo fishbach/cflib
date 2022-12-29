@@ -33,7 +33,7 @@ QSet<QString> excludes;
 
 int usage()
 {
-	QTextStream(stderr) << "usage: " << QCoreApplication::applicationName() << " <main.js>" << endl;
+	QTextStream(stderr) << "usage: " << QCoreApplication::applicationName() << " <main.js>" << Qt::endl;
 	return 1;
 }
 
@@ -83,7 +83,7 @@ int findClosing(const QString & src, int start)
 		}
 	}
 
-	QTextStream(stderr) << "cannot find closing bracket" << endl;
+	QTextStream(stderr) << "cannot find closing bracket" << Qt::endl;
 	return len - 1;
 }
 

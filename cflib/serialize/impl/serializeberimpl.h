@@ -457,16 +457,16 @@ inline void deserializeBER(QHash<Key, T> & cl, const quint8 * data, int len, BER
 }
 
 // ----------------------------------------------------------------------------
-// QMap
+// QMultiMap
 // ----------------------------------------------------------------------------
 
 template<typename Key, typename T>
-inline void serializeBER(const QMap<Key, T> & cl, quint64 tagNo, QByteArray & data, BERSerializerBase &)
+inline void serializeBER(const QMultiMap<Key, T> & cl, quint64 tagNo, QByteArray & data, BERSerializerBase &)
 {
 	TLWriter tlw(data, tagNo);
 	BERSerializerBase ser(data, true);
-	typename QMap<Key, T>::const_iterator it = cl.end();
-	typename QMap<Key, T>::const_iterator begin = cl.begin();
+	typename QMultiMap<Key, T>::const_iterator it = cl.end();
+	typename QMultiMap<Key, T>::const_iterator begin = cl.begin();
 	while (it != begin) {
 		--it;
 		ser << it.key() << it.value();
@@ -474,7 +474,7 @@ inline void serializeBER(const QMap<Key, T> & cl, quint64 tagNo, QByteArray & da
 }
 
 template<typename Key, typename T>
-inline void deserializeBER(QMap<Key, T> & cl, const quint8 * data, int len, BERDeserializerBase &)
+inline void deserializeBER(QMultiMap<Key, T> & cl, const quint8 * data, int len, BERDeserializerBase &)
 {
 	BERDeserializerBase ser(data, len, true);
 	cl.clear();
@@ -482,7 +482,7 @@ inline void deserializeBER(QMap<Key, T> & cl, const quint8 * data, int len, BERD
 		Key key;
 		T value;
 		ser >> key >> value;
-		cl.insertMulti(key, value);
+		cl.insert(key, value);
 	}
 }
 

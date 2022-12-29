@@ -23,6 +23,8 @@
 #include <string.h>
 #include <sys/types.h>
 
+#include <QRandomGenerator>
+
 #ifndef Q_OS_WIN
 	#include <arpa/inet.h>
 	#include <netinet/in.h>
@@ -204,7 +206,7 @@ TCPConnData * TCPManagerImpl::openConnection(
 			logWarn("cannot resolve host: %1", destAddress);
 			return 0;
 		}
-		destIP = ips[qrand() % ips.size()];
+		destIP = ips[QRandomGenerator::global()->generate() % ips.size()];
 	}
 
 	// create non blocking socket

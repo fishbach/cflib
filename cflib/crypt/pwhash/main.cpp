@@ -24,7 +24,7 @@ int main(int argc, char *argv[])
 	#else
 		char * pwd = getpass("Password: ");
 	#endif
-	QTextStream(stdout) << cflib::crypt::hashPassword(pwd) << endl;
+	QTextStream(stdout) << cflib::crypt::hashPassword(pwd) << Qt::endl;
 
 	return 0;
 }

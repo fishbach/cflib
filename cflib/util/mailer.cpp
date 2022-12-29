@@ -62,7 +62,7 @@ void Mailer::initThreadData()
 		this,       &Mailer::finished,
 	Qt::DirectConnection);
 	connect<void (QProcess::*)(QProcess::ProcessError)>(
-		process_, &QProcess::error,
+		process_, &QProcess::errorOccurred,
 		this,       &Mailer::error,
 	Qt::DirectConnection);
 }

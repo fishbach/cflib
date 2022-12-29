@@ -10,7 +10,7 @@
 int usage()
 {
 	QTextStream(stderr)
-		<< "usage: " << QCoreApplication::applicationName() << " <path> [!] <regex>" << endl;
+		<< "usage: " << QCoreApplication::applicationName() << " <path> [!] <regex>" << Qt::endl;
 
 	return 1;
 }
@@ -31,7 +31,7 @@ int findFiles(const QString & path, bool inv, const QString & regex)
 {
 	const QRegExp re(regex);
 	if (!re.isValid()) {
-		QTextStream(stderr) << "invalid regex: " << regex << endl;
+		QTextStream(stderr) << "invalid regex: " << regex << Qt::endl;
 		return 2;
 	}
 
@@ -41,7 +41,7 @@ int findFiles(const QString & path, bool inv, const QString & regex)
 	files.sort();
 	QTextStream out(stdout);
 	foreach (const QString & file, files) {
-		out << file << endl;
+		out << file << Qt::endl;
 	}
 	return 0;
 }

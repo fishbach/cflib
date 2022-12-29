@@ -20,16 +20,16 @@ bool checkDeflate(const QByteArray & source, const QByteArray & enc, int level)
 	QByteArray data = source;
 	deflateRaw(data, level);
 	if (data != QByteArray::fromHex(enc)) {
-		out << "compressed differs: " << endl
-			<< "is: " << data.toHex() << endl
-			<< "ex: " << enc << endl;
+		out << "compressed differs: " << Qt::endl
+			<< "is: " << data.toHex() << Qt::endl
+			<< "ex: " << enc << Qt::endl;
 		return false;
 	}
 	inflateRaw(data);
 	if (data != source) {
-		out << "decompressed differs: " << endl
-			<< "is: " << data.toHex() << endl
-			<< "ex: " << source.toHex() << endl;
+		out << "decompressed differs: " << Qt::endl
+			<< "is: " << data.toHex() << Qt::endl
+			<< "ex: " << source.toHex() << Qt::endl;
 		return false;
 	}
 	return true;

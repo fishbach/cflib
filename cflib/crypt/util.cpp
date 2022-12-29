@@ -7,6 +7,7 @@
 
 #include "util.h"
 
+#include <vector>
 #include <cflib/crypt/impl/botanhelper.h>
 
 USE_LOG(LogCat::Crypt)
@@ -171,17 +172,19 @@ QByteArray x509CreateCertReq(const QByteArray & privateKey, const QList<QByteArr
 			extensions.add(new Cert_Extension::Subject_Alternative_Name(subjectAN));
 		}
 
+		std::vector<uint8_t> encoded;
+		DER_Encoder(encoded)
+			.start_cons(SEQUENCE)
+			.encode(extensions)
+			.end_cons();
+
 		DER_Encoder der;
 		der.start_cons(SEQUENCE)
 			.encode(PKCS10_VERSION)
 			.encode(X509_DN())
 			.raw_bytes(X509::BER_encode(*pk))
 			.start_explicit(0)
-			.encode(Attribute("PKCS9.ExtensionRequest", DER_Encoder()
-				.start_cons(SEQUENCE)
-				.encode(extensions)
-				.end_cons()
-				.get_contents_unlocked()))
+			.encode(Attribute("PKCS9.ExtensionRequest", encoded))
 			.end_explicit()
 			.end_cons();
 

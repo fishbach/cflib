@@ -7,6 +7,10 @@
 
 #include "log.h"
 
+#ifdef Q_OS_MAC
+#include <pthread.h>
+#endif
+
 #include <cflib/util/hex.h>
 
 // needed for threadId()
@@ -19,7 +23,9 @@
 	#else
 		inline pid_t gettid(void) {
 			#ifdef Q_OS_MAC
-				return (pid_t)syscall(SYS_thread_selfid);
+				uint64_t tid64;
+				pthread_threadid_np(NULL, &tid64);
+				return (pid_t)tid64;
 			#else
 				return (pid_t)syscall(__NR_gettid);
 			#endif
@@ -119,13 +125,13 @@ LogCategory Log::logLevelCategory_ = 0;
 void Log::start(const QString & fileName)
 {
 	if (active) {
-		QTextStream(stderr) << "logging already started with log file: " << file.fileName() << endl;
+		QTextStream(stderr) << "logging already started with log file: " << file.fileName() << Qt::endl;
 		return;
 	}
 
 	file.setFileName(fileName);
 	if (!file.open(QFile::WriteOnly | QFile::Append)) {
-		QTextStream(stderr) << "could not open log file: " << fileName  << " (" << file.errorString() << ")" << endl;
+		QTextStream(stderr) << "could not open log file: " << fileName  << " (" << file.errorString() << ")" << Qt::endl;
 		return;
 	}
 	file.setPermissions(QFile::ReadOwner | QFile::WriteOwner | QFile::ReadGroup);

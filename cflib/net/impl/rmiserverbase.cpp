@@ -115,7 +115,7 @@ QStringList getMemberTypes(const SerializeTypeInfo & ti)
 		}
 	}
 
-	QStringList retval = types.toList();
+	QStringList retval = types.values();
 	retval.sort();
 	return retval;
 }

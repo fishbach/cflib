@@ -9,6 +9,7 @@
 
 #include <cflib/util/log.h>
 
+#include <algorithm>
 #include <arpa/inet.h>
 #include <netdb.h>
 #include <sys/socket.h>
@@ -53,8 +54,8 @@ QList<QByteArray> getIPFromDNS(const QByteArray & name, bool preferIPv6)
 
 	freeaddrinfo(res);
 
-	QList<QByteArray> rv = ipv4.isEmpty() || (preferIPv6 && !ipv6.isEmpty()) ? ipv6.toList() : ipv4.toList();
-	qSort(rv);
+	QList<QByteArray> rv = ipv4.isEmpty() || (preferIPv6 && !ipv6.isEmpty()) ? ipv6.values() : ipv4.values();
+	std::sort(std::begin(rv), std::end(rv));
 	logTrace("getIPFromDNS(\"%1\", %2) -> %3", name, preferIPv6, rv.join(' '));
 	return rv;
 }

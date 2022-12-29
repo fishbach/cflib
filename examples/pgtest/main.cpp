@@ -58,7 +58,7 @@ void select()
 		sql >> i >> t >> d >> d >> d >> d >> d >> d >> d >> d >> d >> d >> d >> d >> d;
 		++count;
 	}
-	out << "count: " << count << endl;
+	out << "count: " << count << Qt::endl;
 }
 
 void update(int start, int end)
@@ -101,7 +101,7 @@ void update(int start, int end)
 		if (now - last > 1000) {
 			out
 				<< (count * 1000 / (now - last)) << " msg/s - latency: "
-				<< min << " / " << (sum / count) << " / " << max << " microsec" << endl;
+				<< min << " / " << (sum / count) << " / " << max << " microsec" << Qt::endl;
 			last = now;
 			count = 0;
 			min = 0x7fffffff;
@@ -114,31 +114,31 @@ void update(int start, int end)
 int showUsage(const QByteArray & executable)
 {
 	QTextStream(stderr)
-		<< "Usage: " << executable << " [options] 'host=... port=...'"          << endl
-		<< "Options:"                                                           << endl
-		<< "  -h, --help       => this help"                                    << endl
-		<< "  -i <start>-<end> => insert elements with ids >= start and <= end" << endl
-		<< "  -s               => select"                                       << endl
-		<< "  -u <start>-<end> => update"                                       << endl
-		<< ""                                                                   << endl
-		<< "CREATE TABLE test ("                                                << endl
-		<< "  id        integer NOT NULL,"                                      << endl
-		<< "  timestamp timestamp with time zone,"                              << endl
-		<< "  x         double precision NOT NULL,"                             << endl
-		<< "  y         double precision NOT NULL,"                             << endl
-		<< "  z         double precision NOT NULL,"                             << endl
-		<< "  qw        double precision NOT NULL,"                             << endl
-		<< "  qx        double precision NOT NULL,"                             << endl
-		<< "  qy        double precision NOT NULL,"                             << endl
-		<< "  qz        double precision NOT NULL,"                             << endl
-		<< "  latitude  double precision NOT NULL,"                             << endl
-		<< "  longitude double precision NOT NULL,"                             << endl
-		<< "  globalQw  double precision NOT NULL,"                             << endl
-		<< "  globalQx  double precision NOT NULL,"                             << endl
-		<< "  globalQy  double precision NOT NULL,"                             << endl
-		<< "  globalQz  double precision NOT NULL,"                             << endl
-		<< "  PRIMARY KEY (id)"                                                 << endl
-		<< ");"                                                                 << endl;
+		<< "Usage: " << executable << " [options] 'host=... port=...'"          << Qt::endl
+		<< "Options:"                                                           << Qt::endl
+		<< "  -h, --help       => this help"                                    << Qt::endl
+		<< "  -i <start>-<end> => insert elements with ids >= start and <= end" << Qt::endl
+		<< "  -s               => select"                                       << Qt::endl
+		<< "  -u <start>-<end> => update"                                       << Qt::endl
+		<< ""                                                                   << Qt::endl
+		<< "CREATE TABLE test ("                                                << Qt::endl
+		<< "  id        integer NOT NULL,"                                      << Qt::endl
+		<< "  timestamp timestamp with time zone,"                              << Qt::endl
+		<< "  x         double precision NOT NULL,"                             << Qt::endl
+		<< "  y         double precision NOT NULL,"                             << Qt::endl
+		<< "  z         double precision NOT NULL,"                             << Qt::endl
+		<< "  qw        double precision NOT NULL,"                             << Qt::endl
+		<< "  qx        double precision NOT NULL,"                             << Qt::endl
+		<< "  qy        double precision NOT NULL,"                             << Qt::endl
+		<< "  qz        double precision NOT NULL,"                             << Qt::endl
+		<< "  latitude  double precision NOT NULL,"                             << Qt::endl
+		<< "  longitude double precision NOT NULL,"                             << Qt::endl
+		<< "  globalQw  double precision NOT NULL,"                             << Qt::endl
+		<< "  globalQx  double precision NOT NULL,"                             << Qt::endl
+		<< "  globalQy  double precision NOT NULL,"                             << Qt::endl
+		<< "  globalQz  double precision NOT NULL,"                             << Qt::endl
+		<< "  PRIMARY KEY (id)"                                                 << Qt::endl
+		<< ");"                                                                 << Qt::endl;
 	return 1;
 }
 
@@ -171,7 +171,7 @@ int main(int argc, char *argv[])
 	if (selectOpt.isSet()) select();
 	if (updateOpt.isSet()) update(updateOpt.value().split('-').first().toInt(), updateOpt.value().split('-').last().toInt());
 
-	out << "elapsed: " << timer.elapsed() << endl;
+	out << "elapsed: " << timer.elapsed() << Qt::endl;
 
 	return 0;
 }

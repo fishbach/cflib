@@ -7,6 +7,7 @@
 
 #include "kafkaconnectorimpl.h"
 
+#include <algorithm>
 #include <cflib/net/impl/kafkafetchconnection.h>
 #include <cflib/net/impl/kafkagroupconnection.h>
 #include <cflib/net/impl/kafkametadataconnection.h>
@@ -445,7 +446,7 @@ QMap<QByteArray, QMap<QByteArray, QList<qint32>>> KafkaConnector::Impl::computeG
 
 		for (const QByteArray & topic : topicMembers.keys()) {
 			QList<QByteArray> & members = topicMembers[topic];
-			qSort(members);
+			std::sort(std::begin(members), std::end(members));
 
 			int partitionCount = responsibilities_[topic].size();
 			int partitionsPerMember  = partitionCount / members.size();
@@ -473,7 +474,7 @@ QMap<QByteArray, QMap<QByteArray, QList<qint32>>> KafkaConnector::Impl::computeG
 				allTopicPartitions << qMakePair(topic, i);
 			}
 		}
-		qSort(allTopicPartitions);
+		std::sort(std::begin(allTopicPartitions), std::end(allTopicPartitions));
 
 		QList<QByteArray> members = memberTopics.keys();
 		int memberId = 0;
