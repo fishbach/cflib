@@ -44,7 +44,7 @@ add_library(
     wscommmanager.cpp)
 add_library(cflib::net ALIAS ${PROJECT_NAME})
 
-generate_implementations_for(TARGET ${PROJECT_NAME})
+generate_implementations_for(${PROJECT_NAME})
 
 target_include_directories(
     ${PROJECT_NAME}

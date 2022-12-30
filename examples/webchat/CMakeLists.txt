@@ -12,7 +12,7 @@ include(SerializableGenerator)
 
 add_executable(${PROJECT_NAME} main.cpp infoservice.cpp)
 
-generate_implementations_for(TARGET ${PROJECT_NAME})
+generate_implementations_for(${PROJECT_NAME})
 
 target_include_directories(
     ${PROJECT_NAME}

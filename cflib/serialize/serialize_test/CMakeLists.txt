@@ -25,6 +25,6 @@ foreach(test ${ALL_TESTS})
 
     add_dependencies(${target} ser) # The serializer is needed for the test
 
-    generate_implementations_for(TARGET ${target})
+    generate_implementations_for(${target})
 
 endforeach()

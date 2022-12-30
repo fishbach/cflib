@@ -2,22 +2,20 @@
 #
 # The generation is comprised of:
 #
-#   1. Find all header files under the specified `TARGET`.
+#   1. Find all header files under the specified `target`.
 #   2. Filter all header files that have the string "SERIALIZE_CLASS".
 #   3. Execute the `ser` application to generate implementations.
-#   4. Register the implementation files to the specified `TARGET`.
+#   4. Register the implementation files to the specified `target`.
 #
-# :param TARGET: The target that holds serializable classes.
-# :type TARGET: CMake target.
+# :param target: A target that needs to have implementation generated.
+# :type target: A CMake target.
 #
-function(generate_implementations_for)
+function(generate_implementations_for target)
 
-    cmake_parse_arguments(_ "" "TARGET" "" ${ARGN})
-
-    __find_headers(${__TARGET} headers)
+    __find_headers(${target} headers)
     __filter_serializeable_headers("${headers}")
-    __generate_implementations(${__TARGET} "${headers}" implementations)
-    __register_implementations(${__TARGET} "${implementations}")
+    __generate_implementations(${target} "${headers}" implementations)
+    __register_implementations(${target} "${implementations}")
 
 endfunction(generate_implementations_for)
 
