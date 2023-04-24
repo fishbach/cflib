@@ -19,10 +19,8 @@
 define([
 	'cflib/util/ajax',
 	'cflib/util/api',
-	'cflib/ext/ZeroClipboard'
-], function(ajax, api, ZeroClipboard) {
-
-	ZeroClipboard.config( { swfPath: '/swf/cflib/ZeroClipboard.swf' } );
+	'cflib/ext/clipboard.min'
+], function(ajax, api, clipboard) {
 
 	var timeDiff = 0;
 	var popupZIndex = 1010;
@@ -248,9 +246,9 @@ define([
 	util.logWarn     = function(str) { logToServer(5, str); };
 	util.logCritical = function(str) { logToServer(6, str); };
 
-	util.initClipboardButton = function(button, dataFunc) {
-		new ZeroClipboard(button).on('copy', function(e) {
-			e.clipboardData.setData('text/plain', dataFunc());
+ 	util.initClipboardButton = function(button, dataFunc) {
+		new clipboard(button[0], { 
+			text: dataFunc,
 		});
 	};
 
