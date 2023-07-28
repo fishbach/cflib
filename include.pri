@@ -59,17 +59,23 @@ defineTest(setBuildPaths) {
 		CONFIG *= precompile_header
 	}
 
-	CONFIG *= c++11 stl_off exceptions_off
+	CONFIG *= c++17 stl_off exceptions_off
 	export(CONFIG)
 
-	QMAKE_CXXFLAGS_WARN_ON += -Wno-deprecated-copy
-	equals(QMAKE_CXX, "clang++") {
-		QMAKE_CXXFLAGS_WARN_ON += -Wno-shift-count-overflow
-	}
-	equals(QMAKE_CXX, "g++") {
-		QMAKE_CXXFLAGS_WARN_ON += -Wno-unknown-pragmas
-	}
-	export(QMAKE_CXXFLAGS_WARN_ON)
+	# Qt 5.15 does not have a config for 'c++20' yet.
+	QMAKE_CXXFLAGS_CXX1Z ~= s/-std=.+/-std=c++20
+	export(QMAKE_CXXFLAGS_CXX1Z)
+	QMAKE_CXXFLAGS_GNUCXX1Z ~= s/-std=.+/-std=c++20
+	export(QMAKE_CXXFLAGS_GNUCXX1Z)
+
+#	QMAKE_CXXFLAGS_WARN_ON += -Wno-deprecated-copy
+#	equals(QMAKE_CXX, "clang++") {
+#		QMAKE_CXXFLAGS_WARN_ON += -Wno-shift-count-overflow
+#	}
+#	equals(QMAKE_CXX, "g++") {
+#		QMAKE_CXXFLAGS_WARN_ON += -Wno-unknown-pragmas
+#	}
+#	export(QMAKE_CXXFLAGS_WARN_ON)
 
 	win32 {
 		DEFINES += _WIN32_WINNT=0x0600

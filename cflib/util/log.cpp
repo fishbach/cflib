@@ -12,14 +12,20 @@
 // needed for threadId()
 #ifndef Q_OS_WIN
 	#include <unistd.h>
-	#include <sys/syscall.h>
+	#ifdef Q_OS_MAC
+		#include <pthread.h>
+	#else
+		#include <sys/syscall.h>
+	#endif
 	#ifdef _syscall0
 		_syscall0(pid_t, gettid)
 		pid_t gettid(void);
 	#else
 		inline pid_t gettid(void) {
 			#ifdef Q_OS_MAC
-				return (pid_t)syscall(SYS_thread_selfid);
+				uint64_t tid;
+				pthread_threadid_np(NULL, &tid);
+				return (pid_t)tid;
 			#else
 				return (pid_t)syscall(__NR_gettid);
 			#endif
