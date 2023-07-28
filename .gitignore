@@ -16,9 +16,9 @@ build
 build-*
 .DS_Store
 *~
-target_wrapper.sh
 moc_wrapper.sh
 rcc_wrapper.sh
+target_wrapper.sh
 
 config.pri
 bin
