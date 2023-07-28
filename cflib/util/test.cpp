@@ -60,9 +60,9 @@ int main(int argc, char *argv[])
 		foreach (const QString & t, allTests()) if (t.toLower() == runOnly) { found = true; break; }
 		if (!found) {
 			QTextStream err(stderr);
-			err << "Class \"" << args[1] << "\" not found!" << endl
-				<< "Existing classes:" << endl;
-			foreach (const QString & t, allTests()) err << "  " << t << endl;
+			err << "Class \"" << args[1] << "\" not found!" << Qt::endl
+				<< "Existing classes:" << Qt::endl;
+			foreach (const QString & t, allTests()) err << "  " << t << Qt::endl;
 			return 1;
 		}
 		args.removeAt(1);
@@ -76,7 +76,7 @@ int main(int argc, char *argv[])
 	foreach (QObject * obj, sortedTestObjects()) {
 		if (!runOnly.isEmpty() && QString(obj->metaObject()->className()).toLower() != runOnly) continue;
 		if (first) first = false;
-		else       out << endl;
+		else       out << Qt::endl;
 		retval += QTest::qExec(obj, args);
 	}
 

@@ -27,22 +27,22 @@ USE_LOG(LogCat::Etc)
 int showUsage(const QByteArray & executable)
 {
 	QTextStream(stderr)
-		<< ""                                                                              << endl
-		<< "Simple Webchat example"                                                        << endl
-		<< "------------------------------------"                                          << endl
-		<< endl
-		<< "To make this example run start the webchat executable and access the url"      << endl
-		<< "http://127.0.0.1:8080/ through your browser."                                  << endl
-		<< "If you have an out of source build you need to redirect the webchat to"        << endl
-		<< "the correct location of the example htdocs directory through:"                 << endl
-		<< "./" <<executable << " --htdocs <path to cflib source>/examples/webchat/htdocs" << endl
-		<< endl
-		<< "Usage: " << executable << " [options]"                                         << endl
-		<< "Options:"                                                                      << endl
-		<< "  -h, --help     => this help"                                                 << endl
-		<< "  -e, --export   => export Classes as Javascrpt classes"                       << endl
-		<< "  -f, --htdocs   => set path to htdocs (default htdocs in current directory)"  << endl
-		<< endl;
+		<< ""                                                                              << Qt::endl
+		<< "Simple Webchat example"                                                        << Qt::endl
+		<< "------------------------------------"                                          << Qt::endl
+		<< Qt::endl
+		<< "To make this example run start the webchat executable and access the url"      << Qt::endl
+		<< "http://127.0.0.1:8080/ through your browser."                                  << Qt::endl
+		<< "If you have an out of source build you need to redirect the webchat to"        << Qt::endl
+		<< "the correct location of the example htdocs directory through:"                 << Qt::endl
+		<< "./" <<executable << " --htdocs <path to cflib source>/examples/webchat/htdocs" << Qt::endl
+		<< Qt::endl
+		<< "Usage: " << executable << " [options]"                                         << Qt::endl
+		<< "Options:"                                                                      << Qt::endl
+		<< "  -h, --help     => this help"                                                 << Qt::endl
+		<< "  -e, --export   => export Classes as Javascrpt classes"                       << Qt::endl
+		<< "  -f, --htdocs   => set path to htdocs (default htdocs in current directory)"  << Qt::endl
+		<< Qt::endl;
 	return 1;
 }
 

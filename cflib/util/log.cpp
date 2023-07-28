@@ -119,13 +119,13 @@ LogCategory Log::logLevelCategory_ = 0;
 void Log::start(const QString & fileName)
 {
 	if (active) {
-		QTextStream(stderr) << "logging already started with log file: " << file.fileName() << endl;
+		QTextStream(stderr) << "logging already started with log file: " << file.fileName() << Qt::endl;
 		return;
 	}
 
 	file.setFileName(fileName);
 	if (!file.open(QFile::WriteOnly | QFile::Append)) {
-		QTextStream(stderr) << "could not open log file: " << fileName  << " (" << file.errorString() << ")" << endl;
+		QTextStream(stderr) << "could not open log file: " << fileName  << " (" << file.errorString() << ")" << Qt::endl;
 		return;
 	}
 	file.setPermissions(QFile::ReadOwner | QFile::WriteOwner | QFile::ReadGroup);

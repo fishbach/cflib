@@ -29,7 +29,7 @@ QString InfoService::test()
 QString InfoService::test(const QString & msg)
 {
 	logInfo("msg %1: %2", msg.length(), msg);
-	QTextStream(stdout) << msg << endl;
+	QTextStream(stdout) << msg << Qt::endl;
 	return msg;
 }
 
@@ -58,6 +58,6 @@ void InfoService::update(Dao3 & dao)
 
 void InfoService::talk(const QString & msg)
 {
-	QTextStream(stdout) << QString("connId:%1\twrote: %2").arg(connId()).arg(msg) << endl;
+	QTextStream(stdout) << QString("connId:%1\twrote: %2").arg(connId()).arg(msg) << Qt::endl;
 	newMessage(connId(), msg);
 }

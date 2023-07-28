@@ -20,12 +20,12 @@ namespace {
 int showUsage(const QByteArray & executable)
 {
 	QTextStream(stderr)
-		<< "Usage: " << executable << " [options] <db schema file>"       << endl
-		<< "Options:"                                                     << endl
-		<< "  -h, --help             => this help"                        << endl
-		<< "  -d, --db <param>       => set DB parameters"                << endl
-		<< "  -m, --migrator <param> => set migrator executable"          << endl
-		<< "  -l, --log <level>      => set log level 0 -> all, 7 -> off" << endl;
+		<< "Usage: " << executable << " [options] <db schema file>"       << Qt::endl
+		<< "Options:"                                                     << Qt::endl
+		<< "  -h, --help             => this help"                        << Qt::endl
+		<< "  -d, --db <param>       => set DB parameters"                << Qt::endl
+		<< "  -m, --migrator <param> => set migrator executable"          << Qt::endl
+		<< "  -l, --log <level>      => set log level 0 -> all, 7 -> off" << Qt::endl;
 	return 1;
 }
 
@@ -57,7 +57,7 @@ int main(int argc, char *argv[])
 		}, QString::fromUtf8(schemaArg.value())))
 	{
 		logCritical("could not update db schema");
-		QTextStream(stderr) << "could not update db schema" << endl;
+		QTextStream(stderr) << "could not update db schema" << Qt::endl;
 		return 1;
 	}
 

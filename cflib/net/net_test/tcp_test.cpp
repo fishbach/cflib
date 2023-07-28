@@ -409,7 +409,7 @@ private slots:
 		msgs.clear();
 	}
 
-//	forever { msgSem.acquire(); QTextStream(stdout) << msgs.join("|") << endl; }
+//	forever { msgSem.acquire(); QTextStream(stdout) << msgs.join("|") << Qt::endl; }
 
 };
 #include "tcp_test.moc"

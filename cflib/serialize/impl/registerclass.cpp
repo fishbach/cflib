@@ -23,7 +23,7 @@ QHash<quint32, const RegisterClassBase *> & RegisterClassBase::registry()
 
 void RegisterClassBase::duplicateId(quint32 classId)
 {
-	QTextStream(stderr) << "duplicate type id: %1" << classId << endl;
+	QTextStream(stderr) << "duplicate type id: %1" << classId << Qt::endl;
 	::abort();
 }
 

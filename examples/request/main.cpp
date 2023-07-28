@@ -22,18 +22,18 @@ namespace {
 int showUsage(const QByteArray & executable)
 {
 	QTextStream(stderr)
-		<< "Usage: " << executable << " [options] <URL>"                                                     << endl
-		<< "Options:"                                                                                        << endl
-		<< "  -h, --help        => this help"                                                                << endl
-		<< "  -p, --post        => do POST request"                                                          << endl
-		<< "  -l, --log <level> => set log level 0 -> all, 7 -> off"                                         << endl
-		<< "  -c, --certs <dir> => loads root certificates from given directory"                             << endl
-		<< endl
-		<< "Get the root ca of a certain domain:"                                                            << endl
-		<< "  openssl s_client -showcerts -servername cflib.de -connect cflib.de:443 < /dev/null"            << endl
-		<< "  paste last certificate to: openssl x509 -noout -text"                                          << endl
-		<< "  curl http://crl.identrust.com/DSTROOTCAX3CRL.crl | openssl crl -inform DER"                    << endl
-		<< "  curl http://apps.identrust.com/roots/dstrootcax3.p7c | openssl pkcs7 -inform DER -print_certs" << endl;
+		<< "Usage: " << executable << " [options] <URL>"                                                     << Qt::endl
+		<< "Options:"                                                                                        << Qt::endl
+		<< "  -h, --help        => this help"                                                                << Qt::endl
+		<< "  -p, --post        => do POST request"                                                          << Qt::endl
+		<< "  -l, --log <level> => set log level 0 -> all, 7 -> off"                                         << Qt::endl
+		<< "  -c, --certs <dir> => loads root certificates from given directory"                             << Qt::endl
+		<< Qt::endl
+		<< "Get the root ca of a certain domain:"                                                            << Qt::endl
+		<< "  openssl s_client -showcerts -servername cflib.de -connect cflib.de:443 < /dev/null"            << Qt::endl
+		<< "  paste last certificate to: openssl x509 -noout -text"                                          << Qt::endl
+		<< "  curl http://crl.identrust.com/DSTROOTCAX3CRL.crl | openssl crl -inform DER"                    << Qt::endl
+		<< "  curl http://apps.identrust.com/roots/dstrootcax3.p7c | openssl pkcs7 -inform DER -print_certs" << Qt::endl;
 	return 1;
 }
 
@@ -75,9 +75,9 @@ int main(int argc, char *argv[])
 	HttpRequest * request = new HttpRequest(mgr);
 	request->reply.bind([](int status, const QByteArray & reply) {
 		QTextStream(stdout)
-			<< "Status: " << status << endl
-			<< endl
-			<< reply << endl;
+			<< "Status: " << status << Qt::endl
+			<< Qt::endl
+			<< reply << Qt::endl;
 		threadSafeExit(status == 200 ? 0 : 1);
 	});
 	request->start(QString::fromUtf8(url.value()), postData);

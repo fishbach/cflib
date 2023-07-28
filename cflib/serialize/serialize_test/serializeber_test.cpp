@@ -21,9 +21,9 @@ bool checkSer(T val, const char * hex)
 	ser << val;
 	const QByteArray expected = QByteArray::fromHex(hex);
 	if (ser.data() != expected) {
-		out << "serialized hex differs:" << endl
-			<< "is       : " << ser.data().toHex() << endl
-			<< "expected : " << expected  .toHex() << endl;
+		out << "serialized hex differs:" << Qt::endl
+			<< "is       : " << ser.data().toHex() << Qt::endl
+			<< "expected : " << expected  .toHex() << Qt::endl;
 		return false;
 	}
 	return true;
@@ -36,9 +36,9 @@ bool checkDeser(T val, const char * hex)
 	BERDeserializer deser(expected);
 	T test; deser >> test;
 	if (test != val) {
-		out << "deserialized values differ:" << endl
-			<< "is       : " << test << endl
-			<< "expected : " << val  << endl;
+		out << "deserialized values differ:" << Qt::endl
+			<< "is       : " << test << Qt::endl
+			<< "expected : " << val  << Qt::endl;
 		return false;
 	}
 	return true;
@@ -51,9 +51,9 @@ bool checkDeserNull(T val, const char * hex)
 	BERDeserializer deser(expected);
 	T test; deser >> test;
 	if (test.isNull() != val.isNull()) {
-		out << "deserialized isNull differs:" << endl
-			<< "is       : " << test.isNull() << endl
-			<< "expected : " << val.isNull()  << endl;
+		out << "deserialized isNull differs:" << Qt::endl
+			<< "is       : " << test.isNull() << Qt::endl
+			<< "expected : " << val.isNull()  << Qt::endl;
 		return false;
 	}
 	return true;
@@ -79,18 +79,18 @@ bool testBigTag(int tagNr, const char * hex)
 	ser << 0x42;
 	const QByteArray expected = QByteArray::fromHex(hex) + QByteArray::fromHex("0142");
 	if (ser.data() != expected) {
-		out << "serialized hex differs:" << endl
-			<< "is       : " << ser.data().toHex() << endl
-			<< "expected : " << expected  .toHex() << endl;
+		out << "serialized hex differs:" << Qt::endl
+			<< "is       : " << ser.data().toHex() << Qt::endl
+			<< "expected : " << expected  .toHex() << Qt::endl;
 		retval = false;
 	}
 	BERDeserializer deser(expected);
 	for (int i = 0 ; i < tagNr - 1 ; ++i) deser >> Placeholder();
 	int test; deser >> test;
 	if (test != 0x42) {
-		out << "deserialized values differ:" << endl
-			<< "is       : " << test << endl
-			<< "expected : " << 0x42 << endl;
+		out << "deserialized values differ:" << Qt::endl
+			<< "is       : " << test << Qt::endl
+			<< "expected : " << 0x42 << Qt::endl;
 		return false;
 	}
 	return retval;
