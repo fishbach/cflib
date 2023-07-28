@@ -171,17 +171,19 @@ QByteArray x509CreateCertReq(const QByteArray & privateKey, const QList<QByteArr
 			extensions.add(new Cert_Extension::Subject_Alternative_Name(subjectAN));
 		}
 
+		std::vector<uint8_t> extensionAttribute;
+		DER_Encoder(extensionAttribute)
+			.start_cons(SEQUENCE)
+			.encode(extensions)
+			.end_cons();
+
 		DER_Encoder der;
 		der.start_cons(SEQUENCE)
 			.encode(PKCS10_VERSION)
 			.encode(X509_DN())
 			.raw_bytes(X509::BER_encode(*pk))
 			.start_explicit(0)
-			.encode(Attribute("PKCS9.ExtensionRequest", DER_Encoder()
-				.start_cons(SEQUENCE)
-				.encode(extensions)
-				.end_cons()
-				.get_contents_unlocked()))
+			.encode(Attribute("PKCS9.ExtensionRequest", extensionAttribute))
 			.end_explicit()
 			.end_cons();
 
