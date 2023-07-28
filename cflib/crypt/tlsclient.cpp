@@ -27,23 +27,30 @@ public:
 		isReady(false),
 		hasError(false),
 		policy(highSecurity ? (TLS::Policy *)new TLS::Strict_Policy : (TLS::Policy *)new TLS::TLS12Policy(requireRevocationInfo)),
-		client(*this, session_manager, creds, *policy, rng, hostname.isEmpty() ? std::string() : hostname.toStdString())
+		client(
+			detachedShared(*this),
+			detachedShared(session_manager),
+			detachedShared(creds),
+			policy,
+			detachedShared(rng),
+			TLS::Server_Information(hostname.toStdString()))
 	{
 	}
 
-	void tls_emit_data(const byte data[], size_t size) override
+	void tls_emit_data(std::span<const uint8_t> data) override
 	{
-		outgoingEncryptedPtr->append((const char *)data, (int)size);
+		outgoingEncryptedPtr->append((const char *)data.data(), data.size());
 	}
 
-	void tls_record_received(u64bit, const byte data[], size_t size) override
+	void tls_record_received(uint64_t seq_no, std::span<const uint8_t> data) override
 	{
-		incomingPlainPtr->append((const char *)data, (int)size);
+		Q_UNUSED(seq_no)
+		incomingPlainPtr->append((const char *)data.data(), data.size());
 	}
 
 	void tls_alert(TLS::Alert alert) override
 	{
-		if (alert.type() != TLS::Alert::CLOSE_NOTIFY) {
+		if (alert.type() != TLS::Alert::CloseNotify) {
 			logWarn("TLS alert: %1", alert.type_string().c_str());
 		} else {
 			logTrace("TLS alert: %1", alert.type_string().c_str());
@@ -51,10 +58,10 @@ public:
 		hasError = true;
 	}
 
-	bool tls_session_established(const TLS::Session &) override
+	void tls_session_established(const TLS::Session_Summary & session) override
 	{
+		Q_UNUSED(session)
 		isReady = true;
-		return true;
 	}
 
 	std::chrono::milliseconds tls_verify_cert_chain_ocsp_timeout() const override
@@ -64,10 +71,10 @@ public:
 
 	void tls_verify_cert_chain(
 		const std::vector<X509_Certificate> & cert_chain,
-		const std::vector<std::shared_ptr<const OCSP::Response>> & ocsp_responses,
+		const std::vector<std::optional<OCSP::Response>> & ocsp_responses,
 		const std::vector<Certificate_Store *> & trusted_roots,
 		Usage_Type usage,
-		const std::string & hostname,
+		std::string_view hostname,
 		const TLS::Policy & policy) override
 	{
 		try {
@@ -80,7 +87,7 @@ public:
 			if (!crt.is_self_signed() || !crt.matches_dns_name(hostname)) throw e;
 
 			for (Certificate_Store * cs : trusted_roots) {
-				std::shared_ptr<const X509_Certificate> trusted = cs->find_cert(crt.subject_dn(), crt.subject_key_id());
+				std::optional<X509_Certificate> trusted = cs->find_cert(crt.subject_dn(), crt.subject_key_id());
 				if (trusted && trusted->subject_public_key_bits() == crt.subject_public_key_bits()) return;
 			}
 
@@ -95,7 +102,7 @@ public:
 	QByteArray * incomingPlainPtr;
 	bool isReady;
 	bool hasError;
-	std::unique_ptr<TLS::Policy> policy;
+	std::shared_ptr<TLS::Policy> policy;
 	AutoSeeded_RNG rng;
 	TLS::Client client;
 };

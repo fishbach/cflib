@@ -23,8 +23,7 @@
 #include <botan/pkcs8.h>
 #include <botan/pubkey.h>
 #include <botan/rsa.h>
-#include <botan/tls_client.h>
-#include <botan/tls_server.h>
+#include <botan/tls.h>
 #include <botan/x509_ca.h>
 #include <botan/x509_ext.h>
 #include <botan/x509_key.h>
@@ -43,3 +42,9 @@
 	}
 
 using namespace Botan;
+
+template<typename T>
+std::shared_ptr<T> detachedShared(T & obj)
+{
+	return std::shared_ptr<T>(std::shared_ptr<T>{}, &obj);
+}

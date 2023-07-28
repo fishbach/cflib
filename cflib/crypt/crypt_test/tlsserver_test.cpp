@@ -58,11 +58,16 @@ private slots:
 		enc2.clear();
 		QVERIFY(server.received(enc1, plain, enc2));
 		QVERIFY(plain.isEmpty());
-		QVERIFY(!enc2.isEmpty());
+		QVERIFY(enc2.isEmpty());
+
+		// no data test
 		enc1.clear();
 		QVERIFY(client.received(enc2, plain, enc1));
 		QVERIFY(plain.isEmpty());
 		QVERIFY(enc1.isEmpty());
+		QVERIFY(server.received(enc1, plain, enc2));
+		QVERIFY(plain.isEmpty());
+		QVERIFY(enc2.isEmpty());
 
 		// send plain to server
 		QByteArray msg = "hello dear server";
@@ -110,7 +115,7 @@ private slots:
 		QVERIFY(enc2.isEmpty());
 
 		// send before handshake
-		QByteArray clientMsg = "hello dear client";
+		QByteArray clientMsg = "hello dear server";
 		QVERIFY(client.send(clientMsg, enc1));
 		QVERIFY(enc1.isEmpty());
 
@@ -131,19 +136,13 @@ private slots:
 		// second handshake req -> reply
 		enc2.clear();
 		QVERIFY(server.received(enc1, plain, enc2));
-		QVERIFY(plain.isEmpty());
+		QCOMPARE(plain, clientMsg);
 		QVERIFY(!enc2.isEmpty());
+		plain.clear();
 		enc1.clear();
 		QVERIFY(client.received(enc2, plain, enc1));
 		QCOMPARE(plain, serverMsg);
-		QVERIFY(!enc1.isEmpty());
-
-		// missing plain from client
-		plain.clear();
-		enc2.clear();
-		QVERIFY(server.received(enc1, plain, enc2));
-		QCOMPARE(plain, clientMsg);
-		QVERIFY(enc2.isEmpty());
+		QVERIFY(enc1.isEmpty());
 	}
 
 	void test_missingCA()
@@ -210,14 +209,11 @@ private slots:
 		enc2.clear();
 		QVERIFY(server.received(enc1, plain, enc2));
 		QVERIFY(plain.isEmpty());
-		QVERIFY(!enc2.isEmpty());
-		enc1.clear();
-		QVERIFY(client.received(enc2, plain, enc1));
-		QVERIFY(plain.isEmpty());
-		QVERIFY(enc1.isEmpty());
+		QVERIFY(enc2.isEmpty());
 
 		// send plain to server
 		QByteArray msg = "hello dear server";
+		enc1.clear();
 		QVERIFY(client.send(msg, enc1));
 		QVERIFY(!enc1.isEmpty());
 		QVERIFY(enc1.indexOf(msg) == -1);
@@ -260,12 +256,7 @@ private slots:
 		QVERIFY(!enc1.isEmpty());
 
 		// first handshake req -> reply
-		QVERIFY(server.received(enc1, plain, enc2));
-		QVERIFY(plain.isEmpty());
-		QVERIFY(!enc2.isEmpty());
-		enc1.clear();
-		QVERIFY(!client.received(enc2, plain, enc1));
-		QVERIFY(plain.isEmpty());
+		QVERIFY(!server.received(enc1, plain, enc2));
 	}
 
 	void test_tls_highSecurity_client()
@@ -303,14 +294,11 @@ private slots:
 		enc2.clear();
 		QVERIFY(server.received(enc1, plain, enc2));
 		QVERIFY(plain.isEmpty());
-		QVERIFY(!enc2.isEmpty());
-		enc1.clear();
-		QVERIFY(client.received(enc2, plain, enc1));
-		QVERIFY(plain.isEmpty());
-		QVERIFY(enc1.isEmpty());
+		QVERIFY(enc2.isEmpty());
 
 		// send plain to server
 		QByteArray msg = "hello dear server";
+		enc1.clear();
 		client.send(msg, enc1);
 		QVERIFY(!enc1.isEmpty());
 		QVERIFY(enc1.indexOf(msg) == -1);
@@ -366,14 +354,11 @@ private slots:
 		enc2.clear();
 		QVERIFY(server.received(enc1, plain, enc2));
 		QVERIFY(plain.isEmpty());
-		QVERIFY(!enc2.isEmpty());
-		enc1.clear();
-		QVERIFY(client.received(enc2, plain, enc1));
-		QVERIFY(plain.isEmpty());
-		QVERIFY(enc1.isEmpty());
+		QVERIFY(enc2.isEmpty());
 
 		// send plain to server
 		QByteArray msg = "hello dear server";
+		enc1.clear();
 		client.send(msg, enc1);
 		QVERIFY(!enc1.isEmpty());
 		QVERIFY(enc1.indexOf(msg) == -1);

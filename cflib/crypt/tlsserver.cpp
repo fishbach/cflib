@@ -25,30 +25,46 @@ public:
 		isReady(false),
 		hasError(false),
 		policy(highSecurity ? (TLS::Policy *)new TLS::Strict_Policy : (TLS::Policy *)new TLS::TLS12Policy(requireRevocationInfo)),
-		server(*this, session_manager, creds, *policy, rng)
+		server(
+			detachedShared(*this),
+			detachedShared(session_manager),
+			detachedShared(creds),
+			policy,
+			detachedShared(rng))
 	{
 	}
 
-	void tls_emit_data(const byte data[], size_t size)
+
+//      Server(const std::shared_ptr<Callbacks>& callbacks,
+//             const std::shared_ptr<Session_Manager>& session_manager,
+//             const std::shared_ptr<Credentials_Manager>& creds,
+//             const std::shared_ptr<const Policy>& policy,
+//             const std::shared_ptr<RandomNumberGenerator>& rng,
+//             bool is_datagram = false,
+//             size_t reserved_io_buffer_size = TLS::Channel::IO_BUF_DEFAULT_SIZE);
+
+
+	void tls_emit_data(std::span<const uint8_t> data) override
 	{
-		outgoingEncryptedPtr->append((const char *)data, (int)size);
+		outgoingEncryptedPtr->append((const char *)data.data(), data.size());
 	}
 
-	void tls_record_received(u64bit, const byte data[], size_t size)
+	void tls_record_received(uint64_t seq_no, std::span<const uint8_t> data) override
 	{
-		incomingPlainPtr->append((const char *)data, (int)size);
+		Q_UNUSED(seq_no)
+		incomingPlainPtr->append((const char *)data.data(), data.size());
 	}
 
-	void tls_alert(TLS::Alert alert)
+	void tls_alert(TLS::Alert alert) override
 	{
 		logInfo("TLS alert: %1", alert.type_string().c_str());
 		hasError = true;
 	}
 
-	bool tls_session_established(const TLS::Session &)
+	void tls_session_established(const TLS::Session_Summary & session) override
 	{
+		Q_UNUSED(session)
 		isReady = true;
-		return true;
 	}
 
 public:
@@ -57,7 +73,7 @@ public:
 	QByteArray * incomingPlainPtr;
 	bool isReady;
 	bool hasError;
-	std::unique_ptr<TLS::Policy> policy;
+	std::shared_ptr<TLS::Policy> policy;
 	AutoSeeded_RNG rng;
 	TLS::Server server;
 };
