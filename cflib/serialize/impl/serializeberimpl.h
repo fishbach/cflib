@@ -357,29 +357,6 @@ inline void deserializeBER(QStringList & cl, const quint8 * data, int len, BERDe
 }
 
 // ----------------------------------------------------------------------------
-// QLinkedList
-// ----------------------------------------------------------------------------
-
-template<typename T>
-inline void serializeBER(const QLinkedList<T> & cl, quint64 tagNo, QByteArray & data, BERSerializerBase &)
-{
-	TLWriter tlw(data, tagNo);
-	BERSerializerBase ser(data, true);
-	for (typename QLinkedList<T>::const_iterator it = cl.begin() ; it != cl.end() ; ++it) ser << *it;
-}
-
-template<typename T>
-inline void deserializeBER(QLinkedList<T> & cl, const quint8 * data, int len, BERDeserializerBase &)
-{
-	BERDeserializerBase ser(data, len, true);
-	cl.clear();
-	while (ser.isAnyAvailable()) {
-		T el; ser >> el;
-		cl.append(el);
-	}
-}
-
-// ----------------------------------------------------------------------------
 // QVector
 // ----------------------------------------------------------------------------
 

@@ -9,5 +9,12 @@
 #pragma GCC system_header
 #pragma clang system_header
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wstrict-aliasing"
+#pragma GCC diagnostic ignored "-Wunused-parameter"
+#pragma GCC diagnostic ignored "-Wunused-value"
+
 #undef signals
 #include "../libev/ev.c"
+
+#pragma GCC diagnostic pop

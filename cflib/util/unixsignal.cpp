@@ -33,7 +33,7 @@ sig_t oldSigH15 = 0;
 void signalHandler(int sig)
 {
 	char s = (char)sig;
-	::write(sockets[0], &s, 1);
+	int c __attribute__((unused)) = ::write(sockets[0], &s, 1);
 }
 
 #endif
@@ -81,7 +81,7 @@ void UnixSignal::activated()
 {
 #ifdef Q_OS_UNIX
 	char s;
-	::read(sockets[1], &s, 1);
+	int c __attribute__((unused)) = ::read(sockets[1], &s, 1);
 	int sig = s;
 	logInfo("catched signal %1", sig);
 	emit catchedSignal(sig);

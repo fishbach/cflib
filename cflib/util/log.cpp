@@ -63,6 +63,10 @@ inline uint threadId()
 
 inline void writeInt(char * dest, uint number, int width)
 {
+	// bug in gcc
+	#pragma GCC diagnostic push
+	#pragma GCC diagnostic ignored "-Wstringop-overflow="
+
 	dest += width;
 	for (int i = 0 ; i < width ; ++i) {
 		if (number == 0) {
@@ -72,6 +76,8 @@ inline void writeInt(char * dest, uint number, int width)
 			number /= 10;
 		}
 	}
+
+	#pragma GCC diagnostic pop
 }
 
 inline void writeIntPadded(char * dest, uint number, int width)
@@ -157,6 +163,10 @@ void Log::writeLog(const char * filename, int lineNo, LogCategory category, cons
 	line.resize(54);
 	char * pos = (char *)line.constData();	// constData for performance
 
+	// bug in gcc
+	#pragma GCC diagnostic push
+	#pragma GCC diagnostic ignored "-Wstringop-overflow="
+
 	// timestamp
 	const QDateTime now = QDateTime::currentDateTimeUtc();
 	writeInt(pos, now.date().year(),  4); pos += 4;
@@ -200,6 +210,8 @@ void Log::writeLog(const char * filename, int lineNo, LogCategory category, cons
 		// thread id
 		writeInt(pos, info.threadId, 2); pos += 2;
 		*(pos++) = ' ';
+
+		#pragma GCC diagnostic pop
 
 		// indent for log function trace
 		if (indent < 0) {

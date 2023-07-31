@@ -90,12 +90,6 @@ inline void serializeTypeInfo(SerializeTypeInfoImpl & si, QStringList *)
 }
 
 template<typename T>
-inline void serializeTypeInfo(SerializeTypeInfoImpl & si, QLinkedList<T> *)
-{
-	serializeTypeInfo(si, (QList<T> *)0);
-}
-
-template<typename T>
 inline void serializeTypeInfo(SerializeTypeInfoImpl & si, QVector<T> *)
 {
 	serializeTypeInfo(si, (QList<T> *)0);
