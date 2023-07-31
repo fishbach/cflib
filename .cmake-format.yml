@@ -1,0 +1,6 @@
+# To be used together with cmake-format: https://github.com/cheshirekow/cmake_format
+format:
+  line_width: 120
+  tab_size: 4
+markup:
+  enable_markup: False # Don't reflow comments

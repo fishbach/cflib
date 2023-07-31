@@ -5,6 +5,7 @@
 # Licensed under the MIT License.
 
 *.pro.user
+CMakeLists.txt.user
 *.o
 *.obj
 *.pch
@@ -15,6 +16,7 @@ Makefile.*
 build
 build-*
 .DS_Store
+.vscode
 *~
 moc_wrapper.sh
 rcc_wrapper.sh
