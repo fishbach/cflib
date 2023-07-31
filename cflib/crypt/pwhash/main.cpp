@@ -1,4 +1,4 @@
-/* Copyright (C) 2013-2022 Christian Fischbach <cf@cflib.de>
+/* Copyright (C) 2013-2023 Christian Fischbach <cf@cflib.de>
  *
  * This file is part of cflib.
  *
@@ -24,7 +24,7 @@ int main(int argc, char *argv[])
 	#else
 		char * pwd = getpass("Password: ");
 	#endif
-	QTextStream(stdout) << cflib::crypt::hashPassword(pwd) << endl;
+	QTextStream(stdout) << cflib::crypt::hashPassword(pwd) << Qt::endl;
 
 	return 0;
 }

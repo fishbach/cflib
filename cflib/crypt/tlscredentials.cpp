@@ -1,4 +1,4 @@
-/* Copyright (C) 2013-2022 Christian Fischbach <cf@cflib.de>
+/* Copyright (C) 2013-2023 Christian Fischbach <cf@cflib.de>
  *
  * This file is part of cflib.
  *
@@ -33,21 +33,20 @@ QString TLSCertInfo::toString() const
 class TLSCredentials::Impl : public Credentials_Manager
 {
 public:
-	~Impl()
+	std::vector<Certificate_Store *> trusted_certificate_authorities(const std::string & type, const std::string& context) override
 	{
-		foreach (const CertsPrivKey & ck, chains) delete ck.privateKey;
-	}
-
-	virtual std::vector<Certificate_Store *> trusted_certificate_authorities(const std::string &, const std::string &)
-	{
+		Q_UNUSED(type)
+		Q_UNUSED(context)
 		std::vector<Certificate_Store *> rv(1);
 		rv[0] = &trustedCAs;
 		return rv;
 	}
 
-	virtual std::vector<X509_Certificate> cert_chain(const std::vector<std::string> & cert_key_types,
-		const std::string & type, const std::string & context)
+	std::vector<X509_Certificate> cert_chain(const std::vector<std::string> & cert_key_types,
+		const std::vector<AlgorithmIdentifier> & cert_signature_schemes,
+		const std::string & type, const std::string & context) override
 	{
+		Q_UNUSED(cert_signature_schemes)
 		if (type != "tls-server") return std::vector<X509_Certificate>();
 		foreach (const CertsPrivKey & ck, chains) {
 			if (context != "" && !ck.certs[0].matches_dns_name(context)) continue;
@@ -58,16 +57,16 @@ public:
 		return std::vector<X509_Certificate>();
 	}
 
-	virtual Private_Key * private_key_for(const X509_Certificate & cert, const std::string &, const std::string &)
+	std::shared_ptr<Private_Key> private_key_for(const X509_Certificate & cert, const std::string &, const std::string &) override
 	{
 		foreach (const CertsPrivKey & ck, chains) if (ck.certs[0] == cert) return ck.privateKey;
-		return 0;
+		return std::shared_ptr<Private_Key>();
 	}
 
 public:
 	struct CertsPrivKey {
 		std::vector<X509_Certificate> certs;
-		Private_Key * privateKey;
+		std::shared_ptr<Private_Key> privateKey;
 
 		CertsPrivKey() : privateKey(0) {}
 	};
@@ -123,8 +122,7 @@ bool TLSCredentials::addPrivateKey(const QByteArray & privateKey, const QByteArr
 {
 	TRY {
 		DataSource_Memory ds((const byte *)privateKey.constData(), privateKey.size());
-		AutoSeeded_RNG rng;
-		std::unique_ptr<Private_Key> pk(PKCS8::load_key(ds, rng, password.toStdString()));
+		std::unique_ptr<Private_Key> pk(PKCS8::load_key(ds, password.toStdString()));
 
 		// destroy data in parameters
 		for (int i = 0 ; i < privateKey.size() ; ++i) *((char *)privateKey.constData()) = 0;
@@ -163,7 +161,7 @@ bool TLSCredentials::addPrivateKey(const QByteArray & privateKey, const QByteArr
 
 		Impl::CertsPrivKey ck;
 		ck.certs = certs;
-		ck.privateKey = pk.release();
+		ck.privateKey = std::move(pk);
 		impl_->chains << ck;
 
 		return true;

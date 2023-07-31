@@ -1,4 +1,4 @@
-/* Copyright (C) 2013-2022 Christian Fischbach <cf@cflib.de>
+/* Copyright (C) 2013-2023 Christian Fischbach <cf@cflib.de>
  *
  * This file is part of cflib.
  *
@@ -59,25 +59,25 @@ public:
 			QTextStream(stdout) << "creating private key for Let's Encrypt ...";
 			privateKey_ = rsaCreateKey(4096);
 			if (!writeFile(privateKeyFile_, privateKey_, QFile::ReadOwner | QFile::WriteOwner)) {
-				QTextStream(stderr) << "cannot write private key for Let's Encrypt" << endl;
+				QTextStream(stderr) << "cannot write private key for Let's Encrypt" << Qt::endl;
 				qApp->exit(2);
 				return;
 			}
-			QTextStream(stdout) << " done" << endl;
+			QTextStream(stdout) << " done" << Qt::endl;
 			needRegister_ = true;
 		} else {
 			privateKey_ = readFile(privateKeyFile_);
 			if (!rsaCheckKey(privateKey_)) {
-				QTextStream(stderr) << "cannot load private key for Let's Encrypt" << endl;
+				QTextStream(stderr) << "cannot load private key for Let's Encrypt" << Qt::endl;
 				qApp->exit(3);
 				return;
 			}
-			QTextStream(stdout) << "private key loaded" << endl;
+			QTextStream(stdout) << "private key loaded" << Qt::endl;
 		}
 
 		QTextStream(stdout) << "creating private key for certificate ...";
 		certKey_ = rsaCreateKey(2048);
-		QTextStream(stdout) << " done" << endl;
+		QTextStream(stdout) << " done" << Qt::endl;
 
 		getNonce();
 	}
@@ -111,11 +111,11 @@ private:
 		hdl(netMgr_.head(QNetworkRequest(QUrl(letsencryptCA_ + "/directory"))), [&](QNetworkReply &)
 		{
 			if (nonce_.isEmpty()) {
-				QTextStream(stderr) << "cannot get nonce" << endl;
+				QTextStream(stderr) << "cannot get nonce" << Qt::endl;
 				qApp->exit(4);
 				return;
 			}
-			QTextStream(stdout) << "communication started" << endl;
+			QTextStream(stdout) << "communication started" << Qt::endl;
 
 			if (needRegister_) registerKey();
 			else               getCertificate();
@@ -125,7 +125,7 @@ private:
 	void registerKey()
 	{
 		if (email_.isEmpty()) {
-			QTextStream(stderr) << "need email parameter to register key" << endl;
+			QTextStream(stderr) << "need email parameter to register key" << Qt::endl;
 			qApp->exit(15);
 			return;
 		}
@@ -136,7 +136,7 @@ private:
 			"\"agreement\": \"" + LetsencryptAgreement + "\"}",
 			[&](QNetworkReply &)
 		{
-			QTextStream(stdout) << "public key registered" << endl;
+			QTextStream(stdout) << "public key registered" << Qt::endl;
 			startAuth();
 		});
 	}
@@ -145,7 +145,7 @@ private:
 	{
 		authorized_ = true;
 		if (!http_.isRunning() && !http_.start("0.0.0.0", 80)) {
-			QTextStream(stderr) << "cannot listen on port 80" << endl;
+			QTextStream(stderr) << "cannot listen on port 80" << Qt::endl;
 			qApp->exit(5);
 			return;
 		}
@@ -168,7 +168,7 @@ private:
 			QRegularExpressionMatch match = QRegularExpression(R"(\{[^{]*"type"\s*:\s*"http-01"[^}]*\})")
 				.match(QString::fromUtf8(content));
 			if (!match.hasMatch()) {
-				QTextStream(stderr) << "auth challenge not found for domain: " << domainsToBeAuthenticated_.first() << endl;
+				QTextStream(stderr) << "auth challenge not found for domain: " << domainsToBeAuthenticated_.first() << Qt::endl;
 				qApp->exit(6);
 				return;
 			}
@@ -190,7 +190,7 @@ private:
 			httpPath_    = "/.well-known/acme-challenge/" + token;
 			httpContent_ = authData;
 
-			QTextStream(stdout) << "got auth token" << endl;
+			QTextStream(stdout) << "got auth token" << Qt::endl;
 
 			activateChallenge(authData);
 		});
@@ -213,24 +213,24 @@ private:
 				QRegularExpressionMatch match = QRegularExpression("\"status\"\\s*:\\s*\"([^\"]+)\"")
 					.match(QString::fromUtf8(reply.readAll()));
 				if (!match.hasMatch()) {
-					QTextStream(stderr) << "cannot read status of challenge" << endl;
+					QTextStream(stderr) << "cannot read status of challenge" << Qt::endl;
 					qApp->exit(7);
 					return;
 				}
 				const QByteArray status = match.captured(1).toUtf8();
 
 				if (status == "pending") {
-					QTextStream(stdout) << "waiting for auth challenge ..." << endl;
+					QTextStream(stdout) << "waiting for auth challenge ..." << Qt::endl;
 					QTimer::singleShot(5000, [this]() { checkChallenge(); });
 					return;
 				}
 				if (status != "valid") {
-					QTextStream(stderr) << "auth challenge failed" << endl;
+					QTextStream(stderr) << "auth challenge failed" << Qt::endl;
 					qApp->exit(8);
 					return;
 				}
 
-				QTextStream(stdout) << "auth challenge succeeded for: " << domainsToBeAuthenticated_.first() << endl;
+				QTextStream(stdout) << "auth challenge succeeded for: " << domainsToBeAuthenticated_.first() << Qt::endl;
 
 				domainsToBeAuthenticated_.takeFirst();
 				if (!domainsToBeAuthenticated_.isEmpty()) {
@@ -259,22 +259,22 @@ private:
 					startAuth();
 					return;
 				}
-				QTextStream(stderr) << "cannot get certifcate" << endl;
+				QTextStream(stderr) << "cannot get certifcate" << Qt::endl;
 				qApp->exit(9);
 				return;
 			}
 			QByteArray crt = der2pem(content, "CERTIFICATE");
 
-			QTextStream(stdout) << "got certificate" << endl;
+			QTextStream(stdout) << "got certificate" << Qt::endl;
 
 			if (!writeFile(destDir_ + domains_.first() + "_key.pem", certKey_, QFile::ReadOwner | QFile::WriteOwner)) {
-				QTextStream(stderr) << "cannot write private key for certificate" << endl;
+				QTextStream(stderr) << "cannot write private key for certificate" << Qt::endl;
 				qApp->exit(10);
 				return;
 			}
 
 			if (!writeFile(destDir_ + domains_.first() + "_crt.pem", crt)) {
-				QTextStream(stderr) << "cannot write certificate" << endl;
+				QTextStream(stderr) << "cannot write certificate" << Qt::endl;
 				qApp->exit(11);
 				return;
 			}
@@ -282,7 +282,7 @@ private:
 			QRegularExpressionMatch match = QRegularExpression(R"(<(http.+)>)")
 				.match(QString::fromUtf8(reply.rawHeader("Link")));
 			if (!match.hasMatch()) {
-				QTextStream(stderr) << "issuer not found" << endl;
+				QTextStream(stderr) << "issuer not found" << Qt::endl;
 				qApp->exit(12);
 				return;
 			}
@@ -296,21 +296,21 @@ private:
 		hdl(netMgr_.get(QNetworkRequest(QUrl(url))), [&](QNetworkReply & reply)
 		{
 			if (reply.error() != QNetworkReply::NoError) {
-				QTextStream(stderr) << "cannot get intermediate certificate" << endl;
+				QTextStream(stderr) << "cannot get intermediate certificate" << Qt::endl;
 				qApp->exit(13);
 				return;
 			}
 			QByteArray crt = der2pem(reply.readAll(), "CERTIFICATE");
 
 			if (!writeFile(destDir_ + "intermediate_crt.pem", crt)) {
-				QTextStream(stderr) << "cannot write intermediate certificate" << endl;
+				QTextStream(stderr) << "cannot write intermediate certificate" << Qt::endl;
 				qApp->exit(14);
 				return;
 			}
 
 			QTextStream(stdout) << "key and certificates written to " <<
-				(destDir_.isEmpty() ? "current directory" : destDir_) << endl <<
-				"done!" << endl;
+				(destDir_.isEmpty() ? "current directory" : destDir_) << Qt::endl <<
+				"done!" << Qt::endl;
 			qApp->quit();
 		});
 	}

@@ -1,4 +1,4 @@
-/* Copyright (C) 2013-2022 Christian Fischbach <cf@cflib.de>
+/* Copyright (C) 2013-2023 Christian Fischbach <cf@cflib.de>
  *
  * This file is part of cflib.
  *
@@ -18,7 +18,7 @@ class TLSSessions::Impl
 public:
 	Impl(bool enable) :
 		mgr(enable ?
-			(TLS::Session_Manager *)new TLS::Session_Manager_In_Memory(rng) :
+			(TLS::Session_Manager *)new TLS::Session_Manager_In_Memory(detachedShared(rng)) :
 			(TLS::Session_Manager *)new TLS::Session_Manager_Noop) {}
 
 public:

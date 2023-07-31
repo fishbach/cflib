@@ -1,4 +1,4 @@
-/* Copyright (C) 2013-2022 Christian Fischbach <cf@cflib.de>
+/* Copyright (C) 2013-2023 Christian Fischbach <cf@cflib.de>
  *
  * This file is part of cflib.
  *
@@ -204,7 +204,7 @@ TCPConnData * TCPManagerImpl::openConnection(
 			logWarn("cannot resolve host: %1", destAddress);
 			return 0;
 		}
-		destIP = ips[qrand() % ips.size()];
+		destIP = ips[QRandomGenerator::global()->generate() % ips.size()];
 	}
 
 	// create non blocking socket

@@ -1,10 +1,11 @@
-# Copyright (C) 2013-2022 Christian Fischbach <cf@cflib.de>
+# Copyright (C) 2013-2023 Christian Fischbach <cf@cflib.de>
 #
 # This file is part of cflib.
 #
 # Licensed under the MIT License.
 
 *.pro.user
+CMakeLists.txt.user
 *.o
 *.obj
 *.pch
@@ -17,10 +18,9 @@ build-*
 .DS_Store
 .vscode
 *~
-target_wrapper.sh
 moc_wrapper.sh
 rcc_wrapper.sh
-CMakeLists.txt.user
+target_wrapper.sh
 
 config.pri
 bin

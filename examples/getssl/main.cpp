@@ -1,4 +1,4 @@
-/* Copyright (C) 2013-2022 Christian Fischbach <cf@cflib.de>
+/* Copyright (C) 2013-2023 Christian Fischbach <cf@cflib.de>
  *
  * This file is part of cflib.
  *
@@ -27,32 +27,32 @@ namespace {
 int showUsage(const QByteArray & executable)
 {
 	QTextStream(stderr)
-		<< ""                                                                        << endl
-		<< "Get certificate from letsencrypt.org"                                    << endl
-		<< "------------------------------------"                                    << endl
-		<< endl
-		<< "For communication with Let's Encrypt a dedicated private key is needed." << endl
-		<< "This key is in RSA PKCS#8 PEM encoded format."                               << endl
-		<< "If you do not have one, a new key will be creatd."                       << endl
-		<< "It's a good idea to backup this key to a secure, protected place."       << endl
-		<< "If a domain validation is necessary, letsencrypt.org will contact"       << endl
-		<< "this client at port 80 (HTTP)." << endl
-		<< endl
-		<< "Usage: " << executable << " [options] <domains ...>"                     << endl
-		<< "Options:"                                                                << endl
-		<< "  -h, --help           => this help"                                     << endl
-		<< "  -k, --key <key file> => private key file for Let's Encrypt"            << endl
-		<< "  -e, --email <email>  => contact email for Let's Encrypt"               << endl
-		<< "  -d, --dest <dir>     => certificate destination directory"             << endl
-		<< "  -t, --test           => testmode using Let's Encrypt staging server"   << endl
-		<< endl;
+		<< ""                                                                        << Qt::endl
+		<< "Get certificate from letsencrypt.org"                                    << Qt::endl
+		<< "------------------------------------"                                    << Qt::endl
+		<< Qt::endl
+		<< "For communication with Let's Encrypt a dedicated private key is needed." << Qt::endl
+		<< "This key is in RSA PKCS#8 PEM encoded format."                               << Qt::endl
+		<< "If you do not have one, a new key will be creatd."                       << Qt::endl
+		<< "It's a good idea to backup this key to a secure, protected place."       << Qt::endl
+		<< "If a domain validation is necessary, letsencrypt.org will contact"       << Qt::endl
+		<< "this client at port 80 (HTTP)." << Qt::endl
+		<< Qt::endl
+		<< "Usage: " << executable << " [options] <domains ...>"                     << Qt::endl
+		<< "Options:"                                                                << Qt::endl
+		<< "  -h, --help           => this help"                                     << Qt::endl
+		<< "  -k, --key <key file> => private key file for Let's Encrypt"            << Qt::endl
+		<< "  -e, --email <email>  => contact email for Let's Encrypt"               << Qt::endl
+		<< "  -d, --dest <dir>     => certificate destination directory"             << Qt::endl
+		<< "  -t, --test           => testmode using Let's Encrypt staging server"   << Qt::endl
+		<< Qt::endl;
 	return 1;
 }
 
 void qtMessageHandler(QtMsgType type, const QMessageLogContext & context, const QString & msg)
 {
 	if (type == QtFatalMsg) {
-		QTextStream(stderr) << "fatal Qt error at " << context.file << ":" << context.line << " : " << msg << endl;
+		QTextStream(stderr) << "fatal Qt error at " << context.file << ":" << context.line << " : " << msg << Qt::endl;
 		::abort();
 	}
 }

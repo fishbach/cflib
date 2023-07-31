@@ -1,4 +1,4 @@
-/* Copyright (C) 2013-2022 Christian Fischbach <cf@cflib.de>
+/* Copyright (C) 2013-2023 Christian Fischbach <cf@cflib.de>
  *
  * This file is part of cflib.
  *
@@ -41,7 +41,7 @@ private slots:
 
 	void test_memorableRandom()
 	{
-		QTextStream(stdout) << "random: '" << memorableRandom() << "'" << endl;
+		QTextStream(stdout) << "random: '" << memorableRandom() << "'" << Qt::endl;
 		QCOMPARE(memorableRandom().length(), 8);
 		QVERIFY(memorableRandom() != memorableRandom());
 	}

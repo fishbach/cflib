@@ -31,11 +31,11 @@ namespace {
 int showUsage(const QByteArray & executable)
 {
 	QTextStream(stderr)
-		<< "Usage: " << executable << " [options]"     << endl
-		<< "Options:"                                  << endl
-		<< "  -h, --help   => this help"               << endl
-		<< "  -x, --hex    => input is hex encoded"    << endl
-		<< "  -b, --base64 => input is Base64 encoded" << endl;
+		<< "Usage: " << executable << " [options]"     << Qt::endl
+		<< "Options:"                                  << Qt::endl
+		<< "  -h, --help   => this help"               << Qt::endl
+		<< "  -x, --hex    => input is hex encoded"    << Qt::endl
+		<< "  -b, --base64 => input is Base64 encoded" << Qt::endl;
 	return 1;
 }
 
@@ -49,7 +49,7 @@ void show(const QByteArray & data, bool hex, bool base64)
 
 	static QTextStream out(stdout);
 
-	out << printAsn1(rawData) << endl;
+	out << printAsn1(rawData) << Qt::endl;
 }
 
 }
@@ -78,7 +78,7 @@ int main(int argc, char *argv[])
 		FD_SET(0, &fds);
 		int retval = select(1, &fds, NULL, NULL, &tv);
 		if (retval == -1) {
-			QTextStream(stderr) << "cannot read from stdin" << endl;
+			QTextStream(stderr) << "cannot read from stdin" << Qt::endl;
 			return 1;
 		}
 		if (retval > 0) {

@@ -1,4 +1,4 @@
-/* Copyright (C) 2013-2022 Christian Fischbach <cf@cflib.de>
+/* Copyright (C) 2013-2023 Christian Fischbach <cf@cflib.de>
  *
  * This file is part of cflib.
  *
@@ -41,7 +41,7 @@ protected:
 
 private slots:
 	void finished(int exitCode, QProcess::ExitStatus exitStatus);
-	void error(QProcess::ProcessError error);
+	void errorOccurred(QProcess::ProcessError error);
 	void startProcess();
 
 private:

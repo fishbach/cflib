@@ -1,4 +1,4 @@
-/* Copyright (C) 2013-2022 Christian Fischbach <cf@cflib.de>
+/* Copyright (C) 2013-2023 Christian Fischbach <cf@cflib.de>
  *
  * This file is part of cflib.
  *
@@ -10,7 +10,7 @@
 int usage()
 {
 	QTextStream(stderr)
-		<< "usage: " << QCoreApplication::applicationName() << " <depend|create> <.git search path> <gitversion.h>" << endl;
+		<< "usage: " << QCoreApplication::applicationName() << " <depend|create> <.git search path> <gitversion.h>" << Qt::endl;
 
 	return 1;
 }
@@ -21,14 +21,14 @@ QString findGitDir(const QString & searchPath, int & retval)
 	QFileInfo fi = dir.absoluteFilePath(".git");
 	while (!fi.isDir()) {
 		if (!dir.cdUp()) {
-			QTextStream(stderr) << "cannot find .git directory" << endl;
+			QTextStream(stderr) << "cannot find .git directory" << Qt::endl;
 			retval = 1;
 			return QString();
 		}
 		fi = dir.absoluteFilePath(".git");
 	}
 	if (!fi.isReadable()) {
-		QTextStream(stderr) << "cannot read .git directory: " << fi.canonicalFilePath() << endl;
+		QTextStream(stderr) << "cannot read .git directory: " << fi.canonicalFilePath() << Qt::endl;
 		retval = 2;
 		return QString();
 	}
@@ -44,7 +44,7 @@ int createHeader(const QString & searchPath, const QString & filename)
 	// fetch tail
 	QFile file(gitDir + "/logs/HEAD");
 	if (!file.open(QFile::ReadOnly)) {
-		QTextStream(stderr) << "cannot read: " << file.fileName() << endl;
+		QTextStream(stderr) << "cannot read: " << file.fileName() << Qt::endl;
 		return 3;
 	}
 	if (file.size() > 1024) file.seek(file.size() - 1024);
@@ -62,13 +62,13 @@ int createHeader(const QString & searchPath, const QString & filename)
 
 	QFile out(filename);
 	if (!out.open(QFile::WriteOnly | QFile::Truncate)) {
-		QTextStream(stderr) << "cannot write: " << out.fileName() << endl;
+		QTextStream(stderr) << "cannot write: " << out.fileName() << Qt::endl;
 		return 4;
 	}
 	QTextStream(&out)
-		<< "#pragma once" << endl
-		<< endl
-		<< "#define GIT_VERSION \"" << hash << "\"" << endl;
+		<< "#pragma once" << Qt::endl
+		<< Qt::endl
+		<< "#define GIT_VERSION \"" << hash << "\"" << Qt::endl;
 	out.close();
 	return 0;
 }
@@ -79,7 +79,7 @@ int depend(const QString & searchPath)
 	QString gitDir = findGitDir(searchPath, retval);
 	if (gitDir.isNull()) return retval;
 
-	QTextStream(stdout) << gitDir << "/logs/HEAD" << endl;
+	QTextStream(stdout) << gitDir << "/logs/HEAD" << Qt::endl;
 	return 0;
 }
 

@@ -1,4 +1,4 @@
-/* Copyright (C) 2013-2022 Christian Fischbach <cf@cflib.de>
+/* Copyright (C) 2013-2023 Christian Fischbach <cf@cflib.de>
  *
  * This file is part of cflib.
  *
@@ -164,7 +164,7 @@ int genSerialize(const QString & headerName, const HeaderParser & hp, QIODevice 
 
 	foreach (const HeaderParser::Class & cl, hp.classes()) {
 		out << "\n";
-		QStringList nsList = cl.ns.split("::", QString::SkipEmptyParts);
+		QStringList nsList = cl.ns.split("::", Qt::SkipEmptyParts);
 		bool isFirst = true;
 		foreach (const QString & ns, nsList) {
 			if (isFirst) isFirst = false;

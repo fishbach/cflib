@@ -1,4 +1,4 @@
-/* Copyright (C) 2013-2022 Christian Fischbach <cf@cflib.de>
+/* Copyright (C) 2013-2023 Christian Fischbach <cf@cflib.de>
  *
  * This file is part of cflib.
  *
@@ -452,7 +452,37 @@ inline void deserializeBER(QHash<Key, T> & cl, const quint8 * data, int len, BER
 		Key key;
 		T value;
 		ser >> key >> value;
-		cl.insertMulti(key, value);
+		cl.insert(key, value);
+	}
+}
+
+// ----------------------------------------------------------------------------
+// QMultiHash
+// ----------------------------------------------------------------------------
+
+template<typename Key, typename T>
+inline void serializeBER(const QMultiHash<Key, T> & cl, quint64 tagNo, QByteArray & data, BERSerializerBase &)
+{
+	TLWriter tlw(data, tagNo);
+	BERSerializerBase ser(data, true);
+	typename QMultiHash<Key, T>::const_iterator it = cl.end();
+	typename QMultiHash<Key, T>::const_iterator begin = cl.begin();
+	while (it != begin) {
+		--it;
+		ser << it.key() << it.value();
+	}
+}
+
+template<typename Key, typename T>
+inline void deserializeBER(QMultiHash<Key, T> & cl, const quint8 * data, int len, BERDeserializerBase &)
+{
+	BERDeserializerBase ser(data, len, true);
+	cl.clear();
+	while (ser.isAnyAvailable()) {
+		Key key;
+		T value;
+		ser >> key >> value;
+		cl.insert(key, value);
 	}
 }
 
@@ -482,7 +512,37 @@ inline void deserializeBER(QMap<Key, T> & cl, const quint8 * data, int len, BERD
 		Key key;
 		T value;
 		ser >> key >> value;
-		cl.insertMulti(key, value);
+		cl.insert(key, value);
+	}
+}
+
+// ----------------------------------------------------------------------------
+// QMultiMap
+// ----------------------------------------------------------------------------
+
+template<typename Key, typename T>
+inline void serializeBER(const QMultiMap<Key, T> & cl, quint64 tagNo, QByteArray & data, BERSerializerBase &)
+{
+	TLWriter tlw(data, tagNo);
+	BERSerializerBase ser(data, true);
+	typename QMultiMap<Key, T>::const_iterator it = cl.end();
+	typename QMultiMap<Key, T>::const_iterator begin = cl.begin();
+	while (it != begin) {
+		--it;
+		ser << it.key() << it.value();
+	}
+}
+
+template<typename Key, typename T>
+inline void deserializeBER(QMultiMap<Key, T> & cl, const quint8 * data, int len, BERDeserializerBase &)
+{
+	BERDeserializerBase ser(data, len, true);
+	cl.clear();
+	while (ser.isAnyAvailable()) {
+		Key key;
+		T value;
+		ser >> key >> value;
+		cl.insert(key, value);
 	}
 }
 

@@ -1,4 +1,4 @@
-/* Copyright (C) 2013-2022 Christian Fischbach <cf@cflib.de>
+/* Copyright (C) 2013-2023 Christian Fischbach <cf@cflib.de>
  *
  * This file is part of cflib.
  *
@@ -12,14 +12,20 @@
 // needed for threadId()
 #ifndef Q_OS_WIN
 	#include <unistd.h>
-	#include <sys/syscall.h>
+	#ifdef Q_OS_MAC
+		#include <pthread.h>
+	#else
+		#include <sys/syscall.h>
+	#endif
 	#ifdef _syscall0
 		_syscall0(pid_t, gettid)
 		pid_t gettid(void);
 	#else
 		inline pid_t gettid(void) {
 			#ifdef Q_OS_MAC
-				return (pid_t)syscall(SYS_thread_selfid);
+				uint64_t tid;
+				pthread_threadid_np(NULL, &tid);
+				return (pid_t)tid;
 			#else
 				return (pid_t)syscall(__NR_gettid);
 			#endif
@@ -119,13 +125,13 @@ LogCategory Log::logLevelCategory_ = 0;
 void Log::start(const QString & fileName)
 {
 	if (active) {
-		QTextStream(stderr) << "logging already started with log file: " << file.fileName() << endl;
+		QTextStream(stderr) << "logging already started with log file: " << file.fileName() << Qt::endl;
 		return;
 	}
 
 	file.setFileName(fileName);
 	if (!file.open(QFile::WriteOnly | QFile::Append)) {
-		QTextStream(stderr) << "could not open log file: " << fileName  << " (" << file.errorString() << ")" << endl;
+		QTextStream(stderr) << "could not open log file: " << fileName  << " (" << file.errorString() << ")" << Qt::endl;
 		return;
 	}
 	file.setPermissions(QFile::ReadOwner | QFile::WriteOwner | QFile::ReadGroup);

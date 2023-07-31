@@ -1,4 +1,4 @@
-/* Copyright (C) 2013-2022 Christian Fischbach <cf@cflib.de>
+/* Copyright (C) 2013-2023 Christian Fischbach <cf@cflib.de>
  *
  * This file is part of cflib.
  *
@@ -409,7 +409,7 @@ private slots:
 		msgs.clear();
 	}
 
-//	forever { msgSem.acquire(); QTextStream(stdout) << msgs.join("|") << endl; }
+//	forever { msgSem.acquire(); QTextStream(stdout) << msgs.join("|") << Qt::endl; }
 
 };
 #include "tcp_test.moc"

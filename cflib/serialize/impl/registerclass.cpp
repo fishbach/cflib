@@ -1,4 +1,4 @@
-/* Copyright (C) 2013-2022 Christian Fischbach <cf@cflib.de>
+/* Copyright (C) 2013-2023 Christian Fischbach <cf@cflib.de>
  *
  * This file is part of cflib.
  *
@@ -23,7 +23,7 @@ QHash<quint32, const RegisterClassBase *> & RegisterClassBase::registry()
 
 void RegisterClassBase::duplicateId(quint32 classId)
 {
-	QTextStream(stderr) << "duplicate type id: %1" << classId << endl;
+	QTextStream(stderr) << "duplicate type id: %1" << classId << Qt::endl;
 	::abort();
 }
 

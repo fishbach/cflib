@@ -1,4 +1,4 @@
-/* Copyright (C) 2013-2022 Christian Fischbach <cf@cflib.de>
+/* Copyright (C) 2013-2023 Christian Fischbach <cf@cflib.de>
  *
  * This file is part of cflib.
  *
@@ -53,8 +53,8 @@ QList<QByteArray> getIPFromDNS(const QByteArray & name, bool preferIPv6)
 
 	freeaddrinfo(res);
 
-	QList<QByteArray> rv = ipv4.isEmpty() || (preferIPv6 && !ipv6.isEmpty()) ? ipv6.toList() : ipv4.toList();
-	qSort(rv);
+	QList<QByteArray> rv = ipv4.isEmpty() || (preferIPv6 && !ipv6.isEmpty()) ? ipv6.values() : ipv4.values();
+	std::sort(rv.begin(), rv.end());
 	logTrace("getIPFromDNS(\"%1\", %2) -> %3", name, preferIPv6, rv.join(' '));
 	return rv;
 }

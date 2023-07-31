@@ -1,4 +1,4 @@
-/* Copyright (C) 2013-2022 Christian Fischbach <cf@cflib.de>
+/* Copyright (C) 2013-2023 Christian Fischbach <cf@cflib.de>
  *
  * This file is part of cflib.
  *
@@ -133,7 +133,7 @@ bool ScopedTransaction::commit()
 		return true;
 	}
 
-	QTime watch;
+	QElapsedTimer watch;
 	watch.start();
 	bool ok = db.commit();
 	if (!ok) {

@@ -2,7 +2,7 @@
 
 cflib is a library for Web 2.0 applications written in C++ and JavaScript and efficient network communication between C++ applications.
 
-Copyright (C) 2013-2022 Christian Fischbach <cf@cflib.de>
+Copyright (C) 2013-2023 Christian Fischbach <cf@cflib.de>
 
 This file is part of cflib.
 cflib is provided under the MIT license.

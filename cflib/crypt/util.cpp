@@ -1,4 +1,4 @@
-/* Copyright (C) 2013-2022 Christian Fischbach <cf@cflib.de>
+/* Copyright (C) 2013-2023 Christian Fischbach <cf@cflib.de>
  *
  * This file is part of cflib.
  *
@@ -113,8 +113,8 @@ bool rsaCheckKey(const QByteArray & privateKey)
 {
 	TRY {
 		DataSource_Memory ds((const byte *)privateKey.constData(), privateKey.size());
+		std::unique_ptr<Private_Key> pk(PKCS8::load_key(ds));
 		AutoSeeded_RNG rng;
-		std::unique_ptr<Private_Key> pk(PKCS8::load_key(ds, rng));
 		return pk && pk->check_key(rng, true);
 	} CATCH
 	return false;
@@ -124,8 +124,7 @@ void rsaPublicModulusExponent(const QByteArray & privateKey, QByteArray & modulu
 {
 	TRY {
 		DataSource_Memory ds((const byte *)privateKey.constData(), privateKey.size());
-		AutoSeeded_RNG rng;
-		std::unique_ptr<Private_Key> pk(PKCS8::load_key(ds, rng));
+		std::unique_ptr<Private_Key> pk(PKCS8::load_key(ds));
 		if (pk) {
 			const RSA_PublicKey * rsaKey = dynamic_cast<const RSA_PrivateKey *>(pk.get());
 			std::vector<byte> bytes = BigInt::encode(rsaKey->get_n());
@@ -143,9 +142,9 @@ QByteArray rsaSign(const QByteArray & privateKey, const QByteArray & msg)
 {
 	TRY {
 		DataSource_Memory ds((const byte *)privateKey.constData(), privateKey.size());
-		AutoSeeded_RNG rng;
-		std::unique_ptr<Private_Key> pk(PKCS8::load_key(ds, rng));
+		std::unique_ptr<Private_Key> pk(PKCS8::load_key(ds));
 		if (pk) {
+			AutoSeeded_RNG rng;
 			PK_Signer signer(*pk, rng, "EMSA3(SHA-256)");
 			std::vector<byte> bytes = signer.sign_message((const byte *)msg.constData(), msg.size(), rng);
 			return QByteArray((const char *)bytes.data(), bytes.size());
@@ -157,9 +156,8 @@ QByteArray rsaSign(const QByteArray & privateKey, const QByteArray & msg)
 QByteArray x509CreateCertReq(const QByteArray & privateKey, const QList<QByteArray> subjectAltNames)
 {
 	TRY {
-		AutoSeeded_RNG rng;
 		DataSource_Memory ds((const byte *)privateKey.constData(), privateKey.size());
-		std::unique_ptr<Private_Key> pk(PKCS8::load_key(ds, rng));
+		std::unique_ptr<Private_Key> pk(PKCS8::load_key(ds));
 		if (!pk) return QByteArray();
 
 		const size_t PKCS10_VERSION = 0;
@@ -168,27 +166,29 @@ QByteArray x509CreateCertReq(const QByteArray & privateKey, const QList<QByteArr
 		{
 			AlternativeName subjectAN;
 			foreach (const QByteArray & an, subjectAltNames) subjectAN.add_attribute("DNS", an.toStdString());
-			extensions.add(new Cert_Extension::Subject_Alternative_Name(subjectAN));
+			extensions.add(std::unique_ptr<Certificate_Extension>(new Cert_Extension::Subject_Alternative_Name(subjectAN)));
 		}
 
+		std::vector<uint8_t> extensionAttribute;
+		DER_Encoder(extensionAttribute)
+			.start_cons(ASN1_Type::Sequence, ASN1_Class::Universal)
+			.encode(extensions)
+			.end_cons();
+
 		DER_Encoder der;
-		der.start_cons(SEQUENCE)
+		der.start_cons(ASN1_Type::Sequence, ASN1_Class::Universal)
 			.encode(PKCS10_VERSION)
 			.encode(X509_DN())
 			.raw_bytes(X509::BER_encode(*pk))
 			.start_explicit(0)
-			.encode(Attribute("PKCS9.ExtensionRequest", DER_Encoder()
-				.start_cons(SEQUENCE)
-				.encode(extensions)
-				.end_cons()
-				.get_contents_unlocked()))
+			.encode(Attribute("PKCS9.ExtensionRequest", extensionAttribute))
 			.end_explicit()
 			.end_cons();
 
-		AlgorithmIdentifier sigAlgo;
-		std::unique_ptr<PK_Signer> signer(choose_sig_format(*pk, rng, "SHA-256", sigAlgo));
+		AutoSeeded_RNG rng;
+		std::unique_ptr<PK_Signer> signer(PKCS10_Request::choose_sig_format(*pk, rng, "SHA-256", ""));
 
-		PKCS10_Request csr = PKCS10_Request(X509_Object::make_signed(signer.get(), rng, sigAlgo, der.get_contents()));
+		PKCS10_Request csr = PKCS10_Request(X509_Object::make_signed(*signer, rng, signer->algorithm_identifier(), der.get_contents()));
 
 		std::vector<byte> bytes = csr.BER_encode();
 		return QByteArray((const char *)bytes.data(), bytes.size());

@@ -1,4 +1,4 @@
-/* Copyright (C) 2013-2022 Christian Fischbach <cf@cflib.de>
+/* Copyright (C) 2013-2023 Christian Fischbach <cf@cflib.de>
  *
  * This file is part of cflib.
  *
@@ -92,7 +92,7 @@ void ThreadHolderQt::run()
 
 ThreadHolderLibEV::ThreadHolderLibEV(const QString & threadName, int threadId, ThreadStats * stats, bool isWorkerOnly, bool disable) :
 	ThreadHolder(threadName, threadId, stats, disable),
-	loop_(ev_loop_new(EVFLAG_NOSIGMASK | (isWorkerOnly ? EVBACKEND_SELECT : EVBACKEND_ALL))),
+	loop_(ev_loop_new((uint)EVFLAG_NOSIGMASK | (isWorkerOnly ? EVBACKEND_SELECT : EVBACKEND_ALL))),
 	wakeupWatcher_(new ev_async)
 {
 	ev_async_init(wakeupWatcher_, &ThreadHolderLibEV::asyncCallback);

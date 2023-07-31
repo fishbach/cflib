@@ -1,4 +1,4 @@
-/* Copyright (C) 2013-2022 Christian Fischbach <cf@cflib.de>
+/* Copyright (C) 2013-2023 Christian Fischbach <cf@cflib.de>
  *
  * This file is part of cflib.
  *
@@ -11,7 +11,7 @@
 int usage()
 {
 	QTextStream(stderr)
-		<< "usage: " << QCoreApplication::applicationName() << " serialize <header.h> <source_ser.cpp>" << endl;
+		<< "usage: " << QCoreApplication::applicationName() << " serialize <header.h> <source_ser.cpp>" << Qt::endl;
 
 	return 1;
 }
@@ -22,19 +22,19 @@ int serialize(const QString & header, const QString & dest)
 
 	QFile in(header);
 	if (!in.open(QIODevice::ReadOnly)) {
-		err << "cannot read: " << header << endl;
+		err << "cannot read: " << header << Qt::endl;
 		return 2;
 	}
 	HeaderParser hp;
 	if (!hp.parse(QString::fromUtf8(in.readAll()))) {
-		err << "cannot parse: " << header << " error: " << hp.lastError() << endl;
+		err << "cannot parse: " << header << " error: " << hp.lastError() << Qt::endl;
 		return 3;
 	}
 	in.close();
 
 	QFile out(dest);
 	if (!out.open(QIODevice::WriteOnly | QIODevice::Truncate)) {
-		err << "cannot write file: " << dest << endl;
+		err << "cannot write file: " << dest << Qt::endl;
 		return 4;
 	}
 
