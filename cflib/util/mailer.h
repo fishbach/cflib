@@ -41,7 +41,7 @@ protected:
 
 private slots:
 	void finished(int exitCode, QProcess::ExitStatus exitStatus);
-	void error(QProcess::ProcessError error);
+	void errorOccurred(QProcess::ProcessError error);
 	void startProcess();
 
 private:

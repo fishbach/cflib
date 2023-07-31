@@ -133,7 +133,7 @@ bool ScopedTransaction::commit()
 		return true;
 	}
 
-	QTime watch;
+	QElapsedTimer watch;
 	watch.start();
 	bool ok = db.commit();
 	if (!ok) {

@@ -164,7 +164,7 @@ int genSerialize(const QString & headerName, const HeaderParser & hp, QIODevice 
 
 	foreach (const HeaderParser::Class & cl, hp.classes()) {
 		out << "\n";
-		QStringList nsList = cl.ns.split("::", QString::SkipEmptyParts);
+		QStringList nsList = cl.ns.split("::", Qt::SkipEmptyParts);
 		bool isFirst = true;
 		foreach (const QString & ns, nsList) {
 			if (isFirst) isFirst = false;

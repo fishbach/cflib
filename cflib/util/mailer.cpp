@@ -59,11 +59,11 @@ void Mailer::initThreadData()
 	process_ = new QProcess;
 	connect<void (QProcess::*)(int, QProcess::ExitStatus)>(
 		process_, &QProcess::finished,
-		this,       &Mailer::finished,
+		this,     &Mailer  ::finished,
 	Qt::DirectConnection);
 	connect<void (QProcess::*)(QProcess::ProcessError)>(
-		process_, &QProcess::error,
-		this,       &Mailer::error,
+		process_, &QProcess::errorOccurred,
+		this,     &Mailer  ::errorOccurred,
 	Qt::DirectConnection);
 }
 
@@ -97,7 +97,7 @@ void Mailer::finished(int exitCode, QProcess::ExitStatus exitStatus)
 	if (!queue_.isEmpty()) execLater(new Functor0<Mailer>(this, &Mailer::startProcess));
 }
 
-void Mailer::error(QProcess::ProcessError error)
+void Mailer::errorOccurred(QProcess::ProcessError error)
 {
 	logWarn("Mailer process error: %1", (int)error);
 }

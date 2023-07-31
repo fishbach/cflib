@@ -72,7 +72,7 @@ public:
 	QByteArray body;
 	QList<RequestHandler *> handlers;
 	impl::RequestParser * parser;
-	QTime watch;
+	QElapsedTimer watch;
 	bool replySent;
 	QByteArray remoteIP;
 	QList<QByteArray> sendHeaderLines;

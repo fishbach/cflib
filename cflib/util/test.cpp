@@ -24,7 +24,7 @@ bool classNameLessThan(const QObject * a, const QObject * b)
 QList<QObject *> & sortedTestObjects()
 {
 	QList<QObject *> & retval = *testObjectsQGS();
-	qSort(retval.begin(), retval.end(), classNameLessThan);
+	std::sort(retval.begin(), retval.end(), classNameLessThan);
 	return retval;
 }
 
@@ -41,7 +41,7 @@ QStringList allTests()
 	foreach (QObject * obj, sortedTestObjects()) {
 		retval << obj->metaObject()->className();
 	}
-	qSort(retval);
+	std::sort(retval.begin(), retval.end());
 	return retval;
 }
 

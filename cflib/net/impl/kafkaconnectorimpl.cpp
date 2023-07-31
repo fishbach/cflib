@@ -445,7 +445,7 @@ QMap<QByteArray, QMap<QByteArray, QList<qint32>>> KafkaConnector::Impl::computeG
 
 		for (const QByteArray & topic : topicMembers.keys()) {
 			QList<QByteArray> & members = topicMembers[topic];
-			qSort(members);
+			std::sort(members.begin(), members.end());
 
 			int partitionCount = responsibilities_[topic].size();
 			int partitionsPerMember  = partitionCount / members.size();
@@ -473,7 +473,7 @@ QMap<QByteArray, QMap<QByteArray, QList<qint32>>> KafkaConnector::Impl::computeG
 				allTopicPartitions << qMakePair(topic, i);
 			}
 		}
-		qSort(allTopicPartitions);
+		std::sort(allTopicPartitions.begin(), allTopicPartitions.end());
 
 		QList<QByteArray> members = memberTopics.keys();
 		int memberId = 0;

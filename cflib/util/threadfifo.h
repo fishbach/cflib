@@ -44,10 +44,10 @@ public:
 
 private:
 	const int max_;
-	volatile T * buffer_;
-	volatile int count_;
-	volatile int reader_;
-	volatile int writer_;
+	T * buffer_;
+	int count_;
+	int reader_;
+	int writer_;
 	QAtomicInt sl_;
 };
 
