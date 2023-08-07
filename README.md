@@ -8,19 +8,23 @@ This file is part of cflib.
 cflib is provided under the MIT license.
 See the provied file COPYING for details.
 
+# Requirements
 
-# Dependencies
+* C++ compiler which can do c++20
+* cmake >= 3.16
+* Qt >= 5.15 - https://download.qt.io/archive/qt/5.15/
+* Botan >= 3.1.1 - https://botan.randombit.net/releases/
 
-* Qt >= 5.12 - https://www.qt.io/
-* Botan - https://botan.randombit.net/
+# Download
 
+```
+git clone https://github.com/fishbach/cflib.git
+```
 
 # Build
 
-Qt min Version 5.12 - https://download.qt.io/archive/qt/5.12/
-
-> qmake -r
-
-follow Botan installation note
-
-> make -j 4
+```
+cmake -B build
+cmake --build build
+ctest --test-dir build
+```

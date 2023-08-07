@@ -4,23 +4,14 @@
 #
 # Licensed under the MIT License.
 
-*.pro.user
-CMakeLists.txt.user
 *.o
 *.obj
 *.pch
-Makefile
-Makefile.*
-.qmake.cache
-.qmake.stash
-build
-build-*
+*~
 .DS_Store
 .vscode
-*~
-moc_wrapper.sh
-rcc_wrapper.sh
-target_wrapper.sh
-
-config.pri
-bin
+CMakeLists.txt.user
+Makefile
+Makefile.*
+build
+build-*

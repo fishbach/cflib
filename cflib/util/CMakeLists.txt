@@ -1,46 +1,15 @@
-project(
-    cflib_util
-    VERSION ${CFLIB_SUPERPROJECT_VERSION}
-    LANGUAGES CXX)
+# Copyright (C) 2013-2023 Christian Fischbach <cf@cflib.de>
+#
+# This file is part of cflib.
+#
+# Licensed under the MIT License.
 
-find_package(
-    Qt5
-    COMPONENTS Core
-    REQUIRED)
-find_package(ZLIB REQUIRED)
+cf_lib(cflib_util
+	PUBLIC Qt5::Core
+	PRIVATE ZLIB::ZLIB
+	DIRS impl
+)
 
-add_library(
-    ${PROJECT_NAME}
-    cmdline.cpp
-    evtimer.cpp
-    log.cpp
-    libev.cpp
-    log.cpp
-    mailer.cpp
-    test.cpp
-    threadverify.cpp
-    timer.cpp
-    timeshifter.cpp
-    unixsignal.cpp
-    util.cpp
-    impl/threadverifyimpl.cpp)
-add_library(cflib::util ALIAS ${PROJECT_NAME})
-
-if(APPLE)
-    target_sources(${PROJECT_NAME} PRIVATE impl/util_mac.mm)
-endif()
-
-target_include_directories(
-    ${PROJECT_NAME}
-    PRIVATE $<BUILD_INTERFACE:${CFLIB_SUPERPROJECT_SOURCE_DIR}>
-    INTERFACE $<BUILD_INTERFACE:${CFLIB_SUPERPROJECT_SOURCE_DIR}>)
-
-target_link_libraries(
-    ${PROJECT_NAME}
-    PRIVATE Qt5::Core
-    PRIVATE ZLIB::ZLIB)
-
-add_subdirectory(filefinder)
 add_subdirectory(gitversion)
 add_subdirectory(jscombiner)
 add_subdirectory(util_test)

@@ -5,5 +5,4 @@
  * Licensed under the MIT License.
  */
 
-#include <QtCore>
-#include <QtGui>
+void dummy(void) {}

@@ -1,15 +1,7 @@
-project(
-    gitversion
-    VERSION ${CFLIB_SUPERPROJECT_VERSION}
-    LANGUAGES CXX)
+# Copyright (C) 2013-2023 Christian Fischbach <cf@cflib.de>
+#
+# This file is part of cflib.
+#
+# Licensed under the MIT License.
 
-find_package(
-    Qt5
-    COMPONENTS Core
-    REQUIRED)
-
-add_executable(${PROJECT_NAME} main.cpp)
-
-target_include_directories(${PROJECT_NAME} PRIVATE $<BUILD_INTERFACE:${CFLIB_SUPERPROJECT_SOURCE_DIR}>)
-
-target_link_libraries(${PROJECT_NAME} PRIVATE Qt5::Core)
+cf_app(gitversion Qt5::Core)

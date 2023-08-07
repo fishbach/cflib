@@ -1,23 +1,18 @@
-cmake_minimum_required(VERSION 3.25)
+# Copyright (C) 2013-2023 Christian Fischbach <cf@cflib.de>
+#
+# This file is part of cflib.
+#
+# Licensed under the MIT License.
+
+cmake_minimum_required(VERSION 3.16)
 
 project(
-    cflib
-    VERSION 1.0.0
-    LANGUAGES CXX)
+	cflib
+	VERSION 1.0.0
+	LANGUAGES CXX
+)
 
-enable_testing()
-
-set(CMAKE_CXX_STANDARD 20)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
-
-set(CMAKE_AUTOMOC ON)
-set(CMAKE_AUTORCC ON)
-set(CMAKE_AUTOUIC ON)
-
-set(CFLIB_SUPERPROJECT_SOURCE_DIR ${PROJECT_SOURCE_DIR})
-set(CFLIB_SUPERPROJECT_VERSION ${PROJECT_VERSION})
-
-list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake)
+include(cmake/ProjectConfig.cmake)
 
 add_subdirectory(cflib)
-add_subdirectory(examples)
+#add_subdirectory(examples)
