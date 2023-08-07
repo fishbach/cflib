@@ -65,7 +65,9 @@ inline void writeInt(char * dest, uint number, int width)
 {
 	// bug in gcc
 	#pragma GCC diagnostic push
+	#if __has_warning("-Wstringop-overflow=")
 	#pragma GCC diagnostic ignored "-Wstringop-overflow="
+	#endif
 
 	dest += width;
 	for (int i = 0 ; i < width ; ++i) {
@@ -165,7 +167,9 @@ void Log::writeLog(const char * filename, int lineNo, LogCategory category, cons
 
 	// bug in gcc
 	#pragma GCC diagnostic push
+	#if __has_warning("-Wstringop-overflow=")
 	#pragma GCC diagnostic ignored "-Wstringop-overflow="
+	#endif
 
 	// timestamp
 	const QDateTime now = QDateTime::currentDateTimeUtc();
