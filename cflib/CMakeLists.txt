@@ -8,5 +8,5 @@
 #add_subdirectory(dao)
 #add_subdirectory(db)
 #add_subdirectory(net)
-#add_subdirectory(serialize)
+add_subdirectory(serialize)
 add_subdirectory(util)

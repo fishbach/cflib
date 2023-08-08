@@ -8,6 +8,7 @@ cf_lib(cflib_util
 	PUBLIC Qt5::Core
 	PRIVATE ZLIB::ZLIB
 	DIRS impl
+	ENABLE_MOC
 )
 
 add_subdirectory(gitversion)

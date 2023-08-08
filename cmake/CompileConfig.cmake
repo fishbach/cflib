@@ -37,10 +37,10 @@ find_package(
 find_package(ZLIB REQUIRED)
 
 # cflib targets
-function(cf_configure_target target)
+function(cf_configure_target target enable_moc)
 	if(ENABLE_PCH)
 		target_precompile_headers(${target} REUSE_FROM pch_core)
 	endif()
 
-	set_target_properties(${target} PROPERTIES AUTOMOC ON)
+	set_target_properties(${target} PROPERTIES AUTOMOC ${enable_moc})
 endfunction()
