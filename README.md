@@ -14,6 +14,7 @@ See the provied file COPYING for details.
 * cmake >= 3.16
 * Qt >= 5.15 - https://download.qt.io/archive/qt/5.15/
 * Botan >= 3.1.1 - https://botan.randombit.net/releases/
+* zlib
 
 # Download
 

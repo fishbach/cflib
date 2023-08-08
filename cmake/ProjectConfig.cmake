@@ -33,7 +33,7 @@ endfunction()
 # tests
 enable_testing()
 
-function(cf_tests test lib)
+function(cf_test test lib)
 	cmake_parse_arguments(ARG "ENABLE_SER" "" "DIRS" ${ARGN})
 
 	cf_find_sources(sources . ${ARG_DIRS})

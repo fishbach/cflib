@@ -29,7 +29,39 @@ endif()
 # Qt
 find_package(
 	Qt5 5.15
-	COMPONENTS Core Test
+	COMPONENTS
+		Core
+		Test
+	REQUIRED
+)
+
+# Botan
+find_package(
+	Botan 3.1.1
+	COMPONENTS
+		aead
+		asn1
+		auto_rng
+		bcrypt
+		cbc
+		cfb
+		chacha_rng
+		des
+		filters
+		keypair
+		mode_pad
+		pbes2
+		pem
+		processor_rng
+		pubkey
+		rng
+		rsa
+		stateful_rng
+		system_rng
+		tls12
+		tls13
+		x509
+		xts
 	REQUIRED
 )
 

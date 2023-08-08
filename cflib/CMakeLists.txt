@@ -4,7 +4,7 @@
 #
 # Licensed under the MIT License.
 
-#add_subdirectory(crypt)
+add_subdirectory(crypt)
 #add_subdirectory(dao)
 #add_subdirectory(db)
 #add_subdirectory(net)

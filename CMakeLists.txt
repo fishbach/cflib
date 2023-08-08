@@ -15,10 +15,11 @@ project(
 include(cmake/ProjectConfig.cmake)
 
 cf_add_other(project_files
+	.gitignore
 	COPYING
+	MODULES
 	README.md
 	js/*
-	.gitignore
 )
 
 add_subdirectory(cflib)
