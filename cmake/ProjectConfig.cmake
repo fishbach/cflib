@@ -6,6 +6,7 @@
 
 list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake)
 
+include(ApplyConfigFiles)
 include(CompileConfig)
 include(Util)
 

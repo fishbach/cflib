@@ -18,6 +18,7 @@ cf_add_other(project_files
 	COPYING
 	README.md
 	js/*
+	.gitignore
 )
 
 add_subdirectory(cflib)
