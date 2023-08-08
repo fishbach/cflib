@@ -1,29 +1,16 @@
-project(
-    cflib_db
-    VERSION ${CFLIB_SUPERPROJECT_VERSION}
-    LANGUAGES CXX)
+# Copyright (C) 2013-2023 Christian Fischbach <cf@cflib.de>
+#
+# This file is part of cflib.
+#
+# Licensed under the MIT License.
 
-find_package(
-    Qt5
-    COMPONENTS Core Sql
-    REQUIRED)
-
-find_package(PostgreSQL REQUIRED)
-
-add_library(${PROJECT_NAME} db.cpp dbconfig.cpp dbconfigpsql.cpp psql.cpp schema.cpp)
-add_library(cflib::db ALIAS ${PROJECT_NAME})
-
-target_include_directories(
-    ${PROJECT_NAME}
-    PRIVATE $<BUILD_INTERFACE:${CFLIB_SUPERPROJECT_SOURCE_DIR}>
-    INTERFACE $<BUILD_INTERFACE:${CFLIB_SUPERPROJECT_SOURCE_DIR}>)
-
-target_link_libraries(
-    ${PROJECT_NAME}
-    PRIVATE Qt5::Core
-    PRIVATE Qt5::Sql
-    PRIVATE PostgreSQL::PostgreSQL
-    PRIVATE cflib::util)
+cf_lib(cflib_db
+	PUBLIC cflib_util
+	PUBLIC Qt5::Sql
+	PRIVATE PostgreSQL::PostgreSQL
+	DIRS impl
+	ENABLE_MOC
+)
 
 add_subdirectory(db_test)
 add_subdirectory(migrationmoped)

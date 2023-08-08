@@ -12,6 +12,7 @@ function(cf_find_sources var)
 		file(GLOB files RELATIVE ${CMAKE_CURRENT_SOURCE_DIR}
 			${dir}/*.h
 			${dir}/*.cpp
+			${dir}/*.qrc
 		)
 		list(APPEND ${var} ${files})
 

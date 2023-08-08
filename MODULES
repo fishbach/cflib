@@ -10,7 +10,7 @@ Dependencies:
 cflib/util      ->
 cflib/crypt     ->                                      cflib/util
 cflib/serialize ->                                      cflib/util
-cflib/db        ->                      cflib/serialize cflib/util
+cflib/db        ->                                      cflib/util
 cflib/dao       -> cflib/db             cflib/serialize cflib/util
 cflib/net       ->          cflib/crypt cflib/serialize cflib/util
 
