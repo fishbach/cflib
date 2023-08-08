@@ -5,8 +5,8 @@
  * Licensed under the MIT License.
  */
 
-#include <cflib/serialize/serialize_test/gentest.h>
-#include <cflib/serialize/serialize_test/test/gentest2.h>
+#include <cflib/net/net_test/gentest.h>
+#include <cflib/net/net_test/test/gentest2.h>
 #include <cflib/util/test.h>
 
 using namespace cflib::serialize;

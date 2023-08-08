@@ -52,6 +52,7 @@ find_package(
 		mode_pad
 		pbes2
 		pem
+		prf_tls
 		processor_rng
 		pubkey
 		rng
@@ -60,6 +61,7 @@ find_package(
 		system_rng
 		tls12
 		tls13
+		tls_cbc
 		x509
 		xts
 	REQUIRED

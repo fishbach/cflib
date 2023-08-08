@@ -4,4 +4,4 @@
 #
 # Licensed under the MIT License.
 
-cf_test(serialize_test cflib_serialize DIRS test ENABLE_SER)
+cf_test(serialize_test cflib_serialize ENABLE_SER)
