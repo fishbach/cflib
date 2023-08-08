@@ -11,4 +11,4 @@ cf_lib(cflib_serialize
 
 add_subdirectory(asn1dump)
 add_subdirectory(ser)
-#add_subdirectory(serialize_test)
+add_subdirectory(serialize_test)

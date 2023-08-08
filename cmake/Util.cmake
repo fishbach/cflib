@@ -7,6 +7,7 @@
 function(cf_find_sources var)
 	cmake_parse_arguments(ARG "" "" "OTHER_FILES" ${ARGN})
 
+	set(${var})
 	foreach(dir ${ARG_UNPARSED_ARGUMENTS})
 		file(GLOB files RELATIVE ${CMAKE_CURRENT_SOURCE_DIR}
 			${dir}/*.h
