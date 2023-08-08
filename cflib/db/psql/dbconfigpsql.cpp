@@ -7,7 +7,7 @@
 
 #include "dbconfigpsql.h"
 
-#include <cflib/db/psql.h>
+#include <cflib/db/psql/psql.h>
 
 USE_LOG(LogCat::Db)
 

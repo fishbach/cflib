@@ -69,7 +69,10 @@ find_package(
 )
 
 # PostgreSQL
-find_package(PostgreSQL REQUIRED)
+option(ENABLE_PSQL "enable PostgreSQL" OFF)
+if(ENABLE_PSQL)
+	find_package(PostgreSQL REQUIRED)
+endif()
 
 # ZLIB
 find_package(ZLIB REQUIRED)

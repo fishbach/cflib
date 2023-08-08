@@ -7,7 +7,7 @@
 
 #include "configpsql.h"
 
-#include <cflib/db/dbconfigpsql.h>
+#include <cflib/db/psql/dbconfigpsql.h>
 
 namespace cflib { namespace dao {
 

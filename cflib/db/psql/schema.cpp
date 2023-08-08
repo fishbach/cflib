@@ -7,7 +7,7 @@
 
 #include "schema.h"
 
-#include <cflib/db/psql.h>
+#include <cflib/db/psql/psql.h>
 #include <cflib/util/log.h>
 #include <cflib/util/util.h>
 

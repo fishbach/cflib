@@ -5,8 +5,8 @@
  * Licensed under the MIT License.
  */
 
-#include <cflib/db/psql.h>
-#include <cflib/db/schema.h>
+#include <cflib/db/psql/psql.h>
+#include <cflib/db/psql/schema.h>
 #include <cflib/util/cmdline.h>
 #include <cflib/util/log.h>
 

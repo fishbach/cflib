@@ -5,7 +5,7 @@
  * Licensed under the MIT License.
  */
 
-#include <cflib/db/psql.h>
+#include <cflib/db/psql/psql.h>
 #include <cflib/util/test.h>
 
 #include <cmath>
