@@ -9,6 +9,8 @@ cf_lib(cflib_util
 	PRIVATE ZLIB::ZLIB
 	DIRS impl
 	ENABLE_MOC
+	OTHER_FILES
+		impl/generate_templates.pl
 )
 
 add_subdirectory(gitversion)

@@ -5,7 +5,9 @@
 # Licensed under the MIT License.
 
 function(cf_find_sources var)
-	foreach(dir ${ARGN})
+	cmake_parse_arguments(ARG "" "" "OTHER_FILES" ${ARGN})
+
+	foreach(dir ${ARG_UNPARSED_ARGUMENTS})
 		file(GLOB files RELATIVE ${CMAKE_CURRENT_SOURCE_DIR}
 			${dir}/*.h
 			${dir}/*.cpp
@@ -18,5 +20,18 @@ function(cf_find_sources var)
 			list(APPEND ${var} ${files})
 		endif()
 	endforeach()
+
+	# other files
+	if(ARG_OTHER_FILES)
+		file(GLOB_RECURSE files RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} ${ARG_OTHER_FILES})
+		list(APPEND ${var} ${files})
+		set_source_files_properties(${files} PROPERTIES HEADER_FILE_ONLY ON)
+	endif()
+
 	set(${var} ${${var}} PARENT_SCOPE)
+endfunction()
+
+function(cf_add_other target)
+	file(GLOB_RECURSE files RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} ${ARGN})
+	add_custom_target(${target} SOURCES ${files})
 endfunction()

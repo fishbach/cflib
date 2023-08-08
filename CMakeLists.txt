@@ -14,5 +14,11 @@ project(
 
 include(cmake/ProjectConfig.cmake)
 
+cf_add_other(project_files
+	COPYING
+	README.md
+	js/*
+)
+
 add_subdirectory(cflib)
 #add_subdirectory(examples)

@@ -11,9 +11,9 @@ include(Util)
 
 # library
 function(cf_lib lib)
-	cmake_parse_arguments(ARG "ENABLE_MOC" "" "PUBLIC;PRIVATE;DIRS" ${ARGN})
+	cmake_parse_arguments(ARG "ENABLE_MOC" "" "PUBLIC;PRIVATE;DIRS;OTHER_FILES" ${ARGN})
 
-	cf_find_sources(sources . ${ARG_DIRS})
+	cf_find_sources(sources . ${ARG_DIRS} OTHER_FILES ${ARG_OTHER_FILES})
 	add_library(${lib} ${sources})
 	cf_configure_target(${lib} ${ARG_ENABLE_MOC})
 	target_link_libraries(${lib} PUBLIC ${ARG_PUBLIC} PRIVATE ${ARG_PRIVATE})
@@ -21,9 +21,9 @@ endfunction()
 
 # application
 function(cf_app app)
-	cmake_parse_arguments(ARG "ENABLE_MOC" "" "DIRS" ${ARGN})
+	cmake_parse_arguments(ARG "ENABLE_MOC" "" "DIRS;OTHER_FILES" ${ARGN})
 
-	cf_find_sources(sources . ${ARG_DIRS})
+	cf_find_sources(sources . ${ARG_DIRS} OTHER_FILES ${ARG_OTHER_FILES})
 	add_executable(${app} ${sources})
 	cf_configure_target(${app} ${ARG_ENABLE_MOC})
 	target_link_libraries(${app} PRIVATE ${ARG_UNPARSED_ARGUMENTS})
