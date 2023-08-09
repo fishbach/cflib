@@ -39,32 +39,6 @@ find_package(
 # Botan
 find_package(
 	Botan 3.1.1
-	COMPONENTS
-		aead
-		asn1
-		auto_rng
-		bcrypt
-		cbc
-		cfb
-		chacha_rng
-		des
-		filters
-		keypair
-		mode_pad
-		pbes2
-		pem
-		prf_tls
-		processor_rng
-		pubkey
-		rng
-		rsa
-		stateful_rng
-		system_rng
-		tls12
-		tls13
-		tls_cbc
-		x509
-		xts
 	REQUIRED
 )
 
