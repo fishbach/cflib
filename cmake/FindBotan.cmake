@@ -5,8 +5,8 @@ find_package(Python COMPONENTS Interpreter REQUIRED)
 include(FetchContent)
 FetchContent_Declare(
 	botan_src
-	URL https://github.com/randombit/botan/archive/refs/tags/${Botan_FIND_VERSION}.tar.gz
 	DOWNLOAD_EXTRACT_TIMESTAMP TRUE
+	URL https://github.com/randombit/botan/archive/refs/tags/${Botan_FIND_VERSION}.tar.gz
 )
 FetchContent_MakeAvailable(botan_src)
 
