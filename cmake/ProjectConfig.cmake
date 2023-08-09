@@ -27,6 +27,7 @@ function(cf_app app)
 	cf_find_sources(sources . ${ARG_DIRS} OTHER_FILES ${ARG_OTHER_FILES})
 	add_executable(${app} ${sources})
 	cf_configure_target(${app} ${ARG_ENABLE_MOC} ${ARG_ENABLE_SER})
+	target_include_directories(${app} AFTER PRIVATE .)
 	target_link_libraries(${app} PRIVATE ${ARG_UNPARSED_ARGUMENTS})
 endfunction()
 
