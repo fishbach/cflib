@@ -21,13 +21,12 @@ if (botan_src_COMPILER_ID STREQUAL "gnu")
 elseif (botan_src_COMPILER_ID STREQUAL "appleclang")
 	set(botan_src_COMPILER_ID "clang")
 endif()
-set(botan_src_DISABLE_MODULES
-	pkcs11
-)
+set(botan_src_DISABLE_MODULES pkcs11)
+if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+	list(APPEND botan_src_DISABLE_MODULES simd_avx512)
+endif()
 if(APPLE)
-	list(APPEND botan_src_DISABLE_MODULES
-		certstor_system_macos
-	)
+	list(APPEND botan_src_DISABLE_MODULES certstor_system_macos)
 endif()
 list(JOIN botan_src_DISABLE_MODULES "," botan_src_DISABLE_MODULES)
 

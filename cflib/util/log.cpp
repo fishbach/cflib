@@ -65,8 +65,10 @@ inline void writeInt(char * dest, uint number, int width)
 {
 	// bug in gcc
 	#pragma GCC diagnostic push
-	#if __has_warning("-Wstringop-overflow=")
-	#pragma GCC diagnostic ignored "-Wstringop-overflow="
+	#if defined(__has_warning)
+		#if __has_warning("-Wstringop-overflow=")
+			#pragma GCC diagnostic ignored "-Wstringop-overflow="
+		#endif
 	#endif
 
 	dest += width;
@@ -167,8 +169,10 @@ void Log::writeLog(const char * filename, int lineNo, LogCategory category, cons
 
 	// bug in gcc
 	#pragma GCC diagnostic push
-	#if __has_warning("-Wstringop-overflow=")
-	#pragma GCC diagnostic ignored "-Wstringop-overflow="
+	#if defined(__has_warning)
+		#if __has_warning("-Wstringop-overflow=")
+			#pragma GCC diagnostic ignored "-Wstringop-overflow="
+		#endif
 	#endif
 
 	// timestamp

@@ -75,18 +75,25 @@ function(cf_configure_target target enable_moc enable_ser enable_uic)
 			endif()
 		endforeach()
 
+		# Something to do?
+		if(NOT headers)
+			return()
+		endif()
+
 		foreach(header ${headers})
 			# get output filename (dir/header.h -> target_autogen/dir/header_ser.cpp)
-			get_filename_component(source "${header}" NAME_WLE)
+			set(rel_dir "${target}_autogen")
 			get_filename_component(dir "${header}" DIRECTORY)
 			if(dir)
-				set(source "${dir}/${source}")
+				set(rel_dir "${rel_dir}/${dir}")
 			endif()
-			set(source "${target}_autogen/${source}_ser.cpp")
+			get_filename_component(source "${header}" NAME_WLE)
+			set(source "${rel_dir}/${source}_ser.cpp")
 
 			# add generation step
 			add_custom_command(
 				OUTPUT "${source}"
+				COMMAND ${CMAKE_COMMAND} -E make_directory "${rel_dir}"
 				COMMAND ser serialize "${CMAKE_CURRENT_SOURCE_DIR}/${header}" "${source}"
 				DEPENDS "${header}"
 			)
