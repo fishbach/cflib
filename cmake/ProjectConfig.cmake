@@ -12,21 +12,21 @@ include(Util)
 
 # library
 function(cf_lib lib)
-	cmake_parse_arguments(ARG "ENABLE_MOC;ENABLE_SER" "" "PUBLIC;PRIVATE;DIRS;OTHER_FILES" ${ARGN})
+	cmake_parse_arguments(ARG "ENABLE_MOC;ENABLE_SER;ENABLE_UIC" "" "PUBLIC;PRIVATE;DIRS;OTHER_FILES" ${ARGN})
 
 	cf_find_sources(sources . ${ARG_DIRS} OTHER_FILES ${ARG_OTHER_FILES})
 	add_library(${lib} ${sources})
-	cf_configure_target(${lib} ${ARG_ENABLE_MOC} ${ARG_ENABLE_SER})
+	cf_configure_target(${lib} ${ARG_ENABLE_MOC} ${ARG_ENABLE_SER} ${ARG_ENABLE_UIC})
 	target_link_libraries(${lib} PUBLIC ${ARG_PUBLIC} PRIVATE ${ARG_PRIVATE})
 endfunction()
 
 # application
 function(cf_app app)
-	cmake_parse_arguments(ARG "ENABLE_MOC;ENABLE_SER" "" "DIRS;OTHER_FILES" ${ARGN})
+	cmake_parse_arguments(ARG "ENABLE_MOC;ENABLE_SER;ENABLE_UIC" "" "DIRS;OTHER_FILES" ${ARGN})
 
 	cf_find_sources(sources . ${ARG_DIRS} OTHER_FILES ${ARG_OTHER_FILES})
 	add_executable(${app} ${sources})
-	cf_configure_target(${app} ${ARG_ENABLE_MOC} ${ARG_ENABLE_SER})
+	cf_configure_target(${app} ${ARG_ENABLE_MOC} ${ARG_ENABLE_SER} ${ARG_ENABLE_UIC})
 	target_include_directories(${app} AFTER PRIVATE .)
 	target_link_libraries(${app} PRIVATE ${ARG_UNPARSED_ARGUMENTS})
 endfunction()
@@ -39,7 +39,7 @@ function(cf_test test lib)
 
 	cf_find_sources(sources . ${ARG_DIRS})
 	add_executable(${test} ${sources})
-	cf_configure_target(${test} TRUE ${ARG_ENABLE_SER})
+	cf_configure_target(${test} TRUE ${ARG_ENABLE_SER} FALSE)
 	target_link_libraries(${test} PRIVATE ${lib} Qt5::Test)
 	add_test(NAME ${test} COMMAND ${test})
 endfunction()

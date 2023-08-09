@@ -1,28 +1,9 @@
-project(
-    webchat
-    VERSION ${CFLIB_SUPERPROJECT_VERSION}
-    LANGUAGES CXX)
+# Copyright (C) 2013-2023 Christian Fischbach <cf@cflib.de>
+#
+# This file is part of cflib.
+#
+# Licensed under the MIT License.
 
-find_package(
-    Qt5
-    COMPONENTS Core
-    REQUIRED)
-
-include(SerializableGenerator)
-
-add_executable(${PROJECT_NAME} main.cpp infoservice.cpp)
-
-generate_implementations_for(${PROJECT_NAME})
-
-target_include_directories(
-    ${PROJECT_NAME}
-    PRIVATE $<BUILD_INTERFACE:${CFLIB_SUPERPROJECT_SOURCE_DIR}>
-    PRIVATE $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>)
-
-target_link_libraries(
-    ${PROJECT_NAME}
-    PRIVATE Qt5::Core
-    PRIVATE cflib::crypt
-    PRIVATE cflib::net
-    PRIVATE cflib::serialize
-    PRIVATE cflib::util)
+cf_app(webchat cflib_net ENABLE_SER
+	OTHER_FILES htdocs
+)

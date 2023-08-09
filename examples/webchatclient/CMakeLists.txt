@@ -1,27 +1,15 @@
-project(
-    webchatclient
-    VERSION ${CFLIB_SUPERPROJECT_VERSION}
-    LANGUAGES CXX)
+# Copyright (C) 2013-2023 Christian Fischbach <cf@cflib.de>
+#
+# This file is part of cflib.
+#
+# Licensed under the MIT License.
 
 find_package(
-    Qt5
-    COMPONENTS Core Gui WebSockets Widgets
-    REQUIRED)
+	Qt5
+	COMPONENTS
+		WebSockets
+		Widgets
+	REQUIRED
+)
 
-add_executable(${PROJECT_NAME} main.cpp chatwindow.cpp)
-
-target_include_directories(
-    ${PROJECT_NAME}
-    PRIVATE $<BUILD_INTERFACE:${CFLIB_SUPERPROJECT_SOURCE_DIR}>
-    PRIVATE $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>)
-
-target_link_libraries(
-    ${PROJECT_NAME}
-    PRIVATE Qt5::Core
-    PRIVATE Qt5::Gui
-    PRIVATE Qt5::WebSockets
-    PRIVATE Qt5::Widgets
-    PRIVATE cflib::crypt
-    PRIVATE cflib::net
-    PRIVATE cflib::serialize
-    PRIVATE cflib::util)
+cf_app(webchatclient cflib_net Qt5::WebSockets Qt5::Widgets ENABLE_MOC ENABLE_UIC)

@@ -13,6 +13,7 @@ function(cf_find_sources var)
 			${dir}/*.h
 			${dir}/*.cpp
 			${dir}/*.qrc
+			${dir}/*.ui
 		)
 		list(APPEND ${var} ${files})
 
