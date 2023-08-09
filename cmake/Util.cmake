@@ -26,7 +26,7 @@ function(cf_find_sources var)
 
 	# other files
 	if(ARG_OTHER_FILES)
-		file(GLOB_RECURSE files RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} ${ARG_OTHER_FILES})
+		file(GLOB_RECURSE files FOLLOW_SYMLINKS RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} ${ARG_OTHER_FILES})
 		list(APPEND ${var} ${files})
 		set_source_files_properties(${files} PROPERTIES HEADER_FILE_ONLY ON)
 	endif()
