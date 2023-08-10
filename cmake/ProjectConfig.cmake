@@ -22,12 +22,15 @@ endfunction()
 
 # application
 function(cf_app app)
-	cmake_parse_arguments(ARG "ENABLE_MOC;ENABLE_SER;ENABLE_UIC" "" "DIRS;OTHER_FILES" ${ARGN})
+	cmake_parse_arguments(ARG "ENABLE_MOC;ENABLE_SER;ENABLE_UIC;CF_INTERN" "" "DIRS;OTHER_FILES" ${ARGN})
 
 	cf_find_sources(sources . ${ARG_DIRS} OTHER_FILES ${ARG_OTHER_FILES})
 	add_executable(${app} ${sources})
 	cf_configure_target(${app} ${ARG_ENABLE_MOC} ${ARG_ENABLE_SER} ${ARG_ENABLE_UIC})
 	target_include_directories(${app} AFTER PRIVATE .)
+	if(NOT ARG_CF_INTERN)
+		set_target_properties(${app} PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${PROJECT_SOURCE_DIR}/bin")
+	endif()
 	target_link_libraries(${app} PRIVATE ${ARG_UNPARSED_ARGUMENTS})
 endfunction()
 

@@ -4,12 +4,10 @@
 #
 # Licensed under the MIT License.
 
-*.o
-*.obj
-*.pch
 *~
 .DS_Store
 .vscode
+/bin
 CMakeLists.txt.user
 Makefile
 Makefile.*

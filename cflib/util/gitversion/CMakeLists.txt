@@ -4,4 +4,4 @@
 #
 # Licensed under the MIT License.
 
-cf_app(gitversion Qt5::Core)
+cf_app(gitversion Qt5::Core CF_INTERN)
