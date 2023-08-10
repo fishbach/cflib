@@ -14,4 +14,5 @@ cf_lib(cflib_dao
 	PUBLIC cflib_db
 	PUBLIC cflib_serialize
 	${PSQL_CONFIG}
+	ENABLE_SER
 )

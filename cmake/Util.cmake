@@ -9,11 +9,15 @@ function(cf_find_sources var)
 
 	set(${var})
 	foreach(dir ${ARG_UNPARSED_ARGUMENTS})
+		if(NOT IS_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/${dir}")
+			list(APPEND ${var} "${dir}")
+			continue()
+		endif()
 		file(GLOB files RELATIVE ${CMAKE_CURRENT_SOURCE_DIR}
-			${dir}/*.h
-			${dir}/*.cpp
-			${dir}/*.qrc
-			${dir}/*.ui
+			"${dir}/*.h"
+			"${dir}/*.cpp"
+			"${dir}/*.qrc"
+			"${dir}/*.ui"
 		)
 		list(APPEND ${var} ${files})
 
