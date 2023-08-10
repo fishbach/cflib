@@ -4,6 +4,6 @@
 #
 # Licensed under the MIT License.
 
-find_package(Qt5 COMPONENTS Network REQUIRED)
+find_package(Qt5 COMPONENTS Network)
 
 cf_app(getssl cflib_net Qt5::Network ENABLE_MOC)
