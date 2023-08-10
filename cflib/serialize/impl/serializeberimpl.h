@@ -412,10 +412,10 @@ inline void serializeBER(const QHash<Key, T> & cl, quint64 tagNo, QByteArray & d
 {
 	TLWriter tlw(data, tagNo);
 	BERSerializerBase ser(data, true);
-	typename QHash<Key, T>::const_iterator it = cl.end();
-	typename QHash<Key, T>::const_iterator begin = cl.begin();
-	while (it != begin) {
-		--it;
+	typename QHash<Key, T>::const_iterator it = cl.begin();
+	typename QHash<Key, T>::const_iterator end = cl.end();
+	while (it != end) {
+		++it;
 		ser << it.key() << it.value();
 	}
 }
