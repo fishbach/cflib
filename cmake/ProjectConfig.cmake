@@ -4,46 +4,63 @@
 #
 # Licensed under the MIT License.
 
-list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake)
+# look once for config files
+if(NOT cf_config_file_path)
+	set(cf_config_file_list)
+	set(cf_config_file_path "${PROJECT_SOURCE_DIR}")
+	while(NOT cf_config_file_path STREQUAL "/")
+		if(EXISTS "${cf_config_file_path}/config.cmake")
+			list(APPEND cf_config_file_list "${cf_config_file_path}/config.cmake")
+		endif()
+		get_filename_component(cf_config_file_path "${cf_config_file_path}" DIRECTORY)
+	endwhile()
+	list(REVERSE cf_config_file_list)
+	foreach(config ${cf_config_file_list})
+		message(STATUS "Importing \"${config}\"")
+		include("${config}")
+	endforeach()
+	unset(cf_config_file_list)
+endif()
 
-include(ApplyConfigFiles)
-include(CompileConfig)
-include(Util)
+# config options
+option(ENABLE_CCACHE "enable ccache"                    ON)
+option(ENABLE_PCH    "enable precompiled headers (PCH)" ON)
+option(ENABLE_PSQL   "enable PostgreSQL"                OFF)
 
-# library
-function(cf_lib lib)
-	cmake_parse_arguments(ARG "ENABLE_MOC;ENABLE_SER;ENABLE_UIC" "" "PUBLIC;PRIVATE;DIRS;OTHER_FILES" ${ARGN})
+# C++20
+set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-	cf_find_sources(sources . ${ARG_DIRS} OTHER_FILES ${ARG_OTHER_FILES})
-	add_library(${lib} ${sources})
-	cf_configure_target(${lib} ${ARG_ENABLE_MOC} ${ARG_ENABLE_SER} ${ARG_ENABLE_UIC})
-	target_include_directories(${lib} INTERFACE "${PROJECT_SOURCE_DIR}")
-	target_link_libraries(${lib} PUBLIC ${ARG_PUBLIC} PRIVATE ${ARG_PRIVATE})
-endfunction()
-
-# application
-function(cf_app app)
-	cmake_parse_arguments(ARG "ENABLE_MOC;ENABLE_SER;ENABLE_UIC;CF_INTERN" "" "DIRS;OTHER_FILES" ${ARGN})
-
-	cf_find_sources(sources . ${ARG_DIRS} OTHER_FILES ${ARG_OTHER_FILES})
-	add_executable(${app} ${sources})
-	cf_configure_target(${app} ${ARG_ENABLE_MOC} ${ARG_ENABLE_SER} ${ARG_ENABLE_UIC})
-	target_include_directories(${app} PRIVATE .)
-	if(NOT ARG_CF_INTERN)
-		set_target_properties(${app} PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${PROJECT_SOURCE_DIR}/bin")
+# ccache
+if(ENABLE_CCACHE)
+	find_program(CCACHE_FOUND ccache)
+	if(CCACHE_FOUND)
+		set(CMAKE_CXX_COMPILER_LAUNCHER ccache)
 	endif()
-	target_link_libraries(${app} PRIVATE ${ARG_UNPARSED_ARGUMENTS})
-endfunction()
+endif()
 
-# tests
+# Qt
+find_package(
+	Qt5 5.15
+	COMPONENTS Core Sql Test
+	REQUIRED
+)
+
+# add root include dir
+include_directories(${PROJECT_SOURCE_DIR})
+
+# enable tests
 enable_testing()
 
-function(cf_test test lib)
-	cmake_parse_arguments(ARG "ENABLE_SER" "" "DIRS" ${ARGN})
+# -----------------------------------------------------------------------------
 
-	cf_find_sources(sources . ${ARG_DIRS})
-	add_executable(${test} ${sources})
-	cf_configure_target(${test} TRUE ${ARG_ENABLE_SER} FALSE)
-	target_link_libraries(${test} PRIVATE ${lib} Qt5::Test)
-	add_test(NAME ${test} COMMAND ${test})
-endfunction()
+# handle include from outer project
+if("${CMAKE_CURRENT_LIST_DIR}" STREQUAL "${PROJECT_SOURCE_DIR}/cmake")
+	list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_LIST_DIR})
+	include(Build)
+	include(DependencyConfig)
+	include(Util)
+else()
+	set(CF_IS_CONFIGURED TRUE)
+	add_subdirectory(${CMAKE_CURRENT_LIST_DIR}/..)
+endif()

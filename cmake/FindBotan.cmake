@@ -1,3 +1,9 @@
+# Copyright (C) 2013-2023 Christian Fischbach <cf@cflib.de>
+#
+# This file is part of cflib.
+#
+# Licensed under the MIT License.
+
 # python is needed for configure.py
 find_package(Python COMPONENTS Interpreter REQUIRED)
 
@@ -14,7 +20,7 @@ FetchContent_MakeAvailable(botan_src)
 include(FindPackageHandleStandardArgs)
 find_package_handle_standard_args(Botan DEFAULT_MSG botan_src_SOURCE_DIR)
 
-# prepare parameter for configure.py
+# prepare parameters for configure.py
 string(TOLOWER ${CMAKE_CXX_COMPILER_ID} botan_src_COMPILER_ID)
 if (botan_src_COMPILER_ID STREQUAL "gnu")
 	set(botan_src_COMPILER_ID "gcc")

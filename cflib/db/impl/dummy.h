@@ -5,6 +5,8 @@
  * Licensed under the MIT License.
  */
 
+#include <QtCore>
+
 namespace cflib { namespace db { namespace impl {
 
 // avoid warning:

@@ -23,7 +23,7 @@ cf_add_other(project_files
 )
 
 add_subdirectory(cflib)
-option(BUILD_EXAMPLES "activate build of examples" ON)
+option(BUILD_EXAMPLES "activate build for examples" ON)
 if(BUILD_EXAMPLES)
 	add_subdirectory(examples)
 endif()
