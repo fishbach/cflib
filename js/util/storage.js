@@ -30,7 +30,7 @@ define(function() {
 		var i;
 		var keep = [];
 		if (keepItems) {
-			if (!keepItems.length) keepItems = [keepItems];
+			if (!Array.isArray(keepItems)) keepItems = [keepItems];
 			i = keepItems.length;
 			while (i--) {
 				var name = keepItems[i];

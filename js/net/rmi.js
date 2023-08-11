@@ -159,5 +159,12 @@ define([
 	rmi.register     = function(tagNo, func) { msgHandlers [tagNo] = func; };
 	rmi.registerRSig = function(func) { rsigHandlers[++rsigId] = func; return rsigId; };
 
+	rmi.resetStorage = function(keepItems) {
+		if (!keepItems) keepItems = [];
+		else if (!Array.isArray(keepItems)) keepItems = [keepItems];
+		keepItems.push('clId');
+		storage.clear(keepItems);
+	};
+
 	return rmi;
 });
