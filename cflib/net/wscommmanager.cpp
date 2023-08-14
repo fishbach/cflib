@@ -25,7 +25,7 @@ QByteArray WSCommManagerBase::getRemoteIP(uint connId)
 {
 	SyncedThreadCall<QByteArray> stc(this);
 	if (!stc.verify(&WSCommManagerBase::getRemoteIP, connId)) return stc.retval();
-	return getRemoteIP(connId);
+	return WebSocketService::getRemoteIP(connId);
 }
 
 WSCommManagerBase::WSCommManagerBase(const QString & path, const QRegularExpression & allowedOrigin,

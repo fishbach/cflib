@@ -72,6 +72,12 @@ define([
 		return rv;
 	};
 
+	util.validInputChars = function(str, keepNewlines) {
+		str = util.simplifyStr(str, keepNewlines);
+		if (/[{}\[\]<>;"\\]/.test(str)) return null;
+		return str;
+	};
+
 	// returns only plain words with clean spaces
 	util.textifyStr = function(str) {
 		return util.simplifyStr(str).replace(/[^\w@\._\- ]+/g, '');
@@ -84,6 +90,12 @@ define([
 
 	util.isValidEmail = function(str) {
 		return (/^[\w.\-_]+@\w[\w.\-]+\.\w+$/.test(str));
+	};
+
+	util.validEmail = function(str) {
+		str = util.validInputChars(str);
+		if (!util.isValidEmail(str)) return null;
+		return str;
 	};
 
 	util.dateFromUTC = function(date) {

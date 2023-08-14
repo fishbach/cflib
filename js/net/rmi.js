@@ -159,6 +159,22 @@ define([
 	rmi.register     = function(tagNo, func) { msgHandlers [tagNo] = func; };
 	rmi.registerRSig = function(func) { rsigHandlers[++rsigId] = func; return rsigId; };
 
+	// ========================================================================
+
+	rmi.store = function(name, obj, permanent) {
+		if (!obj) storage.remove(name);
+		else      storage.set(name, util.toBase64(ber.S().o(obj).data()), permanent);
+	};
+
+	rmi.restore = function(name, Type) {
+		try {
+			var data = storage.get(name);
+			if (!data) return null;
+			return new Type(ber.D(util.fromBase64(data)).a());
+		} catch (e) {}
+		return null;
+	};
+
 	rmi.resetStorage = function(keepItems) {
 		if (!keepItems) keepItems = [];
 		else if (!Array.isArray(keepItems)) keepItems = [keepItems];
