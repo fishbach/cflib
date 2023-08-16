@@ -64,8 +64,7 @@ require([
 	function animStep()
 	{
 		var now = new Date().getTime();
-		var remain = [];
-		$.each(animEls, function(el) {
+		$.each(animEls, function(el, i) {
 			var anim = el.anim;
 			while (true) {
 				var td = now - anim.start;
@@ -83,9 +82,9 @@ require([
 
 					setAnimProps(el, anim.prop);
 					delete el.anim;
+					animEls.splice(i, 1);
 					if (anim.finish) anim.finish.call(el);
 				} else {
-					remain.push(el);
 					var nProp = {};
 					var sProp = anim.startProp;
 					var eProp = anim.prop;
@@ -101,7 +100,6 @@ require([
 			}
 		});
 
-		animEls = remain;
 		if (animEls.length === 0) {
 			clearInterval(animTimer);
 			animTimer = null;
