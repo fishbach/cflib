@@ -4,6 +4,6 @@
 #
 # Licensed under the MIT License.
 
-find_package(Qt5 COMPONENTS WebSockets Widgets)
+cf_find_qt(WebSockets Widgets)
 
 cf_app(webchatclient cflib_net Qt5::WebSockets Qt5::Widgets ENABLE_MOC ENABLE_UIC)

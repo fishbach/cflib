@@ -4,6 +4,11 @@
 #
 # Licensed under the MIT License.
 
+# find more Qt components
+function(cf_find_qt)
+	find_package(Qt5 ${Qt5_VERSION} COMPONENTS ${ARGN} REQUIRED)
+endfunction()
+
 # library
 function(cf_lib lib)
 	cmake_parse_arguments(ARG "ENABLE_MOC;ENABLE_SER;ENABLE_UIC" "" "PUBLIC;PRIVATE;DIRS;OTHER_FILES" ${ARGN})
