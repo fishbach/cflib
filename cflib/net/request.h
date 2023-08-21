@@ -28,6 +28,7 @@ public:
 		POST,
 		HEAD
 	};
+	struct LoginPass { QString login; QString password; };
 
 public:
 	Request();
@@ -57,6 +58,7 @@ public:
 	QByteArray getUri() const;
 	QByteArray getBody() const;
 	QByteArray getRemoteIP() const;
+	LoginPass getBasicAuth() const;
 
 	void sendNotFound() const;
 	void sendRedirect(const QByteArray & url) const;
@@ -74,6 +76,8 @@ public:
 
 	TCPConnData * detach() const;
 	TCPManager * tcpManager() const;
+
+	static LoginPass getBasicAuth(const QByteArray & authorization);
 
 private:
 	void callNextHandler() const;

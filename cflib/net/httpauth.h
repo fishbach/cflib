@@ -18,16 +18,15 @@ class HttpAuth : public RequestHandler
 public:
 	HttpAuth(const QByteArray & name);
 
-	void addUser(const QByteArray & name, const QByteArray & passwordHash);
+	void addUser(const QString & name, const QByteArray & passwordHash);
 	void reset();
 
 protected:
 	virtual void handleRequest(const Request & request);
 
 private:
-	const QRegularExpression authRe_;
 	const QByteArray name_;
-	QMap<QByteArray, QByteArray> users_;
+	QMap<QString, QByteArray> users_;
 	QSet<QByteArray> checkedUsers_;
 };
 

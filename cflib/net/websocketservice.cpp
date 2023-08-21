@@ -8,7 +8,6 @@
 #include "websocketservice.h"
 
 #include <cflib/crypt/util.h>
-#include <cflib/net/request.h>
 #include <cflib/net/tcpconn.h>
 #include <cflib/util/evtimer.h>
 #include <cflib/util/log.h>
@@ -26,10 +25,11 @@ class WebSocketService::WSConnHandler : public util::ThreadVerify, public TCPCon
 {
 public:
 	WSConnHandler(WebSocketService * service, TCPConnData * connData, uint connId, uint connectionTimeoutSec,
-		bool deflate)
+		bool deflate, const Request::KeyVal & savedHeaders)
 	:
 		ThreadVerify(service),
 		TCPConn(connData, 0x10000, connectionTimeoutSec > 0),
+		savedHeaders(savedHeaders),
 		service_(*service),
 		connId_(connId),
 		connectionSendInterval_(connectionTimeoutSec / 2),
@@ -245,6 +245,9 @@ private:
 		return stopRead ? 0 : 1;
 	}
 
+public:
+	const Request::KeyVal savedHeaders;
+
 private:
 	WebSocketService & service_;
 	const uint connId_;
@@ -281,6 +284,11 @@ WebSocketService::~WebSocketService()
 	delete timer_;
 }
 
+void WebSocketService::saveHeaderField(const QByteArray & field)
+{
+	saveHeaderFields_ << field;
+}
+
 void WebSocketService::send(uint connId, const QByteArray & data, bool isBinary)
 {
 	WSConnHandler * wsHdl = connections_.value(connId);
@@ -293,10 +301,17 @@ void WebSocketService::close(uint connId, TCPConn::CloseType type)
 	if (wsHdl) wsHdl->close(type, true);
 }
 
-QByteArray WebSocketService::getRemoteIP(uint connId)
+QByteArray WebSocketService::getRemoteIP(uint connId) const
 {
 	WSConnHandler * wsHdl = connections_.value(connId);
 	if (wsHdl) return wsHdl->peerIP();
+	return QByteArray();
+}
+
+QByteArray WebSocketService::getHeader(uint connId, const QByteArray & header) const
+{
+	WSConnHandler * wsHdl = connections_.value(connId);
+	if (wsHdl) return wsHdl->savedHeaders.value(header);
 	return QByteArray();
 }
 
@@ -334,6 +349,11 @@ void WebSocketService::handleRequest(const Request & request)
 		return;
 	}
 
+	Request::KeyVal savedHeaders;
+	for (const QByteArray & header : saveHeaderFields_) {
+		if (headers.contains(header)) savedHeaders[header] = headers[header];
+	}
+
 	// detach from socket
 	TCPConnData * connData = request.detach();
 	if (!connData) {
@@ -341,17 +361,18 @@ void WebSocketService::handleRequest(const Request & request)
 		return;
 	}
 
-	addConnection(connData, wsKey, deflate);
+	addConnection(connData, wsKey, deflate, savedHeaders);
 }
 
-void WebSocketService::addConnection(TCPConnData * connData, const QByteArray & wsKey, bool deflate)
+void WebSocketService::addConnection(TCPConnData * connData, const QByteArray & wsKey, bool deflate,
+	const Request::KeyVal & savedHeaders)
 {
-	if (!verifyThreadCall(&WebSocketService::addConnection, connData, wsKey, deflate)) return;
+	if (!verifyThreadCall(&WebSocketService::addConnection, connData, wsKey, deflate, savedHeaders)) return;
 
 	logFunctionTrace
 
 	const uint connId = ++lastConnId_;
-	WSConnHandler * wsHdl = new WSConnHandler(this, connData, connId, connectionTimeoutSec_, deflate);
+	WSConnHandler * wsHdl = new WSConnHandler(this, connData, connId, connectionTimeoutSec_, deflate, savedHeaders);
 	connections_[connId] = wsHdl;
 
 	// write WS header

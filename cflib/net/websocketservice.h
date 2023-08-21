@@ -7,6 +7,7 @@
 
 #pragma once
 
+#include <cflib/net/request.h>
 #include <cflib/net/requesthandler.h>
 #include <cflib/net/tcpconn.h>
 #include <cflib/util/threadverify.h>
@@ -23,10 +24,14 @@ public:
 	~WebSocketService();
 
 protected:
+	void saveHeaderField(const QByteArray & field);
+
 	void send(uint connId, const QByteArray & data, bool isBinary);
 	void close(uint connId, TCPConn::CloseType type = TCPConn::ReadWriteClosed);
-	QByteArray getRemoteIP(uint connId);
 	void continueRead(uint connId);
+
+	QByteArray getRemoteIP(uint connId) const;
+	QByteArray getHeader(uint connId, const QByteArray & header) const;
 
 	virtual void newConnection(uint connId);
 	virtual void newMsg(uint connId, const QByteArray & data, bool isBinary, bool & stopRead) = 0;
@@ -35,7 +40,8 @@ protected:
 	virtual void handleRequest(const Request & request);
 
 private:
-	void addConnection(TCPConnData * connData, const QByteArray & wsKey, bool deflate);
+	void addConnection(TCPConnData * connData, const QByteArray & wsKey, bool deflate,
+		const Request::KeyVal & savedHeaders);
 	void startTimer();
 	void checkTimeout();
 
@@ -43,6 +49,7 @@ private:
 	const QString path_;
 	const QRegularExpression allowedOrigin_;
 	const uint connectionTimeoutSec_;
+	QSet<QByteArray> saveHeaderFields_;
 	class WSConnHandler;
 	QHash<uint, WSConnHandler *> connections_;
 	uint lastConnId_;

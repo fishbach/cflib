@@ -70,9 +70,13 @@ public:
 class WSCommManagerBase : public WebSocketService
 {
 public:
+	void saveHeaderField(const QByteArray & field);
+
 	void send(uint connId, const QByteArray & data, bool isBinary);
 	void close(uint connId, TCPConn::CloseType type = TCPConn::ReadWriteClosed);
-	QByteArray getRemoteIP(uint connId);
+
+	QByteArray getRemoteIP(uint connId) const;
+	QByteArray getHeader(uint connId, const QByteArray & header) const;
 
 protected:
 	WSCommManagerBase(const QString & path, const QRegularExpression & allowedOrigin, uint connectionTimeoutSec);

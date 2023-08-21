@@ -248,6 +248,11 @@ QByteArray Request::getRemoteIP() const
 	return d->remoteIP;
 }
 
+Request::LoginPass Request::getBasicAuth() const
+{
+	return getBasicAuth(d->headerFields.value("authorization"));
+}
+
 void Request::sendNotFound() const
 {
 	d->sendNotFound();
@@ -337,6 +342,17 @@ TCPManager * Request::tcpManager() const
 {
 	if (!d->parser) return 0;
 	return &d->parser->manager();
+}
+
+Request::LoginPass Request::getBasicAuth(const QByteArray & authorization)
+{
+	static const QRegularExpression authRe("^Basic\\s+([A-Za-z0-9+/]+=*)$");
+
+	const QRegularExpressionMatch match = authRe.match(authorization);
+	if (!match.hasMatch()) return LoginPass();
+	const QList<QByteArray> userPass = QByteArray::fromBase64(match.captured(1).toUtf8()).split(':');
+	if (userPass.size() != 2) return LoginPass();
+	return { userPass[0], userPass[1] };
 }
 
 void Request::callNextHandler() const

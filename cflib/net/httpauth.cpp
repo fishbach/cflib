@@ -17,12 +17,11 @@ USE_LOG(LogCat::Http)
 namespace cflib { namespace net {
 
 HttpAuth::HttpAuth(const QByteArray & name) :
-	authRe_("^Basic\\s+([A-Za-z0-9+/]+=*)$"),
 	name_(name)
 {
 }
 
-void HttpAuth::addUser(const QByteArray & name, const QByteArray & passwordHash)
+void HttpAuth::addUser(const QString & name, const QByteArray & passwordHash)
 {
 	users_[name] = passwordHash;
 }
@@ -37,15 +36,12 @@ void HttpAuth::handleRequest(const Request & request)
 {
 	const QByteArray auth = request.getHeader("authorization");
 	if (checkedUsers_.contains(auth)) return;
-	const QRegularExpressionMatch match = authRe_.match(auth);
-	if (match.hasMatch()) {
-		QList<QByteArray> userPass = QByteArray::fromBase64(match.captured(1).toUtf8()).split(':');
-		if (userPass.size() == 2) {
-			const QByteArray hash = users_.value(userPass[0]);
-			if (!hash.isEmpty() && crypt::checkPassword(userPass[1], hash)) {
-				checkedUsers_ << auth;
-				return;
-			}
+	const Request::LoginPass loginPass = Request::getBasicAuth(auth);
+	if (!loginPass.login.isEmpty()) {
+		const QByteArray hash = users_.value(loginPass.login);
+		if (!hash.isEmpty() && crypt::checkPassword(loginPass.password.toUtf8(), hash)) {
+			checkedUsers_ << auth;
+			return;
 		}
 	}
 
