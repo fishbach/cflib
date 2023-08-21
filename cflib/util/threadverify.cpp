@@ -105,6 +105,11 @@ void ThreadVerify::setThreadPrio(QThread::Priority prio)
 	verifyThread_->setPriority(prio);
 }
 
+void ThreadVerify::execLater(const std::function<void ()> & func) const
+{
+	execLater(new StdFunctor(func));
+}
+
 void ThreadVerify::shutdownThread()
 {
 	if (!verifyThreadCall(&ThreadVerify::shutdownThread)) return;

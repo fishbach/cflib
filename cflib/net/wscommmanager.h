@@ -35,7 +35,7 @@ template<typename C>
 class WSCommConnDataChecker : public virtual WSCommConnMgrAccess<C>
 {
 public:
-	virtual void checkConnData(const C & connData, uint connDataId) = 0;
+	virtual void checkConnData(const C & connData, uint connDataId, uint connId) = 0;
 };
 
 template<typename C>
@@ -291,7 +291,9 @@ void WSCommManager<C>::newMsg(uint connId, const QByteArray & data, bool isBinar
 							info.connDataVerified = true;
 						} else {
 							stopRead = true;
-							connDataChecker_->checkConnData(info.connData, dId);
+							execLater([connDataChecker = connDataChecker_, connData = info.connData, dId, connId]() {
+								connDataChecker->checkConnData(connData, dId, connId);
+							});
 							return;
 						}
 					}

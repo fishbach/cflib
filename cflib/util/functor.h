@@ -35,6 +35,19 @@ private:
 
 // ============================================================================
 
+class StdFunctor : public Functor
+{
+public:
+	StdFunctor(const std::function<void()> & func) : func_(func) {}
+
+	void operator()() const override { func_(); }
+
+private:
+	const std::function<void()> func_;
+};
+
+// ============================================================================
+
 template<typename C>
 class Functor0 : public Functor
 {

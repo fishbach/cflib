@@ -34,6 +34,7 @@ public:
 	void setThreadPrio(QThread::Priority prio);
 
 protected:
+	void execLater(const std::function<void()> & func) const;
 	void execLater(const Functor * func) const;
 	virtual void deleteThreadData() {}
 
