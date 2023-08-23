@@ -121,17 +121,16 @@ protected:
 private:
 	class ConnInfo {
 	public:
-		ConnInfo() : waitingForCheck(true), connDataVerified(true) {}
+		ConnInfo() : connData(), connDataVerified(true) {}
 		C connData;
 		ConnIds connIds;
 		QDateTime lastClosed;
-		bool waitingForCheck;
 		bool connDataVerified;
 	};
 
 private:
 	void init();
-	uint sendNewClientId(uint connId);
+	uint sendNewClientId(uint connId, bool & stopRead);
 	void checkTimeout();
 	bool connDataOk(ConnInfo & info, uint connDataId);
 
@@ -142,7 +141,7 @@ private:
 	QHash<quint64, MsgHandler *> msgHandler_;
 
 	QHash<uint, uint> connId2dataId_;
-	QHash<uint, ConnInfo> connData_;
+	QHash<uint, ConnInfo> connInfos_;
 	QMap<QByteArray, uint> clientIds_;
 
 	util::EVTimer timer_;
@@ -194,8 +193,8 @@ void WSCommManager<C>::updateConnData(uint connDataId, const C & connData)
 {
 	if (!verifyThreadCall(&WSCommManager<C>::updateConnData, connDataId, connData)) return;
 
-	if (!connData_.contains(connDataId)) return;
-	ConnInfo & info = connData_[connDataId];
+	if (!connInfos_.contains(connDataId)) return;
+	ConnInfo & info = connInfos_[connDataId];
 	C oldConnData = info.connData;
 	info.connData = connData;
 	if (connDataOk(info, connDataId)) {
@@ -210,7 +209,7 @@ void WSCommManager<C>::connDataOk(uint connDataId)
 {
 	if (!verifyThreadCall(&WSCommManager<C>::connDataOk, connDataId)) return;
 
-	connDataOk(connData_[connDataId], connDataId);
+	connDataOk(connInfos_[connDataId], connDataId);
 }
 
 template<typename C>
@@ -219,7 +218,7 @@ void WSCommManager<C>::getConnData(const QByteArray & clientId, C & connData, ui
 	if (!verifySyncedThreadCall(&WSCommManager<C>::getConnData, clientId, connData, connDataId)) return;
 
 	connDataId = clientIds_.value(clientId);
-	connData = connDataId == 0 ? C() : connData_.value(connDataId).connData;
+	connData = connDataId == 0 ? C() : connInfos_.value(connDataId).connData;
 }
 
 template<typename C>
@@ -252,7 +251,7 @@ void WSCommManager<C>::newMsg(uint connId, const QByteArray & data, bool isBinar
 
 		QListIterator<TextMsgHandler *> it(textMsgHandler_);
 		while (it.hasNext()) {
-			if (it.next()->handleTextMsg(data, connData_[dataId].connData, connId)) return;
+			if (it.next()->handleTextMsg(data, connInfos_[dataId].connData, connId)) return;
 		}
 		close(connId, TCPConn::HardClosed);
 		logInfo("unhandled text message from %1", connId);
@@ -276,15 +275,15 @@ void WSCommManager<C>::newMsg(uint connId, const QByteArray & data, bool isBinar
 		if (tag == 1) {
 			uint dId;
 			if (valueLen != 20) {
-				dId = sendNewClientId(connId);
+				dId = sendNewClientId(connId, stopRead);
 			} else {
 				const QByteArray clId = serialize::fromByteArray<QByteArray>(data, tagLen, lengthSize, valueLen);
 				dId = clientIds_.value(clId);
 				if (dId == 0) {
-					dId = sendNewClientId(connId);
+					dId = sendNewClientId(connId, stopRead);
 				} else {
 					connId2dataId_[connId] = dId;
-					ConnInfo & info = connData_[dId];
+					ConnInfo & info = connInfos_[dId];
 					info.connIds << connId;
 					if (!info.connDataVerified) {
 						if (!connDataChecker_) {
@@ -294,15 +293,15 @@ void WSCommManager<C>::newMsg(uint connId, const QByteArray & data, bool isBinar
 							execLater([connDataChecker = connDataChecker_, connData = info.connData, dId, connId]() {
 								connDataChecker->checkConnData(connData, dId, connId);
 							});
-							return;
 						}
 					}
 				}
 			}
+			if (stopRead) return;
 
 			// inform state listener
 			QListIterator<StateListener *> it(stateListener_);
-			while (it.hasNext()) it.next()->newConnection(connData_[dId].connData, dId, connId);
+			while (it.hasNext()) it.next()->newConnection(connInfos_[dId].connData, dId, connId);
 		} else {
 			close(connId, TCPConn::HardClosed);
 			logInfo("request without clientId from %1", connId);
@@ -319,7 +318,7 @@ void WSCommManager<C>::newMsg(uint connId, const QByteArray & data, bool isBinar
 	// handler
 	MsgHandler * hdl = msgHandler_.value(tag);
 	if (hdl) {
-		hdl->handleMsg(tag, data, tagLen, lengthSize, valueLen, connData_[dataId].connData, dataId, connId);
+		hdl->handleMsg(tag, data, tagLen, lengthSize, valueLen, connInfos_[dataId].connData, dataId, connId);
 		return;
 	}
 
@@ -337,7 +336,7 @@ void WSCommManager<C>::closed(uint connId, TCPConn::CloseType)
 	if (dataId == 0) return;
 
 	connId2dataId_.remove(connId);
-	ConnInfo & info = connData_[dataId];
+	ConnInfo & info = connInfos_[dataId];
 	info.connIds.remove(connId);
 	const bool isLast = info.connIds.isEmpty();
 	if (isLast) {
@@ -358,7 +357,7 @@ void WSCommManager<C>::init()
 }
 
 template<typename C>
-uint WSCommManager<C>::sendNewClientId(uint connId)
+uint WSCommManager<C>::sendNewClientId(uint connId, bool & stopRead)
 {
 	// create clientId
 	const QByteArray clId = crypt::random(20);
@@ -367,11 +366,19 @@ uint WSCommManager<C>::sendNewClientId(uint connId)
 	uint dataId;
 	do {
 		dataId = crypt::randomUInt32();
-	} while (dataId == 0 || connData_.contains(dataId));
+	} while (dataId == 0 || connInfos_.contains(dataId));
+	ConnInfo & info = connInfos_[dataId];
 
 	connId2dataId_[connId] = dataId;
-	connData_[dataId].connIds << connId;
+	info.connIds << connId;
 	clientIds_[clId] = dataId;
+	if (connDataChecker_) {
+		info.connDataVerified = false;
+		stopRead = true;
+		execLater([connDataChecker = connDataChecker_, connData = info.connData, dataId, connId]() {
+			connDataChecker->checkConnData(connData, dataId, connId);
+		});
+	}
 	send(connId, serialize::toByteArray(clId, 1), true);
 	return dataId;
 }
@@ -384,7 +391,7 @@ void WSCommManager<C>::checkTimeout()
 	QSet<uint> removedIds;
 	{
 		const QDateTime now = QDateTime::currentDateTimeUtc();
-		QMutableHashIterator<uint, ConnInfo> it(connData_);
+		QMutableHashIterator<uint, ConnInfo> it(connInfos_);
 		while (it.hasNext()) {
 			ConnInfo & info = it.next().value();
 			if (info.connIds.isEmpty() && info.lastClosed.secsTo(now) > sessionTimeoutSec_) {
