@@ -73,9 +73,6 @@ void RequestParser::detachRequest()
 	if (!verifyThreadCall(&RequestParser::detachRequest)) return;
 
 	if (--attachedRequests_ == 0) util::deleteNext(this);
-	else if (!detached_ && attachedRequests_ == 1) {
-		close(ReadWriteClosed);
-	}
 }
 
 void RequestParser::setPassThroughHandler(PassThroughHandler * hdl)
