@@ -441,23 +441,24 @@ void RMIServerBase::handleRequest(const Request & request)
 		if (p != -1) path = path.left(p);
 	}
 	if (path.startsWith("/api/")) {
+		request.addHeaderLine("Cache-Control: max-age=31536000");
 		path.remove(0, 5);
 		if (path.startsWith("services")) showServices(request, path.mid(8));
 		else if (path.startsWith("classes"))  showClasses(request, path.mid(7));
 		else request.sendNotFound();
-	} else {
-		if (path.startsWith("/js/")) {
-			QString js = generateJSOrTS(path.mid(4));
-			if (!js.isNull()) request.sendText(js, "application/javascript");
-		} else if (path == "/api") {
-			QString info = HTMLDocHeader;
-			info <<
-				"<ul>\n"
-				"<li><a href=\"api/services\">services</a> - API Services Description</li>\n"
-				"<li><a href=\"api/classes\">classes</a> - API Classes Description</li>\n"
-				"</ul>\n";
-			request.sendText(info << footer);
-		}
+	} else if (path.startsWith("/js/")) {
+		request.addHeaderLine("Cache-Control: max-age=31536000");
+		QString js = generateJSOrTS(path.mid(4));
+		if (!js.isNull()) request.sendText(js, "application/javascript");
+	} else if (path == "/api") {
+		request.addHeaderLine("Cache-Control: max-age=31536000");
+		QString info = HTMLDocHeader;
+		info <<
+			"<ul>\n"
+			"<li><a href=\"api/services\">services</a> - API Services Description</li>\n"
+			"<li><a href=\"api/classes\">classes</a> - API Classes Description</li>\n"
+			"</ul>\n";
+		request.sendText(info << footer);
 	}
 }
 

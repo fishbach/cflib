@@ -36,25 +36,25 @@ void HttpAuth::handleRequest(const Request & request)
 {
 	if (!htpasswd_.isEmpty()) {
 		QFileInfo fi(htpasswd_);
-		if (!fi.exists()) {
-			logWarn("HTTP Basic Auth file %1 missing", htpasswd_);
+		if (!fi.isReadable()) {
 			htpasswdLastMod_ = QDateTime();
+			users_.clear();
+			checkedUsers_.clear();
+			logWarn("Cannot read HTTP Basic Auth file %1", htpasswd_);
 		} else if (fi.lastModified() != htpasswdLastMod_) {
+			htpasswdLastMod_ = fi.lastModified();
+			users_.clear();
+			checkedUsers_.clear();
+
 			QFile f(htpasswd_);
-			if (!f.open(QFile::ReadOnly)) {
-				htpasswdLastMod_ = QDateTime();
-				logWarn("cannot open Basic Auth file %1", htpasswd_);
-			} else {
-				htpasswdLastMod_ = fi.lastModified();
-				users_.clear();
-				checkedUsers_.clear();
-				while (!f.atEnd()) {
-					QStringList parts = QString::fromUtf8(f.readLine()).split(':');
-					if (parts.size() == 2) {
-						users_[parts[0].trimmed()] = parts[1].trimmed().toUtf8();
-					}
+			f.open(QFile::ReadOnly);
+			while (!f.atEnd()) {
+				QStringList parts = QString::fromUtf8(f.readLine()).split(':');
+				if (parts.size() == 2) {
+					users_[parts[0].trimmed()] = parts[1].trimmed().toUtf8();
 				}
 			}
+			logInfo("loaded HTTP Basic Auth file %1 with %2 entries", htpasswd_, users_.size());
 		}
 	}
 
