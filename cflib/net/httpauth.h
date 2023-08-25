@@ -16,7 +16,7 @@ namespace cflib { namespace net {
 class HttpAuth : public RequestHandler
 {
 public:
-	HttpAuth(const QByteArray & name);
+	HttpAuth(const QByteArray & name, const QString & htpasswd = QString());
 
 	void addUser(const QString & name, const QByteArray & passwordHash);
 	void reset();
@@ -26,6 +26,8 @@ protected:
 
 private:
 	const QByteArray name_;
+	const QString htpasswd_;
+	QDateTime htpasswdLastMod_;
 	QMap<QString, QByteArray> users_;
 	QSet<QByteArray> checkedUsers_;
 };

@@ -16,8 +16,8 @@ USE_LOG(LogCat::Http)
 
 namespace cflib { namespace net {
 
-HttpAuth::HttpAuth(const QByteArray & name) :
-	name_(name)
+HttpAuth::HttpAuth(const QByteArray & name, const QString & htpasswd) :
+	name_(name), htpasswd_(htpasswd)
 {
 }
 
@@ -34,8 +34,33 @@ void HttpAuth::reset()
 
 void HttpAuth::handleRequest(const Request & request)
 {
+	if (!htpasswd_.isEmpty()) {
+		QFileInfo fi(htpasswd_);
+		if (!fi.exists()) {
+			logWarn("HTTP Basic Auth file %1 missing", htpasswd_);
+			htpasswdLastMod_ = QDateTime();
+		} else if (fi.lastModified() != htpasswdLastMod_) {
+			QFile f(htpasswd_);
+			if (!f.open(QFile::ReadOnly)) {
+				htpasswdLastMod_ = QDateTime();
+				logWarn("cannot open Basic Auth file %1", htpasswd_);
+			} else {
+				htpasswdLastMod_ = fi.lastModified();
+				users_.clear();
+				checkedUsers_.clear();
+				while (!f.atEnd()) {
+					QStringList parts = QString::fromUtf8(f.readLine()).split(':');
+					if (parts.size() == 2) {
+						users_[parts[0].trimmed()] = parts[1].trimmed().toUtf8();
+					}
+				}
+			}
+		}
+	}
+
 	const QByteArray auth = request.getHeader("authorization");
 	if (checkedUsers_.contains(auth)) return;
+
 	const Request::LoginPass loginPass = Request::getBasicAuth(auth);
 	if (!loginPass.login.isEmpty()) {
 		const QByteArray hash = users_.value(loginPass.login);
