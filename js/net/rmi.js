@@ -141,9 +141,12 @@ define([
 
 	rmi.id = getId;
 
-	rmi.sendAsync = function(data) {
-		if (ws.readyState != 1) waitingAsync.push(data);
-		else                    ws.send(data);
+	rmi.sendAsync = function(data, doNotBuffer) {
+		if (ws.readyState != 1) {
+			if (!doNotBuffer) waitingAsync.push(data);
+		} else {
+			ws.send(data);
+		}
 	};
 
 	rmi.sendRequest = function(data, callback) {
@@ -156,7 +159,7 @@ define([
 		}
 	};
 
-	rmi.register     = function(tagNo, func) { msgHandlers [tagNo] = func; };
+	rmi.register     = function(tagNo, func) { msgHandlers[tagNo] = func; };
 	rmi.registerRSig = function(func) { rsigHandlers[++rsigId] = func; return rsigId; };
 
 	// ========================================================================
