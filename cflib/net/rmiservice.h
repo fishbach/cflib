@@ -34,7 +34,8 @@ template<typename C> class RMIService;
 class RMIServiceBase : public util::ThreadVerify
 {
 public:
-	template<typename F, typename R> class rsig : public cflib::net::RSig<F, R> {};
+	template<typename F, typename R>
+	using rsig = cflib::net::RSig<F, R>;
 
 public:
 	virtual cflib::serialize::SerializeTypeInfo getServiceInfo() const = 0;
