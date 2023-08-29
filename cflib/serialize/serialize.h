@@ -31,7 +31,7 @@
 
 #define SERIALIZE_IS_BASE(Class) \
 	public: \
-		virtual ~Class() {} \
+		virtual ~Class() = default; \
 		virtual cflib::serialize::SerializeTypeInfo getSerializeTypeInfo() const { return serializeTypeInfo(); } \
 		static inline QSharedPointer<Class> createByClassId(quint32 classId) { \
 			return cflib::serialize::impl::RegisterClassBase::create<Class>(classId); } \

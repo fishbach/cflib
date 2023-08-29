@@ -133,4 +133,15 @@ private slots:
 
 void threadSafeExit(int returnCode);
 
+template <typename T>
+class qAsConstKeyValue
+{
+public:
+	qAsConstKeyValue(const T & container_) : container_(container_) {}
+	auto begin() { return container_.constKeyValueBegin(); }
+	auto end() { return container_.constKeyValueEnd(); }
+private:
+	const T & container_;
+};
+
 }}	// namespace
