@@ -53,6 +53,7 @@ function checkWaitingCalls()
 function getModuleName(node)
 {
 	var path = node.getAttribute('src');
+	if (path.startsWith('http')) return path;
 	return path.substr(basePath.length, path.length - basePath.length - 3 - query.length);
 }
 
@@ -127,7 +128,8 @@ function checkDepends(name, depends, func)
 				var node = document.createElement('script');
 				node.addEventListener('load', loadEvent);
 				node.async = true;
-				node.src = basePath + mod + '.js' + query;
+				if (mod.startsWith('http')) node.src = mod;
+				else                        node.src = basePath + mod + '.js' + query;
 				head.appendChild(node);
 			}
 		} else if (!needLoad) {
