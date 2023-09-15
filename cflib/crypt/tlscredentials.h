@@ -22,7 +22,7 @@ struct TLSCertInfo
 	bool isTrusted;
 
 	QString toString() const;
-	bool isNull() const { return subjectName.isNull(); }
+	bool isNull() const { return subjectName.isNull() && issuerName.isNull(); }
 	TLSCertInfo() : isCA(false), isTrusted(false) {}
 };
 
