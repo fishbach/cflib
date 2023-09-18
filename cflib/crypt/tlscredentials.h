@@ -56,6 +56,9 @@ public:
 	bool loadFromDir(const QString & path);
 	bool activateLoaded(bool isTrustedCA = false);
 
+	// write all certificates to a single .pem file
+	QByteArray getAllCertsPEM() const;
+
 private:
 	TLSCertInfo getInfo(const Botan::X509_Certificate & crt) const;
 

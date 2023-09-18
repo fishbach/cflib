@@ -22,6 +22,8 @@ private slots:
 	{
 		TLSCredentials creds;
 
+		QVERIFY(creds.getAllCertsPEM().size() == 0);
+
 		QCOMPARE((int)creds.addCerts(QByteArray()), 0);
 		QCOMPARE((int)creds.addCerts(cert3 + cert1), 2);
 		QCOMPARE((int)creds.addCerts(cert1), 0);
@@ -44,6 +46,8 @@ private slots:
 		QCOMPARE(infos[2].issuerName .constData(), "rootca");
 		QVERIFY( infos[2].isCA);
 		QVERIFY(!infos[2].isTrusted);
+
+		QVERIFY(creds.getAllCertsPEM().size() > 0);
 	}
 
 	void test_addCerts_trusted()

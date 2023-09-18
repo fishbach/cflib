@@ -276,6 +276,21 @@ QList<TLSCertInfo> TLSCredentials::getAllCertInfos() const
 	return rv;
 }
 
+QByteArray TLSCredentials::getAllCertsPEM() const
+{
+	TRY {
+		QByteArray rv = "";	// not null
+		for (const X509_Certificate & cert : impl_->allCerts) {
+			DER_Encoder enc;
+			cert.encode_into(enc);
+			rv += QByteArray::fromStdString(PEM_Code::encode(enc.get_contents(), "CERTIFICATE"));
+			rv += '\n';
+		}
+		return rv;
+	} CATCH
+	return QByteArray();
+}
+
 Botan::Credentials_Manager & TLSCredentials::credentials_Manager()
 {
 	return *impl_;
