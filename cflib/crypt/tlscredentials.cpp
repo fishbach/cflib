@@ -214,7 +214,7 @@ bool TLSCredentials::activateLoaded(bool isTrustedCA)
 	impl_->loadedCerts.clear();
 	foreach (const QByteArray & data, impl_->loadedKeys) {
 		if (!addPrivateKey(data)) {
-			logWarn("could not handle key: %1", data);
+			logWarn("could not handle key: %1", data.left(40));
 			ok = false;
 		}
 	}
