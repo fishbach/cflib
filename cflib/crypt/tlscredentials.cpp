@@ -125,8 +125,8 @@ bool TLSCredentials::addPrivateKey(const QByteArray & privateKey, const QByteArr
 		std::unique_ptr<Private_Key> pk(PKCS8::load_key(ds, password.toStdString()));
 
 		// destroy data in parameters
-		for (int i = 0 ; i < privateKey.size() ; ++i) *((char *)privateKey.constData()) = 0;
-		for (int i = 0 ; i < password.size()   ; ++i) *((char *)password  .constData()) = 0;
+		for (int i = 0 ; i < privateKey.size() ; ++i) ((char *)privateKey.constData())[i] = 0;
+		for (int i = 0 ; i < password.size()   ; ++i) ((char *)password  .constData())[i] = 0;
 
 		if (!pk) return false;
 
