@@ -118,7 +118,7 @@ define([
 	rmi.ev = {
 		loading:          new EV(rmi, 'loading'),			// bool isLoading
 		identityReset:    new EV(rmi, 'identityReset'),
-		newMessage:       new EV(rmi, 'newMessage')		// (string / arraybuffer) data
+		newMessage:       new EV(rmi, 'newMessage'),		// (string / arraybuffer) data
 		connectionClosed: new EV(rmi, 'connectionClosed'),
 		connectionOpened: new EV(rmi, 'connectionOpened')
 	};
