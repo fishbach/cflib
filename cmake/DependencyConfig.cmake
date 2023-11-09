@@ -6,7 +6,7 @@
 
 # Botan
 find_package(
-	Botan 3.1.1
+	Botan 3.2.0
 	REQUIRED
 )
 
