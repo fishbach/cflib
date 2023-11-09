@@ -200,22 +200,6 @@ QString getTSTypename(const SerializeTypeInfo & ti)
 	return ts;
 }
 
-QString getJSFunctionName(const QRegularExpression & containerRE, const SerializeFunctionTypeInfo & func)
-{
-	QString js = func.name;
-	js << '_';
-	foreach (const SerializeVariableTypeInfo & p, func.parameters) {
-		const QRegularExpressionMatch m = containerRE.match(p.type.typeName);
-		if (m.hasMatch()) {
-			js << m.captured(2) << m.captured(1);
-		} else {
-			js << p.type.typeName;
-		}
-	}
-	js.replace(',', "");
-	return js;
-}
-
 QString getJSParameters(const QList<SerializeVariableTypeInfo> & parameters, bool withType)
 {
 	QString js;
@@ -847,7 +831,7 @@ QString RMIServerBase::generateJSForService(const SerializeTypeInfo & ti) const
 				"\t__rmi.send" << (hasRV ? "Request" : "Async") << "(__ber.S().s('"
 				<< ti.typeName.toLower() << "').s('" << func.signature() << "').box(2)";
 		} else {
-			js << objName << '.' << getJSFunctionName(containerRE_, func) << " = function("
+			js << objName << '.' << func.name << " = function("
 				<< getJSParameters(func, false) << (hasRV ? ", callback, context" : "") << ") {\n"
 				"\t__rmi.send" << (hasRV ? "Request" : "Async") << "(__ber.S().s('"
 				<< ti.typeName.toLower() << "').s('" << func.signature() << "')" << getSerializeJSParameters(func) << ".box(2)";

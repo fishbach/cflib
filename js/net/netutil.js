@@ -22,7 +22,7 @@ define([
 			file = parts[1];
 			line = +parts[2];
 		} catch (e2) {} }
-		logService.log_Stringint32uint16String(file, line, category, str);
+		logService.log(file, line, category, str);
 	}
 
 	// ========================================================================
