@@ -56,6 +56,7 @@ define([
 		var id = getId();
 		if (id) ws.send(ber.makeTLV(1, false, id));
 		else    ws.send(ber.makeTLV(1));
+		rmi.ev.connectionOpened.fire();
 		$.each(waitingAsync, function(data) { ws.send(data); });
 		waitingAsync = [];
 		checkWaitingRequests();
@@ -66,6 +67,8 @@ define([
 		if (ws) {
 			ws = null;
 			setTimeout(rmi.start, 5000);
+
+			rmi.ev.connectionClosed.fire();
 		}
 	}
 
@@ -113,9 +116,11 @@ define([
 	var rmi = new RMI();
 
 	rmi.ev = {
-		loading:       new EV(rmi, 'loading'),			// bool isLoading
-		identityReset: new EV(rmi, 'identityReset'),
-		newMessage:    new EV(rmi, 'newMessage')		// (string / arraybuffer) data
+		loading:          new EV(rmi, 'loading'),			// bool isLoading
+		identityReset:    new EV(rmi, 'identityReset'),
+		newMessage:       new EV(rmi, 'newMessage')		// (string / arraybuffer) data
+		connectionClosed: new EV(rmi, 'connectionClosed'),
+		connectionOpened: new EV(rmi, 'connectionOpened')
 	};
 
 	rmi.start = function() {
