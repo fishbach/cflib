@@ -139,12 +139,16 @@ void Log::start(const QString & fileName)
 		return;
 	}
 
-	file.setFileName(fileName);
-	if (!file.open(QFile::WriteOnly | QFile::Append)) {
-		QTextStream(stderr) << "could not open log file: " << fileName  << " (" << file.errorString() << ")" << Qt::endl;
-		return;
+	if (fileName == "-") {
+		file.open(1, QFile::WriteOnly);
+	} else {
+		file.setFileName(fileName);
+		if (!file.open(QFile::WriteOnly | QFile::Append)) {
+			QTextStream(stderr) << "could not open log file: " << fileName  << " (" << file.errorString() << ")" << Qt::endl;
+			return;
+		}
+		file.setPermissions(QFile::ReadOwner | QFile::WriteOwner | QFile::ReadGroup);
 	}
-	file.setPermissions(QFile::ReadOwner | QFile::WriteOwner | QFile::ReadGroup);
 	active = true;
 
 	qInstallMessageHandler(&Log::qtMessageHandler);
