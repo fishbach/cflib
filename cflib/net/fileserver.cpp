@@ -266,7 +266,8 @@ void FileServer::handleRequest(const Request & request)
 		else if (ending == "jpg" ) { cache = true;  compression = false; contentType = "image/jpeg"; }
 		else if (ending == "jpeg") { cache = true;  compression = false; contentType = "image/jpeg"; }
 		else if (ending == "svg" ) { cache = true;  compression = true;  contentType = "image/svg+xml"; }
-		else if (ending == "js"  ) { cache = true;  compression = true;  contentType = "application/javascript; charset=utf-8"; }
+		else if (ending == "js"  ) { cache = true;  compression = true;  contentType = "text/javascript; charset=utf-8"; }
+		else if (ending == "mjs" ) { cache = true;  compression = true;  contentType = "text/javascript; charset=utf-8"; }
 		else if (ending == "css" ) { cache = true;  compression = true;  contentType = "text/css; charset=utf-8"; }
 		else if (ending == "data") { cache = true;  compression = true;  contentType = "application/octet-stream"; }
 		else if (ending == "pdf" ) { cache = false; compression = true;  contentType = "application/pdf"; }
