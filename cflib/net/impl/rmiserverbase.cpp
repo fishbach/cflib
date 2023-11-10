@@ -403,7 +403,7 @@ void RMIServerBase::exportTo(const QString & dest) const
 	QDir().mkpath(dest + "/js/services");
 	QSet<QString> files;
 	for (const QString & name : services_.keys()) {
-		for (const QString & suffix : QStringList{".js", ".ts"}) {
+		for (const QString & suffix : QStringList{".js"/*, ".ts"*/}) {
 			QString file = name + suffix;
 			files << file;
 			QString service = "services/" + file;
@@ -1111,7 +1111,7 @@ QSet<QString> RMIServerBase::exportClass(const ClassInfoEl & cl, const QString &
 {
 	QSet<QString> rv;
 	if (cl.infos.isEmpty()) {
-		for (const QString & suffix : QStringList{".js", "dao.ts"}) {
+		for (const QString & suffix : QStringList{".js"/*, "dao.ts"*/}) {
 			QString cl = path + suffix;
 			rv << cl;
 			QString js = generateJSOrTS(cl);
