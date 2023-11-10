@@ -96,12 +96,27 @@ void writeHTMLFile(const QString & file, QString content)
 
 // ============================================================================
 
-FileServer::FileServer(const QString & path, bool parseHtml, uint threadCount) :
+FileServer::FileServer(const QString & path, bool parseHtml, uint threadCount, bool enableIndex, bool noCache, bool removeSlash, bool useHostAsDir) :
+	FileServer(path, QString(), parseHtml, threadCount, enableIndex, noCache, removeSlash, useHostAsDir)
+{
+}
+
+FileServer::FileServer(const QString & path, const char * prefix, bool parseHtml, uint threadCount, bool enableIndex, bool noCache, bool removeSlash, bool useHostAsDir) :
+	FileServer(path, QString(prefix), parseHtml, threadCount, enableIndex, noCache, removeSlash, useHostAsDir)
+{
+}
+
+FileServer::FileServer(const QString & path, const QString & prefix, bool parseHtml, uint threadCount, bool enableIndex, bool noCache, bool removeSlash, bool useHostAsDir) :
 	ThreadVerify("FileServer", Worker, threadCount),
 	path_(path),
+	prefix_(prefix),
 	parseHtml_(parseHtml),
+	enableIndex_(enableIndex),
+	noCache_(noCache),
+	removeSlash_(removeSlash),
+	useHostAsDir_(useHostAsDir),
 	eTag_(crypt::random(4).toHex()),
-	pathRE_("^(/(?:(?:.well-known|[_\\-\\w][._\\-\\w]*)(?:/[_\\-\\w][._\\-\\w]*)*/?)?)(?:\\?.*)?$"),
+	pathRE_("^(/(?:[_\\-\\w@=:][._\\-\\w@=:]*(?:/[_\\-\\w@=:][._\\-\\w@=:]*)*/?)?)(?:\\?.*)?$"),
 	endingRE_("\\.(\\w+)$"),
 	elementRE_("<!\\s*(\\$|inc |if |else|end|etag)(.*?)!>")
 {
@@ -126,14 +141,30 @@ void FileServer::handleRequest(const Request & request)
 {
 	if (!verifyThreadCall(&FileServer::handleRequest, request)) return;
 
+	QString path = request.getUri();
+
+	// Is it for us?
+	if (!prefix_.isEmpty()) {
+		if (!path.startsWith(prefix_)) return;
+
+		// remove trailing slash
+		if (removeSlash_ && path.endsWith('/')) { request.sendRedirect(path.left(path.length() - 1).toUtf8()); return; }
+
+		path.remove(0, prefix_.length());
+		if (path.isEmpty()) path += '/';
+	} else {
+		// remove trailing slash
+		if (removeSlash_ && path.length() > 1 && path.endsWith('/')) { request.sendRedirect(path.left(path.length() - 1).toUtf8()); return; }
+	}
+
 	// check eTag
-	if (request.getHeader("if-none-match") == eTag_) {
+	if (!noCache_ && request.getHeader("if-none-match") == eTag_) {
 		request.sendRaw(
 			"HTTP/1.1 304 Not Modified\r\n"
 			<< request.defaultHeaders() <<
 			"Cache-Control: no-cache\r\n"
 			"ETag: " << eTag_ << "\r\n"
-			"Content-Type: text/html; charset=utf-8\r\n",
+			"Content-Type: text/html; charset=utf-8\r\n\r\n",
 
 			"<html>\r\n"
 			"<head><title>304 - Not Modified</title></head>\r\n"
@@ -146,7 +177,6 @@ void FileServer::handleRequest(const Request & request)
 	}
 
 	// check path for valid chars
-	QString path = request.getUri();
 	QRegularExpressionMatch reMatch = pathRE_.match(path);
 	if (!reMatch.hasMatch()) {
 		logInfo("invalid path: %1", path);
@@ -157,9 +187,6 @@ void FileServer::handleRequest(const Request & request)
 
 	logFunctionTraceParam("FileServer::handleRequest(%1)", path);
 
-	// remove trailing slash
-	if (path.length() > 1 && path.endsWith('/')) { request.sendRedirect(path.left(path.length() - 1).toUtf8()); return; }
-
 	// auto generate partial files
 	bool isPart = false;
 	if (parseHtml_ && path.endsWith("/index_part.html")) {
@@ -168,9 +195,22 @@ void FileServer::handleRequest(const Request & request)
 		if (path.isEmpty()) path = '/';
 	}
 
-	QString fullPath = path_ + path;
+	QString fullPath = path_;
+	if (useHostAsDir_) {
+		fullPath += '/';
+		fullPath += request.getHeader("host");
+	}
+	fullPath += path;
 	QFileInfo fi(fullPath);
-	if (fi.isDir()) fi.setFile(fullPath + "/index.html");
+	if (fi.isDir()) {
+		if (enableIndex_) {
+			request.addHeaderLine("Cache-Control: no-cache");
+			if (request.isHEAD()) request.sendText("");
+			else                  request.sendText(createIndex(fi.canonicalFilePath(), path));
+			return;
+		}
+		fi.setFile(fullPath + "/index.html");
+	}
 
 	// check for redirects
 	if (!fi.isReadable()) {
@@ -195,19 +235,19 @@ void FileServer::handleRequest(const Request & request)
 	// parse html files
 	if (fullPath.endsWith(".html")) {
 		request.addHeaderLine("Cache-Control: no-cache");
-		request.addHeaderLine("ETag: " << eTag_);
+		if (!noCache_) request.addHeaderLine("ETag: " << eTag_);
 		if (request.isHEAD()) request.sendText("");
 		else if (parseHtml_)  request.sendText(parseHtml(fullPath, isPart, path));
-		else                  request.sendText(cflib::util::readFile(fullPath));
+		else                  request.sendText(util::readFile(fullPath));
 		return;
 	}
 
 	QByteArray replyData;
 	if (!request.isHEAD()) {
-		if (fullPath.endsWith(".css")) {
+		if (parseHtml_ && fullPath.endsWith(".css")) {
 			replyData = parseHtml(fullPath, false, path).toUtf8();
 		} else {
-			replyData = cflib::util::readFile(fullPath);
+			replyData = util::readFile(fullPath);
 		}
 	}
 
@@ -218,24 +258,26 @@ void FileServer::handleRequest(const Request & request)
 	const QRegularExpressionMatch match = endingRE_.match(path);
 	if (match.hasMatch()) {
 		const QString ending = match.captured(1);
-		     if (ending == "htm"  ) { cache = false; compression = true;  contentType = "text/html; charset=utf-8"; }
-		else if (ending == "txt"  ) { cache = false; compression = true;  contentType = "text/plain"; }
-		else if (ending == "ico"  ) { cache = true;  compression = false; contentType = "image/x-icon"; }
-		else if (ending == "gif"  ) { cache = true;  compression = false; contentType = "image/gif"; }
-		else if (ending == "png"  ) { cache = true;  compression = false; contentType = "image/png"; }
-		else if (ending == "jpg"  ) { cache = true;  compression = false; contentType = "image/jpeg"; }
-		else if (ending == "jpeg" ) { cache = true;  compression = false; contentType = "image/jpeg"; }
-		else if (ending == "svg"  ) { cache = true;  compression = true;  contentType = "image/svg+xml"; }
-		else if (ending == "js"   ) { cache = true;  compression = true;  contentType = "application/javascript; charset=utf-8"; }
-		else if (ending == "css"  ) { cache = true;  compression = true;  contentType = "text/css; charset=utf-8"; }
-		else if (ending == "data" ) { cache = true;  compression = true;  contentType = "application/octet-stream"; }
-		else if (ending == "pdf"  ) { cache = false; compression = true;  contentType = "application/pdf"; }
+		     if (ending == "htm" ) { cache = false; compression = true;  contentType = "text/html; charset=utf-8"; }
+		else if (ending == "txt" ) { cache = false; compression = true;  contentType = "text/plain"; }
+		else if (ending == "ico" ) { cache = true;  compression = false; contentType = "image/x-icon"; }
+		else if (ending == "gif" ) { cache = true;  compression = false; contentType = "image/gif"; }
+		else if (ending == "png" ) { cache = true;  compression = false; contentType = "image/png"; }
+		else if (ending == "jpg" ) { cache = true;  compression = false; contentType = "image/jpeg"; }
+		else if (ending == "jpeg") { cache = true;  compression = false; contentType = "image/jpeg"; }
+		else if (ending == "svg" ) { cache = true;  compression = true;  contentType = "image/svg+xml"; }
+		else if (ending == "js"  ) { cache = true;  compression = true;  contentType = "application/javascript; charset=utf-8"; }
+		else if (ending == "css" ) { cache = true;  compression = true;  contentType = "text/css; charset=utf-8"; }
+		else if (ending == "data") { cache = true;  compression = true;  contentType = "application/octet-stream"; }
+		else if (ending == "pdf" ) { cache = false; compression = true;  contentType = "application/pdf"; }
+		else if (ending == "log" ) { cache = false; compression = true;  contentType = "text/plain"; }
+		else if (ending == "md"  ) { cache = false; compression = true;  contentType = "text/markdown; charset=utf-8"; }
 	}
-	if (cache) {
+	if (!noCache_ && cache) {
 		request.addHeaderLine("Cache-Control: max-age=31536000");
 	} else {
 		request.addHeaderLine("Cache-Control: no-cache");
-		request.addHeaderLine("ETag: " << eTag_);
+		if (!noCache_) request.addHeaderLine("ETag: " << eTag_);
 	}
 	if (request.isHEAD()) request.sendReply("", contentType);
 	else                  request.sendReply(replyData, contentType, compression);
@@ -247,7 +289,7 @@ QString FileServer::parseHtml(const QString & fullPath, bool isPart, const QStri
 	logFunctionTraceParam("FileServer::parseHtml(%1, %2, %3, (%4))", fullPath, isPart, path, params.join(','));
 
 	QString retval;
-	QString html = cflib::util::readTextfile(fullPath);
+	QString html = util::readTextfile(fullPath);
 	QStack<bool> ifStack;
 	QRegularExpressionMatch m;
 	while ((m = elementRE_.match(html)).hasMatch()) {
@@ -354,6 +396,54 @@ void FileServer::exportDir(const QString & fullPath, const QString & path, const
 	foreach (const QFileInfo & info, QDir(fullPath).entryInfoList(QDir::Dirs | QDir::NoDotAndDotDot)) {
 		exportDir(info.canonicalFilePath(), p + info.fileName(), dest + '/' + info.fileName());
 	}
+}
+
+QString FileServer::createIndex(const QString & fullPath, const QString & path)
+{
+	QString html;
+	html << "<!DOCTYPE html>\r\n<html><head></head>\r\n<body>\r\n";
+
+	QString backJumpPath;
+	QString pathStart;
+	if (!removeSlash_) {
+		if (path != "/") {
+			int pos = path.lastIndexOf('/');
+			backJumpPath = prefix_ + path.left(pos);
+		}
+		pathStart = prefix_ + path + (path.endsWith('/') ? "" : "/");
+
+	} else {
+		// remove slash mode - create relative paths
+		const QString lastPartOfPrefix = prefix_.split("/").last();
+		const QStringList pathSplitted = path.split("/");
+		if (path != "/") { // subdir
+			// for the backjump path we must go two levels back and one forth
+			// example:
+			// /devlog/data1       -> ../devlog        (go to root -> subdir "data1")
+			// /devlog/data1/data2 -> ../data1/data2   (go to devlog -> subdir "data1")
+			if (pathSplitted.size() >= 3) { // subdir level 2 or greater
+				backJumpPath = "../" + pathSplitted[pathSplitted.size() - 2];
+			} else { // first subdir level
+				backJumpPath = "../" + lastPartOfPrefix;
+			}
+			pathStart = pathSplitted.last() + "/";
+		} else {
+			pathStart = lastPartOfPrefix + "/";
+		}
+	}
+
+	if (!backJumpPath.isNull()) {
+		html << "<a href=\"" << backJumpPath << "\">..</a><br>\r\n";
+	}
+
+	for (const QString & entry : QDir(fullPath).entryList(
+			QDir::Dirs | QDir::Files | QDir::NoDotAndDotDot,
+			QDir::Name | QDir::DirsFirst | QDir::IgnoreCase)) {
+		html << "<a href=\"" << pathStart << entry << "\">" << entry << "</a><br>\r\n";
+	}
+
+	html << "</body></html>";
+	return html;
 }
 
 }}	// namespace
