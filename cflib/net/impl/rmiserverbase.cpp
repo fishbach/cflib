@@ -401,9 +401,12 @@ void RMIServerBase::exportTo(const QString & dest) const
 {
 	// write services
 	QDir().mkpath(dest + "/js/services");
-	foreach (const QString & name, services_.keys()) {
+	QSet<QString> files;
+	for (const QString & name : services_.keys()) {
 		for (const QString & suffix : QStringList{".js", ".ts"}) {
-			QString service = "services/" + name + suffix;
+			QString file = name + suffix;
+			files << file;
+			QString service = "services/" + file;
 			QString js = generateJSOrTS(service);
 			QFile f(dest + "/js/" + service);
 			f.open(QFile::WriteOnly | QFile::Truncate);
@@ -411,8 +414,23 @@ void RMIServerBase::exportTo(const QString & dest) const
 		}
 	}
 
+	// remove old
+	for (const QFileInfo & fi : QDir(dest + "/js/services").entryInfoList(QDir::Files)) {
+		if (!files.contains(fi.fileName())) QFile(fi.filePath()).remove();
+	}
+
 	// write classes (recursive)
-	exportClass(classInfos_, "", dest);
+	files = exportClass(classInfos_, "", dest);
+
+	// remove old
+	int len = dest.length() + 3;
+	QDirIterator it(dest + "/js", QDirIterator::Subdirectories | QDirIterator::FollowSymlinks);
+	while (it.hasNext()) {
+		QString name = it.next().mid(len);
+		if (it.fileInfo().isFile() && name.contains("/dao/")) {
+			if (!files.contains(name.mid(1))) QFile(it.filePath()).remove();
+		}
+	}
 }
 
 void RMIServerBase::handleRequest(const Request & request)
@@ -1089,11 +1107,13 @@ QString RMIServerBase::generateTSForService(const SerializeTypeInfo & ti) const
 	return ts;
 }
 
-void RMIServerBase::exportClass(const ClassInfoEl & cl, const QString & path, const QString & dest) const
+QSet<QString> RMIServerBase::exportClass(const ClassInfoEl & cl, const QString & path, const QString & dest) const
 {
+	QSet<QString> rv;
 	if (cl.infos.isEmpty()) {
 		for (const QString & suffix : QStringList{".js", "dao.ts"}) {
 			QString cl = path + suffix;
+			rv << cl;
 			QString js = generateJSOrTS(cl);
 			QFile f(dest + "/js/" + cl);
 			f.open(QFile::WriteOnly | QFile::Truncate);
@@ -1104,9 +1124,10 @@ void RMIServerBase::exportClass(const ClassInfoEl & cl, const QString & path, co
 		QString p = path;
 		if (!path.isEmpty()) p += '/';
 		foreach (const QString & ns, cl.infos.keys()) {
-			exportClass(*cl.infos[ns], p + ns, dest);
+			rv += exportClass(*cl.infos[ns], p + ns, dest);
 		}
 	}
+	return rv;
 }
 
 void RMIServerBase::addClassInfo(const SerializeTypeInfo & ti)
