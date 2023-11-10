@@ -427,13 +427,12 @@ void RMIServerBase::handleRequest(const Request & request)
 	if (path.startsWith("/api/")) {
 		request.addHeaderLine("Cache-Control: max-age=31536000");
 		path.remove(0, 5);
-		if (path.startsWith("services")) showServices(request, path.mid(8));
-		else if (path.startsWith("classes"))  showClasses(request, path.mid(7));
-		else request.sendNotFound();
-	} else if (path.startsWith("/js/")) {
-		request.addHeaderLine("Cache-Control: max-age=31536000");
-		QString js = generateJSOrTS(path.mid(4));
-		if (!js.isNull()) request.sendText(js, "application/javascript");
+		if      (path.startsWith("services")) showServices(request, path.mid(8));
+		else if (path.startsWith("classes" )) showClasses (request, path.mid(7));
+		else if (path.startsWith("js/"     )) {
+			QString js = generateJSOrTS(path.mid(3));
+			if (!js.isNull()) request.sendText(js, "application/javascript");
+		} else request.sendNotFound();
 	} else if (path == "/api") {
 		request.addHeaderLine("Cache-Control: max-age=31536000");
 		QString info = HTMLDocHeader;
@@ -524,8 +523,8 @@ void RMIServerBase::showServices(const Request & request, QString path) const
 
 	info <<
 		"<h3>Service: <b>" << ti.typeName << "</b></h3>\n"
-		"JavaScript File: <a href=\"/js/services/" << path << ".js\">/js/services/" << path << ".js</a><br>\n"
-		"TypeScript File: <a href=\"/js/services/" << path << ".ts\">/js/services/" << path << ".ts</a>\n"
+		"JavaScript File: <a href=\"/api/js/services/" << path << ".js\">/api/js/services/" << path << ".js</a><br>\n"
+		"TypeScript File: <a href=\"/api/js/services/" << path << ".ts\">/api/js/services/" << path << ".ts</a>\n"
 		"<h4>Methods:</h4>\n"
 		"<ul>\n";
 	foreach (const SerializeFunctionTypeInfo & func, ti.functions) {
@@ -567,8 +566,8 @@ void RMIServerBase::showClasses(const Request & request, QString path) const
 
 	info <<
 		"<h3>Class: <b>" << ti.getName() << "</b></h3>\n"
-		"JavaScript File: <a href=\"/js/" << path << ".js\">/js/" << path << ".js</a><br>\n"
-		"TypeScript File: <a href=\"/js/" << path << "dao.ts\">/js/" << path << "dao.ts</a><br>\n"
+		"JavaScript File: <a href=\"/api/js/" << path << ".js\">/api/js/" << path << ".js</a><br>\n"
+		"TypeScript File: <a href=\"/api/js/" << path << "dao.ts\">/api/js/" << path << "dao.ts</a><br>\n"
 		"<br>\n"
 		"Base: ";
 	if (ti.bases.isEmpty()) {
