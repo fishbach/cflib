@@ -8,6 +8,8 @@
 .DS_Store
 .vscode
 /bin
+/js/dao
+/js/services
 CMakeLists.txt.user
 Makefile
 Makefile.*
