@@ -116,7 +116,7 @@ FileServer::FileServer(const QString & path, const QString & prefix, bool parseH
 	removeSlash_(removeSlash),
 	useHostAsDir_(useHostAsDir),
 	eTag_(crypt::random(4).toHex()),
-	pathRE_("^(/(?:[_\\-\\w@=:][._\\-\\w@=:]*(?:/[_\\-\\w@=:][._\\-\\w@=:]*)*/?)?)(?:\\?.*)?$"),
+	pathRE_("^(/(?:(?:.well-known|[_\\-\\w][._\\-\\w]*)(?:/[_\\-\\w][._\\-\\w]*)*/?)?)(?:\\?.*)?$"),
 	endingRE_("\\.(\\w+)$"),
 	elementRE_("<!\\s*(\\$|inc |if |else|end|etag)(.*?)!>")
 {
@@ -164,7 +164,7 @@ void FileServer::handleRequest(const Request & request)
 			<< request.defaultHeaders() <<
 			"Cache-Control: no-cache\r\n"
 			"ETag: " << eTag_ << "\r\n"
-			"Content-Type: text/html; charset=utf-8\r\n\r\n",
+			"Content-Type: text/html; charset=utf-8\r\n",
 
 			"<html>\r\n"
 			"<head><title>304 - Not Modified</title></head>\r\n"
