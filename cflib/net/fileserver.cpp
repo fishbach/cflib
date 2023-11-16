@@ -118,7 +118,7 @@ FileServer::FileServer(const QString & path, const QString & prefix, bool parseH
 	eTag_(crypt::random(4).toHex()),
 	pathRE_("^(/(?:(?:.well-known|[_\\-\\w][._\\-\\w]*)(?:/[_\\-\\w][._\\-\\w]*)*/?)?)(?:\\?.*)?$"),
 	endingRE_("\\.(\\w+)$"),
-	elementRE_("<!\\s*(\\$|inc |if |else|end|etag)(.*?)!>")
+	elementRE_("<!\\s*(\\$|inc |if |else|end|etag|importmap)(.*?)!>")
 {
 }
 
@@ -323,6 +323,20 @@ QString FileServer::parseHtml(const QString & fullPath, bool isPart, const QStri
 		} else if (cmd == "etag") {
 			if (skip) continue;
 			retval += eTag_;
+		} else if (cmd == "importmap") {
+			if (skip) continue;
+			retval += "<script type=\"importmap\">{\"imports\":{";
+			QDirIterator it(path_, {"*.mjs"}, QDir::NoFilter, QDirIterator::Subdirectories | QDirIterator::FollowSymlinks);
+			const int len = path_.length() + 1;
+			const QString suffix = '?' + eTag_ + '"';
+			bool isFirst = true;
+			while (it.hasNext()) {
+				const QString file = it.next().mid(len);
+				if (isFirst) isFirst = false;
+				else retval += ',';
+				retval << "\"/" << file << "\":\"./" << file << suffix;
+			}
+			retval += "}}</script>";
 		} else if (cmd == "if ") {
 			QStringList cond = splitParams(param);
 			if (cond.size() != 3) {
