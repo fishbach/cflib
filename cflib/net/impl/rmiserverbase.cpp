@@ -403,7 +403,7 @@ void RMIServerBase::exportTo(const QString & dest) const
 	QDir().mkpath(dest + "/js/services");
 	QSet<QString> files;
 	for (const QString & name : services_.keys()) {
-		for (const QString & suffix : QStringList{".js"/*, ".ts"*/}) {
+		for (const QString & suffix : QStringList{".mjs"/*, ".ts"*/}) {
 			QString file = name + suffix;
 			files << file;
 			QString service = "services/" + file;
@@ -541,7 +541,7 @@ void RMIServerBase::showServices(const Request & request, QString path) const
 
 	info <<
 		"<h3>Service: <b>" << ti.typeName << "</b></h3>\n"
-		"JavaScript File: <a href=\"/api/js/services/" << path << ".js\">/api/js/services/" << path << ".js</a><br>\n"
+		"JavaScript File: <a href=\"/api/js/services/" << path << ".mjs\">/api/js/services/" << path << ".mjs</a><br>\n"
 		"TypeScript File: <a href=\"/api/js/services/" << path << ".ts\">/api/js/services/" << path << ".ts</a>\n"
 		"<h4>Methods:</h4>\n"
 		"<ul>\n";
@@ -584,7 +584,7 @@ void RMIServerBase::showClasses(const Request & request, QString path) const
 
 	info <<
 		"<h3>Class: <b>" << ti.getName() << "</b></h3>\n"
-		"JavaScript File: <a href=\"/api/js/" << path << ".js\">/api/js/" << path << ".js</a><br>\n"
+		"JavaScript File: <a href=\"/api/js/" << path << ".mjs\">/api/js/" << path << ".mjs</a><br>\n"
 		"TypeScript File: <a href=\"/api/js/" << path << "dao.ts\">/api/js/" << path << "dao.ts</a><br>\n"
 		"<br>\n"
 		"Base: ";
@@ -629,8 +629,8 @@ void RMIServerBase::classesToHTML(QString & info, const ClassInfoEl & infoEl) co
 QString RMIServerBase::generateJSOrTS(const QString & path) const
 {
 	const bool isTS = path.endsWith(".ts");
-	if (!path.endsWith(".js") && !isTS) return QString();
-	const SerializeTypeInfo ti = getTypeInfo(path.left(path.length() - (isTS && path.endsWith("dao.ts") ? 6 : 3)));
+	if (!path.endsWith(".mjs") && !isTS) return QString();
+	const SerializeTypeInfo ti = getTypeInfo(path.left(path.length() - (isTS && path.endsWith("dao.ts") ? 6 : 4)));
 	if (ti.getName().isEmpty()) return QString();
 
 	QString rv;
@@ -650,29 +650,30 @@ QString RMIServerBase::generateJS(const SerializeTypeInfo & ti) const
 {
 	const bool isService = !ti.functions.isEmpty() || !ti.cfSignals.isEmpty();
 
+	QString pathPrefix = "../";
+	if (!isService) {
+		for (int i = ti.ns.count("::") ; i > 0 ; --i) {
+			pathPrefix << "../";
+		}
+	}
+
 	QString js;
-	js <<
-		"define(['cflib/net/ber', 'cflib/" << (isService ? "net/rmi'" : "util/inherit'") <<
-		(ti.cfSignals.isEmpty() ? "" : ", 'cflib/net/rsig'");
+	js << "import __ber from '" << pathPrefix << "cflib/net/ber.mjs';\n";
+	if (isService) js << "import __rmi from '" << pathPrefix << "cflib/net/rmi.mjs';\n";
+	else           js << "import __inherit from '" << pathPrefix << "cflib/util/inherit.mjs';\n";
+	if (!ti.cfSignals.isEmpty()) js << "import __RSig from '" << pathPrefix << "cflib/net/rsig.mjs';\n";
 	foreach (QString type, getMemberTypes(ti)) {
+		QString name = type;
+		name.replace("::", "__");
+		js << "import " << name;
 		type.replace("::", "/");
-		js << ", '" << type.toLower() << '\'';
+		js << " from '" << pathPrefix << type.toLower() << ".mjs';\n";
 	}
-	js << "], function(__ber, " << (isService ? "__rmi" : "__inherit") <<
-		(ti.cfSignals.isEmpty() ? "" : ", __RSig");
-	foreach (QString type, getMemberTypes(ti)) {
-		type.replace("::", "__");
-		js << ", " << type;
-	}
-	js << ") {\n"
-		"\n";
+	js << "\n";
 
 	if (isService) js << generateJSForService(ti);
 	else           js << generateJSForClass(ti);
 
-	js <<
-		"\n"
-		"});\n";
 	return js;
 }
 
@@ -801,7 +802,7 @@ QString RMIServerBase::generateJSForClass(const SerializeTypeInfo & ti) const
 	}
 	js << ".data();\n"
 		"};\n"
-		"return " << nsPrefix << typeName << ";\n";
+		"export default " << nsPrefix << typeName << ";\n";
 	return js;
 }
 
@@ -880,7 +881,7 @@ QString RMIServerBase::generateJSForService(const SerializeTypeInfo & ti) const
 			"\n";
 	}
 
-	js << "return " << objName << ";\n";
+	js << "export default " << objName << ";\n";
 	return js;
 }
 
@@ -1111,7 +1112,7 @@ QSet<QString> RMIServerBase::exportClass(const ClassInfoEl & cl, const QString &
 {
 	QSet<QString> rv;
 	if (cl.infos.isEmpty()) {
-		for (const QString & suffix : QStringList{".js"/*, "dao.ts"*/}) {
+		for (const QString & suffix : QStringList{".mjs"/*, "dao.ts"*/}) {
 			QString cl = path + suffix;
 			rv << cl;
 			QString js = generateJSOrTS(cl);
