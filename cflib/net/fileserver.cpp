@@ -326,7 +326,7 @@ QString FileServer::parseHtml(const QString & fullPath, bool isPart, const QStri
 		} else if (cmd == "importmap") {
 			if (skip) continue;
 			retval += "<script type=\"importmap\">{\"imports\":{";
-			QDirIterator it(path_, {"*.js", "*.mjs"}, QDir::NoFilter, QDirIterator::Subdirectories | QDirIterator::FollowSymlinks);
+			QDirIterator it(path_, {"*.mjs"}, QDir::NoFilter, QDirIterator::Subdirectories | QDirIterator::FollowSymlinks);
 			const int len = path_.length() + 1;
 			const QString suffix = '?' + eTag_ + '"';
 			bool isFirst = true;
