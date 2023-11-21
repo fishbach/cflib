@@ -10,7 +10,7 @@
 
 using namespace cflib::util;
 
-const QRegularExpression callRE(R"((?:^|\W)(require|define)\s*\((\s*|\s*\[.*?\]\s*,\s*)function\s*\()",
+const QRegularExpression callRE(R"((?:^|\W)(require|define)\s*\((\s*|\s*\[.*?\]\s*,\s*)(?:function\s*)?\()",
 	QRegularExpression::DotMatchesEverythingOption);
 const QRegularExpression closingRE(R"(\(|\)|"|'|//|/\*)",
 	QRegularExpression::DotMatchesEverythingOption);
@@ -219,9 +219,9 @@ int main(int argc, char *argv[])
 
 	foreach (const QString & name, order) {
 		output
-			<< "\n// ============================================================================n"
+			<< "\n// ============================================================================\n"
 			<< "// " << name << "\n"
-			<< "// ============================================================================n\n";
+			<< "// ============================================================================\n\n";
 		convertFile(name);
 		output += "\n";
 	}
