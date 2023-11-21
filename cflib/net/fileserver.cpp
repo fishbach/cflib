@@ -244,7 +244,11 @@ void FileServer::handleRequest(const Request & request)
 
 	QByteArray replyData;
 	if (!request.isHEAD()) {
-		if (parseHtml_ && fullPath.endsWith(".css")) {
+		if (parseHtml_ && (
+			fullPath.endsWith(".css") ||
+			fullPath.endsWith(".js" ) ||
+			fullPath.endsWith(".mjs")))
+		{
 			replyData = parseHtml(fullPath, false, path).toUtf8();
 		} else {
 			replyData = util::readFile(fullPath);
