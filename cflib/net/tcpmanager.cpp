@@ -12,77 +12,77 @@
 namespace cflib { namespace net {
 
 TCPManager::TCPManager(uint tlsThreadCount, util::ThreadVerify * other) :
-	impl_(other ?
-		new impl::TCPManagerImpl(*this, tlsThreadCount, other) :
-		new impl::TCPManagerImpl(*this, tlsThreadCount))
+    impl_(other ?
+        new impl::TCPManagerImpl(*this, tlsThreadCount, other) :
+        new impl::TCPManagerImpl(*this, tlsThreadCount))
 {
 }
 
 TCPManager::~TCPManager()
 {
-	delete impl_;
+    delete impl_;
 }
 
 void TCPManager::stop()
 {
-	impl_->stop();
+    impl_->stop();
 }
 
 bool TCPManager::isRunning() const
 {
-	return impl_->isRunning();
+    return impl_->isRunning();
 }
 
 TCPConnData * TCPManager::openConnection(const QByteArray & destAddress, quint16 destPort, bool preferIPv6)
 {
-	return impl_->openConnection(destAddress, destPort, QByteArray(), 0, 0, preferIPv6);
+    return impl_->openConnection(destAddress, destPort, QByteArray(), 0, 0, preferIPv6);
 }
 
 TCPConnData * TCPManager::openConnection(const QByteArray & destAddress, quint16 destPort,
-	const QByteArray & sourceIP, quint16 sourcePort, bool preferIPv6)
+    const QByteArray & sourceIP, quint16 sourcePort, bool preferIPv6)
 {
-	return impl_->openConnection(destAddress, destPort, sourceIP, sourcePort, 0, preferIPv6);
+    return impl_->openConnection(destAddress, destPort, sourceIP, sourcePort, 0, preferIPv6);
 }
 
 TCPConnData * TCPManager::openTLSConnection(const QByteArray & destAddress, quint16 destPort, bool preferIPv6)
 {
-	return impl_->openConnection(destAddress, destPort, QByteArray(), 0, &impl_->clientCredentials, preferIPv6);
+    return impl_->openConnection(destAddress, destPort, QByteArray(), 0, &impl_->clientCredentials, preferIPv6);
 }
 
 TCPConnData * TCPManager::openTLSConnection(const QByteArray & destAddress, quint16 destPort,
-	const QByteArray & sourceIP, quint16 sourcePort, bool preferIPv6)
+    const QByteArray & sourceIP, quint16 sourcePort, bool preferIPv6)
 {
-	return impl_->openConnection(destAddress, destPort, sourceIP, sourcePort, &impl_->clientCredentials, preferIPv6);
+    return impl_->openConnection(destAddress, destPort, sourceIP, sourcePort, &impl_->clientCredentials, preferIPv6);
 }
 
 int TCPManager::openListenSocket(const QByteArray & ip, quint16 port)
 {
-	return impl::TCPManagerImpl::openListenSocket(ip, port);
+    return impl::TCPManagerImpl::openListenSocket(ip, port);
 }
 
 bool TCPManager::start(int listenSocket)
 {
-	return impl_->start(listenSocket, 0);
+    return impl_->start(listenSocket, 0);
 }
 
 bool TCPManager::start(int listenSocket, crypt::TLSCredentials & credentials)
 {
-	return impl_->start(listenSocket, &credentials);
+    return impl_->start(listenSocket, &credentials);
 }
 
 util::ThreadVerify * TCPManager::networkThread()
 {
-	return impl_;
+    return impl_;
 }
 
 crypt::TLSCredentials & TCPManager::clientCredentials()
 {
-	return impl_->clientCredentials;
+    return impl_->clientCredentials;
 }
 
 void TCPManager::newConnection(TCPConnData * data)
 {
-	impl_->deleteOnFinish(data);
+    impl_->deleteOnFinish(data);
 }
 
-}}	// namespace
+}}    // namespace

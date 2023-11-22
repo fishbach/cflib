@@ -14,21 +14,21 @@ namespace cflib { namespace dao {
 ConfigPSql * ConfigPSql::instance_ = 0;
 
 ConfigPSql::ConfigPSql() :
-	isProduction(false),
-	emailsEnabled(false)
+    isProduction(false),
+    emailsEnabled(false)
 {
-	if (instance_ == 0) instance_ = this;
+    if (instance_ == 0) instance_ = this;
 }
 
 void ConfigPSql::loadFromDB()
 {
-	const QMap<QString, QString> vals = cflib::db::getConfigPSql();
+    const QMap<QString, QString> vals = cflib::db::getConfigPSql();
 
-	isProduction  = vals["isProduction"] == "true";
-	emailsEnabled = vals["emailsEnabled"] == "true";
-	baseURL       = vals["baseURL"];
+    isProduction  = vals["isProduction"] == "true";
+    emailsEnabled = vals["emailsEnabled"] == "true";
+    baseURL       = vals["baseURL"];
 
-	init(vals);
+    init(vals);
 }
 
 }}

@@ -18,79 +18,79 @@ namespace cflib { namespace net {
 class HttpServer::Impl : public TCPManager
 {
 public:
-	Impl(uint threadCount, uint tlsThreadCount) :
-		TCPManager(tlsThreadCount),
-		threadCounter_(0)
-	{
-		for (uint i = 1 ; i <= threadCount ; ++i) threads_.append(new impl::HttpThread(i, threadCount));
-	}
+    Impl(uint threadCount, uint tlsThreadCount) :
+        TCPManager(tlsThreadCount),
+        threadCounter_(0)
+    {
+        for (uint i = 1 ; i <= threadCount ; ++i) threads_.append(new impl::HttpThread(i, threadCount));
+    }
 
-	~Impl()
-	{
-		stop();
-		foreach (impl::HttpThread * th, threads_) delete th;
-	}
+    ~Impl()
+    {
+        stop();
+        foreach (impl::HttpThread * th, threads_) delete th;
+    }
 
-	void registerHandler(RequestHandler & handler)
-	{
-		handlers_ << &handler;
-	}
+    void registerHandler(RequestHandler & handler)
+    {
+        handlers_ << &handler;
+    }
 
 protected:
-	virtual void newConnection(TCPConnData * data)
+    virtual void newConnection(TCPConnData * data)
     {
-		threads_[++threadCounter_ % threads_.size()]->newRequest(data, handlers_);
+        threads_[++threadCounter_ % threads_.size()]->newRequest(data, handlers_);
     }
 
 private:
-	QVector<impl::HttpThread *> threads_;
-	uint threadCounter_;
-	QList<RequestHandler *> handlers_;
+    QVector<impl::HttpThread *> threads_;
+    uint threadCounter_;
+    QList<RequestHandler *> handlers_;
 };
 
 HttpServer::HttpServer(uint threadCount, uint tlsThreadCount) :
-	impl_(new Impl(threadCount, tlsThreadCount))
+    impl_(new Impl(threadCount, tlsThreadCount))
 {
 }
 
 HttpServer::~HttpServer()
 {
-	delete impl_;
+    delete impl_;
 }
 
 bool HttpServer::start(const QByteArray & address, quint16 port)
 {
-	return impl_->start(address, port);
+    return impl_->start(address, port);
 }
 
 bool HttpServer::start(const QByteArray & address, quint16 port, crypt::TLSCredentials & credentials)
 {
-	return impl_->start(address, port, credentials);
+    return impl_->start(address, port, credentials);
 }
 
 bool HttpServer::start(int listenSocket)
 {
-	return impl_->start(listenSocket);
+    return impl_->start(listenSocket);
 }
 
 bool HttpServer::start(int listenSocket, crypt::TLSCredentials & credentials)
 {
-	return impl_->start(listenSocket, credentials);
+    return impl_->start(listenSocket, credentials);
 }
 
 void HttpServer::stop()
 {
-	impl_->stop();
+    impl_->stop();
 }
 
 bool HttpServer::isRunning() const
 {
-	return impl_->isRunning();
+    return impl_->isRunning();
 }
 
 void HttpServer::registerHandler(RequestHandler & handler)
 {
-	impl_->registerHandler(handler);
+    impl_->registerHandler(handler);
 }
 
-}}	// namespace
+}}    // namespace

@@ -40,24 +40,24 @@ void inflateRaw(QByteArray & data);
 
 QByteArray readFile(const QString & path);
 bool writeFile(const QString & path, const QByteArray & data, QFile::Permissions perm =
-	QFile::ReadOwner  | QFile::ReadUser | QFile::ReadGroup | QFile::ReadOther |
-	QFile::WriteOwner | QFile::WriteUser);
+    QFile::ReadOwner  | QFile::ReadUser | QFile::ReadGroup | QFile::ReadOther |
+    QFile::WriteOwner | QFile::WriteUser);
 QString readTextfile(const QString & path);
 
 inline QChar decomposedBase(const QChar & chr)
 {
-	if (chr.decompositionTag() != QChar::NoDecomposition) return chr.decomposition()[0];
-	return chr;
+    if (chr.decompositionTag() != QChar::NoDecomposition) return chr.decomposition()[0];
+    return chr;
 }
 
 inline QString decomposedBase(const QString & str)
 {
-	QString retval = str;
-	for (QString::Iterator it = retval.begin() ; it != retval.end() ; ++it) {
-		QChar & chr = *it;
-		if (chr.decompositionTag() != QChar::NoDecomposition) chr = chr.decomposition()[0];
-	}
-	return retval;
+    QString retval = str;
+    for (QString::Iterator it = retval.begin() ; it != retval.end() ; ++it) {
+        QChar & chr = *it;
+        if (chr.decompositionTag() != QChar::NoDecomposition) chr = chr.decomposition()[0];
+    }
+    return retval;
 }
 
 QByteArray encodeQuotedPrintable(const QString & text);
@@ -66,37 +66,37 @@ QByteArray encodeWord(const QString & str, bool strict);
 template<typename K, typename V>
 QString intHashToString(const QHash<K, V> & hash)
 {
-	QString rv('[');
-	QHashIterator<K, V> it(hash);
-	bool isFirst = true;
-	while (it.hasNext()) {
-		it.next();
-		if (isFirst) isFirst = false;
-		else rv += ',';
-		rv += QString::number(it.key());
-		rv += ':';
-		rv += it.value().toString();
-	}
-	rv += ']';
-	return rv;
+    QString rv('[');
+    QHashIterator<K, V> it(hash);
+    bool isFirst = true;
+    while (it.hasNext()) {
+        it.next();
+        if (isFirst) isFirst = false;
+        else rv += ',';
+        rv += QString::number(it.key());
+        rv += ':';
+        rv += it.value().toString();
+    }
+    rv += ']';
+    return rv;
 }
 
 template<typename K, typename V>
 QString intMapToString(const QMap<K, V> & hash)
 {
-	QString rv('[');
-	QMapIterator<K, V> it(hash);
-	bool isFirst = true;
-	while (it.hasNext()) {
-		it.next();
-		if (isFirst) isFirst = false;
-		else rv += ',';
-		rv += QString::number(it.key());
-		rv += ':';
-		rv += it.value().toString();
-	}
-	rv += ']';
-	return rv;
+    QString rv('[');
+    QMapIterator<K, V> it(hash);
+    bool isFirst = true;
+    while (it.hasNext()) {
+        it.next();
+        if (isFirst) isFirst = false;
+        else rv += ',';
+        rv += QString::number(it.key());
+        rv += ':';
+        rv += it.value().toString();
+    }
+    rv += ']';
+    return rv;
 }
 
 QString flatten(const QString & str);
@@ -105,9 +105,9 @@ inline QString & add(QStringList & list) { list << QString(); return list.last()
 
 inline QDateTime readUTCDateTime(const QString & str)
 {
-	QDateTime rv = QDateTime::fromString(str, "yyyy-MM-dd HH:mm:ss");
-	rv.setTimeSpec(Qt::UTC);
-	return rv;
+    QDateTime rv = QDateTime::fromString(str, "yyyy-MM-dd HH:mm:ss");
+    rv.setTimeSpec(Qt::UTC);
+    return rv;
 }
 
 bool validWebInputChars(const QString & str);
@@ -126,11 +126,11 @@ void preventApplicationSuspend();
 
 class LogProcStatus : public QObject
 {
-	Q_OBJECT
+    Q_OBJECT
 public:
-	LogProcStatus(uint intervalMsec);
+    LogProcStatus(uint intervalMsec);
 private slots:
-	void timeout();
+    void timeout();
 };
 
 void threadSafeExit(int returnCode);
@@ -139,11 +139,11 @@ template <typename T>
 class qAsConstKeyValue
 {
 public:
-	qAsConstKeyValue(const T & container_) : container_(container_) {}
-	auto begin() { return container_.constKeyValueBegin(); }
-	auto end() { return container_.constKeyValueEnd(); }
+    qAsConstKeyValue(const T & container_) : container_(container_) {}
+    auto begin() { return container_.constKeyValueBegin(); }
+    auto end() { return container_.constKeyValueEnd(); }
 private:
-	const T & container_;
+    const T & container_;
 };
 
-}}	// namespace
+}}    // namespace

@@ -21,18 +21,18 @@ class TCPManagerImpl;
 class TLSThread : public util::ThreadVerify
 {
 public:
-	TLSThread(TCPManagerImpl & impl, uint no, uint total);
-	~TLSThread();
+    TLSThread(TCPManagerImpl & impl, uint no, uint total);
+    ~TLSThread();
 
-	void startReadWatcher(TCPConnData * conn);
-	void read(TCPConnData * conn);
-	void write(TCPConnData * conn, const QByteArray & data, bool notifyFinished);
-	void closeConn(TCPConnData * conn, TCPConn::CloseType type, bool notifyClose);
-	void deleteOnFinish(TCPConnData * conn);
-	void callClosed(TCPConnData * conn);
+    void startReadWatcher(TCPConnData * conn);
+    void read(TCPConnData * conn);
+    void write(TCPConnData * conn, const QByteArray & data, bool notifyFinished);
+    void closeConn(TCPConnData * conn, TCPConn::CloseType type, bool notifyClose);
+    void deleteOnFinish(TCPConnData * conn);
+    void callClosed(TCPConnData * conn);
 
 private:
-	TCPManagerImpl & impl_;
+    TCPManagerImpl & impl_;
 };
 
-}}}	// namespace
+}}}    // namespace

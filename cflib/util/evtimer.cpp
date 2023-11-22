@@ -17,32 +17,32 @@ namespace cflib { namespace util {
 
 void EVTimer::init()
 {
-	timer_ = new ev_timer;
-	ev_init(timer_, &EVTimer::timeout);
-	timer_->data = this;
+    timer_ = new ev_timer;
+    ev_init(timer_, &EVTimer::timeout);
+    timer_->data = this;
 }
 
 EVTimer::~EVTimer()
 {
-	delete timer_;
-	delete func_;
+    delete timer_;
+    delete func_;
 }
 
 void EVTimer::start(double after, double repeat)
 {
-	ev_timer_set(timer_, after, repeat);
-	ev_timer_start(libEVLoopOfThread(), timer_);
+    ev_timer_set(timer_, after, repeat);
+    ev_timer_start(libEVLoopOfThread(), timer_);
 }
 
 void EVTimer::stop()
 {
-	ev_timer_stop(libEVLoopOfThread(), timer_);
+    ev_timer_stop(libEVLoopOfThread(), timer_);
 }
 
 void EVTimer::timeout(ev_loop *, ev_timer * w, int)
 {
-	EVTimer * timer = (EVTimer *)w->data;
-	(*timer->func_)();
+    EVTimer * timer = (EVTimer *)w->data;
+    (*timer->func_)();
 }
 
-}}	// namespace
+}}    // namespace

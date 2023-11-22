@@ -6,20 +6,20 @@
 
 # look once for config files
 if(NOT cf_config_file_path)
-	set(cf_config_file_list)
-	set(cf_config_file_path "${PROJECT_SOURCE_DIR}")
-	while(NOT cf_config_file_path STREQUAL "/")
-		if(EXISTS "${cf_config_file_path}/config.cmake")
-			list(APPEND cf_config_file_list "${cf_config_file_path}/config.cmake")
-		endif()
-		get_filename_component(cf_config_file_path "${cf_config_file_path}" DIRECTORY)
-	endwhile()
-	list(REVERSE cf_config_file_list)
-	foreach(config ${cf_config_file_list})
-		message(STATUS "Importing \"${config}\"")
-		include("${config}")
-	endforeach()
-	unset(cf_config_file_list)
+    set(cf_config_file_list)
+    set(cf_config_file_path "${PROJECT_SOURCE_DIR}")
+    while(NOT cf_config_file_path STREQUAL "/")
+        if(EXISTS "${cf_config_file_path}/config.cmake")
+            list(APPEND cf_config_file_list "${cf_config_file_path}/config.cmake")
+        endif()
+        get_filename_component(cf_config_file_path "${cf_config_file_path}" DIRECTORY)
+    endwhile()
+    list(REVERSE cf_config_file_list)
+    foreach(config ${cf_config_file_list})
+        message(STATUS "Importing \"${config}\"")
+        include("${config}")
+    endforeach()
+    unset(cf_config_file_list)
 endif()
 
 # config options
@@ -33,10 +33,10 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 # ccache
 if(ENABLE_CCACHE)
-	find_program(CCACHE_FOUND ccache)
-	if(CCACHE_FOUND)
-		set(CMAKE_CXX_COMPILER_LAUNCHER ccache)
-	endif()
+    find_program(CCACHE_FOUND ccache)
+    if(CCACHE_FOUND)
+        set(CMAKE_CXX_COMPILER_LAUNCHER ccache)
+    endif()
 endif()
 
 # strip release builds
@@ -44,9 +44,9 @@ set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -s")
 
 # Qt
 find_package(
-	Qt5 5.15
-	COMPONENTS Core Sql Test
-	REQUIRED
+    Qt5 5.15
+    COMPONENTS Core Sql Test
+    REQUIRED
 )
 
 # add root include dir
@@ -59,10 +59,10 @@ enable_testing()
 
 # handle include from outer project
 if("${CMAKE_CURRENT_LIST_DIR}" STREQUAL "${PROJECT_SOURCE_DIR}/cmake")
-	list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_LIST_DIR})
-	include(Build)
-	include(DependencyConfig)
-	include(Util)
+    list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_LIST_DIR})
+    include(Build)
+    include(DependencyConfig)
+    include(Util)
 else()
-	add_subdirectory(${CMAKE_CURRENT_LIST_DIR}/..)
+    add_subdirectory(${CMAKE_CURRENT_LIST_DIR}/..)
 endif()

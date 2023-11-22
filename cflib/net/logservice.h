@@ -14,13 +14,13 @@ namespace cflib { namespace net {
 
 class LogService : public RMIServiceBase
 {
-	SERIALIZE_CLASS
+    SERIALIZE_CLASS
 public:
-	LogService();
-	~LogService();
+    LogService();
+    ~LogService();
 
 rmi:
-	void log(const QString & file, int line, cflib::util::LogCategory category, const QString & str);
+    void log(const QString & file, int line, cflib::util::LogCategory category, const QString & str);
 };
 
-}}	// namespace
+}}    // namespace

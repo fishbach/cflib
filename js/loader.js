@@ -20,145 +20,145 @@ var needName = null;
 
 function setModule(name, value)
 {
-	loadedModules[name] = value;
+    loadedModules[name] = value;
 
-	var last = mod;
-	var parts = name.split('/');
-	var len = parts.length - 1;
-	for (var i = 0 ; i < len ; ++i) {
-		var p = parts[i];
-		if (!(p in last)) last = last[p] = {};
-		else              last = last[p];
-	}
-	last[parts[len]] = value;
+    var last = mod;
+    var parts = name.split('/');
+    var len = parts.length - 1;
+    for (var i = 0 ; i < len ; ++i) {
+        var p = parts[i];
+        if (!(p in last)) last = last[p] = {};
+        else              last = last[p];
+    }
+    last[parts[len]] = value;
 }
 
 function checkWaitingCalls()
 {
-	var again;
-	do {
-		again = false;
-		var i = waitingCalls.length;
-		while (i--) {
-			if (checkDepends.apply(this, waitingCalls[i])) {
-				waitingCalls.splice(i, 1);
-				again = true;
-			}
-		}
-	} while (again);
+    var again;
+    do {
+        again = false;
+        var i = waitingCalls.length;
+        while (i--) {
+            if (checkDepends.apply(this, waitingCalls[i])) {
+                waitingCalls.splice(i, 1);
+                again = true;
+            }
+        }
+    } while (again);
 
-	if (waitingCalls.length === 0) loadingModules = {};
+    if (waitingCalls.length === 0) loadingModules = {};
 }
 
 function getModuleName(node)
 {
-	var path = node.getAttribute('src');
-	if (path.startsWith('http')) return path;
-	return path.substr(basePath.length, path.length - basePath.length - 3 - query.length);
+    var path = node.getAttribute('src');
+    if (path.startsWith('http')) return path;
+    return path.substr(basePath.length, path.length - basePath.length - 3 - query.length);
 }
 
 function getCurrentModuleName(func)
 {
-	if (document.currentScript) func(getModuleName(document.currentScript));
-	else                        needName = func;
+    if (document.currentScript) func(getModuleName(document.currentScript));
+    else                        needName = func;
 }
 
 function getLoop(chain, deps)
 {
-	var last = chain[chain.length - 1];
-	for (var d in deps[last]) {
-		for (var i = 0, len = chain.length ; i < len ; ++i) {
-			if (d == chain[i]) return chain.slice(i).concat(d);
-		}
-		if (d in deps) {
-			var rv = getLoop(chain.concat(d), deps);
-			if (rv) return rv;
-		}
-	}
-	return null;
+    var last = chain[chain.length - 1];
+    for (var d in deps[last]) {
+        for (var i = 0, len = chain.length ; i < len ; ++i) {
+            if (d == chain[i]) return chain.slice(i).concat(d);
+        }
+        if (d in deps) {
+            var rv = getLoop(chain.concat(d), deps);
+            if (rv) return rv;
+        }
+    }
+    return null;
 }
 
 function loadEvent()
 {
-	this.removeEventListener('load', loadEvent);
+    this.removeEventListener('load', loadEvent);
 
-	var name = getModuleName(this);
-	if (needName) {
-		needName(name);
-		needName = null;
-	}
+    var name = getModuleName(this);
+    if (needName) {
+        needName(name);
+        needName = null;
+    }
 
-	if (!(name in defines)) {
-		loadedModules[name] = null;
-		checkWaitingCalls();
-	} else {
-		delete defines[name];
-	}
+    if (!(name in defines)) {
+        loadedModules[name] = null;
+        checkWaitingCalls();
+    } else {
+        delete defines[name];
+    }
 
-	if (--loadingCount === 0 && waitingCalls.length > 0) {
-		var deps = {};
-		var first = null;
-		for (var i = 0, len = waitingCalls.length ; i < len ; ++i) {
-			var c = waitingCalls[i];
-			var from = c[0];
-			if (!from) continue;
-			if (!first) first = from;
-			var o = deps[from] = {};
-			var to = c[1];
-			for (var j = 0, jLen = to.length ; j < jLen ; ++j) o[to[j]] = true;
-		}
-		throw new Error('dependency loop detected: ' + getLoop([first], deps).join(' -> '));
-	}
+    if (--loadingCount === 0 && waitingCalls.length > 0) {
+        var deps = {};
+        var first = null;
+        for (var i = 0, len = waitingCalls.length ; i < len ; ++i) {
+            var c = waitingCalls[i];
+            var from = c[0];
+            if (!from) continue;
+            if (!first) first = from;
+            var o = deps[from] = {};
+            var to = c[1];
+            for (var j = 0, jLen = to.length ; j < jLen ; ++j) o[to[j]] = true;
+        }
+        throw new Error('dependency loop detected: ' + getLoop([first], deps).join(' -> '));
+    }
 }
 
 function checkDepends(name, depends, func)
 {
-	var needLoad = false;
-	var args = [];
-	var i = depends.length;
-	while (i--) {
-		var mod = depends[i];
-		if (!(mod in loadedModules)) {
-			needLoad = true;
+    var needLoad = false;
+    var args = [];
+    var i = depends.length;
+    while (i--) {
+        var mod = depends[i];
+        if (!(mod in loadedModules)) {
+            needLoad = true;
 
-			if (!(mod in loadingModules)) {
-				loadingModules[mod] = true;
+            if (!(mod in loadingModules)) {
+                loadingModules[mod] = true;
 
-				++loadingCount;
-				var node = document.createElement('script');
-				node.addEventListener('load', loadEvent);
-				node.async = true;
-				if (mod.startsWith('http')) node.src = mod;
-				else                        node.src = basePath + mod + '.js' + query;
-				head.appendChild(node);
-			}
-		} else if (!needLoad) {
-			args.unshift(loadedModules[mod]);
-		}
-	}
-	if (needLoad) return false;
+                ++loadingCount;
+                var node = document.createElement('script');
+                node.addEventListener('load', loadEvent);
+                node.async = true;
+                if (mod.startsWith('http')) node.src = mod;
+                else                        node.src = basePath + mod + '.js' + query;
+                head.appendChild(node);
+            }
+        } else if (!needLoad) {
+            args.unshift(loadedModules[mod]);
+        }
+    }
+    if (needLoad) return false;
 
-	var rv = func.apply(scope, args);
-	if (name) setModule(name, rv);
-	return true;
+    var rv = func.apply(scope, args);
+    if (name) setModule(name, rv);
+    return true;
 }
 
 function doDefine(name, depends, func)
 {
-	if (name) defines[name] = true;
-	if (func) {
-		if (!checkDepends(name, depends, func)) {
-			waitingCalls.push(arguments);
-		} else {
-			if (name) checkWaitingCalls();
-		}
-	} else {
-		var rv = depends();
-		if (name) {
-			setModule(name, rv);
-			checkWaitingCalls();
-		}
-	}
+    if (name) defines[name] = true;
+    if (func) {
+        if (!checkDepends(name, depends, func)) {
+            waitingCalls.push(arguments);
+        } else {
+            if (name) checkWaitingCalls();
+        }
+    } else {
+        var rv = depends();
+        if (name) {
+            setModule(name, rv);
+            checkWaitingCalls();
+        }
+    }
 }
 
 require = function(depends, func) { doDefine(null, depends, func); };
@@ -166,32 +166,32 @@ define  = function(depends, func) { getCurrentModuleName(function(name) { doDefi
 mod     = {};
 
 (function() {
-	var scripts = document.getElementsByTagName('script');
-	var i = scripts.length;
-	while (i--) {
-		var scr = scripts[i];
-		var main = scr.getAttribute('data-main');
-		if (!main) continue;
+    var scripts = document.getElementsByTagName('script');
+    var i = scripts.length;
+    while (i--) {
+        var scr = scripts[i];
+        var main = scr.getAttribute('data-main');
+        if (!main) continue;
 
-		// basePath
-		var p = main.lastIndexOf('/');
-		if (p != -1) basePath = main.substr(0, p + 1);
+        // basePath
+        var p = main.lastIndexOf('/');
+        if (p != -1) basePath = main.substr(0, p + 1);
 
-		// query
-		query = scr.getAttribute('src') || '';
-		p = query.indexOf('?');
-		query = p == -1 ? '' : query.substr(p);
+        // query
+        query = scr.getAttribute('src') || '';
+        p = query.indexOf('?');
+        query = p == -1 ? '' : query.substr(p);
 
-		// head
-		head = scr.parentNode;
+        // head
+        head = scr.parentNode;
 
-		var node = document.createElement('script');
-		node.async = true;
-		node.src = main + query;
-		head.appendChild(node);
-		return;
-	}
-	throw new Error('attribute "data-main" missing');
+        var node = document.createElement('script');
+        node.async = true;
+        node.src = main + query;
+        head.appendChild(node);
+        return;
+    }
+    throw new Error('attribute "data-main" missing');
 })();
 
 })(this);

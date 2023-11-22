@@ -19,40 +19,40 @@ namespace impl { class TCPManagerImpl; }
 
 class TCPConnData
 {
-	Q_DISABLE_COPY(TCPConnData)
+    Q_DISABLE_COPY(TCPConnData)
 public:
-	TCPConnData(impl::TCPManagerImpl & impl,
-		int socket, const char * peerIP, quint16 peerPort,
-		crypt::TLSStream * tlsStream, uint tlsThreadId);
-	~TCPConnData();
+    TCPConnData(impl::TCPManagerImpl & impl,
+        int socket, const char * peerIP, quint16 peerPort,
+        crypt::TLSStream * tlsStream, uint tlsThreadId);
+    ~TCPConnData();
 
-	void callClosed();
+    void callClosed();
 
 public:
-	impl::TCPManagerImpl & impl;
-	TCPConn * conn;
+    impl::TCPManagerImpl & impl;
+    TCPConn * conn;
 
-	// connection
-	const int socket;
-	const QByteArray peerIP;
-	const quint16 peerPort;
+    // connection
+    const int socket;
+    const QByteArray peerIP;
+    const quint16 peerPort;
 
-	// TLS handling
-	crypt::TLSStream * const tlsStream;
-	const uint tlsThreadId;
+    // TLS handling
+    crypt::TLSStream * const tlsStream;
+    const uint tlsThreadId;
 
-	// state
-	ev_io * readWatcher;
-	ev_io * writeWatcher;
-	QByteArray readBuf;
-	QByteArray readData;
-	QByteArray writeBuf;
-	bool notifySomeBytesWritten;
-	bool closeAfterWriting;
-	bool deleteAfterWriting;
-	bool notifyWrite;
-	volatile TCPConn::CloseType closeType;
-	TCPConn::CloseType lastInformedCloseType;
+    // state
+    ev_io * readWatcher;
+    ev_io * writeWatcher;
+    QByteArray readBuf;
+    QByteArray readData;
+    QByteArray writeBuf;
+    bool notifySomeBytesWritten;
+    bool closeAfterWriting;
+    bool deleteAfterWriting;
+    bool notifyWrite;
+    volatile TCPConn::CloseType closeType;
+    TCPConn::CloseType lastInformedCloseType;
 };
 
-}}	// namespace
+}}    // namespace

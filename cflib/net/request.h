@@ -20,78 +20,78 @@ namespace impl { class RequestParser; }
 class Request
 {
 public:
-	typedef QPair<int, int> Id;
-	typedef QMap<QByteArray, QByteArray> KeyVal;
-	enum Method {
-		NONE = 0,
-		GET,
-		POST,
-		HEAD
-	};
-	struct LoginPass { QString login; QString password; };
+    typedef QPair<int, int> Id;
+    typedef QMap<QByteArray, QByteArray> KeyVal;
+    enum Method {
+        NONE = 0,
+        GET,
+        POST,
+        HEAD
+    };
+    struct LoginPass { QString login; QString password; };
 
 public:
-	Request();
-	Request(int connId, int requestId,
-		const QByteArray & header,
-		const KeyVal & headerFields, Method method, const QByteArray & uri,
-		const QByteArray & body, const QList<RequestHandler *> & handlers, bool passThrough,
-		impl::RequestParser * parser);
+    Request();
+    Request(int connId, int requestId,
+        const QByteArray & header,
+        const KeyVal & headerFields, Method method, const QByteArray & uri,
+        const QByteArray & body, const QList<RequestHandler *> & handlers, bool passThrough,
+        impl::RequestParser * parser);
 
-	// implicit sharing
-	~Request();
-	Request(const Request & other);
-	Request & operator=(const Request & other);
+    // implicit sharing
+    ~Request();
+    Request(const Request & other);
+    Request & operator=(const Request & other);
 
-	Id getId() const;
-	bool replySent() const;
+    Id getId() const;
+    bool replySent() const;
 
-	QByteArray getRawHeader() const;
-	QByteArray getHeader(const QByteArray & name) const;
-	QByteArray getHostname() const;
-	KeyVal getHeaderFields() const;
-	Method getMethod() const;
-	QByteArray getMethodName() const;
-	inline bool isGET()  const { return getMethod() == GET; }
-	inline bool isPOST() const { return getMethod() == POST; }
-	inline bool isHEAD() const { return getMethod() == HEAD; }
-	QByteArray getUri() const;
-	QByteArray getBody() const;
-	QByteArray getRemoteIP() const;
-	LoginPass getBasicAuth() const;
+    QByteArray getRawHeader() const;
+    QByteArray getHeader(const QByteArray & name) const;
+    QByteArray getHostname() const;
+    KeyVal getHeaderFields() const;
+    Method getMethod() const;
+    QByteArray getMethodName() const;
+    inline bool isGET()  const { return getMethod() == GET; }
+    inline bool isPOST() const { return getMethod() == POST; }
+    inline bool isHEAD() const { return getMethod() == HEAD; }
+    QByteArray getUri() const;
+    QByteArray getBody() const;
+    QByteArray getRemoteIP() const;
+    LoginPass getBasicAuth() const;
 
-	void sendNotFound() const;
-	void sendRedirect(const QByteArray & url) const;
-	void sendReply(const QByteArray & reply, const QByteArray & contentType, bool compression = true) const;
-	void sendText(const QString & reply, const QByteArray & contentType = "text/html", bool compression = true) const;
-	void sendRaw(const QByteArray & header, const QByteArray & body, bool compression) const;
-	void addHeaderLine(const QByteArray & line) const;
-	QByteArray defaultHeaders() const;
+    void sendNotFound() const;
+    void sendRedirect(const QByteArray & url) const;
+    void sendReply(const QByteArray & reply, const QByteArray & contentType, bool compression = true) const;
+    void sendText(const QString & reply, const QByteArray & contentType = "text/html", bool compression = true) const;
+    void sendRaw(const QByteArray & header, const QByteArray & body, bool compression) const;
+    void addHeaderLine(const QByteArray & line) const;
+    QByteArray defaultHeaders() const;
 
-	bool isPassThrough() const;
-	void setPassThroughHandler(PassThroughHandler * hdl) const;
-	QByteArray readPassThrough(bool & isLast) const;
-	void startWatcher() const;
-	void abort() const;
+    bool isPassThrough() const;
+    void setPassThroughHandler(PassThroughHandler * hdl) const;
+    QByteArray readPassThrough(bool & isLast) const;
+    void startWatcher() const;
+    void abort() const;
 
-	TCPConnData * detach() const;
-	TCPManager * tcpManager() const;
+    TCPConnData * detach() const;
+    TCPManager * tcpManager() const;
 
-	static LoginPass getBasicAuth(const QByteArray & authorization);
-
-private:
-	void callNextHandler() const;
+    static LoginPass getBasicAuth(const QByteArray & authorization);
 
 private:
-	class Shared;
-	Shared * d;
-	friend class impl::RequestParser;
+    void callNextHandler() const;
+
+private:
+    class Shared;
+    Shared * d;
+    friend class impl::RequestParser;
 };
 
 class PassThroughHandler
 {
 public:
-	virtual void morePassThroughData() = 0;
+    virtual void morePassThroughData() = 0;
 };
 
-}}	// namespace
+}}    // namespace

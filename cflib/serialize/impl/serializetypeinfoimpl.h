@@ -16,9 +16,9 @@ class SerializeTypeInfoImpl : public SerializeTypeInfo {};
 template<typename T>
 inline SerializeTypeInfo fromType()
 {
-	SerializeTypeInfoImpl retval;
-	serializeTypeInfo(retval, (T *)0);
-	return retval;
+    SerializeTypeInfoImpl retval;
+    serializeTypeInfo(retval, (T *)0);
+    return retval;
 }
 
 
@@ -27,10 +27,10 @@ inline SerializeTypeInfo fromType()
 // ============================================================================
 
 #define DO_SERIALIZE_TYPE_INFO(T, N) \
-	inline void serializeTypeInfo(SerializeTypeInfoImpl & si, T *) { \
-		si.type = SerializeTypeInfo::Basic; \
-		si.typeName = #N; \
-	} \
+    inline void serializeTypeInfo(SerializeTypeInfoImpl & si, T *) { \
+        si.type = SerializeTypeInfo::Basic; \
+        si.typeName = #N; \
+    } \
 
 DO_SERIALIZE_TYPE_INFO(bool,    bool)
 DO_SERIALIZE_TYPE_INFO(qint8,   int8)
@@ -54,7 +54,7 @@ DO_SERIALIZE_TYPE_INFO(QDateTime,  DateTime)
 template<typename T>
 inline void serializeTypeInfo(SerializeTypeInfoImpl & si, QFlags<T> *)
 {
-	serializeTypeInfo(si, (int *)0);
+    serializeTypeInfo(si, (int *)0);
 }
 
 
@@ -65,58 +65,58 @@ inline void serializeTypeInfo(SerializeTypeInfoImpl & si, QFlags<T> *)
 template<typename T1, typename T2>
 inline void serializeTypeInfo(SerializeTypeInfoImpl & si, QPair<T1, T2> *)
 {
-	SerializeTypeInfoImpl si1;
-	serializeTypeInfo(si1, (T1 *)0);
-	SerializeTypeInfoImpl si2;
-	serializeTypeInfo(si2, (T2 *)0);
-	si.type = SerializeTypeInfo::Container;
-	si.typeName = "Pair<" + si1.typeName + "," + si2.typeName + ">";
-	si.bases << si1 << si2;
+    SerializeTypeInfoImpl si1;
+    serializeTypeInfo(si1, (T1 *)0);
+    SerializeTypeInfoImpl si2;
+    serializeTypeInfo(si2, (T2 *)0);
+    si.type = SerializeTypeInfo::Container;
+    si.typeName = "Pair<" + si1.typeName + "," + si2.typeName + ">";
+    si.bases << si1 << si2;
 }
 
 template<typename T>
 inline void serializeTypeInfo(SerializeTypeInfoImpl & si, QList<T> *)
 {
-	SerializeTypeInfoImpl si1;
-	serializeTypeInfo(si1, (T *)0);
-	si.type = SerializeTypeInfo::Container;
-	si.typeName = "List<" + si1.typeName + ">";
-	si.bases << si1;
+    SerializeTypeInfoImpl si1;
+    serializeTypeInfo(si1, (T *)0);
+    si.type = SerializeTypeInfo::Container;
+    si.typeName = "List<" + si1.typeName + ">";
+    si.bases << si1;
 }
 
 inline void serializeTypeInfo(SerializeTypeInfoImpl & si, QStringList *)
 {
-	serializeTypeInfo(si, (QList<QString> *)0);
+    serializeTypeInfo(si, (QList<QString> *)0);
 }
 
 template<typename T>
 inline void serializeTypeInfo(SerializeTypeInfoImpl & si, QVector<T> *)
 {
-	serializeTypeInfo(si, (QList<T> *)0);
+    serializeTypeInfo(si, (QList<T> *)0);
 }
 
 template<typename T>
 inline void serializeTypeInfo(SerializeTypeInfoImpl & si, QSet<T> *)
 {
-	serializeTypeInfo(si, (QList<T> *)0);
+    serializeTypeInfo(si, (QList<T> *)0);
 }
 
 template<typename Key, typename T>
 inline void serializeTypeInfo(SerializeTypeInfoImpl & si, QMap<Key, T> *)
 {
-	SerializeTypeInfoImpl si1;
-	serializeTypeInfo(si1, (Key *)0);
-	SerializeTypeInfoImpl si2;
-	serializeTypeInfo(si2, (T *)0);
-	si.type = SerializeTypeInfo::Container;
-	si.typeName = "Map<" + si1.typeName + "," + si2.typeName + ">";
-	si.bases << si1 << si2;
+    SerializeTypeInfoImpl si1;
+    serializeTypeInfo(si1, (Key *)0);
+    SerializeTypeInfoImpl si2;
+    serializeTypeInfo(si2, (T *)0);
+    si.type = SerializeTypeInfo::Container;
+    si.typeName = "Map<" + si1.typeName + "," + si2.typeName + ">";
+    si.bases << si1 << si2;
 }
 
 template<typename Key, typename T>
 inline void serializeTypeInfo(SerializeTypeInfoImpl & si, QHash<Key, T> *)
 {
-	serializeTypeInfo(si, (QMap<Key, T> *)0);
+    serializeTypeInfo(si, (QMap<Key, T> *)0);
 }
 
 
@@ -127,7 +127,7 @@ inline void serializeTypeInfo(SerializeTypeInfoImpl & si, QHash<Key, T> *)
 template<typename T>
 inline void serializeTypeInfo(SerializeTypeInfoImpl & si, T *)
 {
-	(SerializeTypeInfo &)si = T::serializeTypeInfo();
+    (SerializeTypeInfo &)si = T::serializeTypeInfo();
 }
 
 
@@ -138,7 +138,7 @@ inline void serializeTypeInfo(SerializeTypeInfoImpl & si, T *)
 template<typename T>
 inline void serializeTypeInfo(SerializeTypeInfoImpl & si, QSharedPointer<T> *)
 {
-	(SerializeTypeInfo &)si = T::serializeTypeInfo();
+    (SerializeTypeInfo &)si = T::serializeTypeInfo();
 }
 
-}}}	// namespace
+}}}    // namespace

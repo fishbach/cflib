@@ -13,13 +13,13 @@ namespace cflib { namespace crypt {
 
 class TLSStream
 {
-	Q_DISABLE_COPY(TLSStream)
+    Q_DISABLE_COPY(TLSStream)
 public:
-	TLSStream() {}
-	virtual ~TLSStream() {}
-	virtual QByteArray initialSend() = 0;
-	virtual bool received(const QByteArray & encrypted, QByteArray & plain, QByteArray & sendBack) = 0;
-	virtual bool send(const QByteArray & plain, QByteArray & encrypted) = 0;
+    TLSStream() {}
+    virtual ~TLSStream() {}
+    virtual QByteArray initialSend() = 0;
+    virtual bool received(const QByteArray & encrypted, QByteArray & plain, QByteArray & sendBack) = 0;
+    virtual bool send(const QByteArray & plain, QByteArray & encrypted) = 0;
 };
 
-}}	// namespace
+}}    // namespace

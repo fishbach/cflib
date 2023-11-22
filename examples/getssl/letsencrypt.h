@@ -9,16 +9,16 @@
 
 class LetsEncrypt
 {
-	Q_DISABLE_COPY(LetsEncrypt)
+    Q_DISABLE_COPY(LetsEncrypt)
 public:
-	LetsEncrypt(const QList<QByteArray> & domains, const QByteArray & email,
-		const QByteArray & privateKeyFile, const QByteArray & destDir,
-		bool test);
-	~LetsEncrypt();
+    LetsEncrypt(const QList<QByteArray> & domains, const QByteArray & email,
+        const QByteArray & privateKeyFile, const QByteArray & destDir,
+        bool test);
+    ~LetsEncrypt();
 
-	void start();
+    void start();
 
 private:
-	class Impl;
-	Impl * impl_;
+    class Impl;
+    Impl * impl_;
 };

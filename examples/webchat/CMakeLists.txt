@@ -5,5 +5,5 @@
 # Licensed under the MIT License.
 
 cf_app(webchat cflib_net ENABLE_SER
-	OTHER_FILES htdocs/*
+    OTHER_FILES htdocs/*
 )

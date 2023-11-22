@@ -16,32 +16,32 @@ class TCPManager;
 
 class HttpRequest : public util::ThreadVerify
 {
-	Q_DISABLE_COPY(HttpRequest)
+    Q_DISABLE_COPY(HttpRequest)
 public:
-	HttpRequest(TCPManager & mgr);
-	~HttpRequest();
+    HttpRequest(TCPManager & mgr);
+    ~HttpRequest();
 
-	void start(const QUrl & url, const QList<QByteArray> & headers,
-		const QByteArray & postData = QByteArray(), const QByteArray & contentType = "application/octet-stream",
-		uint timeoutMs = 10000);
+    void start(const QUrl & url, const QList<QByteArray> & headers,
+        const QByteArray & postData = QByteArray(), const QByteArray & contentType = "application/octet-stream",
+        uint timeoutMs = 10000);
 
-	inline void start(const QUrl & url,
-		const QByteArray & postData = QByteArray(), const QByteArray & contentType = "application/octet-stream",
-		uint timeoutMs = 10000)
-	{
-		start(url, QList<QByteArray>(), postData, contentType, timeoutMs);
-	}
+    inline void start(const QUrl & url,
+        const QByteArray & postData = QByteArray(), const QByteArray & contentType = "application/octet-stream",
+        uint timeoutMs = 10000)
+    {
+        start(url, QList<QByteArray>(), postData, contentType, timeoutMs);
+    }
 
 cfsignals:
-	sig<void (int status, const QByteArray & reply)> reply;
+    sig<void (int status, const QByteArray & reply)> reply;
 
 private:
-	void destroy();
+    void destroy();
 
 private:
-	TCPManager & mgr_;
-	class Conn;
-	Conn * conn_;
+    TCPManager & mgr_;
+    class Conn;
+    Conn * conn_;
 };
 
-}}	// namespace
+}}    // namespace

@@ -32,8 +32,8 @@ sig_t oldSigH15 = 0;
 
 void signalHandler(int sig)
 {
-	char s = (char)sig;
-	int c __attribute__((unused)) = ::write(sockets[0], &s, 1);
+    char s = (char)sig;
+    int c __attribute__((unused)) = ::write(sockets[0], &s, 1);
 }
 
 #endif
@@ -42,50 +42,50 @@ void signalHandler(int sig)
 
 UnixSignal::UnixSignal(bool quitQCoreApplication)
 {
-	logFunctionTrace
+    logFunctionTrace
 
-	if (active) qFatal("only one UnixSignal instance can exist");
-	active = true;
+    if (active) qFatal("only one UnixSignal instance can exist");
+    active = true;
 
 #ifdef Q_OS_UNIX
-	if (::socketpair(AF_UNIX, SOCK_STREAM, 0, sockets)) qFatal("Couldn't create socketpair");
-	sn_ = new QSocketNotifier(sockets[1], QSocketNotifier::Read);
-	connect(sn_, SIGNAL(activated(int)), this, SLOT(activated()));
-	oldSigH1  = ::signal(1,  signalHandler);
-	oldSigH2  = ::signal(2,  signalHandler);
-	oldSigH15 = ::signal(15, signalHandler);
+    if (::socketpair(AF_UNIX, SOCK_STREAM, 0, sockets)) qFatal("Couldn't create socketpair");
+    sn_ = new QSocketNotifier(sockets[1], QSocketNotifier::Read);
+    connect(sn_, SIGNAL(activated(int)), this, SLOT(activated()));
+    oldSigH1  = ::signal(1,  signalHandler);
+    oldSigH2  = ::signal(2,  signalHandler);
+    oldSigH15 = ::signal(15, signalHandler);
 
-	if (quitQCoreApplication) connect(this, SIGNAL(catchedSignal(int)), QCoreApplication::instance(), SLOT(quit()));
+    if (quitQCoreApplication) connect(this, SIGNAL(catchedSignal(int)), QCoreApplication::instance(), SLOT(quit()));
 #else
-	Q_UNUSED(quitQCoreApplication)
+    Q_UNUSED(quitQCoreApplication)
 #endif
 }
 
 UnixSignal::~UnixSignal()
 {
-	logFunctionTrace
+    logFunctionTrace
 
 #ifdef Q_OS_UNIX
-	::signal(1,  oldSigH1);
-	::signal(2,  oldSigH2);
-	::signal(15, oldSigH15);
-	delete sn_;
-	::close(sockets[0]);
-	::close(sockets[1]);
+    ::signal(1,  oldSigH1);
+    ::signal(2,  oldSigH2);
+    ::signal(15, oldSigH15);
+    delete sn_;
+    ::close(sockets[0]);
+    ::close(sockets[1]);
 #endif
 
-	active = false;
+    active = false;
 }
 
 void UnixSignal::activated()
 {
 #ifdef Q_OS_UNIX
-	char s;
-	int c __attribute__((unused)) = ::read(sockets[1], &s, 1);
-	int sig = s;
-	logInfo("catched signal %1", sig);
-	emit catchedSignal(sig);
+    char s;
+    int c __attribute__((unused)) = ::read(sockets[1], &s, 1);
+    int sig = s;
+    logInfo("catched signal %1", sig);
+    emit catchedSignal(sig);
 #endif
 }
 
-}}	// namespace
+}}    // namespace

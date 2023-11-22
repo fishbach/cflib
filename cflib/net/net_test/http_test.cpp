@@ -22,42 +22,42 @@ QMutex mutex;
 
 void msg(const QString & msg)
 {
-	QMutexLocker ml(&mutex);
-	msgs << msg;
-	msgSem.release();
+    QMutexLocker ml(&mutex);
+    msgs << msg;
+    msgSem.release();
 }
 
 class TestHdl : public RequestHandler
 {
 public:
-	TestHdl() : count_(0) {}
+    TestHdl() : count_(0) {}
 
 protected:
-	virtual void handleRequest(const Request & request)
-	{
-		msg("new request: " + request.getUri());
-		if (request.getUri() == "/abort") {
-			request.abort();
-		} else {
-			request.sendText(QString("reply %1").arg(++count_));
-		}
-	}
+    virtual void handleRequest(const Request & request)
+    {
+        msg("new request: " + request.getUri());
+        if (request.getUri() == "/abort") {
+            request.abort();
+        } else {
+            request.sendText(QString("reply %1").arg(++count_));
+        }
+    }
 private:
-	uint count_;
+    uint count_;
 };
 
 class TestClient : public HttpClient
 {
 public:
-	TestClient(TCPManager & mgr,  bool keepAlive) : HttpClient(mgr, keepAlive) {}
+    TestClient(TCPManager & mgr,  bool keepAlive) : HttpClient(mgr, keepAlive) {}
 
 protected:
-	virtual void reply(const QByteArray & raw)
-	{
-		QByteArray r = raw;
-		r.replace("\r\n" , "|");
-		msg("http reply: " + r);
-	}
+    virtual void reply(const QByteArray & raw)
+    {
+        QByteArray r = raw;
+        r.replace("\r\n" , "|");
+        msg("http reply: " + r);
+    }
 
 };
 
@@ -65,91 +65,91 @@ protected:
 
 class HTTP_Test: public QObject
 {
-	Q_OBJECT
+    Q_OBJECT
 private slots:
 
-	void test_keepAlive()
-	{
-		TestHdl hdl;
-		HttpServer server;
-		server.registerHandler(hdl);
-		server.start("127.0.0.1", 12301);
+    void test_keepAlive()
+    {
+        TestHdl hdl;
+        HttpServer server;
+        server.registerHandler(hdl);
+        server.start("127.0.0.1", 12301);
 
-		TCPManager mgr;
-		TestClient cli(mgr, true);
+        TCPManager mgr;
+        TestClient cli(mgr, true);
 
-		cli.get("127.0.0.1", 12301, "/test1");
-		msgSem.acquire(2);
-		QCOMPARE(msgs.size(), 2);
-		QVERIFY(msgs.contains("new request: /test1"));
-		QVERIFY(!msgs.filter(QRegularExpression(
-			"http reply: HTTP/1.1 200 OK\\|"
-			"Date: .*\\|"
-			"Server: cflib/.*\\|"
-			"Connection: keep-alive\\|"
-			"Content-Type: text/html; charset=utf-8|Content-Length: 7||reply 1"
-		)).isEmpty());
-		msgs.clear();
+        cli.get("127.0.0.1", 12301, "/test1");
+        msgSem.acquire(2);
+        QCOMPARE(msgs.size(), 2);
+        QVERIFY(msgs.contains("new request: /test1"));
+        QVERIFY(!msgs.filter(QRegularExpression(
+            "http reply: HTTP/1.1 200 OK\\|"
+            "Date: .*\\|"
+            "Server: cflib/.*\\|"
+            "Connection: keep-alive\\|"
+            "Content-Type: text/html; charset=utf-8|Content-Length: 7||reply 1"
+        )).isEmpty());
+        msgs.clear();
 
-		cli.get("127.0.0.1", 12301, "/test2");
-		msgSem.acquire(2);
-		QCOMPARE(msgs.size(), 2);
-		QVERIFY(msgs.contains("new request: /test2"));
-		QVERIFY(!msgs.filter(QRegularExpression(
-			"http reply: HTTP/1.1 200 OK\\|"
-			"Date: .*\\|"
-			"Server: cflib/.*\\|"
-			"Connection: keep-alive\\|"
-			"Content-Type: text/html; charset=utf-8|Content-Length: 7||reply 2"
-		)).isEmpty());
-		msgs.clear();
+        cli.get("127.0.0.1", 12301, "/test2");
+        msgSem.acquire(2);
+        QCOMPARE(msgs.size(), 2);
+        QVERIFY(msgs.contains("new request: /test2"));
+        QVERIFY(!msgs.filter(QRegularExpression(
+            "http reply: HTTP/1.1 200 OK\\|"
+            "Date: .*\\|"
+            "Server: cflib/.*\\|"
+            "Connection: keep-alive\\|"
+            "Content-Type: text/html; charset=utf-8|Content-Length: 7||reply 2"
+        )).isEmpty());
+        msgs.clear();
 
 
-		cli.get("127.0.0.1", 12301, "/abort");
-		msgSem.acquire(2);
-		QCOMPARE(msgs.size(), 2);
-		QVERIFY(msgs.contains("new request: /abort"));
-		QVERIFY(msgs.contains("http reply: "));
-		msgs.clear();
-	}
+        cli.get("127.0.0.1", 12301, "/abort");
+        msgSem.acquire(2);
+        QCOMPARE(msgs.size(), 2);
+        QVERIFY(msgs.contains("new request: /abort"));
+        QVERIFY(msgs.contains("http reply: "));
+        msgs.clear();
+    }
 
-	void test_immediateClose()
-	{
-		TestHdl hdl;
+    void test_immediateClose()
+    {
+        TestHdl hdl;
 
-		HttpServer server;
-		server.registerHandler(hdl);
-		server.start("127.0.0.1", 12301);
+        HttpServer server;
+        server.registerHandler(hdl);
+        server.start("127.0.0.1", 12301);
 
-		TCPManager mgr;
-		TestClient cli(mgr, false);
+        TCPManager mgr;
+        TestClient cli(mgr, false);
 
-		cli.get("127.0.0.1", 12301, "/test1");
-		msgSem.acquire(2);
-		QCOMPARE(msgs.size(), 2);
-		QVERIFY(msgs.contains("new request: /test1"));
-		QVERIFY(!msgs.filter(QRegularExpression(
-			"http reply: HTTP/1.1 200 OK\\|"
-			"Date: .*\\|"
-			"Server: cflib/.*\\|"
-			"Connection: keep-alive\\|"
-			"Content-Type: text/html; charset=utf-8|Content-Length: 7||reply 1"
-		)).isEmpty());
-		msgs.clear();
+        cli.get("127.0.0.1", 12301, "/test1");
+        msgSem.acquire(2);
+        QCOMPARE(msgs.size(), 2);
+        QVERIFY(msgs.contains("new request: /test1"));
+        QVERIFY(!msgs.filter(QRegularExpression(
+            "http reply: HTTP/1.1 200 OK\\|"
+            "Date: .*\\|"
+            "Server: cflib/.*\\|"
+            "Connection: keep-alive\\|"
+            "Content-Type: text/html; charset=utf-8|Content-Length: 7||reply 1"
+        )).isEmpty());
+        msgs.clear();
 
-		cli.get("127.0.0.1", 12301, "/test2");
-		msgSem.acquire(2);
-		QCOMPARE(msgs.size(), 2);
-		QVERIFY(msgs.contains("new request: /test2"));
-		QVERIFY(!msgs.filter(QRegularExpression(
-			"http reply: HTTP/1.1 200 OK\\|"
-			"Date: .*\\|"
-			"Server: cflib/.*\\|"
-			"Connection: keep-alive\\|"
-			"Content-Type: text/html; charset=utf-8|Content-Length: 7||reply 2"
-		)).isEmpty());
-		msgs.clear();
-	}
+        cli.get("127.0.0.1", 12301, "/test2");
+        msgSem.acquire(2);
+        QCOMPARE(msgs.size(), 2);
+        QVERIFY(msgs.contains("new request: /test2"));
+        QVERIFY(!msgs.filter(QRegularExpression(
+            "http reply: HTTP/1.1 200 OK\\|"
+            "Date: .*\\|"
+            "Server: cflib/.*\\|"
+            "Connection: keep-alive\\|"
+            "Content-Type: text/html; charset=utf-8|Content-Length: 7||reply 2"
+        )).isEmpty());
+        msgs.clear();
+    }
 
 };
 #include "http_test.moc"

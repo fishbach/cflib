@@ -5,12 +5,12 @@
 # Licensed under the MIT License.
 
 cf_lib(cflib_util
-	PUBLIC Qt5::Core
-	PRIVATE ZLIB::ZLIB
-	DIRS impl
-	ENABLE_MOC
-	OTHER_FILES
-		impl/generate_templates.pl
+    PUBLIC Qt5::Core
+    PRIVATE ZLIB::ZLIB
+    DIRS impl
+    ENABLE_MOC
+    OTHER_FILES
+        impl/generate_templates.pl
 )
 
 add_subdirectory(gitversion)

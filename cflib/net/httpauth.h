@@ -16,20 +16,20 @@ namespace cflib { namespace net {
 class HttpAuth : public RequestHandler
 {
 public:
-	HttpAuth(const QByteArray & name, const QString & htpasswd = QString());
+    HttpAuth(const QByteArray & name, const QString & htpasswd = QString());
 
-	void addUser(const QString & name, const QByteArray & passwordHash);
-	void reset();
+    void addUser(const QString & name, const QByteArray & passwordHash);
+    void reset();
 
 protected:
-	virtual void handleRequest(const Request & request);
+    virtual void handleRequest(const Request & request);
 
 private:
-	const QByteArray name_;
-	const QString htpasswd_;
-	QDateTime htpasswdLastMod_;
-	QMap<QString, QByteArray> users_;
-	QSet<QByteArray> checkedUsers_;
+    const QByteArray name_;
+    const QString htpasswd_;
+    QDateTime htpasswdLastMod_;
+    QMap<QString, QByteArray> users_;
+    QSet<QByteArray> checkedUsers_;
 };
 
-}}	// namespace
+}}    // namespace

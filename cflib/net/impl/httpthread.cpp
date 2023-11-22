@@ -13,37 +13,37 @@
 namespace cflib { namespace net { namespace impl {
 
 HttpThread::HttpThread(uint no, uint count) :
-	ThreadVerify(QString("HTTP-Server %1/%2").arg(no).arg(count), util::ThreadVerify::Worker),
-	activeRequests_(0),
-	shutdown_(false)
+    ThreadVerify(QString("HTTP-Server %1/%2").arg(no).arg(count), util::ThreadVerify::Worker),
+    activeRequests_(0),
+    shutdown_(false)
 {
 }
 
 HttpThread::~HttpThread()
 {
-	waitForRequestsToFinish();
-	sem_.acquire();
-	stopVerifyThread();
+    waitForRequestsToFinish();
+    sem_.acquire();
+    stopVerifyThread();
 }
 
 void HttpThread::newRequest(TCPConnData * data, const QList<RequestHandler *> & handlers)
 {
-	++activeRequests_;
-	new impl::RequestParser(data, handlers, this);
+    ++activeRequests_;
+    new impl::RequestParser(data, handlers, this);
 }
 
 void HttpThread::requestFinished()
 {
-	--activeRequests_;
-	if (shutdown_ && activeRequests_ == 0) sem_.release();
+    --activeRequests_;
+    if (shutdown_ && activeRequests_ == 0) sem_.release();
 }
 
 void HttpThread::waitForRequestsToFinish()
 {
-	if (!verifyThreadCall(&HttpThread::waitForRequestsToFinish)) return;
+    if (!verifyThreadCall(&HttpThread::waitForRequestsToFinish)) return;
 
-	if (activeRequests_ == 0) sem_.release();
-	else shutdown_ = true;
+    if (activeRequests_ == 0) sem_.release();
+    else shutdown_ = true;
 }
 
-}}}	// namespace
+}}}    // namespace

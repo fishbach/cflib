@@ -5,8 +5,8 @@
 # Licensed under the MIT License.
 
 cf_lib(cflib_serialize
-	PUBLIC cflib_util
-	DIRS impl
+    PUBLIC cflib_util
+    DIRS impl
 )
 
 add_subdirectory(asn1dump)

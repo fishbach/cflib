@@ -22,8 +22,8 @@ bool update(const QByteArray & schema, Migrator migrator);
 template<typename M>
 bool update(const QString & filename = ":/schema.sql")
 {
-	M migrator;
-	return update(&migrator, filename);
+    M migrator;
+    return update(&migrator, filename);
 }
 
-}}}	// namespace
+}}}    // namespace

@@ -14,4 +14,4 @@ namespace cflib { namespace db {
 QMap<QString, QString> getConfig();
 cflib::util::Mail getMailTemplate(const QString & name, const QString & lang);
 
-}}	// namespace
+}}    // namespace

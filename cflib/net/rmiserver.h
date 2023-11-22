@@ -16,39 +16,39 @@ namespace cflib { namespace net {
 
 template<typename C>
 class RMIServer :
-	public RequestHandler,
-	public WSCommMsgHandler<C>,
-	public WSCommStateListener<C>,
-	private impl::RMIServerBase
+    public RequestHandler,
+    public WSCommMsgHandler<C>,
+    public WSCommStateListener<C>,
+    private impl::RMIServerBase
 {
 public:
-	RMIServer(WSCommManager<C> & commMgr) : RMIServerBase(commMgr) {
-		commMgr.registerMsgHandler(2, *this);
-		commMgr.registerStateListener(*this);
-	}
+    RMIServer(WSCommManager<C> & commMgr) : RMIServerBase(commMgr) {
+        commMgr.registerMsgHandler(2, *this);
+        commMgr.registerStateListener(*this);
+    }
 
-	using RMIServerBase::registerService;
-	using RMIServerBase::exportTo;
+    using RMIServerBase::registerService;
+    using RMIServerBase::exportTo;
 
-	virtual void handleMsg(quint64,
-		const QByteArray & data, int tagLen, int lengthSize, qint32 valueLen,
-		const C & connData, uint connDataId, uint connId)
-	{
-		handleCall(data, (const quint8 *)data.constData() + tagLen + lengthSize, valueLen, connData, connDataId, connId);
-	}
+    virtual void handleMsg(quint64,
+        const QByteArray & data, int tagLen, int lengthSize, qint32 valueLen,
+        const C & connData, uint connDataId, uint connId)
+    {
+        handleCall(data, (const quint8 *)data.constData() + tagLen + lengthSize, valueLen, connData, connDataId, connId);
+    }
 
-	virtual void connDataChange(const C &, const C & newConnData, uint connDataId, const QSet<uint> & connIds)
-	{
-		RMIServerBase::connDataChange(newConnData, connDataId, connIds);
-	}
+    virtual void connDataChange(const C &, const C & newConnData, uint connDataId, const QSet<uint> & connIds)
+    {
+        RMIServerBase::connDataChange(newConnData, connDataId, connIds);
+    }
 
-	virtual void connectionClosed(const C & connData, uint connDataId, uint connId, bool isLast)
-	{
-		RMIServerBase::connectionClosed(connData, connDataId, connId, isLast);
-	}
+    virtual void connectionClosed(const C & connData, uint connDataId, uint connId, bool isLast)
+    {
+        RMIServerBase::connectionClosed(connData, connDataId, connId, isLast);
+    }
 
 protected:
-	virtual void handleRequest(const Request & request) { RMIServerBase::handleRequest(request); }
+    virtual void handleRequest(const Request & request) { RMIServerBase::handleRequest(request); }
 };
 
-}}	// namespace
+}}    // namespace

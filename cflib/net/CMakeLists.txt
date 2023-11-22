@@ -5,10 +5,10 @@
 # Licensed under the MIT License.
 
 cf_lib(cflib_net
-	PUBLIC cflib_crypt
-	PUBLIC cflib_serialize
-	DIRS impl
-	ENABLE_SER
+    PUBLIC cflib_crypt
+    PUBLIC cflib_serialize
+    DIRS impl
+    ENABLE_SER
 )
 
 add_subdirectory(net_test)

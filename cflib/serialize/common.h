@@ -11,4 +11,4 @@ namespace cflib { namespace serialize {
 
 struct Placeholder {};
 
-}}	// namespace
+}}    // namespace

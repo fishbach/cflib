@@ -18,23 +18,23 @@ template <typename... P> struct ReadAndCall;
 template <typename P, typename... PN>
 struct ReadAndCall<P, PN...>
 {
-	template<typename F, typename... A>
-	void operator()(BERDeserializer & deser, F func, A... a)
-	{
-		typename std::decay<P>::type p;
-		deser >> p;
-		ReadAndCall<PN...>()(deser, func, std::forward<A>(a)..., std::move(p));
-	}
+    template<typename F, typename... A>
+    void operator()(BERDeserializer & deser, F func, A... a)
+    {
+        typename std::decay<P>::type p;
+        deser >> p;
+        ReadAndCall<PN...>()(deser, func, std::forward<A>(a)..., std::move(p));
+    }
 };
 
 template <>
 struct ReadAndCall<>
 {
-	template<typename F, typename... A>
-	void operator()(BERDeserializer &, F func, A... a)
-	{
-		func(std::forward<A>(a)...);
-	}
+    template<typename F, typename... A>
+    void operator()(BERDeserializer &, F func, A... a)
+    {
+        func(std::forward<A>(a)...);
+    }
 };
 
-}}}	// namespace
+}}}    // namespace

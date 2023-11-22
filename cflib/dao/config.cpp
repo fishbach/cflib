@@ -14,21 +14,21 @@ namespace cflib { namespace dao {
 Config * Config::instance_ = 0;
 
 Config::Config() :
-	isProduction(false),
-	emailsEnabled(false)
+    isProduction(false),
+    emailsEnabled(false)
 {
-	if (instance_ == 0) instance_ = this;
+    if (instance_ == 0) instance_ = this;
 }
 
 void Config::loadFromDB()
 {
-	const QMap<QString, QString> vals = cflib::db::getConfig();
+    const QMap<QString, QString> vals = cflib::db::getConfig();
 
-	isProduction  = vals["isProduction"] == "true";
-	emailsEnabled = vals["emailsEnabled"] == "true";
-	baseURL       = vals["baseURL"];
+    isProduction  = vals["isProduction"] == "true";
+    emailsEnabled = vals["emailsEnabled"] == "true";
+    baseURL       = vals["baseURL"];
 
-	init(vals);
+    init(vals);
 }
 
 }}

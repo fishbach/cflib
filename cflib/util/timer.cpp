@@ -16,38 +16,38 @@ namespace {
 
 class TimerObject : public QObject
 {
-	Q_OBJECT
+    Q_OBJECT
 public:
-	TimerObject(const Functor * func) : func_(func) {}
+    TimerObject(const Functor * func) : func_(func) {}
 
 public slots:
-	void timeout()
-	{
-		(*func_)();
-		delete func_;
-		delete this;
-	}
+    void timeout()
+    {
+        (*func_)();
+        delete func_;
+        delete this;
+    }
 
 private:
-	const Functor * func_;
+    const Functor * func_;
 };
 
 }
 
 void Timer::singleShot(double afterSecs, const Functor * func)
 {
-	ev_loop * loop = libEVLoopOfThread();
-	if (loop) ev_once(loop, -1, 0, afterSecs, &Timer::timeout, (void *)func);
-	else      QTimer::singleShot(afterSecs * 1000, new TimerObject(func), SLOT(timeout()));
+    ev_loop * loop = libEVLoopOfThread();
+    if (loop) ev_once(loop, -1, 0, afterSecs, &Timer::timeout, (void *)func);
+    else      QTimer::singleShot(afterSecs * 1000, new TimerObject(func), SLOT(timeout()));
 }
 
 void Timer::timeout(int, void * arg)
 {
-	const Functor * func = (const Functor *)arg;
-	(*func)();
-	delete func;
+    const Functor * func = (const Functor *)arg;
+    (*func)();
+    delete func;
 }
 
-}}	// namespace
+}}    // namespace
 
 #include "timer.moc"

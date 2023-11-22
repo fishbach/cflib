@@ -13,7 +13,7 @@ namespace cflib { namespace net {
 
 void RSigBase::send(uint connId, const QByteArray & data)
 {
-	server_->send(connId, data);
+    server_->send(connId, data);
 }
 
-}}	// namespace
+}}    // namespace

@@ -14,4 +14,4 @@ namespace cflib { namespace serialize {
 
 QString printAsn1(const QByteArray & data);
 
-}}	// namespace
+}}    // namespace

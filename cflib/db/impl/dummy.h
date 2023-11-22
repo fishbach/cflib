@@ -13,7 +13,7 @@ namespace cflib { namespace db { namespace impl {
 // file: cflib/db/libcflib_db.a(mocs_compilation.cpp.o) has no symbols
 class Dummy : public QObject
 {
-	Q_OBJECT
+    Q_OBJECT
 };
 
-}}}	// namespace
+}}}    // namespace

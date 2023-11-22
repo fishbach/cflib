@@ -17,38 +17,38 @@ namespace cflib { namespace util {
 template<typename T>
 class ThreadFifo
 {
-	Q_DISABLE_COPY(ThreadFifo)
+    Q_DISABLE_COPY(ThreadFifo)
 public:
-	ThreadFifo(int size) : max_(size), buffer_(new T[size]), count_(0), reader_(0), writer_(0) {}
-	~ThreadFifo() { delete[] buffer_; }
+    ThreadFifo(int size) : max_(size), buffer_(new T[size]), count_(0), reader_(0), writer_(0) {}
+    ~ThreadFifo() { delete[] buffer_; }
 
-	inline bool put(T data) {
-		while (!sl_.testAndSetAcquire(0, 1));
-		if (count_ == max_) { sl_.storeRelease(0); return false; }
-		++count_;
-		buffer_[writer_] = data;
-		writer_ = (writer_ + 1) % max_;
-		sl_.storeRelease(0);
-		return true;
-	}
+    inline bool put(T data) {
+        while (!sl_.testAndSetAcquire(0, 1));
+        if (count_ == max_) { sl_.storeRelease(0); return false; }
+        ++count_;
+        buffer_[writer_] = data;
+        writer_ = (writer_ + 1) % max_;
+        sl_.storeRelease(0);
+        return true;
+    }
 
-	inline T take() {
-		while (!sl_.testAndSetAcquire(0, 1));
-		if (count_ == 0) { sl_.storeRelease(0); return T(); }
-		--count_;
-		T rv = buffer_[reader_];
-		reader_ = (reader_ + 1) % max_;
-		sl_.storeRelease(0);
-		return rv;
-	}
+    inline T take() {
+        while (!sl_.testAndSetAcquire(0, 1));
+        if (count_ == 0) { sl_.storeRelease(0); return T(); }
+        --count_;
+        T rv = buffer_[reader_];
+        reader_ = (reader_ + 1) % max_;
+        sl_.storeRelease(0);
+        return rv;
+    }
 
 private:
-	const int max_;
-	T * buffer_;
-	int count_;
-	int reader_;
-	int writer_;
-	QAtomicInt sl_;
+    const int max_;
+    T * buffer_;
+    int count_;
+    int reader_;
+    int writer_;
+    QAtomicInt sl_;
 };
 
-}}	// namespace
+}}    // namespace

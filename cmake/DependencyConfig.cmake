@@ -6,13 +6,13 @@
 
 # Botan
 find_package(
-	Botan 3.2.0
-	REQUIRED
+    Botan 3.2.0
+    REQUIRED
 )
 
 # PostgreSQL
 if(ENABLE_PSQL)
-	find_package(PostgreSQL REQUIRED)
+    find_package(PostgreSQL REQUIRED)
 endif()
 
 # ZLIB

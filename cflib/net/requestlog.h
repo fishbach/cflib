@@ -16,7 +16,7 @@ namespace cflib { namespace net {
 class RequestLog : public RequestHandler
 {
 protected:
-	virtual void handleRequest(const Request & request);
+    virtual void handleRequest(const Request & request);
 };
 
-}}	// namespace
+}}    // namespace

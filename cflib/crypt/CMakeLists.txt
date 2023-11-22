@@ -5,9 +5,9 @@
 # Licensed under the MIT License.
 
 cf_lib(cflib_crypt
-	PUBLIC cflib_util
-	PRIVATE cflib_botan
-	DIRS impl
+    PUBLIC cflib_util
+    PRIVATE cflib_botan
+    DIRS impl
 )
 
 add_subdirectory(crypt_test)

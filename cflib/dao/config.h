@@ -13,24 +13,24 @@ namespace cflib { namespace dao {
 
 class Config
 {
-	SERIALIZE_CLASS
-	SERIALIZE_IS_BASE(Config)
+    SERIALIZE_CLASS
+    SERIALIZE_IS_BASE(Config)
 public:
-	Config();
+    Config();
 
-	void loadFromDB();
-	static const Config & instance() { return *instance_; }
+    void loadFromDB();
+    static const Config & instance() { return *instance_; }
 
 public serialized:
-	bool isProduction;
-	bool emailsEnabled;
-	QString baseURL;
+    bool isProduction;
+    bool emailsEnabled;
+    QString baseURL;
 
 protected:
-	virtual void init(const QMap<QString, QString> &) {}
+    virtual void init(const QMap<QString, QString> &) {}
 
 private:
-	static Config * instance_;
+    static Config * instance_;
 };
 
-}}	// namespace
+}}    // namespace

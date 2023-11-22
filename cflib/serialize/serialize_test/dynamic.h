@@ -11,47 +11,47 @@
 
 class DynamicBase
 {
-	SERIALIZE_CLASS
-	SERIALIZE_IS_BASE(DynamicBase)
+    SERIALIZE_CLASS
+    SERIALIZE_IS_BASE(DynamicBase)
 public serialized:
-	int x;
+    int x;
 
 public:
-	DynamicBase() : x(0) {}
+    DynamicBase() : x(0) {}
 };
 
 class DynamicA : public DynamicBase
 {
-	SERIALIZE_CLASS
-	SERIALIZE_BASE(DynamicA)
+    SERIALIZE_CLASS
+    SERIALIZE_BASE(DynamicA)
 public serialized:
-	int a;
+    int a;
 
 public:
-	DynamicA() : a(0) {}
+    DynamicA() : a(0) {}
 };
 
 class DynamicB : public DynamicBase
 {
-	SERIALIZE_CLASS
-	SERIALIZE_BASE(DynamicB)
+    SERIALIZE_CLASS
+    SERIALIZE_BASE(DynamicB)
 public serialized:
-	double b;
+    double b;
 
 public:
-	DynamicB() : b(0) {}
+    DynamicB() : b(0) {}
 };
 
 class DynamicUse
 {
-	SERIALIZE_CLASS
+    SERIALIZE_CLASS
 public serialized:
-	int y;
-	QSharedPointer<DynamicBase> d;
-	typedef QSharedPointer<DynamicBase> DBase;
-	QList<DBase> e;
-	int z;
+    int y;
+    QSharedPointer<DynamicBase> d;
+    typedef QSharedPointer<DynamicBase> DBase;
+    QList<DBase> e;
+    int z;
 
 public:
-	DynamicUse() : y(0), z(0) {}
+    DynamicUse() : y(0), z(0) {}
 };

@@ -11,7 +11,7 @@
 
 class GenTest6
 {
-	SERIALIZE_CLASS
+    SERIALIZE_CLASS
 public serialized:
-	int a;
+    int a;
 };

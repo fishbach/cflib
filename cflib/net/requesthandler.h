@@ -14,11 +14,11 @@ class Request;
 class RequestHandler
 {
 public:
-	virtual ~RequestHandler() {}
+    virtual ~RequestHandler() {}
 
 protected:
-	virtual void handleRequest(const Request & request) = 0;
-	friend class Request;
+    virtual void handleRequest(const Request & request) = 0;
+    friend class Request;
 };
 
-}}	// namespace
+}}    // namespace

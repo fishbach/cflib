@@ -12,52 +12,52 @@
 USE_LOG(LogCat::Compute)
 
 InfoService::InfoService() :
-	RMIService(serializeTypeInfo().typeName)
+    RMIService(serializeTypeInfo().typeName)
 {
 }
 
 InfoService::~InfoService()
 {
-	stopVerifyThread();
+    stopVerifyThread();
 }
 
 QString InfoService::test()
 {
-	return QString::fromUtf8("hello w\xc3\xb6rld");
+    return QString::fromUtf8("hello w\xc3\xb6rld");
 }
 
 QString InfoService::test(const QString & msg)
 {
-	logInfo("msg %1: %2", msg.length(), msg);
-	QTextStream(stdout) << msg << Qt::endl;
-	return msg;
+    logInfo("msg %1: %2", msg.length(), msg);
+    QTextStream(stdout) << msg << Qt::endl;
+    return msg;
 }
 
 void InfoService::async(qint64 i)
 {
-	logInfo("async: %1", i);
+    logInfo("async: %1", i);
 }
 
 Dao InfoService::update(const Dao & dao)
 {
-	Dao rv;
-	rv.name = dao.name + "XX";
-	rv.number = dao.number + 13;
-	return rv;
+    Dao rv;
+    rv.name = dao.name + "XX";
+    rv.number = dao.number + 13;
+    return rv;
 }
 
 void InfoService::update(Dao2 & dao)
 {
-	dao.numbers << 3 << 4 << 5;
+    dao.numbers << 3 << 4 << 5;
 }
 
 void InfoService::update(Dao3 & dao)
 {
-	dao.timestamp = QDateTime::currentDateTimeUtc();
+    dao.timestamp = QDateTime::currentDateTimeUtc();
 }
 
 void InfoService::talk(const QString & msg)
 {
-	QTextStream(stdout) << QString("connId:%1\twrote: %2").arg(connId()).arg(msg) << Qt::endl;
-	newMessage(connId(), msg);
+    QTextStream(stdout) << QString("connId:%1\twrote: %2").arg(connId()).arg(msg) << Qt::endl;
+    newMessage(connId(), msg);
 }

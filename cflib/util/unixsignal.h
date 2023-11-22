@@ -14,19 +14,19 @@ namespace cflib { namespace util {
 // catches signals 1, 2 and 15
 class UnixSignal : public QObject
 {
-	Q_OBJECT
+    Q_OBJECT
 public:
-	UnixSignal(bool quitQCoreApplication = false);
-	~UnixSignal();
+    UnixSignal(bool quitQCoreApplication = false);
+    ~UnixSignal();
 
 signals:
-	void catchedSignal(int sig);
+    void catchedSignal(int sig);
 
 private slots:
-	void activated();
+    void activated();
 
 private:
-	QSocketNotifier * sn_;
+    QSocketNotifier * sn_;
 };
 
-}}	// namespace
+}}    // namespace

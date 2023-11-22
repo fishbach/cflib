@@ -11,29 +11,29 @@
 
 class Dao
 {
-	SERIALIZE_CLASS
+    SERIALIZE_CLASS
 public serialized:
-	QString name;
-	quint32 number;
-	typedef QList<quint32> List;
-	typedef QPair<List, QDateTime> Pair;
-	QPair<quint8, Pair> pair;
+    QString name;
+    quint32 number;
+    typedef QList<quint32> List;
+    typedef QPair<List, QDateTime> Pair;
+    QPair<quint8, Pair> pair;
 };
 
 class Dao2
 {
-	SERIALIZE_CLASS
-	SERIALIZE_IS_BASE(Dao2)
+    SERIALIZE_CLASS
+    SERIALIZE_IS_BASE(Dao2)
 public serialized:
-	Dao dao;
-	QList<int> numbers;
-	double f;
+    Dao dao;
+    QList<int> numbers;
+    double f;
 };
 
 class Dao3 : public Dao2
 {
-	SERIALIZE_CLASS
-	SERIALIZE_BASE(Dao3)
+    SERIALIZE_CLASS
+    SERIALIZE_BASE(Dao3)
 public serialized:
-	QDateTime timestamp;
+    QDateTime timestamp;
 };

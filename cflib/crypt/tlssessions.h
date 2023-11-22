@@ -15,18 +15,18 @@ namespace cflib { namespace crypt {
 
 class TLSSessions
 {
-	Q_DISABLE_COPY(TLSSessions)
+    Q_DISABLE_COPY(TLSSessions)
 public:
-	TLSSessions(bool enable = false);
-	~TLSSessions();
+    TLSSessions(bool enable = false);
+    ~TLSSessions();
 
 private:
-	class Impl;
-	Impl * impl_;
+    class Impl;
+    Impl * impl_;
 
-	friend class TLSClient;
-	friend class TLSServer;
-	Botan::TLS::Session_Manager & session_Manager();
+    friend class TLSClient;
+    friend class TLSServer;
+    Botan::TLS::Session_Manager & session_Manager();
 };
 
-}}	// namespace
+}}    // namespace

@@ -22,48 +22,48 @@ class HttpThread;
 class RequestParser : public util::ThreadVerify, public TCPConn
 {
 public:
-	RequestParser(TCPConnData * data,
-		const QList<RequestHandler *> & handlers, HttpThread * thread);
-	~RequestParser();
+    RequestParser(TCPConnData * data,
+        const QList<RequestHandler *> & handlers, HttpThread * thread);
+    ~RequestParser();
 
-	void sendReply(int id, const QByteArray & reply);
+    void sendReply(int id, const QByteArray & reply);
 
-	void detachRequest();
-	void setPassThroughHandler(PassThroughHandler * hdl);
-	QByteArray readPassThrough(bool & isLast);
-	TCPConnData * detach();
+    void detachRequest();
+    void setPassThroughHandler(PassThroughHandler * hdl);
+    QByteArray readPassThrough(bool & isLast);
+    TCPConnData * detach();
 
 protected:
-	virtual void newBytesAvailable();
-	virtual void closed(CloseType type);
+    virtual void newBytesAvailable();
+    virtual void closed(CloseType type);
 
 private:
-	void parseRequest();
-	bool parseHeader();
-	bool handleRequestLine(const QByteArray & line);
-	void writeReply(const QByteArray & reply);
+    void parseRequest();
+    bool parseHeader();
+    bool handleRequestLine(const QByteArray & line);
+    void writeReply(const QByteArray & reply);
 
 private:
-	const QList<RequestHandler *> & handlers_;
-	HttpThread * thread_;
-	const int id_;
+    const QList<RequestHandler *> & handlers_;
+    HttpThread * thread_;
+    const int id_;
 
-	QByteArray header_;
+    QByteArray header_;
 
-	qint64 contentLength_;
-	QMap<QByteArray, QByteArray> headerFields_;
-	int method_;
-	QByteArray uri_;
-	QByteArray body_;
+    qint64 contentLength_;
+    QMap<QByteArray, QByteArray> headerFields_;
+    int method_;
+    QByteArray uri_;
+    QByteArray body_;
 
-	int requestCount_;
-	int nextReplyId_;
-	QMap<int, QByteArray> replies_;
+    int requestCount_;
+    int nextReplyId_;
+    QMap<int, QByteArray> replies_;
 
-	int attachedRequests_;
-	bool detached_;
-	bool passThrough_;
-	PassThroughHandler * passThroughHandler_;
+    int attachedRequests_;
+    bool detached_;
+    bool passThrough_;
+    PassThroughHandler * passThroughHandler_;
 };
 
-}}}	// namespace
+}}}    // namespace

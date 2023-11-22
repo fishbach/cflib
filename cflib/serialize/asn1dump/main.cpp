@@ -30,71 +30,71 @@ namespace {
 
 int showUsage(const QByteArray & executable)
 {
-	QTextStream(stderr)
-		<< "Usage: " << executable << " [options]"     << Qt::endl
-		<< "Options:"                                  << Qt::endl
-		<< "  -h, --help   => this help"               << Qt::endl
-		<< "  -x, --hex    => input is hex encoded"    << Qt::endl
-		<< "  -b, --base64 => input is Base64 encoded" << Qt::endl;
-	return 1;
+    QTextStream(stderr)
+        << "Usage: " << executable << " [options]"     << Qt::endl
+        << "Options:"                                  << Qt::endl
+        << "  -h, --help   => this help"               << Qt::endl
+        << "  -x, --hex    => input is hex encoded"    << Qt::endl
+        << "  -b, --base64 => input is Base64 encoded" << Qt::endl;
+    return 1;
 }
 
 
 void show(const QByteArray & data, bool hex, bool base64)
 {
-	const QByteArray rawData =
-		hex    ? QByteArray::fromHex(data)    :
-		base64 ? QByteArray::fromBase64(data) :
-		data;
+    const QByteArray rawData =
+        hex    ? QByteArray::fromHex(data)    :
+        base64 ? QByteArray::fromBase64(data) :
+        data;
 
-	static QTextStream out(stdout);
+    static QTextStream out(stdout);
 
-	out << printAsn1(rawData) << Qt::endl;
+    out << printAsn1(rawData) << Qt::endl;
 }
 
 }
 
 int main(int argc, char *argv[])
 {
-	CmdLine cmdLine(argc, argv);
-	Option help     ('h', "help"  ); cmdLine << help;
-	Option hexOpt   ('x', "hex"   ); cmdLine << hexOpt;
-	Option base64Opt('b', "base64"); cmdLine << base64Opt;
-	if (!cmdLine.parse() || help.isSet() || (hexOpt.isSet() && base64Opt.isSet())) return showUsage(cmdLine.executable());
+    CmdLine cmdLine(argc, argv);
+    Option help     ('h', "help"  ); cmdLine << help;
+    Option hexOpt   ('x', "hex"   ); cmdLine << hexOpt;
+    Option base64Opt('b', "base64"); cmdLine << base64Opt;
+    if (!cmdLine.parse() || help.isSet() || (hexOpt.isSet() && base64Opt.isSet())) return showUsage(cmdLine.executable());
 
-	QCoreApplication a(argc, argv);
+    QCoreApplication a(argc, argv);
 
-	const QByteArray buf(0x10000, '\0');
-	QByteArray data;
+    const QByteArray buf(0x10000, '\0');
+    QByteArray data;
 
-	struct timeval tv;
-	tv.tv_sec  = 0;
-	tv.tv_usec = 250000;
+    struct timeval tv;
+    tv.tv_sec  = 0;
+    tv.tv_usec = 250000;
 
-	fd_set fds;
-	FD_ZERO(&fds);
+    fd_set fds;
+    FD_ZERO(&fds);
 
-	forever {
-		FD_SET(0, &fds);
-		int retval = select(1, &fds, NULL, NULL, &tv);
-		if (retval == -1) {
-			QTextStream(stderr) << "cannot read from stdin" << Qt::endl;
-			return 1;
-		}
-		if (retval > 0) {
-			qint64 count = read(0, (void *)buf.constData(), buf.size());
-			if (count == 0) {
-				// eof
-				if (!data.isEmpty()) show(data, hexOpt.isSet(), base64Opt.isSet());
-				break;
-			}
-			data.append(buf.constData(), count);
-		} else if (!data.isEmpty()) {
-			// timeout
-			show(data, hexOpt.isSet(), base64Opt.isSet());
-			data.clear();
-		}
-	}
+    forever {
+        FD_SET(0, &fds);
+        int retval = select(1, &fds, NULL, NULL, &tv);
+        if (retval == -1) {
+            QTextStream(stderr) << "cannot read from stdin" << Qt::endl;
+            return 1;
+        }
+        if (retval > 0) {
+            qint64 count = read(0, (void *)buf.constData(), buf.size());
+            if (count == 0) {
+                // eof
+                if (!data.isEmpty()) show(data, hexOpt.isSet(), base64Opt.isSet());
+                break;
+            }
+            data.append(buf.constData(), count);
+        } else if (!data.isEmpty()) {
+            // timeout
+            show(data, hexOpt.isSet(), base64Opt.isSet());
+            data.clear();
+        }
+    }
 
-	return 0;
+    return 0;
 }

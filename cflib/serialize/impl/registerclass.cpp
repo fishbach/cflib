@@ -18,13 +18,13 @@ Q_GLOBAL_STATIC(Registry, getRegistry)
 
 QHash<quint32, const RegisterClassBase *> & RegisterClassBase::registry()
 {
-	return *getRegistry();
+    return *getRegistry();
 }
 
 void RegisterClassBase::duplicateId(quint32 classId)
 {
-	QTextStream(stderr) << "duplicate type id: %1" << classId << Qt::endl;
-	::abort();
+    QTextStream(stderr) << "duplicate type id: %1" << classId << Qt::endl;
+    ::abort();
 }
 
-}}}	// namespace
+}}}    // namespace

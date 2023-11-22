@@ -17,23 +17,23 @@ class RequestHandler;
 
 class HttpServer
 {
-	Q_DISABLE_COPY(HttpServer)
+    Q_DISABLE_COPY(HttpServer)
 public:
-	HttpServer(uint threadCount = 2, uint tlsThreadCount = 0);
-	~HttpServer();
+    HttpServer(uint threadCount = 2, uint tlsThreadCount = 0);
+    ~HttpServer();
 
-	bool start(const QByteArray & address, quint16 port);
-	bool start(const QByteArray & address, quint16 port, crypt::TLSCredentials & credentials);
-	bool start(int listenSocket);
-	bool start(int listenSocket, crypt::TLSCredentials & credentials);
-	void stop();
-	bool isRunning() const;
+    bool start(const QByteArray & address, quint16 port);
+    bool start(const QByteArray & address, quint16 port, crypt::TLSCredentials & credentials);
+    bool start(int listenSocket);
+    bool start(int listenSocket, crypt::TLSCredentials & credentials);
+    void stop();
+    bool isRunning() const;
 
-	void registerHandler(RequestHandler & handler);
+    void registerHandler(RequestHandler & handler);
 
 private:
-	class Impl;
-	Impl * impl_;
+    class Impl;
+    Impl * impl_;
 };
 
-}}	// namespace
+}}    // namespace

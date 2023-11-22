@@ -24,55 +24,55 @@ class TLSThread;
 class TCPManagerImpl : public util::ThreadVerify
 {
 public:
-	TCPManagerImpl(TCPManager & parent, uint tlsThreadCount);
-	TCPManagerImpl(TCPManager & parent, uint tlsThreadCount, util::ThreadVerify * other);
-	~TCPManagerImpl();
+    TCPManagerImpl(TCPManager & parent, uint tlsThreadCount);
+    TCPManagerImpl(TCPManager & parent, uint tlsThreadCount, util::ThreadVerify * other);
+    ~TCPManagerImpl();
 
-	bool isRunning() const { return listenSock_ != -1; }
-	bool start(int listenSocket, crypt::TLSCredentials * credentials);
-	void stop();
+    bool isRunning() const { return listenSock_ != -1; }
+    bool start(int listenSocket, crypt::TLSCredentials * credentials);
+    void stop();
 
-	TCPConnData * openConnection(const QByteArray & destAddress, quint16 destPort,
-		const QByteArray & sourceIP, quint16 sourcePort,
-		crypt::TLSCredentials * credentials, bool preferIPv6);
+    TCPConnData * openConnection(const QByteArray & destAddress, quint16 destPort,
+        const QByteArray & sourceIP, quint16 sourcePort,
+        crypt::TLSCredentials * credentials, bool preferIPv6);
 
-	void startReadWatcher(TCPConnData * conn);
-	void writeToSocket(TCPConnData * conn, const QByteArray & data, bool notifyFinished);
-	void closeConn(TCPConnData * conn, TCPConn::CloseType type, bool notifyClose);
-	void deleteOnFinish(TCPConnData * conn);
+    void startReadWatcher(TCPConnData * conn);
+    void writeToSocket(TCPConnData * conn, const QByteArray & data, bool notifyFinished);
+    void closeConn(TCPConnData * conn, TCPConn::CloseType type, bool notifyClose);
+    void deleteOnFinish(TCPConnData * conn);
 
-	void tlsStartReadWatcher(TCPConnData * conn);
-	void tlsWrite(TCPConnData * conn, const QByteArray & data, bool notifyFinished) const;
-	void tlsCloseConn(TCPConnData * conn, TCPConn::CloseType type, bool notifyClose) const;
-	void tlsDeleteOnFinish(TCPConnData * conn) const;
+    void tlsStartReadWatcher(TCPConnData * conn);
+    void tlsWrite(TCPConnData * conn, const QByteArray & data, bool notifyFinished) const;
+    void tlsCloseConn(TCPConnData * conn, TCPConn::CloseType type, bool notifyClose) const;
+    void tlsDeleteOnFinish(TCPConnData * conn) const;
 
-	static void setNoDelay(int socket, bool noDelay);
-	static int openListenSocket(const QByteArray & ip, quint16 port);
+    static void setNoDelay(int socket, bool noDelay);
+    static int openListenSocket(const QByteArray & ip, quint16 port);
 
-	static void readable(ev_loop * loop, ev_io * w, int revents);
-	static void writeable(ev_loop * loop, ev_io * w, int revents);
+    static void readable(ev_loop * loop, ev_io * w, int revents);
+    static void writeable(ev_loop * loop, ev_io * w, int revents);
 
-	TCPManager & parent;
+    TCPManager & parent;
 
-	crypt::TLSCredentials clientCredentials;
+    crypt::TLSCredentials clientCredentials;
 
 protected:
-	virtual void deleteThreadData();
+    virtual void deleteThreadData();
 
 private:
-	static void listenSocketReadable(ev_loop * loop, ev_io * w, int revents);
-	void callClosed(TCPConnData * conn);
-	TCPConnData * addConnection(int sock, const QByteArray & destIP, quint16 destPort,
-		crypt::TLSCredentials * credentials, const QByteArray & destAddress);
+    static void listenSocketReadable(ev_loop * loop, ev_io * w, int revents);
+    void callClosed(TCPConnData * conn);
+    TCPConnData * addConnection(int sock, const QByteArray & destIP, quint16 destPort,
+        crypt::TLSCredentials * credentials, const QByteArray & destAddress);
 
 private:
-	int listenSock_;
-	bool isIPv6Sock_;
-	ev_io * readWatcher_;
-	crypt::TLSCredentials * credentials_;
-	QVector<TLSThread *> tlsThreads_;
-	QAtomicInteger<uint> tlsConnId_;
-	QSet<TCPConnData *> connections_;
+    int listenSock_;
+    bool isIPv6Sock_;
+    ev_io * readWatcher_;
+    crypt::TLSCredentials * credentials_;
+    QVector<TLSThread *> tlsThreads_;
+    QAtomicInteger<uint> tlsConnId_;
+    QSet<TCPConnData *> connections_;
 };
 
-}}}	// namespace
+}}}    // namespace

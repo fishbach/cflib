@@ -17,17 +17,17 @@ class TLSSessions;
 class TLSServer : public TLSStream
 {
 public:
-	TLSServer(TLSSessions & sessions, TLSCredentials & credentials,
-		bool highSecurity = false, bool requireRevocationInfo = false);
-	~TLSServer();
+    TLSServer(TLSSessions & sessions, TLSCredentials & credentials,
+        bool highSecurity = false, bool requireRevocationInfo = false);
+    ~TLSServer();
 
-	QByteArray initialSend() override { return QByteArray(); }
-	bool received(const QByteArray & encrypted, QByteArray & plain, QByteArray & sendBack) override;
-	bool send(const QByteArray & plain, QByteArray & encrypted) override;
+    QByteArray initialSend() override { return QByteArray(); }
+    bool received(const QByteArray & encrypted, QByteArray & plain, QByteArray & sendBack) override;
+    bool send(const QByteArray & plain, QByteArray & encrypted) override;
 
 private:
-	class Impl;
-	Impl * impl_;
+    class Impl;
+    Impl * impl_;
 };
 
-}}	// namespace
+}}    // namespace

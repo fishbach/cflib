@@ -14,4 +14,4 @@ namespace cflib { namespace db {
 QMap<QString, QString> getConfigPSql();
 cflib::util::Mail getMailTemplatePSql(const QString & name, const QString & lang);
 
-}}	// namespace
+}}    // namespace

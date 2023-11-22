@@ -17,26 +17,26 @@ namespace cflib { namespace util {
 class EVTimer
 {
 public:
-	template<typename C>
-	EVTimer(C * obj, void (C::*method)()) :
-		timer_(0),
-		func_(new Functor0<C>(obj, method))
-	{
-		init();
-	}
-	~EVTimer();
+    template<typename C>
+    EVTimer(C * obj, void (C::*method)()) :
+        timer_(0),
+        func_(new Functor0<C>(obj, method))
+    {
+        init();
+    }
+    ~EVTimer();
 
-	void start(double after, double repeat);
-	void start(double repeat) { start(repeat, repeat); }
-	void stop();
-
-private:
-	void init();
-	static void timeout(ev_loop * loop, ev_timer * w, int revents);
+    void start(double after, double repeat);
+    void start(double repeat) { start(repeat, repeat); }
+    void stop();
 
 private:
-	ev_timer * timer_;
-	Functor * func_;
+    void init();
+    static void timeout(ev_loop * loop, ev_timer * w, int revents);
+
+private:
+    ev_timer * timer_;
+    Functor * func_;
 };
 
-}}	// namespace
+}}    // namespace

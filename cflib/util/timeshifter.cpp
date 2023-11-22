@@ -13,13 +13,13 @@ qint64 TimeShifter::diff_ = 0;
 
 void TimeShifter::setDateTime(const QDateTime & newNow)
 {
-	if (newNow.isNull()) diff_ = 0;
-	else diff_ = QDateTime::currentDateTimeUtc().msecsTo(newNow);
+    if (newNow.isNull()) diff_ = 0;
+    else diff_ = QDateTime::currentDateTimeUtc().msecsTo(newNow);
 }
 
 QDateTime TimeShifter::currentDateTime()
 {
-	return QDateTime::currentDateTimeUtc().addMSecs(diff_);
+    return QDateTime::currentDateTimeUtc().addMSecs(diff_);
 }
 
-}}	// namespace
+}}    // namespace

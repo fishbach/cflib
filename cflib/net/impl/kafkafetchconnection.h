@@ -13,14 +13,14 @@ namespace cflib { namespace net {
 class KafkaConnector::FetchConnection : public impl::KafkaConnection
 {
 public:
-	FetchConnection(TCPConnData * data, KafkaConnector::Impl & impl);
+    FetchConnection(TCPConnData * data, KafkaConnector::Impl & impl);
 
 protected:
-	void reply(qint32 correlationId, impl::KafkaRawReader & reader) override;
-	void closed() override;
+    void reply(qint32 correlationId, impl::KafkaRawReader & reader) override;
+    void closed() override;
 
 private:
-	KafkaConnector::Impl & impl_;
+    KafkaConnector::Impl & impl_;
 };
 
-}}	// namespace
+}}    // namespace

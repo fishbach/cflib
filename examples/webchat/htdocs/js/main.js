@@ -6,26 +6,26 @@
  */
 
 require([
-	'cflib/domext/util'
+    'cflib/domext/util'
 ], function() { require([
-	'cflib/dom',
-	'cflib/net/netutil',
-	'cflib/net/rmi',
-	'cflib/util/storage',
-	'chat'
+    'cflib/dom',
+    'cflib/net/netutil',
+    'cflib/net/rmi',
+    'cflib/util/storage',
+    'chat'
 ], function(
-	$, netUtil, rmi, storage, chat
+    $, netUtil, rmi, storage, chat
 ) { $.start(function() {
 
 window.onerror = function() {
-	netUtil.logInfo("JS exception: " + Array.prototype.join.call(arguments, ', '));
-	// It may happen that we have rubbish in storage after an exception.
-	storage.clear();
+    netUtil.logInfo("JS exception: " + Array.prototype.join.call(arguments, ', '));
+    // It may happen that we have rubbish in storage after an exception.
+    storage.clear();
 };
 
 // server might have been restarted with new version
 rmi.ev.identityReset.bind(function() {
-	location.href = location.href;
+    location.href = location.href;
 });
 
 rmi.ev.loading.bind(function(isLoading) { $('#loading').html(isLoading ? " (loading)" : ""); });

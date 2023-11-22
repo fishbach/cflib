@@ -13,26 +13,26 @@
 
 class InfoService : public cflib::net::RMIService<QString>
 {
-	SERIALIZE_CLASS
+    SERIALIZE_CLASS
 public:
-	InfoService();
-	~InfoService();
+    InfoService();
+    ~InfoService();
 
 rmi:
-	QString test();
-	void test(int &, int &) {}
-	QString test(const QString & msg);
-	void async(qint64 i);
-	qint64 iTest(qint64 i) { return i; }
-	Dao update(const Dao & dao);
-	void update(Dao2 & dao);
-	void update(Dao3 & dao);
-	void doSignal(int t) { mySig(t); }
+    QString test();
+    void test(int &, int &) {}
+    QString test(const QString & msg);
+    void async(qint64 i);
+    qint64 iTest(qint64 i) { return i; }
+    Dao update(const Dao & dao);
+    void update(Dao2 & dao);
+    void update(Dao3 & dao);
+    void doSignal(int t) { mySig(t); }
 
-	void talk(const QString & msg);
+    void talk(const QString & msg);
 
 cfsignals:
-	rsig<void (int t), void()> mySig;
-	rsig<void (int t, const QString & s), void()> mySig2;
-	rsig<void (int t, const QString & s), void()> newMessage;
+    rsig<void (int t), void()> mySig;
+    rsig<void (int t, const QString & s), void()> mySig2;
+    rsig<void (int t, const QString & s), void()> newMessage;
 };

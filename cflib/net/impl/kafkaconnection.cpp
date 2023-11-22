@@ -21,70 +21,70 @@ const KafkaString kafkaClientName = "cflib";
 }
 
 KafkaConnection::KafkaConnection(TCPConnData * data) :
-	TCPConn(data)
+    TCPConn(data)
 {
-	setNoDelay(true);
-	startReadWatcher();
+    setNoDelay(true);
+    startReadWatcher();
 }
 
 KafkaRequestWriter KafkaConnection::request(qint16 apiKey, qint16 apiVersion, qint32 correlationId, quint32 expectedSize)
 {
-	KafkaRequestWriter rv(*this, kafkaClientName.size() + 10 + expectedSize);
-	rv
-		<< apiKey
-		<< apiVersion
-		<< correlationId
-		<< kafkaClientName;
-	return rv;
+    KafkaRequestWriter rv(*this, kafkaClientName.size() + 10 + expectedSize);
+    rv
+        << apiKey
+        << apiVersion
+        << correlationId
+        << kafkaClientName;
+    return rv;
 }
 
 void KafkaConnection::newBytesAvailable()
 {
-	buffer_ += read();
+    buffer_ += read();
 
-	// enough bytes for size?
-	while (buffer_.size() >= 4) {
-		cflib::net::impl::KafkaRawReader reader(buffer_);
+    // enough bytes for size?
+    while (buffer_.size() >= 4) {
+        cflib::net::impl::KafkaRawReader reader(buffer_);
 
-		// read size
-		qint32 size;
-		reader >> size;
-		if (size <= 0) {
-			logWarn("funny size of reply: %1", size);
-			abort();
-			buffer_.clear();
-			return;
-		}
+        // read size
+        qint32 size;
+        reader >> size;
+        if (size <= 0) {
+            logWarn("funny size of reply: %1", size);
+            abort();
+            buffer_.clear();
+            return;
+        }
 
-		// enough bytes?
-		if (buffer_.size() < size + 4) break;
+        // enough bytes?
+        if (buffer_.size() < size + 4) break;
 
-		qint32 correlationId;
-		reader >> correlationId;
+        qint32 correlationId;
+        reader >> correlationId;
 
-		reply(correlationId, reader);
+        reply(correlationId, reader);
 
-		buffer_.remove(0, size + 4);
-	}
+        buffer_.remove(0, size + 4);
+    }
 
-	startReadWatcher();
+    startReadWatcher();
 }
 
 void KafkaConnection::closed(TCPConn::CloseType)
 {
-	closed();
-	util::deleteNext(this);
+    closed();
+    util::deleteNext(this);
 }
 
 KafkaRequestWriter::KafkaRequestWriter(KafkaConnection & connection, quint32 expectedSize) :
-	KafkaRawWriter(expectedSize),
-	connection_(connection)
+    KafkaRawWriter(expectedSize),
+    connection_(connection)
 {
 }
 
 void KafkaRequestWriter::send()
 {
-	connection_.write(getData());
+    connection_.write(getData());
 }
 
-}}}	// namespace
+}}}    // namespace

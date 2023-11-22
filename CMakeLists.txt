@@ -7,23 +7,23 @@
 cmake_minimum_required(VERSION 3.16)
 
 project(
-	cflib
-	VERSION 1.0.0
-	LANGUAGES CXX
+    cflib
+    VERSION 1.0.0
+    LANGUAGES CXX
 )
 
 include(cmake/ProjectConfig.cmake)
 
 cf_add_other(project_files
-	.gitignore
-	COPYING
-	MODULES
-	README.md
-	js/*
+    .gitignore
+    COPYING
+    MODULES
+    README.md
+    js/*
 )
 
 add_subdirectory(cflib)
 option(BUILD_EXAMPLES "activate build for examples" ON)
 if(BUILD_EXAMPLES)
-	add_subdirectory(examples)
+    add_subdirectory(examples)
 endif()

@@ -35,4 +35,4 @@ QByteArray x509CreateCertReq(const QByteArray & privateKey, const QList<QByteArr
 
 QByteArray der2pem(const QByteArray & der, const QByteArray & label);
 
-}}	// namespace
+}}    // namespace

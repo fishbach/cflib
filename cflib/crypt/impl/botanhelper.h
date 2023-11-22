@@ -10,8 +10,8 @@
 #include <cflib/util/log.h>
 
 #ifdef Q_OS_WIN32
-	#pragma warning( push )
-	#pragma warning( disable : 4267 )
+    #pragma warning( push )
+    #pragma warning( disable : 4267 )
 #endif
 
 #include <botan/auto_rng.h>
@@ -29,22 +29,22 @@
 #include <botan/x509_key.h>
 
 #ifdef Q_OS_WIN32
-	#pragma warning( pop )
+    #pragma warning( pop )
 #endif
 
 #define TRY \
-	try
+    try
 #define CATCH \
-	catch (std::exception & e) { \
-		logWarn("Botan exception: %1", e.what()); \
-	} catch (...) { \
-		logWarn("unknown Botan exception"); \
-	}
+    catch (std::exception & e) { \
+        logWarn("Botan exception: %1", e.what()); \
+    } catch (...) { \
+        logWarn("unknown Botan exception"); \
+    }
 
 using namespace Botan;
 
 template<typename T>
 std::shared_ptr<T> detachedShared(T & obj)
 {
-	return std::shared_ptr<T>(std::shared_ptr<T>{}, &obj);
+    return std::shared_ptr<T>(std::shared_ptr<T>{}, &obj);
 }

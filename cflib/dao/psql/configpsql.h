@@ -13,24 +13,24 @@ namespace cflib { namespace dao {
 
 class ConfigPSql
 {
-	SERIALIZE_CLASS
-	SERIALIZE_IS_BASE(ConfigPSql)
+    SERIALIZE_CLASS
+    SERIALIZE_IS_BASE(ConfigPSql)
 public:
-	ConfigPSql();
+    ConfigPSql();
 
-	void loadFromDB();
-	static const ConfigPSql & instance() { return *instance_; }
+    void loadFromDB();
+    static const ConfigPSql & instance() { return *instance_; }
 
 public serialized:
-	bool isProduction;
-	bool emailsEnabled;
-	QString baseURL;
+    bool isProduction;
+    bool emailsEnabled;
+    QString baseURL;
 
 protected:
-	virtual void init(const QMap<QString, QString> &) {}
+    virtual void init(const QMap<QString, QString> &) {}
 
 private:
-	static ConfigPSql * instance_;
+    static ConfigPSql * instance_;
 };
 
-}}	// namespace
+}}    // namespace

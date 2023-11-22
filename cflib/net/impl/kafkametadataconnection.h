@@ -13,20 +13,20 @@ namespace cflib { namespace net {
 class KafkaConnector::MetadataConnection : public impl::KafkaConnection
 {
 public:
-	// isMetaDataRequest == false -> group coordinator request
-	MetadataConnection(bool isMetaDataRequest, TCPConnData * data, KafkaConnector::Impl & impl);
+    // isMetaDataRequest == false -> group coordinator request
+    MetadataConnection(bool isMetaDataRequest, TCPConnData * data, KafkaConnector::Impl & impl);
 
 protected:
-	void reply(qint32, impl::KafkaRawReader & reader) override;
-	void closed() override;
+    void reply(qint32, impl::KafkaRawReader & reader) override;
+    void closed() override;
 
 private:
-	void readMetaData(impl::KafkaRawReader & reader);
-	void readGroupCoordinator(impl::KafkaRawReader & reader);
+    void readMetaData(impl::KafkaRawReader & reader);
+    void readGroupCoordinator(impl::KafkaRawReader & reader);
 
 private:
-	KafkaConnector::Impl & impl_;
-	const bool isMetaDataRequest_;
+    KafkaConnector::Impl & impl_;
+    const bool isMetaDataRequest_;
 };
 
-}}	// namespace
+}}    // namespace

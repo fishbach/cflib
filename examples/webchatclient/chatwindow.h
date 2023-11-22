@@ -16,25 +16,25 @@ class ChatWindow;
 
 class ChatWindow : public QMainWindow
 {
-	Q_OBJECT
+    Q_OBJECT
 
 public:
-	explicit ChatWindow(QWidget *parent = 0);
-	~ChatWindow();
+    explicit ChatWindow(QWidget *parent = 0);
+    ~ChatWindow();
 
 signals:
-	void connectionEstablished();
+    void connectionEstablished();
 
 private slots:
-	void onConnected();
-	void onBinaryMessageReceived(const QByteArray & data);
-	void onSendPressed();
-	void onConnectionEstablished();
+    void onConnected();
+    void onBinaryMessageReceived(const QByteArray & data);
+    void onSendPressed();
+    void onConnectionEstablished();
 
 private:
-	QWebSocket ws_;
-	QByteArray clId_;
+    QWebSocket ws_;
+    QByteArray clId_;
 
 private:
-	Ui::ChatWindow *ui;
+    Ui::ChatWindow *ui;
 };

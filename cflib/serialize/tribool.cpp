@@ -15,22 +15,22 @@ namespace impl {
 
 void serializeTypeInfo(SerializeTypeInfoImpl & si, TriBool *)
 {
-	si.type = SerializeTypeInfo::Basic;
-	si.typeName = "tribool";
+    si.type = SerializeTypeInfo::Basic;
+    si.typeName = "tribool";
 }
 
 void serializeBER(const TriBool & val, quint64 tagNo, QByteArray & data, BERSerializerBase &)
 {
-	serializeBERInt(val.toInt(), tagNo, data);
+    serializeBERInt(val.toInt(), tagNo, data);
 }
 
 void deserializeBER(TriBool & val, const quint8 * data, int len, BERDeserializerBase &)
 {
-	int v;
-	deserializeBERInt(v, data, len);
-	val = TriBool::fromInt(v);
+    int v;
+    deserializeBERInt(v, data, len);
+    val = TriBool::fromInt(v);
 }
 
 }
 
-}}	// namespace
+}}    // namespace
