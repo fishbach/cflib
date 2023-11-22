@@ -58,6 +58,6 @@ void InfoService::update(Dao3 & dao)
 
 void InfoService::talk(const QString & msg)
 {
-    QTextStream(stdout) << QString("connId:%1\twrote: %2").arg(connId()).arg(msg) << Qt::endl;
+    QTextStream(stdout) << QString("connId:%1    wrote: %2").arg(connId()).arg(msg) << Qt::endl;
     newMessage(connId(), msg);
 }

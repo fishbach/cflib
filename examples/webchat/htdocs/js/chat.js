@@ -24,7 +24,7 @@ define([
 
         infoService.rsig.newMessage.register().bind(function (connectionId, text) {
             var $textarea = $('#chatTextArea');
-            $textarea.val($textarea.val() + connectionId + ':\t' + text + '\n');
+            $textarea.val($textarea.val() + connectionId + ':    ' + text + '\n');
             $textarea.el.scrollTop = $textarea.el.scrollHeight - $textarea.height();
         });
     }

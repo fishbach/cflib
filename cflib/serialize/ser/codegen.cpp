@@ -30,7 +30,7 @@ void writeMethods(QTextStream & out, const HeaderParser::Class & cl)
     } else {
         out <<
             "template<typename T> void " << cl.name << "::serialize(T & ser) const {\n"
-            "\tser << ";
+            "    ser << ";
         if (cl.doBaseSerialize) {
             out << "(quint32)" << calcClassHash(cl) << " << (const " << cl.base << " &)*this";
         } else {
@@ -43,7 +43,7 @@ void writeMethods(QTextStream & out, const HeaderParser::Class & cl)
             ";\n"
             "}\n"
             "template<typename T> void " << cl.name << "::deserialize(T & ser) {\n"
-            "\tser >> cflib::serialize::Placeholder()";
+            "    ser >> cflib::serialize::Placeholder()";
         if (cl.doBaseSerialize) {
             out << " >> (" << cl.base << " &)*this";
         }
@@ -61,22 +61,22 @@ void writeMethods(QTextStream & out, const HeaderParser::Class & cl)
 
 void writeFunctionSwitch(const HeaderParser::Functions & list, bool withReturnValues, QTextStream & out)
 {
-    out << "\tswitch (__callNo) {\n";
+    out << "    switch (__callNo) {\n";
     int i = 0;
     foreach (const HeaderParser::Function & f, list) {
         ++i;
         if (f.hasReturnValues() != withReturnValues) continue;
 
-        out << "\t\tcase " << QByteArray::number(i) << ": {\n";
+        out << "        case " << QByteArray::number(i) << ": {\n";
         if (!f.parameters.isEmpty()) {
             int id = 0;
             foreach (const HeaderParser::Variable & p, f.parameters) {
-                out << "\t\t\t" << p.type << ' ';
+                out << "            " << p.type << ' ';
                 if (p.name.isEmpty()) out << "__param_" << QString::number(++id);
                 else out << "__" << p.name;
                 out << ";\n";
             }
-            out << "\t\t\t__deser";
+            out << "            __deser";
             id = 0;
             foreach (const HeaderParser::Variable & p, f.parameters) {
                 out << " >> ";
@@ -85,7 +85,7 @@ void writeFunctionSwitch(const HeaderParser::Functions & list, bool withReturnVa
             }
             out << ";\n";
         }
-        out << "\t\t\t";
+        out << "            ";
         if (f.returnType != "void") out << "__ser << ";
         out << f.name << '(';
         int id = 0;
@@ -98,7 +98,7 @@ void writeFunctionSwitch(const HeaderParser::Functions & list, bool withReturnVa
         }
         out << ")";
         if (f.hasReturnValues()) {
-            if (f.returnType == "void") out << ";\n\t\t\t__ser";
+            if (f.returnType == "void") out << ";\n            __ser";
             id = 0;
             foreach (const HeaderParser::Variable & p, f.parameters) {
                 if (!p.isRef) continue;
@@ -108,36 +108,36 @@ void writeFunctionSwitch(const HeaderParser::Functions & list, bool withReturnVa
             }
         }
         out << ";\n"
-            "\t\t\treturn;\n"
-            "\t\t}\n";
+            "            return;\n"
+            "        }\n";
     }
-    out << "\t}\n";
+    out << "    }\n";
 }
 
 void writeFunction(const HeaderParser::Function & f, QTextStream & out)
 {
     out <<
-        "\t{\n"
-        "\t\tcflib::serialize::SerializeFunctionTypeInfo func;\n"
-        "\t\tfunc.name = \"" << f.name << "\";\n";
+        "    {\n"
+        "        cflib::serialize::SerializeFunctionTypeInfo func;\n"
+        "        func.name = \"" << f.name << "\";\n";
     if (f.returnType != "void") {
-        out << "\t\tfunc.returnType = cflib::serialize::impl::fromType<" << f.returnType << ">();\n";
+        out << "        func.returnType = cflib::serialize::impl::fromType<" << f.returnType << ">();\n";
     }
     if (!f.parameters.isEmpty()) {
-        out << "\t\tfunc.parameters";
+        out << "        func.parameters";
         foreach (const HeaderParser::Variable & m, f.parameters) {
             out <<
-                "\n\t\t\t<< cflib::serialize::SerializeVariableTypeInfo(\""
+                "\n            << cflib::serialize::SerializeVariableTypeInfo(\""
                 << m.name << "\", cflib::serialize::impl::fromType<" << m.type << ">(), "
                 << (m.isRef ? "true" : "false") << ")";
         }
         out << ";\n";
     }
     if (!f.registerParameters.isEmpty()) {
-        out << "\t\tfunc.registerParameters";
+        out << "        func.registerParameters";
         foreach (const HeaderParser::Variable & m, f.registerParameters) {
             out <<
-                "\n\t\t\t<< cflib::serialize::SerializeVariableTypeInfo(\""
+                "\n            << cflib::serialize::SerializeVariableTypeInfo(\""
                 << m.name << "\", cflib::serialize::impl::fromType<" << m.type << ">(), "
                 << (m.isRef ? "true" : "false") << ")";
         }
@@ -177,22 +177,22 @@ int genSerialize(const QString & headerName, const HeaderParser & hp, QIODevice 
 
         out <<
             "cflib::serialize::SerializeTypeInfo " << cl.name << "::serializeTypeInfo() {\n"
-            "\tcflib::serialize::SerializeTypeInfo retval;\n"
-            "\tretval.type = cflib::serialize::SerializeTypeInfo::Class;\n";
-        if (cl.doBaseSerialize) out << "\tretval.classId = " << calcClassHash(cl) << ";\n";
+            "    cflib::serialize::SerializeTypeInfo retval;\n"
+            "    retval.type = cflib::serialize::SerializeTypeInfo::Class;\n";
+        if (cl.doBaseSerialize) out << "    retval.classId = " << calcClassHash(cl) << ";\n";
         out <<
-            "\tretval.ns = \"" << cl.ns << "\";\n"
-            "\tretval.typeName = \"" << cl.name << "\";\n";
+            "    retval.ns = \"" << cl.ns << "\";\n"
+            "    retval.typeName = \"" << cl.name << "\";\n";
         if (cl.doBaseSerialize) {
-            out << "\tretval.bases << cflib::serialize::impl::fromType<" << cl.base << ">();\n";
+            out << "    retval.bases << cflib::serialize::impl::fromType<" << cl.base << ">();\n";
         }
         if (!cl.members.isEmpty()) {
-            out << "\tretval.members";
+            out << "    retval.members";
             foreach (const HeaderParser::Variable & m, cl.members) {
                 if (m.name.isEmpty()) {
-                    out << "\n\t\t<< cflib::serialize::SerializeVariableTypeInfo()";
+                    out << "\n        << cflib::serialize::SerializeVariableTypeInfo()";
                 } else {
-                    out << "\n\t\t<< cflib::serialize::SerializeVariableTypeInfo(\"" << m.name
+                    out << "\n        << cflib::serialize::SerializeVariableTypeInfo(\"" << m.name
                         << "\", cflib::serialize::impl::fromType<" << m.type << ">())";
                 }
             }
@@ -201,17 +201,17 @@ int genSerialize(const QString & headerName, const HeaderParser & hp, QIODevice 
         foreach (const HeaderParser::Function & f, cl.functions) {
             writeFunction(f, out);
             out <<
-                "\t\tretval.functions << func;\n"
-                "\t}\n";
+                "        retval.functions << func;\n"
+                "    }\n";
         }
         foreach (const HeaderParser::Function & f, cl.cfSignals) {
             writeFunction(f, out);
             out <<
-                "\t\tretval.cfSignals << func;\n"
-                "\t}\n";
+                "        retval.cfSignals << func;\n"
+                "    }\n";
         }
         out <<
-            "\treturn retval;\n"
+            "    return retval;\n"
             "}\n";
 
         if (!cl.functions.isEmpty() || !cl.cfSignals.isEmpty()) {
@@ -253,15 +253,15 @@ int genSerialize(const QString & headerName, const HeaderParser & hp, QIODevice 
             } else {
                 out <<
                     "cflib::net::RSigBase * " << cl.name << "::getCfSignal(uint __sigNo) {\n"
-                    "\tswitch (__sigNo) {\n";
+                    "    switch (__sigNo) {\n";
                 int i = 0;
                 foreach (const HeaderParser::Function & f, cl.cfSignals) {
                     ++i;
-                    out << "\t\tcase " << QByteArray::number(i) << ": return &" << f.name << ";\n";
+                    out << "        case " << QByteArray::number(i) << ": return &" << f.name << ";\n";
                 }
                 out <<
-                    "\t}\n"
-                    "\treturn 0;\n"
+                    "    }\n"
+                    "    return 0;\n"
                     "}\n";
             }
         }

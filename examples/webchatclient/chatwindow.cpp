@@ -69,7 +69,7 @@ void ChatWindow::onBinaryMessageReceived(const QByteArray & data)
             int connectionId;
             QString message;
             dser >> connectionId >> message;
-            ui->chatTextArea->append(QString("%1:\t%2").arg(connectionId).arg(message));
+            ui->chatTextArea->append(QString("%1:    %2").arg(connectionId).arg(message));
         } else {
             qDebug() << "Unknown signal " << service << method;
         }

@@ -43,7 +43,7 @@ chmod 600 *_key.pem *_key_pkcs8.pem
 
 echo
 ls *_crl.pem *_crt.pem *_key_pkcs8.pem | sort -d | while read a; do
-  echo -e "\t// $a"
-  cat $a | perl -pe 's/(.*)/\t"\1\\r\\n"/'
+  echo -e "    // $a"
+  cat $a | perl -pe 's/(.*)/    "\1\\r\\n"/'
   echo
 done

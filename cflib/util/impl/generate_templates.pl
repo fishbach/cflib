@@ -15,9 +15,9 @@ sub verifyThreadCall
     my ($paramCount, $sync, $const) = @_;
 
     my $synced = $sync ? "Synced" : "";
-    my $sem1   = $sync ? "\n\t\tQSemaphore sem;" : "";
+    my $sem1   = $sync ? "\n        QSemaphore sem;" : "";
     my $sem2   = $sync ? ", &sem" : "";
-    my $sem3   = $sync ? "\n\t\tsem.acquire();" : "";
+    my $sem3   = $sync ? "\n        sem.acquire();" : "";
     my $const1 = $const ? " const" : "";
     my $const2 = $const ? "const " : "";
     my $const3 = $const ? "C" : "";
@@ -91,7 +91,7 @@ sub genVerify
         verifyThreadCall($i, 0, 1);
         verifyThreadCall($i, 1, 0);
         verifyThreadCall($i, 1, 1);
-        print "\t// ------------------------------------------------------------------------\n\n";
+        print "    // ------------------------------------------------------------------------\n\n";
     }
     print
 <<"EOF"
@@ -133,9 +133,9 @@ sub functor
     my $paramU  = "";
     for (my $i = 1 ; $i <= $paramCount ; ++$i) {
         $typesP  .= ", typename P$i";
-        $typesA  .= "\n\ttypedef typename RemoveConstRef<P$i>::Type A$i;";
+        $typesA  .= "\n    typedef typename RemoveConstRef<P$i>::Type A$i;";
         $tempP   .= ($i > 1 ? ", " : "") . "P$i";
-        $memberD .= "\n\tA$i a${i}_;";
+        $memberD .= "\n    A$i a${i}_;";
         $memberU .= ($i > 1 ? ", " : "") . "a${i}_";
         $paramD  .= ", P$i a$i";
         $paramU  .= ", a${i}_(a$i)";

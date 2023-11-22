@@ -772,28 +772,28 @@ QString RMIServerBase::generateJSForClass(const SerializeTypeInfo & ti) const
     else js << base;
     js    << ");\n"
         << nsPrefix << typeName << ".prototype.__init = function(param) {\n";
-    if (base.isEmpty()) js << "\t" << nsPrefix << typeName << ".__super.apply(this, arguments);\n";
-    js    << "\tif (param instanceof Uint8Array) {\n"
-        "\t\tvar __D = __ber.D(param);\n";
-    if (!base.isEmpty()) js << "\t\t" << nsPrefix << typeName << ".__super.call(this, __D.a());\n";
-    else                 js << "\t\t__D.n();\n";
+    if (base.isEmpty()) js << "    " << nsPrefix << typeName << ".__super.apply(this, arguments);\n";
+    js    << "    if (param instanceof Uint8Array) {\n"
+        "        var __D = __ber.D(param);\n";
+    if (!base.isEmpty()) js << "        " << nsPrefix << typeName << ".__super.call(this, __D.a());\n";
+    else                 js << "        __D.n();\n";
     foreach (const SerializeVariableTypeInfo & vti, ti.members) {
-        js << "\t\tthis." << formatMembernameForJS(vti) << " = " << getDeserializeCode(vti.type, false) << ";\n";
+        js << "        this." << formatMembernameForJS(vti) << " = " << getDeserializeCode(vti.type, false) << ";\n";
     }
     js <<
-        "\t} else {\n";
-    if (!base.isEmpty()) js <<"\t\t" << nsPrefix << typeName << ".__super.apply(this, arguments);\n";
+        "    } else {\n";
+    if (!base.isEmpty()) js <<"        " << nsPrefix << typeName << ".__super.apply(this, arguments);\n";
     js <<
-        "\t\tif (!param || typeof param != 'object') param = {};\n";
+        "        if (!param || typeof param != 'object') param = {};\n";
     foreach (const SerializeVariableTypeInfo & vti, ti.members) {
         const QString name = formatMembernameForJS(vti);
-        js << "\t\tthis." << name << " = " << formatJSTypeConstruction(vti.type, "param." + name, false) << ";\n";
+        js << "        this." << name << " = " << formatJSTypeConstruction(vti.type, "param." + name, false) << ";\n";
     }
     js <<
-        "\t}\n"
+        "    }\n"
         "};\n"
         << nsPrefix << typeName << ".prototype.__serialize = function(__S) {\n"
-        "\t__S";
+        "    __S";
     if (ti.classId != 0) js << ".i(" << nsPrefix << typeName << ".__classId)";
     else                 js << ".n()";
     if (!base.isEmpty()) js << ".o(this, " << base << ".prototype.__serialize)";
@@ -822,7 +822,7 @@ QString RMIServerBase::generateJSForService(const SerializeTypeInfo & ti) const
         for (const SerializeFunctionTypeInfo & func : ti.cfSignals) {
             if (isFirst) isFirst = false;
             else         js << ",\n";
-            js << '\t' << func.name << ": new __RSig(" << objName << ", '" << func.name << "', '" <<
+            js << '    ' << func.name << ": new __RSig(" << objName << ", '" << func.name << "', '" <<
                 ti.typeName.toLower() << "', '" << func.name << "', function(";
             if (func.parameters.isEmpty()) {
                 js << ") { " << objName << ".rsig." << func.name << ".fire(); })";
@@ -846,12 +846,12 @@ QString RMIServerBase::generateJSForService(const SerializeTypeInfo & ti) const
         const bool hasRV = func.hasReturnValues();
         if (func.parameters.isEmpty()) {
             js << objName << '.' << func.name << " = function(" << (hasRV ? "callback, context" : "") << ") {\n"
-                "\t__rmi.send" << (hasRV ? "Request" : "Async") << "(__ber.S().s('"
+                "    __rmi.send" << (hasRV ? "Request" : "Async") << "(__ber.S().s('"
                 << ti.typeName.toLower() << "').s('" << func.signature() << "').box(2)";
         } else {
             js << objName << '.' << func.name << " = function("
                 << getJSParameters(func, false) << (hasRV ? ", callback, context" : "") << ") {\n"
-                "\t__rmi.send" << (hasRV ? "Request" : "Async") << "(__ber.S().s('"
+                "    __rmi.send" << (hasRV ? "Request" : "Async") << "(__ber.S().s('"
                 << ti.typeName.toLower() << "').s('" << func.signature() << "')" << getSerializeJSParameters(func) << ".box(2)";
         }
 
@@ -864,9 +864,9 @@ QString RMIServerBase::generateJSForService(const SerializeTypeInfo & ti) const
 
         js <<
             ",\n"
-            "\t\tcallback ? function(__data) {\n"
-            "\t\t\tvar __D = __ber.D(__data);\n"
-            "\t\t\tcallback.call(context";
+            "        callback ? function(__data) {\n"
+            "            var __D = __ber.D(__data);\n"
+            "            callback.call(context";
         if (func.returnType.type != SerializeTypeInfo::Null) {
             js << ", " << getDeserializeCode(func.returnType, false);
         }
@@ -876,7 +876,7 @@ QString RMIServerBase::generateJSForService(const SerializeTypeInfo & ti) const
         }
         js <<
             ");\n"
-            "\t\t} : null);\n"
+            "        } : null);\n"
             "};\n"
             "\n";
     }
@@ -900,42 +900,42 @@ QString RMIServerBase::generateTSForClass(const SerializeTypeInfo & ti) const
     ts << "export abstract class " << typeName << "Dao extends " << (!base.isEmpty() ? base : "__modelBase") << " {\n"
         "\n";
 
-    if (ti.classId != 0) ts << "\tstatic __classId: number = " << QString::number(ti.classId) << ";\n";
+    if (ti.classId != 0) ts << "    static __classId: number = " << QString::number(ti.classId) << ";\n";
     if (!ti.members.isEmpty()) {
         foreach (const SerializeVariableTypeInfo & vti, ti.members) {
-            ts << "\t" << formatMembernameForJS(vti) << ": " << getTSTypename(vti.type) << ";\n";
+            ts << "    " << formatMembernameForJS(vti) << ": " << getTSTypename(vti.type) << ";\n";
         }
     }
     if (ti.classId != 0 || !ti.members.isEmpty()) ts << "\n";
 
     ts <<
-        "\tconstructor(param?) {\n";
-    if (base.isEmpty()) ts << "\t\tsuper(param);\n";
+        "    constructor(param?) {\n";
+    if (base.isEmpty()) ts << "        super(param);\n";
     ts <<
-        "\t\tif (param instanceof Uint8Array) {\n"
-        "\t\t\tvar __D = __ber.D(param);\n"
-        "\t\t\t__D.n();\n";
-    if (!base.isEmpty()) ts << "\t\t\tsuper(__D.a());\n";
+        "        if (param instanceof Uint8Array) {\n"
+        "            var __D = __ber.D(param);\n"
+        "            __D.n();\n";
+    if (!base.isEmpty()) ts << "            super(__D.a());\n";
     foreach (const SerializeVariableTypeInfo & vti, ti.members) {
-        ts << "\t\t\tthis." << formatMembernameForJS(vti) << " = " << getDeserializeCode(vti.type, true) << ";\n";
+        ts << "            this." << formatMembernameForJS(vti) << " = " << getDeserializeCode(vti.type, true) << ";\n";
     }
 
     ts <<
-        "\t\t} else {\n";
-    if (!base.isEmpty()) ts << "\t\t\tsuper(param);\n";
+        "        } else {\n";
+    if (!base.isEmpty()) ts << "            super(param);\n";
     ts <<
-        "\t\t\tif (!param || typeof param != 'object') param = {};\n";
+        "            if (!param || typeof param != 'object') param = {};\n";
 
     foreach (const SerializeVariableTypeInfo & vti, ti.members) {
         const QString name = formatMembernameForJS(vti);
-        ts << "\t\t\tthis." << name << " = " << formatJSTypeConstruction(vti.type, "param." + name, true) << ";\n";
+        ts << "            this." << name << " = " << formatJSTypeConstruction(vti.type, "param." + name, true) << ";\n";
     }
     ts <<
-        "\t\t}\n"
-        "\t}\n"
+        "        }\n"
+        "    }\n"
         "\n"
-        "\tprotected __serialize(__S): void {\n"
-        "\t\t__S.";
+        "    protected __serialize(__S): void {\n"
+        "        __S.";
     if (ti.classId != 0) ts << "i(" << typeName << "Dao.__classId)";
     else                 ts << "n()";
     if (!base.isEmpty()) ts << ".o(this, super.__serialize)";
@@ -943,15 +943,15 @@ QString RMIServerBase::generateTSForClass(const SerializeTypeInfo & ti) const
         ts << getSerializeCode(vti.type, "this." + formatMembernameForJS(vti));
     }
     ts << ".data();\n"
-        "\t}\n"
+        "    }\n"
         "\n";
 
     ts <<
-        "\tstatic new(model): any {\n";
-    if (ti.classId != 0) ts << "\t\t__ber.ClassRegistry.set(" << typeName << "Dao.__classId, model);\n";
+        "    static new(model): any {\n";
+    if (ti.classId != 0) ts << "        __ber.ClassRegistry.set(" << typeName << "Dao.__classId, model);\n";
     ts <<
-        "\t\treturn __ber.dynamicCreate(model);\n"
-        "\t}\n"
+        "        return __ber.dynamicCreate(model);\n"
+        "    }\n"
         "\n"
         "}\n";
 
@@ -968,7 +968,7 @@ QString RMIServerBase::generateTSForService(const SerializeTypeInfo & ti) const
         QString funcTypename = func.name;
         funcTypename[0] = func.name[0].toUpper();
         ts << "interface __" << funcTypename << " {\n"
-            "\tregister(" << getJSParameters(func.registerParameters, true) << "): Observable<";
+            "    register(" << getJSParameters(func.registerParameters, true) << "): Observable<";
         if (func.parameters.size() > 1) ts << "[";
         bool isFirst = true;
         foreach (const SerializeVariableTypeInfo & p, func.parameters) {
@@ -987,40 +987,40 @@ QString RMIServerBase::generateTSForService(const SerializeTypeInfo & ti) const
         "\n";
 
     if (!ti.cfSignals.isEmpty()) {
-        ts << "\trsig: {\n";
+        ts << "    rsig: {\n";
         bool isFirst = true;
         foreach (const SerializeFunctionTypeInfo & func, ti.cfSignals) {
             if (isFirst) isFirst = false;
             else         ts << ",\n";
             QString funcTypename = func.name;
             funcTypename[0] = func.name[0].toUpper();
-            ts << "\t\t" << func.name << ": __" << funcTypename;
+            ts << "        " << func.name << ": __" << funcTypename;
         }
         ts << "\n"
-            "\t};\n"
+            "    };\n"
             "\n"
-            "\tconstructor() {\n"
-            "\t\tthis.rsig = {\n";
+            "    constructor() {\n"
+            "        this.rsig = {\n";
 
         isFirst = true;
         foreach (const SerializeFunctionTypeInfo & func, ti.cfSignals) {
             if (isFirst) isFirst = false;
             else         ts << ",\n";
 
-            ts << "\t\t\t" << func.name << ": new __RSig(\n"
-                "\t\t\t\t'" << ti.typeName.toLower() << "', '" << func.name << "',\n"
-                "\t\t\t\tfunction(";
+            ts << "            " << func.name << ": new __RSig(\n"
+                "                '" << ti.typeName.toLower() << "', '" << func.name << "',\n"
+                "                function(";
             if (func.registerParameters.isEmpty()) {
                 ts << ") {},\n";
             } else {
                 ts << "__S, " << getJSParameters(func.registerParameters, false) << ") {\n"
-                    "\t\t\t\t\t__S" << getSerializeJSParameters(func.registerParameters) << ";\n"
-                    "\t\t\t\t},\n";
+                    "                    __S" << getSerializeJSParameters(func.registerParameters) << ";\n"
+                    "                },\n";
             }
 
-            ts << "\t\t\t\tfunction(__data) {\n"
-                "\t\t\t\t\tvar __D = __ber.D(__data);\n"
-                "\t\t\t\t\treturn ";
+            ts << "                function(__data) {\n"
+                "                    var __D = __ber.D(__data);\n"
+                "                    return ";
             if (func.parameters.size() > 1) ts << "[";
 
             bool isFirst = true;
@@ -1032,20 +1032,20 @@ QString RMIServerBase::generateTSForService(const SerializeTypeInfo & ti) const
 
             if (func.parameters.size() > 1) ts << "]";
             ts << ";\n"
-                "\t\t\t\t}\n"
-                "\t\t\t)";
+                "                }\n"
+                "            )";
         }
 
         ts << "\n"
-            "\t\t};\n"
-            "\t}\n"
+            "        };\n"
+            "    }\n"
             "\n";
     }
 
     foreach (const SerializeFunctionTypeInfo & func, ti.functions) {
         const uint rvCount = func.returnValueCount();
 
-        ts << "\t" << func.name << "(" << getJSParameters(func, true) << "): ";
+        ts << "    " << func.name << "(" << getJSParameters(func, true) << "): ";
         if (rvCount == 0) {
             ts << "void";
         } else {
@@ -1066,21 +1066,21 @@ QString RMIServerBase::generateTSForService(const SerializeTypeInfo & ti) const
             ts << ">";
         }
         ts << " {\n"
-            "\t\t" << (rvCount > 0 ? "return " : "") << "__rmi.send" << (rvCount > 0 ? "Request" : "Async") << "(__ber.S().s('"
+            "        " << (rvCount > 0 ? "return " : "") << "__rmi.send" << (rvCount > 0 ? "Request" : "Async") << "(__ber.S().s('"
             << ti.typeName.toLower() << "').s('" << func.signature() << "')" << getSerializeJSParameters(func) << ".box(2)";
 
         if (rvCount == 0) {
             ts << ");\n"
-                "\t}\n"
+                "    }\n"
                 "\n";
             continue;
         }
 
         ts <<
             ",\n"
-            "\t\t\tfunction(__data) {\n"
-            "\t\t\t\tvar __D = __ber.D(__data);\n"
-            "\t\t\t\treturn ";
+            "            function(__data) {\n"
+            "                var __D = __ber.D(__data);\n"
+            "                return ";
         if (rvCount > 1) ts << "[";
         bool isFirst = true;
         if (func.returnType.type != SerializeTypeInfo::Null) {
@@ -1095,8 +1095,8 @@ QString RMIServerBase::generateTSForService(const SerializeTypeInfo & ti) const
         }
         if (rvCount > 1) ts << "]";
         ts << ";\n"
-            "\t\t\t});\n"
-            "\t}\n"
+            "            });\n"
+            "    }\n"
             "\n";
     }
 

@@ -46,9 +46,9 @@ private slots:
     {
         QCOMPARE(flatten(QString()), QString());
         QCOMPARE(flatten(""), QString(""));
-        QCOMPARE(flatten("\t  \r\n"), QString(""));
-        QCOMPARE(flatten("\t ab_c & 1.2-3 öüäß\r\n"), QString("ab_c_1.2-3"));
-        QCOMPARE(flatten("\t _ \r\n_"), QString("_"));
+        QCOMPARE(flatten("      \r\n"), QString(""));
+        QCOMPARE(flatten("     ab_c & 1.2-3 öüäß\r\n"), QString("ab_c_1.2-3"));
+        QCOMPARE(flatten("     _ \r\n_"), QString("_"));
     }
 
     void test_QString()
