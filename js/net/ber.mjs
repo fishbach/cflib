@@ -52,6 +52,7 @@ function toUTF8(str)
                 }
                 this.len = oi;
                 allocate.call(this, il - i + ol);
+                rv = this.d;
             }
 
             if      (c <   0x800) { rv[oi++] = 0xC0 | c >>>  6; rv[oi++] = 0x80 | (c        & 0x3F); }
