@@ -822,7 +822,7 @@ QString RMIServerBase::generateJSForService(const SerializeTypeInfo & ti) const
         for (const SerializeFunctionTypeInfo & func : ti.cfSignals) {
             if (isFirst) isFirst = false;
             else         js << ",\n";
-            js << '    ' << func.name << ": new __RSig(" << objName << ", '" << func.name << "', '" <<
+            js << "    " << func.name << ": new __RSig(" << objName << ", '" << func.name << "', '" <<
                 ti.typeName.toLower() << "', '" << func.name << "', function(";
             if (func.parameters.isEmpty()) {
                 js << ") { " << objName << ".rsig." << func.name << ".fire(); })";
