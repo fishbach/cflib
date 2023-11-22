@@ -24,8 +24,11 @@ private:
 		quint32		id;
 		quint16		x16;
 		quint32		x32;
-		quint64		x64;
-		QDateTime	t;
+        quint64		x64;
+        qint16		s16;
+        qint32		s32;
+        qint64		s64;
+        QDateTime	t;
 		QByteArray	a;
 		QString		s;
 		float		f;
@@ -47,19 +50,20 @@ private slots:
 		sql.exec("DROP TABLE cflib_db_test_3");
 
 		QVERIFY(sql.exec(
-			"CREATE TABLE cflib_db_test ("
-				"id integer NOT NULL, "
-				"x16 smallint, "
-				"x32 integer, "
-				"x64 bigint, "
-				"t timestamp with time zone, "
-				"a bytea, "
-				"s text, "
-				"r real, "
-				"d double precision, "
-				"b smallint, "
-				"PRIMARY KEY (id)"
-			")"));
+            MULTI_LINE_STRING(
+            CREATE TABLE cflib_db_test (
+                id integer NOT NULL,
+                x16 smallint,
+                x32 integer,
+                x64 bigint,
+                t timestamp with time zone,
+                a bytea,
+                s text,
+                r real,
+                d double precision,
+                b boolean,
+                PRIMARY KEY (id)
+                    ))));
 		QVERIFY(sql.exec(
 			"CREATE TABLE cflib_db_test_2 ("
 				"id serial NOT NULL, "
@@ -101,19 +105,39 @@ private slots:
 
 	// -----------------------------------------------------------
 
-	void insert_test_01()
+    void check_datatype_boolean()
+    {
+        PSqlConn;
+
+        bool result = false;
+        QVERIFY(sql.exec("SELECT (1=1);"));
+        QVERIFY(sql.next());
+        sql >> result;
+        QVERIFY(result);
+
+        sql.prepare("SELECT pg_typeof($1) = pg_typeof(False)");
+        sql << true;
+        QVERIFY(sql.exec());
+        QVERIFY(sql.next());
+        sql >> result;
+        QVERIFY(result);
+    }
+
+    // -----------------------------------------------------------
+    void insert_test_01()
 	{
 		PSqlConn;
 
 		QVERIFY(sql.exec(
-			"INSERT INTO "
-				"cflib_db_test "
-			"("
-				"id, x16, x32, x64, t, a, s, r, d, b"
-			") VALUES ("
-				"1, 2, -1, 4, '2017-02-27T14:47:34.123Z', E'\\x41\\x30', E'ABC\\xC3\\xB6\\xC3\\x9F', 1.23, 3.45, 1"
-			")"
-		));
+            MULTI_LINE_STRING(
+            INSERT INTO
+                cflib_db_test
+            (
+                id, x16, x32, x64, t, a, s, r, d, b
+            ) VALUES (
+                1, 2, -1, 4, '2017-02-27T14:47:34.123Z', E'\x41\x30', E'ABC\xC3\xB6\xC3\x9F', 1.23, 3.45, 'True'
+            )
+        )));
 	}
 
 	void select_test_01()
@@ -145,9 +169,56 @@ private slots:
 		QVERIFY(sql.exec("DELETE FROM cflib_db_test WHERE id=1;"));
 	}
 
-	// -----------------------------------------------------------
+    // -----------------------------------------------------------
 
-	void insert_test_02()
+    void insert_test_02()
+    {
+        PSqlConn;
+
+        QVERIFY(sql.exec(
+            MULTI_LINE_STRING(
+                INSERT INTO
+                    cflib_db_test
+                (
+                    id, x16, x32, x64, t, a, s, r, d, b
+                    ) VALUES (
+                    1, -32768, -2147483648, -9223372036854775807, '1970-01-01T00:00:00.000Z', E'\x41\x30', E'ABC\xC3\xB6\xC3\x9F', -1.23, -3.45, 'False'
+                    )
+                )));
+    }
+
+    void select_test_02()
+    {
+        PSqlConn;
+
+        QVERIFY(sql.exec("SELECT id, x16, x32, x64, t, a, s, r, d, b FROM cflib_db_test"));
+
+        QVERIFY(sql.next());
+        sql >> tt.id >> tt.s16 >> tt.s32 >> tt.s64 >> tt.t >> tt.a >> tt.s >> tt.f >> tt.d >> tt.b;
+        QCOMPARE(tt.id,  (qint32)1);
+        QCOMPARE(tt.s16, -32768);
+        QCOMPARE(tt.s32, -2147483648l);
+        QCOMPARE(tt.s64, Q_INT64_C(-9223372036854775807));
+        QCOMPARE(tt.t, QDateTime(QDate(1970, 1, 1), QTime(0, 0, 0, 0), Qt::UTC));
+        QCOMPARE(tt.a, QByteArray("A0"));
+        QCOMPARE(tt.s, QString::fromUtf8("ABC\xC3\xB6\xC3\x9F"));
+        QVERIFY(qFuzzyCompare(tt.f, -1.23f));
+        QVERIFY(qFuzzyCompare(tt.d, -3.45));
+        QVERIFY(!tt.b);
+        // no futher lines
+        QVERIFY(!sql.next());
+    }
+
+    void clean_test_02()
+    {
+        // leave table empty
+        PSqlConn;
+        QVERIFY(sql.exec("DELETE FROM cflib_db_test WHERE id=1;"));
+    }
+
+    // -----------------------------------------------------------
+
+    void insert_test_03()
 	{
 		PSqlConn;
 		QVERIFY(sql.exec(
@@ -156,12 +227,12 @@ private slots:
 			"("
 				"id, x16, x32, x64, t, a, s, r, d"
 			") VALUES ("
-				"2, 5, 6, 7, CURRENT_TIMESTAMP, '', '', 0, 'NaN'"
+                "3, 5, 6, 7, CURRENT_TIMESTAMP, '', '', 0, 'NaN'"
 			")"
 		));
 	}
 
-	void select_test_02()
+    void select_test_03()
 	{
 		PSqlConn;
 
@@ -169,7 +240,7 @@ private slots:
 
 		QVERIFY(sql.next());
 		sql >> tt.id >> tt.x16 >> tt.x32 >> tt.x64 >> tt.t >> tt.a >> tt.s >> tt.f >> tt.d >> tt.b;
-		QCOMPARE(tt.id,  (quint32)2);
+        QCOMPARE(tt.id,  (quint32)3);
 		QCOMPARE(tt.x16, (quint16)5);
 		QCOMPARE(tt.x64, (quint64)7);
 		QVERIFY(QDateTime::currentDateTimeUtc().addSecs(-30) < tt.t);
@@ -183,11 +254,11 @@ private slots:
 		QVERIFY(!sql.next());
 	}
 
-	void clean_test_02()
+    void clean_test_03()
 	{
 		// leave table empty
 		PSqlConn;
-		QVERIFY(sql.exec("DELETE FROM cflib_db_test WHERE id=2;"));
+        QVERIFY(sql.exec("DELETE FROM cflib_db_test WHERE id=3;"));
 	}
 
 	// -----------------------------------------------------------

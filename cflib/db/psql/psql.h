@@ -14,14 +14,17 @@
 #define PSqlConn3 cflib::db::PSql sql3(&::cflib_util_logFileInfo, __LINE__)
 #define PSqlConn4 cflib::db::PSql sql4(&::cflib_util_logFileInfo, __LINE__)
 
+#define MULTI_LINE_STRING(...) #__VA_ARGS__
+
 namespace cflib { namespace db {
 
 /* Attention:
  * PSql uses one DB connection per thread.
- * Therefore it is not possible to have two instances of PSql in one thread having both simultaneous acivate queries!
+ * Therefore it is not possible to have two instances of PSql in one thread having both simultaneous active queries!
  *
  * PostgreSQL type mapping:
- *   21 : smallint                  <->  bool, qint8, quint8, qint16, quint16
+ *   16 : boolean                   <->  bool
+ *   21 : smallint                  <->  qint8, quint8, qint16, quint16
  *   23 : integer (serial)          <->  qint32, quint32
  *   20 : bigint  (bigserial)       <->  qint64, quint64
  *  700 : real                      <->  float
@@ -71,7 +74,7 @@ public:
 
 	bool next();
 
-	inline PSql & operator<<(bool    val) { setInt16(        val); return *this; }
+    inline PSql & operator<<(bool    val) { setBool (        val); return *this; }
 	inline PSql & operator<<(qint8   val) { setInt16(        val); return *this; }
 	inline PSql & operator<<(quint8  val) { setInt16((qint8 )val); return *this; }
 	inline PSql & operator<<(qint16  val) { setInt16(        val); return *this; }
@@ -90,7 +93,7 @@ public:
 
 	PSql & operator<<(Null);
 
-	inline PSql & operator>>(bool    & val) { qint16 val16; getInt16(val16); val = val16; return *this; }
+    inline PSql & operator>>(bool    & val) { getBool (          val); return *this; }
 	inline PSql & operator>>(qint8   & val) { qint16 val16; getInt16(val16); val = val16; return *this; }
 	inline PSql & operator>>(quint8  & val) { qint16 val16; getInt16(val16); val = val16; return *this; }
 	inline PSql & operator>>(qint16  & val) { getInt16(          val); return *this; }
@@ -120,11 +123,13 @@ public:
 	bool isNull(uint fieldId);
 
 private:
-	PSql(ThreadData & td, const cflib::util::LogFileInfo & lfi, int line);
-	void setInt16(qint16 val);
+    PSql(ThreadData & td, const cflib::util::LogFileInfo & lfi, int line);
+    void setBool (bool val);
+    void setInt16(qint16 val);
 	void setInt32(qint32 val);
-	void setInt64(qint64 val);
-	void getInt16(qint16 & val);
+    void setInt64(qint64 val);
+    void getBool (bool & val);
+    void getInt16(qint16 & val);
 	void getInt32(qint32 & val);
 	void getInt64(qint64 & val);
 	bool initResult();
