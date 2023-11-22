@@ -13,6 +13,8 @@
 
 #define directConnect(o1, f1, o2, f2) QObject::connect(o1, f1, o2, f2, Qt::DirectConnection)
 
+#define MultiLineStr(...) #__VA_ARGS__
+
 inline QByteArray operator<<(const char * lhs, const QByteArray & rhs) { QByteArray ba(lhs); return ba += rhs; }
 inline QByteArray & operator<<(QByteArray & lhs, const QByteArray & rhs) { return lhs += rhs; }
 inline QByteArray & operator<<(QByteArray & lhs, const char * rhs) { return lhs += rhs; }

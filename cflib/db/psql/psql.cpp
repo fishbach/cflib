@@ -21,9 +21,9 @@ namespace {
 QAtomicInt connIdCounter(1);
 
 enum PostgresTypes {
-    PSql_null = 0,
-    PSql_bool,
-    PSql_int16,
+	PSql_null = 0,
+	PSql_bool,
+	PSql_int16,
 	PSql_int32,
 	PSql_int64,
 	PSql_float,
@@ -36,7 +36,7 @@ enum PostgresTypes {
 
 const char * PostgresTypeNames[] = {
 	0,
-    "boolean",
+	"boolean",
 	"smallint",
 	"integer",
 	"bigint",
@@ -613,8 +613,8 @@ bool PSql::isNull(uint fieldId)
 
 void PSql::setBool (bool val)
 {
-    uchar * dest = setParamType(PSql_bool, 1, false);
-    *dest = val?'1':'0';
+	uchar * dest = setParamType(PSql_bool, 1, false);
+	*dest = val?'1':'0';
 }
 
 void PSql::setInt16(qint16 val)
@@ -637,15 +637,16 @@ void PSql::setInt64(qint64 val)
 
 void PSql::getBool(bool & val)
 {
-    val = 0;
-    if (!checkField(PSql_bool, 1)) return;
-    if (!lastFieldIsNull_) {
-        const char * resultField = (const char *)PQgetvalue((PGresult *)res_, 0, currentFieldId_);
-        val = resultField[0] == 't' || resultField[0] == 'T' ||
-              resultField[0] == 'y' || resultField[0] == 'Y' ||
-              resultField[0] == '1' || resultField[0] == 1;
-    }
-    ++currentFieldId_;
+	val = 0;
+	if (!checkField(PSql_bool, 1)) return;
+	if (!lastFieldIsNull_) {
+		const char * resultField = (const char *)PQgetvalue((PGresult *)res_, 0, currentFieldId_);
+		val =
+			resultField[0] == 't' || resultField[0] == 'T' ||
+			resultField[0] == 'y' || resultField[0] == 'Y' ||
+			resultField[0] == '1' || resultField[0] == 1;
+	}
+	++currentFieldId_;
 }
 
 void PSql::getInt16(qint16 & val)
