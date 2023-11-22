@@ -51,7 +51,7 @@ function toUTF8(str)
 									   3;
 				}
 				this.len = oi;
-				allocate.call(this, ol);
+				allocate.call(this, il - i + ol);
 			}
 
 			if      (c <   0x800) { rv[oi++] = 0xC0 | c >>>  6; rv[oi++] = 0x80 | (c        & 0x3F); }
