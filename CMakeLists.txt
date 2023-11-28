@@ -14,7 +14,7 @@ project(
 
 include(cmake/ProjectConfig.cmake)
 
-cf_add_other(project_files
+cf_add_other(cflib_files
     .gitignore
     COPYING
     MODULES
