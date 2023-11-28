@@ -55,7 +55,7 @@ public:
 
     // This constructor opens an own DB-connection.
     // If connectionParameter is empty, the default parameters will be used.
-    PSql(const QString & connectionParameter);
+    PSql(const QString & connectionParameter = QString());
 
     ~PSql();
 

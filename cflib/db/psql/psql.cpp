@@ -203,7 +203,7 @@ bool PSql::setParameter(const QString & connectionParameterRef, const QString & 
 
 QString PSql::setDBName(const QString & connectionParameter, const QString & dbName)
 {
-    char * errMsg;
+    char * errMsg = 0;
     PQconninfoOption * options = PQconninfoParse(connInfo.toUtf8().constData(), &errMsg);
     if (!options) {
         logWarn("cannot parse connection parameter %1 (error: %2)", connectionParameter, errMsg);

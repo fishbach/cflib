@@ -779,7 +779,7 @@ private slots:
         sql.prepare("SELECT id FROM cflib_db_test ORDER BY id");
         QVERIFY(sql.exec());
 
-        PSql sql2("");
+        PSql sql2;
         sql2.prepare("SELECT x32 FROM cflib_db_test WHERE id = $1");
 
         QVERIFY(sql.next());
@@ -825,7 +825,7 @@ private slots:
         sql  << 9;
         QVERIFY(sql.exec());
 
-        PSql sql2("");
+        PSql sql2;
         sql2.prepare("SELECT id FROM cflib_db_test WHERE id = $1");
         sql2 << 9;
         QVERIFY(sql2.exec(1));
