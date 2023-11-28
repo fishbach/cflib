@@ -45,8 +45,9 @@ public:
     static const int MAX_FIELD_COUNT = 64;
     struct Null {} null;
 
-    static bool setParameter(const QString & connectionParameter);
-    static void closeConnection();
+    static bool setParameter(const QString & connectionParameter, const QString & overrideEnvVar = QString());
+    static QString setDBName(const QString & connectionParameter, const QString & dbName);
+    static void closeThreadConnection();
 
 public:
     // This constructor uses the thread specific DB-connection.

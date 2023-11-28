@@ -53,6 +53,11 @@ public slots:
     }
 };
 
+QString connParam(const QString & dbName)
+{
+    return PSql::setDBName(QProcessEnvironment::systemEnvironment().value("DB_TEST_DB", "host=127.0.0.1"), dbName);
+}
+
 }
 
 class Schema_test : public QObject
@@ -62,16 +67,17 @@ private slots:
 
     void initTestCase()
     {
-        PSql sql("host=127.0.0.1 dbname=postgres");
+        PSql::closeThreadConnection();
+        PSql sql(connParam("postgres"));
         sql.exec("DROP DATABASE cflib_db_test");
         QVERIFY(sql.exec("CREATE DATABASE cflib_db_test"));
-        QVERIFY(PSql::setParameter("host=127.0.0.1 dbname=cflib_db_test"));
+        QVERIFY(PSql::setParameter(connParam("cflib_db_test")));
     }
 
     void cleanupTestCase()
     {
-        PSql::closeConnection();
-        PSql sql("host=127.0.0.1 dbname=postgres");
+        PSql::closeThreadConnection();
+        PSql sql(connParam("postgres"));
         QVERIFY(sql.exec("DROP DATABASE cflib_db_test"));
     }
 
@@ -125,11 +131,11 @@ private slots:
 
     void resetDB()
     {
-        PSql::closeConnection();
-        PSql sql("host=127.0.0.1 dbname=postgres");
+        PSql::closeThreadConnection();
+        PSql sql(connParam("postgres"));
         QVERIFY(sql.exec("DROP DATABASE cflib_db_test"));
         QVERIFY(sql.exec("CREATE DATABASE cflib_db_test"));
-        QVERIFY(PSql::setParameter("host=127.0.0.1 dbname=cflib_db_test"));
+        QVERIFY(PSql::setParameter(connParam("cflib_db_test")));
     }
 
     void empty_head_test()

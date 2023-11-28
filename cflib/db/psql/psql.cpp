@@ -70,32 +70,31 @@ class PSql::ThreadData : public QObject
     Q_OBJECT
 public:
     const bool isDedicated;
-    const int connId;
     PGconn * conn;
     bool transactionActive;
     bool doRollback;
     QList<QByteArray> preparedStatements;
-    util::EVTimer * evTimer_;
-    uint instanceCount_;
+    uint instanceCount;
 
 public:
     ThreadData(const QString & connectionParameter = QString(), bool isDedicated = false) :
         isDedicated(isDedicated),
-        connId(connIdCounter.fetchAndAddRelaxed(1)),
-        conn(0),
+        conn(nullptr),
         transactionActive(false),
         doRollback(false),
-        evTimer_(0),
-        instanceCount_(0)
+        instanceCount(0),
+        connectionParameter_(connectionParameter.isNull() ? connInfo : connectionParameter),
+        connId_(connIdCounter.fetchAndAddRelaxed(1)),
+        evTimer_(nullptr)
     {
-        logDebug("new DB connection: %1", connId);
+        logDebug("new DB connection: %1", connId_);
 
-        if (connectionParameter.isNull() && connInfo.isNull()) {
+        if (connectionParameter_.isNull()) {
             logWarn("no connection parameters");
             return;
         }
 
-        conn = PQconnectdb(!connectionParameter.isEmpty() ? connectionParameter.toUtf8().constData() : connInfo.toUtf8().constData());
+        conn = PQconnectdb(connectionParameter_.toUtf8().constData());
         if (PQstatus(conn) != CONNECTION_OK) {
             logWarn("cannot connect to database (error: %1)", PQerrorMessage(conn));
             PQfinish(conn);
@@ -117,7 +116,7 @@ public:
     {
         delete evTimer_;
         PQfinish(conn);
-        logDebug("DB connection %1 closed", connId);
+        logDebug("DB connection %1 closed", connId_);
     }
 
 private slots:
@@ -128,35 +127,44 @@ private slots:
 
         PGresult * res = PQexec(conn, "SELECT 1");
         if (PQresultStatus(res) != PGRES_TUPLES_OK) {
-            logWarn("DB error on connection %1 check: %2", connId, PQerrorMessage(conn));
+            logWarn("DB error on connection %1 check: %2", connId_, PQerrorMessage(conn));
             PQclear(res);
             PQfinish(conn);
 
             // try reconnect
-            conn = PQconnectdb(connInfo.toUtf8().constData());
+            conn = PQconnectdb(connectionParameter_.toUtf8().constData());
             if (PQstatus(conn) != CONNECTION_OK) {
                 logWarn("cannot connect to database (error: %1)", PQerrorMessage(conn));
                 PQfinish(conn);
             }
         } else {
             int elapsed = watch.elapsed();
-            if (elapsed >= 5) logTrace("DB connection %1 responsiveness: %2 msec", connId, elapsed);
+            if (elapsed >= 5) logTrace("DB connection %1 responsiveness: %2 msec", connId_, elapsed);
             PQclear(res);
         }
     }
 
+private:
+    const QString connectionParameter_;
+    const int connId_;
+    util::EVTimer * evTimer_;
 };
 
 QThreadStorage<PSql::ThreadData *> PSql::threadData_;
 
 const int PSql::MAX_FIELD_COUNT;
 
-bool PSql::setParameter(const QString & connectionParameter)
+bool PSql::setParameter(const QString & connectionParameterRef, const QString & overrideEnvVar)
 {
-    if (threadData_.hasLocalData()) threadData_.setLocalData(0);
-
+    if (!connInfo.isNull()) {
+        logWarn("Changing the global DB connection parameters does not reconnect existing connections!");
+    }
     connInfo = QString();
 
+    const QString connectionParameter = overrideEnvVar.isEmpty() ? connectionParameterRef :
+        QProcessEnvironment::systemEnvironment().value(overrideEnvVar, connectionParameterRef);
+
+    // try connect
     PGconn * conn = PQconnectdb(connectionParameter.toUtf8().constData());
     if (PQstatus(conn) != CONNECTION_OK) {
         logWarn("cannot connect to database (error: %1)", PQerrorMessage(conn));
@@ -164,6 +172,7 @@ bool PSql::setParameter(const QString & connectionParameter)
         return false;
     }
 
+    // query oids
     typeOids[PSql_null] = (Oid)0;
     for (Oid oid = PSql_null + 1 ; oid < PSql_lastEntry ; ++oid) {
         PGresult * res = PQexec(conn, QByteArray("SELECT '") + PostgresTypeNames[oid] + "'::regtype::oid");
@@ -192,9 +201,30 @@ bool PSql::setParameter(const QString & connectionParameter)
     return true;
 }
 
-void PSql::closeConnection()
+QString PSql::setDBName(const QString & connectionParameter, const QString & dbName)
 {
-    threadData_.setLocalData(0);
+    char * errMsg;
+    PQconninfoOption * options = PQconninfoParse(connInfo.toUtf8().constData(), &errMsg);
+    if (!options) {
+        logWarn("cannot parse connection parameter %1 (error: %2)", connectionParameter, errMsg);
+        PQfreemem(errMsg);
+        return QString();
+    }
+
+    QString newParams = QString("dbname=%1").arg(dbName);
+    for (PQconninfoOption * it = options ; it->keyword != NULL ; ++it) {
+        if (it->val != NULL && QString(it->keyword) != "dbname") {
+            newParams += QString(" %1=%2").arg(it->keyword, it->val);
+        }
+    }
+
+    PQconninfoFree(options);
+    return newParams;
+}
+
+void PSql::closeThreadConnection()
+{
+    threadData_.setLocalData(nullptr);
 }
 
 PSql::PSql(const util::LogFileInfo * lfi, int line) :
@@ -212,7 +242,7 @@ PSql::PSql(const QString & connectionParameter) :
 PSql::PSql(ThreadData & td, const util::LogFileInfo & lfi, int line) :
     td_(td),
     lfi_(lfi), line_(line),
-    instanceName_("i" + QByteArray::number(++td_.instanceCount_)),
+    instanceName_("i" + QByteArray::number(++td_.instanceCount)),
     nestedTransaction_(false),
     localTransactionActive_(false),
     isFirstResult_(true),
@@ -236,7 +266,7 @@ PSql::~PSql()
 {
     clearResult();
     if (localTransactionActive_) rollback();
-    --td_.instanceCount_;
+    --td_.instanceCount;
     removePreparedStatement();
     if (td_.isDedicated) delete &td_;
 }

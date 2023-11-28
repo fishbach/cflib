@@ -42,7 +42,7 @@ private slots:
 
     void initTestCase()
     {
-        QVERIFY(PSql::setParameter("host=127.0.0.1"));
+        QVERIFY(PSql::setParameter("host=127.0.0.1", "DB_TEST_DB"));
         PSqlConn;
 
         // drop any old exisiting table
