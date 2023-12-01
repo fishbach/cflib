@@ -644,7 +644,7 @@ bool PSql::isNull(uint fieldId)
 void PSql::setBool (bool val)
 {
     uchar * dest = setParamType(PSql_bool, 1, false);
-    *dest = val?'1':'0';
+    *dest = val? true : false;
 }
 
 void PSql::setInt16(qint16 val)
