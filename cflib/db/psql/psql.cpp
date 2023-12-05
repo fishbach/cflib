@@ -641,10 +641,10 @@ bool PSql::isNull(uint fieldId)
     return checkField(PSql_null, 0) && lastFieldIsNull_;
 }
 
-void PSql::setBool (bool val)
+void PSql::setBool(bool val)
 {
     uchar * dest = setParamType(PSql_bool, 1, false);
-    *dest = val? true : false;
+    if (dest) *dest = val;
 }
 
 void PSql::setInt16(qint16 val)
@@ -667,14 +667,10 @@ void PSql::setInt64(qint64 val)
 
 void PSql::getBool(bool & val)
 {
-    val = 0;
+    val = false;
     if (!checkField(PSql_bool, 1)) return;
     if (!lastFieldIsNull_) {
-        const char * resultField = (const char *)PQgetvalue((PGresult *)res_, 0, currentFieldId_);
-        val =
-            resultField[0] == 't' || resultField[0] == 'T' ||
-            resultField[0] == 'y' || resultField[0] == 'Y' ||
-            resultField[0] == '1' || resultField[0] == 1;
+        val = *PQgetvalue((PGresult *)res_, 0, currentFieldId_);
     }
     ++currentFieldId_;
 }

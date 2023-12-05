@@ -22,19 +22,19 @@ private:
 
     struct TestTypes
     {
-        quint32        id;
-        quint16        x16;
-        quint32        x32;
-        quint64        x64;
-        qint16        s16;
-        qint32        s32;
-        qint64        s64;
-        QDateTime    t;
-        QByteArray    a;
-        QString        s;
-        float        f;
-        double        d;
-        bool        b;
+        quint32    id;
+        quint16    x16;
+        quint32    x32;
+        quint64    x64;
+        qint16     s16;
+        qint32     s32;
+        qint64     s64;
+        QDateTime  t;
+        QByteArray a;
+        QString    s;
+        float      f;
+        double     d;
+        bool       b;
     };
     TestTypes tt;
 
@@ -111,10 +111,25 @@ private slots:
         PSqlConn;
 
         bool result = false;
-        QVERIFY(sql.exec("SELECT (1=1);"));
+        QVERIFY(sql.exec("SELECT 1=1"));
         QVERIFY(sql.next());
         sql >> result;
         QVERIFY(result);
+
+        QVERIFY(sql.exec("SELECT 0=1"));
+        QVERIFY(sql.next());
+        sql >> result;
+        QVERIFY(!result);
+
+        sql.prepare("SELECT $1");
+        sql << false;
+        QVERIFY(sql.exec());
+        QVERIFY(sql.next());
+        QVERIFY(!sql.get<bool>(0));
+        sql << true;
+        QVERIFY(sql.exec());
+        QVERIFY(sql.next());
+        QVERIFY(sql.get<bool>(0));
 
         sql.prepare("SELECT pg_typeof($1) = pg_typeof(False)");
         sql << true;
@@ -135,7 +150,7 @@ private slots:
             (
                 id, x16, x32, x64, t, a, s, r, d, b
             ) VALUES (
-                1, 2, -1, 4, '2017-02-27T14:47:34.123Z', E'\x41\x30', E'ABC\xC3\xB6\xC3\x9F', 1.23, 3.45, 'True'
+                1, 2, -1, 4, '2017-02-27T14:47:34.123Z', E'\x41\x30', E'ABC\xC3\xB6\xC3\x9F', 1.23, 3.45, TRUE
             )
         )));
     }
@@ -179,12 +194,15 @@ private slots:
             INSERT INTO
                 cflib_db_test
             (
-                id, x16, x32, x64, t, a, s, r, d, b
-                ) VALUES (
-                1, -32768, -2147483648, -9223372036854775807, '1970-01-01T00:00:00.000Z', E'\x41\x30', E'ABC\xC3\xB6\xC3\x9F', -1.23, -3.45, 'False'
-                )
+                id,
+                x16, x32, x64,
+                t, a, s, r, d, b
+            ) VALUES (
+                1,
+                -32768, -2147483648, -9223372036854775807,
+                '1970-01-01T00:00:00.000Z', E'\x41\x30', E'ABC\xC3\xB6\xC3\x9F', -1.23, -3.45, FALSE
             )
-        ));
+        )));
     }
 
     void select_test_02()
@@ -349,22 +367,24 @@ private slots:
             "INSERT INTO "
                 "cflib_db_test "
             "("
-                "id, x16, x32, x64, t, a, s, r, d"
+                "id, x16, x32, x64, t, a, s, r, d, b"
             ") VALUES ("
-                "$1, $2, $3, $4, $5, $6, $7, $8, $9"
+                "$1, $2, $3, $4, $5, $6, $7, $8, $9, $10"
             ")"
         );
         sql << 3
             << (quint16)0xFFFA << 67 << 89
             << QDateTime(QDate(2017, 2, 27), QTime(10, 47, 34, 123), Qt::UTC)
             << sql.null << "dödïdüß"
-            << 123.456f << 789.123;
+            << 123.456f << 789.123
+            << true;
         QVERIFY(sql.exec());
         sql << 4
             << (qint8)-45 << sql.null << (qint32)-89
             << sql.null
             << sql.null << sql.null
-            << sql.null << sql.null;
+            << sql.null << sql.null
+            << false;
         QVERIFY(sql.exec());
     }
 
@@ -372,7 +392,7 @@ private slots:
     {
         PSqlConn;
 
-        QVERIFY(sql.exec("SELECT id, x16, x32, x64, t, a, s, r, d FROM cflib_db_test"));
+        QVERIFY(sql.exec("SELECT id, x16, x32, x64, t, a, s, r, d, b FROM cflib_db_test"));
 
         QVERIFY(sql.next());
         QVERIFY(!sql.isNull());
@@ -388,6 +408,8 @@ private slots:
         sql >> tt.a >> tt.s >> tt.f >> tt.d;
         QCOMPARE(tt.f, 123.456f);
         QCOMPARE(tt.d, 789.123);
+        sql >> tt.b;
+        QVERIFY(tt.b);
     }
 
     // -----------------------------------------------------------
@@ -396,7 +418,7 @@ private slots:
     {
         PSqlConn;
 
-        QVERIFY(sql.exec("SELECT id, x16, x32, x64, t, a, s, r, d FROM cflib_db_test"));
+        QVERIFY(sql.exec("SELECT id, x16, x32, x64, t, a, s, r, d, b FROM cflib_db_test"));
         QVERIFY(sql.next());
 
         sql >> sql.null;    // id
@@ -405,14 +427,14 @@ private slots:
         sql >> sql.null;    // x64
         sql >> sql.null;    // t
 
-        QVERIFY(sql.isNull());
+        QVERIFY(sql.isNull());  // a
         sql >> sql.null;
         QVERIFY(sql.lastFieldIsNull());
-        QVERIFY(!sql.isNull());
+        QVERIFY(!sql.isNull()); // s
         sql >> tt.s;
         QVERIFY(!sql.lastFieldIsNull());
         QCOMPARE(tt.s, QString::fromUtf8("dödïdüß"));
-        QVERIFY(!sql.isNull());
+        QVERIFY(!sql.isNull()); // r
         sql >> sql.null;
         QVERIFY(!sql.lastFieldIsNull());
 
@@ -421,20 +443,33 @@ private slots:
         qint64 sx64;
 
         QVERIFY(sql.next());
-        sql >> tt.id >> sx16;
+
+        sql >> tt.id >> sx16;   // id, x16
         QCOMPARE(tt.id,  (quint32)4);
         QCOMPARE(sx16, (qint16)-45);
-        QVERIFY(sql.isNull());
+        QVERIFY(!sql.lastFieldIsNull());
+        QVERIFY(sql.isNull());  // x32
         sql >> sx32;
         QVERIFY(sql.lastFieldIsNull());
         sql >> sx64;
         QCOMPARE(sx64, (qint64)-89);
-        QVERIFY(!sql.isNull(1));
-        QVERIFY( sql.isNull(2));
+        QVERIFY(!sql.lastFieldIsNull());
+        QVERIFY(!sql.isNull(1));    // x16
+        QVERIFY(!sql.isNull(3));    // x64
+        QVERIFY( sql.isNull(4));    // t
+
+        sql >> tt.t >> tt.a >> tt.s >> tt.f >> tt.d >> tt.b;
+        QVERIFY(tt.t.isNull());
+        QVERIFY(tt.a.isNull());
+        QVERIFY(tt.s.isNull());
+        QCOMPARE(tt.f, 0.0f);
+        QCOMPARE(tt.d, 0.0);
+        QVERIFY(!tt.b);
+        QVERIFY(!sql.lastFieldIsNull());
 
         QVERIFY(!sql.next());
 
-        // leave talbe empty
+        // leave table empty
         QVERIFY(sql.exec("DELETE FROM cflib_db_test WHERE id=3;"));
         QVERIFY(sql.exec("DELETE FROM cflib_db_test WHERE id=4;"));
     }
