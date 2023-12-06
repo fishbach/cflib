@@ -368,6 +368,11 @@ private slots:
 
     void test_IPv6()
     {
+        // Do we have an IPv6 loopback device?
+        if (QProcess::execute("sh", { "-c", "ifconfig | grep -q 'inet6 ::1'" }) != 0) {;
+            QSKIP("no IPv6 loopback device");
+        }
+
         Server serv;
         QVERIFY(serv.start("::1", 12301));
         TCPManager cli;
