@@ -14,6 +14,7 @@ FetchContent_Declare(
     DOWNLOAD_EXTRACT_TIMESTAMP TRUE
     URL https://github.com/randombit/botan/archive/refs/tags/${Botan_FIND_VERSION}.tar.gz
 )
+set(FETCHCONTENT_UPDATES_DISCONNECTED_BOTAN_SRC ON)
 FetchContent_MakeAvailable(botan_src)
 
 # handle find_packet logic
