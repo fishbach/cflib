@@ -17,7 +17,7 @@ function fromUTF8(uint8Array)
             u8 < 0xE0 ? (u8 & 0x1F) <<  6 | (uint8Array[i++] & 0x3F) :
             u8 < 0xF0 ? (u8 & 0x0F) << 12 | (uint8Array[i++] & 0x3F) <<  6 | (uint8Array[i++] & 0x3F) :
                         (u8 & 0x07) << 18 | (uint8Array[i++] & 0x3F) << 12 | (uint8Array[i++] & 0x3F) << 6 | (uint8Array[i++] & 0x3F)
-        if (u32 < 0xFFFF) {
+        if (u32 < 0x10000) {
             se += String.fromCharCode(u32);
         } else {
             u32 -= 0x10000;
