@@ -13,12 +13,18 @@ function fromUTF8(uint8Array)
     while (i < l) {
         var u8 = uint8Array[i++];
         /*jshint smarttabs:true */
-        se += String.fromCharCode(
-            u8 < 0x80 ?  u8 :
+        var u32 = u8 < 0x80 ?  u8 :
             u8 < 0xE0 ? (u8 & 0x1F) <<  6 | (uint8Array[i++] & 0x3F) :
             u8 < 0xF0 ? (u8 & 0x0F) << 12 | (uint8Array[i++] & 0x3F) <<  6 | (uint8Array[i++] & 0x3F) :
                         (u8 & 0x07) << 18 | (uint8Array[i++] & 0x3F) << 12 | (uint8Array[i++] & 0x3F) << 6 | (uint8Array[i++] & 0x3F)
-        );
+        if (u32 < 0xFFFF) {
+            se += String.fromCharCode(u32);
+        } else {
+            u32 -= 0x10000;
+            var highSurrogate = 0xD800 | (u32 >> 10 & 0x3FF);
+            var lowSurrogate = 0xDC00 | (u32 & 0x3FF);
+            se += String.fromCharCode(highSurrogate, lowSurrogate);
+        }
     }
     return se;
 }
@@ -33,6 +39,15 @@ function toUTF8(str)
         var c = str.charCodeAt(i);
         if (c < 0x80) rv[oi++] = c;
         else {
+            if ((c & 0xFC00) == 0xD800) {
+                var c2 = str.charCodeAt(i+1);
+                if ((c2 & 0xFC00) == 0xDC00) {
+                    c = ((c & 0x3FF) << 10 | (c2 & 0x3FF)) + 0x10000
+                    ++i;
+                }
+                else continue;
+            }
+
             // resize output array
             if (isLatin) {
                 isLatin = false;
