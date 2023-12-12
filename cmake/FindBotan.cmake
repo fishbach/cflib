@@ -14,7 +14,6 @@ FetchContent_Declare(
     DOWNLOAD_EXTRACT_TIMESTAMP TRUE
     URL https://github.com/randombit/botan/archive/refs/tags/${Botan_FIND_VERSION}.tar.gz
 )
-set(FETCHCONTENT_UPDATES_DISCONNECTED_BOTAN_SRC ON)
 FetchContent_MakeAvailable(botan_src)
 
 # handle find_packet logic
@@ -48,6 +47,7 @@ add_custom_command(
         $<$<BOOL:${MINGW}>:--os=mingw>
         --disable-shared
         --amalgamation
+        --no-store-vc-rev
         --disable-modules=${botan_src_DISABLE_MODULES}
 )
 
