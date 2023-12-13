@@ -36,7 +36,7 @@ if(ENABLE_CCACHE)
     find_program(CCACHE_FOUND ccache)
     if(CCACHE_FOUND AND NOT CMAKE_CXX_COMPILER_LAUNCHER)
         message(STATUS "Using ccache")
-        set(CMAKE_CXX_COMPILER_LAUNCHER ccache)
+        set(CMAKE_CXX_COMPILER_LAUNCHER CCACHE_SLOPPINESS=include_file_ctime,include_file_mtime,pch_defines,time_macros ccache)
     endif()
 endif()
 
