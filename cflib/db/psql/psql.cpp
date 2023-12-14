@@ -47,8 +47,16 @@ const char * PostgresTypeNames[] = {
     "timestamp with time zone",
 };
 
+struct PublicConnInfo {
+    QString host;
+    QString port;
+    QString database;
+    QString user;
+};
+
 Oid typeOids[PSql_lastEntry];
 QString connInfo;
+PublicConnInfo pConnInfo;
 
 const qint64 MsecDelta = -QDateTime::fromMSecsSinceEpoch(0).msecsTo(QDateTime(QDate(2000, 1, 1), QTime(0, 0), Qt::UTC));
 const QVector<int> ParamFormats(PSql::MAX_FIELD_COUNT, 1);
@@ -154,6 +162,14 @@ QThreadStorage<PSql::ThreadData *> PSql::threadData_;
 
 const int PSql::MAX_FIELD_COUNT;
 
+void CopyOnKeyword(const QString name, QString & target, const PQconninfoOption * conninfo)
+{
+    if (conninfo->val != NULL && name == conninfo->keyword)
+    {
+        target = conninfo->val;
+    }
+}
+
 bool PSql::setParameter(const QString & connectionParameterRef, const QString & overrideEnvVar)
 {
     if (!connInfo.isNull()) {
@@ -171,6 +187,17 @@ bool PSql::setParameter(const QString & connectionParameterRef, const QString & 
         PQfinish(conn);
         return false;
     }
+
+    // gather current connection infos
+    PQconninfoOption const * conninfo = PQconninfo(conn);
+    while ((conninfo) && (conninfo->keyword)) {
+        CopyOnKeyword("host", pConnInfo.host, conninfo);
+        CopyOnKeyword("port", pConnInfo.port, conninfo);
+        CopyOnKeyword("dbname", pConnInfo.database, conninfo);
+        CopyOnKeyword("user", pConnInfo.user, conninfo);
+        conninfo++;
+    }
+    logInfo("psql successful connected to psql://%1@%2:%3/%4", pConnInfo.user, pConnInfo.host, pConnInfo.port, pConnInfo.database);
 
     // query oids
     typeOids[PSql_null] = (Oid)0;
