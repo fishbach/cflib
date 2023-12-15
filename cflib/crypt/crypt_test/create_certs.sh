@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -e
+
 rm -rf certs
 mkdir certs
 cd certs
