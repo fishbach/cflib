@@ -13,18 +13,12 @@ function fromUTF8(uint8Array)
     while (i < l) {
         var u8 = uint8Array[i++];
         /*jshint smarttabs:true */
-        var u32 = u8 < 0x80 ?  u8 :
+        se += String.fromCodePoint(
+            u8 < 0x80 ?  u8 :
             u8 < 0xE0 ? (u8 & 0x1F) <<  6 | (uint8Array[i++] & 0x3F) :
             u8 < 0xF0 ? (u8 & 0x0F) << 12 | (uint8Array[i++] & 0x3F) <<  6 | (uint8Array[i++] & 0x3F) :
                         (u8 & 0x07) << 18 | (uint8Array[i++] & 0x3F) << 12 | (uint8Array[i++] & 0x3F) << 6 | (uint8Array[i++] & 0x3F)
-        if (u32 < 0x10000) {
-            se += String.fromCharCode(u32);
-        } else {
-            u32 -= 0x10000;
-            var highSurrogate = 0xD800 | (u32 >> 10 & 0x3FF);
-            var lowSurrogate = 0xDC00 | (u32 & 0x3FF);
-            se += String.fromCharCode(highSurrogate, lowSurrogate);
-        }
+        );
     }
     return se;
 }
@@ -36,18 +30,11 @@ function toUTF8(str)
     var oi = this.len;
     var isLatin = true;
     for (var i = 0 ; i < il ; ++i) {
-        var c = str.charCodeAt(i);
+        var c = str.codePointAt(i);
+        if (c >= 0x10000) ++i;
+
         if (c < 0x80) rv[oi++] = c;
         else {
-            if ((c & 0xFC00) == 0xD800) {
-                var c2 = str.charCodeAt(i+1);
-                if ((c2 & 0xFC00) == 0xDC00) {
-                    c = ((c & 0x3FF) << 10 | (c2 & 0x3FF)) + 0x10000
-                    ++i;
-                }
-                else continue;
-            }
-
             // resize output array
             if (isLatin) {
                 isLatin = false;
@@ -57,7 +44,9 @@ function toUTF8(str)
                     c < 0x10000 ? 2 :
                                   3;
                 for (var j = i + 1 ; j < il ; ++j) {
-                    var cl = str.charCodeAt(j);
+                    var cl = str.codePointAt(j);
+                    if (cl >= 0x10000) ++j;
+
                     /*jshint smarttabs:true */
                     ol +=
                         cl <    0x80 ? 0 :
@@ -70,6 +59,7 @@ function toUTF8(str)
                 rv = this.d;
             }
 
+            // https://en.wikipedia.org/wiki/UTF-8
             if      (c <   0x800) { rv[oi++] = 0xC0 | c >>>  6; rv[oi++] = 0x80 | (c        & 0x3F); }
             else if (c < 0x10000) { rv[oi++] = 0xE0 | c >>> 12; rv[oi++] = 0x80 | (c >>>  6 & 0x3F); rv[oi++] = 0x80 | (c       & 0x3F); }
             else                  { rv[oi++] = 0xF0 | c >>> 18; rv[oi++] = 0x80 | (c >>> 12 & 0x3F); rv[oi++] = 0x80 | (c >>> 6 & 0x3F); rv[oi++] = 0x80 | (c & 0x3F); }
