@@ -98,7 +98,7 @@ void Mailer::finished(int exitCode, QProcess::ExitStatus exitStatus)
     // check status
     if (exitCode == 0 && exitStatus == QProcess::NormalExit) {
         if (!output.isEmpty()) logWarn("got output while sending email to %1: %2", queue_.first().to, output);
-        else                   logInfo("email to %1 sent", queue_.first().to);
+        else                   logInfo("email from %1 to %2 sent", queue_.first().from, queue_.first().to);
     } else {
         logWarn("could not send email to %1 (exitCode: %2, exitStatus: %3, output: %4)",
             queue_.first().to, exitCode, (int)exitStatus, output);
