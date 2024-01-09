@@ -21,10 +21,12 @@ public:
 
 public:
     Mail() {}
-    Mail(const QString & to, const QString & subject, const QString & text, const QString & from = QString()) :
+    Mail(const QString & to, const QString & subject, const QString & text, const QString & from) :
         from(from), to(to), subject(subject), text(text) {}
 
-    QByteArray raw(QString & destAddress) const;
+    bool isValid() const;
+
+    QByteArray raw(QString & from, QString & to) const;
 };
 
 class Mailer : public QObject, public ThreadVerify

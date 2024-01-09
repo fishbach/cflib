@@ -94,7 +94,7 @@ void Mailer::finished(int exitCode, QProcess::ExitStatus exitStatus)
 
     // more mails?
     queue_.removeFirst();
-    if (!queue_.isEmpty()) execLater(new Functor0<Mailer>(this, &Mailer::startProcess));
+    if (!queue_.isEmpty()) execLater([this]() { startProcess(); });
 }
 
 void Mailer::errorOccurred(QProcess::ProcessError error)
@@ -109,6 +109,12 @@ void Mailer::doSend(const Mail & mail)
 
     if (sendmailPath_.isNull()) {
         logWarn("mailer not active, mail to %1 dropped", mail.to);
+        return;
+    }
+
+    if (!mail.isValid()) {
+        QString from, to;
+        logWarn("invalid mail: %1", mail.raw(from, to));
         return;
     }
 
@@ -135,22 +141,27 @@ QByteArray encodeAddress(const QString & address, QString & plain)
 void Mailer::startProcess()
 {
     const Mail & mail = queue_.first();
-    QString destAddress;
-    const QByteArray raw = mail.raw(destAddress);
-    logDebug("exec: %1 %2", sendmailPath_, destAddress);
-    process_->start(sendmailPath_, QStringList() << destAddress);
+    QString from;
+    QString to;
+    const QByteArray raw = mail.raw(from, to);
+    logDebug("exec: %1 -f %2 %3", sendmailPath_, from, to);
+    process_->start(sendmailPath_, {"-f", from, to});
     process_->write(raw);
     process_->closeWriteChannel();
 }
 
-QByteArray Mail::raw(QString & destAddress) const
+bool Mail::isValid() const
+{
+    return !from.isEmpty() && !to.isEmpty();
+}
+
+QByteArray Mail::raw(QString & fromAddr, QString & toAddr) const
 {
     QByteArray rv;
-    rv    << "Content-type: text/plain; charset=utf-8\r\n"
-        << "Content-transfer-encoding: quoted-printable\r\n";
-    QString addr;
-    if (!from.isEmpty()) rv << "From: " << encodeAddress(from, addr) << "\r\n";
-    rv    << "To: " << encodeAddress(to, destAddress) << "\r\n"
+    rv  << "Content-type: text/plain; charset=utf-8\r\n"
+        << "Content-transfer-encoding: quoted-printable\r\n"
+        << "From: "    << encodeAddress(from, fromAddr)           << "\r\n"
+        << "To: "      << encodeAddress(to, toAddr)               << "\r\n"
         << "Subject: " << cflib::util::encodeWord(subject, false) << "\r\n"
         << "\r\n"
         << cflib::util::encodeQuotedPrintable(text);
