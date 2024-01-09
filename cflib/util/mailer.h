@@ -20,23 +20,23 @@ public:
     QString text;
 
 public:
-    Mail() {}
+    Mail() = default;
     Mail(const QString & to, const QString & subject, const QString & text, const QString & from) :
         from(from), to(to), subject(subject), text(text) {}
 
     bool isValid() const;
 
-    QByteArray raw(QString & from, QString & to) const;
+    QByteArray raw(QString & fromAddr, QString & toAddr) const;
 };
 
 class Mailer : public QObject, public ThreadVerify
 {
     Q_OBJECT
 public:
-    Mailer();
+    Mailer(bool isEnabled = true);
     ~Mailer();
 
-    static void send(const Mail & mail) { instance_->doSend(mail); }
+    static void send(const Mail & mail);
 
 protected:
     virtual void deleteThreadData();
@@ -52,7 +52,6 @@ private:
 
 private:
     static Mailer * instance_;
-    bool isFirstInstance_;
 
     QString sendmailPath_;
     QProcess * process_;

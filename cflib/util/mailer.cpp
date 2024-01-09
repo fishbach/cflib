@@ -14,20 +14,23 @@ USE_LOG(LogCat::Etc)
 
 namespace cflib { namespace util {
 
-Mailer * Mailer::instance_ = 0;
+Mailer * Mailer::instance_ = nullptr;
 
-Mailer::Mailer() :
+Mailer::Mailer(bool isEnabled) :
     ThreadVerify("Mailer", ThreadVerify::Qt),
-    process_(0)
+    process_(nullptr)
 {
-    if (!instance_) {
-        instance_ = this;
-        isFirstInstance_ = true;
-    } else isFirstInstance_ = false;
+    if (instance_) logWarn("It makes no sense to have two Mailer instances!");
+    instance_ = this;
+
+    if (!isEnabled) {
+        logInfo("emailing disabled");
+        return;
+    }
 
     QStringList paths = QProcessEnvironment::systemEnvironment().value("PATH").split(':');
     paths << "/usr/lib/" << "/usr/sbin/";
-    foreach (QString path, paths) {
+    for (QString & path : paths) {
         if (!path.endsWith('/')) path += '/';
         path += "sendmail";
         QFileInfo info(path);
@@ -48,7 +51,16 @@ Mailer::Mailer() :
 Mailer::~Mailer()
 {
     stopVerifyThread();
-    if (isFirstInstance_) instance_ = 0;
+    instance_ = nullptr;
+}
+
+void Mailer::send(const Mail & mail)
+{
+    if (!instance_) {
+        logWarn("no Mailer instance available");
+        return;
+    }
+    instance_->doSend(mail);
 }
 
 void Mailer::initThreadData()
@@ -69,12 +81,12 @@ void Mailer::initThreadData()
 
 void Mailer::deleteThreadData()
 {
-    if (process_->state() != QProcess::NotRunning) {
+    if (process_ && process_->state() != QProcess::NotRunning) {
         logWarn("mail process still running");
         process_->kill();
     }
     delete process_;
-    process_ = 0;
+    process_ = nullptr;
 }
 
 void Mailer::finished(int exitCode, QProcess::ExitStatus exitStatus)
@@ -107,14 +119,19 @@ void Mailer::doSend(const Mail & mail)
     logFunctionTraceParam("new mail to: %1", mail.to);
     if (!verifyThreadCall(&Mailer::doSend, mail)) return;
 
-    if (sendmailPath_.isNull()) {
-        logWarn("mailer not active, mail to %1 dropped", mail.to);
+    QString fromAddr;
+    QString toAddr;
+    if (!mail.isValid()) {
+        logWarn("invalid mail: %1", mail.raw(fromAddr, toAddr));
         return;
     }
 
-    if (!mail.isValid()) {
-        QString from, to;
-        logWarn("invalid mail: %1", mail.raw(from, to));
+    if (sendmailPath_.isNull()) {
+        logInfo("mailer not active, mail from %1 to %2 dropped", mail.from, mail.to);
+        QTextStream(stdout)
+            << "--------" << Qt::endl
+            << mail.raw(fromAddr, toAddr) << Qt::endl
+            << "--------" << Qt::endl;
         return;
     }
 
