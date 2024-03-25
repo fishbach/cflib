@@ -33,6 +33,14 @@ function(cf_app app)
     endif()
     target_link_libraries(${app} PRIVATE ${ARG_UNPARSED_ARGUMENTS})
 
+    # strip release builds and split debug info
+    add_custom_command(TARGET "${app}" POST_BUILD
+        COMMAND $<$<CONFIG:Release>:${CMAKE_STRIP}>           ARGS --strip-all $<TARGET_FILE:${app}>
+        COMMAND $<$<CONFIG:RelWithDebInfo>:${CMAKE_OBJCOPY}>  ARGS --only-keep-debug $<TARGET_FILE:${app}> $<TARGET_FILE:${app}>.debug
+        COMMAND $<$<CONFIG:RelWithDebInfo>:${CMAKE_STRIP}>    ARGS -g $<TARGET_FILE:${app}>
+        COMMAND $<$<CONFIG:RelWithDebInfo>:${CMAKE_OBJCOPY}>  ARGS --add-gnu-debuglink=$<TARGET_FILE:${app}>.debug $<TARGET_FILE:${app}>
+    )
+
     # gitversion.h
     if(ARG_ENABLE_GIT_VERSION)
         set(dest "${app}_autogen")

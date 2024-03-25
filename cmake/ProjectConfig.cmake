@@ -40,9 +40,6 @@ if(ENABLE_CCACHE)
     endif()
 endif()
 
-# strip release builds
-set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -s")
-
 # Qt
 find_package(
     Qt5 5.15
