@@ -113,6 +113,7 @@ public:
     void updateConnData(uint connDataId, const C & connData);
     void connDataOk(uint connDataId);
     void getConnData(const QByteArray & clientId, C & connData, uint & connDataId);
+    void getConnData(uint connId, C & connData, uint & connDataId);
 
 protected:
     virtual void newMsg(uint connId, const QByteArray & data, bool isBinary, bool & stopRead);
@@ -215,9 +216,18 @@ void WSCommManager<C>::connDataOk(uint connDataId)
 template<typename C>
 void WSCommManager<C>::getConnData(const QByteArray & clientId, C & connData, uint & connDataId)
 {
-    if (!verifySyncedThreadCall(&WSCommManager<C>::getConnData, clientId, connData, connDataId)) return;
+    if (!verifySyncedThreadCall<WSCommManager<C>, const QByteArray &>(&WSCommManager<C>::getConnData, clientId, connData, connDataId)) return;
 
     connDataId = clientIds_.value(clientId);
+    connData = connDataId == 0 ? C() : connInfos_.value(connDataId).connData;
+}
+
+template<typename C>
+void WSCommManager<C>::getConnData(uint connId, C & connData, uint & connDataId)
+{
+    if (!verifySyncedThreadCall<WSCommManager<C>, uint>(&WSCommManager<C>::getConnData, connId, connData, connDataId)) return;
+
+    connDataId = connId2dataId_.value(connId);
     connData = connDataId == 0 ? C() : connInfos_.value(connDataId).connData;
 }
 
