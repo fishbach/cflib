@@ -154,19 +154,17 @@ $.fn.stop = function(setFinishState) {
 };
 
 $.fn.shake = function() {
-    var oldPos  = this.css('position');
     var oldLeft = this.css('left');
-    this.css('position', 'relative');
     var elCount = this.count();
     var finished = function() {
         if (--elCount) return;
-        this.css('position', oldPos).css('left', oldLeft);
+        this.css('left', oldLeft);
     };
     var i = 3;
     while (i--) {
         this
-            .animate({ left: '-5px' }, 40)
-            .animate({ left:  '5px' }, 80)
+            .animate({ left: '-10px' }, 40)
+            .animate({ left:  '10px' }, 80)
             .animate({ left:  '0px' }, 40, !i ? finished : undefined);
     }
     return this;
