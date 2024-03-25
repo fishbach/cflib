@@ -27,8 +27,20 @@ public:
         commMgr.registerStateListener(*this);
     }
 
-    using RMIServerBase::registerService;
     using RMIServerBase::exportTo;
+
+    void registerService(RMIServiceBase & serviceBase)
+    {
+        RMIServerBase::registerService(serviceBase);
+        {
+            WSCommConnDataChecker<C> * service = dynamic_cast<WSCommConnDataChecker<C> *>(&serviceBase);
+            if (service) this->commMgr().setConnDataChecker(*service);
+        }
+        {
+            WSCommStateListener<C> * service = dynamic_cast<WSCommStateListener<C> *>(&serviceBase);
+            if (service) this->commMgr().registerStateListener(*service);
+        }
+    }
 
     virtual void handleMsg(quint64,
         const QByteArray & data, int tagLen, int lengthSize, qint32 valueLen,
