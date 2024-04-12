@@ -1,4 +1,4 @@
-/* Copyright (C) 2013-2023 Christian Fischbach <cf@cflib.de>
+/* Copyright (C) 2013-2024 Christian Fischbach <cf@cflib.de>
  *
  * This file is part of cflib.
  *

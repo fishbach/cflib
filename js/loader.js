@@ -1,4 +1,4 @@
-/* Copyright (C) 2013-2023 Christian Fischbach <cf@cflib.de>
+/* Copyright (C) 2013-2024 Christian Fischbach <cf@cflib.de>
  *
  * This file is part of cflib.
  *
@@ -115,9 +115,9 @@ function checkDepends(name, depends, func)
 {
     var needLoad = false;
     var args = [];
-    var i = depends.length;
-    while (i--) {
-        var mod = depends[i];
+    var i = 0, len = depends.length;
+    while (i < len) {
+        var mod = depends[i++];
         if (!(mod in loadedModules)) {
             needLoad = true;
 
