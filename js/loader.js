@@ -115,9 +115,9 @@ function checkDepends(name, depends, func)
 {
     var needLoad = false;
     var args = [];
-    var i = 0, len = depends.length;
-    while (i < len) {
-        var mod = depends[i++];
+    var i = depends.length;
+    while (i--) {
+        var mod = depends[i];
         if (!(mod in loadedModules)) {
             needLoad = true;
 
