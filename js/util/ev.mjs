@@ -135,10 +135,14 @@ EV.prototype = {
     unbindAll: function(scope) {
         var evData = scope.__evData;
         var listener = this.listener;
-        var ids = evData[this.id].ids;
-        var i = ids.length;
-        while (i--) delete listener[ids[i]];
-        delete evData[this.id];
+        if (evData && evData[this.id]) {
+            var ids = evData[this.id].ids;
+            if (ids) {
+                var i = ids.length;
+                while (i--) delete listener[ids[i]];
+                delete evData[this.id];    
+            }
+        }
         return this;
     },
 
