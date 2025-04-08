@@ -46,15 +46,15 @@ quint64 randomUInt64()
     return 0;
 }
 
-QByteArray memorableRandom()
+QByteArray memorableRandom(const int length)
 {
     const char * vowels     = "aeiou";
     const char * consonants = "bcdfghjklmnpqrstvwxyz";
-    const QByteArray rnd = random(8);
-    if (rnd.size() != 8) return QByteArray();
-    QByteArray rv(8, '\0');
-    for (int i = 0 ; i < 6 ; ++i) rv[i] = (i % 2 == 0) ? consonants[(uchar)rnd[i] * 21 / 256] : vowels[(uchar)rnd[i] * 5 / 256];
-    for (int i = 6 ; i < 8 ; ++i) rv[i] = '0' + ((uchar)rnd[i] * 10 / 256);
+    const QByteArray rnd = random(length+2);
+    if (rnd.size() != length+2) return QByteArray();
+    QByteArray rv(length+2, '\0');
+    for (int i = 0 ; i < length ; ++i) rv[i] = (i % 2 == 0) ? consonants[(uchar)rnd[i] * 21 / 256] : vowels[(uchar)rnd[i] * 5 / 256];
+    for (int i = length ; i < length+2 ; ++i) rv[i] = '0' + ((uchar)rnd[i] * 10 / 256);
     return rv;
 }
 
