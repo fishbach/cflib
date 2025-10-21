@@ -90,6 +90,7 @@ void ThreadVerify::execCall(const Functor * func) const
 {
     if (!verifyThread_->isActive()) {
         logWarn("execCall for already terminated thread %1", verifyThread_->threadName);
+        delete func;
         return;
     }
     while (!verifyThread_->doCall(func)) QThread::msleep(1000);
