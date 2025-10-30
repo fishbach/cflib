@@ -257,7 +257,7 @@ TLSCertInfo TLSCredentials::getInfo(const X509_Certificate & crt) const
 QList<TLSCertInfo> TLSCredentials::getCertChainInfos() const
 {
     QList<TLSCertInfo> rv;
-    for (const Impl::CertsPrivKey & ck : impl_->chains) {
+    for (const Impl::CertsPrivKey & ck : std::as_const(impl_->chains)) {
         for (const X509_Certificate & crt : ck.certs) {
             TLSCertInfo info = getInfo(crt);
             if (!info.isNull()) rv << info;
@@ -269,7 +269,7 @@ QList<TLSCertInfo> TLSCredentials::getCertChainInfos() const
 QList<TLSCertInfo> TLSCredentials::getAllCertInfos() const
 {
     QList<TLSCertInfo> rv;
-    for (const X509_Certificate & crt : impl_->allCerts) {
+    for (const X509_Certificate & crt : std::as_const(impl_->allCerts)) {
         TLSCertInfo info = getInfo(crt);
         if (!info.isNull()) rv << info;
     }
@@ -280,7 +280,7 @@ QByteArray TLSCredentials::getAllCertsPEM() const
 {
     TRY {
         QByteArray rv = "";    // not null
-        for (const X509_Certificate & cert : impl_->allCerts) {
+        for (const X509_Certificate & cert : std::as_const(impl_->allCerts)) {
             DER_Encoder enc;
             cert.encode_into(enc);
             rv += QByteArray::fromStdString(PEM_Code::encode(enc.get_contents(), "CERTIFICATE"));
