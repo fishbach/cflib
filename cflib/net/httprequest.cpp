@@ -179,10 +179,10 @@ void HttpRequest::start(const QUrl & url, const QList<QByteArray> & headers,
     const QByteArray & postData, const QByteArray & contentType,
     uint timeoutMs)
 {
-    if (!verifyThreadCall(&HttpRequest::start, url, postData, contentType, timeoutMs)) return;
+    if (!verifyThreadCall(&HttpRequest::start, url, headers, postData, contentType, timeoutMs)) return;
 
     if (conn_) {
-        logWarn("cannot handle to simultaneous requests");
+        logWarn("cannot handle two simultaneous requests");
         reply(429, "Too Many Requests");
         return;
     }

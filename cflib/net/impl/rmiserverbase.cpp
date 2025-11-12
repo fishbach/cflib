@@ -770,13 +770,15 @@ QString RMIServerBase::generateJSForClass(const SerializeTypeInfo & ti) const
         "__inherit.setBase(" << nsPrefix << typeName << ", ";
     if (base.isEmpty()) js << "__inherit.Base";
     else js << base;
-    js    << ");\n"
-        << nsPrefix << typeName << ".prototype.__init = function(param) {\n";
+    js << ");\n";
+    if (ti.classId != 0) js << nsPrefix << typeName << ".__classId = " << QString::number(ti.classId) << ";\n";
+    js << nsPrefix << typeName << ".prototype.__init = function(param) {\n";
     if (base.isEmpty()) js << "    " << nsPrefix << typeName << ".__super.apply(this, arguments);\n";
-    js    << "    if (param instanceof Uint8Array) {\n"
-        "        var __D = __ber.D(param);\n";
+    js <<
+        "    if (param instanceof Uint8Array) {\n"
+        "        var __D = __ber.D(param);\n"
+        "        __D.n();\n";
     if (!base.isEmpty()) js << "        " << nsPrefix << typeName << ".__super.call(this, __D.a());\n";
-    else                 js << "        __D.n();\n";
     foreach (const SerializeVariableTypeInfo & vti, ti.members) {
         js << "        this." << formatMembernameForJS(vti) << " = " << getDeserializeCode(vti.type, false) << ";\n";
     }
