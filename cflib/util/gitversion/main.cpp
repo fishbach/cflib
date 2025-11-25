@@ -37,29 +37,44 @@ QString findGitDir(const QString & searchPath, int & retval)
 
 int createHeader(const QString & searchPath, const QString & filename)
 {
-    int retval;
-    QString gitDir = findGitDir(searchPath, retval);
-    if (gitDir.isNull()) return retval;
+    QProcess git;
 
-    // fetch tail
-    QFile file(gitDir + "/logs/HEAD");
-    if (!file.open(QFile::ReadOnly)) {
-        QTextStream(stderr) << "cannot read: " << file.fileName() << Qt::endl;
+    git.setWorkingDirectory(searchPath);
+    git.start("git", {"rev-parse", "HEAD"});
+    if (!git.waitForStarted()) {
+        QTextStream(stderr) << "cannot start git rev-parse HEAD" << Qt::endl;
         return 3;
     }
-    if (file.size() > 1024) file.seek(file.size() - 1024);
-    QString tail = QString::fromLatin1(file.readAll());
-    file.close();
-
-    // extract hash
-    QString hash;
-    QRegExp re("(?:^|\n)\\s*[0-9a-f]{40} ([0-9a-f]{40}) ");
-    int pos = re.indexIn(tail);
-    while (pos != -1) {
-        hash = re.cap(1);
-        pos = re.indexIn(tail, pos + re.matchedLength());
+    if (!git.waitForFinished()) {
+        QTextStream(stderr) << "git rev-parse HEAD failed" << Qt::endl;
+        return 4;
     }
+    QByteArray hash = git.readAll();
+    if (hash.isEmpty()) {
+        QTextStream(stderr) << "cannot determine git hash" << Qt::endl;
+        return 5;
+    }
+    hash = hash.trimmed();
 
+    QFile in(filename);
+    if (in.open(QFile::ReadOnly)) {
+        QString tail = QString::fromLatin1(in.readAll());
+        in.close();
+
+        // Extract existing hash
+        QString existing_hash;
+        QRegExp re("GIT_VERSION \"([0-9a-f]{40})\"");
+        int pos = re.indexIn(tail);
+        while (pos != -1) {
+            existing_hash = re.cap(1);
+            pos = re.indexIn(tail, pos + re.matchedLength());
+        }
+
+        // Nothing to change
+        if (hash == existing_hash) {
+            return 0;
+        }
+    }
     QFile out(filename);
     if (!out.open(QFile::WriteOnly | QFile::Truncate)) {
         QTextStream(stderr) << "cannot write: " << out.fileName() << Qt::endl;
