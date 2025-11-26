@@ -9,30 +9,10 @@
 
 int usage()
 {
-    QTextStream(stderr)
-        << "usage: " << QCoreApplication::applicationName() << " <depend|create> <.git search path> <gitversion.h>" << Qt::endl;
+    QTextStream(stderr) << "usage: " << QCoreApplication::applicationName()
+                        << " <create> <git repo path> <path to gitversion.h>" << Qt::endl;
 
     return 1;
-}
-
-QString findGitDir(const QString & searchPath, int & retval)
-{
-    QDir dir(searchPath);
-    QFileInfo fi = dir.absoluteFilePath(".git");
-    while (!fi.isDir()) {
-        if (!dir.cdUp()) {
-            QTextStream(stderr) << "cannot find .git directory" << Qt::endl;
-            retval = 1;
-            return QString();
-        }
-        fi = dir.absoluteFilePath(".git");
-    }
-    if (!fi.isReadable()) {
-        QTextStream(stderr) << "cannot read .git directory: " << fi.canonicalFilePath() << Qt::endl;
-        retval = 2;
-        return QString();
-    }
-    return fi.canonicalFilePath();
 }
 
 int createHeader(const QString & searchPath, const QString & filename)
@@ -88,23 +68,12 @@ int createHeader(const QString & searchPath, const QString & filename)
     return 0;
 }
 
-int depend(const QString & searchPath)
-{
-    int retval;
-    QString gitDir = findGitDir(searchPath, retval);
-    if (gitDir.isNull()) return retval;
-
-    QTextStream(stdout) << gitDir << "/logs/HEAD" << Qt::endl;
-    return 0;
-}
-
 int main(int argc, char *argv[])
 {
     QCoreApplication app(argc, argv);
     QStringList args = app.arguments();
     args.removeFirst();
 
-    if (args.size() == 2 && args[0] == "depend") return depend(args[1]);
     if (args.size() == 3 && args[0] == "create") return createHeader(args[1], args[2]);
 
     return usage();
