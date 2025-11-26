@@ -47,11 +47,11 @@ function(cf_app app)
     if(ARG_ENABLE_GIT_VERSION)
         set(dest "${app}_autogen")
         set(header "${dest}/gitversion.h")
-        add_custom_command(
-            OUTPUT "${header}"
-            COMMAND ${CMAKE_COMMAND} -E make_directory "${dest}"
+        add_custom_target(ALL
+            ${CMAKE_COMMAND} -E make_directory "${dest}"
             COMMAND gitversion create "${CMAKE_SOURCE_DIR}" "${header}"
-            DEPENDS "${CMAKE_SOURCE_DIR}/.git/logs/HEAD"
+            BYPRODUCTS "${header}"
+            DEPENDS gitversion
         )
         target_sources(${app} PRIVATE "${header}")
         get_property(target_dir TARGET ${app} PROPERTY BINARY_DIR)
