@@ -277,6 +277,7 @@ void FileServer::handleRequest(const Request & request)
         else if (ending == "pdf" ) { cache = false; compression = true;  contentType = "application/pdf"; }
         else if (ending == "log" ) { cache = false; compression = true;  contentType = "text/plain"; }
         else if (ending == "md"  ) { cache = false; compression = true;  contentType = "text/markdown; charset=utf-8"; }
+        else if (ending == "wasm") { cache = false; compression = true;  contentType = "application/wasm"; }
     }
     if (!noCache_ && cache) {
         request.addHeaderLine("Cache-Control: max-age=31536000");
