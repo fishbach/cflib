@@ -84,7 +84,7 @@ void writeHTMLFile(const QString & file, QString content)
 {
     content
         .replace(QRegularExpression("<!--.*?-->"), "")
-        .replace(QRegularExpression("^\\s+|\\s+$"), "")
+        .replace(QRegularExpression("^\\s+|\\s+$"), " ")
         .replace(QRegularExpression("\\s+"), " ");
 
     QFile f(file);
