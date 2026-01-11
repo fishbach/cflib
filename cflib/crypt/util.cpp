@@ -127,9 +127,9 @@ void rsaPublicModulusExponent(const QByteArray & privateKey, QByteArray & modulu
         std::unique_ptr<Private_Key> pk(PKCS8::load_key(ds));
         if (pk) {
             const RSA_PublicKey * rsaKey = dynamic_cast<const RSA_PrivateKey *>(pk.get());
-            std::vector<byte> bytes = BigInt::encode(rsaKey->get_n());
+            std::vector<byte> bytes = rsaKey->get_n().serialize<std::vector<uint8_t>>();
             modulus = QByteArray((const char *)bytes.data(), bytes.size());
-            bytes = BigInt::encode(rsaKey->get_e());
+            bytes = rsaKey->get_e().serialize<std::vector<uint8_t>>();
             publicExponent = QByteArray((const char *)bytes.data(), bytes.size());
             return;
         }
@@ -165,7 +165,7 @@ QByteArray x509CreateCertReq(const QByteArray & privateKey, const QList<QByteArr
         Extensions extensions;
         {
             AlternativeName subjectAN;
-            foreach (const QByteArray & an, subjectAltNames) subjectAN.add_attribute("DNS", an.toStdString());
+            foreach (const QByteArray & an, subjectAltNames) subjectAN.add_dns(an.toStdString());
             extensions.add(std::unique_ptr<Certificate_Extension>(new Cert_Extension::Subject_Alternative_Name(subjectAN)));
         }
 
