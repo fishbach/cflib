@@ -47,7 +47,7 @@ add_custom_command(
         $<$<BOOL:${MINGW}>:--os=mingw>
         --disable-shared
         --amalgamation
-        --no-store-vc-rev
+        --disable-deprecated-features
         --disable-modules=${botan_src_DISABLE_MODULES}
 )
 
