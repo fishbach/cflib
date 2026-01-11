@@ -46,6 +46,7 @@ private slots:
         QVERIFY(client.initialSend().isEmpty());
 
         // first handshake req -> reply
+        enc2.clear();
         QVERIFY(server.received(enc1, plain, enc2));
         QVERIFY(plain.isEmpty());
         QVERIFY(!enc2.isEmpty());
@@ -58,19 +59,21 @@ private slots:
         enc2.clear();
         QVERIFY(server.received(enc1, plain, enc2));
         QVERIFY(plain.isEmpty());
-        QVERIFY(enc2.isEmpty());
-
-        // no data test
+        QVERIFY(!enc2.isEmpty());
         enc1.clear();
         QVERIFY(client.received(enc2, plain, enc1));
         QVERIFY(plain.isEmpty());
-        QVERIFY(enc1.isEmpty());
+        QVERIFY(!enc1.isEmpty());
+
+        // third handshake req, no reply
+        enc2.clear();
         QVERIFY(server.received(enc1, plain, enc2));
         QVERIFY(plain.isEmpty());
         QVERIFY(enc2.isEmpty());
 
         // send plain to server
         QByteArray msg = "hello dear server";
+        enc1.clear();
         client.send(msg, enc1);
         QVERIFY(!enc1.isEmpty());
         QVERIFY(enc1.indexOf(msg) == -1);
@@ -81,6 +84,7 @@ private slots:
 
         // send plain to client
         msg = "hello dear client";
+        enc2.clear();
         server.send(msg, enc2);
         QVERIFY(!enc2.isEmpty());
         QVERIFY(enc2.indexOf(msg) == -1);
@@ -111,11 +115,13 @@ private slots:
 
         // send before handshake
         QByteArray serverMsg = "hello dear client";
+        enc2.clear();
         QVERIFY(server.send(serverMsg, enc2));
         QVERIFY(enc2.isEmpty());
 
         // send before handshake
         QByteArray clientMsg = "hello dear server";
+        enc1.clear();
         QVERIFY(client.send(clientMsg, enc1));
         QVERIFY(enc1.isEmpty());
 
@@ -125,6 +131,7 @@ private slots:
         QVERIFY(enc1.indexOf(clientMsg) == -1);
 
         // first handshake req -> reply
+        enc2.clear();
         QVERIFY(server.received(enc1, plain, enc2));
         QVERIFY(plain.isEmpty());
         QVERIFY(!enc2.isEmpty());
@@ -136,9 +143,19 @@ private slots:
         // second handshake req -> reply
         enc2.clear();
         QVERIFY(server.received(enc1, plain, enc2));
-        QCOMPARE(plain, clientMsg);
+        QVERIFY(plain.isEmpty());
         QVERIFY(!enc2.isEmpty());
+        enc1.clear();
+        QVERIFY(client.received(enc2, plain, enc1));
+        QVERIFY(plain.isEmpty());
+        QVERIFY(!enc1.isEmpty());
+
+        // third handshake req, no reply
+        enc2.clear();
+        QVERIFY(server.received(enc1, plain, enc2));
+        QCOMPARE(plain, clientMsg);
         plain.clear();
+        QVERIFY(!enc2.isEmpty());
         enc1.clear();
         QVERIFY(client.received(enc2, plain, enc1));
         QCOMPARE(plain, serverMsg);
@@ -166,6 +183,17 @@ private slots:
         QVERIFY(!enc1.isEmpty());
 
         // first handshake req -> reply
+        enc2.clear();
+        QVERIFY(server.received(enc1, plain, enc2));
+        QVERIFY(plain.isEmpty());
+        QVERIFY(!enc2.isEmpty());
+        enc1.clear();
+        QVERIFY(client.received(enc2, plain, enc1));
+        QVERIFY(plain.isEmpty());
+        QVERIFY(!enc1.isEmpty());
+
+        // second handshake req -> reply
+        enc2.clear();
         QVERIFY(server.received(enc1, plain, enc2));
         QVERIFY(plain.isEmpty());
         QVERIFY(!enc2.isEmpty());
@@ -197,6 +225,7 @@ private slots:
         QVERIFY(!enc1.isEmpty());
 
         // first handshake req -> reply
+        enc2.clear();
         QVERIFY(server.received(enc1, plain, enc2));
         QVERIFY(plain.isEmpty());
         QVERIFY(!enc2.isEmpty());
@@ -206,6 +235,16 @@ private slots:
         QVERIFY(!enc1.isEmpty());
 
         // second handshake req -> reply
+        enc2.clear();
+        QVERIFY(server.received(enc1, plain, enc2));
+        QVERIFY(plain.isEmpty());
+        QVERIFY(!enc2.isEmpty());
+        enc1.clear();
+        QVERIFY(client.received(enc2, plain, enc1));
+        QVERIFY(plain.isEmpty());
+        QVERIFY(!enc1.isEmpty());
+
+        // third handshake req, no reply
         enc2.clear();
         QVERIFY(server.received(enc1, plain, enc2));
         QVERIFY(plain.isEmpty());
@@ -224,6 +263,7 @@ private slots:
 
         // send plain to client
         msg = "hello dear client";
+        enc2.clear();
         QVERIFY(server.send(msg, enc2));
         QVERIFY(!enc2.isEmpty());
         QVERIFY(enc2.indexOf(msg) == -1);
@@ -256,6 +296,17 @@ private slots:
         QVERIFY(!enc1.isEmpty());
 
         // first handshake req -> reply
+        enc2.clear();
+        QVERIFY(server.received(enc1, plain, enc2));
+        QVERIFY(plain.isEmpty());
+        QVERIFY(!enc2.isEmpty());
+        enc1.clear();
+        QVERIFY(client.received(enc2, plain, enc1));
+        QVERIFY(plain.isEmpty());
+        QVERIFY(!enc1.isEmpty());
+
+        // second handshake req -> reply
+        enc2.clear();
         QVERIFY(!server.received(enc1, plain, enc2));
     }
 
@@ -282,6 +333,7 @@ private slots:
         QVERIFY(!enc1.isEmpty());
 
         // first handshake req -> reply
+        enc2.clear();
         QVERIFY(server.received(enc1, plain, enc2));
         QVERIFY(plain.isEmpty());
         QVERIFY(!enc2.isEmpty());
@@ -291,6 +343,16 @@ private slots:
         QVERIFY(!enc1.isEmpty());
 
         // second handshake req -> reply
+        enc2.clear();
+        QVERIFY(server.received(enc1, plain, enc2));
+        QVERIFY(plain.isEmpty());
+        QVERIFY(!enc2.isEmpty());
+        enc1.clear();
+        QVERIFY(client.received(enc2, plain, enc1));
+        QVERIFY(plain.isEmpty());
+        QVERIFY(!enc1.isEmpty());
+
+        // third handshake req, no reply
         enc2.clear();
         QVERIFY(server.received(enc1, plain, enc2));
         QVERIFY(plain.isEmpty());
@@ -309,6 +371,7 @@ private slots:
 
         // send plain to client
         msg = "hello dear client";
+        enc2.clear();
         server.send(msg, enc2);
         QVERIFY(!enc2.isEmpty());
         QVERIFY(enc2.indexOf(msg) == -1);
@@ -342,6 +405,7 @@ private slots:
         QVERIFY(!enc1.isEmpty());
 
         // first handshake req -> reply
+        enc2.clear();
         QVERIFY(server.received(enc1, plain, enc2));
         QVERIFY(plain.isEmpty());
         QVERIFY(!enc2.isEmpty());
@@ -351,6 +415,16 @@ private slots:
         QVERIFY(!enc1.isEmpty());
 
         // second handshake req -> reply
+        enc2.clear();
+        QVERIFY(server.received(enc1, plain, enc2));
+        QVERIFY(plain.isEmpty());
+        QVERIFY(!enc2.isEmpty());
+        enc1.clear();
+        QVERIFY(client.received(enc2, plain, enc1));
+        QVERIFY(plain.isEmpty());
+        QVERIFY(!enc1.isEmpty());
+
+        // third handshake req, no reply
         enc2.clear();
         QVERIFY(server.received(enc1, plain, enc2));
         QVERIFY(plain.isEmpty());
@@ -369,6 +443,7 @@ private slots:
 
         // send plain to client
         msg = "hello dear client";
+        enc2.clear();
         server.send(msg, enc2);
         QVERIFY(!enc2.isEmpty());
         QVERIFY(enc2.indexOf(msg) == -1);
