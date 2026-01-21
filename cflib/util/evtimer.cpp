@@ -30,8 +30,15 @@ EVTimer::~EVTimer()
 
 void EVTimer::start(double after, double repeat)
 {
-    ev_timer_set(timer_, after, repeat);
-    ev_timer_start(libEVLoopOfThread(), timer_);
+    ev_loop * loop = libEVLoopOfThread();
+    if (!loop) {
+        logWarn("no eventloop for EVTimer::start");
+        return;
+    }
+    // refer to: http://pod.tst.eu/http://cvs.schmorp.de/libev/ev.pod#The_special_problem_of_time_updates
+    if (after > 0) ev_timer_set(timer_, after + (ev_time() - ev_now(loop)), repeat);
+    else           ev_timer_set(timer_, 0, repeat);
+    ev_timer_start(loop, timer_);
 }
 
 void EVTimer::stop()
