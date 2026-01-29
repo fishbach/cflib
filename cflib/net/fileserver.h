@@ -34,6 +34,7 @@ public:
 
     void exportTo(const QString & dest) const;
     void add404File(const QRegularExpression & re, const QString & dest);
+    void setAccessControlAllowOrigin(const QByteArray & origin) { accessControlAllowOrigin_ = origin; }
 
 protected:
     virtual void handleRequest(const Request & request);
@@ -58,6 +59,7 @@ private:
     const QRegularExpression pathRE_;
     const QRegularExpression endingRE_;
     const QRegularExpression elementRE_;
+    QByteArray accessControlAllowOrigin_;
 };
 
 }}    // namespace

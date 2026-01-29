@@ -157,6 +157,8 @@ void FileServer::handleRequest(const Request & request)
         if (removeSlash_ && path.length() > 1 && path.endsWith('/')) { request.sendRedirect(path.left(path.length() - 1).toUtf8()); return; }
     }
 
+    if (!accessControlAllowOrigin_.isNull()) request.addHeaderLine("Access-Control-Allow-Origin: " << accessControlAllowOrigin_);
+
     // check eTag
     if (!noCache_ && request.getHeader("if-none-match") == eTag_) {
         request.sendRaw(

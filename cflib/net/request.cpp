@@ -107,8 +107,6 @@ public:
             cflib::util::gzip(body, 1);
         }
 
-        QListIterator<QByteArray> it(sendHeaderLines);
-        while (it.hasNext()) header << it.next() << "\r\n";
         if (method != Request::HEAD) {
             header
                 << "Content-Length: " << QByteArray::number(body.size()) << "\r\n"
@@ -139,10 +137,13 @@ public:
 
     inline QByteArray defaultHeaders()
     {
-        return
+        QByteArray headers =
             "Date: " << cflib::util::dateTimeForHTTP(QDateTime::currentDateTimeUtc()) << "\r\n"
             "Connection: keep-alive\r\n"
             "Server: cflib/0.9\r\n";
+        QListIterator<QByteArray> it(sendHeaderLines);
+        while (it.hasNext()) headers << it.next() << "\r\n";
+        return headers;
     }
 
 };
