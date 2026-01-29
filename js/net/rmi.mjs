@@ -121,10 +121,13 @@ rmi.ev = {
     connectionOpened: new EV(rmi, 'connectionOpened')
 };
 
-rmi.start = function() {
+rmi.start = function(url) {
     if (ws) return;
-    var loc = window.location;
-    ws = new WebSocket((loc.protocol == 'https:' ? 'wss://' : 'ws://') + loc.host + '/ws');
+    if (!url) {
+        let loc = window.location;
+        url = (loc.protocol == 'https:' ? 'wss://' : 'ws://') + loc.host + '/ws';
+    }
+    ws = new WebSocket(url);
     ws.binaryType = 'arraybuffer';
     ws.onmessage = newMessage;
     ws.onopen = wsOpen;
