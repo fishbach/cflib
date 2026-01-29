@@ -1114,6 +1114,7 @@ QSet<QString> RMIServerBase::exportClass(const ClassInfoEl & cl, const QString &
 {
     QSet<QString> rv;
     if (cl.infos.isEmpty()) {
+        if (path.isEmpty()) return rv;
         for (const QString & suffix : QStringList{".mjs"/*, "dao.ts"*/}) {
             QString cl = path + suffix;
             rv << cl;
