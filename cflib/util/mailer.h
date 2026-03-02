@@ -42,7 +42,7 @@ class Mailer : public QObject, public ThreadVerify
 {
 	Q_OBJECT
 public:
-	Mailer();
+	Mailer(const QString & configFile = QString());
 	~Mailer();
 
 	static void send(const Mail & mail) { instance_->doSend(mail); }
@@ -61,6 +61,7 @@ private:
 
 private:
 	static Mailer * instance_;
+	const QString configFile_;
 	bool isFirstInstance_;
 
 	QString sendmailPath_;

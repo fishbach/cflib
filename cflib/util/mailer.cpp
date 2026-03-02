@@ -27,8 +27,9 @@ namespace cflib { namespace util {
 
 Mailer * Mailer::instance_ = 0;
 
-Mailer::Mailer() :
+Mailer::Mailer(const QString & configFile) :
 	ThreadVerify("Mailer", ThreadVerify::Qt),
+	configFile_("-C" + configFile),
 	process_(0)
 {
 	if (!instance_) {
@@ -149,7 +150,10 @@ void Mailer::startProcess()
 	QString destAddress;
 	const QByteArray raw = mail.raw(destAddress);
 	logDebug("exec: %1 %2", sendmailPath_, destAddress);
-	process_->start(sendmailPath_, QStringList() << destAddress);
+	QStringList args;
+	if (!configFile_.isEmpty()) args << configFile_;
+	args << destAddress;
+	process_->start(sendmailPath_, args);
 	process_->write(raw);
 	process_->closeWriteChannel();
 }
