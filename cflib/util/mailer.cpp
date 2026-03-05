@@ -149,10 +149,11 @@ void Mailer::startProcess()
 	const Mail & mail = queue_.first();
 	QString destAddress;
 	const QByteArray raw = mail.raw(destAddress);
-	logDebug("exec: %1 %2", sendmailPath_, destAddress);
 	QStringList args;
 	if (!configFile_.isEmpty()) args << configFile_;
 	args << destAddress;
+	logDebug("exec: %1 %2", sendmailPath_, args.join(' '));
+	logTrace("raw mail: %1", raw);
 	process_->start(sendmailPath_, args);
 	process_->write(raw);
 	process_->closeWriteChannel();
