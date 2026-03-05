@@ -29,7 +29,7 @@ Mailer * Mailer::instance_ = 0;
 
 Mailer::Mailer(const QString & configFile) :
 	ThreadVerify("Mailer", ThreadVerify::Qt),
-	configFile_("-C" + configFile),
+	configFile_(configFile),
 	process_(0)
 {
 	if (!instance_) {
@@ -150,7 +150,7 @@ void Mailer::startProcess()
 	QString destAddress;
 	const QByteArray raw = mail.raw(destAddress);
 	QStringList args;
-	if (!configFile_.isEmpty()) args << configFile_;
+	if (!configFile_.isEmpty()) args << ("-C" + configFile_);
 	args << destAddress;
 	logDebug("exec: %1 %2", sendmailPath_, args.join(' '));
 	logTrace("raw mail: %1", raw);
