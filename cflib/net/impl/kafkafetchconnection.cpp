@@ -19,32 +19,32 @@ KafkaConnector::FetchConnection::FetchConnection(TCPConnData * data, KafkaConnec
 {
 }
 
-void KafkaConnector::FetchConnection::reply(qint32 correlationId, impl::KafkaRawReader & reader)
+void KafkaConnector::FetchConnection::reply(cfint32 correlationId, impl::KafkaRawReader & reader)
 {
-    qint32 topicCount;
+    cfint32 topicCount;
     reader >> topicCount;
-    for (qint32 i = 0 ; i < topicCount ; ++i) {
+    for (cfint32 i = 0 ; i < topicCount ; ++i) {
 
         impl::KafkaString topicName;
         reader >> topicName;
 
-        qint32 partitionCount;
+        cfint32 partitionCount;
         reader >> partitionCount;
-        for (qint32 i = 0 ; i < partitionCount ; ++i) {
-            qint32 partitionId;
-            qint16 errorCode;
-            qint64 highwaterMarkOffset;
-            qint32 messageSetSize;
+        for (cfint32 i = 0 ; i < partitionCount ; ++i) {
+            cfint32 partitionId;
+            cfint16 errorCode;
+            cfint64 highwaterMarkOffset;
+            cfint32 messageSetSize;
             reader >> partitionId >> errorCode >> highwaterMarkOffset >> messageSetSize;
 
             KafkaConnector::Messages messages;
-            qint64 firstOffset = -1;
+            cfint64 firstOffset = -1;
             bool isFirst = true;
             while (messageSetSize >= 12) {
-                const quint32 startPos = reader.bytesLeft();
+                const cfuint32 startPos = reader.bytesLeft();
 
-                qint64 offset;
-                qint32 messageSize;
+                cfint64 offset;
+                cfint32 messageSize;
                 reader >> offset >> messageSize;
                 if (messageSize + 12 > messageSetSize) break;
 
@@ -53,9 +53,9 @@ void KafkaConnector::FetchConnection::reply(qint32 correlationId, impl::KafkaRaw
                     firstOffset = offset;
                 }
 
-                qint32 crc;
-                qint8 magicByte;
-                qint8 attributes;
+                cfint32 crc;
+                cfint8 magicByte;
+                cfint8 attributes;
                 KafkaConnector::Message msg;
                 reader >> crc >> magicByte >> attributes >> msg.first >> msg.second;
                 messages << msg;
@@ -70,7 +70,9 @@ void KafkaConnector::FetchConnection::reply(qint32 correlationId, impl::KafkaRaw
 
 void KafkaConnector::FetchConnection::closed()
 {
-    impl_.fetchConnections_.remove(impl_.fetchConnections_.keys(this).value(0));
+    for (auto it = impl_.fetchConnections_.begin(); it != impl_.fetchConnections_.end(); ++it) {
+        if (it->second == this) { impl_.fetchConnections_.erase(it); break; }
+    }
     impl_.fetchMetaData();
 }
 

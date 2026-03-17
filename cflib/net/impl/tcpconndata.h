@@ -19,10 +19,10 @@ namespace impl { class TCPManagerImpl; }
 
 class TCPConnData
 {
-    Q_DISABLE_COPY(TCPConnData)
+    CF_DISABLE_COPY(TCPConnData)
 public:
     TCPConnData(impl::TCPManagerImpl & impl,
-        int socket, const char * peerIP, quint16 peerPort,
+        int socket, const char * peerIP, cfuint16 peerPort,
         crypt::TLSStream * tlsStream, uint tlsThreadId);
     ~TCPConnData();
 
@@ -34,8 +34,8 @@ public:
 
     // connection
     const int socket;
-    const QByteArray peerIP;
-    const quint16 peerPort;
+    const CFByteArray peerIP;
+    const cfuint16 peerPort;
 
     // TLS handling
     crypt::TLSStream * const tlsStream;
@@ -44,9 +44,9 @@ public:
     // state
     ev_io * readWatcher;
     ev_io * writeWatcher;
-    QByteArray readBuf;
-    QByteArray readData;
-    QByteArray writeBuf;
+    CFByteArray readBuf;
+    CFByteArray readData;
+    CFByteArray writeBuf;
     bool notifySomeBytesWritten;
     bool closeAfterWriting;
     bool deleteAfterWriting;

@@ -9,36 +9,108 @@
 #include <cflib/util/test.h>
 #include <cflib/util/util.h>
 
+#include <cflib/base/cfconcurrent.h>
+#include <cflib/base/cfthread.h>
+
 #include <cmath>
+#include <thread>
+#include <unistd.h>
 
 using namespace cflib::db;
 
 USE_LOG(LogCat::Db)
 
-class PSql_test : public QObject
+namespace {
+
+inline bool fuzzyCompare(float a, float b)
 {
-    Q_OBJECT
+    return fabsf(a - b) <= 0.00001f * fmaxf(1.0f, fmaxf(fabsf(a), fabsf(b)));
+}
+
+inline bool fuzzyCompare(double a, double b)
+{
+    return fabs(a - b) <= 0.000000000001 * fmax(1.0, fmax(fabs(a), fabs(b)));
+}
+
+CFDateTime makeUTCDateTime(int year, int month, int day, int hour, int min, int sec, int msec)
+{
+    struct tm t = {};
+    t.tm_year = year - 1900;
+    t.tm_mon  = month - 1;
+    t.tm_mday = day;
+    t.tm_hour = hour;
+    t.tm_min  = min;
+    t.tm_sec  = sec;
+    time_t epoch = timegm(&t);
+    return CFDateTime::fromMSecsSinceEpoch((cfint64)epoch * 1000 + msec);
+}
+
+}
+
+class PSql_test : public cflib::util::TestBase
+{
+public:
+    std::vector<cflib::util::TestMethod> testMethods() const override {
+        auto self = const_cast<PSql_test *>(this);
+        return {
+            {"initTestCase",                       [self]() { self->initTestCase(); }},
+            {"result_test",                        [self]() { self->result_test(); }},
+            {"check_datatype_boolean",             [self]() { self->check_datatype_boolean(); }},
+            {"insert_test_01",                     [self]() { self->insert_test_01(); }},
+            {"select_test_01",                     [self]() { self->select_test_01(); }},
+            {"clean_test_01",                      [self]() { self->clean_test_01(); }},
+            {"insert_test_02",                     [self]() { self->insert_test_02(); }},
+            {"select_test_02",                     [self]() { self->select_test_02(); }},
+            {"clean_test_02",                      [self]() { self->clean_test_02(); }},
+            {"insert_test_03",                     [self]() { self->insert_test_03(); }},
+            {"select_test_03",                     [self]() { self->select_test_03(); }},
+            {"clean_test_03",                      [self]() { self->clean_test_03(); }},
+            {"serial_test",                        [self]() { self->serial_test(); }},
+            {"bigserial_test",                     [self]() { self->bigserial_test(); }},
+            {"insert_prepared_test",               [self]() { self->insert_prepared_test(); }},
+            {"select_prepared_insert_test",        [self]() { self->select_prepared_insert_test(); }},
+            {"select_NULLs_test",                  [self]() { self->select_NULLs_test(); }},
+            {"insert_special_symbols_test",        [self]() { self->insert_special_symbols_test(); }},
+            {"select_special_symbols_test",        [self]() { self->select_special_symbols_test(); }},
+            {"alter_table_test",                   [self]() { self->alter_table_test(); }},
+            {"insert_time_with_time_zone_test",    [self]() { self->insert_time_with_time_zone_test(); }},
+            {"select_time_with_time_zone_test",    [self]() { self->select_time_with_time_zone_test(); }},
+            {"update_table_test",                  [self]() { self->update_table_test(); }},
+            {"select_updated_table_test",          [self]() { self->select_updated_table_test(); }},
+            {"select_error_test",                  [self]() { self->select_error_test(); }},
+            {"cascading_transaction_test",         [self]() { self->cascading_transaction_test(); }},
+            {"keepFields_test",                    [self]() { self->keepFields_test(); }},
+            {"multi_prepare_test",                 [self]() { self->multi_prepare_test(); }},
+            {"multi_prepare_transaction_test",     [self]() { self->multi_prepare_transaction_test(); }},
+            {"cascading_multi_prepare_test",       [self]() { self->cascading_multi_prepare_test(); }},
+            {"two_connections_test",               [self]() { self->two_connections_test(); }},
+            {"transaction_isolation_test",         [self]() { self->transaction_isolation_test(); }},
+            {"transaction_blocking_commit_test",   [self]() { self->transaction_blocking_commit_test(); }},
+            {"transaction_blocking_rollback_test", [self]() { self->transaction_blocking_rollback_test(); }},
+            {"transaction_failing_exec_test",      [self]() { self->transaction_failing_exec_test(); }},
+            {"cleanupTestCase",                    [self]() { self->cleanupTestCase(); }},
+        };
+    }
+
 private:
 
     struct TestTypes
     {
-        quint32    id;
-        quint16    x16;
-        quint32    x32;
-        quint64    x64;
-        qint16     s16;
-        qint32     s32;
-        qint64     s64;
-        QDateTime  t;
-        QByteArray a;
-        QString    s;
-        float      f;
-        double     d;
-        bool       b;
+        cfuint32    id;
+        cfuint16    x16;
+        cfuint32    x32;
+        cfuint64    x64;
+        cfint16     s16;
+        cfint32     s32;
+        cfint64     s64;
+        CFDateTime  t;
+        CFByteArray a;
+        CFString    s;
+        float       f;
+        double      d;
+        bool        b;
     };
     TestTypes tt;
-
-private slots:
 
     void initTestCase()
     {
@@ -163,15 +235,15 @@ private slots:
 
         QVERIFY(sql.next());
         sql >> tt.id >> tt.x16 >> tt.x32 >> tt.x64 >> tt.t >> tt.a >> tt.s >> tt.f >> tt.d >> tt.b;
-        QCOMPARE(tt.id,  (quint32)1);
-        QCOMPARE(tt.x16, (quint16)2);
-        QCOMPARE(tt.x32, (quint32)0xFFFFFFFF);
-        QCOMPARE(tt.x64, (quint64)4);
-        QCOMPARE(tt.t, QDateTime(QDate(2017, 2, 27), QTime(14, 47, 34, 123), Qt::UTC));
-        QCOMPARE(tt.a, QByteArray("A0"));
-        QCOMPARE(tt.s, QString::fromUtf8("ABC\xC3\xB6\xC3\x9F"));
-        QVERIFY(qFuzzyCompare(tt.f, 1.23f));
-        QVERIFY(qFuzzyCompare(tt.d, 3.45));
+        QCOMPARE(tt.id,  (cfuint32)1);
+        QCOMPARE(tt.x16, (cfuint16)2);
+        QCOMPARE(tt.x32, (cfuint32)0xFFFFFFFF);
+        QCOMPARE(tt.x64, (cfuint64)4);
+        QCOMPARE(tt.t.toMSecsSinceEpoch(), makeUTCDateTime(2017, 2, 27, 14, 47, 34, 123).toMSecsSinceEpoch());
+        QCOMPARE(tt.a, CFByteArray("A0"));
+        QCOMPARE(tt.s, CFString::fromUtf8("ABC\xC3\xB6\xC3\x9F"));
+        QVERIFY(fuzzyCompare(tt.f, 1.23f));
+        QVERIFY(fuzzyCompare(tt.d, 3.45));
         QVERIFY(tt.b);
         // no futher lines
         QVERIFY(!sql.next());
@@ -213,15 +285,15 @@ private slots:
 
         QVERIFY(sql.next());
         sql >> tt.id >> tt.s16 >> tt.s32 >> tt.s64 >> tt.t >> tt.a >> tt.s >> tt.f >> tt.d >> tt.b;
-        QCOMPARE(tt.id,  (qint32)1);
-        QCOMPARE(tt.s16, -32768);
-        QCOMPARE(tt.s32, -2147483648l);
-        QCOMPARE(tt.s64, Q_INT64_C(-9223372036854775807));
-        QCOMPARE(tt.t, QDateTime(QDate(1970, 1, 1), QTime(0, 0, 0, 0), Qt::UTC));
-        QCOMPARE(tt.a, QByteArray("A0"));
-        QCOMPARE(tt.s, QString::fromUtf8("ABC\xC3\xB6\xC3\x9F"));
-        QVERIFY(qFuzzyCompare(tt.f, -1.23f));
-        QVERIFY(qFuzzyCompare(tt.d, -3.45));
+        QCOMPARE(tt.id,  (cfint32)1);
+        QCOMPARE(tt.s16, (cfint16)-32768);
+        QCOMPARE(tt.s32, (cfint32)-2147483648l);
+        QCOMPARE(tt.s64, (cfint64)(-9223372036854775807LL));
+        QCOMPARE(tt.t.toMSecsSinceEpoch(), makeUTCDateTime(1970, 1, 1, 0, 0, 0, 0).toMSecsSinceEpoch());
+        QCOMPARE(tt.a, CFByteArray("A0"));
+        QCOMPARE(tt.s, CFString::fromUtf8("ABC\xC3\xB6\xC3\x9F"));
+        QVERIFY(fuzzyCompare(tt.f, -1.23f));
+        QVERIFY(fuzzyCompare(tt.d, -3.45));
         QVERIFY(!tt.b);
         // no futher lines
         QVERIFY(!sql.next());
@@ -258,13 +330,14 @@ private slots:
 
         QVERIFY(sql.next());
         sql >> tt.id >> tt.x16 >> tt.x32 >> tt.x64 >> tt.t >> tt.a >> tt.s >> tt.f >> tt.d >> tt.b;
-        QCOMPARE(tt.id,  (quint32)3);
-        QCOMPARE(tt.x16, (quint16)5);
-        QCOMPARE(tt.x64, (quint64)7);
-        QVERIFY(QDateTime::currentDateTimeUtc().addSecs(-30) < tt.t);
-        QVERIFY(QDateTime::currentDateTimeUtc().addSecs( 30) > tt.t);
-        QCOMPARE(tt.a, QByteArray(""));
-        QCOMPARE(tt.s, QString(""));
+        QCOMPARE(tt.id,  (cfuint32)3);
+        QCOMPARE(tt.x16, (cfuint16)5);
+        QCOMPARE(tt.x64, (cfuint64)7);
+        CFDateTime now = CFDateTime::nowUTC();
+        QVERIFY(tt.t.toMSecsSinceEpoch() > now.toMSecsSinceEpoch() - 30000);
+        QVERIFY(tt.t.toMSecsSinceEpoch() < now.toMSecsSinceEpoch() + 30000);
+        QCOMPARE(tt.a, CFByteArray(""));
+        QCOMPARE(tt.s, CFString(""));
         QCOMPARE(tt.f, 0.0f);
         QVERIFY(std::isnan(tt.d));
         QVERIFY(!tt.b);
@@ -299,23 +372,23 @@ private slots:
         QVERIFY(sql.exec());
         QVERIFY(sql.next());
         sql >> tt.id;
-        QCOMPARE(tt.id,  (quint32)1);
+        QCOMPARE(tt.id,  (cfuint32)1);
 
         sql << 23;
         QVERIFY(sql.exec());
         QVERIFY(sql.next());
         sql >> tt.id;
-        QCOMPARE(tt.id,  (quint32)2);
+        QCOMPARE(tt.id,  (cfuint32)2);
 
         QVERIFY(sql.exec("SELECT id, x32 FROM cflib_db_test_2"));
         QVERIFY(sql.next());
         sql >> tt.id >> tt.x32;
-        QCOMPARE(tt.id,  (quint32)1);
-        QCOMPARE(tt.x32, (quint32)42);
+        QCOMPARE(tt.id,  (cfuint32)1);
+        QCOMPARE(tt.x32, (cfuint32)42);
         QVERIFY(sql.next());
         sql >> tt.id >> tt.x32;
-        QCOMPARE(tt.id,  (quint32)2);
-        QCOMPARE(tt.x32, (quint32)23);
+        QCOMPARE(tt.id,  (cfuint32)2);
+        QCOMPARE(tt.x32, (cfuint32)23);
         QVERIFY(!sql.next());
     }
 
@@ -337,23 +410,23 @@ private slots:
         QVERIFY(sql.exec());
         QVERIFY(sql.next());
         sql >> tt.x64;
-        QCOMPARE(tt.x64,  (quint32)1);
+        QCOMPARE(tt.x64,  (cfuint64)1);
 
         sql << 765;
         QVERIFY(sql.exec());
         QVERIFY(sql.next());
         sql >> tt.x64;
-        QCOMPARE(tt.x64,  (quint32)2);
+        QCOMPARE(tt.x64,  (cfuint64)2);
 
         QVERIFY(sql.exec("SELECT id, x32 FROM cflib_db_test_3"));
         QVERIFY(sql.next());
         sql >> tt.x64 >> tt.x32;
-        QCOMPARE(tt.x64,  (quint32)1);
-        QCOMPARE(tt.x32, (quint32)456);
+        QCOMPARE(tt.x64,  (cfuint64)1);
+        QCOMPARE(tt.x32, (cfuint32)456);
         QVERIFY(sql.next());
         sql >> tt.x64 >> tt.x32;
-        QCOMPARE(tt.x64,  (quint32)2);
-        QCOMPARE(tt.x32, (quint32)765);
+        QCOMPARE(tt.x64,  (cfuint64)2);
+        QCOMPARE(tt.x32, (cfuint32)765);
         QVERIFY(!sql.next());
     }
 
@@ -373,14 +446,14 @@ private slots:
             ")"
         );
         sql << 3
-            << (quint16)0xFFFA << 67 << 89
-            << QDateTime(QDate(2017, 2, 27), QTime(10, 47, 34, 123), Qt::UTC)
-            << sql.null << "dödïdüß"
+            << (cfuint16)0xFFFA << 67 << 89
+            << makeUTCDateTime(2017, 2, 27, 10, 47, 34, 123)
+            << sql.null << "d\xC3\xB6""d\xC3\xAF""d\xC3\xBC\xC3\x9F"
             << 123.456f << 789.123
             << true;
         QVERIFY(sql.exec());
         sql << 4
-            << (qint8)-45 << sql.null << (qint32)-89
+            << (cfint8)-45 << sql.null << (cfint32)-89
             << sql.null
             << sql.null << sql.null
             << sql.null << sql.null
@@ -397,13 +470,13 @@ private slots:
         QVERIFY(sql.next());
         QVERIFY(!sql.isNull());
         sql >> tt.id >> tt.x16 >> tt.x32 >> tt.x64;
-        QCOMPARE(tt.id,  (quint32)3);
-        QCOMPARE(tt.x16, (quint16)0xFFFA);
-        QCOMPARE(tt.x32, (quint32)67);
-        QCOMPARE(tt.x64, (quint64)89);
+        QCOMPARE(tt.id,  (cfuint32)3);
+        QCOMPARE(tt.x16, (cfuint16)0xFFFA);
+        QCOMPARE(tt.x32, (cfuint32)67);
+        QCOMPARE(tt.x64, (cfuint64)89);
         QVERIFY(!sql.isNull());
         sql >> tt.t;
-        QCOMPARE(tt.t, QDateTime(QDate(2017, 2, 27), QTime(10, 47, 34, 123), Qt::UTC));
+        QCOMPARE(tt.t.toMSecsSinceEpoch(), makeUTCDateTime(2017, 2, 27, 10, 47, 34, 123).toMSecsSinceEpoch());
         QVERIFY(!sql.lastFieldIsNull());
         sql >> tt.a >> tt.s >> tt.f >> tt.d;
         QCOMPARE(tt.f, 123.456f);
@@ -433,26 +506,26 @@ private slots:
         QVERIFY(!sql.isNull()); // s
         sql >> tt.s;
         QVERIFY(!sql.lastFieldIsNull());
-        QCOMPARE(tt.s, QString::fromUtf8("dödïdüß"));
+        QCOMPARE(tt.s, CFString::fromUtf8("d\xC3\xB6""d\xC3\xAF""d\xC3\xBC\xC3\x9F"));
         QVERIFY(!sql.isNull()); // r
         sql >> sql.null;
         QVERIFY(!sql.lastFieldIsNull());
 
-        qint16 sx16;
-        qint32 sx32;
-        qint64 sx64;
+        cfint16 sx16;
+        cfint32 sx32;
+        cfint64 sx64;
 
         QVERIFY(sql.next());
 
         sql >> tt.id >> sx16;   // id, x16
-        QCOMPARE(tt.id,  (quint32)4);
-        QCOMPARE(sx16, (qint16)-45);
+        QCOMPARE(tt.id,  (cfuint32)4);
+        QCOMPARE(sx16, (cfint16)-45);
         QVERIFY(!sql.lastFieldIsNull());
         QVERIFY(sql.isNull());  // x32
         sql >> sx32;
         QVERIFY(sql.lastFieldIsNull());
         sql >> sx64;
-        QCOMPARE(sx64, (qint64)-89);
+        QCOMPARE(sx64, (cfint64)-89);
         QVERIFY(!sql.lastFieldIsNull());
         QVERIFY(!sql.isNull(1));    // x16
         QVERIFY(!sql.isNull(3));    // x64
@@ -480,13 +553,13 @@ private slots:
     {
         PSqlConn;
 
-        QVERIFY(sql.exec(QString::fromUtf8(
+        QVERIFY(sql.exec(CFString::fromUtf8(
             "INSERT INTO "
                 "cflib_db_test "
             "("
                 "id, x16, x32, x64, t, a, s, r, d"
             ") VALUES ("
-                "1.0, 2.0, 3.0, 4.0, '2017-02-27T14:47:34.123Z', 'ÖÄÜ', 'ÖÄÜ', 1.23, 3.45"
+                "1.0, 2.0, 3.0, 4.0, '2017-02-27T14:47:34.123Z', '\xC3\x96\xC3\x84\xC3\x9C', '\xC3\x96\xC3\x84\xC3\x9C', 1.23, 3.45"
             ")"
         )));
     }
@@ -499,15 +572,15 @@ private slots:
 
         QVERIFY(sql.next());
         sql >> tt.id >> tt.x16 >> tt.x32 >> tt.x64 >> tt.t >> tt.a >> tt.s >> tt.f >> tt.d;
-        QCOMPARE(tt.id,  (quint32)1);
-        QCOMPARE(tt.x16, (quint16)2);
-        QCOMPARE(tt.x32, (quint32)3);
-        QCOMPARE(tt.x64, (quint64)4);
-        QCOMPARE(tt.t, QDateTime(QDate(2017, 2, 27), QTime(14, 47, 34, 123), Qt::UTC));
-        QCOMPARE(tt.a, QByteArray("ÖÄÜ"));
-        QCOMPARE(tt.s, QString::fromUtf8("ÖÄÜ"));
-        QVERIFY(qFuzzyCompare(tt.f, 1.23f));
-        QVERIFY(qFuzzyCompare(tt.d, 3.45));
+        QCOMPARE(tt.id,  (cfuint32)1);
+        QCOMPARE(tt.x16, (cfuint16)2);
+        QCOMPARE(tt.x32, (cfuint32)3);
+        QCOMPARE(tt.x64, (cfuint64)4);
+        QCOMPARE(tt.t.toMSecsSinceEpoch(), makeUTCDateTime(2017, 2, 27, 14, 47, 34, 123).toMSecsSinceEpoch());
+        QCOMPARE(tt.a, CFByteArray("\xC3\x96\xC3\x84\xC3\x9C"));
+        QCOMPARE(tt.s, CFString::fromUtf8("\xC3\x96\xC3\x84\xC3\x9C"));
+        QVERIFY(fuzzyCompare(tt.f, 1.23f));
+        QVERIFY(fuzzyCompare(tt.d, 3.45));
         // no futher lines
         QVERIFY(!sql.next());
         // leave table empty
@@ -536,7 +609,7 @@ private slots:
             "("
                 "id, x16, x32, x64, a, s, r, d, t"
             ") VALUES ("
-                "1, 2, 3, 4, '漢字', 'Hello World!', 1.23, 3.45, '2017-02-27T14:47:34.123Z'"
+                "1, 2, 3, 4, '\xe6\xbc\xa2\xe5\xad\x97', 'Hello World!', 1.23, 3.45, '2017-02-27T14:47:34.123Z'"
             ")"
         ));
     }
@@ -550,15 +623,15 @@ private slots:
 
         QVERIFY(sql.next());
         sql >> tt.id >> tt.x16 >> tt.x32 >> tt.x64 >> tt.a >> tt.s >> tt.f >> tt.d >> tt.t;
-        QCOMPARE(tt.id,  (quint32)1);
-        QCOMPARE(tt.x16, (quint16)2);
-        QCOMPARE(tt.x32, (quint32)3);
-        QCOMPARE(tt.x64, (quint64)4);
-        QCOMPARE(tt.t, QDateTime(QDate(2017, 2, 27), QTime(14, 47, 34, 123), Qt::UTC)); // or 15:47:27 without UTC
-        QCOMPARE(tt.a, QByteArray("漢字"));
-        QCOMPARE(tt.s, QString::fromUtf8("Hello World!"));
-        QVERIFY(qFuzzyCompare(tt.f, 1.23f));
-        QVERIFY(qFuzzyCompare(tt.d, 3.45));
+        QCOMPARE(tt.id,  (cfuint32)1);
+        QCOMPARE(tt.x16, (cfuint16)2);
+        QCOMPARE(tt.x32, (cfuint32)3);
+        QCOMPARE(tt.x64, (cfuint64)4);
+        QCOMPARE(tt.t.toMSecsSinceEpoch(), makeUTCDateTime(2017, 2, 27, 14, 47, 34, 123).toMSecsSinceEpoch());
+        QCOMPARE(tt.a, CFByteArray("\xe6\xbc\xa2\xe5\xad\x97"));
+        QCOMPARE(tt.s, CFString::fromUtf8("Hello World!"));
+        QVERIFY(fuzzyCompare(tt.f, 1.23f));
+        QVERIFY(fuzzyCompare(tt.d, 3.45));
         // no futher lines
         QVERIFY(!sql.next());
     }
@@ -587,15 +660,15 @@ private slots:
 
         QVERIFY(sql.next());
         sql >> tt.id >> tt.x16 >> tt.x32 >> tt.x64 >> tt.a >> tt.s >> tt.f >> tt.d >> tt.t;
-        QCOMPARE(tt.id,  (quint32)2);
-        QCOMPARE(tt.x16, (quint16)123);
-        QCOMPARE(tt.x32, (quint32)345);
-        QCOMPARE(tt.x64, (quint64)1234567);
-        QCOMPARE(tt.t, QDateTime(QDate(2017, 2, 27), QTime(14, 47, 34, 123), Qt::UTC)); // or 15:47:27 without UTC
-        QCOMPARE(tt.a, QByteArray("2017-02-27T14:47:34.123Z"));
-        QCOMPARE(tt.s, QString::fromUtf8("Hello again"));
-        QVERIFY(qFuzzyCompare(tt.f, 123.456f));
-        QVERIFY(qFuzzyCompare(tt.d, 12345.6789));
+        QCOMPARE(tt.id,  (cfuint32)2);
+        QCOMPARE(tt.x16, (cfuint16)123);
+        QCOMPARE(tt.x32, (cfuint32)345);
+        QCOMPARE(tt.x64, (cfuint64)1234567);
+        QCOMPARE(tt.t.toMSecsSinceEpoch(), makeUTCDateTime(2017, 2, 27, 14, 47, 34, 123).toMSecsSinceEpoch());
+        QCOMPARE(tt.a, CFByteArray("2017-02-27T14:47:34.123Z"));
+        QCOMPARE(tt.s, CFString::fromUtf8("Hello again"));
+        QVERIFY(fuzzyCompare(tt.f, 123.456f));
+        QVERIFY(fuzzyCompare(tt.d, 12345.6789));
         // no futher lines
         QVERIFY(!sql.next());
     }
@@ -687,13 +760,13 @@ private slots:
         QVERIFY(sql.exec());
         QVERIFY(sql.next());
         sql >> tt.x32;
-        QCOMPARE(tt.x32, (quint32)123);
+        QCOMPARE(tt.x32, (cfuint32)123);
 
         sql << 6;
         QVERIFY(sql.exec());
         QVERIFY(sql.next());
         sql >> tt.x32;
-        QCOMPARE(tt.x32, (quint32)123);
+        QCOMPARE(tt.x32, (cfuint32)123);
     }
 
     // -----------------------------------------------------------
@@ -722,7 +795,7 @@ private slots:
         QVERIFY(sql2.exec());
         QVERIFY(sql2.next());
         sql2 >> tt.id;
-        QCOMPARE(tt.id, (quint32)6);
+        QCOMPARE(tt.id, (cfuint32)6);
         QVERIFY(!sql2.next());
 
         sql << 8;
@@ -731,7 +804,7 @@ private slots:
         QVERIFY(sql2.exec());
         QVERIFY(sql2.next());
         sql2 >> tt.id;
-        QCOMPARE(tt.id, (quint32)7);
+        QCOMPARE(tt.id, (cfuint32)7);
         QVERIFY(!sql2.next());
     }
 
@@ -779,7 +852,7 @@ private slots:
         QVERIFY(sql.exec("SELECT COUNT(*) FROM cflib_db_test"));
         QVERIFY(sql.next());
         sql >> tt.x64;
-        QVERIFY(tt.x64 > (quint32)1);
+        QVERIFY(tt.x64 > (cfuint64)1);
 
         sql.prepare("SELECT id FROM cflib_db_test ORDER BY id");
         QVERIFY(sql.exec());
@@ -789,13 +862,13 @@ private slots:
 
         QVERIFY(sql.next());
         sql >> tt.id;
-        QCOMPARE(tt.id, (quint32)2);
+        QCOMPARE(tt.id, (cfuint32)2);
 
         sql2 << tt.id;
         QVERIFY(sql2.exec());
         QVERIFY(sql2.next());
         sql2 >> tt.x32;
-        QCOMPARE(tt.x32, (quint32)345);
+        QCOMPARE(tt.x32, (cfuint32)345);
         QVERIFY(!sql2.next());
 
         // cascading queries do not work
@@ -809,7 +882,7 @@ private slots:
         QVERIFY(sql.exec("SELECT COUNT(*) FROM cflib_db_test"));
         QVERIFY(sql.next());
         sql >> tt.x64;
-        QVERIFY(tt.x64 > (quint32)2);
+        QVERIFY(tt.x64 > (cfuint64)2);
 
         sql.prepare("SELECT id FROM cflib_db_test ORDER BY id");
         QVERIFY(sql.exec());
@@ -819,24 +892,24 @@ private slots:
 
         QVERIFY(sql.next());
         sql >> tt.id;
-        QCOMPARE(tt.id, (quint32)2);
+        QCOMPARE(tt.id, (cfuint32)2);
 
         sql2 << tt.id;
         QVERIFY(sql2.exec());
         QVERIFY(sql2.next());
         sql2 >> tt.x32;
-        QCOMPARE(tt.x32, (quint32)345);
+        QCOMPARE(tt.x32, (cfuint32)345);
         QVERIFY(!sql2.next());
 
         QVERIFY(sql.next());
         sql >> tt.id;
-        QCOMPARE(tt.id, (quint32)5);
+        QCOMPARE(tt.id, (cfuint32)5);
 
         sql2 << tt.id;
         QVERIFY(sql2.exec());
         QVERIFY(sql2.next());
         sql2 >> tt.x32;
-        QCOMPARE(tt.x32, (quint32)123);
+        QCOMPARE(tt.x32, (cfuint32)123);
         QVERIFY(!sql2.next());
 
         QVERIFY(sql.next());
@@ -876,35 +949,8 @@ private slots:
 
     void transaction_blocking_commit_test()
     {
-        class Thread : public QThread
-        {
-        public:
-            QSemaphore sem;
-            bool result;
-
-        protected:
-            void run() override
-            {
-                PSqlConn;
-                sql.prepare(
-                    "INSERT INTO "
-                        "cflib_db_test "
-                    "("
-                        "id"
-                    ") VALUES ("
-                        "$1"
-                    ")"
-                );
-
-                sql << 11;
-                result = sql.exec();
-                sem.release();
-
-                sql << 10;
-                result = sql.exec();
-                sem.release();
-            }
-        };
+        CFSemaphore sem;
+        bool threadResult = false;
 
         PSqlConn;
         sql.begin();
@@ -920,52 +966,48 @@ private slots:
         sql << 10;
         QVERIFY(sql.exec());
 
-        Thread thread;
-        thread.start();
+        std::thread thread([&sem, &threadResult]() {
+            PSqlConn;
+            sql.prepare(
+                "INSERT INTO "
+                    "cflib_db_test "
+                "("
+                    "id"
+                ") VALUES ("
+                    "$1"
+                ")"
+            );
+
+            sql << 11;
+            threadResult = sql.exec();
+            sem.release();
+
+            sql << 10;
+            threadResult = sql.exec();
+            sem.release();
+        });
 
         // Insert of different key works.
-        thread.sem.acquire();
-        QVERIFY(thread.result);
+        sem.acquire();
+        QVERIFY(threadResult);
 
         // Insert of same key blocks until our transaction has finished.
-        QThread::sleep(1);
-        QVERIFY(thread.sem.available() == 0);
+        // (We can't easily check sem.available() == 0 with CFSemaphore,
+        //  so just sleep a bit and then commit.)
+        usleep(1000000); // 1 second
 
         QVERIFY(sql.commit());
 
-        thread.sem.acquire();
-        QVERIFY(!thread.result);
+        sem.acquire();
+        QVERIFY(!threadResult);
 
-        thread.wait();
+        thread.join();
     }
 
     void transaction_blocking_rollback_test()
     {
-        class Thread : public QThread
-        {
-        public:
-            QSemaphore sem;
-            bool result;
-
-        protected:
-            void run() override
-            {
-                PSqlConn;
-                sql.prepare(
-                    "INSERT INTO "
-                        "cflib_db_test "
-                    "("
-                        "id"
-                    ") VALUES ("
-                        "$1"
-                    ")"
-                );
-
-                sql << 12;
-                result = sql.exec();
-                sem.release();
-            }
-        };
+        CFSemaphore sem;
+        bool threadResult = false;
 
         PSqlConn;
         sql.begin();
@@ -981,19 +1023,32 @@ private slots:
         sql << 12;
         QVERIFY(sql.exec());
 
-        Thread thread;
-        thread.start();
+        std::thread thread([&sem, &threadResult]() {
+            PSqlConn;
+            sql.prepare(
+                "INSERT INTO "
+                    "cflib_db_test "
+                "("
+                    "id"
+                ") VALUES ("
+                    "$1"
+                ")"
+            );
+
+            sql << 12;
+            threadResult = sql.exec();
+            sem.release();
+        });
 
         // Insert of same key blocks until our transaction has finished.
-        QThread::sleep(1);
-        QVERIFY(thread.sem.available() == 0);
+        usleep(1000000); // 1 second
 
         sql.rollback();
 
-        thread.sem.acquire();
-        QVERIFY(thread.result);
+        sem.acquire();
+        QVERIFY(threadResult);
 
-        thread.wait();
+        thread.join();
     }
 
     void transaction_failing_exec_test()
@@ -1019,5 +1074,4 @@ private slots:
     }
 
 };
-#include "psql_test.moc"
 ADD_TEST(PSql_test)

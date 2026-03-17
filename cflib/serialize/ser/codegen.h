@@ -7,8 +7,9 @@
 
 #pragma once
 
-class HeaderParser;
-class QIODevice;
-class QString;
+#include <cstdio>
+#include <string>
 
-int genSerialize(const QString & headerName, const HeaderParser & hp, QIODevice & out);
+class HeaderParser;
+
+int genSerialize(const std::string & headerName, const HeaderParser & hp, FILE * out);

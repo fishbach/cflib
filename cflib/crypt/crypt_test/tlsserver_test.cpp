@@ -16,10 +16,21 @@
 
 using namespace cflib::crypt;
 
-class TLSServer_test : public QObject
+class TLSServer_test : public cflib::util::TestBase
 {
-    Q_OBJECT
-private slots:
+public:
+    std::vector<cflib::util::TestMethod> testMethods() const override {
+        auto self = const_cast<TLSServer_test *>(this);
+        return {
+            {"test_tls",                    [self]() { self->test_tls(); }},
+            {"test_fastSend",               [self]() { self->test_fastSend(); }},
+            {"test_missingCA",              [self]() { self->test_missingCA(); }},
+            {"test_hostname",               [self]() { self->test_hostname(); }},
+            {"test_wrongHostname",          [self]() { self->test_wrongHostname(); }},
+            {"test_tls_highSecurity_client",[self]() { self->test_tls_highSecurity_client(); }},
+            {"test_tls_highSecurity_server",[self]() { self->test_tls_highSecurity_server(); }}
+        };
+    }
 
     void test_tls()
     {
@@ -35,9 +46,9 @@ private slots:
         TLSSessions clientSessions;
         TLSClient client(clientSessions, clientCreds);
 
-        QByteArray enc1;
-        QByteArray enc2;
-        QByteArray plain;
+        CFByteArray enc1;
+        CFByteArray enc2;
+        CFByteArray plain;
 
         // client starts handshake
         QVERIFY(server.initialSend().isEmpty());
@@ -46,50 +57,50 @@ private slots:
         QVERIFY(client.initialSend().isEmpty());
 
         // first handshake req -> reply
-        enc2.clear();
+        enc2 = CFByteArray();
         QVERIFY(server.received(enc1, plain, enc2));
         QVERIFY(plain.isEmpty());
         QVERIFY(!enc2.isEmpty());
-        enc1.clear();
+        enc1 = CFByteArray();
         QVERIFY(client.received(enc2, plain, enc1));
         QVERIFY(plain.isEmpty());
         QVERIFY(!enc1.isEmpty());
 
         // second handshake req -> reply
-        enc2.clear();
+        enc2 = CFByteArray();
         QVERIFY(server.received(enc1, plain, enc2));
         QVERIFY(plain.isEmpty());
         QVERIFY(!enc2.isEmpty());
-        enc1.clear();
+        enc1 = CFByteArray();
         QVERIFY(client.received(enc2, plain, enc1));
         QVERIFY(plain.isEmpty());
         QVERIFY(!enc1.isEmpty());
 
         // third handshake req, no reply
-        enc2.clear();
+        enc2 = CFByteArray();
         QVERIFY(server.received(enc1, plain, enc2));
         QVERIFY(plain.isEmpty());
         QVERIFY(enc2.isEmpty());
 
         // send plain to server
-        QByteArray msg = "hello dear server";
-        enc1.clear();
+        CFByteArray msg = "hello dear server";
+        enc1 = CFByteArray();
         client.send(msg, enc1);
         QVERIFY(!enc1.isEmpty());
         QVERIFY(enc1.indexOf(msg) == -1);
-        enc2.clear();
+        enc2 = CFByteArray();
         QVERIFY(server.received(enc1, plain, enc2));
         QCOMPARE(plain, msg);
         QVERIFY(enc2.isEmpty());
 
         // send plain to client
         msg = "hello dear client";
-        enc2.clear();
+        enc2 = CFByteArray();
         server.send(msg, enc2);
         QVERIFY(!enc2.isEmpty());
         QVERIFY(enc2.indexOf(msg) == -1);
-        plain.clear();
-        enc1.clear();
+        plain = CFByteArray();
+        enc1 = CFByteArray();
         QVERIFY(client.received(enc2, plain, enc1));
         QCOMPARE(plain, msg);
         QVERIFY(enc1.isEmpty());
@@ -109,19 +120,19 @@ private slots:
         TLSSessions clientSessions;
         TLSClient client(clientSessions, clientCreds);
 
-        QByteArray enc1;
-        QByteArray enc2;
-        QByteArray plain;
+        CFByteArray enc1;
+        CFByteArray enc2;
+        CFByteArray plain;
 
         // send before handshake
-        QByteArray serverMsg = "hello dear client";
-        enc2.clear();
+        CFByteArray serverMsg = "hello dear client";
+        enc2 = CFByteArray();
         QVERIFY(server.send(serverMsg, enc2));
         QVERIFY(enc2.isEmpty());
 
         // send before handshake
-        QByteArray clientMsg = "hello dear server";
-        enc1.clear();
+        CFByteArray clientMsg = "hello dear server";
+        enc1 = CFByteArray();
         QVERIFY(client.send(clientMsg, enc1));
         QVERIFY(enc1.isEmpty());
 
@@ -131,32 +142,32 @@ private slots:
         QVERIFY(enc1.indexOf(clientMsg) == -1);
 
         // first handshake req -> reply
-        enc2.clear();
+        enc2 = CFByteArray();
         QVERIFY(server.received(enc1, plain, enc2));
         QVERIFY(plain.isEmpty());
         QVERIFY(!enc2.isEmpty());
-        enc1.clear();
+        enc1 = CFByteArray();
         QVERIFY(client.received(enc2, plain, enc1));
         QVERIFY(plain.isEmpty());
         QVERIFY(!enc1.isEmpty());
 
         // second handshake req -> reply
-        enc2.clear();
+        enc2 = CFByteArray();
         QVERIFY(server.received(enc1, plain, enc2));
         QVERIFY(plain.isEmpty());
         QVERIFY(!enc2.isEmpty());
-        enc1.clear();
+        enc1 = CFByteArray();
         QVERIFY(client.received(enc2, plain, enc1));
         QVERIFY(plain.isEmpty());
         QVERIFY(!enc1.isEmpty());
 
         // third handshake req, no reply
-        enc2.clear();
+        enc2 = CFByteArray();
         QVERIFY(server.received(enc1, plain, enc2));
         QCOMPARE(plain, clientMsg);
-        plain.clear();
+        plain = CFByteArray();
         QVERIFY(!enc2.isEmpty());
-        enc1.clear();
+        enc1 = CFByteArray();
         QVERIFY(client.received(enc2, plain, enc1));
         QCOMPARE(plain, serverMsg);
         QVERIFY(enc1.isEmpty());
@@ -174,30 +185,30 @@ private slots:
         TLSSessions clientSessions;
         TLSClient client(clientSessions, clientCreds);
 
-        QByteArray enc1;
-        QByteArray enc2;
-        QByteArray plain;
+        CFByteArray enc1;
+        CFByteArray enc2;
+        CFByteArray plain;
 
         // client starts handshake
         enc1 = client.initialSend();
         QVERIFY(!enc1.isEmpty());
 
         // first handshake req -> reply
-        enc2.clear();
+        enc2 = CFByteArray();
         QVERIFY(server.received(enc1, plain, enc2));
         QVERIFY(plain.isEmpty());
         QVERIFY(!enc2.isEmpty());
-        enc1.clear();
+        enc1 = CFByteArray();
         QVERIFY(client.received(enc2, plain, enc1));
         QVERIFY(plain.isEmpty());
         QVERIFY(!enc1.isEmpty());
 
         // second handshake req -> reply
-        enc2.clear();
+        enc2 = CFByteArray();
         QVERIFY(server.received(enc1, plain, enc2));
         QVERIFY(plain.isEmpty());
         QVERIFY(!enc2.isEmpty());
-        enc1.clear();
+        enc1 = CFByteArray();
         QVERIFY(!client.received(enc2, plain, enc1));
         QVERIFY(plain.isEmpty());
     }
@@ -216,59 +227,59 @@ private slots:
         TLSSessions clientSessions;
         TLSClient client(clientSessions, clientCreds, "127.0.0.1");
 
-        QByteArray enc1;
-        QByteArray enc2;
-        QByteArray plain;
+        CFByteArray enc1;
+        CFByteArray enc2;
+        CFByteArray plain;
 
         // client starts handshake
         enc1 = client.initialSend();
         QVERIFY(!enc1.isEmpty());
 
         // first handshake req -> reply
-        enc2.clear();
+        enc2 = CFByteArray();
         QVERIFY(server.received(enc1, plain, enc2));
         QVERIFY(plain.isEmpty());
         QVERIFY(!enc2.isEmpty());
-        enc1.clear();
+        enc1 = CFByteArray();
         QVERIFY(client.received(enc2, plain, enc1));
         QVERIFY(plain.isEmpty());
         QVERIFY(!enc1.isEmpty());
 
         // second handshake req -> reply
-        enc2.clear();
+        enc2 = CFByteArray();
         QVERIFY(server.received(enc1, plain, enc2));
         QVERIFY(plain.isEmpty());
         QVERIFY(!enc2.isEmpty());
-        enc1.clear();
+        enc1 = CFByteArray();
         QVERIFY(client.received(enc2, plain, enc1));
         QVERIFY(plain.isEmpty());
         QVERIFY(!enc1.isEmpty());
 
         // third handshake req, no reply
-        enc2.clear();
+        enc2 = CFByteArray();
         QVERIFY(server.received(enc1, plain, enc2));
         QVERIFY(plain.isEmpty());
         QVERIFY(enc2.isEmpty());
 
         // send plain to server
-        QByteArray msg = "hello dear server";
-        enc1.clear();
+        CFByteArray msg = "hello dear server";
+        enc1 = CFByteArray();
         QVERIFY(client.send(msg, enc1));
         QVERIFY(!enc1.isEmpty());
         QVERIFY(enc1.indexOf(msg) == -1);
-        enc2.clear();
+        enc2 = CFByteArray();
         QVERIFY(server.received(enc1, plain, enc2));
         QCOMPARE(plain, msg);
         QVERIFY(enc2.isEmpty());
 
         // send plain to client
         msg = "hello dear client";
-        enc2.clear();
+        enc2 = CFByteArray();
         QVERIFY(server.send(msg, enc2));
         QVERIFY(!enc2.isEmpty());
         QVERIFY(enc2.indexOf(msg) == -1);
-        plain.clear();
-        enc1.clear();
+        plain = CFByteArray();
+        enc1 = CFByteArray();
         QVERIFY(client.received(enc2, plain, enc1));
         QCOMPARE(plain, msg);
         QVERIFY(enc1.isEmpty());
@@ -287,26 +298,26 @@ private slots:
         TLSSessions clientSessions;
         TLSClient client(clientSessions, clientCreds, "fucking.hell");
 
-        QByteArray enc1;
-        QByteArray enc2;
-        QByteArray plain;
+        CFByteArray enc1;
+        CFByteArray enc2;
+        CFByteArray plain;
 
         // client starts handshake
         enc1 = client.initialSend();
         QVERIFY(!enc1.isEmpty());
 
         // first handshake req -> reply
-        enc2.clear();
+        enc2 = CFByteArray();
         QVERIFY(server.received(enc1, plain, enc2));
         QVERIFY(plain.isEmpty());
         QVERIFY(!enc2.isEmpty());
-        enc1.clear();
+        enc1 = CFByteArray();
         QVERIFY(client.received(enc2, plain, enc1));
         QVERIFY(plain.isEmpty());
         QVERIFY(!enc1.isEmpty());
 
         // second handshake req -> reply
-        enc2.clear();
+        enc2 = CFByteArray();
         QVERIFY(!server.received(enc1, plain, enc2));
     }
 
@@ -322,61 +333,61 @@ private slots:
         QCOMPARE((int)clientCreds.addCerts(cert3, true), 1);
         QCOMPARE((int)clientCreds.addRevocationLists(cert2Crl), 1);
         TLSSessions clientSessions;
-        TLSClient client(clientSessions, clientCreds, QByteArray(), true);
+        TLSClient client(clientSessions, clientCreds, CFByteArray(), true);
 
-        QByteArray enc1;
-        QByteArray enc2;
-        QByteArray plain;
+        CFByteArray enc1;
+        CFByteArray enc2;
+        CFByteArray plain;
 
         // client starts handshake
         enc1 = client.initialSend();
         QVERIFY(!enc1.isEmpty());
 
         // first handshake req -> reply
-        enc2.clear();
+        enc2 = CFByteArray();
         QVERIFY(server.received(enc1, plain, enc2));
         QVERIFY(plain.isEmpty());
         QVERIFY(!enc2.isEmpty());
-        enc1.clear();
+        enc1 = CFByteArray();
         QVERIFY(client.received(enc2, plain, enc1));
         QVERIFY(plain.isEmpty());
         QVERIFY(!enc1.isEmpty());
 
         // second handshake req -> reply
-        enc2.clear();
+        enc2 = CFByteArray();
         QVERIFY(server.received(enc1, plain, enc2));
         QVERIFY(plain.isEmpty());
         QVERIFY(!enc2.isEmpty());
-        enc1.clear();
+        enc1 = CFByteArray();
         QVERIFY(client.received(enc2, plain, enc1));
         QVERIFY(plain.isEmpty());
         QVERIFY(!enc1.isEmpty());
 
         // third handshake req, no reply
-        enc2.clear();
+        enc2 = CFByteArray();
         QVERIFY(server.received(enc1, plain, enc2));
         QVERIFY(plain.isEmpty());
         QVERIFY(enc2.isEmpty());
 
         // send plain to server
-        QByteArray msg = "hello dear server";
-        enc1.clear();
+        CFByteArray msg = "hello dear server";
+        enc1 = CFByteArray();
         client.send(msg, enc1);
         QVERIFY(!enc1.isEmpty());
         QVERIFY(enc1.indexOf(msg) == -1);
-        enc2.clear();
+        enc2 = CFByteArray();
         QVERIFY(server.received(enc1, plain, enc2));
         QCOMPARE(plain, msg);
         QVERIFY(enc2.isEmpty());
 
         // send plain to client
         msg = "hello dear client";
-        enc2.clear();
+        enc2 = CFByteArray();
         server.send(msg, enc2);
         QVERIFY(!enc2.isEmpty());
         QVERIFY(enc2.indexOf(msg) == -1);
-        plain.clear();
-        enc1.clear();
+        plain = CFByteArray();
+        enc1 = CFByteArray();
         QVERIFY(client.received(enc2, plain, enc1));
         QCOMPARE(plain, msg);
         QVERIFY(enc1.isEmpty());
@@ -396,64 +407,63 @@ private slots:
         TLSSessions clientSessions;
         TLSClient client(clientSessions, clientCreds);
 
-        QByteArray enc1;
-        QByteArray enc2;
-        QByteArray plain;
+        CFByteArray enc1;
+        CFByteArray enc2;
+        CFByteArray plain;
 
         // client starts handshake
         enc1 = client.initialSend();
         QVERIFY(!enc1.isEmpty());
 
         // first handshake req -> reply
-        enc2.clear();
+        enc2 = CFByteArray();
         QVERIFY(server.received(enc1, plain, enc2));
         QVERIFY(plain.isEmpty());
         QVERIFY(!enc2.isEmpty());
-        enc1.clear();
+        enc1 = CFByteArray();
         QVERIFY(client.received(enc2, plain, enc1));
         QVERIFY(plain.isEmpty());
         QVERIFY(!enc1.isEmpty());
 
         // second handshake req -> reply
-        enc2.clear();
+        enc2 = CFByteArray();
         QVERIFY(server.received(enc1, plain, enc2));
         QVERIFY(plain.isEmpty());
         QVERIFY(!enc2.isEmpty());
-        enc1.clear();
+        enc1 = CFByteArray();
         QVERIFY(client.received(enc2, plain, enc1));
         QVERIFY(plain.isEmpty());
         QVERIFY(!enc1.isEmpty());
 
         // third handshake req, no reply
-        enc2.clear();
+        enc2 = CFByteArray();
         QVERIFY(server.received(enc1, plain, enc2));
         QVERIFY(plain.isEmpty());
         QVERIFY(enc2.isEmpty());
 
         // send plain to server
-        QByteArray msg = "hello dear server";
-        enc1.clear();
+        CFByteArray msg = "hello dear server";
+        enc1 = CFByteArray();
         client.send(msg, enc1);
         QVERIFY(!enc1.isEmpty());
         QVERIFY(enc1.indexOf(msg) == -1);
-        enc2.clear();
+        enc2 = CFByteArray();
         QVERIFY(server.received(enc1, plain, enc2));
         QCOMPARE(plain, msg);
         QVERIFY(enc2.isEmpty());
 
         // send plain to client
         msg = "hello dear client";
-        enc2.clear();
+        enc2 = CFByteArray();
         server.send(msg, enc2);
         QVERIFY(!enc2.isEmpty());
         QVERIFY(enc2.indexOf(msg) == -1);
-        plain.clear();
-        enc1.clear();
+        plain = CFByteArray();
+        enc1 = CFByteArray();
         QVERIFY(client.received(enc2, plain, enc1));
         QCOMPARE(plain, msg);
         QVERIFY(enc1.isEmpty());
     }
-
 };
-#include "tlsserver_test.moc"
+
 ADD_TEST(TLSServer_test)

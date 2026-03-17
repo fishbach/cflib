@@ -7,7 +7,8 @@
 
 #pragma once
 
-#include <QtCore>
+#include <cflib/base/cfcontainers.h>
+#include <cflib/base/macros.h>
 
 namespace cflib { namespace crypt { class TLSCredentials; }}
 
@@ -17,13 +18,13 @@ class RequestHandler;
 
 class HttpServer
 {
-    Q_DISABLE_COPY(HttpServer)
+    CF_DISABLE_COPY(HttpServer)
 public:
     HttpServer(uint threadCount = 2, uint tlsThreadCount = 0);
     ~HttpServer();
 
-    bool start(const QByteArray & address, quint16 port);
-    bool start(const QByteArray & address, quint16 port, crypt::TLSCredentials & credentials);
+    bool start(const CFByteArray & address, cfuint16 port);
+    bool start(const CFByteArray & address, cfuint16 port, crypt::TLSCredentials & credentials);
     bool start(int listenSocket);
     bool start(int listenSocket, crypt::TLSCredentials & credentials);
     void stop();

@@ -7,10 +7,13 @@
 
 #include "psql.h"
 
+#include <cflib/base/cfconcurrent.h>
 #include <cflib/util/evtimer.h>
 #include <cflib/util/threadverify.h>
 
 #include <libpq-fe.h>
+
+#include <cstring>
 
 USE_LOG(LogCat::Db)
 
@@ -18,7 +21,7 @@ namespace cflib { namespace db {
 
 namespace {
 
-QAtomicInt connIdCounter(1);
+CFAtomicInt connIdCounter(1);
 
 enum PostgresTypes {
     PSql_null = 0,
@@ -48,36 +51,88 @@ const char * PostgresTypeNames[] = {
 };
 
 Oid typeOids[PSql_lastEntry];
-QString connInfo;
+CFString connInfo;
 
-const qint64 MsecDelta = -QDateTime::fromMSecsSinceEpoch(0).msecsTo(QDateTime(QDate(2000, 1, 1), QTime(0, 0), Qt::UTC));
-const QVector<int> ParamFormats(PSql::MAX_FIELD_COUNT, 1);
+// PostgreSQL epoch is 2000-01-01 00:00:00 UTC
+// Unix epoch is 1970-01-01 00:00:00 UTC
+// Difference in milliseconds: 946684800000
+const cfint64 MsecDelta = 946684800000LL;
+const int ParamFormats[PSql::MAX_FIELD_COUNT] = {
+    1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+    1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1
+};
 
 union FloatInt {
     float f;
-    quint32 i;
+    cfuint32 i;
 };
 
 union DoubleInt {
     double d;
-    quint64 i;
+    cfuint64 i;
 };
+
+// Big-endian byte-order helpers
+inline void writeBE16(cfuint8 * dest, cfuint16 val)
+{
+    dest[0] = (cfuint8)(val >> 8);
+    dest[1] = (cfuint8)(val);
+}
+
+inline void writeBE32(cfuint8 * dest, cfuint32 val)
+{
+    dest[0] = (cfuint8)(val >> 24);
+    dest[1] = (cfuint8)(val >> 16);
+    dest[2] = (cfuint8)(val >> 8);
+    dest[3] = (cfuint8)(val);
+}
+
+inline void writeBE64(cfuint8 * dest, cfuint64 val)
+{
+    dest[0] = (cfuint8)(val >> 56);
+    dest[1] = (cfuint8)(val >> 48);
+    dest[2] = (cfuint8)(val >> 40);
+    dest[3] = (cfuint8)(val >> 32);
+    dest[4] = (cfuint8)(val >> 24);
+    dest[5] = (cfuint8)(val >> 16);
+    dest[6] = (cfuint8)(val >> 8);
+    dest[7] = (cfuint8)(val);
+}
+
+inline cfuint16 readBE16(const cfuint8 * src)
+{
+    return ((cfuint16)src[0] << 8) | (cfuint16)src[1];
+}
+
+inline cfuint32 readBE32(const cfuint8 * src)
+{
+    return ((cfuint32)src[0] << 24) | ((cfuint32)src[1] << 16) |
+           ((cfuint32)src[2] << 8)  | (cfuint32)src[3];
+}
+
+inline cfuint64 readBE64(const cfuint8 * src)
+{
+    return ((cfuint64)src[0] << 56) | ((cfuint64)src[1] << 48) |
+           ((cfuint64)src[2] << 40) | ((cfuint64)src[3] << 32) |
+           ((cfuint64)src[4] << 24) | ((cfuint64)src[5] << 16) |
+           ((cfuint64)src[6] << 8)  | (cfuint64)src[7];
+}
 
 }
 
-class PSql::ThreadData : public QObject
+class PSql::ThreadData
 {
-    Q_OBJECT
+    CF_DISABLE_COPY(ThreadData)
 public:
     const bool isDedicated;
     PGconn * conn;
     bool transactionActive;
     bool doRollback;
-    QList<QByteArray> preparedStatements;
-    uint instanceCount;
+    CFList<CFByteArray> preparedStatements;
+    cfuint instanceCount;
 
 public:
-    ThreadData(const QString & connectionParameter = QString(), bool isDedicated = false) :
+    ThreadData(const CFString & connectionParameter = CFString(), bool isDedicated = false) :
         isDedicated(isDedicated),
         conn(nullptr),
         transactionActive(false),
@@ -94,7 +149,7 @@ public:
             return;
         }
 
-        conn = PQconnectdb(connectionParameter_.toUtf8().constData());
+        conn = PQconnectdb(connectionParameter_.c_str());
         if (PQstatus(conn) != CONNECTION_OK) {
             logWarn("cannot connect to database (error: %1)", PQerrorMessage(conn));
             PQfinish(conn);
@@ -105,10 +160,6 @@ public:
         if (util::libEVLoopOfThread()) {
             evTimer_ = new util::EVTimer(this, &ThreadData::checkConnection);
             evTimer_->start(15);
-        } else {
-            QTimer * timer = new QTimer(this);
-            connect(timer, SIGNAL(timeout()), this, SLOT(checkConnection()));
-            timer->start(15 * 1000);
         }
     }
 
@@ -119,10 +170,9 @@ public:
         logDebug("DB connection %1 closed", connId_);
     }
 
-private slots:
     void checkConnection()
     {
-        QElapsedTimer watch;
+        CFElapsedTimer watch;
         watch.start();
 
         PGresult * res = PQexec(conn, "SELECT 1");
@@ -132,40 +182,43 @@ private slots:
             PQfinish(conn);
 
             // try reconnect
-            conn = PQconnectdb(connectionParameter_.toUtf8().constData());
+            conn = PQconnectdb(connectionParameter_.c_str());
             if (PQstatus(conn) != CONNECTION_OK) {
                 logWarn("cannot connect to database (error: %1)", PQerrorMessage(conn));
                 PQfinish(conn);
             }
         } else {
-            int elapsed = watch.elapsed();
+            cfint64 elapsed = watch.elapsed();
             if (elapsed >= 5) logTrace("DB connection %1 responsiveness: %2 msec", connId_, elapsed);
             PQclear(res);
         }
     }
 
 private:
-    const QString connectionParameter_;
+    const CFString connectionParameter_;
     const int connId_;
     util::EVTimer * evTimer_;
 };
 
-QThreadStorage<PSql::ThreadData *> PSql::threadData_;
+thread_local PSql::ThreadData * PSql::threadData_ = nullptr;
 
 const int PSql::MAX_FIELD_COUNT;
 
-bool PSql::setParameter(const QString & connectionParameterRef, const QString & overrideEnvVar)
+bool PSql::setParameter(const CFString & connectionParameterRef, const CFString & overrideEnvVar)
 {
     if (!connInfo.isNull()) {
         logWarn("Changing the global DB connection parameters does not reconnect existing connections!");
     }
-    connInfo = QString();
+    connInfo = CFString();
 
-    const QString connectionParameter = overrideEnvVar.isEmpty() ? connectionParameterRef :
-        QProcessEnvironment::systemEnvironment().value(overrideEnvVar, connectionParameterRef);
+    CFString connectionParameter = connectionParameterRef;
+    if (!overrideEnvVar.isEmpty()) {
+        const char * envVal = getenv(overrideEnvVar.c_str());
+        if (envVal) connectionParameter = CFString(envVal);
+    }
 
     // try connect
-    PGconn * conn = PQconnectdb(connectionParameter.toUtf8().constData());
+    PGconn * conn = PQconnectdb(connectionParameter.c_str());
     if (PQstatus(conn) != CONNECTION_OK) {
         logWarn("cannot connect to database (error: %1)", PQerrorMessage(conn));
         PQfinish(conn);
@@ -175,7 +228,8 @@ bool PSql::setParameter(const QString & connectionParameterRef, const QString & 
     // query oids
     typeOids[PSql_null] = (Oid)0;
     for (Oid oid = PSql_null + 1 ; oid < PSql_lastEntry ; ++oid) {
-        PGresult * res = PQexec(conn, QByteArray("SELECT '") + PostgresTypeNames[oid] + "'::regtype::oid");
+        CFByteArray query = CFByteArray("SELECT '") + PostgresTypeNames[oid] + "'::regtype::oid";
+        PGresult * res = PQexec(conn, query.constData());
         if (PQresultStatus(res) != PGRES_TUPLES_OK) {
             logWarn("cannot get oids (error: %1)", PQerrorMessage(conn));
             PQclear(res);
@@ -190,7 +244,7 @@ bool PSql::setParameter(const QString & connectionParameterRef, const QString & 
             return false;
         }
 
-        typeOids[oid] = (Oid)QByteArray(PQgetvalue(res, 0, 0)).toUInt();
+        typeOids[oid] = (Oid)CFByteArray(PQgetvalue(res, 0, 0)).toUInt();
 
         PQclear(res);
     }
@@ -200,13 +254,13 @@ bool PSql::setParameter(const QString & connectionParameterRef, const QString & 
     if (!conninfo) {
         logWarn("cannot get connection info");
     } else {
-        QMap<QByteArray, QByteArray> vals;
+        CFMap<CFByteArray, CFByteArray> vals;
         for (PQconninfoOption * it = conninfo ; it->keyword != NULL ; ++it) {
-            if (it->val != NULL) vals[it->keyword] = it->val;
+            if (it->val != NULL) vals[CFByteArray(it->keyword)] = CFByteArray(it->val);
         }
         PQconninfoFree(conninfo);
 
-        logInfo("connected to psql://%1@%2:%3/%4", vals["user"], vals["host"], vals["port"], vals["dbname"]);
+        logInfo("connected to psql://%1@%2:%3/%4", vals[CFByteArray("user")], vals[CFByteArray("host")], vals[CFByteArray("port")], vals[CFByteArray("dbname")]);
     }
 
     PQfinish(conn);
@@ -215,20 +269,20 @@ bool PSql::setParameter(const QString & connectionParameterRef, const QString & 
     return true;
 }
 
-QString PSql::setDBName(const QString & connectionParameter, const QString & dbName)
+CFString PSql::setDBName(const CFString & connectionParameter, const CFString & dbName)
 {
     char * errMsg = 0;
-    PQconninfoOption * options = PQconninfoParse(connInfo.toUtf8().constData(), &errMsg);
+    PQconninfoOption * options = PQconninfoParse(connInfo.c_str(), &errMsg);
     if (!options) {
         logWarn("cannot parse connection parameter %1 (error: %2)", connectionParameter, errMsg);
         PQfreemem(errMsg);
-        return QString();
+        return CFString();
     }
 
-    QString newParams = QString("dbname=%1").arg(dbName);
+    CFString newParams = CFString("dbname=") + dbName;
     for (PQconninfoOption * it = options ; it->keyword != NULL ; ++it) {
-        if (it->val != NULL && QString(it->keyword) != "dbname") {
-            newParams += QString(" %1=%2").arg(it->keyword, it->val);
+        if (it->val != NULL && CFString(it->keyword) != "dbname") {
+            newParams += CFString(" ") + it->keyword + "=" + it->val;
         }
     }
 
@@ -238,17 +292,18 @@ QString PSql::setDBName(const QString & connectionParameter, const QString & dbN
 
 void PSql::closeThreadConnection()
 {
-    threadData_.setLocalData(nullptr);
+    delete threadData_;
+    threadData_ = nullptr;
 }
 
 PSql::PSql(const util::LogFileInfo * lfi, int line) :
-    PSql(threadData_.hasLocalData() ? *(threadData_.localData()) : (
-        threadData_.setLocalData(new ThreadData()), *(threadData_.localData())),
+    PSql(threadData_ ? *threadData_ : (
+        threadData_ = new ThreadData(), *threadData_),
         lfi ? *lfi : ::cflib_util_logFileInfo, line)
 {
 }
 
-PSql::PSql(const QString & connectionParameter) :
+PSql::PSql(const CFString & connectionParameter) :
     PSql(*(new ThreadData(connectionParameter, true)), ::cflib_util_logFileInfo, 0)
 {
 }
@@ -256,7 +311,7 @@ PSql::PSql(const QString & connectionParameter) :
 PSql::PSql(ThreadData & td, const util::LogFileInfo & lfi, int line) :
     td_(td),
     lfi_(lfi), line_(line),
-    instanceName_("i" + QByteArray::number(++td_.instanceCount)),
+    instanceName_("i" + CFByteArray::number((cfint64)(++td_.instanceCount))),
     nestedTransaction_(false),
     localTransactionActive_(false),
     isFirstResult_(true),
@@ -332,7 +387,7 @@ bool PSql::commit()
     }
 
     bool ok;
-    QElapsedTimer watch;
+    CFElapsedTimer watch;
     watch.start();
     PGresult * res = PQexec(td_.conn, "COMMIT");
     if (PQresultStatus(res) != PGRES_COMMAND_OK) {
@@ -347,8 +402,8 @@ bool PSql::commit()
     PQclear(res);
 
     // try again to remove prepared statements
-    for (const QByteArray & in : td_.preparedStatements) {
-        PQclear(PQexec(td_.conn, "DEALLOCATE " + in));
+    for (const CFByteArray & in : td_.preparedStatements) {
+        PQclear(PQexec(td_.conn, ("DEALLOCATE " + in).constData()));
     }
     td_.preparedStatements.clear();
 
@@ -380,8 +435,8 @@ void PSql::rollback()
     PQclear(res);
 
     // try again to remove prepared statements
-    for (const QByteArray & in : td_.preparedStatements) {
-        PQclear(PQexec(td_.conn, "DEALLOCATE " + in));
+    for (const CFByteArray & in : td_.preparedStatements) {
+        PQclear(PQexec(td_.conn, ("DEALLOCATE " + in).constData()));
     }
     td_.preparedStatements.clear();
 
@@ -389,7 +444,7 @@ void PSql::rollback()
     td_.transactionActive = false;
 }
 
-bool PSql::exec(const QString & query)
+bool PSql::exec(const CFString & query)
 {
     if (td_.doRollback) return false;
 
@@ -405,9 +460,9 @@ bool PSql::exec(const QString & query)
     return initResult();
 }
 
-bool PSql::execMultiple(const QString & query)
+bool PSql::execMultiple(const CFString & query)
 {
-    const QByteArray utf8 = query.toUtf8();
+    const CFByteArray utf8 = query.toUtf8();
     PGresult * res = PQexec(td_.conn, utf8.constData());
     if (PQresultStatus(res) != PGRES_TUPLES_OK && PQresultStatus(res) != PGRES_COMMAND_OK) {
         cflib::util::Log(lfi_, line_ ? line_ : __LINE__, LogCat::Debug | LogCat::Db)("query: %1", lastQuery_);
@@ -419,7 +474,7 @@ bool PSql::execMultiple(const QString & query)
     return true;
 }
 
-void PSql::prepare(const QByteArray & query)
+void PSql::prepare(const CFByteArray & query)
 {
     lastQuery_ = query;
     isPrepared_ = false;
@@ -427,7 +482,7 @@ void PSql::prepare(const QByteArray & query)
     prepareData_.clear();
 }
 
-bool PSql::exec(uint keepFields)
+bool PSql::exec(cfuint keepFields)
 {
     if (lastQuery_.isNull()) {
         cflib::util::Log(lfi_, line_ ? line_ : __LINE__, LogCat::Warn | LogCat::Db)(
@@ -463,7 +518,7 @@ bool PSql::exec(uint keepFields)
     }
 
     if (!PQsendQueryPrepared(td_.conn, instanceName_.constData(),
-        prepareParamCount_, prepareParamValues, prepareParamLengths_, ParamFormats.constData(), 1))
+        prepareParamCount_, prepareParamValues, prepareParamLengths_, ParamFormats, 1))
     {
         cflib::util::Log(lfi_, line_ ? line_ : __LINE__, LogCat::Debug | LogCat::Db)("query: %1", lastQuery_);
         cflib::util::Log(lfi_, line_ ? line_ : __LINE__, LogCat::Warn  | LogCat::Db)("cannot send query: %1", PQerrorMessage(td_.conn));
@@ -517,47 +572,47 @@ bool PSql::next()
 
 PSql & PSql::operator<<(float val)
 {
-    uchar * dest = setParamType(PSql_float, sizeof(float), false);
-    if (dest) qToBigEndian<quint32>(FloatInt{val}.i, dest);
+    cfuint8 * dest = setParamType(PSql_float, sizeof(float), false);
+    if (dest) writeBE32(dest, FloatInt{val}.i);
     return *this;
 }
 
 PSql & PSql::operator<<(double val)
 {
-    uchar * dest = setParamType(PSql_double, sizeof(double), false);
-    if (dest) qToBigEndian<quint64>(DoubleInt{val}.i, dest);
+    cfuint8 * dest = setParamType(PSql_double, sizeof(double), false);
+    if (dest) writeBE64(dest, DoubleInt{val}.i);
     return *this;
 }
 
-PSql & PSql::operator<<(const QDateTime & val)
+PSql & PSql::operator<<(const CFDateTime & val)
 {
     if (val.isNull()) {
         setParamType(PSql_timestampWithTimeZone, 0, true);
     } else {
-        uchar * dest = setParamType(PSql_timestampWithTimeZone, sizeof(qint64), false);
-        if (dest) qToBigEndian<qint64>((val.toMSecsSinceEpoch() + MsecDelta) * 1000, dest);
+        cfuint8 * dest = setParamType(PSql_timestampWithTimeZone, sizeof(cfint64), false);
+        if (dest) writeBE64(dest, (cfuint64)((val.toMSecsSinceEpoch() - MsecDelta) * 1000));
     }
     return *this;
 }
 
-PSql & PSql::operator<<(const QByteArray & val)
+PSql & PSql::operator<<(const CFByteArray & val)
 {
     if (val.isNull()) {
         setParamType(PSql_binary, 0, true);
     } else {
-        uchar * dest = setParamType(PSql_binary, val.size(), false);
+        cfuint8 * dest = setParamType(PSql_binary, val.size(), false);
         if (dest) memcpy(dest, val.constData(), val.size());
     }
     return *this;
 }
 
-PSql & PSql::operator<<(const QString & val)
+PSql & PSql::operator<<(const CFString & val)
 {
     if (val.isNull()) {
         setParamType(PSql_string, 0, true);
     } else {
-        const QByteArray utf8 = val.toUtf8();
-        uchar * dest = setParamType(PSql_string, utf8.size(), false);
+        const CFByteArray utf8 = val.toUtf8();
+        cfuint8 * dest = setParamType(PSql_string, utf8.size(), false);
         if (dest) memcpy(dest, utf8.constData(), utf8.size());
     }
     return *this;
@@ -568,8 +623,8 @@ PSql & PSql::operator<<(const char * val)
     if (!val) {
         setParamType(PSql_string, 0, true);
     } else {
-        uint len = qstrlen(val);
-        uchar * dest = setParamType(PSql_string, len, false);
+        cfuint len = strlen(val);
+        cfuint8 * dest = setParamType(PSql_string, len, false);
         if (dest) memcpy(dest, val, len);
     }
     return *this;
@@ -587,7 +642,7 @@ PSql & PSql::operator>>(float & val)
     if (!checkField(PSql_float, sizeof(float))) return *this;
     if (!lastFieldIsNull_) {
         FloatInt fi;
-        fi.i = qFromBigEndian<quint32>((const uchar *)PQgetvalue((PGresult *)res_, 0, currentFieldId_));
+        fi.i = readBE32((const cfuint8 *)PQgetvalue((PGresult *)res_, 0, currentFieldId_));
         val = fi.f;
     }
     ++currentFieldId_;
@@ -600,43 +655,42 @@ PSql & PSql::operator>>(double & val)
     if (!checkField(PSql_double, sizeof(double))) return *this;
     if (!lastFieldIsNull_) {
         DoubleInt di;
-        di.i = qFromBigEndian<quint64>((const uchar *)PQgetvalue((PGresult *)res_, 0, currentFieldId_));
+        di.i = readBE64((const cfuint8 *)PQgetvalue((PGresult *)res_, 0, currentFieldId_));
         val = di.d;
     }
     ++currentFieldId_;
     return *this;
 }
 
-PSql & PSql::operator>>(QDateTime & val)
+PSql & PSql::operator>>(CFDateTime & val)
 {
-    val = QDateTime();
-    if (!checkField(PSql_timestampWithTimeZone, sizeof(qint64))) return *this;
+    val = CFDateTime();
+    if (!checkField(PSql_timestampWithTimeZone, sizeof(cfint64))) return *this;
     if (!lastFieldIsNull_) {
-        qint64 rawTime = qFromBigEndian<qint64>((const uchar *)PQgetvalue((PGresult *)res_, 0, currentFieldId_));
-        val.setTimeSpec(Qt::UTC);
-        val.setMSecsSinceEpoch(rawTime / 1000 - MsecDelta);
+        cfint64 rawTime = (cfint64)readBE64((const cfuint8 *)PQgetvalue((PGresult *)res_, 0, currentFieldId_));
+        val = CFDateTime::fromMSecsSinceEpoch(rawTime / 1000 + MsecDelta);
     }
     ++currentFieldId_;
     return *this;
 }
 
-PSql & PSql::operator>>(QByteArray & val)
+PSql & PSql::operator>>(CFByteArray & val)
 {
-    val = QByteArray();
+    val = CFByteArray();
     if (!checkField(PSql_binary, 0)) return *this;
     if (!lastFieldIsNull_) {
-        val = QByteArray(PQgetvalue((PGresult *)res_, 0, currentFieldId_), PQgetlength((PGresult *)res_, 0, currentFieldId_));
+        val = CFByteArray(PQgetvalue((PGresult *)res_, 0, currentFieldId_), PQgetlength((PGresult *)res_, 0, currentFieldId_));
     }
     ++currentFieldId_;
     return *this;
 }
 
-PSql & PSql::operator>>(QString & val)
+PSql & PSql::operator>>(CFString & val)
 {
-    val = QString();
+    val = CFString();
     if (!checkField(PSql_string, 0)) return *this;
     if (!lastFieldIsNull_) {
-        val = QString::fromUtf8(PQgetvalue((PGresult *)res_, 0, currentFieldId_), PQgetlength((PGresult *)res_, 0, currentFieldId_));
+        val = CFString::fromUtf8(PQgetvalue((PGresult *)res_, 0, currentFieldId_), PQgetlength((PGresult *)res_, 0, currentFieldId_));
     }
     ++currentFieldId_;
     return *this;
@@ -649,7 +703,7 @@ PSql & PSql::operator>>(Null)
     return *this;
 }
 
-bool PSql::isNull(uint fieldId)
+bool PSql::isNull(cfuint fieldId)
 {
     currentFieldId_ = fieldId;
     return checkField(PSql_null, 0) && lastFieldIsNull_;
@@ -657,26 +711,26 @@ bool PSql::isNull(uint fieldId)
 
 void PSql::setBool(bool val)
 {
-    uchar * dest = setParamType(PSql_bool, 1, false);
+    cfuint8 * dest = setParamType(PSql_bool, 1, false);
     if (dest) *dest = val;
 }
 
-void PSql::setInt16(qint16 val)
+void PSql::setInt16(cfint16 val)
 {
-    uchar * dest = setParamType(PSql_int16, sizeof(qint16), false);
-    if (dest) qToBigEndian<qint16>(val, dest);
+    cfuint8 * dest = setParamType(PSql_int16, sizeof(cfint16), false);
+    if (dest) writeBE16(dest, (cfuint16)val);
 }
 
-void PSql::setInt32(qint32 val)
+void PSql::setInt32(cfint32 val)
 {
-    uchar * dest = setParamType(PSql_int32, sizeof(qint32), false);
-    if (dest) qToBigEndian<qint32>(val, dest);
+    cfuint8 * dest = setParamType(PSql_int32, sizeof(cfint32), false);
+    if (dest) writeBE32(dest, (cfuint32)val);
 }
 
-void PSql::setInt64(qint64 val)
+void PSql::setInt64(cfint64 val)
 {
-    uchar * dest = setParamType(PSql_int64, sizeof(qint64), false);
-    if (dest) qToBigEndian<qint64>(val, dest);
+    cfuint8 * dest = setParamType(PSql_int64, sizeof(cfint64), false);
+    if (dest) writeBE64(dest, (cfuint64)val);
 }
 
 void PSql::getBool(bool & val)
@@ -689,32 +743,32 @@ void PSql::getBool(bool & val)
     ++currentFieldId_;
 }
 
-void PSql::getInt16(qint16 & val)
+void PSql::getInt16(cfint16 & val)
 {
     val = 0;
-    if (!checkField(PSql_int16, sizeof(qint16))) return;
+    if (!checkField(PSql_int16, sizeof(cfint16))) return;
     if (!lastFieldIsNull_) {
-        val = qFromBigEndian<qint16>((const uchar *)PQgetvalue((PGresult *)res_, 0, currentFieldId_));
+        val = (cfint16)readBE16((const cfuint8 *)PQgetvalue((PGresult *)res_, 0, currentFieldId_));
     }
     ++currentFieldId_;
 }
 
-void PSql::getInt32(qint32 & val)
+void PSql::getInt32(cfint32 & val)
 {
     val = 0;
-    if (!checkField(PSql_int32, sizeof(qint32))) return;
+    if (!checkField(PSql_int32, sizeof(cfint32))) return;
     if (!lastFieldIsNull_) {
-        val = qFromBigEndian<qint32>((const uchar *)PQgetvalue((PGresult *)res_, 0, currentFieldId_));
+        val = (cfint32)readBE32((const cfuint8 *)PQgetvalue((PGresult *)res_, 0, currentFieldId_));
     }
     ++currentFieldId_;
 }
 
-void PSql::getInt64(qint64 & val)
+void PSql::getInt64(cfint64 & val)
 {
     val = 0;
-    if (!checkField(PSql_int64, sizeof(qint64))) return;
+    if (!checkField(PSql_int64, sizeof(cfint64))) return;
     if (!lastFieldIsNull_) {
-        val = qFromBigEndian<qint64>((const uchar *)PQgetvalue((PGresult *)res_, 0, currentFieldId_));
+        val = (cfint64)readBE64((const cfuint8 *)PQgetvalue((PGresult *)res_, 0, currentFieldId_));
     }
     ++currentFieldId_;
 }
@@ -792,7 +846,7 @@ bool PSql::checkField(int fieldType, int fieldSize)
     return true;
 }
 
-uchar * PSql::setParamType(int fieldType, int fieldSize, bool isNull)
+cfuint8 * PSql::setParamType(int fieldType, int fieldSize, bool isNull)
 {
     if (prepareParamCount_ >= MAX_FIELD_COUNT) {
         cflib::util::Log(lfi_, line_ ? line_ : __LINE__, LogCat::Warn | LogCat::Db)(
@@ -817,7 +871,7 @@ uchar * PSql::setParamType(int fieldType, int fieldSize, bool isNull)
 
     const int oldSize = prepareData_.size();
     prepareData_.resize(oldSize + fieldSize);
-    return (uchar *)prepareData_.constData() + oldSize;
+    return (cfuint8 *)prepareData_.constData() + oldSize;
 }
 
 void PSql::removePreparedStatement()
@@ -825,7 +879,7 @@ void PSql::removePreparedStatement()
     if (!prepareUsed_) return;
     prepareUsed_ = false;
 
-    PGresult * res = PQexec(td_.conn, "DEALLOCATE " + instanceName_);
+    PGresult * res = PQexec(td_.conn, ("DEALLOCATE " + instanceName_).constData());
     if (PQresultStatus(res) != PGRES_TUPLES_OK) {
         td_.preparedStatements << instanceName_;
     }
@@ -833,5 +887,3 @@ void PSql::removePreparedStatement()
 }
 
 }}    // namespace
-
-#include "psql.moc"

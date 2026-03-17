@@ -7,10 +7,16 @@
 
 #include "fileserver.h"
 
+#include <cflib/base/cffile.h>
 #include <cflib/crypt/util.h>
 #include <cflib/net/request.h>
 #include <cflib/util/log.h>
 #include <cflib/util/util.h>
+
+#include <dirent.h>
+#include <stack>
+#include <sys/stat.h>
+#include <unistd.h>
 
 USE_LOG(LogCat::Http)
 
@@ -18,17 +24,17 @@ namespace cflib { namespace net {
 
 namespace {
 
-QStringList splitParams(const QString & param)
+CFStringList splitParams(const CFString & param)
 {
-    QStringList retval;
+    CFStringList retval;
 
-    QString str;
+    CFString str;
     bool isStr = false;
     bool isEsc = false;
     int i = 0;
-    const QString p = param.simplified();
-    while (i < p.length()) {
-        const QChar c = p[i++];
+    const CFString p = param.simplified();
+    while (i < (int)p.length()) {
+        const char c = p[i++];
         if (isEsc) {
             isEsc = false;
             if      (c == '\\') str += '\\';
@@ -58,55 +64,87 @@ QStringList splitParams(const QString & param)
     return retval;
 }
 
-inline QString handleVars(const QString & expr, const QString & path, const QStringList & params)
+inline CFString handleVars(const CFString & expr, const CFString & path, const CFStringList & params)
 {
-    QString retval = expr.trimmed();
+    CFString retval = expr.trimmed();
     if (retval == "$path") retval = path;
     else if (retval[0] == '$') {
         bool ok;
         uint nr = retval.mid(1).toUInt(&ok) - 1;
-        if (ok && nr < (uint)params.length()) retval = params[nr];
+        if (ok && nr < (uint)params.size()) retval = params[nr];
         else retval.clear();
     }
     return retval;
 }
 
-inline void handleVars(QStringList & vars, const QString & path, const QStringList & params)
+inline void handleVars(CFStringList & vars, const CFString & path, const CFStringList & params)
 {
-    QMutableStringListIterator it(vars);
-    while (it.hasNext()) {
-        QString & var = it.next();
+    for (auto & var : vars) {
         var = handleVars(var, path, params);
     }
 }
 
-void writeHTMLFile(const QString & file, QString content)
+void writeHTMLFile(const CFString & file, CFString content)
 {
-    content
-        .replace(QRegularExpression("<!--.*?-->"), "")
-        .replace(QRegularExpression("^\\s+|\\s+$"), " ")
-        .replace(QRegularExpression("\\s+"), " ");
+    static const CFRegex commentRe("<!--.*?-->");
+    static const CFRegex trimRe("^\\s+|\\s+$");
+    static const CFRegex spaceRe("\\s+");
+    content = commentRe.replaceAll(content, "");
+    content = trimRe.replaceAll(content, " ");
+    content = spaceRe.replaceAll(content, " ");
 
-    QFile f(file);
-    f.open(QFile::WriteOnly | QFile::Truncate);
-    f.write(content.toUtf8());
+    cflib::util::writeFile(file, content.toUtf8());
+}
+
+// Check if path is a directory
+inline bool isDirectory(const CFString & path) {
+    struct stat st;
+    return stat(path.c_str(), &st) == 0 && S_ISDIR(st.st_mode);
+}
+
+// Check if a file is readable
+inline bool isReadable(const CFString & path) {
+    return access(path.c_str(), R_OK) == 0;
+}
+
+// Get canonical path
+inline CFString canonicalPath(const CFString & path) {
+    char * real = realpath(path.c_str(), nullptr);
+    if (!real) return path;
+    CFString result(real);
+    free(real);
+    return result;
+}
+
+// Get directory part of path
+inline CFString dirName(const CFString & path) {
+    cfsize_t pos = path.lastIndexOf("/");
+    if (pos < 0) return ".";
+    return path.left(pos);
+}
+
+// Get filename from path
+inline CFString fileName(const CFString & path) {
+    cfsize_t pos = path.lastIndexOf("/");
+    if (pos < 0) return path;
+    return path.mid(pos + 1);
 }
 
 }
 
 // ============================================================================
 
-FileServer::FileServer(const QString & path, bool parseHtml, uint threadCount, bool enableIndex, bool noCache, bool removeSlash, bool useHostAsDir) :
-    FileServer(path, QString(), parseHtml, threadCount, enableIndex, noCache, removeSlash, useHostAsDir)
+FileServer::FileServer(const CFString & path, bool parseHtml, uint threadCount, bool enableIndex, bool noCache, bool removeSlash, bool useHostAsDir) :
+    FileServer(path, CFString(), parseHtml, threadCount, enableIndex, noCache, removeSlash, useHostAsDir)
 {
 }
 
-FileServer::FileServer(const QString & path, const char * prefix, bool parseHtml, uint threadCount, bool enableIndex, bool noCache, bool removeSlash, bool useHostAsDir) :
-    FileServer(path, QString(prefix), parseHtml, threadCount, enableIndex, noCache, removeSlash, useHostAsDir)
+FileServer::FileServer(const CFString & path, const char * prefix, bool parseHtml, uint threadCount, bool enableIndex, bool noCache, bool removeSlash, bool useHostAsDir) :
+    FileServer(path, CFString(prefix), parseHtml, threadCount, enableIndex, noCache, removeSlash, useHostAsDir)
 {
 }
 
-FileServer::FileServer(const QString & path, const QString & prefix, bool parseHtml, uint threadCount, bool enableIndex, bool noCache, bool removeSlash, bool useHostAsDir) :
+FileServer::FileServer(const CFString & path, const CFString & prefix, bool parseHtml, uint threadCount, bool enableIndex, bool noCache, bool removeSlash, bool useHostAsDir) :
     ThreadVerify("FileServer", Worker, threadCount),
     path_(path),
     prefix_(prefix),
@@ -127,47 +165,50 @@ FileServer::~FileServer()
     stopVerifyThread();
 }
 
-void FileServer::exportTo(const QString & dest) const
+void FileServer::exportTo(const CFString & dest) const
 {
     exportDir(path_, "/", dest);
 }
 
-void FileServer::add404File(const QRegularExpression & re, const QString & dest)
+void FileServer::add404File(const CFRegex & re, const CFString & dest)
 {
-    redirects404_ << qMakePair(re, dest);
+    redirects404_ << CFPair<CFRegex, CFString>(re, dest);
 }
 
 void FileServer::handleRequest(const Request & request)
 {
     if (!verifyThreadCall(&FileServer::handleRequest, request)) return;
 
-    QString path = request.getUri();
+    CFString path = request.getUri();
 
     // Is it for us?
     if (!prefix_.isEmpty()) {
         if (!path.startsWith(prefix_)) return;
 
         // remove trailing slash
-        if (removeSlash_ && path.endsWith('/')) { request.sendRedirect(path.left(path.length() - 1).toUtf8()); return; }
+        if (removeSlash_ && path.endsWith("/")) { request.sendRedirect(path.left(path.length() - 1).toUtf8()); return; }
 
         path.remove(0, prefix_.length());
         if (path.isEmpty()) path += '/';
     } else {
         // remove trailing slash
-        if (removeSlash_ && path.length() > 1 && path.endsWith('/')) { request.sendRedirect(path.left(path.length() - 1).toUtf8()); return; }
+        if (removeSlash_ && path.length() > 1 && path.endsWith("/")) { request.sendRedirect(path.left(path.length() - 1).toUtf8()); return; }
     }
 
-    if (!accessControlAllowOrigin_.isNull()) request.addHeaderLine("Access-Control-Allow-Origin: " << accessControlAllowOrigin_);
+    if (!accessControlAllowOrigin_.isNull()) {
+        CFByteArray acoLine = "Access-Control-Allow-Origin: ";
+        acoLine << accessControlAllowOrigin_;
+        request.addHeaderLine(acoLine);
+    }
 
     // check eTag
     if (!noCache_ && request.getHeader("if-none-match") == eTag_) {
-        request.sendRaw(
-            "HTTP/1.1 304 Not Modified\r\n"
-            << request.defaultHeaders() <<
-            "Cache-Control: no-cache\r\n"
-            "ETag: " << eTag_ << "\r\n"
-            "Content-Type: text/html; charset=utf-8\r\n",
-
+        CFByteArray hdr = "HTTP/1.1 304 Not Modified\r\n";
+        hdr << request.defaultHeaders()
+            << "Cache-Control: no-cache\r\n"
+               "ETag: " << eTag_ << "\r\n"
+               "Content-Type: text/html; charset=utf-8\r\n";
+        request.sendRaw(hdr,
             "<html>\r\n"
             "<head><title>304 - Not Modified</title></head>\r\n"
             "<body>\r\n"
@@ -179,7 +220,7 @@ void FileServer::handleRequest(const Request & request)
     }
 
     // check path for valid chars
-    QRegularExpressionMatch reMatch = pathRE_.match(path);
+    CFRegex::MatchResult reMatch = pathRE_.matchResult(path);
     if (!reMatch.hasMatch()) {
         logInfo("invalid path: %1", path);
         return;
@@ -194,35 +235,39 @@ void FileServer::handleRequest(const Request & request)
     if (parseHtml_ && path.endsWith("/index_part.html")) {
         isPart = true;
         path.remove(path.length() - 16, 16);
-        if (path.isEmpty()) path = '/';
+        if (path.isEmpty()) path = "/";
     }
 
-    QString fullPath = path_;
+    CFString fullPath = path_;
     if (useHostAsDir_) {
         fullPath += '/';
         fullPath += request.getHeader("host");
     }
     fullPath += path;
-    QFileInfo fi(fullPath);
-    if (fi.isDir()) {
+
+    bool fileIsDir = isDirectory(fullPath);
+    if (fileIsDir) {
         if (enableIndex_) {
             request.addHeaderLine("Cache-Control: no-cache");
             if (request.isHEAD()) request.sendText("");
-            else                  request.sendText(createIndex(fi.canonicalFilePath(), path));
+            else                  request.sendText(createIndex(canonicalPath(fullPath), path));
             return;
         }
-        fi.setFile(fullPath + "/index.html");
+        fullPath += "/index.html";
     }
 
+    bool fileReadable = isReadable(fullPath);
+
     // check for redirects
-    if (!fi.isReadable()) {
+    if (!fileReadable) {
         bool wasRedirect = false;
-        const QString origPath = request.getUri();
-        foreach (const Redirect & rd, redirects404_) {
-            if (rd.first.match(origPath).hasMatch()) {
+        const CFString origPath = request.getUri();
+        for (const auto & rd : redirects404_) {
+            if (rd.first.match(origPath)) {
                 isPart = false;
-                fi.setFile(path_ + rd.second);
-                if (fi.isReadable()) wasRedirect = true;
+                fullPath = path_ + rd.second;
+                fileReadable = isReadable(fullPath);
+                if (fileReadable) wasRedirect = true;
                 break;
             }
         }
@@ -232,19 +277,19 @@ void FileServer::handleRequest(const Request & request)
         }
     }
 
-    fullPath = fi.canonicalFilePath();
+    fullPath = canonicalPath(fullPath);
 
     // parse html files
     if (fullPath.endsWith(".html")) {
         request.addHeaderLine("Cache-Control: no-cache");
-        if (!noCache_) request.addHeaderLine("ETag: " << eTag_);
+        if (!noCache_) { CFByteArray el = "ETag: "; el << eTag_; request.addHeaderLine(el); }
         if (request.isHEAD()) request.sendText("");
         else if (parseHtml_)  request.sendText(parseHtml(fullPath, isPart, path));
-        else                  request.sendText(util::readFile(fullPath));
+        else                  request.sendText(CFString(util::readFile(fullPath)));
         return;
     }
 
-    QByteArray replyData;
+    CFByteArray replyData;
     if (!request.isHEAD()) {
         if (parseHtml_ && (
             fullPath.endsWith(".css") ||
@@ -260,10 +305,10 @@ void FileServer::handleRequest(const Request & request)
     // deliver static content
     bool cache = true;
     bool compression = false;
-    QByteArray contentType = "application/octet-stream";
-    const QRegularExpressionMatch match = endingRE_.match(path);
+    CFByteArray contentType = "application/octet-stream";
+    const CFRegex::MatchResult match = endingRE_.matchResult(path);
     if (match.hasMatch()) {
-        const QString ending = match.captured(1);
+        const CFString ending = match.captured(1);
              if (ending == "htm" ) { cache = false; compression = true;  contentType = "text/html; charset=utf-8"; }
         else if (ending == "txt" ) { cache = false; compression = true;  contentType = "text/plain"; }
         else if (ending == "ico" ) { cache = true;  compression = false; contentType = "image/x-icon"; }
@@ -285,76 +330,97 @@ void FileServer::handleRequest(const Request & request)
         request.addHeaderLine("Cache-Control: max-age=31536000");
     } else {
         request.addHeaderLine("Cache-Control: no-cache");
-        if (!noCache_) request.addHeaderLine("ETag: " << eTag_);
+        if (!noCache_) { CFByteArray el = "ETag: "; el << eTag_; request.addHeaderLine(el); }
     }
     if (request.isHEAD()) request.sendReply("", contentType);
     else                  request.sendReply(replyData, contentType, compression);
 }
 
-QString FileServer::parseHtml(const QString & fullPath, bool isPart, const QString & path,
-    const QStringList & params) const
+CFString FileServer::parseHtml(const CFString & fullPath, bool isPart, const CFString & path,
+    const CFStringList & params) const
 {
-    logFunctionTraceParam("FileServer::parseHtml(%1, %2, %3, (%4))", fullPath, isPart, path, params.join(','));
+    logFunctionTraceParam("FileServer::parseHtml(%1, %2, %3, (%4))", fullPath, isPart, path, cfJoin(params, ','));
 
-    QString retval;
-    QString html = util::readTextfile(fullPath);
-    QStack<bool> ifStack;
-    QRegularExpressionMatch m;
-    while ((m = elementRE_.match(html)).hasMatch()) {
+    CFString retval;
+    CFString html = util::readTextfile(fullPath);
+    std::stack<bool> ifStack;
+    CFRegex::MatchResult m;
+    while ((m = elementRE_.matchResult(html)).hasMatch()) {
         int pos = m.capturedStart();
-        const bool skip = !ifStack.isEmpty() && !ifStack.top();
+        const bool skip = !ifStack.empty() && !ifStack.top();
         if (!skip) retval += html.left(pos);
         pos += m.capturedLength();
         html.remove(0, pos);
 
-        const QString cmd   = m.captured(1);
-        const QString param = m.captured(2);
+        const CFString cmd   = m.captured(1);
+        const CFString param = m.captured(2);
 
         if (cmd == "inc ") {
             if (skip) continue;
-            QStringList incParams = splitParams(param);
+            CFStringList incParams = splitParams(param);
             handleVars(incParams, path, params);
-            if (incParams.isEmpty()) continue;
-            QString inc = incParams.takeFirst();
+            if (incParams.empty()) continue;
+            CFString inc = cfTakeFirst(incParams);
             if (inc == "nopart") {
                 if (isPart) continue;
-                if (incParams.isEmpty()) continue;
-                inc = incParams.takeFirst();
+                if (incParams.empty()) continue;
+                inc = cfTakeFirst(incParams);
             }
             if (inc.indexOf('/') == 0) inc = path_ + inc;
-            else                       inc = QFileInfo(fullPath).canonicalPath() + '/' + inc;
+            else                       inc = dirName(canonicalPath(fullPath)) + "/" + inc;
             retval += parseHtml(inc, isPart, path, incParams);
         } else if (cmd == "$") {
             if (skip) continue;
-            retval += handleVars('$' + param.trimmed(), path, params);
+            retval += handleVars(CFString("$") + param.trimmed(), path, params);
         } else if (cmd == "etag") {
             if (skip) continue;
             retval += eTag_;
         } else if (cmd == "importmap") {
             if (skip) continue;
             retval += "<script type=\"importmap\">{\"imports\":{";
-            QDirIterator it(path_, {"*.mjs"}, QDir::NoFilter, QDirIterator::Subdirectories | QDirIterator::FollowSymlinks);
+            // Walk directory tree for .mjs files
+            std::function<void(const CFString &)> walkMjs;
             const int len = path_.length() + 1;
-            const QString suffix = '?' + eTag_ + '"';
+            const CFString suffix = CFString("?") + eTag_ + "\"";
             bool isFirst = true;
-            while (it.hasNext()) {
-                const QString file = it.next().mid(len);
-                if (isFirst) isFirst = false;
-                else retval += ',';
-                retval << "\"/" << file << "\":\"./" << file << suffix;
-            }
+            walkMjs = [&](const CFString & dir) {
+                DIR * d = opendir(dir.c_str());
+                if (!d) return;
+                struct dirent * ent;
+                while ((ent = readdir(d)) != nullptr) {
+                    CFString name(ent->d_name);
+                    if (name == "." || name == "..") continue;
+                    CFString full = dir + "/" + name;
+                    struct stat st;
+                    if (stat(full.c_str(), &st) != 0) continue;
+                    if (S_ISDIR(st.st_mode)) {
+                        walkMjs(full);
+                    } else if (name.endsWith(".mjs")) {
+                        CFString file = full.mid(len);
+                        if (isFirst) isFirst = false;
+                        else retval += ',';
+                        retval += "\"/";
+                        retval += file;
+                        retval += "\":\"./";
+                        retval += file;
+                        retval += suffix;
+                    }
+                }
+                closedir(d);
+            };
+            walkMjs(path_);
             retval += "}}</script>";
         } else if (cmd == "if ") {
-            QStringList cond = splitParams(param);
-            if (cond.size() != 3) {
+            CFStringList cond = splitParams(param);
+            if ((int)cond.size() != 3) {
                 ifStack.push(false);
                 continue;
             }
             handleVars(cond, path, params);
 
-            const QString & lhs = cond[0];
-            const QString & cmp = cond[1];
-            const QString & rhs = cond[2];
+            const CFString & lhs = cond[0];
+            const CFString & cmp = cond[1];
+            const CFString & rhs = cond[2];
 
             bool eval = false;
             if (cmp == "==") {
@@ -387,68 +453,84 @@ QString FileServer::parseHtml(const QString & fullPath, bool isPart, const QStri
     return retval;
 }
 
-void FileServer::exportDir(const QString & fullPath, const QString & path, const QString & dest) const
+void FileServer::exportDir(const CFString & fullPath, const CFString & path, const CFString & dest) const
 {
     if (path == "/include") return;
 
-    foreach (const QFileInfo & info, QDir(fullPath).entryInfoList(QDir::Files)) {
-        const QString fileName = info.fileName();
-        const QString filePath = info.canonicalFilePath();
-        QDir().mkpath(dest);
-        if (fileName == "index.html") {
-            writeHTMLFile(dest + "/index.html",      parseHtml(filePath, false, path));
-            writeHTMLFile(dest + "/index_part.html", parseHtml(filePath, true,  path));
-        } else if (fileName == "404.html") {
-            writeHTMLFile(dest + "/404.html",        parseHtml(filePath, false, path));
-        } else if (fileName.endsWith(".css")) {
-            QString out = parseHtml(filePath, false, path);
-            out.replace(QRegularExpression("(@import url\\(\".*?)\\?" + eTag_), "\\1");
-            QFile f(dest + '/' + fileName);
-            f.open(QFile::WriteOnly | QFile::Truncate);
-            f.write(out.toUtf8());
-        } else {
-            const QString destFile = dest + '/' + fileName;
-            QFile::remove(destFile);
-            QFile::copy(filePath, destFile);
+    DIR * d = opendir(fullPath.c_str());
+    if (!d) return;
+
+    // Create destination directory
+    cflib::util::mkPath(dest);
+
+    struct dirent * ent;
+    while ((ent = readdir(d)) != nullptr) {
+        CFString name(ent->d_name);
+        if (name == "." || name == "..") continue;
+        CFString filePath = canonicalPath(fullPath + "/" + name);
+        struct stat st;
+        if (stat(filePath.c_str(), &st) != 0) continue;
+
+        if (S_ISREG(st.st_mode)) {
+            if (name == "index.html") {
+                writeHTMLFile(dest + "/index.html",      parseHtml(filePath, false, path));
+                writeHTMLFile(dest + "/index_part.html", parseHtml(filePath, true,  path));
+            } else if (name == "404.html") {
+                writeHTMLFile(dest + "/404.html",        parseHtml(filePath, false, path));
+            } else if (CFString(name).endsWith(".css")) {
+                CFString out = parseHtml(filePath, false, path);
+                { CFRegex importRe(CFString("(@import url\\(\".*?)\\?") + CFString(eTag_)); out = importRe.replace(out, "$1"); }
+                cflib::util::writeFile(dest + "/" + name, out.toUtf8());
+            } else {
+                cflib::util::copyFile(filePath, dest + "/" + name);
+            }
         }
     }
+    closedir(d);
 
-    QString p = path;
+    // Process subdirectories
+    d = opendir(fullPath.c_str());
+    if (!d) return;
+    CFString p = path;
     if (path.length() > 1) p += '/';
-    foreach (const QFileInfo & info, QDir(fullPath).entryInfoList(QDir::Dirs | QDir::NoDotAndDotDot)) {
-        exportDir(info.canonicalFilePath(), p + info.fileName(), dest + '/' + info.fileName());
+    while ((ent = readdir(d)) != nullptr) {
+        CFString name(ent->d_name);
+        if (name == "." || name == "..") continue;
+        CFString subPath = fullPath + "/" + name;
+        struct stat st;
+        if (stat(subPath.c_str(), &st) != 0) continue;
+        if (S_ISDIR(st.st_mode)) {
+            exportDir(canonicalPath(subPath), p + name, dest + "/" + name);
+        }
     }
+    closedir(d);
 }
 
-QString FileServer::createIndex(const QString & fullPath, const QString & path)
+CFString FileServer::createIndex(const CFString & fullPath, const CFString & path)
 {
-    QString html;
+    CFString html;
     html << "<!DOCTYPE html>\r\n<html><head></head>\r\n<body>\r\n";
 
-    QString backJumpPath;
-    QString pathStart;
+    CFString backJumpPath;
+    CFString pathStart;
     if (!removeSlash_) {
         if (path != "/") {
-            int pos = path.lastIndexOf('/');
+            int pos = path.lastIndexOf("/");
             backJumpPath = prefix_ + path.left(pos);
         }
-        pathStart = prefix_ + path + (path.endsWith('/') ? "" : "/");
+        pathStart = prefix_ + path + (path.endsWith("/") ? "" : "/");
 
     } else {
         // remove slash mode - create relative paths
-        const QString lastPartOfPrefix = prefix_.split("/").last();
-        const QStringList pathSplitted = path.split("/");
+        const CFString lastPartOfPrefix = cfLast(prefix_.split("/"));
+        const CFStringList pathSplitted = path.split("/");
         if (path != "/") { // subdir
-            // for the backjump path we must go two levels back and one forth
-            // example:
-            // /devlog/data1       -> ../devlog        (go to root -> subdir "data1")
-            // /devlog/data1/data2 -> ../data1/data2   (go to devlog -> subdir "data1")
-            if (pathSplitted.size() >= 3) { // subdir level 2 or greater
+            if ((int)pathSplitted.size() >= 3) { // subdir level 2 or greater
                 backJumpPath = "../" + pathSplitted[pathSplitted.size() - 2];
             } else { // first subdir level
                 backJumpPath = "../" + lastPartOfPrefix;
             }
-            pathStart = pathSplitted.last() + "/";
+            pathStart = cfLast(pathSplitted) + "/";
         } else {
             pathStart = lastPartOfPrefix + "/";
         }
@@ -458,10 +540,31 @@ QString FileServer::createIndex(const QString & fullPath, const QString & path)
         html << "<a href=\"" << backJumpPath << "\">..</a><br>\r\n";
     }
 
-    for (const QString & entry : QDir(fullPath).entryList(
-            QDir::Dirs | QDir::Files | QDir::NoDotAndDotDot,
-            QDir::Name | QDir::DirsFirst | QDir::IgnoreCase)) {
-        html << "<a href=\"" << pathStart << entry << "\">" << entry << "</a><br>\r\n";
+    // List directory entries
+    DIR * d = opendir(fullPath.c_str());
+    if (d) {
+        // Collect entries, then sort
+        CFStringList dirs, files;
+        struct dirent * ent;
+        while ((ent = readdir(d)) != nullptr) {
+            CFString name(ent->d_name);
+            if (name == "." || name == "..") continue;
+            struct stat st;
+            CFString full = fullPath + "/" + name;
+            if (stat(full.c_str(), &st) != 0) continue;
+            if (S_ISDIR(st.st_mode)) dirs.push_back(name);
+            else files.push_back(name);
+        }
+        closedir(d);
+
+        cfSort(dirs);
+        cfSort(files);
+        for (const auto & entry : dirs) {
+            html << "<a href=\"" << pathStart << entry << "\">" << entry << "</a><br>\r\n";
+        }
+        for (const auto & entry : files) {
+            html << "<a href=\"" << pathStart << entry << "\">" << entry << "</a><br>\r\n";
+        }
     }
 
     html << "</body></html>";

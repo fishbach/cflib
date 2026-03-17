@@ -7,6 +7,7 @@
 
 #include "dns.h"
 
+#include <cflib/base/cfregex.h>
 #include <cflib/util/log.h>
 
 #include <arpa/inet.h>
@@ -20,42 +21,44 @@ namespace cflib { namespace net {
 
 namespace {
 
-const QRegularExpression ipRe("^(?:\\d+\\.\\d+\\.\\d+\\.\\d+|[:0-9A-Fa-f]+)$");
+const CFRegex ipRe("^(?:\\d+\\.\\d+\\.\\d+\\.\\d+|[:0-9A-Fa-f]+)$");
 
 }
 
-QList<QByteArray> getIPFromDNS(const QByteArray & name, bool preferIPv6)
+CFList<CFByteArray> getIPFromDNS(const CFByteArray & name, bool preferIPv6)
 {
-    if (ipRe.match(name).hasMatch()) {
+    if (ipRe.match(name)) {
         logTrace("getIPFromDNS(\"%1\", %2) -> %1", name, preferIPv6);
-        return QList<QByteArray>() << name;
+        CFList<CFByteArray> rv;
+        rv.push_back(name);
+        return rv;
     }
 
     struct addrinfo * res;
     int err = getaddrinfo(name.constData(), 0, 0, &res);
     if (err != 0) {
         logWarn("getaddrinfo failed with error: %1", err);
-        return QList<QByteArray>();
+        return CFList<CFByteArray>();
     }
 
-    QSet<QByteArray> ipv4;
-    QSet<QByteArray> ipv6;
+    CFSet<CFByteArray> ipv4;
+    CFSet<CFByteArray> ipv6;
     for ( ; res ; res = res->ai_next) {
         char ip[40];
         if (res->ai_family == AF_INET) {
             inet_ntop(AF_INET, &((struct sockaddr_in *)res->ai_addr)->sin_addr, ip, sizeof(ip));
-            ipv4 << ip;
+            ipv4.insert(CFByteArray(ip));
         } else if (res->ai_family == AF_INET6) {
             inet_ntop(AF_INET6, &((struct sockaddr_in6 *)res->ai_addr)->sin6_addr, ip, sizeof(ip));
-            ipv6 << ip;
+            ipv6.insert(CFByteArray(ip));
         }
     }
 
     freeaddrinfo(res);
 
-    QList<QByteArray> rv = ipv4.isEmpty() || (preferIPv6 && !ipv6.isEmpty()) ? ipv6.values() : ipv4.values();
+    CFList<CFByteArray> rv = ipv4.empty() || (preferIPv6 && !ipv6.empty()) ? cfSetValues(ipv6) : cfSetValues(ipv4);
     std::sort(rv.begin(), rv.end());
-    logTrace("getIPFromDNS(\"%1\", %2) -> %3", name, preferIPv6, rv.join(' '));
+    logTrace("getIPFromDNS(\"%1\", %2) -> %3", name, preferIPv6, cfJoin(rv, ' '));
     return rv;
 }
 

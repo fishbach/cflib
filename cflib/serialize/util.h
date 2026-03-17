@@ -16,27 +16,27 @@ namespace cflib { namespace serialize {
 // returns -1 if not enough data available
 // returns -2 if length is undefined (one byte: 0x80)
 // returns -3 if too big length was found (max TLV size is 2^32 - 1)
-inline qint32 getTLVLength(const QByteArray & data, quint64 & tagNo, int & tagLen, int & lengthSize)
+inline cfint32 getTLVLength(const CFByteArray & data, cfuint64 & tagNo, int & tagLen, int & lengthSize)
 {
-    const qint64 valueLen = impl::decodeTLV((const quint8 *)data.constData(), data.size(), tagNo, tagLen, lengthSize);
+    const cfint64 valueLen = impl::decodeTLV((const cfuint8 *)data.constData(), data.size(), tagNo, tagLen, lengthSize);
     if (valueLen < 0) return valueLen;
-    if (valueLen > Q_INT64_C(0x7FFFFFFF) - tagLen - lengthSize) return -3;
-    if (data.size() < tagLen + lengthSize + valueLen) return -1;
+    if (valueLen > (cfint64)0x7FFFFFFF - tagLen - lengthSize) return -3;
+    if ((cfint64)data.size() < tagLen + lengthSize + valueLen) return -1;
     return valueLen;
 }
 
-inline QByteArray emptyTag(quint64 tagNo)
+inline CFByteArray emptyTag(cfuint64 tagNo)
 {
-    const quint8 tagLen = impl::calcTagLen(tagNo);
-    QByteArray rv(tagLen + 1, '\0');
-    impl::writeTagBytes((quint8 *)rv.constData(), tagNo, false, tagLen);
+    const cfuint8 tagLen = impl::calcTagLen(tagNo);
+    CFByteArray rv(tagLen + 1, '\0');
+    impl::writeTagBytes((cfuint8 *)rv.data(), tagNo, false, tagLen);
     return rv;
 }
 
 template<typename T>
-inline QByteArray toByteArray(const T & v, quint64 tagNo = 1)
+inline CFByteArray toByteArray(const T & v, cfuint64 tagNo = 1)
 {
-    QByteArray rv;
+    CFByteArray rv;
     impl::BERSerializerBase * dummy = 0;
     impl::serializeBER(v, tagNo, rv, *dummy);
     return rv;
@@ -55,28 +55,28 @@ inline void someToByteArray(BERSerializer & ser, uint start, uint count, P... p)
 }
 
 template<typename T>
-inline T fromByteArray(const QByteArray & data, int tagLen, int lengthSize, qint32 valueLen)
+inline T fromByteArray(const CFByteArray & data, int tagLen, int lengthSize, cfint32 valueLen)
 {
     if (valueLen == 0 && lengthSize == 2) return T();
     T retval;
     impl::BERDeserializerBase * dummy = 0;
-    impl::deserializeBER(retval, (const quint8 *)data.constData() + tagLen + lengthSize, valueLen, *dummy);
+    impl::deserializeBER(retval, (const cfuint8 *)data.constData() + tagLen + lengthSize, valueLen, *dummy);
     return retval;
 }
 
 template<typename T>
-inline T fromByteArray(const QByteArray & data)
+inline T fromByteArray(const CFByteArray & data)
 {
-    quint64 tag = 0;
+    cfuint64 tag = 0;
     int tagLen = 0;
     int lengthSize = 0;
-    const qint64 valueLen = getTLVLength(data, tag, tagLen, lengthSize);
+    const cfint64 valueLen = getTLVLength(data, tag, tagLen, lengthSize);
     if (valueLen < 0) return T();
 
     if (valueLen == 0 && lengthSize == 2) return T();
     T retval;
     impl::BERDeserializerBase * dummy = 0;
-    impl::deserializeBER(retval, (const quint8 *)data.constData() + tagLen + lengthSize, valueLen, *dummy);
+    impl::deserializeBER(retval, (const cfuint8 *)data.constData() + tagLen + lengthSize, valueLen, *dummy);
     return retval;
 }
 

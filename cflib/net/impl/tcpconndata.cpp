@@ -17,7 +17,7 @@ USE_LOG(LogCat::Network)
 namespace cflib { namespace net {
 
 TCPConnData::TCPConnData(impl::TCPManagerImpl & impl,
-    int socket, const char * peerIP, quint16 peerPort,
+    int socket, const char * peerIP, cfuint16 peerPort,
     crypt::TLSStream * tlsStream, uint tlsThreadId)
 :
     impl(impl), conn(0),
@@ -33,7 +33,7 @@ TCPConnData::TCPConnData(impl::TCPManagerImpl & impl,
     writeWatcher->data = this;
 
     if (tlsStream) {
-        const QByteArray data = tlsStream->initialSend();
+        const CFByteArray data = tlsStream->initialSend();
         if (!data.isEmpty()) impl.writeToSocket(this, data, false);
     }
 }

@@ -7,23 +7,58 @@
 
 #pragma once
 
-#include <QtCore>
+#include <cflib/base/cfbytearray.h>
+#include <cflib/base/types.h>
+
+#include <bit>
+#include <cstring>
+
+namespace
+{
+
+// Byte-swap helpers (replacing cfToBigEndian/cfFromBigEndian)
+template<typename T>
+inline void cfToBigEndian(T val, cfuint8 * dest) {
+    // Convert to big-endian and write to dest
+    if constexpr (std::endian::native == std::endian::little) {
+        cfuint8 * src = reinterpret_cast<cfuint8 *>(&val);
+        for (int i = 0; i < (int)sizeof(T); ++i)
+            dest[i] = src[sizeof(T) - 1 - i];
+    } else {
+        std::memcpy(dest, &val, sizeof(T));
+    }
+}
+
+template<typename T>
+inline T cfFromBigEndian(const cfuint8 * src) {
+    T val;
+    if constexpr (std::endian::native == std::endian::little) {
+        cfuint8 * dest = reinterpret_cast<cfuint8 *>(&val);
+        for (int i = 0; i < (int)sizeof(T); ++i)
+            dest[i] = src[sizeof(T) - 1 - i];
+    } else {
+        std::memcpy(&val, src, sizeof(T));
+    }
+    return val;
+}
+
+}
 
 namespace cflib { namespace net { namespace impl {
 
-class KafkaString : public QByteArray
+class KafkaString : public CFByteArray
 {
 public:
     inline KafkaString() {}
-    inline KafkaString(const char * data, int size = -1) : QByteArray(data, size) {}
-    inline KafkaString(int size, char c) : QByteArray(size, c) {}
-    inline KafkaString(const QByteArray & other) : QByteArray(other) {}
+    inline KafkaString(const char * data, int size = -1) : CFByteArray(data, size) {}
+    inline KafkaString(int size, char c) : CFByteArray(size, c) {}
+    inline KafkaString(const CFByteArray & other) : CFByteArray(other) {}
 };
 
 class KafkaRawWriter
 {
 public:
-    KafkaRawWriter(quint32 expectedSize = 0)
+    KafkaRawWriter(cfuint32 expectedSize = 0)
     {
         data_.reserve(4 + expectedSize);
         data_.resize(4);
@@ -34,20 +69,20 @@ public:
         data_.resize(4);
     }
 
-    inline QByteArray getData()
+    inline CFByteArray getData()
     {
-        qToBigEndian<qint32>(data_.size() - 4, (uchar *)data_.constData());
+        cfToBigEndian<cfint32>(data_.size() - 4, (cfuint8 *)data_.constData());
         return data_;
     }
 
-    inline void expectMoreBytes(quint32 count)
+    inline void expectMoreBytes(cfuint32 count)
     {
         data_.reserve(data_.size() + count);
     }
 
-    inline uchar * getCurrentRawData()
+    inline cfuint8 * getCurrentRawData()
     {
-        return (uchar *)data_.constData();
+        return (cfuint8 *)data_.data();
     }
 
     inline int getCurrentSize()
@@ -55,19 +90,19 @@ public:
         return data_.size();
     }
 
-    inline QByteArray getRawContent()
+    inline CFByteArray getRawContent()
     {
         return data_.mid(4);
     }
 
 private:
-    QByteArray data_;
+    CFByteArray data_;
 
-    friend KafkaRawWriter & operator<<(KafkaRawWriter & out, qint8               val);
-    friend KafkaRawWriter & operator<<(KafkaRawWriter & out, qint16              val);
-    friend KafkaRawWriter & operator<<(KafkaRawWriter & out, qint32              val);
-    friend KafkaRawWriter & operator<<(KafkaRawWriter & out, qint64              val);
-    friend KafkaRawWriter & operator<<(KafkaRawWriter & out, const QByteArray  & val);
+    friend KafkaRawWriter & operator<<(KafkaRawWriter & out, cfint8               val);
+    friend KafkaRawWriter & operator<<(KafkaRawWriter & out, cfint16              val);
+    friend KafkaRawWriter & operator<<(KafkaRawWriter & out, cfint32              val);
+    friend KafkaRawWriter & operator<<(KafkaRawWriter & out, cfint64              val);
+    friend KafkaRawWriter & operator<<(KafkaRawWriter & out, const CFByteArray  & val);
     friend KafkaRawWriter & operator<<(KafkaRawWriter & out, const KafkaString & val);
 };
 
@@ -76,21 +111,21 @@ private:
     { \
         const int oldSize = out.data_.size(); \
         out.data_.resize(oldSize + sizeof(type)); \
-        qToBigEndian<type>(val, (uchar *)(out.data_.constData() + oldSize)); \
+        cfToBigEndian<type>(val, (cfuint8 *)(out.data_.constData() + oldSize)); \
         return out; \
     } \
 
-DEFINE_KAFKA_WRITE_INT_OPERATOR(qint8 )
-DEFINE_KAFKA_WRITE_INT_OPERATOR(qint16)
-DEFINE_KAFKA_WRITE_INT_OPERATOR(qint32)
-DEFINE_KAFKA_WRITE_INT_OPERATOR(qint64)
+DEFINE_KAFKA_WRITE_INT_OPERATOR(cfint8)
+DEFINE_KAFKA_WRITE_INT_OPERATOR(cfint16)
+DEFINE_KAFKA_WRITE_INT_OPERATOR(cfint32)
+DEFINE_KAFKA_WRITE_INT_OPERATOR(cfint64)
 
-inline KafkaRawWriter & operator<<(KafkaRawWriter & out, const QByteArray & val)
+inline KafkaRawWriter & operator<<(KafkaRawWriter & out, const CFByteArray & val)
 {
     if (val.isNull()) {
-        out << (qint32)-1;
+        out << (cfint32)-1;
     } else {
-        out << (qint32)val.size();
+        out << (cfint32)val.size();
         out.data_.append(val);
     }
     return out;
@@ -99,9 +134,9 @@ inline KafkaRawWriter & operator<<(KafkaRawWriter & out, const QByteArray & val)
 inline KafkaRawWriter & operator<<(KafkaRawWriter & out, const KafkaString & val)
 {
     if (val.isNull()) {
-        out << (qint16)-1;
+        out << (cfint16)-1;
     } else {
-        out << (qint16)val.size();
+        out << (cfint16)val.size();
         out.data_.append(val);
     }
     return out;
@@ -111,23 +146,23 @@ inline KafkaRawWriter & operator<<(KafkaRawWriter & out, const KafkaString & val
 class KafkaRawReader
 {
 public:
-    KafkaRawReader(const QByteArray & data) :
+    KafkaRawReader(const CFByteArray & data) :
         readPtr_(data.constData()),
         bytesLeft_(data.size())
     {
     }
 
-    inline quint32 bytesLeft() { return bytesLeft_; }
+    inline cfuint32 bytesLeft() { return bytesLeft_; }
 
 private:
     const char * readPtr_;
-    quint32 bytesLeft_;
+    cfuint32 bytesLeft_;
 
-    friend KafkaRawReader & operator>>(KafkaRawReader & in, qint8       & val);
-    friend KafkaRawReader & operator>>(KafkaRawReader & in, qint16      & val);
-    friend KafkaRawReader & operator>>(KafkaRawReader & in, qint32      & val);
-    friend KafkaRawReader & operator>>(KafkaRawReader & in, qint64      & val);
-    friend KafkaRawReader & operator>>(KafkaRawReader & in, QByteArray  & val);
+    friend KafkaRawReader & operator>>(KafkaRawReader & in, cfint8       & val);
+    friend KafkaRawReader & operator>>(KafkaRawReader & in, cfint16      & val);
+    friend KafkaRawReader & operator>>(KafkaRawReader & in, cfint32      & val);
+    friend KafkaRawReader & operator>>(KafkaRawReader & in, cfint64      & val);
+    friend KafkaRawReader & operator>>(KafkaRawReader & in, CFByteArray  & val);
     friend KafkaRawReader & operator>>(KafkaRawReader & in, KafkaString & val);
 };
 
@@ -138,27 +173,27 @@ private:
             val = 0; \
             in.bytesLeft_ = 0; \
         } else { \
-            val = qFromBigEndian<type>((const uchar *)in.readPtr_); \
+            val = cfFromBigEndian<type>((const cfuint8 *)in.readPtr_); \
             in.readPtr_   += sizeof(type); \
             in.bytesLeft_ -= sizeof(type); \
         } \
         return in; \
     } \
 
-DEFINE_KAFKA_READ_INT_OPERATOR(qint8 )
-DEFINE_KAFKA_READ_INT_OPERATOR(qint16)
-DEFINE_KAFKA_READ_INT_OPERATOR(qint32)
-DEFINE_KAFKA_READ_INT_OPERATOR(qint64)
+DEFINE_KAFKA_READ_INT_OPERATOR(cfint8)
+DEFINE_KAFKA_READ_INT_OPERATOR(cfint16)
+DEFINE_KAFKA_READ_INT_OPERATOR(cfint32)
+DEFINE_KAFKA_READ_INT_OPERATOR(cfint64)
 
-inline KafkaRawReader & operator>>(KafkaRawReader & in, QByteArray & val)
+inline KafkaRawReader & operator>>(KafkaRawReader & in, CFByteArray & val)
 {
-    qint32 size;
+    cfint32 size;
     in >> size;
     if (size < 0) {
-        val = QByteArray();
+        val = CFByteArray();
     } else {
-        if ((quint32)size > in.bytesLeft_) size = in.bytesLeft_;
-        val = QByteArray(in.readPtr_, size);
+        if ((cfuint32)size > in.bytesLeft_) size = in.bytesLeft_;
+        val = CFByteArray(in.readPtr_, size);
         in.readPtr_   += size;
         in.bytesLeft_ -= size;
     }
@@ -167,12 +202,12 @@ inline KafkaRawReader & operator>>(KafkaRawReader & in, QByteArray & val)
 
 inline KafkaRawReader & operator>>(KafkaRawReader & in, KafkaString & val)
 {
-    qint16 size;
+    cfint16 size;
     in >> size;
     if (size < 0) {
         val = KafkaString();
     } else {
-        if ((quint32)size > in.bytesLeft_) size = in.bytesLeft_;
+        if ((cfuint32)size > in.bytesLeft_) size = in.bytesLeft_;
         val = KafkaString(in.readPtr_, size);
         in.readPtr_   += size;
         in.bytesLeft_ -= size;

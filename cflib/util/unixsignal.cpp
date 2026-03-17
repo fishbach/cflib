@@ -7,13 +7,14 @@
 
 #include "unixsignal.h"
 
+#include <cflib/util/libev.h>
 #include <cflib/util/log.h>
+#include <cflib/util/threadverify.h>
 
-#ifdef Q_OS_UNIX
-#include <signal.h>
+#include <csignal>
+#include <cstdlib>
 #include <sys/socket.h>
 #include <unistd.h>
-#endif
 
 USE_LOG(LogCat::Etc)
 
@@ -22,13 +23,11 @@ namespace cflib { namespace util {
 namespace {
 
 bool active = false;
-
-#ifdef Q_OS_UNIX
-
 int sockets[2];
 sig_t oldSigH1 = 0;
 sig_t oldSigH2 = 0;
 sig_t oldSigH15 = 0;
+UnixSignal * currentInstance = nullptr;
 
 void signalHandler(int sig)
 {
@@ -36,56 +35,67 @@ void signalHandler(int sig)
     int c __attribute__((unused)) = ::write(sockets[0], &s, 1);
 }
 
-#endif
-
 }
 
-UnixSignal::UnixSignal(bool quitQCoreApplication)
+UnixSignal::UnixSignal()
+    : watcher_(nullptr)
 {
     logFunctionTrace
 
-    if (active) qFatal("only one UnixSignal instance can exist");
+    if (active) {
+        logCritical("only one UnixSignal instance can exist");
+        abort();
+    }
     active = true;
+    currentInstance = this;
 
-#ifdef Q_OS_UNIX
-    if (::socketpair(AF_UNIX, SOCK_STREAM, 0, sockets)) qFatal("Couldn't create socketpair");
-    sn_ = new QSocketNotifier(sockets[1], QSocketNotifier::Read);
-    connect(sn_, SIGNAL(activated(int)), this, SLOT(activated()));
+    if (::socketpair(AF_UNIX, SOCK_STREAM, 0, sockets)) {
+        logCritical("Couldn't create socketpair");
+        abort();
+    }
+
+    ev_loop * loop = libEVLoopOfThread();
+    if (loop) {
+        watcher_ = new ev_io;
+        ev_io_init(watcher_, &UnixSignal::ioCallback, sockets[1], EV_READ);
+        watcher_->data = this;
+        ev_io_start(loop, watcher_);
+    }
+
     oldSigH1  = ::signal(1,  signalHandler);
     oldSigH2  = ::signal(2,  signalHandler);
     oldSigH15 = ::signal(15, signalHandler);
-
-    if (quitQCoreApplication) connect(this, SIGNAL(catchedSignal(int)), QCoreApplication::instance(), SLOT(quit()));
-#else
-    Q_UNUSED(quitQCoreApplication)
-#endif
 }
 
 UnixSignal::~UnixSignal()
 {
     logFunctionTrace
 
-#ifdef Q_OS_UNIX
     ::signal(1,  oldSigH1);
     ::signal(2,  oldSigH2);
     ::signal(15, oldSigH15);
-    delete sn_;
+
+    if (watcher_) {
+        ev_loop * loop = libEVLoopOfThread();
+        if (loop) ev_io_stop(loop, watcher_);
+        delete watcher_;
+    }
+
     ::close(sockets[0]);
     ::close(sockets[1]);
-#endif
 
+    currentInstance = nullptr;
     active = false;
 }
 
-void UnixSignal::activated()
+void UnixSignal::ioCallback(ev_loop *, ev_io * w, int)
 {
-#ifdef Q_OS_UNIX
+    UnixSignal * self = (UnixSignal *)w->data;
     char s;
     int c __attribute__((unused)) = ::read(sockets[1], &s, 1);
     int sig = s;
     logInfo("catched signal %1", sig);
-    emit catchedSignal(sig);
-#endif
+    self->catchedSignal(sig);
 }
 
 }}    // namespace

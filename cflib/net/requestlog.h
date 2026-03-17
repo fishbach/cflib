@@ -9,7 +9,8 @@
 
 #include <cflib/net/requesthandler.h>
 
-#include <QtCore>
+#include <cflib/base/cfcontainers.h>
+#include <cflib/base/macros.h>
 
 namespace cflib { namespace net {
 

@@ -5,76 +5,63 @@
  * Licensed under the MIT License.
  */
 
-#include <QtCore>
+#include <cstdio>
+#include <cstring>
+#include <fstream>
+#include <iterator>
+#include <string>
 
-int usage()
+static int usage(const char * prog)
 {
-    QTextStream(stderr) << "usage: " << QCoreApplication::applicationName()
-                        << " <create> <git repo path> <path to gitversion.h>" << Qt::endl;
-
+    fprintf(stderr, "usage: %s <create> <git repo path> <path to gitversion.h>\n", prog);
     return 1;
 }
 
-int createHeader(const QString & searchPath, const QString & filename)
+static std::string runGit(const std::string & repoPath)
 {
-    QProcess git;
+    std::string cmd = "git -C \"" + repoPath + "\" rev-parse HEAD 2>/dev/null";
+    FILE * p = popen(cmd.c_str(), "r");
+    if (!p) return {};
+    char buf[256] = {};
+    fgets(buf, sizeof(buf), p);
+    pclose(p);
+    std::string hash(buf);
+    while (!hash.empty() && (hash.back() == '\n' || hash.back() == '\r' || hash.back() == ' '))
+        hash.pop_back();
+    return hash;
+}
 
-    git.setWorkingDirectory(searchPath);
-    git.start("git", {"rev-parse", "HEAD"});
-    if (!git.waitForStarted()) {
-        QTextStream(stderr) << "cannot start git rev-parse HEAD" << Qt::endl;
-        return 3;
-    }
-    if (!git.waitForFinished()) {
-        QTextStream(stderr) << "git rev-parse HEAD failed" << Qt::endl;
-        return 4;
-    }
-    QByteArray hash = git.readAll();
-    if (hash.isEmpty()) {
-        QTextStream(stderr) << "cannot determine git hash" << Qt::endl;
+static int createHeader(const std::string & repoPath, const std::string & filename)
+{
+    std::string hash = runGit(repoPath);
+    if (hash.empty()) {
+        fprintf(stderr, "cannot determine git hash\n");
         return 5;
     }
-    hash = hash.trimmed();
 
-    QFile in(filename);
-    if (in.open(QFile::ReadOnly)) {
-        QString tail = QString::fromLatin1(in.readAll());
-        in.close();
-
-        // Extract existing hash
-        QString existing_hash;
-        QRegExp re("GIT_VERSION \"([0-9a-f]{40})\"");
-        int pos = re.indexIn(tail);
-        while (pos != -1) {
-            existing_hash = re.cap(1);
-            pos = re.indexIn(tail, pos + re.matchedLength());
-        }
-
-        // Nothing to change
-        if (hash == existing_hash) {
-            return 0;
+    // Check if existing file already has the same hash
+    {
+        std::ifstream in(filename);
+        if (in) {
+            std::string content((std::istreambuf_iterator<char>(in)), {});
+            const std::string marker = "GIT_VERSION \"";
+            auto pos = content.find(marker);
+            if (pos != std::string::npos && content.substr(pos + marker.size(), 40) == hash)
+                return 0;
         }
     }
-    QFile out(filename);
-    if (!out.open(QFile::WriteOnly | QFile::Truncate)) {
-        QTextStream(stderr) << "cannot write: " << out.fileName() << Qt::endl;
+
+    std::ofstream out(filename, std::ios::trunc);
+    if (!out) {
+        fprintf(stderr, "cannot write: %s\n", filename.c_str());
         return 4;
     }
-    QTextStream(&out)
-        << "#pragma once" << Qt::endl
-        << Qt::endl
-        << "#define GIT_VERSION \"" << hash << "\"" << Qt::endl;
-    out.close();
+    out << "#pragma once\n\n#define GIT_VERSION \"" << hash << "\"\n";
     return 0;
 }
 
-int main(int argc, char *argv[])
+int main(int argc, char * argv[])
 {
-    QCoreApplication app(argc, argv);
-    QStringList args = app.arguments();
-    args.removeFirst();
-
-    if (args.size() == 3 && args[0] == "create") return createHeader(args[1], args[2]);
-
-    return usage();
+    if (argc == 4 && strcmp(argv[1], "create") == 0) return createHeader(argv[2], argv[3]);
+    return usage(argv[0]);
 }

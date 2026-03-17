@@ -7,8 +7,16 @@
 
 #include "mailer.h"
 
+#include <cflib/util/libev.h>
 #include <cflib/util/log.h>
 #include <cflib/util/util.h>
+
+#include <cstdlib>
+#include <cstdio>
+#include <fcntl.h>
+#include <sys/stat.h>
+#include <sys/wait.h>
+#include <unistd.h>
 
 USE_LOG(LogCat::Etc)
 
@@ -17,8 +25,8 @@ namespace cflib { namespace util {
 Mailer * Mailer::instance_ = nullptr;
 
 Mailer::Mailer(bool isEnabled) :
-    ThreadVerify("Mailer", ThreadVerify::Qt),
-    process_(nullptr)
+    ThreadVerify("Mailer", ThreadVerify::Worker),
+    childPid_(-1)
 {
     if (instance_) logWarn("It makes no sense to have two Mailer instances!");
     instance_ = this;
@@ -28,19 +36,28 @@ Mailer::Mailer(bool isEnabled) :
         return;
     }
 
-    QStringList paths = QProcessEnvironment::systemEnvironment().value("PATH").split(':');
-    paths << "/usr/lib/" << "/usr/sbin/";
-    for (QString & path : paths) {
-        if (!path.endsWith('/')) path += '/';
-        path += "sendmail";
-        QFileInfo info(path);
-        if (info.isExecutable()) {
-            sendmailPath_ = info.canonicalFilePath();
+    // Search for sendmail
+    const char * pathEnv = getenv("PATH");
+    CFString pathStr(pathEnv ? pathEnv : "");
+    auto paths = pathStr.split(':');
+    // Add extra search paths
+    paths.push_back(CFString("/usr/lib"));
+    paths.push_back(CFString("/usr/sbin"));
+
+    for (const CFString & path : paths) {
+        CFString candidate = path;
+        if (!candidate.endsWith("/")) candidate += "/";
+        candidate += "sendmail";
+        struct stat st;
+        if (stat(candidate.c_str(), &st) == 0 && (st.st_mode & S_IXUSR)) {
+            sendmailPath_ = candidate;
             break;
         }
     }
+
     if (sendmailPath_.isNull()) {
-        logWarn("cannot find sendmail executable (searched: %1)", paths.join(", "));
+        CFString searchedPaths = CFString(", ").join(paths);
+        logWarn("cannot find sendmail executable (searched: %1)", searchedPaths);
     } else {
         logDebug("found sendmail at: %1", sendmailPath_);
     }
@@ -67,51 +84,15 @@ void Mailer::initThreadData()
 {
     if (!verifyThreadCall(&Mailer::initThreadData)) return;
     logFunctionTrace
-
-    process_ = new QProcess;
-    connect<void (QProcess::*)(int, QProcess::ExitStatus)>(
-        process_, &QProcess::finished,
-        this,     &Mailer  ::finished,
-    Qt::DirectConnection);
-    connect<void (QProcess::*)(QProcess::ProcessError)>(
-        process_, &QProcess::errorOccurred,
-        this,     &Mailer  ::errorOccurred,
-    Qt::DirectConnection);
 }
 
 void Mailer::deleteThreadData()
 {
-    if (process_ && process_->state() != QProcess::NotRunning) {
+    if (childPid_ > 0) {
         logWarn("mail process still running");
-        process_->kill();
+        kill(childPid_, SIGKILL);
+        childPid_ = -1;
     }
-    delete process_;
-    process_ = nullptr;
-}
-
-void Mailer::finished(int exitCode, QProcess::ExitStatus exitStatus)
-{
-    QByteArray output;
-    output += process_->readAllStandardOutput();
-    output += process_->readAllStandardError();
-
-    // check status
-    if (exitCode == 0 && exitStatus == QProcess::NormalExit) {
-        if (!output.isEmpty()) logWarn("got output while sending email to %1: %2", queue_.first().to, output);
-        else                   logInfo("email from %1 to %2 sent", queue_.first().from, queue_.first().to);
-    } else {
-        logWarn("could not send email to %1 (exitCode: %2, exitStatus: %3, output: %4)",
-            queue_.first().to, exitCode, (int)exitStatus, output);
-    }
-
-    // more mails?
-    queue_.removeFirst();
-    if (!queue_.isEmpty()) execLater([this]() { startProcess(); });
-}
-
-void Mailer::errorOccurred(QProcess::ProcessError error)
-{
-    logWarn("Mailer process error: %1", (int)error);
 }
 
 void Mailer::doSend(const Mail & mail)
@@ -119,8 +100,8 @@ void Mailer::doSend(const Mail & mail)
     logFunctionTraceParam("new mail to: %1", mail.to);
     if (!verifyThreadCall(&Mailer::doSend, mail)) return;
 
-    QString fromAddr;
-    QString toAddr;
+    CFString fromAddr;
+    CFString toAddr;
     if (!mail.isValid()) {
         logWarn("invalid mail: %1", mail.raw(fromAddr, toAddr));
         return;
@@ -128,25 +109,25 @@ void Mailer::doSend(const Mail & mail)
 
     if (sendmailPath_.isNull()) {
         logInfo("mailer not active, mail from %1 to %2 dropped", mail.from, mail.to);
-        QTextStream(stdout)
-            << "--------" << Qt::endl
-            << mail.raw(fromAddr, toAddr) << Qt::endl
-            << "--------" << Qt::endl;
+        fprintf(stdout, "--------\n%s\n--------\n", mail.raw(fromAddr, toAddr).constData());
         return;
     }
 
-    queue_ << mail;
+    queue_.push_back(mail);
     if (queue_.size() == 1) startProcess();
 }
 
 namespace {
 
-QByteArray encodeAddress(const QString & address, QString & plain)
+CFByteArray encodeAddress(const CFString & address, CFString & plain)
 {
-    static const QRegExp re("(.+)<(.+)>");
-    if (re.indexIn(address) != -1) {
-        plain = re.cap(2).trimmed();
-        return cflib::util::encodeWord(re.cap(1).trimmed(), true) + " <" + plain.toUtf8() + ">";
+    // Simple parse: look for "name <addr>" pattern
+    cfsize_t lt = address.indexOf('<');
+    cfsize_t gt = address.indexOf('>');
+    if (lt >= 0 && gt > lt) {
+        CFString name = address.left(lt).trimmed();
+        plain = address.mid(lt + 1, gt - lt - 1).trimmed();
+        return cflib::util::encodeWord(name, true) + " <" + plain.toUtf8() + ">";
     } else {
         plain = address.trimmed();
         return plain.toUtf8();
@@ -157,14 +138,93 @@ QByteArray encodeAddress(const QString & address, QString & plain)
 
 void Mailer::startProcess()
 {
-    const Mail & mail = queue_.first();
-    QString from;
-    QString to;
-    const QByteArray raw = mail.raw(from, to);
+    const Mail & mail = queue_.front();
+    CFString from;
+    CFString to;
+    const CFByteArray raw = mail.raw(from, to);
     logDebug("exec: %1 -f %2 %3", sendmailPath_, from, to);
-    process_->start(sendmailPath_, {"-f", from, to});
-    process_->write(raw);
-    process_->closeWriteChannel();
+
+    int pipefd[2];
+    if (pipe(pipefd) != 0) {
+        logWarn("pipe failed for sendmail");
+        queue_.erase(queue_.begin());
+        return;
+    }
+
+    pid_t pid = fork();
+    if (pid < 0) {
+        logWarn("fork failed for sendmail");
+        close(pipefd[0]);
+        close(pipefd[1]);
+        queue_.erase(queue_.begin());
+        return;
+    }
+
+    if (pid == 0) {
+        // Child process
+        close(pipefd[1]); // close write end
+        dup2(pipefd[0], STDIN_FILENO);
+        close(pipefd[0]);
+
+        // Close stdout/stderr
+        int devnull = open("/dev/null", 0);
+        if (devnull >= 0) {
+            dup2(devnull, STDOUT_FILENO);
+            dup2(devnull, STDERR_FILENO);
+            close(devnull);
+        }
+
+        execl(sendmailPath_.c_str(), "sendmail", "-f", from.c_str(), to.c_str(), (char *)nullptr);
+        _exit(127);
+    }
+
+    // Parent
+    close(pipefd[0]); // close read end
+    // Write mail data to pipe
+    const char * data = raw.constData();
+    cfsize_t remaining = raw.size();
+    while (remaining > 0) {
+        ssize_t written = write(pipefd[1], data, remaining);
+        if (written <= 0) break;
+        data += written;
+        remaining -= written;
+    }
+    close(pipefd[1]);
+
+    childPid_ = pid;
+
+    // Watch for child exit via libev
+    ev_loop * loop = libEVLoop();
+    if (loop) {
+        ev_child * cw = new ev_child;
+        ev_child_init(cw, &Mailer::childCallback, pid, 0);
+        cw->data = this;
+        ev_child_start(loop, cw);
+    }
+}
+
+void Mailer::childCallback(ev_loop * loop, ev_child * w, int)
+{
+    Mailer * self = (Mailer *)w->data;
+    int status = w->rstatus;
+    ev_child_stop(loop, w);
+    delete w;
+    self->childExited(status);
+}
+
+void Mailer::childExited(int status)
+{
+    childPid_ = -1;
+
+    if (WIFEXITED(status) && WEXITSTATUS(status) == 0) {
+        logInfo("email from %1 to %2 sent", queue_.front().from, queue_.front().to);
+    } else {
+        int exitCode = WIFEXITED(status) ? WEXITSTATUS(status) : -1;
+        logWarn("could not send email to %1 (exitCode: %2)", queue_.front().to, exitCode);
+    }
+
+    queue_.erase(queue_.begin());
+    if (!queue_.empty()) execLater([this]() { startProcess(); });
 }
 
 bool Mail::isValid() const
@@ -172,9 +232,9 @@ bool Mail::isValid() const
     return !from.isEmpty() && !to.isEmpty();
 }
 
-QByteArray Mail::raw(QString & fromAddr, QString & toAddr) const
+CFByteArray Mail::raw(CFString & fromAddr, CFString & toAddr) const
 {
-    QByteArray rv;
+    CFByteArray rv;
     rv  << "Content-type: text/plain; charset=utf-8\r\n"
         << "Content-transfer-encoding: quoted-printable\r\n"
         << "From: "    << encodeAddress(from, fromAddr)           << "\r\n"

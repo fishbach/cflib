@@ -7,7 +7,8 @@
 
 #pragma once
 
-#include <QtCore>
+#include <cflib/base/cfcontainers.h>
+#include <cflib/base/macros.h>
 
 namespace cflib { namespace net {
 
@@ -15,16 +16,16 @@ class TCPManager;
 
 class HttpClient
 {
-    Q_DISABLE_COPY(HttpClient)
+    CF_DISABLE_COPY(HttpClient)
 public:
     HttpClient(TCPManager & mgr, bool keepAlive = true);
     ~HttpClient();
 
     // TODO: getaddrinfo -> dns resolve
-    void get(const QByteArray & ip, quint16 port, const QByteArray & url);
+    void get(const CFByteArray & ip, cfuint16 port, const CFByteArray & url);
 
 protected:
-    virtual void reply(const QByteArray & raw) = 0;
+    virtual void reply(const CFByteArray & raw) = 0;
 
 private:
     TCPManager & mgr_;

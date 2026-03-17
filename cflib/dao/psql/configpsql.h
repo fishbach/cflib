@@ -24,10 +24,10 @@ public:
 public serialized:
     bool isProduction;
     bool emailsEnabled;
-    QString baseURL;
+    CFString baseURL;
 
 protected:
-    virtual void init(const QMap<QString, QString> &) {}
+    virtual void init(const CFMap<CFString, CFString> &) {}
 
 private:
     static ConfigPSql * instance_;

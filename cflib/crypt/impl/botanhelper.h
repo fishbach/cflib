@@ -9,7 +9,7 @@
 
 #include <cflib/util/log.h>
 
-#ifdef Q_OS_WIN32
+#ifdef _WIN32
     #pragma warning( push )
     #pragma warning( disable : 4267 )
 #endif
@@ -28,7 +28,7 @@
 #include <botan/x509_ext.h>
 #include <botan/x509_key.h>
 
-#ifdef Q_OS_WIN32
+#ifdef _WIN32
     #pragma warning( pop )
 #endif
 

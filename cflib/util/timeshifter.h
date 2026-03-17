@@ -7,18 +7,18 @@
 
 #pragma once
 
-#include <QtCore>
+#include <cflib/base/cfdatetime.h>
 
 namespace cflib { namespace util {
 
 class TimeShifter
 {
 public:
-    static void setDateTime(const QDateTime & newNow = QDateTime());
-    static QDateTime currentDateTime();    // returns UTC
+    static void setDateTime(const CFDateTime & newNow = CFDateTime());
+    static CFDateTime currentDateTime();    // returns UTC
 
 private:
-    static qint64 diff_;
+    static cfint64 diff_;
 };
 
 }}    // namespace

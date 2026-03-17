@@ -15,14 +15,14 @@ namespace cflib { namespace serialize {
 
 namespace {
 
-QString writeStr(const QByteArray & msg)
+CFString writeStr(const CFByteArray & msg)
 {
     uint specialCount = 0;
-    QByteArray rv;
+    CFByteArray rv;
     const char * start = msg.constData();
     const char * p = start;
-    for (int i = 0 ; i < msg.length() ; ++i) {
-        const quint8 c = (quint8)*p;
+    for (cfsize_t i = 0 ; i < msg.length() ; ++i) {
+        const cfuint8 c = (cfuint8)*p;
         if (c < 0x20 || c > 0x7E) {
             if (p > start) rv.append(start, p - start);
             ++p; start = p;
@@ -35,77 +35,95 @@ QString writeStr(const QByteArray & msg)
         } else ++p;
     }
     if (p > start) rv.append(start, p - start);
-    return 100 * specialCount / msg.size() > 10 ? QString() : rv;
+    return 100 * specialCount / msg.size() > 10 ? CFString() : CFString(rv.constData());
 }
 
-QString showValue(const quint8 * data, int len)
+CFString showValue(const cfuint8 * data, int len)
 {
     if (len == 0) return "null";
 
-    QString rv;
+    CFString rv;
 
-    QString str = writeStr(QByteArray::fromRawData((const char *)data, len));
-    if (!str.isNull()) rv += '"' % str % "\" ";
+    CFString str = writeStr(CFByteArray::fromRawData((const char *)data, len));
+    if (!str.isNull()) {
+        rv += '"';
+        rv += str;
+        rv += "\" ";
+    }
 
     if (len == 9 && *data == 0) {
-        quint64 val;
+        cfuint64 val;
         impl::deserializeBERInt(val, data, len);
-        rv += '(' % QString::number(val) % ") ";
+        rv += '(';
+        rv += CFString::number(val);
+        rv += ") ";
     } else if (len < 9) {
-        qint64 val;
+        cfint64 val;
         impl::deserializeBERInt(val, data, len);
-        rv += '(' % QString::number(val);
+        rv += '(';
+        rv += CFString::number(val);
         if (len == 4) {
             rv += " / ";
-            rv += QString::number(*((const float *)data));
+            rv += CFString::number((double)*((const float *)data));
         } else if (len == 8) {
             rv += " / ";
-            rv += QString::number(*((const double *)data));
+            rv += CFString::number(*((const double *)data));
         } else if (val >= 946681200000 && val < 4102441200000) {
             rv += " / ";
-            rv += QDateTime::fromMSecsSinceEpoch(val, Qt::UTC).toString(Qt::ISODateWithMs);
+            CFDateTime dt = CFDateTime::fromMSecsSinceEpoch(val);
+            // Format as ISO date
+            char buf[64];
+            snprintf(buf, sizeof(buf), "%04d-%02d-%02dT%02d:%02d:%02d.%03dZ",
+                dt.year(), dt.month(), dt.day(), dt.hour(), dt.minute(), dt.second(), dt.msec());
+            rv += buf;
         }
         rv += ") ";
     }
 
-    rv += "0x" % QByteArray::fromRawData((const char *)data, len).toHex().toUpper();
+    rv += "0x";
+    rv += CFString(CFByteArray::fromRawData((const char *)data, len).toHex().constData()).toUpper();
 
     return rv;
 }
 
-QString printAsn1(const quint8 * data, int len, int indent)
+CFString printAsn1(const cfuint8 * data, int len, int indent)
 {
-    QString rv;
+    CFString rv;
 
-    forever {
-        quint64 tagNo = 0;
+    while (true) {
+        cfuint64 tagNo = 0;
         int tagLen = 0;
         int lengthSize = 0;
-        const qint32 valueLen = getTLVLength(QByteArray::fromRawData((const char *)data, len), tagNo, tagLen, lengthSize);
+        const cfint32 valueLen = getTLVLength(CFByteArray::fromRawData((const char *)data, len), tagNo, tagLen, lengthSize);
         if (valueLen == -1) {
-            rv << "not enough data available\n";
+            rv += "not enough data available\n";
             return rv;
         }
         if (valueLen == -2) {
-            rv << "undefined length found\n";
+            rv += "undefined length found\n";
             return rv;
         }
         if (valueLen == -3) {
-            rv << "too big length found\n";
+            rv += "too big length found\n";
             return rv;
         }
 
-        for (int i = 0 ; i < indent ; ++i) rv << "  ";
-        rv << QString("%1").arg(tagNo, 2, 10, QChar('0'));
+        for (int i = 0 ; i < indent ; ++i) rv += "  ";
+        // Format tag number with leading zero
+        char tagBuf[16];
+        snprintf(tagBuf, sizeof(tagBuf), "%02llu", (unsigned long long)tagNo);
+        rv += tagBuf;
 
         if (*data & 0x20) {
-            rv << ":\n";
-            rv << printAsn1(data + tagLen + lengthSize, valueLen, indent + 1);
+            rv += ":\n";
+            rv += printAsn1(data + tagLen + lengthSize, valueLen, indent + 1);
         } else {
-            rv << ": " << showValue(data + tagLen + lengthSize, valueLen) << "\n";
+            rv += ": ";
+            rv += showValue(data + tagLen + lengthSize, valueLen);
+            rv += "\n";
         }
 
-        const qint32 total = tagLen + lengthSize + valueLen;
+        const cfint32 total = tagLen + lengthSize + valueLen;
         if (len <= total) return rv;
 
         data += total;
@@ -117,9 +135,9 @@ QString printAsn1(const quint8 * data, int len, int indent)
 
 }
 
-QString printAsn1(const QByteArray & data)
+CFString printAsn1(const CFByteArray & data)
 {
-    return printAsn1((const quint8 *)data.constData(), data.size(), 0);
+    return printAsn1((const cfuint8 *)data.constData(), data.size(), 0);
 }
 
 }}

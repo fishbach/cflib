@@ -18,10 +18,19 @@ USE_LOG(LogCat::Db)
 
 namespace {
 
-class Migrator : public QObject
+class Migrator
 {
-    Q_OBJECT
-public slots:
+public:
+    bool migrate(const CFByteArray & name)
+    {
+        if (name == "test1") return test1();
+        if (name == "test2") return test2();
+        if (name == "test3") return test3();
+        if (name == "test4") return test4();
+        if (name == "test5") return test5();
+        return false;
+    }
+
     bool test1()
     {
         PSqlConn;
@@ -53,17 +62,29 @@ public slots:
     }
 };
 
-QString connParam(const QString & dbName)
+CFString connParam(const CFString & dbName)
 {
-    return PSql::setDBName(QProcessEnvironment::systemEnvironment().value("DB_TEST_DB", "host=127.0.0.1"), dbName);
+    const char * envVal = getenv("DB_TEST_DB");
+    CFString baseConn = envVal ? CFString(envVal) : CFString("host=127.0.0.1");
+    return PSql::setDBName(baseConn, dbName);
 }
 
 }
 
-class Schema_test : public QObject
+class Schema_test : public cflib::util::TestBase
 {
-    Q_OBJECT
-private slots:
+public:
+    std::vector<cflib::util::TestMethod> testMethods() const override {
+        auto self = const_cast<Schema_test *>(this);
+        return {
+            {"initTestCase",    [self]() { self->initTestCase(); }},
+            {"basic_test",      [self]() { self->basic_test(); }},
+            {"update_test",     [self]() { self->update_test(); }},
+            {"resetDB",         [self]() { self->resetDB(); }},
+            {"empty_head_test", [self]() { self->empty_head_test(); }},
+            {"cleanupTestCase", [self]() { self->cleanupTestCase(); }},
+        };
+    }
 
     void initTestCase()
     {
@@ -83,25 +104,25 @@ private slots:
 
     void basic_test()
     {
-        QVERIFY(schema::update<Migrator>());
+        QVERIFY((schema::update<Migrator>(CFString(SCHEMA_SQL_PATH))));
 
         PSqlConn;
         QVERIFY(sql.exec("SELECT key, value, value2, value3, value4 FROM config ORDER BY key"));
-        QString key, value;
-        qint32 value2, value3, value4;
+        CFString key, value;
+        cfint32 value2, value3, value4;
 
         QVERIFY(sql.next());
         sql >> key >> value >> value2 >> value3 >> value4;
-        QCOMPARE(key, QString("test1"));
-        QCOMPARE(value, QString("val1"));
+        QCOMPARE(key, CFString("test1"));
+        QCOMPARE(value, CFString("val1"));
         QCOMPARE(value2, 0);
         QCOMPARE(value3, 0);
         QCOMPARE(value4, 0);
 
         QVERIFY(sql.next());
         sql >> key >> value >> value2 >> value3 >> value4;
-        QCOMPARE(key, QString("test2"));
-        QCOMPARE(value, QString("val2"));
+        QCOMPARE(key, CFString("test2"));
+        QCOMPARE(value, CFString("val2"));
         QCOMPARE(value2, 2);
         QCOMPARE(value3, 0);
         QCOMPARE(value4, 0);
@@ -114,7 +135,7 @@ private slots:
 
     void update_test()
     {
-        QByteArray schema = readFile(":/schema.sql");
+        CFByteArray schema = readFile(CFString(SCHEMA_SQL_PATH));
         QVERIFY(schema::update(schema));
 
         schema +=
@@ -126,7 +147,7 @@ private slots:
         PSqlConn;
         QVERIFY(sql.exec("SELECT COUNT(*) FROM config WHERE key = 'neu'"));
         QVERIFY(sql.next());
-        QCOMPARE(sql.get<qint64>(0), 1);
+        QCOMPARE(sql.get<cfint64>(0), (cfint64)1);
     }
 
     void resetDB()
@@ -140,19 +161,18 @@ private slots:
 
     void empty_head_test()
     {
-        QVERIFY(schema::update(
+        QVERIFY(schema::update(CFByteArray(
             "-- REVISION first\n"
             "CREATE TABLE config (\n"
             "  key   text NOT NULL, \n"
             "  value text, \n"
             "  PRIMARY KEY (key)\n"
             ");\n"
-        ));
+        )));
 
         PSqlConn;
         QVERIFY(sql.exec("SELECT key, value FROM config"));
     }
 
 };
-#include "schema_test.moc"
 ADD_TEST(Schema_test)

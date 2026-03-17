@@ -10,23 +10,26 @@
 
 #include <functional>
 #include <random>
+#include <thread>
 
 using namespace cflib::util;
 
 namespace {
 
-class Worker : public QThread
+class Worker
 {
 public:
-    Worker(ThreadFifo<int> & fifo, uint seed) : fifo_(fifo), rnd_(seed), ok_(true) { start(); }
+    Worker(ThreadFifo<int> & fifo, cfuint seed) : fifo_(fifo), rnd_(seed), ok_(true) {
+        thread_ = std::thread([this]() { run(); });
+    }
 
     bool ok() {
-        wait();
+        thread_.join();
         return ok_;
     }
 
 protected:
-    virtual void run()
+    void run()
     {
         std::uniform_int_distribution<int> dist1(0, 3);
         std::uniform_int_distribution<int> dist2(0, 127);
@@ -53,14 +56,21 @@ private:
     ThreadFifo<int> & fifo_;
     std::minstd_rand rnd_;
     bool ok_;
+    std::thread thread_;
 };
 
 }
 
-class ThreadFifo_Test: public QObject
+class ThreadFifo_Test : public cflib::util::TestBase
 {
-    Q_OBJECT
-private slots:
+public:
+    std::vector<cflib::util::TestMethod> testMethods() const override {
+        auto self = const_cast<ThreadFifo_Test *>(this);
+        return {
+            {"basic_test", [self]() { self->basic_test(); }},
+            {"thread_test", [self]() { self->thread_test(); }}
+        };
+    }
 
     void basic_test()
     {
@@ -103,5 +113,4 @@ private slots:
     }
 
 };
-#include "threadfifo_test.moc"
 ADD_TEST(ThreadFifo_Test)

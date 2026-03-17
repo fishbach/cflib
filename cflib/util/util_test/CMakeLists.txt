@@ -4,4 +4,4 @@
 #
 # Licensed under the MIT License.
 
-cf_test(util_test cflib_util)
+cf_test(util_test cflib_util PCH ${PROJECT_SOURCE_DIR}/pch/util.h)

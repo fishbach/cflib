@@ -7,29 +7,30 @@
 
 #pragma once
 
-#include <QtCore>
+#include <cflib/base/cfbytearray.h>
+#include <cflib/base/types.h>
 
 namespace cflib { namespace util {
 
 // 0 .. 15 -> '0' .. '9', 'A' .. 'F'
-inline char toHex(quint8 b)
+inline char toHex(cfuint8 b)
 {
     if (b >= 10) return b + 55;
     else return b + 48;
 }
 
-inline quint8 fromHex(char c)
+inline cfuint8 fromHex(char c)
 {
     if      (c >= 'a') c -= 'a' - 10;
     else if (c >= 'A') c -= 'A' - 10;
     else               c -= '0';
-    return (quint8)c;
+    return (cfuint8)c;
 }
 
-inline QByteArray uint64ToHex(quint64 n)
+inline CFByteArray uint64ToHex(cfuint64 n)
 {
-    QByteArray rv(16, '0');
-    uint p = 16;
+    CFByteArray rv((cfsize_t)16, '0');
+    cfuint p = 16;
     while (n > 0) {
         rv[--p] = toHex(n & 0xF);
         n >>= 4;

@@ -14,20 +14,20 @@ namespace cflib { namespace util {
 
 class ThreadStats : private ThreadVerify
 {
-    Q_DISABLE_COPY(ThreadStats)
+    CF_DISABLE_COPY(ThreadStats)
 public:
     struct ThreadInfo
     {
-        QString name;
-        qint64 current;
-        qint64 total;
-        qint64 peaks;
-        qint64 overflows;
-        qint64 avg;
+        CFString name;
+        cfint64 current;
+        cfint64 total;
+        cfint64 peaks;
+        cfint64 overflows;
+        cfint64 avg;
 
         ThreadInfo() : current(0), total(0), peaks(0), overflows(0), avg(0) {}
     };
-    typedef QVector<ThreadInfo> ThreadInfos;
+    typedef CFVector<ThreadInfo> ThreadInfos;
 
 public:
     ThreadStats() : ThreadVerify(), timer_(this, &ThreadStats::timeout)
@@ -42,7 +42,7 @@ public:
         stopVerifyThread();
     }
 
-    inline void externNewCallTime(int threadId, qint64 nsecs)
+    inline void externNewCallTime(int threadId, cfint64 nsecs)
     {
         if (!verifyThreadCall(&ThreadStats::externNewCallTime, threadId, nsecs)) return;
         infos_[threadId].current += nsecs;
@@ -54,15 +54,15 @@ public:
         ++infos_[threadId].overflows;
     }
 
-    int externNewId(const QString & threadName)
+    int externNewId(const CFString & threadName)
     {
         SyncedThreadCall<int> stc(this);
         if (!stc.verify(&ThreadStats::externNewId, threadName)) return stc.retval();
 
         ThreadInfo info;
         info.name = threadName;
-        infos_ << info;
-        return infos_.size() - 1;
+        infos_.push_back(info);
+        return (int)infos_.size() - 1;
     }
 
     ThreadInfos current() const
@@ -83,7 +83,7 @@ private:
 
     void timeout()
     {
-        qint64 dt = elapsed_.nsecsElapsed();
+        cfint64 dt = elapsed_.nsecsElapsed();
         for (ThreadInfo & info : infos_) {
             if (info.current > dt) {
                 ++info.peaks;
@@ -100,7 +100,7 @@ private:
 private:
     ThreadInfos infos_;
     EVTimer timer_;
-    QElapsedTimer elapsed_;
+    CFElapsedTimer elapsed_;
 };
 
 }}    // namespace

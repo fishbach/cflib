@@ -7,23 +7,25 @@
 
 #pragma once
 
-#include <QtCore>
+#include <cflib/base/cfbytearray.h>
+#include <cflib/base/cfstring.h>
+
 #include <functional>
 
 namespace cflib { namespace db { namespace schema {
 
-typedef std::function<bool (const QByteArray & name)> Migrator;
+typedef std::function<bool (const CFByteArray & name)> Migrator;
 
-bool update(QObject * migrator = 0, const QString & filename = ":/schema.sql");
-bool update(Migrator migrator     , const QString & filename = ":/schema.sql");
-bool update(const QByteArray & schema, QObject * migrator = 0);
-bool update(const QByteArray & schema, Migrator migrator);
+bool update(Migrator migrator, const CFString & filename);
+bool update(const CFByteArray & schema, Migrator migrator = Migrator());
 
 template<typename M>
-bool update(const QString & filename = ":/schema.sql")
+bool update(const CFString & filename = ":/schema.sql")
 {
     M migrator;
-    return update(&migrator, filename);
+    return update(
+        [&migrator](const CFByteArray & name) { return migrator.migrate(name); },
+        filename);
 }
 
 }}}    // namespace

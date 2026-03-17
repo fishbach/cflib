@@ -7,6 +7,8 @@
 
 #include "tcpmanagerimpl.h"
 
+#include <cflib/base/macros.h>
+
 #include <cflib/crypt/tlsclient.h>
 #include <cflib/crypt/tlsserver.h>
 #include <cflib/crypt/tlssessions.h>
@@ -20,10 +22,11 @@
 #include <errno.h>
 #include <fcntl.h>
 #include <functional>
+#include <cstdlib>
 #include <string.h>
 #include <sys/types.h>
 
-#ifndef Q_OS_WIN
+#ifndef _WIN32
     #include <arpa/inet.h>
     #include <netinet/in.h>
     #include <netinet/tcp.h>
@@ -49,11 +52,11 @@ namespace cflib { namespace net { namespace impl {
 
 namespace {
 
-Q_GLOBAL_STATIC(TLSSessions, tlsSessions)
+CF_GLOBAL_STATIC(TLSSessions, tlsSessions)
 
 inline bool setNonBlocking(int fd)
 {
-#ifdef Q_OS_WIN
+#ifdef _WIN32
     unsigned long nonblocking = 1;
     ioctlsocket(fd, FIONBIO, (unsigned long *)&nonblocking);
 #else
@@ -62,14 +65,14 @@ inline bool setNonBlocking(int fd)
         return false;
     }
 #endif
-#ifdef Q_OS_MAC
+#ifdef __APPLE__
     int set = 1;
     setsockopt(fd, SOL_SOCKET, SO_NOSIGPIPE, (void *)&set, sizeof(int));
 #endif
     return true;
 }
 
-inline bool callWithSockaddr(const QByteArray & ip, quint16 port, std::function<bool (const struct sockaddr *, socklen_t)> func)
+inline bool callWithSockaddr(const CFByteArray & ip, cfuint16 port, std::function<bool (const struct sockaddr *, socklen_t)> func)
 {
     if (ip.indexOf('.') == -1) {
         struct sockaddr_in6 addr;
@@ -99,8 +102,8 @@ TCPManagerImpl::TCPManagerImpl(TCPManager & parent, uint tlsThreadCount) :
     credentials_(0),
     tlsConnId_(0)
 {
-    setThreadPrio(QThread::HighestPriority);
-    for (uint i = 1 ; i <= tlsThreadCount ; ++i) tlsThreads_.append(new TLSThread(*this, i, tlsThreadCount));
+    setThreadPrio(0); // no-op, was QThread::HighestPriority
+    for (uint i = 1 ; i <= tlsThreadCount ; ++i) tlsThreads_.push_back(new TLSThread(*this, i, tlsThreadCount));
 }
 
 TCPManagerImpl::TCPManagerImpl(TCPManager & parent, uint tlsThreadCount, util::ThreadVerify * other) :
@@ -112,14 +115,14 @@ TCPManagerImpl::TCPManagerImpl(TCPManager & parent, uint tlsThreadCount, util::T
     credentials_(0),
     tlsConnId_(0)
 {
-    for (uint i = 1 ; i <= tlsThreadCount ; ++i) tlsThreads_.append(new TLSThread(*this, i, tlsThreadCount));
+    for (uint i = 1 ; i <= tlsThreadCount ; ++i) tlsThreads_.push_back(new TLSThread(*this, i, tlsThreadCount));
 }
 
 TCPManagerImpl::~TCPManagerImpl()
 {
     logFunctionTrace
     stopVerifyThread();
-    foreach (TLSThread * th, tlsThreads_) delete th;
+    for (auto * th : tlsThreads_) delete th;
     delete readWatcher_;
 }
 
@@ -140,7 +143,7 @@ bool TCPManagerImpl::start(int listenSocket, crypt::TLSCredentials * credentials
         return false;
     }
 
-    if (credentials && tlsThreads_.isEmpty()) {
+    if (credentials && tlsThreads_.empty()) {
         logWarn("no TLS threads");
         return false;
     }
@@ -178,33 +181,33 @@ void TCPManagerImpl::stop()
         credentials_ = 0;
     }
 
-    foreach (TCPConnData * c, connections_) {
+    for (auto * c : connections_) {
         if (c->tlsStream) tlsCloseConn(c, TCPConn::HardClosed, false);
         else              closeConn(c, TCPConn::HardClosed, false);
     }
 }
 
 TCPConnData * TCPManagerImpl::openConnection(
-    const QByteArray & destAddress, quint16 destPort,
-    const QByteArray & sourceIP, quint16 sourcePort,
+    const CFByteArray & destAddress, cfuint16 destPort,
+    const CFByteArray & sourceIP, cfuint16 sourcePort,
     TLSCredentials * credentials, bool preferIPv6)
 {
     // no thread verify needed here
 
-    if (credentials && tlsThreads_.isEmpty()) {
+    if (credentials && tlsThreads_.empty()) {
         logWarn("no TLS threads");
         return 0;
     }
 
     // resolve dns
-    QByteArray destIP;
+    CFByteArray destIP;
     {
-        const QList<QByteArray> ips = getIPFromDNS(destAddress, preferIPv6);
-        if (ips.isEmpty()) {
+        const CFList<CFByteArray> ips = getIPFromDNS(destAddress, preferIPv6);
+        if (ips.empty()) {
             logWarn("cannot resolve host: %1", destAddress);
             return 0;
         }
-        destIP = ips[QRandomGenerator::global()->generate() % ips.size()];
+        destIP = ips[rand() % ips.size()];
     }
 
     // create non blocking socket
@@ -252,7 +255,7 @@ void TCPManagerImpl::startReadWatcher(TCPConnData * conn)
     ev_io_start(libEVLoop(), conn->readWatcher);
 }
 
-void TCPManagerImpl::writeToSocket(TCPConnData * conn, const QByteArray & data, bool notifyFinished)
+void TCPManagerImpl::writeToSocket(TCPConnData * conn, const CFByteArray & data, bool notifyFinished)
 {
     if (!verifyThreadCall(&TCPManagerImpl::writeToSocket, conn, data, notifyFinished)) return;
 
@@ -351,7 +354,7 @@ void TCPManagerImpl::deleteOnFinish(TCPConnData * conn)
         conn->deleteAfterWriting = true;
     } else {
         closeConn(conn, TCPConn::ReadWriteClosed, false);
-        connections_.remove(conn);
+        connections_.erase(conn);
         delete conn;
     }
 }
@@ -361,7 +364,7 @@ void TCPManagerImpl::tlsStartReadWatcher(TCPConnData * conn)
     tlsThreads_[conn->tlsThreadId]->startReadWatcher(conn);
 }
 
-void TCPManagerImpl::tlsWrite(TCPConnData * conn, const QByteArray & data, bool notifyFinished) const
+void TCPManagerImpl::tlsWrite(TCPConnData * conn, const CFByteArray & data, bool notifyFinished) const
 {
     tlsThreads_[conn->tlsThreadId]->write(conn, data, notifyFinished);
 }
@@ -382,7 +385,7 @@ void TCPManagerImpl::setNoDelay(int socket, bool noDelay)
     setsockopt(socket, IPPROTO_TCP, TCP_NODELAY, (char *)&on, sizeof(on));
 }
 
-int TCPManagerImpl::openListenSocket(const QByteArray & ip, quint16 port)
+int TCPManagerImpl::openListenSocket(const CFByteArray & ip, cfuint16 port)
 {
     // create non blocking socket
     int rv = socket(ip.indexOf('.') == -1 ? AF_INET6 : AF_INET, SOCK_STREAM, 0);
@@ -449,22 +452,22 @@ void TCPManagerImpl::writeable(ev_loop * loop, ev_io * w, int)
     TCPConnData * conn = (TCPConnData *)w->data;
     TCPManagerImpl & impl = conn->impl;
 
-    QByteArray & buf = conn->writeBuf;
+    CFByteArray & buf = conn->writeBuf;
     const int fd = conn->socket;
 
-#ifdef Q_OS_LINUX
+#ifdef __linux__
     const ssize_t count = ::send(fd, buf.constData(), buf.size(), MSG_NOSIGNAL);
 #else
     const ssize_t count = ::send(fd, buf.constData(), buf.size(), 0);
 #endif
-    logTrace("wrote %1 / %2 bytes on %3", (qint64)count, buf.size(), fd);
+    logTrace("wrote %1 / %2 bytes on %3", (cfint64)count, buf.size(), fd);
     if (count < buf.size()) {
         if (count < 0 && errno != EAGAIN && errno != EWOULDBLOCK && errno != ENOTCONN) {
             logDebug("write on fd %1 failed (%2 - %3)", fd, errno, strerror(errno));
             buf.clear();
             impl.closeConn(conn, errno == EPIPE ? TCPConn::WriteClosed : TCPConn::HardClosed, false);
             if (conn->deleteAfterWriting) {
-                impl.connections_.remove(conn);
+                impl.connections_.erase(conn);
                 delete conn;
             }
             return;
@@ -472,7 +475,7 @@ void TCPManagerImpl::writeable(ev_loop * loop, ev_io * w, int)
         if (count > 0) {
             buf.remove(0, count);
             if (conn->notifySomeBytesWritten) {
-                impl.execLater(new Functor1<TCPConn, quint64>(conn->conn, &TCPConn::someBytesWritten, (quint64)count));
+                impl.execLater(new Functor1<TCPConn, cfuint64>(conn->conn, &TCPConn::someBytesWritten, (cfuint64)count));
             }
         }
         if (!ev_is_active(w)) ev_io_start(loop, w);
@@ -481,13 +484,13 @@ void TCPManagerImpl::writeable(ev_loop * loop, ev_io * w, int)
         if (conn->closeAfterWriting) {
             impl.closeConn(conn, TCPConn::WriteClosed, false);
             if (conn->deleteAfterWriting) {
-                impl.connections_.remove(conn);
+                impl.connections_.erase(conn);
                 delete conn;
             }
         } else {
             if (ev_is_active(w)) ev_io_stop(loop, w);
             if (conn->notifySomeBytesWritten) {
-                impl.execLater(new Functor1<TCPConn, quint64>(conn->conn, &TCPConn::someBytesWritten, (quint64)count));
+                impl.execLater(new Functor1<TCPConn, cfuint64>(conn->conn, &TCPConn::someBytesWritten, (cfuint64)count));
             }
             if (conn->notifyWrite) {
                 conn->notifyWrite = false;
@@ -503,11 +506,11 @@ void TCPManagerImpl::listenSocketReadable(ev_loop *, ev_io * w, int)
 
     TCPManagerImpl * impl = (TCPManagerImpl *)w->data;
 
-    forever {
+    for (;;) {
         // get socket and source address
         int newSock;
         char ip[40];
-        quint16 port;
+        cfuint16 port;
         if (impl->isIPv6Sock_) {
             struct sockaddr_in6 cliAddr;
             socklen_t len = sizeof(cliAddr);
@@ -529,7 +532,7 @@ void TCPManagerImpl::listenSocketReadable(ev_loop *, ev_io * w, int)
 
         TCPConnData * conn = impl->credentials_ ?
             new TCPConnData(*impl, newSock, ip, port,
-                new TLSServer(*tlsSessions(), *(impl->credentials_)),
+                new TLSServer(tlsSessions(), *(impl->credentials_)),
                 ++impl->tlsConnId_ % impl->tlsThreads_.size()) :
             new TCPConnData(*impl, newSock, ip, port, 0, 0);
         impl->connections_ << conn;
@@ -545,16 +548,16 @@ void TCPManagerImpl::callClosed(TCPConnData * conn)
     else                 execLater(new Functor0<TCPConnData>(conn, &TCPConnData::callClosed));
 }
 
-TCPConnData * TCPManagerImpl::addConnection(int sock, const QByteArray & destIP, quint16 destPort,
-    TLSCredentials * credentials, const QByteArray & destAddress)
+TCPConnData * TCPManagerImpl::addConnection(int sock, const CFByteArray & destIP, cfuint16 destPort,
+    TLSCredentials * credentials, const CFByteArray & destAddress)
 {
     SyncedThreadCall<TCPConnData *> stc(this);
     if (!stc.verify(&TCPManagerImpl::addConnection, sock, destIP, destPort, credentials, destAddress)) return stc.retval();
 
     TCPConnData * conn = credentials ?
-        new TCPConnData(*this, sock, destIP, destPort,
-            new TLSClient(*tlsSessions(), *credentials, destAddress), ++tlsConnId_ % tlsThreads_.size()) :
-        new TCPConnData(*this, sock, destIP, destPort, 0, 0);
+        new TCPConnData(*this, sock, destIP.constData(), destPort,
+            new TLSClient(tlsSessions(), *credentials, destAddress), ++tlsConnId_ % tlsThreads_.size()) :
+        new TCPConnData(*this, sock, destIP.constData(), destPort, 0, 0);
     connections_ << conn;
     return conn;
 }

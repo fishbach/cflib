@@ -7,7 +7,8 @@
 
 #pragma once
 
-#include <QtCore>
+#include <cflib/base/cfbytearray.h>
+#include <cflib/base/cfcontainers.h>
 
 namespace cflib { namespace util {
 
@@ -15,22 +16,22 @@ class ArgBase
 {
 public:
     bool isSet() const { return count_ > 0; }
-    QByteArray value(const QByteArray & defaultValue = QByteArray()) const { return values_.isEmpty() ? defaultValue : values_.first(); }
-    QList<QByteArray> values() const { return values_; }
-    uint count() const { return count_; }
+    CFByteArray value(const CFByteArray & defaultValue = CFByteArray()) const { return values_.empty() ? defaultValue : values_.front(); }
+    CFList<CFByteArray> values() const { return values_; }
+    cfuint count() const { return count_; }
 
 protected:
-    ArgBase(char optionChar, const QByteArray & optionName, bool hasValue, bool isOptional, bool isRepeatable) :
+    ArgBase(char optionChar, const CFByteArray & optionName, bool hasValue, bool isOptional, bool isRepeatable) :
         optionChar_(optionChar), optionName_(optionName), hasValue_(hasValue), isOptional_(isOptional), isRepeatable_(isRepeatable),
         count_(0) {}
 
     char optionChar_;
-    QByteArray optionName_;
+    CFByteArray optionName_;
     bool hasValue_;
     bool isOptional_;
     bool isRepeatable_;
-    uint count_;
-    QList<QByteArray> values_;
+    cfuint count_;
+    CFList<CFByteArray> values_;
 
     friend class CmdLine;
 };
@@ -39,16 +40,16 @@ class Arg : public ArgBase
 {
 public:
     Arg(bool isOptional = true, bool isRepeatable = false) :
-        ArgBase(0, QByteArray(), true, isOptional, isRepeatable) {}
+        ArgBase(0, CFByteArray(), true, isOptional, isRepeatable) {}
 };
 
 class Option : public ArgBase
 {
 public:
-    Option(const QByteArray & optionName, bool hasValue = false,
+    Option(const CFByteArray & optionName, bool hasValue = false,
         bool isOptional = true, bool isRepeatable = false) :
         ArgBase(0, optionName, hasValue, isOptional, isRepeatable) {}
-    Option(char optionChar, const QByteArray & optionName = QByteArray(), bool hasValue = false,
+    Option(char optionChar, const CFByteArray & optionName = CFByteArray(), bool hasValue = false,
         bool isOptional = true, bool isRepeatable = false) :
         ArgBase(optionChar, optionName, hasValue, isOptional, isRepeatable) {}
 };
@@ -61,15 +62,15 @@ public:
     CmdLine & operator<<(Arg & arg);
     CmdLine & operator<<(Option & arg);
 
-    QByteArray executable() const { return executable_; }
+    CFByteArray executable() const { return executable_; }
 
 private:
-    QList<QByteArray> rawArgs_;
-    QList<Arg *> args_;
-    QHash<char, Option *> shortOptions_;
-    QHash<QByteArray, Option *> options_;
-    QList<ArgBase *> nonOptionals_;
-    QByteArray executable_;
+    CFList<CFByteArray> rawArgs_;
+    CFList<Arg *> args_;
+    CFHash<char, Option *> shortOptions_;
+    CFHash<CFByteArray, Option *> options_;
+    CFList<ArgBase *> nonOptionals_;
+    CFByteArray executable_;
 };
 
 }}    // namespace

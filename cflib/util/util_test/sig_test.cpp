@@ -10,10 +10,18 @@
 
 using namespace cflib::util;
 
-class Sig_Test: public QObject
+class Sig_Test : public cflib::util::TestBase
 {
-    Q_OBJECT
-private slots:
+public:
+    std::vector<cflib::util::TestMethod> testMethods() const override {
+        auto self = const_cast<Sig_Test *>(this);
+        return {
+            {"simple_test", [self]() { self->simple_test(); }},
+            {"return_test", [self]() { self->return_test(); }},
+            {"ref_test", [self]() { self->ref_test(); }},
+            {"member_test", [self]() { self->member_test(); }}
+        };
+    }
 
     void simple_test()
     {
@@ -81,5 +89,4 @@ private slots:
     }
 
 };
-#include "sig_test.moc"
 ADD_TEST(Sig_Test)

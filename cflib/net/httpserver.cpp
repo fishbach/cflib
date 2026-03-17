@@ -22,13 +22,13 @@ public:
         TCPManager(tlsThreadCount),
         threadCounter_(0)
     {
-        for (uint i = 1 ; i <= threadCount ; ++i) threads_.append(new impl::HttpThread(i, threadCount));
+        for (uint i = 1 ; i <= threadCount ; ++i) threads_.push_back(new impl::HttpThread(i, threadCount));
     }
 
     ~Impl()
     {
         stop();
-        foreach (impl::HttpThread * th, threads_) delete th;
+        for (auto * th : threads_) delete th;
     }
 
     void registerHandler(RequestHandler & handler)
@@ -43,9 +43,9 @@ protected:
     }
 
 private:
-    QVector<impl::HttpThread *> threads_;
+    CFVector<impl::HttpThread *> threads_;
     uint threadCounter_;
-    QList<RequestHandler *> handlers_;
+    CFList<RequestHandler *> handlers_;
 };
 
 HttpServer::HttpServer(uint threadCount, uint tlsThreadCount) :
@@ -58,12 +58,12 @@ HttpServer::~HttpServer()
     delete impl_;
 }
 
-bool HttpServer::start(const QByteArray & address, quint16 port)
+bool HttpServer::start(const CFByteArray & address, cfuint16 port)
 {
     return impl_->start(address, port);
 }
 
-bool HttpServer::start(const QByteArray & address, quint16 port, crypt::TLSCredentials & credentials)
+bool HttpServer::start(const CFByteArray & address, cfuint16 port, crypt::TLSCredentials & credentials)
 {
     return impl_->start(address, port, credentials);
 }

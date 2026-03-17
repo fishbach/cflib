@@ -34,16 +34,6 @@ public:
     {
     }
 
-
-//      Server(const std::shared_ptr<Callbacks>& callbacks,
-//             const std::shared_ptr<Session_Manager>& session_manager,
-//             const std::shared_ptr<Credentials_Manager>& creds,
-//             const std::shared_ptr<const Policy>& policy,
-//             const std::shared_ptr<RandomNumberGenerator>& rng,
-//             bool is_datagram = false,
-//             size_t reserved_io_buffer_size = TLS::Channel::IO_BUF_DEFAULT_SIZE);
-
-
     void tls_emit_data(std::span<const uint8_t> data) override
     {
         outgoingEncryptedPtr->append((const char *)data.data(), data.size());
@@ -51,7 +41,7 @@ public:
 
     void tls_record_received(uint64_t seq_no, std::span<const uint8_t> data) override
     {
-        Q_UNUSED(seq_no)
+        CF_UNUSED(seq_no);
         incomingPlainPtr->append((const char *)data.data(), data.size());
     }
 
@@ -63,14 +53,14 @@ public:
 
     void tls_session_established(const TLS::Session_Summary & session) override
     {
-        Q_UNUSED(session)
+        CF_UNUSED(session);
         isReady = true;
     }
 
 public:
-    QByteArray outgoingPlainTmpBuf;
-    QByteArray * outgoingEncryptedPtr;
-    QByteArray * incomingPlainPtr;
+    CFByteArray outgoingPlainTmpBuf;
+    CFByteArray * outgoingEncryptedPtr;
+    CFByteArray * incomingPlainPtr;
     bool isReady;
     bool hasError;
     std::shared_ptr<TLS::Policy> policy;
@@ -91,14 +81,14 @@ TLSServer::~TLSServer()
     delete impl_;
 }
 
-bool TLSServer::received(const QByteArray & encrypted, QByteArray & plain, QByteArray & sendBack)
+bool TLSServer::received(const CFByteArray & encrypted, CFByteArray & plain, CFByteArray & sendBack)
 {
     if (impl_->hasError) return false;
     impl_->outgoingEncryptedPtr = &sendBack;
     impl_->incomingPlainPtr     = &plain;
     TRY {
         impl_->server.received_data((const byte *)encrypted.constData(), encrypted.size());
-        QByteArray & tmpBuf = impl_->outgoingPlainTmpBuf;
+        CFByteArray & tmpBuf = impl_->outgoingPlainTmpBuf;
         if (!tmpBuf.isEmpty() && impl_->isReady && !impl_->hasError) {
             impl_->server.send((const byte *)tmpBuf.constData(), tmpBuf.size());
             tmpBuf.clear();
@@ -109,7 +99,7 @@ bool TLSServer::received(const QByteArray & encrypted, QByteArray & plain, QByte
     return false;
 }
 
-bool TLSServer::send(const QByteArray & plain, QByteArray & encrypted)
+bool TLSServer::send(const CFByteArray & plain, CFByteArray & encrypted)
 {
     if (impl_->hasError) return false;
     impl_->outgoingEncryptedPtr = &encrypted;

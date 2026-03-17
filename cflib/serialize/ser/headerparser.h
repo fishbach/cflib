@@ -7,37 +7,38 @@
 
 #pragma once
 
-#include <QtCore>
+#include <string>
+#include <vector>
 
 class HeaderParser
 {
 public:
     struct Variable
     {
-        QString name;
-        QString type;
+        std::string name;
+        std::string type;
         bool isRef;
 
         Variable() : isRef(false) {}
     };
-    typedef QList<Variable> Variables;
+    typedef std::vector<Variable> Variables;
 
     struct Function
     {
-        QString returnType;
-        QString name;
+        std::string returnType;
+        std::string name;
         Variables parameters;
         Variables registerParameters;
 
         bool hasReturnValues() const;
     };
-    typedef QList<Function> Functions;
+    typedef std::vector<Function> Functions;
 
     struct Class
     {
-        QString ns;
-        QString name;
-        QString base;
+        std::string ns;
+        std::string name;
+        std::string base;
         bool doBaseSerialize;
         Variables members;
         Functions functions;
@@ -45,26 +46,26 @@ public:
 
         Class() : doBaseSerialize(false) {}
     };
-    typedef QList<Class> Classes;
+    typedef std::vector<Class> Classes;
 
 public:
-    bool parse(const QString & header);
-    QString lastError() const { return lastError_; }
+    bool parse(const std::string & header);
+    std::string lastError() const { return lastError_; }
 
-    bool hasSerializeElements() const { return !classes_.isEmpty(); }
-    QList<Class> classes() const { return classes_; }
-
-private:
-    bool getVariables(const QString & in, int start, int end, Class & cl);
-    bool getParameters(const QString & in, int start, int end, Variables & vars);
-    bool getFunctions(const QString & in, int start, int end, Class & cl);
-    bool getCfSignals(const QString & in, int start, int end, Class & cl);
-    bool getMembers(const QString & in, int start, int end, Class & cl, int & state);
-    bool getMemberBlocks(const QString & in, int start, int end, Class & cl, int & state);
-    bool getClasses(const QString & in, int start, int end, Class cl);
-    bool removeCommentsAndStringContents(QString & header);
+    bool hasSerializeElements() const { return !classes_.empty(); }
+    std::vector<Class> classes() const { return classes_; }
 
 private:
-    QString lastError_;
+    bool getVariables(const std::string & in, int start, int end, Class & cl);
+    bool getParameters(const std::string & in, int start, int end, Variables & vars);
+    bool getFunctions(const std::string & in, int start, int end, Class & cl);
+    bool getCfSignals(const std::string & in, int start, int end, Class & cl);
+    bool getMembers(const std::string & in, int start, int end, Class & cl, int & state);
+    bool getMemberBlocks(const std::string & in, int start, int end, Class & cl, int & state);
+    bool getClasses(const std::string & in, int start, int end, Class cl);
+    bool removeCommentsAndStringContents(std::string & header);
+
+private:
+    std::string lastError_;
     Classes classes_;
 };

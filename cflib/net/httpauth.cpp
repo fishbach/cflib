@@ -12,16 +12,18 @@
 #include <cflib/util/log.h>
 #include <cflib/util/util.h>
 
+#include <sys/stat.h>
+
 USE_LOG(LogCat::Http)
 
 namespace cflib { namespace net {
 
-HttpAuth::HttpAuth(const QByteArray & name, const QString & htpasswd) :
+HttpAuth::HttpAuth(const CFByteArray & name, const CFString & htpasswd) :
     name_(name), htpasswd_(htpasswd)
 {
 }
 
-void HttpAuth::addUser(const QString & name, const QByteArray & passwordHash)
+void HttpAuth::addUser(const CFString & name, const CFByteArray & passwordHash)
 {
     users_[name] = passwordHash;
 }
@@ -35,47 +37,50 @@ void HttpAuth::reset()
 void HttpAuth::handleRequest(const Request & request)
 {
     if (!htpasswd_.isEmpty()) {
-        QFileInfo fi(htpasswd_);
-        if (!fi.isReadable()) {
-            htpasswdLastMod_ = QDateTime();
+        struct stat st;
+        bool readable = stat(htpasswd_.c_str(), &st) == 0 && S_ISREG(st.st_mode);
+        if (!readable) {
+            htpasswdLastMod_ = CFDateTime();
             users_.clear();
             checkedUsers_.clear();
             logWarn("Cannot read HTTP Basic Auth file %1", htpasswd_);
-        } else if (fi.lastModified() != htpasswdLastMod_) {
-            htpasswdLastMod_ = fi.lastModified();
-            users_.clear();
-            checkedUsers_.clear();
+        } else {
+            CFDateTime fileMod = CFDateTime::fromSecsSinceEpoch(st.st_mtime);
+            if (fileMod.toSecsSinceEpoch() != htpasswdLastMod_.toSecsSinceEpoch()) {
+                htpasswdLastMod_ = fileMod;
+                users_.clear();
+                checkedUsers_.clear();
 
-            QFile f(htpasswd_);
-            f.open(QFile::ReadOnly);
-            while (!f.atEnd()) {
-                QStringList parts = QString::fromUtf8(f.readLine()).split(':');
-                if (parts.size() == 2) {
-                    users_[parts[0].trimmed()] = parts[1].trimmed().toUtf8();
+                CFByteArray content = util::readFile(htpasswd_);
+                CFList<CFByteArray> lines = content.split('\n');
+                for (const auto & line : lines) {
+                    CFList<CFByteArray> parts = line.split(':');
+                    if (parts.size() == 2) {
+                        users_[CFString(parts[0].trimmed().toStdString())] = parts[1].trimmed();
+                    }
                 }
+                logInfo("loaded HTTP Basic Auth file %1 with %2 entries", htpasswd_, users_.size());
             }
-            logInfo("loaded HTTP Basic Auth file %1 with %2 entries", htpasswd_, users_.size());
         }
     }
 
-    const QByteArray auth = request.getHeader("authorization");
-    if (checkedUsers_.contains(auth)) return;
+    const CFByteArray auth = request.getHeader("authorization");
+    if (cfContains(checkedUsers_, auth)) return;
 
     const Request::LoginPass loginPass = Request::getBasicAuth(auth);
     if (!loginPass.login.isEmpty()) {
-        const QByteArray hash = users_.value(loginPass.login);
+        auto it = users_.find(loginPass.login);
+        const CFByteArray hash = it != users_.end() ? it->second : CFByteArray();
         if (!hash.isEmpty() && crypt::checkPassword(loginPass.password.toUtf8(), hash)) {
-            checkedUsers_ << auth;
+            checkedUsers_.insert(auth);
             return;
         }
     }
 
-    request.sendRaw(
-        "HTTP/1.1 401 Not Authorized\r\n"
-        "WWW-Authenticate: Basic realm=\"" << name_ << "\"\r\n"
-        << request.defaultHeaders() <<
-        "Content-Type: text/html; charset=utf-8\r\n",
-
+    CFByteArray hdr = "HTTP/1.1 401 Not Authorized\r\n"
+        "WWW-Authenticate: Basic realm=\"";
+    hdr << name_ << "\"\r\n" << request.defaultHeaders() << "Content-Type: text/html; charset=utf-8\r\n";
+    request.sendRaw(hdr,
         "<html>\r\n"
         "<head><title>401 - Not Authorized</title></head>\r\n"
         "<body>\r\n"

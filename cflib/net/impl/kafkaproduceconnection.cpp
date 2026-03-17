@@ -15,21 +15,21 @@ KafkaConnector::ProduceConnection::ProduceConnection(TCPConnData * data, KafkaCo
 {
 }
 
-void KafkaConnector::ProduceConnection::reply(qint32 correlationId, impl::KafkaRawReader & reader)
+void KafkaConnector::ProduceConnection::reply(cfint32 correlationId, impl::KafkaRawReader & reader)
 {
-    qint32 topicCount;
+    cfint32 topicCount;
     reader >> topicCount;
-    for (qint32 i = 0 ; i < topicCount ; ++i) {
+    for (cfint32 i = 0 ; i < topicCount ; ++i) {
 
         impl::KafkaString topicName;
         reader >> topicName;
 
-        qint32 partitionCount;
+        cfint32 partitionCount;
         reader >> partitionCount;
-        for (qint32 i = 0 ; i < partitionCount ; ++i) {
-            qint32 partitionId;
-            qint16 errorCode;
-            qint64 offset;
+        for (cfint32 i = 0 ; i < partitionCount ; ++i) {
+            cfint32 partitionId;
+            cfint16 errorCode;
+            cfint64 offset;
             reader >> partitionId >> errorCode >> offset;
             impl_.main_.produceResponse(correlationId, (KafkaConnector::ErrorCode)errorCode, offset);
         }
@@ -38,7 +38,9 @@ void KafkaConnector::ProduceConnection::reply(qint32 correlationId, impl::KafkaR
 
 void KafkaConnector::ProduceConnection::closed()
 {
-    impl_.produceConnections_.remove(impl_.produceConnections_.keys(this).value(0));
+    for (auto it = impl_.produceConnections_.begin(); it != impl_.produceConnections_.end(); ++it) {
+        if (it->second == this) { impl_.produceConnections_.erase(it); break; }
+    }
     impl_.fetchMetaData();
 }
 

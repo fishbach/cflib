@@ -7,11 +7,11 @@
 
 #pragma once
 
-#include <QtCore>
+#include <cflib/base/cfbytearray.h>
 
 namespace {
 
-const QByteArray cert1(
+const CFByteArray cert1(
     "-----BEGIN CERTIFICATE-----\r\n"
     "MIIDKzCCAhOgAwIBAgICEAEwDQYJKoZIhvcNAQELBQAwDTELMAkGA1UEAwwCY2Ew\r\n"
     "HhcNMjYwMTExMTEzMTQ5WhcNMzYwMTA5MTEzMTQ5WjAUMRIwEAYDVQQDDAkxMjcu\r\n"
@@ -33,7 +33,7 @@ const QByteArray cert1(
     "-----END CERTIFICATE-----\r\n"
 );
 
-const QByteArray cert1PrivateKey(
+const CFByteArray cert1PrivateKey(
     "-----BEGIN ENCRYPTED PRIVATE KEY-----\r\n"
     "MIIFJDBWBgkqhkiG9w0BBQ0wSTAxBgkqhkiG9w0BBQwwJAQQI4rALn3ko/KqhwoA\r\n"
     "48iDZQICCAAwDAYIKoZIhvcNAgkFADAUBggqhkiG9w0DBwQIpv61SH+PwEYEggTI\r\n"
@@ -66,7 +66,7 @@ const QByteArray cert1PrivateKey(
     "-----END ENCRYPTED PRIVATE KEY-----\r\n"
 );
 
-const QByteArray cert2(
+const CFByteArray cert2(
     "-----BEGIN CERTIFICATE-----\r\n"
     "MIIC6jCCAdKgAwIBAgICEAAwDQYJKoZIhvcNAQELBQAwETEPMA0GA1UEAwwGcm9v\r\n"
     "dGNhMB4XDTI2MDExMTExMzE0OVoXDTM2MDEwOTExMzE0OVowDTELMAkGA1UEAwwC\r\n"
@@ -87,7 +87,7 @@ const QByteArray cert2(
     "-----END CERTIFICATE-----\r\n"
 );
 
-const QByteArray cert2Crl(
+const CFByteArray cert2Crl(
     "-----BEGIN X509 CRL-----\r\n"
     "MIIBZTBPAgEBMA0GCSqGSIb3DQEBCwUAMA0xCzAJBgNVBAMMAmNhFw0yNjAxMTEx\r\n"
     "MTMxNDlaFw0zNjAxMDkxMTMxNDlaoA4wDDAKBgNVHRQEAwIBATANBgkqhkiG9w0B\r\n"
@@ -100,7 +100,7 @@ const QByteArray cert2Crl(
     "-----END X509 CRL-----\r\n"
 );
 
-const QByteArray cert3(
+const CFByteArray cert3(
     "-----BEGIN CERTIFICATE-----\r\n"
     "MIIDADCCAeigAwIBAgIUR6hzmRwZpLodPwaeXfL1mBfhRBIwDQYJKoZIhvcNAQEL\r\n"
     "BQAwETEPMA0GA1UEAwwGcm9vdGNhMB4XDTI2MDExMTExMzE0OVoXDTM2MDEwOTEx\r\n"
@@ -122,10 +122,10 @@ const QByteArray cert3(
     "-----END CERTIFICATE-----\r\n"
 );
 
-inline QByteArray detach(const QByteArray & ba)
+inline CFByteArray detach(const CFByteArray & ba)
 {
-    QByteArray rv(ba);
-    rv.detach();
+    CFByteArray rv(ba);
+
     return rv;
 }
 

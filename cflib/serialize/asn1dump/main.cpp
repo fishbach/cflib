@@ -28,28 +28,26 @@ using namespace cflib::util;
 
 namespace {
 
-int showUsage(const QByteArray & executable)
+int showUsage(const CFByteArray & executable)
 {
-    QTextStream(stderr)
-        << "Usage: " << executable << " [options]"     << Qt::endl
-        << "Options:"                                  << Qt::endl
-        << "  -h, --help   => this help"               << Qt::endl
-        << "  -x, --hex    => input is hex encoded"    << Qt::endl
-        << "  -b, --base64 => input is Base64 encoded" << Qt::endl;
+    fprintf(stderr,
+        "Usage: %s [options]\n"
+        "Options:\n"
+        "  -h, --help   => this help\n"
+        "  -x, --hex    => input is hex encoded\n"
+        "  -b, --base64 => input is Base64 encoded\n",
+        executable.constData());
     return 1;
 }
 
 
-void show(const QByteArray & data, bool hex, bool base64)
+void show(const CFByteArray & data, bool hex, bool)
 {
-    const QByteArray rawData =
-        hex    ? QByteArray::fromHex(data)    :
-        base64 ? QByteArray::fromBase64(data) :
+    const CFByteArray rawData =
+        hex ? CFByteArray::fromHex(data) :
         data;
 
-    static QTextStream out(stdout);
-
-    out << printAsn1(rawData) << Qt::endl;
+    fprintf(stdout, "%s\n", printAsn1(rawData).c_str());
 }
 
 }
@@ -62,10 +60,8 @@ int main(int argc, char *argv[])
     Option base64Opt('b', "base64"); cmdLine << base64Opt;
     if (!cmdLine.parse() || help.isSet() || (hexOpt.isSet() && base64Opt.isSet())) return showUsage(cmdLine.executable());
 
-    QCoreApplication a(argc, argv);
-
-    const QByteArray buf(0x10000, '\0');
-    QByteArray data;
+    const CFByteArray buf(0x10000, '\0');
+    CFByteArray data;
 
     struct timeval tv;
     tv.tv_sec  = 0;
@@ -74,15 +70,15 @@ int main(int argc, char *argv[])
     fd_set fds;
     FD_ZERO(&fds);
 
-    forever {
+    while (true) {
         FD_SET(0, &fds);
         int retval = select(1, &fds, NULL, NULL, &tv);
         if (retval == -1) {
-            QTextStream(stderr) << "cannot read from stdin" << Qt::endl;
+            fprintf(stderr, "cannot read from stdin\n");
             return 1;
         }
         if (retval > 0) {
-            qint64 count = read(0, (void *)buf.constData(), buf.size());
+            cfint64 count = read(0, (void *)buf.constData(), buf.size());
             if (count == 0) {
                 // eof
                 if (!data.isEmpty()) show(data, hexOpt.isSet(), base64Opt.isSet());

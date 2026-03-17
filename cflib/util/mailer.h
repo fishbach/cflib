@@ -9,29 +9,32 @@
 
 #include <cflib/util/threadverify.h>
 
+struct ev_loop;
+struct ev_child;
+
 namespace cflib { namespace util {
 
 class Mail
 {
 public:
-    QString from;
-    QString to;
-    QString subject;
-    QString text;
+    CFString from;
+    CFString to;
+    CFString subject;
+    CFString text;
 
 public:
     Mail() = default;
-    Mail(const QString & to, const QString & subject, const QString & text, const QString & from) :
+    Mail(const CFString & to, const CFString & subject, const CFString & text, const CFString & from) :
         from(from), to(to), subject(subject), text(text) {}
 
     bool isValid() const;
 
-    QByteArray raw(QString & fromAddr, QString & toAddr) const;
+    CFByteArray raw(CFString & fromAddr, CFString & toAddr) const;
 };
 
-class Mailer : public QObject, public ThreadVerify
+class Mailer : public ThreadVerify
 {
-    Q_OBJECT
+    CF_DISABLE_COPY(Mailer)
 public:
     Mailer(bool isEnabled = true);
     ~Mailer();
@@ -41,21 +44,19 @@ public:
 protected:
     virtual void deleteThreadData();
 
-private slots:
-    void finished(int exitCode, QProcess::ExitStatus exitStatus);
-    void errorOccurred(QProcess::ProcessError error);
-    void startProcess();
-
 private:
     void initThreadData();
     void doSend(const Mail & mail);
+    void startProcess();
+    static void childCallback(ev_loop * loop, ev_child * w, int revents);
+    void childExited(int status);
 
 private:
     static Mailer * instance_;
 
-    QString sendmailPath_;
-    QProcess * process_;
-    QList<Mail> queue_;
+    CFString sendmailPath_;
+    CFList<Mail> queue_;
+    pid_t childPid_;
 };
 
 }}    // namespace

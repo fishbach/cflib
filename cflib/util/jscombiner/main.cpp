@@ -8,45 +8,63 @@
 #include <cflib/util/cmdline.h>
 #include <cflib/util/util.h>
 
+#include <algorithm>
+#include <map>
+#include <regex>
+#include <set>
+#include <string>
+#include <unistd.h>
+#include <vector>
+
 using namespace cflib::util;
 
-const QRegularExpression callRE(R"((?:^|\W)(require|define)\s*\((\s*|\s*\[.*?\]\s*,\s*)(?:function\s*)?\()",
-    QRegularExpression::DotMatchesEverythingOption);
-const QRegularExpression closingRE(R"(\(|\)|"|'|//|/\*)",
-    QRegularExpression::DotMatchesEverythingOption);
-const QRegularExpression eolRE(R"(\r|\n)",
-    QRegularExpression::DotMatchesEverythingOption);
+const std::regex callRE(
+    R"((?:^|\W)(require|define)\s*\((\s*|\s*\[[\s\S]*?\]\s*,\s*)(?:function\s*)?\()",
+    std::regex::ECMAScript);
+const std::regex closingRE(R"(\(|\)|"|'|//|/\*)");
 
-QString output;
-
-QString basePath = "";
+std::string output;
+std::string basePath;
 
 struct Space {
-    QMap<QString, Space> sub;
+    std::map<std::string, Space> sub;
 };
 Space spaces;
 
-QSet<QString> available;
-QStringList order;
-QSet<QString> defined;
-QSet<QString> excludes;
+std::set<std::string> available;
+std::vector<std::string> order;
+std::set<std::string> defined;
+std::set<std::string> excludes;
 
-int usage()
+int usage(const char * progName)
 {
-    QTextStream(stderr) << "usage: " << QCoreApplication::applicationName() << " <main.js>" << Qt::endl;
+    fprintf(stderr, "usage: %s <main.js>\n", progName);
     return 1;
 }
 
-int findClosing(const QString & src, int start)
+static std::vector<std::string> splitStr(const std::string & s, char delim)
 {
-    const int len = src.length();
-    int openCount = 0;
-    forever {
-        QRegularExpressionMatch m = closingRE.match(src, start);
-        if (!m.hasMatch()) break;
-        start = m.capturedEnd();
+    std::vector<std::string> result;
+    size_t start = 0, pos;
+    while ((pos = s.find(delim, start)) != std::string::npos) {
+        result.push_back(s.substr(start, pos - start));
+        start = pos + 1;
+    }
+    result.push_back(s.substr(start));
+    return result;
+}
 
-        QString found = m.captured();
+int findClosing(const std::string & src, int start)
+{
+    const int len = (int)src.size();
+    int openCount = 0;
+    while (true) {
+        std::smatch m;
+        auto searchFrom = src.cbegin() + start;
+        if (!std::regex_search(searchFrom, src.cend(), m, closingRE)) break;
+        start += (int)m.position() + (int)m.length();
+
+        std::string found = m[0].str();
         if (found == "(") {
             ++openCount;
         } else if (found == ")") {
@@ -55,49 +73,43 @@ int findClosing(const QString & src, int start)
         } else if (found == "'") {
             int pos = start;
             while (pos < len) {
-                QChar c = src[pos++];
+                char c = src[pos++];
                 if (c == '\\') ++pos;
-                else if (c == '\'') {
-                    start = pos;
-                    break;
-                }
+                else if (c == '\'') { start = pos; break; }
             }
         } else if (found == "\"") {
             int pos = start;
             while (pos < len) {
-                QChar c = src[pos++];
+                char c = src[pos++];
                 if (c == '\\') ++pos;
-                else if (c == '"') {
-                    start = pos;
-                    break;
-                }
+                else if (c == '"') { start = pos; break; }
             }
         } else if (found == "//") {
-            int pos = src.indexOf(eolRE, start);
-            if (pos == -1) break;
-            start = pos + 1;
+            size_t pos = src.find_first_of("\r\n", start);
+            if (pos == std::string::npos) break;
+            start = (int)pos + 1;
         } else if (found == "/*") {
-            int pos = src.indexOf("*/", start);
-            if (pos == -1) break;
-            start = pos + 1;
+            size_t pos = src.find("*/", start);
+            if (pos == std::string::npos) break;
+            start = (int)pos + 1;
         }
     }
 
-    QTextStream(stderr) << "cannot find closing bracket" << Qt::endl;
+    fprintf(stderr, "cannot find closing bracket\n");
     return len - 1;
 }
 
-QStringList parseDepends(const QString & depends)
+std::vector<std::string> parseDepends(const std::string & depends)
 {
-    QStringList rv;
+    std::vector<std::string> rv;
     int pos = 0;
     int start = -1;
-    while (pos < depends.length()) {
-        QChar c = depends[pos++];
+    while (pos < (int)depends.size()) {
+        char c = depends[pos++];
         if (c == '\'' || c == '"') {
             if (start == -1) start = pos;
             else {
-                rv << depends.mid(start, pos - start - 1);
+                rv.push_back(depends.substr(start, pos - start - 1));
                 start = -1;
             }
         }
@@ -105,127 +117,135 @@ QStringList parseDepends(const QString & depends)
     return rv;
 }
 
-void getDependencies(const QString & name)
+void getDependencies(const std::string & name)
 {
-    QString file = readTextfile(name);
+    std::string file(readTextfile(CFString(name.c_str())).str());
 
     int pos = 0;
-    forever {
-        QRegularExpressionMatch m = callRE.match(file, pos);
-        if (!m.hasMatch()) break;
-        pos = m.capturedEnd();
+    while (true) {
+        std::smatch m;
+        auto searchFrom = file.cbegin() + pos;
+        std::regex_constants::match_flag_type flags = std::regex_constants::match_default;
+        if (pos > 0) flags |= std::regex_constants::match_prev_avail;
+        if (!std::regex_search(searchFrom, file.cend(), m, callRE, flags)) break;
 
-        // update spaces
-        if (m.captured(1) == "define") {
-            const QString mod = name.mid(basePath.length(), name.length() - basePath.length() - 3);
-            defined << mod;
-            QStringList parts = mod.split('/');
-            parts.removeLast();
+        int prevPos = pos;
+        pos = prevPos + (int)m.position() + (int)m.length();
+
+        if (m[1].str() == "define") {
+            std::string mod = name.substr(basePath.size(), name.size() - basePath.size() - 3);
+            defined.insert(mod);
+            std::vector<std::string> parts = splitStr(mod, '/');
+            parts.pop_back();
             Space * sp = &spaces;
-            foreach (const QString & p, parts) sp = &(sp->sub[p]);
+            for (const auto & p : parts) sp = &(sp->sub[p]);
         }
 
-        foreach (const QString & dep, parseDepends(m.captured(2))) {
-            if (excludes.contains(dep)) continue;
-            const QString depFile = basePath + dep + ".js";
-            if (!available.contains(depFile)) getDependencies(depFile);
+        for (const auto & dep : parseDepends(m[2].str())) {
+            if (excludes.count(dep)) continue;
+            std::string depFile = basePath + dep + ".js";
+            if (!available.count(depFile)) getDependencies(depFile);
         }
     }
 
-    available << name;
-    order << name;
+    available.insert(name);
+    order.push_back(name);
 }
 
-void convertFile(const QString & name)
+void convertFile(const std::string & name)
 {
-    QString file = readTextfile(name);
+    std::string file(readTextfile(CFString(name.c_str())).str());
 
     int pos = 0;
-    forever {
-        QRegularExpressionMatch m = callRE.match(file, pos);
-        if (!m.hasMatch()) break;
-        pos = m.capturedEnd();
+    while (true) {
+        std::smatch m;
+        auto searchFrom = file.cbegin() + pos;
+        std::regex_constants::match_flag_type flags = std::regex_constants::match_default;
+        if (pos > 0) flags |= std::regex_constants::match_prev_avail;
+        if (!std::regex_search(searchFrom, file.cend(), m, callRE, flags)) break;
 
-        int start   = m.capturedStart(1);
-        int end     = m.capturedEnd(2);
+        int prevPos = pos;
+        pos = prevPos + (int)m.position() + (int)m.length();
+
+        int start   = prevPos + (int)m.position(1);
+        int end     = prevPos + (int)m.position(2) + (int)m.length(2);
         int closing = findClosing(file, end);
 
-        QString params = "(";
+        std::string params = "(";
         bool first = true;
-        foreach (QString dep, parseDepends(m.captured(2))) {
-            if (first) first = false;
-            else params += ", ";
-            if (defined.contains(dep)) params << "mod." << dep.replace('/', '.');
-            else                       params << "null";
+        for (std::string dep : parseDepends(m[2].str())) {
+            if (first) first = false; else params += ", ";
+            if (defined.count(dep)) {
+                std::replace(dep.begin(), dep.end(), '/', '.');
+                params += "mod." + dep;
+            } else {
+                params += "null";
+            }
         }
         params += ")";
         file.insert(closing, params);
 
-        QString head;
-        if (m.captured(1) == "define") {
-            QString mod = name.mid(basePath.length(), name.length() - basePath.length() - 3);
-            head << "mod." << mod.replace('/', '.') << " = ";
+        std::string head;
+        if (m[1].str() == "define") {
+            std::string mod = name.substr(basePath.size(), name.size() - basePath.size() - 3);
+            std::replace(mod.begin(), mod.end(), '/', '.');
+            head = "mod." + mod + " = ";
         }
-        head << "(";
+        head += "(";
         file.replace(start, end - start, head);
-        pos += head.length() - end + start;
+        pos += (int)head.size() - end + start;
     }
     output += file;
 }
 
 void printSpaces(const Space & space)
 {
-    if (space.sub.isEmpty()) {
+    if (space.sub.empty()) {
         output += "{}";
         return;
     }
     output += "{ ";
     bool first = true;
-    QMapIterator<QString, Space> it(space.sub);
-    while (it.hasNext()) {
-        it.next();
-        if (first) first = false;
-        else       output += ", ";
-        output << it.key() << ": ";
-        printSpaces(it.value());
+    for (const auto & [key, val] : space.sub) {
+        if (first) first = false; else output += ", ";
+        output += key + ": ";
+        printSpaces(val);
     }
     output += " }";
 }
 
-int main(int argc, char *argv[])
+int main(int argc, char * argv[])
 {
-    QCoreApplication app(argc, argv);
-
-    // parse cmd line
     CmdLine cmdLine(argc, argv);
     Option help    ('h', "help"                     ); cmdLine << help;
     Option exclude ('e', "exclude", true, true, true); cmdLine << exclude;
     Arg    fileName(false                           ); cmdLine << fileName;
-    if (!cmdLine.parse() || help.isSet()) return usage();
+    if (!cmdLine.parse() || help.isSet()) return usage(argv[0]);
 
-    QString main = fileName.value();
-    if (!QFileInfo(main).isReadable()) return usage();
+    std::string mainFile(fileName.value().constData(), fileName.value().size());
+    if (access(mainFile.c_str(), R_OK) != 0) return usage(argv[0]);
 
-    foreach (const QByteArray & a, exclude.values()) excludes << QString::fromUtf8(a);
+    for (const auto & a : exclude.values())
+        excludes.insert(std::string(a.constData(), a.size()));
 
-    int pos = main.lastIndexOf('/');
-    if (pos != -1) basePath = main.left(pos + 1);
+    size_t slashPos = mainFile.rfind('/');
+    if (slashPos != std::string::npos) basePath = mainFile.substr(0, slashPos + 1);
 
-    getDependencies(main);
+    getDependencies(mainFile);
 
     output += "var mod = ";
     printSpaces(spaces);
     output += ";\n";
 
-    foreach (const QString & name, order) {
-        output
-            << "\n// ============================================================================\n"
-            << "// " << name << "\n"
-            << "// ============================================================================\n\n";
+    for (const auto & name : order) {
+        output +=
+            "\n// ============================================================================\n"
+            "// " + name + "\n"
+            "// ============================================================================\n\n";
         convertFile(name);
         output += "\n";
     }
 
-    QTextStream(stdout) << output.toUtf8();
+    printf("%s", output.c_str());
     return 0;
 }

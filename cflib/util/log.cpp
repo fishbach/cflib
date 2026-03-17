@@ -7,61 +7,59 @@
 
 #include "log.h"
 
+#include <cflib/base/cfconcurrent.h>
+#include <cflib/base/cfdatetime.h>
+#include <cflib/base/cffile.h>
+#include <cflib/base/cfcontainers.h>
 #include <cflib/util/hex.h>
 
 // needed for threadId()
-#ifndef Q_OS_WIN
-    #include <unistd.h>
-    #ifdef Q_OS_MAC
-        #include <pthread.h>
-    #else
-        #include <sys/syscall.h>
-    #endif
-    #ifdef _syscall0
-        _syscall0(pid_t, gettid)
-        pid_t gettid(void);
-    #else
-        inline pid_t gettid(void) {
-            #ifdef Q_OS_MAC
-                uint64_t tid;
-                pthread_threadid_np(NULL, &tid);
-                return (pid_t)tid;
-            #else
-                return (pid_t)syscall(__NR_gettid);
-            #endif
-        }
-    #endif
+#include <unistd.h>
+#ifdef __APPLE__
+    #include <pthread.h>
 #else
-    #include <windows.h>
+    #include <sys/syscall.h>
 #endif
+#ifdef _syscall0
+    _syscall0(pid_t, gettid)
+    pid_t gettid(void);
+#else
+    inline pid_t gettid(void) {
+        #ifdef __APPLE__
+            uint64_t tid;
+            pthread_threadid_np(NULL, &tid);
+            return (pid_t)tid;
+        #else
+            return (pid_t)syscall(__NR_gettid);
+        #endif
+    }
+#endif
+
+#include <cstdio>
 
 namespace cflib { namespace util {
 
 namespace {
 
 bool active = false;
-QMutex mutex;
-QFile file;
+CFMutex mutex;
+CFFile file;
 LogCategory logLevelTrigger = 15;
 LogLevelCallback logLevelCallback = 0;
 
 struct ThreadInfo {
-    uint indent;
-    uint threadId;
+    cfuint indent;
+    cfuint threadId;
     ThreadInfo() : indent(0), threadId(0) {}
 };
-QHash<uint, ThreadInfo> threadInfos;
+CFHash<cfuint, ThreadInfo> threadInfos;
 
-inline uint threadId()
+inline cfuint threadId()
 {
-#ifdef Q_OS_WIN
-    return (uint)GetCurrentThreadId();
-#else
-    return (uint)gettid();
-#endif
+    return (cfuint)gettid();
 }
 
-inline void writeInt(char * dest, uint number, int width)
+inline void writeInt(char * dest, cfuint number, int width)
 {
     // bug in gcc
     #pragma GCC diagnostic push
@@ -84,7 +82,7 @@ inline void writeInt(char * dest, uint number, int width)
     #pragma GCC diagnostic pop
 }
 
-inline void writeIntPadded(char * dest, uint number, int width)
+inline void writeIntPadded(char * dest, cfuint number, int width)
 {
     dest += width;
     for (int i = 0 ; i < width ; ++i) {
@@ -104,17 +102,17 @@ inline void writeCategory(char * dest, LogCategory cat)
     *(dest++) = toHex(cat >> 12);
     *(dest++) = toHex(cat >>  8 & 0xF);
     *(dest++) = toHex(cat >>  4 & 0xF);
-    const uint lc = cat & 0xF;
+    const cfuint lc = cat & 0xF;
     *(dest++) = LevelChar[lc > 6 ? 0 : lc];
 }
 
 // allow only ASCII for security reasons
-inline void writeMsg(QByteArray & out, const QByteArray & msg)
+inline void writeMsg(CFByteArray & out, const CFByteArray & msg)
 {
     const char * start = msg.constData();
     const char * p = start;
-    for (int i = 0 ; i < msg.length() ; ++i) {
-        const quint8 c = (quint8)*p;
+    for (cfsize_t i = 0 ; i < msg.length() ; ++i) {
+        const cfuint8 c = (cfuint8)*p;
         if (c < 0x20 || c > 0x7E) {
             if (p > start) out.append(start, p - start);
             ++p; start = p;
@@ -132,26 +130,24 @@ inline void writeMsg(QByteArray & out, const QByteArray & msg)
 
 LogCategory Log::logLevelCategory_ = 0;
 
-void Log::start(const QString & fileName)
+void Log::start(const CFString & fileName)
 {
     if (active) {
-        QTextStream(stderr) << "logging already started with log file: " << file.fileName() << Qt::endl;
+        fprintf(stderr, "logging already started with log file: %s\n", file.fileName().c_str());
         return;
     }
 
     if (fileName == "-") {
-        file.open(1, QFile::WriteOnly);
+        file.open(1, CFFile::WriteOnly);
     } else {
         file.setFileName(fileName);
-        if (!file.open(QFile::WriteOnly | QFile::Append)) {
-            QTextStream(stderr) << "could not open log file: " << fileName  << " (" << file.errorString() << ")" << Qt::endl;
+        if (!file.open(CFFile::WriteOnly | CFFile::Append)) {
+            fprintf(stderr, "could not open log file: %s (%s)\n", fileName.c_str(), file.errorString().c_str());
             return;
         }
-        file.setPermissions(QFile::ReadOwner | QFile::WriteOwner | QFile::ReadGroup);
+        file.setPermissions(CFFile::ReadOwner | CFFile::WriteOwner | CFFile::ReadGroup);
     }
     active = true;
-
-    qInstallMessageHandler(&Log::qtMessageHandler);
 }
 
 void Log::setLevelCallback(LogCategory level, LogLevelCallback callback)
@@ -160,13 +156,13 @@ void Log::setLevelCallback(LogCategory level, LogLevelCallback callback)
     logLevelCallback = callback;
 }
 
-void Log::writeLog(const char * filename, int lineNo, LogCategory category, const QByteArray & msg,
+void Log::writeLog(const char * filename, int lineNo, LogCategory category, const CFByteArray & msg,
     int indent)
 {
     if (!active) return;
 
     // construct message
-    QByteArray line;
+    CFByteArray line;
     line.reserve(256);
     line.resize(54);
     char * pos = (char *)line.constData();    // constData for performance
@@ -180,16 +176,16 @@ void Log::writeLog(const char * filename, int lineNo, LogCategory category, cons
     #endif
 
     // timestamp
-    const QDateTime now = QDateTime::currentDateTimeUtc();
-    writeInt(pos, now.date().year(),  4); pos += 4;
-    writeInt(pos, now.date().month(), 2); pos += 2;
-    writeInt(pos, now.date().day(),   2); pos += 2;
+    const CFDateTime now = CFDateTime::nowUTC();
+    writeInt(pos, now.year(),  4); pos += 4;
+    writeInt(pos, now.month(), 2); pos += 2;
+    writeInt(pos, now.day(),   2); pos += 2;
     *(pos++) = '-';
-    writeInt(pos, now.time().hour(),   2); pos += 2;
-    writeInt(pos, now.time().minute(), 2); pos += 2;
-    writeInt(pos, now.time().second(), 2); pos += 2;
+    writeInt(pos, now.hour(),   2); pos += 2;
+    writeInt(pos, now.minute(), 2); pos += 2;
+    writeInt(pos, now.second(), 2); pos += 2;
     *(pos++) = '.';
-    writeInt(pos, now.time().msec(),   3); pos += 3;
+    writeInt(pos, now.msec(),   3); pos += 3;
     *(pos++) = ' ';
 
     // category
@@ -215,9 +211,9 @@ void Log::writeLog(const char * filename, int lineNo, LogCategory category, cons
 
     // get thread info
     {
-        QMutexLocker lock(&mutex);
+        CFMutexLocker lock(mutex);
         ThreadInfo & info = threadInfos[threadId()];
-        if (info.threadId == 0) info.threadId = threadInfos.size();
+        if (info.threadId == 0) info.threadId = (cfuint)threadInfos.size();
 
         // thread id
         writeInt(pos, info.threadId, 2); pos += 2;
@@ -228,10 +224,10 @@ void Log::writeLog(const char * filename, int lineNo, LogCategory category, cons
         // indent for log function trace
         if (indent < 0) {
             info.indent += indent;
-            if (info.indent > 0) line += QByteArray(info.indent, ' ');
+            if (info.indent > 0) line += CFByteArray((cfsize_t)info.indent, ' ');
             line += "}\n";
         } else {
-            if (info.indent > 0) line += QByteArray(info.indent, ' ');
+            if (info.indent > 0) line += CFByteArray((cfsize_t)info.indent, ' ');
             if (indent > 0) {
                 line += msg;
                 line += " {\n";
@@ -250,21 +246,6 @@ void Log::writeLog(const char * filename, int lineNo, LogCategory category, cons
 
     // log level callback
     if (logLevelCallback && (category & 0x0F) >= logLevelTrigger) logLevelCallback(line);
-}
-
-void Log::qtMessageHandler(QtMsgType type, const QMessageLogContext & context, const QString & msg)
-{
-    LogCategory cat = 0;
-    switch (type) {
-        case QtDebugMsg:    cat = LogCat::Debug; break;
-        case QtWarningMsg:  cat = LogCat::Warn;  break;
-        case QtCriticalMsg:
-        case QtFatalMsg:    cat = LogCat::Critical; break;
-        // QtInfoMsg if Qt >= 5.5
-        default:            cat = LogCat::Info; break;
-    }
-    Log::writeLog(context.file, context.line, cat, msg.toUtf8(), 0);
-    if (type == QtFatalMsg) ::abort();
 }
 
 }}    // namespace

@@ -14,7 +14,7 @@
 namespace cflib { namespace net { namespace impl {
 
 TLSThread::TLSThread(TCPManagerImpl & impl, uint no, uint total) :
-    ThreadVerify(QString("TLSThread %1/%2").arg(no).arg(total), ThreadVerify::Worker),
+    ThreadVerify(CFString("TLSThread ") + CFString::number(no) + "/" + CFString::number(total), ThreadVerify::Worker),
     impl_(impl)
 {
 }
@@ -34,8 +34,8 @@ void TLSThread::read(TCPConnData * conn)
 {
     if (!verifyThreadCall(&TLSThread::read, conn)) return;
 
-    QByteArray sendBack;
-    QByteArray plain;
+    CFByteArray sendBack;
+    CFByteArray plain;
     bool ok = conn->tlsStream->received(conn->readData, plain, sendBack);
     if (!sendBack.isEmpty()) impl_.writeToSocket(conn, sendBack, false);
 
@@ -50,11 +50,11 @@ void TLSThread::read(TCPConnData * conn)
     }
 }
 
-void TLSThread::write(TCPConnData * conn, const QByteArray & data, bool notifyFinished)
+void TLSThread::write(TCPConnData * conn, const CFByteArray & data, bool notifyFinished)
 {
     if (!verifyThreadCall(&TLSThread::write, conn, data, notifyFinished)) return;
 
-    QByteArray enc;
+    CFByteArray enc;
     if (!conn->tlsStream->send(data, enc)) {
         impl_.closeConn(conn, TCPConn::ReadWriteClosed, notifyFinished);
     } else {

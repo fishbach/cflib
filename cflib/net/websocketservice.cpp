@@ -43,8 +43,8 @@ public:
         setNoDelay(true);
         startReadWatcher();
         if (connectionTimeoutSec > 0) {
-            lastRead_  = QDateTime::currentDateTimeUtc();
-            lastWrite_ = QDateTime::currentDateTimeUtc();
+            lastRead_  = CFDateTime::currentDateTimeUtc();
+            lastWrite_ = CFDateTime::currentDateTimeUtc();
         }
         if (deflateEnabled_) logDebug("using deflate on connection: %1", connId);
     }
@@ -64,7 +64,7 @@ public:
         startReadWatcher();
     }
 
-    void send(const QByteArray & data, bool isBinary)
+    void send(const CFByteArray & data, bool isBinary)
     {
         if (logTrace) {
             if (isBinary) logTrace("binary out %1: %2", connId_, data.toHex());
@@ -72,16 +72,16 @@ public:
         }
 
         bool deflate = false;
-        QByteArray deflateBuf;
+        CFByteArray deflateBuf;
         if (deflateEnabled_ && data.size() > 256) {
             deflate = true;
             deflateBuf = data;
             util::deflateRaw(deflateBuf, 1);
-            logDebug("deflated %1 -> %2 (connId: %3)", data.size(), deflateBuf.size(), connId_);
+            logDebug("deflated %1 -> %2 (connId: %3)", (cfuint64)data.size(), (cfuint64)deflateBuf.size(), connId_);
         }
 
         const uint len = deflate ? deflateBuf.size() : data.size();
-        QByteArray frame;
+        CFByteArray frame;
         frame.reserve(len + 10);
 
         // write first start byte
@@ -110,9 +110,11 @@ public:
         write(frame);
     }
 
-    void checkTimeout(const QDateTime & now)
+    void checkTimeout(const CFDateTime & now)
     {
-        uint last = qMax(lastRead_.secsTo(now), lastWrite_.secsTo(now));
+        cfint64 readSecs = lastRead_.secsTo(now);
+        cfint64 writeSecs = lastWrite_.secsTo(now);
+        uint last = (uint)cfMax(readSecs, writeSecs);
         if (last < connectionSendInterval_) return;
         if (last > connectionDataTimeout_) {
             logInfo("timeout on connection %1", connId_);
@@ -128,7 +130,7 @@ protected:
         if (!verifyThreadCall(&WSConnHandler::newBytesAvailable)) return;
 
         buf_ += read();
-        if (connectionDataTimeout_ > 0) lastRead_ = QDateTime::currentDateTimeUtc();
+        if (connectionDataTimeout_ > 0) lastRead_ = CFDateTime::currentDateTimeUtc();
         continueRead();
     }
 
@@ -137,27 +139,27 @@ protected:
         if (!verifyThreadCall(&WSConnHandler::closed, type)) return;
 
         if ((type & ReadClosed) && (type & WriteClosed)) {
-            service_.connections_.remove(connId_);
+            service_.connections_.erase(connId_);
             util::deleteNext(this);
         }
         service_.closed(connId_, type);
     }
 
-    virtual void someBytesWritten(quint64 count)
+    virtual void someBytesWritten(cfuint64 count)
     {
         if (!verifyThreadCall(&WSConnHandler::someBytesWritten, count)) return;
-        lastWrite_ = QDateTime::currentDateTimeUtc();
+        lastWrite_ = CFDateTime::currentDateTimeUtc();
     }
 
 private:
     // 0 -> stop, 1 -> continue, 2 -> need more data
     uint handleData()
     {
-        quint8 * data = (quint8 *)buf_.constData();
+        cfuint8 * data = (cfuint8 *)buf_.constData();
         uint dLen = buf_.size();
         const bool fin = data[0] & 0x80;
         const bool deflate = deflateEnabled_ && (data[0] & 0x40);
-        const quint8 opcode = data[0] & 0xF;
+        const cfuint8 opcode = data[0] & 0xF;
         const bool mask = data[1] & 0x80;
 
         // clients must send masked data
@@ -168,20 +170,20 @@ private:
         }
 
         // read len
-        quint64 len = data[1] & 0x7F;
+        cfuint64 len = data[1] & 0x7F;
         if (len < 126) {
             data += 2;
             dLen -= 2;
         } else if (len == 126) {
             if (dLen < 4) return 2;
-            len = (quint64)data[2] << 8 | (quint64)data[3];
+            len = (cfuint64)data[2] << 8 | (cfuint64)data[3];
             data += 4;
             dLen -= 4;
         } else {
             if (dLen < 10) return 2;
             len =
-                (quint64)data[2] << 56 | (quint64)data[3] << 48 | (quint64)data[4] << 40 | (quint64)data[5] << 32 |
-                (quint64)data[6] << 24 | (quint64)data[7] << 16 | (quint64)data[8] <<  8 | (quint64)data[9];
+                (cfuint64)data[2] << 56 | (cfuint64)data[3] << 48 | (cfuint64)data[4] << 40 | (cfuint64)data[5] << 32 |
+                (cfuint64)data[6] << 24 | (cfuint64)data[7] << 16 | (cfuint64)data[8] <<  8 | (cfuint64)data[9];
             data += 10;
             dLen -= 10;
         }
@@ -190,7 +192,7 @@ private:
         if (dLen < len + 4) return 2;
 
         // apply mask
-        const quint8 * maskKey = data;
+        const cfuint8 * maskKey = data;
         data += 4;
         dLen -= 4;
         for (uint i = 0 ; i < len ; ++i) data[i] ^= maskKey[i % 4];
@@ -215,7 +217,7 @@ private:
                 isDeflated_ = deflate;
                 fragmentBuf_.append((const char *)data, len);
             } else {
-                QByteArray msg((const char *)data, len);
+                CFByteArray msg((const char *)data, len);
                 if (deflate) util::inflateRaw(msg);
                 if (logTrace) {
                     if (opcode == 2) logTrace("binary in %1: %2", connId_, msg.toHex());
@@ -229,10 +231,10 @@ private:
             stopRead = true;
         } else if (opcode == 0x9) {    // ping
             // send pong
-            quint8 * orig = (quint8 *)buf_.constData();
+            cfuint8 * orig = (cfuint8 *)buf_.constData();
             orig[0] = (orig[0] & 0xF0) | 0xA;
             orig[1] &= 0x7F;
-            QByteArray pong((const char *)orig, buf_.size() - dLen - 4);
+            CFByteArray pong((const char *)orig, buf_.size() - dLen - 4);
             pong.append((const char *)data, len);
             write(pong);
         } else if (opcode == 0xA) {
@@ -253,19 +255,19 @@ private:
     const uint connId_;
     const uint connectionSendInterval_;
     const uint connectionDataTimeout_;
-    QByteArray buf_;
-    QByteArray fragmentBuf_;
+    CFByteArray buf_;
+    CFByteArray fragmentBuf_;
     bool isBinary_;
     bool isDeflated_;
-    QDateTime lastRead_;
-    QDateTime lastWrite_;
-    const QByteArray ping_;
+    CFDateTime lastRead_;
+    CFDateTime lastWrite_;
+    const CFByteArray ping_;
     const bool deflateEnabled_;
 };
 
 // ============================================================================
 
-WebSocketService::WebSocketService(const QString & path, const QRegularExpression & allowedOrigin,
+WebSocketService::WebSocketService(const CFString & path, const CFRegex & allowedOrigin,
     uint connectionTimeoutSec)
 :
     ThreadVerify("WebSocketService", LoopType::Worker),
@@ -275,7 +277,7 @@ WebSocketService::WebSocketService(const QString & path, const QRegularExpressio
     lastConnId_(0),
     timer_(connectionTimeoutSec > 0 ? new util::EVTimer(this, &WebSocketService::checkTimeout) : 0)
 {
-    setThreadPrio(QThread::HighPriority);
+    setThreadPrio(0); // no-op, was QThread::HighPriority
     if (timer_) startTimer();
 }
 
@@ -284,40 +286,40 @@ WebSocketService::~WebSocketService()
     delete timer_;
 }
 
-void WebSocketService::saveHeaderField(const QByteArray & field)
+void WebSocketService::saveHeaderField(const CFByteArray & field)
 {
     saveHeaderFields_ << field;
 }
 
-void WebSocketService::send(uint connId, const QByteArray & data, bool isBinary)
+void WebSocketService::send(uint connId, const CFByteArray & data, bool isBinary)
 {
-    WSConnHandler * wsHdl = connections_.value(connId);
+    WSConnHandler * wsHdl = cfHashValue(connections_, connId, (WSConnHandler *)nullptr);
     if (wsHdl) wsHdl->send(data, isBinary);
 }
 
 void WebSocketService::close(uint connId, TCPConn::CloseType type)
 {
-    WSConnHandler * wsHdl = connections_.value(connId);
+    WSConnHandler * wsHdl = cfHashValue(connections_, connId, (WSConnHandler *)nullptr);
     if (wsHdl) wsHdl->close(type, true);
 }
 
-QByteArray WebSocketService::getRemoteIP(uint connId) const
+CFByteArray WebSocketService::getRemoteIP(uint connId) const
 {
-    WSConnHandler * wsHdl = connections_.value(connId);
+    WSConnHandler * wsHdl = cfHashValue(connections_, connId, (WSConnHandler *)nullptr);
     if (wsHdl) return wsHdl->peerIP();
-    return QByteArray();
+    return CFByteArray();
 }
 
-QByteArray WebSocketService::getHeader(uint connId, const QByteArray & header) const
+CFByteArray WebSocketService::getHeader(uint connId, const CFByteArray & header) const
 {
-    WSConnHandler * wsHdl = connections_.value(connId);
-    if (wsHdl) return wsHdl->savedHeaders.value(header);
-    return QByteArray();
+    WSConnHandler * wsHdl = cfHashValue(connections_, connId, (WSConnHandler *)nullptr);
+    if (wsHdl) return cfMapValue(wsHdl->savedHeaders, header);
+    return CFByteArray();
 }
 
 void WebSocketService::continueRead(uint connId)
 {
-    WSConnHandler * wsHdl = connections_.value(connId);
+    WSConnHandler * wsHdl = cfHashValue(connections_, connId, (WSConnHandler *)nullptr);
     if (wsHdl) wsHdl->continueRead();
 }
 
@@ -331,27 +333,28 @@ void WebSocketService::closed(uint, TCPConn::CloseType)
 
 void WebSocketService::handleRequest(const Request & request)
 {
-    if (request.getUri() != path_ || !request.isGET()) return;
+    if (request.getUri() != path_.toUtf8() || !request.isGET()) return;
 
     // check WS headers
     const Request::KeyVal headers = request.getHeaderFields();
-    const QByteArray wsKey = headers["sec-websocket-key"];
-    if (headers["upgrade"].toLower() != "websocket" || wsKey.isEmpty()) {
+    const CFByteArray wsKey = cfMapValue(headers, CFByteArray("sec-websocket-key"));
+    if (cfMapValue(headers, CFByteArray("upgrade")).toLower() != "websocket" || wsKey.isEmpty()) {
         request.sendNotFound();
         return;
     }
-    const bool deflate = headers["sec-websocket-extensions"].toLower().indexOf("permessage-deflate") != -1;
+    const bool deflate = cfMapValue(headers, CFByteArray("sec-websocket-extensions")).toLower().indexOf("permessage-deflate") != -1;
 
     // check origin
-    if (allowedOrigin_.isValid() && !allowedOrigin_.match(headers["origin"].toLower()).hasMatch()) {
-        logWarn("wrong Origin: %1", headers["origin"]);
+    if (allowedOrigin_.isValid() && !allowedOrigin_.match(cfMapValue(headers, CFByteArray("origin")).toLower())) {
+        logWarn("wrong Origin: %1", cfMapValue(headers, CFByteArray("origin")));
         request.sendNotFound();
         return;
     }
 
     Request::KeyVal savedHeaders;
-    for (const QByteArray & header : saveHeaderFields_) {
-        if (headers.contains(header)) savedHeaders[header] = headers[header];
+    for (const CFByteArray & header : saveHeaderFields_) {
+        auto it = headers.find(header);
+        if (it != headers.end()) savedHeaders[header] = it->second;
     }
 
     // detach from socket
@@ -364,7 +367,7 @@ void WebSocketService::handleRequest(const Request & request)
     addConnection(connData, wsKey, deflate, savedHeaders);
 }
 
-void WebSocketService::addConnection(TCPConnData * connData, const QByteArray & wsKey, bool deflate,
+void WebSocketService::addConnection(TCPConnData * connData, const CFByteArray & wsKey, bool deflate,
     const Request::KeyVal & savedHeaders)
 {
     if (!verifyThreadCall(&WebSocketService::addConnection, connData, wsKey, deflate, savedHeaders)) return;
@@ -376,7 +379,7 @@ void WebSocketService::addConnection(TCPConnData * connData, const QByteArray & 
     connections_[connId] = wsHdl;
 
     // write WS header
-    QByteArray header =
+    CFByteArray header =
         "HTTP/1.1 101 Switching Protocols\r\n"
         "Upgrade: websocket\r\n"
         "Connection: Upgrade\r\n"
@@ -399,9 +402,8 @@ void WebSocketService::startTimer()
 
 void WebSocketService::checkTimeout()
 {
-    const QDateTime now = QDateTime::currentDateTimeUtc();
-    QHashIterator<uint, WSConnHandler *> it(connections_);
-    while (it.hasNext()) it.next().value()->checkTimeout(now);
+    const CFDateTime now = CFDateTime::currentDateTimeUtc();
+    for (auto & [id, hdl] : connections_) hdl->checkTimeout(now);
 }
 
 }}    // namespace

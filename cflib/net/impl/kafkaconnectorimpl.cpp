@@ -65,11 +65,11 @@ void KafkaConnector::Impl::setState(KafkaConnector::State newState)
     main_.stateChanged(newState);
 }
 
-void KafkaConnector::Impl::connect(const QList<KafkaConnector::Address> &cluster)
+void KafkaConnector::Impl::connect(const CFList<KafkaConnector::Address> &cluster)
 {
     if (!verifyThreadCall(&Impl::connect, cluster)) return;
 
-    if (!cluster_.isEmpty()) {
+    if (!cluster_.empty()) {
         /// TODO abort all
     }
 
@@ -85,7 +85,7 @@ void KafkaConnector::Impl::fetchMetaData()
 
     TCPConnData * data = connectToCluster();
     if (!data) {
-        if (cluster_.isEmpty()) {
+        if (cluster_.empty()) {
             setState(Idle);
         } else {
             logWarn("could not connect to kafka cluster");
@@ -96,17 +96,17 @@ void KafkaConnector::Impl::fetchMetaData()
 
     KafkaConnector::MetadataConnection * conn = new KafkaConnector::MetadataConnection(true, data, *this);
     impl::KafkaRequestWriter req = conn->request(Metadata, 0, 1, 4);
-    req << (qint32)0;    // no topic specified -> get all
+    req << (cfint32)0;    // no topic specified -> get all
     req.send();
 }
 
-void KafkaConnector::Impl::produce(const QByteArray & topic, qint32 partitionId, const Messages & messages,
-    quint16 requiredAcks, quint32 ackTimeoutMs, quint32 correlationId)
+void KafkaConnector::Impl::produce(const CFByteArray & topic, cfint32 partitionId, const Messages & messages,
+    cfuint16 requiredAcks, cfuint32 ackTimeoutMs, cfuint32 correlationId)
 {
     if (!verifyThreadCall(&Impl::produce, topic, partitionId, messages, requiredAcks, ackTimeoutMs, correlationId)) return;
 
     // get broker for topic and partition
-    qint32 nodeId = responsibilities_[topic][partitionId].id;
+    cfint32 nodeId = responsibilities_[topic][partitionId].id;
     if (nodeId == -1) {
         if (requiredAcks != 0) main_.produceResponse(correlationId, KafkaConnector::UnknownTopicOrPartition, -1);
         fetchMetaData();
@@ -126,7 +126,7 @@ void KafkaConnector::Impl::produce(const QByteArray & topic, qint32 partitionId,
         conn = new KafkaConnector::ProduceConnection(data, *this);
     }
 
-    qint32 messageSetSize = 0;
+    cfint32 messageSetSize = 0;
     for (const Message & msg : messages) {
         messageSetSize +=
             8 + 4 +                    // Offset, MessageSize
@@ -138,44 +138,44 @@ void KafkaConnector::Impl::produce(const QByteArray & topic, qint32 partitionId,
     impl::KafkaRequestWriter req = conn->request(Produce, 0, correlationId,
         2 + 4 + 4 + 2 + topic.size() + 4 + 4 + 4 + messageSetSize);
     req
-        << (qint16)requiredAcks
-        << (qint32)ackTimeoutMs
-        << (qint32)1    // just one topic
+        << (cfint16)requiredAcks
+        << (cfint32)ackTimeoutMs
+        << (cfint32)1    // just one topic
         << (impl::KafkaString)topic
-        << (qint32)1    // just one partition
+        << (cfint32)1    // just one partition
         << partitionId
         << messageSetSize;
     for (const Message & msg : messages) {
         req
-            << (qint64)0    // Offset
-            << (qint32)(    // MessageSize
+            << (cfint64)0    // Offset
+            << (cfint32)(    // MessageSize
                 4 + 1 + 1 +                // Crc, MagicByte, Attributes
                 4 + msg.first.size() +    // Key
                 4 + msg.second.size());    // Value
         const int crcPos = req.getCurrentSize();
         req
-            << (qint32)0    // Crc
-            << (qint8)0        // MagicByte
-            << (qint8)0        // Attributes
+            << (cfint32)0    // Crc
+            << (cfint8)0        // MagicByte
+            << (cfint8)0        // Attributes
             << msg.first    // Key
             << msg.second;    // Value
 
         // calc CRC32
-        qToBigEndian<qint32>(
+        cfToBigEndian<cfint32>(
             util::calcCRC32((const char *)req.getCurrentRawData() + crcPos + 4, req.getCurrentSize() - crcPos - 4),
             req.getCurrentRawData() + crcPos);
     }
     req.send();
 }
 
-void KafkaConnector::Impl::getOffsets(const QByteArray & topic, qint32 partitionId, quint32 correlationId, bool first)
+void KafkaConnector::Impl::getOffsets(const CFByteArray & topic, cfint32 partitionId, cfuint32 correlationId, bool first)
 {
     if (!verifyThreadCall(&Impl::getOffsets, topic, partitionId, correlationId, first)) return;
 
     logFunctionTrace
 
     // get broker for topic and partition
-    qint32 nodeId = responsibilities_[topic][partitionId].id;
+    cfint32 nodeId = responsibilities_[topic][partitionId].id;
     if (nodeId == -1) {
         main_.offsetResponse(correlationId, -1);
         fetchMetaData();
@@ -195,24 +195,24 @@ void KafkaConnector::Impl::getOffsets(const QByteArray & topic, qint32 partition
     impl::KafkaRequestWriter req = conn->request(Offsets, 1, correlationId,
         4 + 2 + topic.size() + 4 + 8 + 4);
     req
-        << (qint32)-1
-        << (qint32)1    // just one topic
+        << (cfint32)-1
+        << (cfint32)1    // just one topic
         << (impl::KafkaString)topic
-        << (qint32)1    // just one partition
-        << (qint32)partitionId
-        << (qint64)(first ? -2 : -1);    // first or last offset
+        << (cfint32)1    // just one partition
+        << (cfint32)partitionId
+        << (cfint64)(first ? -2 : -1);    // first or last offset
     req.send();
 }
 
-void KafkaConnector::Impl::fetch(const QByteArray & topic, qint32 partitionId, qint64 offset,
-    quint32 maxWaitTime, quint32 minBytes, quint32 maxBytes, quint32 correlationId)
+void KafkaConnector::Impl::fetch(const CFByteArray & topic, cfint32 partitionId, cfint64 offset,
+    cfuint32 maxWaitTime, cfuint32 minBytes, cfuint32 maxBytes, cfuint32 correlationId)
 {
     if (!verifyThreadCall(&Impl::fetch, topic, partitionId, offset, maxWaitTime, minBytes, maxBytes, correlationId)) return;
 
     logFunctionTrace
 
     // get broker for topic and partition
-    qint32 nodeId = responsibilities_[topic][partitionId].id;
+    cfint32 nodeId = responsibilities_[topic][partitionId].id;
     if (nodeId == -1) {
         main_.fetchResponse(correlationId, KafkaConnector::Messages(), -1, -1, KafkaConnector::UnknownTopicOrPartition);
         fetchMetaData();
@@ -235,19 +235,19 @@ void KafkaConnector::Impl::fetch(const QByteArray & topic, qint32 partitionId, q
     impl::KafkaRequestWriter req = conn->request(Fetch, 0, correlationId,
         4 + 4 + 4 + 4 + 2 + topic.size() + 4 + 4 + 8 + 4);
     req
-        << (qint32)-1
-        << (qint32)maxWaitTime
-        << (qint32)minBytes
-        << (qint32)1    // just one topic
+        << (cfint32)-1
+        << (cfint32)maxWaitTime
+        << (cfint32)minBytes
+        << (cfint32)1    // just one topic
         << (impl::KafkaString)topic
-        << (qint32)1    // just one partition
+        << (cfint32)1    // just one partition
         << partitionId
         << offset
-        << (qint32)maxBytes;
+        << (cfint32)maxBytes;
     req.send();
 }
 
-void KafkaConnector::Impl::joinGroup(const QByteArray & groupId, const Topics & topics, GroupAssignmentStrategy preferredStrategy)
+void KafkaConnector::Impl::joinGroup(const CFByteArray & groupId, const Topics & topics, GroupAssignmentStrategy preferredStrategy)
 {
     if (!verifyThreadCall(&Impl::joinGroup, groupId, topics, preferredStrategy)) return;
 
@@ -256,12 +256,12 @@ void KafkaConnector::Impl::joinGroup(const QByteArray & groupId, const Topics & 
     if (groupId_ != groupId) leaveGroup();
     groupId_ = groupId;
     groupTopicPartitions_.clear();
-    for (const QByteArray & topic : topics) groupTopicPartitions_[topic] = QList<qint32>();
+    for (const CFByteArray & topic : topics) groupTopicPartitions_[topic] = CFList<cfint32>();
     preferredStrategy_ = preferredStrategy;
     rejoinGroup();
 }
 
-void KafkaConnector::Impl::fetch(quint32 maxWaitTime, quint32 minBytes, quint32 maxBytes)
+void KafkaConnector::Impl::fetch(cfuint32 maxWaitTime, cfuint32 minBytes, cfuint32 maxBytes)
 {
     if (!verifyThreadCall(&Impl::fetch, maxWaitTime, minBytes, maxBytes)) return;
 
@@ -300,7 +300,7 @@ TCPConnData * KafkaConnector::Impl::connectToCluster()
 {
     logFunctionTrace
 
-    if (cluster_.isEmpty()) return 0;
+    if (cluster_.empty()) return 0;
     if (clusterId_ >= cluster_.size()) clusterId_ = 0;
 
     const int startId = clusterId_;
@@ -343,31 +343,31 @@ void KafkaConnector::Impl::doJoin()
 {
     logFunctionTrace
 
-    qint32 metaDataSize = 2 + 4 + 4;
-    for (const QByteArray & topic : groupTopicPartitions_.keys()) metaDataSize += 2 + topic.size();
+    cfint32 metaDataSize = 2 + 4 + 4;
+    for (const CFByteArray & topic : cfKeys(groupTopicPartitions_)) metaDataSize += 2 + topic.size();
 
     impl::KafkaRequestWriter req = groupConnection_->request(JoinGroup, 1, JoinGroup);
     req
         << (impl::KafkaString)groupId_
-        << (qint32)6000                                // SessionTimeout   (see group.min.session.timeout.ms)
-        << (qint32)6000                                // RebalanceTimeout (see group.min.session.timeout.ms)
+        << (cfint32)6000                                // SessionTimeout   (see group.min.session.timeout.ms)
+        << (cfint32)6000                                // RebalanceTimeout (see group.min.session.timeout.ms)
         << (impl::KafkaString)groupMemberId_
         << (impl::KafkaString)"consumer"
-        << (qint32)2                                // two protocols
+        << (cfint32)2                                // two protocols
         << (impl::KafkaString)(preferredStrategy_ == RangeAssignment ? "range" : "roundrobin")
         << metaDataSize
-        << (qint16)0                                // Version
-        << (qint32)groupTopicPartitions_.size();    // Topics
-    for (const QByteArray & topic : groupTopicPartitions_.keys()) req << (impl::KafkaString)topic;
+        << (cfint16)0                                // Version
+        << (cfint32)groupTopicPartitions_.size();    // Topics
+    for (const CFByteArray & topic : cfKeys(groupTopicPartitions_)) req << (impl::KafkaString)topic;
     req
-        << QByteArray()                                // UserData
+        << CFByteArray()                                // UserData
         << (impl::KafkaString)(preferredStrategy_ != RangeAssignment ? "range" : "roundrobin")
         << metaDataSize
-        << (qint16)0                                // Version
-        << (qint32)groupTopicPartitions_.size();    // Topics
-    for (const QByteArray & topic : groupTopicPartitions_.keys()) req << (impl::KafkaString)topic;
+        << (cfint16)0                                // Version
+        << (cfint32)groupTopicPartitions_.size();    // Topics
+    for (const CFByteArray & topic : cfKeys(groupTopicPartitions_)) req << (impl::KafkaString)topic;
     req
-        << QByteArray();                            // UserData
+        << CFByteArray();                            // UserData
     req.send();
 }
 
@@ -383,30 +383,29 @@ void KafkaConnector::Impl::sendGroupHeartBeat()
     req.send();
 }
 
-void KafkaConnector::Impl::doSync(const QByteArray & protocol, QMap<QByteArray, QSet<QByteArray>> memberTopics)
+void KafkaConnector::Impl::doSync(const CFByteArray & protocol, CFMap<CFByteArray, CFSet<CFByteArray>> memberTopics)
 {
     logFunctionTrace
 
-    QMap<QByteArray, QMap<QByteArray, QList<qint32>>> groupAssignment = computeGroupAssignment(protocol, memberTopics);
-    QMap<QByteArray, QByteArray> rawAssignment;
-    for (const QByteArray & member : groupAssignment.keys()) {
-        const QMap<QByteArray, QList<qint32>> & topics = groupAssignment[member];
+    CFMap<CFByteArray, CFMap<CFByteArray, CFList<cfint32>>> groupAssignment = computeGroupAssignment(protocol, memberTopics);
+    CFMap<CFByteArray, CFByteArray> rawAssignment;
+    for (const CFByteArray & member : cfKeys(groupAssignment)) {
+        const CFMap<CFByteArray, CFList<cfint32>> & topics = groupAssignment[member];
 
         impl::KafkaRawWriter writer;
         writer
-            << (qint16)0    // Version
-            << (qint32)topics.size();
+            << (cfint16)0    // Version
+            << (cfint32)topics.size();
 
-        for (const QByteArray & topic : topics.keys()) {
-            const QList<qint32> & partitions = topics[topic];
+        for (const auto & [topic, partitions] : topics) {
 
             writer
                 << (impl::KafkaString)topic
-                << (qint32)partitions.size();
-            for (qint32 partition : partitions) writer << partition;
+                << (cfint32)partitions.size();
+            for (cfint32 partition : partitions) writer << partition;
         }
         writer
-            << QByteArray();    // UserData
+            << CFByteArray();    // UserData
 
         rawAssignment[member] = writer.getRawContent();
     }
@@ -416,9 +415,9 @@ void KafkaConnector::Impl::doSync(const QByteArray & protocol, QMap<QByteArray, 
         << (impl::KafkaString)groupId_
         << generationId_
         << (impl::KafkaString)groupMemberId_
-        << (qint32)rawAssignment.size();
-    for (const QByteArray & member : rawAssignment.keys()) {
-        const QByteArray & assignment = rawAssignment[member];
+        << (cfint32)rawAssignment.size();
+    for (const CFByteArray & member : cfKeys(rawAssignment)) {
+        const CFByteArray & assignment = rawAssignment[member];
         req
             << (impl::KafkaString)member
             << assignment;
@@ -426,32 +425,32 @@ void KafkaConnector::Impl::doSync(const QByteArray & protocol, QMap<QByteArray, 
     req.send();
 }
 
-QMap<QByteArray, QMap<QByteArray, QList<qint32>>> KafkaConnector::Impl::computeGroupAssignment(
-    const QByteArray & protocol, QMap<QByteArray, QSet<QByteArray>> memberTopics)
+CFMap<CFByteArray, CFMap<CFByteArray, CFList<cfint32>>> KafkaConnector::Impl::computeGroupAssignment(
+    const CFByteArray & protocol, CFMap<CFByteArray, CFSet<CFByteArray>> memberTopics)
 {
-    QMap<QByteArray, QMap<QByteArray, QList<qint32>>> rv;
-    if (memberTopics.isEmpty()) return rv;
+    CFMap<CFByteArray, CFMap<CFByteArray, CFList<cfint32>>> rv;
+    if (memberTopics.empty()) return rv;
 
     logFunctionTraceParam("computeGroupAssignment with %1", protocol);
 
     if (protocol == "range") {
 
-        QMap<QByteArray, QList<QByteArray>> topicMembers;
-        for (const QByteArray & member : memberTopics.keys()) {
-            for (const QByteArray & topic : memberTopics[member]) {
-                if (!responsibilities_.value(topic).isEmpty()) topicMembers[topic] << member;
+        CFMap<CFByteArray, CFList<CFByteArray>> topicMembers;
+        for (const CFByteArray & member : cfKeys(memberTopics)) {
+            for (const CFByteArray & topic : memberTopics[member]) {
+                if (!cfMapValue(responsibilities_, topic).empty()) topicMembers[topic] << member;
             }
         }
 
-        for (const QByteArray & topic : topicMembers.keys()) {
-            QList<QByteArray> & members = topicMembers[topic];
+        for (const CFByteArray & topic : cfKeys(topicMembers)) {
+            CFList<CFByteArray> & members = topicMembers[topic];
             std::sort(members.begin(), members.end());
 
             int partitionCount = responsibilities_[topic].size();
             int partitionsPerMember  = partitionCount / members.size();
             int unassignedPartitions = partitionCount % members.size();
             int pId = 0;
-            for (const QByteArray & member : members) {
+            for (const CFByteArray & member : members) {
                 for (int j = 0 ; j < partitionsPerMember ; ++j) {
                     rv[member][topic] << pId++;
                 }
@@ -464,34 +463,33 @@ QMap<QByteArray, QMap<QByteArray, QList<qint32>>> KafkaConnector::Impl::computeG
 
     } else if (protocol == "roundrobin") {
 
-        QSet<QByteArray> allTopics;
-        for (const QSet<QByteArray> & topics : memberTopics.values()) allTopics += topics;
+        CFSet<CFByteArray> allTopics;
+        for (const auto & [member, topics] : memberTopics) allTopics += topics;
 
-        QVector<QPair<QByteArray, qint32>> allTopicPartitions;
-        for (const QByteArray & topic : allTopics) {
-            for (qint32 i = 0 ; i < responsibilities_.value(topic).size() ; ++i) {
-                allTopicPartitions << qMakePair(topic, i);
+        CFVector<CFPair<CFByteArray, cfint32>> allTopicPartitions;
+        for (const CFByteArray & topic : allTopics) {
+            for (cfint32 i = 0 ; i < (cfint32)cfMapValue(responsibilities_, topic).size() ; ++i) {
+                allTopicPartitions << CFPair(topic, i);
             }
         }
         std::sort(allTopicPartitions.begin(), allTopicPartitions.end());
 
-        QList<QByteArray> members = memberTopics.keys();
+        CFList<CFByteArray> members = cfKeys(memberTopics);
         int memberId = 0;
-        QMutableVectorIterator<QPair<QByteArray, qint32>> it(allTopicPartitions);
-        while (it.hasNext()) {
-            const QPair<QByteArray, qint32> & el = it.next();
-            const QByteArray & member = members[memberId];
-            if (memberTopics[member].contains(el.first)) {
-                rv[member][el.first] << el.second;
-                logInfo("assigning %1/%2 to %3", el.first, el.second, member);
-                it.remove();
-            } else if (it.hasNext()) {
-                // try next (topic, partition) for member
-                continue;
+        while (!allTopicPartitions.empty()) {
+            bool assigned = false;
+            for (auto it = allTopicPartitions.begin(); it != allTopicPartitions.end(); ++it) {
+                const CFByteArray & member = members[memberId];
+                if (cfContains(memberTopics[member], it->first)) {
+                    rv[member][it->first] << it->second;
+                    logInfo("assigning %1/%2 to %3", it->first, it->second, member);
+                    allTopicPartitions.erase(it);
+                    assigned = true;
+                    break;
+                }
             }
-
-            if (++memberId >= members.size()) memberId = 0;
-            it.toFront();
+            if (!assigned) break;
+            if (++memberId >= (int)members.size()) memberId = 0;
         }
 
     } else {

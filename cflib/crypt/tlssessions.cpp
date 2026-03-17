@@ -23,7 +23,7 @@ public:
 
 public:
     AutoSeeded_RNG rng;
-    QSharedPointer<TLS::Session_Manager> mgr;
+    std::shared_ptr<TLS::Session_Manager> mgr;
 };
 
 TLSSessions::TLSSessions(bool enable) :

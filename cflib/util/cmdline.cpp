@@ -7,67 +7,81 @@
 
 #include "cmdline.h"
 
+#include <cstring>
+
 namespace cflib { namespace util {
 
 CmdLine::CmdLine(int argc, char *argv[])
 {
-    for (int i = 0 ; i < argc ; ++i) rawArgs_ << argv[i];
+    for (int i = 0 ; i < argc ; ++i) rawArgs_.push_back(CFByteArray(argv[i]));
 }
 
 bool CmdLine::parse()
 {
-    QListIterator<QByteArray> it(rawArgs_);
+    if (rawArgs_.empty()) return false;
 
-    if (!it.hasNext()) return false;
-    executable_ = QFileInfo(it.next()).fileName().toUtf8();
+    // Extract executable basename
+    const CFByteArray & fullPath = rawArgs_[0];
+    cfsize_t lastSlash = fullPath.indexOf('/');
+    cfsize_t pos = lastSlash;
+    while (pos >= 0) {
+        lastSlash = pos;
+        pos = fullPath.indexOf('/', lastSlash + 1);
+    }
+    executable_ = (lastSlash >= 0) ? fullPath.mid(lastSlash + 1) : fullPath;
 
+    cfsize_t rawIdx = 1;
     int argCount = 0;
     bool parseMoreOptions = true;
-    while (it.hasNext()) {
-        const QByteArray & raw = it.next();
+    while (rawIdx < (cfsize_t)rawArgs_.size()) {
+        const CFByteArray & raw = rawArgs_[rawIdx++];
 
         if (parseMoreOptions && raw.startsWith("--")) {
             if (raw.length() == 2) {
                 parseMoreOptions = false;
                 continue;
             }
-            Option * opt = options_.value(raw.mid(2));
-            if (!opt || (!opt->isRepeatable_ && opt->count_ > 0)) return false;
+            auto it = options_.find(raw.mid(2));
+            if (it == options_.end()) return false;
+            Option * opt = it->second;
+            if (!opt->isRepeatable_ && opt->count_ > 0) return false;
             opt->count_++;
             if (opt->hasValue_) {
-                if (!it.hasNext()) return false;
-                opt->values_ << it.next();
+                if (rawIdx >= (cfsize_t)rawArgs_.size()) return false;
+                opt->values_.push_back(rawArgs_[rawIdx++]);
             }
         } else if (parseMoreOptions && raw.startsWith("-")) {
             if (raw.length() < 2) return false;
-            int pos = 0;
-            while (++pos < raw.length()) {
-                Option * opt = shortOptions_.value(raw.at(pos));
-                if (!opt || (!opt->isRepeatable_ && opt->count_ > 0)) return false;
+            cfsize_t p = 0;
+            while (++p < raw.length()) {
+                auto it = shortOptions_.find(raw.at(p));
+                if (it == shortOptions_.end()) return false;
+                Option * opt = it->second;
+                if (!opt->isRepeatable_ && opt->count_ > 0) return false;
                 opt->count_++;
                 if (opt->hasValue_) {
-                    if (pos < raw.length() - 1 || !it.hasNext()) return false;
-                    opt->values_ << it.next();
+                    if (p < raw.length() - 1 || rawIdx >= (cfsize_t)rawArgs_.size()) return false;
+                    opt->values_.push_back(rawArgs_[rawIdx++]);
                 }
             }
         } else {
-            Arg * arg = args_.value(argCount);
-            if (!arg) return false;
+            if (argCount >= (int)args_.size()) return false;
+            Arg * arg = args_[argCount];
             arg->count_++;
-            arg->values_ << raw;
+            arg->values_.push_back(raw);
             if (!arg->isRepeatable_) ++argCount;
         }
     }
 
-    foreach (const ArgBase * arg, nonOptionals_) if (!arg->isOptional_ && arg->count_ == 0) return false;
+    for (const ArgBase * arg : nonOptionals_) if (!arg->isOptional_ && arg->count_ == 0) return false;
 
     return true;
 }
 
 CmdLine & CmdLine::operator<<(Arg & arg)
 {
-    args_ << &arg;
-    if (!arg.isOptional_) nonOptionals_ << &arg;
+    args_.push_back(&arg);
+    if (!arg.isOptional_) nonOptionals_.push_back(&arg);
     return *this;
 }
 
@@ -75,7 +89,7 @@ CmdLine & CmdLine::operator<<(Option & opt)
 {
     if (opt.optionChar_ != 0) shortOptions_[opt.optionChar_] = &opt;
     if (!opt.optionName_.isEmpty()) options_[opt.optionName_] = &opt;
-    if (!opt.isOptional_) nonOptionals_ << &opt;
+    if (!opt.isOptional_) nonOptionals_.push_back(&opt);
     return *this;
 }
 

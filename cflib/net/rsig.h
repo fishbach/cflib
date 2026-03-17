@@ -11,7 +11,7 @@
 #include <cflib/util/sig.h>
 #include <cflib/util/tuplecompare.h>
 
-#include <QtCore>
+#include <cflib/base/cfcontainers.h>
 
 namespace cflib { namespace net {
 
@@ -20,8 +20,8 @@ namespace impl { class RMIServerBase; }
 class RSigBase
 {
 public:
-    typedef QPair<uint, uint> ConnIdRegId;
-    typedef QVector<ConnIdRegId> Listeners;
+    typedef CFPair<uint, uint> ConnIdRegId;
+    typedef CFVector<ConnIdRegId> Listeners;
 
 public:
     RSigBase() : server_(0) {}
@@ -32,7 +32,7 @@ public:
     Listeners defaultListeners;
 
 protected:
-    void send(uint connId, const QByteArray & data);
+    void send(uint connId, const CFByteArray & data);
 
 private:
     impl::RMIServerBase * server_;
@@ -63,7 +63,7 @@ public:
     {
         uint regId; deser >> regId;
         if (!registerFunc_) {
-            defaultListeners << qMakePair(connId, regId);
+            defaultListeners << CFPair(connId, regId);
             return;
         }
         serialize::readAndCall<R...>(deser, [this, connId, regId](R... r) {
@@ -75,7 +75,7 @@ public:
     {
         uint regId; deser >> regId;
         if (!unregisterFunc_) {
-            defaultListeners.removeAll(qMakePair(connId, regId));
+            defaultListeners.erase(std::remove(defaultListeners.begin(), defaultListeners.end(), CFPair<uint, uint>(connId, regId)), defaultListeners.end());
             return;
         }
         unregisterFunc_(connId, regId);
@@ -138,7 +138,7 @@ public:
 private:
     void handleRemote(P... p)
     {
-        QByteArray encodedParams;
+        CFByteArray encodedParams;
         {
             serialize::BERSerializer ser;
             serialize::toByteArray(ser, std::forward<P>(p)...);

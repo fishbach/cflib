@@ -12,18 +12,15 @@ using namespace cflib::serialize;
 
 namespace {
 
-QTextStream out(stdout);
-
 template<typename T>
 bool checkSer(T val, const char * hex)
 {
     BERSerializer ser;
     ser << val;
-    const QByteArray expected = QByteArray::fromHex(hex);
+    const CFByteArray expected = CFByteArray::fromHex(hex);
     if (ser.data() != expected) {
-        out << "serialized hex differs:" << Qt::endl
-            << "is       : " << ser.data().toHex() << Qt::endl
-            << "expected : " << expected  .toHex() << Qt::endl;
+        fprintf(stdout, "serialized hex differs:\nis       : %s\nexpected : %s\n",
+            ser.data().toHex().data(), expected.toHex().data());
         return false;
     }
     return true;
@@ -32,13 +29,11 @@ bool checkSer(T val, const char * hex)
 template<typename T>
 bool checkDeser(T val, const char * hex)
 {
-    const QByteArray expected = QByteArray::fromHex(hex);
+    const CFByteArray expected = CFByteArray::fromHex(hex);
     BERDeserializer deser(expected);
     T test; deser >> test;
     if (test != val) {
-        out << "deserialized values differ:" << Qt::endl
-            << "is       : " << test << Qt::endl
-            << "expected : " << val  << Qt::endl;
+        fprintf(stdout, "deserialized values differ\n");
         return false;
     }
     return true;
@@ -47,13 +42,12 @@ bool checkDeser(T val, const char * hex)
 template<typename T>
 bool checkDeserNull(T val, const char * hex)
 {
-    const QByteArray expected = QByteArray::fromHex(hex);
+    const CFByteArray expected = CFByteArray::fromHex(hex);
     BERDeserializer deser(expected);
     T test; deser >> test;
     if (test.isNull() != val.isNull()) {
-        out << "deserialized isNull differs:" << Qt::endl
-            << "is       : " << test.isNull() << Qt::endl
-            << "expected : " << val.isNull()  << Qt::endl;
+        fprintf(stdout, "deserialized isNull differs: is=%d expected=%d\n",
+            (int)test.isNull(), (int)val.isNull());
         return false;
     }
     return true;
@@ -77,20 +71,17 @@ bool testBigTag(int tagNr, const char * hex)
     BERSerializer ser;
     for (int i = 0 ; i < tagNr - 1 ; ++i) ser << Placeholder();
     ser << 0x42;
-    const QByteArray expected = QByteArray::fromHex(hex) + QByteArray::fromHex("0142");
+    const CFByteArray expected = CFByteArray::fromHex(hex) + CFByteArray::fromHex("0142");
     if (ser.data() != expected) {
-        out << "serialized hex differs:" << Qt::endl
-            << "is       : " << ser.data().toHex() << Qt::endl
-            << "expected : " << expected  .toHex() << Qt::endl;
+        fprintf(stdout, "serialized hex differs:\nis       : %s\nexpected : %s\n",
+            ser.data().toHex().data(), expected.toHex().data());
         retval = false;
     }
     BERDeserializer deser(expected);
     for (int i = 0 ; i < tagNr - 1 ; ++i) deser >> Placeholder();
     int test; deser >> test;
     if (test != 0x42) {
-        out << "deserialized values differ:" << Qt::endl
-            << "is       : " << test << Qt::endl
-            << "expected : " << 0x42 << Qt::endl;
+        fprintf(stdout, "deserialized values differ: is=%d expected=%d\n", test, 0x42);
         return false;
     }
     return retval;
@@ -98,100 +89,111 @@ bool testBigTag(int tagNr, const char * hex)
 
 }
 
-class SerializeBER_Test: public QObject
+class SerializeBER_Test : public cflib::util::TestBase
 {
-    Q_OBJECT
-private slots:
+public:
+    std::vector<cflib::util::TestMethod> testMethods() const override {
+        auto self = const_cast<SerializeBER_Test *>(this);
+        return {
+            {"integer",    [self]() { self->integer(); }},
+            {"nullInList", [self]() { self->nullInList(); }},
+            {"string",     [self]() { self->string(); }},
+            {"many",       [self]() { self->many(); }},
+            {"bigTag",     [self]() { self->bigTag(); }},
+            {"object",     [self]() { self->object(); }},
+            {"lists",      [self]() { self->lists(); }},
+            {"maps",       [self]() { self->maps(); }}
+        };
+    }
 
     void integer()
     {
-        QVERIFY(checkSerDeser<bool   >( false, ""          ));
-        QVERIFY(checkSerDeser<bool   >(  true, "c10101"    ));
-        QVERIFY(checkSerDeser<quint8 >(     0, ""          ));
-        QVERIFY(checkSerDeser<quint8 >(     1, "c10101"    ));
-        QVERIFY(checkSerDeser<quint8 >(   127, "c1017f"    ));
-        QVERIFY(checkSerDeser<quint8 >(   255, "c10200ff"  ));
-        QVERIFY(checkSerDeser< qint8 >(     0, ""          ));
-        QVERIFY(checkSerDeser< qint8 >(     1, "c10101"    ));
-        QVERIFY(checkSerDeser< qint8 >(   127, "c1017f"    ));
-        QVERIFY(checkSerDeser< qint8 >(    -1, "c101ff"    ));
-        QVERIFY(checkSerDeser< qint8 >(    -2, "c101fe"    ));
-        QVERIFY(checkSerDeser< qint8 >(  -128, "c10180"    ));
-        QVERIFY(checkSerDeser<quint16>(     0, ""          ));
-        QVERIFY(checkSerDeser<quint16>(     1, "c10101"    ));
-        QVERIFY(checkSerDeser<quint16>( 32767, "c1027fff"  ));
-        QVERIFY(checkSerDeser<quint16>( 65535, "c10300ffff"));
-        QVERIFY(checkSerDeser< qint16>(     0, ""          ));
-        QVERIFY(checkSerDeser< qint16>(     1, "c10101"    ));
-        QVERIFY(checkSerDeser< qint16>(   127, "c1017f"    ));
-        QVERIFY(checkSerDeser< qint16>(   128, "c1020080"  ));
-        QVERIFY(checkSerDeser< qint16>( 32767, "c1027fff"  ));
-        QVERIFY(checkSerDeser< qint16>(    -1, "c101ff"    ));
-        QVERIFY(checkSerDeser< qint16>(    -2, "c101fe"    ));
-        QVERIFY(checkSerDeser< qint16>(  -128, "c10180"    ));
-        QVERIFY(checkSerDeser< qint16>(  -129, "c102ff7f"  ));
-        QVERIFY(checkSerDeser< qint16>(-32767, "c1028001"  ));
-        QVERIFY(checkSerDeser< qint16>(-32768, "c1028000"  ));
-        QVERIFY(checkSerDeser<quint64>(     0, ""          ));
-        QVERIFY(checkSerDeser<quint64>(     1, "c10101"    ));
-        QVERIFY(checkSerDeser<quint64>(   128, "c1020080"  ));
-        QVERIFY(checkSerDeser< qint64>(    -1, "c101ff"    ));
-        QVERIFY(checkSerDeser< qint64>(    -2, "c101fe"    ));
-        QVERIFY(checkSerDeser< qint64>(  -128, "c10180"    ));
-        QVERIFY(checkSerDeser< qint64>(  -129, "c102ff7f"  ));
+        QVERIFY(checkSerDeser<bool      >( false, ""          ));
+        QVERIFY(checkSerDeser<bool      >(  true, "c10101"    ));
+        QVERIFY(checkSerDeser<cfuint8   >(     0, ""          ));
+        QVERIFY(checkSerDeser<cfuint8   >(     1, "c10101"    ));
+        QVERIFY(checkSerDeser<cfuint8   >(   127, "c1017f"    ));
+        QVERIFY(checkSerDeser<cfuint8   >(   255, "c10200ff"  ));
+        QVERIFY(checkSerDeser<cfint8    >(     0, ""          ));
+        QVERIFY(checkSerDeser<cfint8    >(     1, "c10101"    ));
+        QVERIFY(checkSerDeser<cfint8    >(   127, "c1017f"    ));
+        QVERIFY(checkSerDeser<cfint8    >(    -1, "c101ff"    ));
+        QVERIFY(checkSerDeser<cfint8    >(    -2, "c101fe"    ));
+        QVERIFY(checkSerDeser<cfint8    >(  -128, "c10180"    ));
+        QVERIFY(checkSerDeser<cfuint16  >(     0, ""          ));
+        QVERIFY(checkSerDeser<cfuint16  >(     1, "c10101"    ));
+        QVERIFY(checkSerDeser<cfuint16  >( 32767, "c1027fff"  ));
+        QVERIFY(checkSerDeser<cfuint16  >( 65535, "c10300ffff"));
+        QVERIFY(checkSerDeser<cfint16   >(     0, ""          ));
+        QVERIFY(checkSerDeser<cfint16   >(     1, "c10101"    ));
+        QVERIFY(checkSerDeser<cfint16   >(   127, "c1017f"    ));
+        QVERIFY(checkSerDeser<cfint16   >(   128, "c1020080"  ));
+        QVERIFY(checkSerDeser<cfint16   >( 32767, "c1027fff"  ));
+        QVERIFY(checkSerDeser<cfint16   >(    -1, "c101ff"    ));
+        QVERIFY(checkSerDeser<cfint16   >(    -2, "c101fe"    ));
+        QVERIFY(checkSerDeser<cfint16   >(  -128, "c10180"    ));
+        QVERIFY(checkSerDeser<cfint16   >(  -129, "c102ff7f"  ));
+        QVERIFY(checkSerDeser<cfint16   >(-32767, "c1028001"  ));
+        QVERIFY(checkSerDeser<cfint16   >(-32768, "c1028000"  ));
+        QVERIFY(checkSerDeser<cfuint64  >(     0, ""          ));
+        QVERIFY(checkSerDeser<cfuint64  >(     1, "c10101"    ));
+        QVERIFY(checkSerDeser<cfuint64  >(   128, "c1020080"  ));
+        QVERIFY(checkSerDeser<cfint64   >(    -1, "c101ff"    ));
+        QVERIFY(checkSerDeser<cfint64   >(    -2, "c101fe"    ));
+        QVERIFY(checkSerDeser<cfint64   >(  -128, "c10180"    ));
+        QVERIFY(checkSerDeser<cfint64   >(  -129, "c102ff7f"  ));
 
-        QVERIFY(checkSerDeser<quint64>(Q_UINT64_C(0x7fffffffffffffff), "c1087fffffffffffffff"));
-        QVERIFY(checkSerDeser<quint64>(Q_UINT64_C(0x8000000000000000), "c109008000000000000000"));
-        QVERIFY(checkSerDeser<quint64>(Q_UINT64_C(0xfffffffffffffffe), "c10900fffffffffffffffe"));
-        QVERIFY(checkSerDeser<quint64>(Q_UINT64_C(0xffffffffffffffff), "c10900ffffffffffffffff"));
+        QVERIFY(checkSerDeser<cfuint64>((cfuint64)UINT64_C(0x7fffffffffffffff), "c1087fffffffffffffff"));
+        QVERIFY(checkSerDeser<cfuint64>((cfuint64)UINT64_C(0x8000000000000000), "c109008000000000000000"));
+        QVERIFY(checkSerDeser<cfuint64>((cfuint64)UINT64_C(0xfffffffffffffffe), "c10900fffffffffffffffe"));
+        QVERIFY(checkSerDeser<cfuint64>((cfuint64)UINT64_C(0xffffffffffffffff), "c10900ffffffffffffffff"));
 
-        QVERIFY(checkSerDeser<qint64 >(Q_INT64_C(   36028797018963967),   "c1077fffffffffffff"));
-        QVERIFY(checkSerDeser<qint64 >(Q_INT64_C(   36028797018963968),   "c1080080000000000000"));
-        QVERIFY(checkSerDeser<qint64 >(Q_INT64_C( 9223372036854775807),   "c1087fffffffffffffff"));
-        QVERIFY(checkSerDeser<qint64 >(Q_INT64_C(-9223372036854775807),   "c1088000000000000001"));
-        QVERIFY(checkSerDeser<qint64 >(Q_INT64_C(-9223372036854775807)-1, "c1088000000000000000"));
+        QVERIFY(checkSerDeser<cfint64>((cfint64)INT64_C(   36028797018963967),   "c1077fffffffffffff"));
+        QVERIFY(checkSerDeser<cfint64>((cfint64)INT64_C(   36028797018963968),   "c1080080000000000000"));
+        QVERIFY(checkSerDeser<cfint64>((cfint64)INT64_C( 9223372036854775807),   "c1087fffffffffffffff"));
+        QVERIFY(checkSerDeser<cfint64>((cfint64)INT64_C(-9223372036854775807),   "c1088000000000000001"));
+        QVERIFY(checkSerDeser<cfint64>((cfint64)INT64_C(-9223372036854775807)-1, "c1088000000000000000"));
     }
 
     void nullInList()
     {
-        QVERIFY(checkSerDeser<QList<bool   > >(QList<bool   >() << false, "e103c08100"));
-        QVERIFY(checkSerDeser<QList<quint8 > >(QList<quint8 >() << 0,     "e103c08100"));
-        QVERIFY(checkSerDeser<QList< qint8 > >(QList< qint8 >() << 0,     "e103c08100"));
-        QVERIFY(checkSerDeser<QList<quint16> >(QList<quint16>() << 0,     "e103c08100"));
-        QVERIFY(checkSerDeser<QList<quint64> >(QList<quint64>() << 0,     "e103c08100"));
+        QVERIFY(checkSerDeser<CFList<bool      >>(CFList<bool      >{false}, "e103c08100"));
+        QVERIFY(checkSerDeser<CFList<cfuint8   >>(CFList<cfuint8   >{0},     "e103c08100"));
+        QVERIFY(checkSerDeser<CFList<cfint8    >>(CFList<cfint8    >{0},     "e103c08100"));
+        QVERIFY(checkSerDeser<CFList<cfuint16  >>(CFList<cfuint16  >{0},     "e103c08100"));
+        QVERIFY(checkSerDeser<CFList<cfuint64  >>(CFList<cfuint64  >{0},     "e103c08100"));
 
-        QVERIFY(checkSer<QList<const char *>    >(QList<const char *>() << 0,            "e103c08100"));
-        QVERIFY(checkSerDeser<QList<QByteArray> >(QList<QByteArray  >() << QByteArray(), "e103c08100"));
-        QVERIFY(checkSerDeser<QList<QByteArray> >(QList<QByteArray  >() << QByteArray(), "e103c08100"));
-        QVERIFY(checkSerDeser<QList<QString>    >(QList<QString     >() << QString(),    "e103c08100"));
-        QVERIFY(checkSerDeser<QList<QChar>      >(QList<QChar       >() << QChar(),      "e103c08100"));
+        QVERIFY(checkSer<CFList<const char *>>(CFList<const char *>{nullptr},          "e103c08100"));
+        QVERIFY(checkSerDeser<CFList<CFByteArray>>(CFList<CFByteArray>{CFByteArray()}, "e103c08100"));
+        QVERIFY(checkSerDeser<CFList<CFString   >>(CFList<CFString   >{CFString()},    "e103c08100"));
+        QVERIFY(checkSerDeser<CFList<CFChar     >>(CFList<CFChar     >{CFChar()},      "e103c08100"));
     }
 
     void string()
     {
-        QVERIFY(checkSer<const char *>(0,    ""));
-        QVERIFY(checkSer<const char *>("",   "c100"));
-        QVERIFY(checkSer<const char *>("X",  "c10158"));
-        QVERIFY(checkSer<const char *>("XY", "c1025859"));
+        QVERIFY(checkSer<const char *>(nullptr, ""));
+        QVERIFY(checkSer<const char *>("",      "c100"));
+        QVERIFY(checkSer<const char *>("X",     "c10158"));
+        QVERIFY(checkSer<const char *>("XY",    "c1025859"));
 
-        QVERIFY(checkSerDeserNull<QByteArray>(QByteArray(),     ""));
-        QVERIFY(checkSerDeserNull<QByteArray>(QByteArray(""),   "c100"));
-        QVERIFY(checkSerDeserNull<QByteArray>(QByteArray("X"),  "c10158"));
-        QVERIFY(checkSerDeserNull<QByteArray>(QByteArray("XY"), "c1025859"));
-        QVERIFY(checkSerDeserNull<QByteArray>(QByteArray::fromHex("003132"), "c103 003132"));
-        QVERIFY(checkSerDeserNull<QByteArray>(QByteArray::fromHex("310032"), "c103 310032"));
-        QVERIFY(checkSerDeserNull<QByteArray>(QByteArray::fromHex("313200"), "c103 313200"));
+        QVERIFY(checkSerDeserNull<CFByteArray>(CFByteArray(),     ""));
+        QVERIFY(checkSerDeserNull<CFByteArray>(CFByteArray(""),   "c100"));
+        QVERIFY(checkSerDeserNull<CFByteArray>(CFByteArray("X"),  "c10158"));
+        QVERIFY(checkSerDeserNull<CFByteArray>(CFByteArray("XY"), "c1025859"));
+        QVERIFY(checkSerDeserNull<CFByteArray>(CFByteArray::fromHex("003132"), "c103 003132"));
+        QVERIFY(checkSerDeserNull<CFByteArray>(CFByteArray::fromHex("310032"), "c103 310032"));
+        QVERIFY(checkSerDeserNull<CFByteArray>(CFByteArray::fromHex("313200"), "c103 313200"));
 
-        QVERIFY(checkSerDeserNull<QString>(QString(),     ""));
-        QVERIFY(checkSerDeserNull<QString>(QString(""),   "c100"));
-        QVERIFY(checkSerDeserNull<QString>(QString("X"),  "c10158"));
-        QVERIFY(checkSerDeserNull<QString>(QString("XY"), "c1025859"));
-        QVERIFY(checkSerDeserNull<QString>(QString("XäÄöÖüÜßY"), "c1 10 58 c3a4 c384 c3b6 c396 c3bc c39c c39f 59"));
+        QVERIFY(checkSerDeserNull<CFString>(CFString(),     ""));
+        QVERIFY(checkSerDeserNull<CFString>(CFString(""),   "c100"));
+        QVERIFY(checkSerDeserNull<CFString>(CFString("X"),  "c10158"));
+        QVERIFY(checkSerDeserNull<CFString>(CFString("XY"), "c1025859"));
+        QVERIFY(checkSerDeserNull<CFString>(CFString("XäÄöÖüÜßY"), "c1 10 58 c3a4 c384 c3b6 c396 c3bc c39c c39f 59"));
 
-        QVERIFY(checkSerDeserNull<QChar>(QChar(),         ""));
-        QVERIFY(checkSerDeserNull<QChar>(QString("A")[0], "c10141"));
-        QVERIFY(checkSerDeserNull<QChar>(QString("ä")[0], "c10200e4"));
-        QVERIFY(checkSerDeserNull<QChar>(QString("ß")[0], "c10200df"));
+        QVERIFY(checkSerDeserNull<CFChar>(CFChar(),            ""));
+        QVERIFY(checkSerDeserNull<CFChar>(CFChar{char32_t('A')}, "c10141"));
+        QVERIFY(checkSerDeserNull<CFChar>(CFChar{char32_t(0xe4)}, "c10200e4"));
+        QVERIFY(checkSerDeserNull<CFChar>(CFChar{char32_t(0xdf)}, "c10200df"));
     }
 
     void many()
@@ -199,7 +201,7 @@ private slots:
         {
             BERSerializer ser;
             ser << 17 << 18 << 0 << 20;
-            const QByteArray hex = QByteArray::fromHex("C10111 C20112        C40114");
+            const CFByteArray hex = CFByteArray::fromHex("C10111 C20112        C40114");
             QCOMPARE(ser.data(), hex);
             BERDeserializer deser(hex);
             int a, b, c, d; deser >> a >> b >> c >> d;
@@ -210,14 +212,14 @@ private slots:
         }{
             BERSerializer ser;
             ser << 17 << Placeholder() << 19;
-            const QByteArray hex = QByteArray::fromHex("C10111        C30113");
+            const CFByteArray hex = CFByteArray::fromHex("C10111        C30113");
             QCOMPARE(ser.data(), hex);
             BERDeserializer deser(hex);
             int a, b; deser >> a >> Placeholder() >> b;
             QCOMPARE(a, 17);
             QCOMPARE(b, 19);
         }{
-            const QByteArray hex = QByteArray::fromHex("C10111 C20112 C30113");
+            const CFByteArray hex = CFByteArray::fromHex("C10111 C20112 C30113");
             BERDeserializer deser(hex);
             int a, c; deser >> a >> Placeholder() >> c;
             QCOMPARE(a, 17);
@@ -256,14 +258,14 @@ private slots:
 
     void lists()
     {
-        QVERIFY(checkSerDeser<QList<quint8 > >(QList<quint8 >(), ""));
-        QVERIFY(checkSerDeser<QList<quint8 > >(QList<quint8 >() << 0x42, "e103c00142"));
-        QVERIFY(checkSerDeser<QList<quint8 > >(QList<quint8 >() << 0x42 << 0x43, "e106c00142c00143"));
-        QVERIFY(checkSerDeser<QStringList    >(QStringList() << QString("XY") << QString() << "" << "A",
+        QVERIFY(checkSerDeser<CFList<cfuint8>>(CFList<cfuint8>(), ""));
+        QVERIFY(checkSerDeser<CFList<cfuint8>>(CFList<cfuint8>{0x42}, "e103c00142"));
+        QVERIFY(checkSerDeser<CFList<cfuint8>>(CFList<cfuint8>{0x42, 0x43}, "e106c00142c00143"));
+        QVERIFY(checkSerDeser<CFStringList>(CFStringList{"XY", CFString(), "", "A"},
             "e10c c0025859 c08100 c000 c00141"));
 
-        BERDeserializer ser(QByteArray::fromHex("e105 c08100 c000"));
-        QStringList list; ser >> list;
+        BERDeserializer ser(CFByteArray::fromHex("e105 c08100 c000"));
+        CFStringList list; ser >> list;
         QVERIFY(list[0].isNull());
         QVERIFY(!list[1].isNull());
         QVERIFY(list[1].isEmpty());
@@ -271,15 +273,14 @@ private slots:
 
     void maps()
     {
-        typedef QMap<QString, int> Map;
+        typedef CFMap<CFString, int> Map;
         Map map;
         QVERIFY(checkSerDeser<Map>(map, ""));
         map["xy"] = 4;
         QVERIFY(checkSerDeser<Map>(map, "e107 c0027879 c00104"));
         map["xyz"] = 7;
-        QVERIFY(checkSerDeser<Map>(map, "e10f c00378797a c00107 c0027879 c00104"));
+        QVERIFY(checkSerDeser<Map>(map, "e10f c0027879 c00104 c00378797a c00107"));
     }
-
 };
-#include "serializeber_test.moc"
+
 ADD_TEST(SerializeBER_Test)

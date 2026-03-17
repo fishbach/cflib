@@ -7,7 +7,8 @@
 
 #pragma once
 
-#include <QtCore>
+#include <cflib/base/cfcontainers.h>
+#include <cflib/base/macros.h>
 
 namespace cflib { namespace net {
 
@@ -18,7 +19,7 @@ namespace impl { class TLSThread; }
 
 class TCPConn
 {
-    Q_DISABLE_COPY(TCPConn)
+    CF_DISABLE_COPY(TCPConn)
 public:
     enum CloseType {
         NotClosed       = 0,
@@ -43,11 +44,11 @@ public:
     virtual ~TCPConn();
 
     // returns all available bytes
-    QByteArray read();
+    CFByteArray read();
 
     // buffers any amount of bytes passed
     // if notifyFinished == true, function writeFinished will be called when all bytes got written.
-    void write(const QByteArray & data, bool notifyFinished = false);
+    void write(const CFByteArray & data, bool notifyFinished = false);
 
     // closes the socket
     // - WriteClosed closes the write channel after all bytes have been written
@@ -64,8 +65,8 @@ public:
     void startReadWatcher();
 
     CloseType isClosed() const;
-    QByteArray peerIP() const;
-    quint16 peerPort() const;
+    CFByteArray peerIP() const;
+    cfuint16 peerPort() const;
 
     TCPConnData * detach();
 
@@ -76,9 +77,9 @@ public:
 
 protected:
     virtual void newBytesAvailable() {}
-    virtual void closed(CloseType type) { Q_UNUSED(type); }
+    virtual void closed(CloseType type) { CF_UNUSED(type); }
     virtual void writeFinished() {}
-    virtual void someBytesWritten(quint64 count) { Q_UNUSED(count) }
+    virtual void someBytesWritten(cfuint64 count) { CF_UNUSED(count); }
 
 private:
     TCPConnData * data_;

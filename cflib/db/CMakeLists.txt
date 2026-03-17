@@ -13,10 +13,7 @@ endif()
 
 cf_lib(cflib_db
     PUBLIC cflib_util
-    PUBLIC Qt5::Sql
     ${PSQL_CONFIG}
-    DIRS impl
-    ENABLE_MOC
 )
 
 if(ENABLE_PSQL)

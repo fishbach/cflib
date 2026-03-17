@@ -16,7 +16,7 @@ public:
     FetchConnection(TCPConnData * data, KafkaConnector::Impl & impl);
 
 protected:
-    void reply(qint32 correlationId, impl::KafkaRawReader & reader) override;
+    void reply(cfint32 correlationId, impl::KafkaRawReader & reader) override;
     void closed() override;
 
 private:

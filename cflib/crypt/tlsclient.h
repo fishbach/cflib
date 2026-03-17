@@ -17,13 +17,13 @@ class TLSSessions;
 class TLSClient : public TLSStream
 {
 public:
-    TLSClient(TLSSessions & sessions, TLSCredentials & credentials, const QByteArray & hostname = QByteArray(),
+    TLSClient(TLSSessions & sessions, TLSCredentials & credentials, const CFByteArray & hostname = CFByteArray(),
         bool highSecurity = false, bool requireRevocationInfo = false);
     ~TLSClient();
 
-    QByteArray initialSend() override;
-    bool received(const QByteArray & encrypted, QByteArray & plain, QByteArray & sendBack) override;
-    bool send(const QByteArray & plain, QByteArray & encrypted) override;
+    CFByteArray initialSend() override;
+    bool received(const CFByteArray & encrypted, CFByteArray & plain, CFByteArray & sendBack) override;
+    bool send(const CFByteArray & plain, CFByteArray & encrypted) override;
 
 private:
     class Impl;

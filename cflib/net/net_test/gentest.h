@@ -19,8 +19,8 @@ public:
     int f2() { return 4; }
 
 rmi:
-    void f3(int, QString) {}
-    QList<int> f4() { return QList<int>(); }
+    void f3(int, CFString) {}
+    CFList<int> f4() { return CFList<int>(); }
     int f5(int x, int y);
     void f6();
 
@@ -43,7 +43,7 @@ public serialized:
     int a;
     SERIALIZE_SKIP(int b)
     int c;
-    QString d;
+    CFString d;
 
 public:
     int y;
@@ -96,14 +96,14 @@ public:
 
 namespace gentest2 {
 
-class GenTest4 : public QList<QString>
+class GenTest4 : public CFList<CFString>
 {
     SERIALIZE_CLASS
     SERIALIZE_STDBASE(GenTest4)
 public serialized:
     int a;
-    QList<int> b;
-    QList<GenTest2> c;
+    CFList<int> b;
+    CFList<GenTest2> c;
 };
 
 }

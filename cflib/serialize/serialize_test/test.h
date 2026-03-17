@@ -32,11 +32,6 @@ public:
 
 SERIALIZE_CLASS_USE_NULL(Test1)
 
-inline QTextStream & operator<<(QTextStream & s, const Test1 & t1)
-{
-    return s << t1.a << ", " << t1.b;
-}
-
 class Test2
 {
 public:
@@ -56,44 +51,3 @@ public:
         ser >> t1 >> a;
     }
 };
-
-inline QTextStream & operator<<(QTextStream & s, const Test2 & t2)
-{
-    return s << t2.t1 << ", " << t2.a;
-}
-
-template<typename T>
-inline QTextStream & operator<<(QTextStream & s, const QList<T> & list)
-{
-    bool isFirst = true;
-    foreach (T el, list) {
-        if (isFirst) isFirst = false;
-        else         s << ", ";
-        s << el;
-    }
-    return s;
-}
-
-template<typename Key, typename Val>
-inline QTextStream & operator<<(QTextStream & s, const QMap<Key, Val> & map)
-{
-    bool isFirst = true;
-    foreach (Key key, map.keys()) {
-        if (isFirst) isFirst = false;
-        else         s << ", ";
-        s << key << ": " << map[key];
-    }
-    return s;
-}
-
-template<typename Key, typename Val>
-inline QTextStream & operator<<(QTextStream & s, const QHash<Key, Val> & map)
-{
-    bool isFirst = true;
-    foreach (Key key, map.keys()) {
-        if (isFirst) isFirst = false;
-        else         s << ", ";
-        s << key << ": " << map[key];
-    }
-    return s;
-}

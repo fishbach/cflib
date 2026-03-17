@@ -13,32 +13,36 @@
 
 using namespace cflib::serialize;
 
-class TypeInfo_Test: public QObject
+class TypeInfo_Test : public cflib::util::TestBase
 {
-    Q_OBJECT
-private slots:
+public:
+    std::vector<cflib::util::TestMethod> testMethods() const override {
+        auto self = const_cast<TypeInfo_Test *>(this);
+        return {
+            {"toString", [self]() { self->toString(); }}
+        };
+    }
 
     void toString()
     {
-        QCOMPARE(GenTestRMI::serializeTypeInfo().toString(), QString(
+        QCOMPARE(GenTestRMI::serializeTypeInfo().toString(), CFString(
             "GenTestRMI{void f3(int32,String),List<int32> f4(),int32 f5(int32 x,int32 y),void f6()}"));
-        QCOMPARE(GenTest1::serializeTypeInfo().toString(), QString(
+        QCOMPARE(GenTest1::serializeTypeInfo().toString(), CFString(
             "GenTest1{int32 a,,int32 c,String d}"));
-        QCOMPARE(GenTest2::serializeTypeInfo().toString(), QString(
+        QCOMPARE(GenTest2::serializeTypeInfo().toString(), CFString(
             "GenTest2{GenTest1{int32 a,,int32 c,String d} a,int32 b}"));
-        QCOMPARE(gentest::GenTest3::serializeTypeInfo().toString(), QString(
+        QCOMPARE(gentest::GenTest3::serializeTypeInfo().toString(), CFString(
             "gentest::GenTest3[GenTest1{int32 a,,int32 c,String d}]{int32 e,int32 f}"));
-        QCOMPARE(gentest::GenTest3::Inner1::serializeTypeInfo().toString(), QString(
+        QCOMPARE(gentest::GenTest3::Inner1::serializeTypeInfo().toString(), CFString(
             "gentest::GenTest3::Inner1{int32 a}"));
-        QCOMPARE(gentest::GenTest3::Inner2::serializeTypeInfo().toString(), QString(
+        QCOMPARE(gentest::GenTest3::Inner2::serializeTypeInfo().toString(), CFString(
             "gentest::GenTest3::Inner2{}"));
-        QCOMPARE(gentest::gentest2::GenTest4::serializeTypeInfo().toString(), QString(
+        QCOMPARE(gentest::gentest2::GenTest4::serializeTypeInfo().toString(), CFString(
             "gentest::gentest2::GenTest4[List<String>]"
             "{int32 a,List<int32> b,List<GenTest2{GenTest1{int32 a,,int32 c,String d} a,int32 b}> c}"));
-        QCOMPARE(GenTest6::serializeTypeInfo().toString(), QString(
+        QCOMPARE(GenTest6::serializeTypeInfo().toString(), CFString(
             "GenTest6{int32 a}"));
     }
-
 };
-#include "typeinfo_test.moc"
+
 ADD_TEST(TypeInfo_Test)

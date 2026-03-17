@@ -9,9 +9,11 @@
 
 #include <cflib/net/impl/rmiserverbase.h>
 
+#include <algorithm>
+
 namespace cflib { namespace net {
 
-RMIServiceBase::RMIServiceBase(const QString & threadName, uint threadCount, LoopType loopType) :
+RMIServiceBase::RMIServiceBase(const CFString & threadName, uint threadCount, LoopType loopType) :
     util::ThreadVerify(threadName, loopType, threadCount),
     server_(0), connId_(this, 0), delayedReply_(this, false)
 {
@@ -53,8 +55,11 @@ void RMIServiceBase::connectionClosed(uint connId, bool isLast)
     // remove rsig clients
     int i = getServiceInfo().cfSignals.size();
     while (i > 0) {
-        QMutableVectorIterator<net::RSigBase::ConnIdRegId> listenerIt(getCfSignal(i--)->defaultListeners);
-        while (listenerIt.hasNext()) if (listenerIt.next().first == connId) listenerIt.remove();
+        auto & listeners = getCfSignal(i--)->defaultListeners;
+        listeners.erase(
+            std::remove_if(listeners.begin(), listeners.end(),
+                [connId](const net::RSigBase::ConnIdRegId & p) { return p.first == connId; }),
+            listeners.end());
     }
 
     connId_ = connId;
@@ -68,7 +73,7 @@ RMIReplier RMIServiceBase::delayReply()
     return RMIReplier(*server_, connId_);
 }
 
-QByteArray RMIServiceBase::getRemoteIP() const
+CFByteArray RMIServiceBase::getRemoteIP() const
 {
     return server_->getRemoteIP(connId_);
 }

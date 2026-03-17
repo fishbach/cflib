@@ -10,10 +10,16 @@
 
 using namespace cflib::serialize;
 
-class Dynamic_Test: public QObject
+class Dynamic_Test : public cflib::util::TestBase
 {
-    Q_OBJECT
-private slots:
+public:
+    std::vector<cflib::util::TestMethod> testMethods() const override {
+        auto self = const_cast<Dynamic_Test *>(this);
+        return {
+            {"serializeNull", [self]() { self->serializeNull(); }},
+            {"serialize",     [self]() { self->serialize(); }}
+        };
+    }
 
     void serializeNull()
     {
@@ -27,8 +33,8 @@ private slots:
         deser >> out;
 
         QVERIFY(in.y == out.y);
-        QVERIFY(in.d.isNull());
-        QVERIFY(in.e.isEmpty());
+        QVERIFY(!in.d);
+        QVERIFY(in.e.empty());
         QVERIFY(in.z == out.z);
     }
 
@@ -41,7 +47,7 @@ private slots:
         in.d.reset(dynA);
         DynamicB * dynB = new DynamicB();
         dynB->b = 123.45;
-        in.e << QSharedPointer<DynamicBase>(dynB);
+        in.e.push_back(CFSharedPtr<DynamicBase>(dynB));
         BERSerializer ser;
         ser << in;
 
@@ -50,13 +56,12 @@ private slots:
         deser >> out;
 
         QCOMPARE(out.y, in.y);
-        QVERIFY(!in.d.isNull());
-        QCOMPARE(in.d.dynamicCast<DynamicA>()->a, 45);
-        QCOMPARE(in.e.size(), 1);
-        QCOMPARE(in.e.first().dynamicCast<DynamicB>()->b, 123.45);
+        QVERIFY(!!in.d);
+        QCOMPARE(std::dynamic_pointer_cast<DynamicA>(in.d)->a, 45);
+        QCOMPARE((int)in.e.size(), 1);
+        QCOMPARE(std::dynamic_pointer_cast<DynamicB>(in.e[0])->b, 123.45);
         QCOMPARE(out.z, in.z);
     }
-
 };
-#include "dynamic_test.moc"
+
 ADD_TEST(Dynamic_Test)

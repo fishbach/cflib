@@ -10,24 +10,33 @@
 #include <cflib/crypt/impl/botanhelper.h>
 #include <cflib/util/util.h>
 
+#include <dirent.h>
+
 USE_LOG(LogCat::Crypt)
 
 namespace cflib { namespace crypt {
 
 namespace {
 
-QByteArray fromStdVector(const std::vector<std::string> & vec)
+CFByteArray fromStdVector(const std::vector<std::string> & vec)
 {
-    if (vec.size() == 0) return QByteArray();
-    return QByteArray::fromStdString(vec[0]);
+    if (vec.size() == 0) return CFByteArray();
+    return CFByteArray(vec[0].c_str(), (cfsize_t)vec[0].size());
 }
 
 }
 
-QString TLSCertInfo::toString() const
+CFString TLSCertInfo::toString() const
 {
-    return QString("subject: \"%1\", issuer: \"%2\", isCA: %3, isTrusted: %4")
-        .arg(QString::fromUtf8(subjectName)).arg(QString::fromUtf8(issuerName)).arg(isCA).arg(isTrusted);
+    CFString rv("subject: \"");
+    rv += CFString(subjectName.constData());
+    rv += "\", issuer: \"";
+    rv += CFString(issuerName.constData());
+    rv += "\", isCA: ";
+    rv += CFString::number((cfint32)isCA);
+    rv += ", isTrusted: ";
+    rv += CFString::number((cfint32)isTrusted);
+    return rv;
 }
 
 class TLSCredentials::Impl : public Credentials_Manager
@@ -35,8 +44,8 @@ class TLSCredentials::Impl : public Credentials_Manager
 public:
     std::vector<Certificate_Store *> trusted_certificate_authorities(const std::string & type, const std::string& context) override
     {
-        Q_UNUSED(type)
-        Q_UNUSED(context)
+        CF_UNUSED(type);
+        CF_UNUSED(context);
         std::vector<Certificate_Store *> rv(1);
         rv[0] = &trustedCAs;
         return rv;
@@ -46,11 +55,11 @@ public:
         const std::vector<AlgorithmIdentifier> & cert_signature_schemes,
         const std::string & type, const std::string & context) override
     {
-        Q_UNUSED(cert_signature_schemes)
+        CF_UNUSED(cert_signature_schemes);
         if (type != "tls-server") return std::vector<X509_Certificate>();
-        foreach (const CertsPrivKey & ck, chains) {
+        for (const CertsPrivKey & ck : chains) {
             if (context != "" && !ck.certs[0].matches_dns_name(context)) continue;
-            foreach (const std::string & kt, cert_key_types) {
+            for (const std::string & kt : cert_key_types) {
                 if (kt == ck.privateKey->algo_name()) return ck.certs;
             }
         }
@@ -59,7 +68,7 @@ public:
 
     std::shared_ptr<Private_Key> private_key_for(const X509_Certificate & cert, const std::string &, const std::string &) override
     {
-        foreach (const CertsPrivKey & ck, chains) if (ck.certs[0] == cert) return ck.privateKey;
+        for (const CertsPrivKey & ck : chains) if (ck.certs[0] == cert) return ck.privateKey;
         return std::shared_ptr<Private_Key>();
     }
 
@@ -70,12 +79,12 @@ public:
 
         CertsPrivKey() : privateKey(0) {}
     };
-    QList<CertsPrivKey> chains;
-    QList<X509_Certificate> allCerts;
+    CFList<CertsPrivKey> chains;
+    CFList<X509_Certificate> allCerts;
     Certificate_Store_In_Memory trustedCAs;
-    QList<QByteArray> loadedCerts;
-    QList<QByteArray> loadedKeys;
-    QList<QByteArray> loadedCrls;
+    CFList<CFByteArray> loadedCerts;
+    CFList<CFByteArray> loadedKeys;
+    CFList<CFByteArray> loadedCrls;
 };
 
 TLSCredentials::TLSCredentials() :
@@ -88,15 +97,19 @@ TLSCredentials::~TLSCredentials()
     delete impl_;
 }
 
-uint TLSCredentials::addCerts(const QByteArray & certs, bool isTrustedCA)
+uint TLSCredentials::addCerts(const CFByteArray & certs, bool isTrustedCA)
 {
     uint rv = 0;
     try {
         DataSource_Memory ds((const byte *)certs.constData(), certs.size());
-        forever {
+        while (true) {
             X509_Certificate crt(ds);
-            if (impl_->allCerts.contains(crt)) continue;
-            impl_->allCerts << crt;
+            bool found = false;
+            for (const X509_Certificate & existing : impl_->allCerts) {
+                if (existing == crt) { found = true; break; }
+            }
+            if (found) continue;
+            impl_->allCerts.push_back(crt);
             if (isTrustedCA) impl_->trustedCAs.add_certificate(crt);
             ++rv;
         }
@@ -104,12 +117,12 @@ uint TLSCredentials::addCerts(const QByteArray & certs, bool isTrustedCA)
     return rv;
 }
 
-uint TLSCredentials::addRevocationLists(const QByteArray & crls)
+uint TLSCredentials::addRevocationLists(const CFByteArray & crls)
 {
     uint rv = 0;
     try {
         DataSource_Memory ds((const byte *)crls.constData(), crls.size());
-        forever {
+        while (true) {
             X509_CRL crl(ds);
             impl_->trustedCAs.add_crl(crl);
             ++rv;
@@ -118,27 +131,27 @@ uint TLSCredentials::addRevocationLists(const QByteArray & crls)
     return rv;
 }
 
-bool TLSCredentials::addPrivateKey(const QByteArray & privateKey, const QByteArray & password)
+bool TLSCredentials::addPrivateKey(const CFByteArray & privateKey, const CFByteArray & password)
 {
     TRY {
         DataSource_Memory ds((const byte *)privateKey.constData(), privateKey.size());
-        std::unique_ptr<Private_Key> pk(PKCS8::load_key(ds, password.toStdString()));
+        std::unique_ptr<Private_Key> pk(PKCS8::load_key(ds, std::string(password.constData(), password.size())));
 
         // destroy data in parameters
-        for (int i = 0 ; i < privateKey.size() ; ++i) ((char *)privateKey.constData())[i] = 0;
-        for (int i = 0 ; i < password.size()   ; ++i) ((char *)password  .constData())[i] = 0;
+        for (cfsize_t i = 0 ; i < privateKey.size() ; ++i) ((char *)privateKey.constData())[i] = 0;
+        for (cfsize_t i = 0 ; i < password.size()   ; ++i) ((char *)password  .constData())[i] = 0;
 
         if (!pk) return false;
 
         // Does key exist?
         const std::vector<byte> pubKey = pk->subject_public_key();
-        foreach (const Impl::CertsPrivKey & ck, impl_->chains) {
+        for (const Impl::CertsPrivKey & ck : impl_->chains) {
             if (pubKey == ck.privateKey->subject_public_key()) return false;
         }
 
         // search cert
         std::vector<X509_Certificate> certs;
-        foreach (const X509_Certificate & crt, impl_->allCerts) {
+        for (const X509_Certificate & crt : impl_->allCerts) {
             std::unique_ptr<Public_Key> certPubKey(crt.subject_public_key());
             if (pubKey == certPubKey->subject_public_key()) {
                 certs.push_back(crt);
@@ -150,7 +163,7 @@ bool TLSCredentials::addPrivateKey(const QByteArray & privateKey, const QByteArr
         // build chain
         again:
         const std::vector<byte> authorityKeyId = certs[certs.size() - 1].authority_key_id();
-        foreach (const X509_Certificate & crt, impl_->allCerts) {
+        for (const X509_Certificate & crt : impl_->allCerts) {
             if (crt.subject_key_id() == authorityKeyId &&
                 std::find(certs.begin(), certs.end(), crt) == certs.end())
             {
@@ -162,64 +175,66 @@ bool TLSCredentials::addPrivateKey(const QByteArray & privateKey, const QByteArr
         Impl::CertsPrivKey ck;
         ck.certs = certs;
         ck.privateKey = std::move(pk);
-        impl_->chains << ck;
+        impl_->chains.push_back(ck);
 
         return true;
     } CATCH
     return false;
 }
 
-bool TLSCredentials::loadFromDir(const QString & path)
+bool TLSCredentials::loadFromDir(const CFString & path)
 {
-    QDir dir(path);
-    foreach (const QFileInfo & fi, dir.entryInfoList(QStringList() << "*_crt.pem", QDir::Readable | QDir::Files)) {
-        const QString file = fi.absoluteFilePath();
-        const QByteArray data = util::readFile(file);
-        if (data.isEmpty()) {
-            logWarn("could not read certificate: %1", file);
-            continue;
+    DIR * dir = opendir(path.c_str());
+    if (!dir) return false;
+    struct dirent * entry;
+    while ((entry = readdir(dir)) != nullptr) {
+        CFString name(entry->d_name);
+        CFString file = CFString(path.str() + "/" + name.str());
+        if (name.endsWith("_crt.pem")) {
+            CFByteArray data = util::readFile(file);
+            if (data.isEmpty()) {
+                logWarn("could not read certificate: %1", file);
+                continue;
+            }
+            impl_->loadedCerts.push_back(data);
+        } else if (name.endsWith("_key.pem")) {
+            CFByteArray data = util::readFile(file);
+            if (data.isEmpty()) {
+                logWarn("could not read key: %1", file);
+                continue;
+            }
+            impl_->loadedKeys.push_back(data);
+        } else if (name.endsWith("_crl.pem")) {
+            CFByteArray data = util::readFile(file);
+            if (data.isEmpty()) {
+                logWarn("could not read revocation list: %1", file);
+                continue;
+            }
+            impl_->loadedCrls.push_back(data);
         }
-        impl_->loadedCerts << data;
     }
-    foreach (const QFileInfo & fi, dir.entryInfoList(QStringList() << "*_key.pem", QDir::Readable | QDir::Files)) {
-        const QString file = fi.absoluteFilePath();
-        const QByteArray data = util::readFile(file);
-        if (data.isEmpty()) {
-            logWarn("could not read key: %1", file);
-            continue;
-        }
-        impl_->loadedKeys << data;
-    }
-    foreach (const QFileInfo & fi, dir.entryInfoList(QStringList() << "*_crl.pem", QDir::Readable | QDir::Files)) {
-        const QString file = fi.absoluteFilePath();
-        const QByteArray data = util::readFile(file);
-        if (data.isEmpty()) {
-            logWarn("could not read revocation list: %1", file);
-            continue;
-        }
-        impl_->loadedCrls << data;
-    }
+    closedir(dir);
     return true;
 }
 
 bool TLSCredentials::activateLoaded(bool isTrustedCA)
 {
     bool ok = true;
-    foreach (const QByteArray & data, impl_->loadedCerts) {
+    for (const CFByteArray & data : impl_->loadedCerts) {
         if (addCerts(data, isTrustedCA) == 0) {
             logWarn("could not handle certificate: %1", data);
             ok = false;
         }
     }
     impl_->loadedCerts.clear();
-    foreach (const QByteArray & data, impl_->loadedKeys) {
+    for (const CFByteArray & data : impl_->loadedKeys) {
         if (!addPrivateKey(data)) {
             logWarn("could not handle key: %1", data.left(40));
             ok = false;
         }
     }
     impl_->loadedKeys.clear();
-    foreach (const QByteArray & data, impl_->loadedCrls) {
+    for (const CFByteArray & data : impl_->loadedCrls) {
         if (addRevocationLists(data) == 0) {
             logWarn("could not handle revocation list: %1", data);
             ok = false;
@@ -227,8 +242,8 @@ bool TLSCredentials::activateLoaded(bool isTrustedCA)
     }
     impl_->loadedCrls.clear();
 
-    const QList<TLSCertInfo> infos = getAllCertInfos();
-    logInfo("loaded %1 certifices:", infos.size());
+    const CFList<TLSCertInfo> infos = getAllCertInfos();
+    logInfo("loaded %1 certifices:", (cfuint64)infos.size());
     for (const TLSCertInfo & info : infos) {
         logInfo("  cert: %1", info);
     }
@@ -254,41 +269,42 @@ TLSCertInfo TLSCredentials::getInfo(const X509_Certificate & crt) const
     return TLSCertInfo();
 }
 
-QList<TLSCertInfo> TLSCredentials::getCertChainInfos() const
+CFList<TLSCertInfo> TLSCredentials::getCertChainInfos() const
 {
-    QList<TLSCertInfo> rv;
-    for (const Impl::CertsPrivKey & ck : std::as_const(impl_->chains)) {
+    CFList<TLSCertInfo> rv;
+    for (const Impl::CertsPrivKey & ck : impl_->chains) {
         for (const X509_Certificate & crt : ck.certs) {
             TLSCertInfo info = getInfo(crt);
-            if (!info.isNull()) rv << info;
+            if (!info.isNull()) rv.push_back(info);
         }
     }
     return rv;
 }
 
-QList<TLSCertInfo> TLSCredentials::getAllCertInfos() const
+CFList<TLSCertInfo> TLSCredentials::getAllCertInfos() const
 {
-    QList<TLSCertInfo> rv;
-    for (const X509_Certificate & crt : std::as_const(impl_->allCerts)) {
+    CFList<TLSCertInfo> rv;
+    for (const X509_Certificate & crt : impl_->allCerts) {
         TLSCertInfo info = getInfo(crt);
-        if (!info.isNull()) rv << info;
+        if (!info.isNull()) rv.push_back(info);
     }
     return rv;
 }
 
-QByteArray TLSCredentials::getAllCertsPEM() const
+CFByteArray TLSCredentials::getAllCertsPEM() const
 {
     TRY {
-        QByteArray rv = "";    // not null
-        for (const X509_Certificate & cert : std::as_const(impl_->allCerts)) {
+        CFByteArray rv("");    // not null
+        for (const X509_Certificate & cert : impl_->allCerts) {
             DER_Encoder enc;
             cert.encode_into(enc);
-            rv += QByteArray::fromStdString(PEM_Code::encode(enc.get_contents(), "CERTIFICATE"));
+            const std::string pem = PEM_Code::encode(enc.get_contents(), "CERTIFICATE");
+            rv += CFByteArray(pem.c_str(), (cfsize_t)pem.size());
             rv += '\n';
         }
         return rv;
     } CATCH
-    return QByteArray();
+    return CFByteArray();
 }
 
 Botan::Credentials_Manager & TLSCredentials::credentials_Manager()

@@ -7,7 +7,8 @@
 
 #pragma once
 
-#include <QtCore>
+#include <cflib/base/cfconcurrent.h>
+#include <cflib/base/macros.h>
 
 // Threadsafe Fifo
 // put and take from multiple threads possible
@@ -17,7 +18,7 @@ namespace cflib { namespace util {
 template<typename T>
 class ThreadFifo
 {
-    Q_DISABLE_COPY(ThreadFifo)
+    CF_DISABLE_COPY(ThreadFifo)
 public:
     ThreadFifo(int size) : max_(size), buffer_(new T[size]), count_(0), reader_(0), writer_(0) {}
     ~ThreadFifo() { delete[] buffer_; }
@@ -48,7 +49,7 @@ private:
     int count_;
     int reader_;
     int writer_;
-    QAtomicInt sl_;
+    CFAtomicInt sl_;
 };
 
 }}    // namespace

@@ -11,6 +11,9 @@
 #include <cflib/util/log.h>
 #include <cflib/util/threadstats.h>
 
+#include <chrono>
+#include <thread>
+
 USE_LOG(LogCat::Etc)
 
 namespace cflib { namespace util {
@@ -21,15 +24,12 @@ ThreadStats * threadStats = 0;
 
 }
 
-ThreadVerify::ThreadVerify(const QString & threadName, LoopType loopType, uint threadCount) :
+ThreadVerify::ThreadVerify(const CFString & threadName, LoopType loopType, cfuint threadCount) :
     ownerOfVerifyThread_(true)
 {
     const int threadId  = threadStats ? threadStats->externNewId(threadName) : -1;
 
-    if (loopType == Qt) {
-        if (threadCount > 1) logCritical("thread count must be less or equal 1 for Qt thread %1", threadName);
-        verifyThread_ = new impl::ThreadHolderQt(threadName, threadId, threadStats, threadCount == 0);
-    } else if (loopType == Net) {
+    if (loopType == Net) {
         if (threadCount > 1) logCritical("thread count must be less or equal 1 for network thread %1", threadName);
         verifyThread_ = new impl::ThreadHolderWorkerPool(threadName, threadId, threadStats, false, threadCount);
     } else {
@@ -64,18 +64,11 @@ ThreadVerify::~ThreadVerify()
     }
 }
 
-QObject * ThreadVerify::threadObject() const
-{
-    const impl::ThreadHolderQt * th = dynamic_cast<const impl::ThreadHolderQt *>(verifyThread_);
-    if (!th) return 0;
-    return th->threadObject();
-}
-
 void ThreadVerify::stopVerifyThread()
 {
     if (ownerOfVerifyThread_ && verifyThread_->isRunning()) {
         shutdownThread();
-        verifyThread_->wait();
+        verifyThread_->join();
     }
 }
 
@@ -93,17 +86,12 @@ void ThreadVerify::execCall(const Functor * func) const
         delete func;
         return;
     }
-    while (!verifyThread_->doCall(func)) QThread::msleep(1000);
+    while (!verifyThread_->doCall(func)) std::this_thread::sleep_for(std::chrono::seconds(1));
 }
 
 void ThreadVerify::execLater(const Functor * func) const
 {
-    ((const impl::ThreadHolder *)QThread::currentThread())->execLater(func);
-}
-
-void ThreadVerify::setThreadPrio(QThread::Priority prio)
-{
-    verifyThread_->setPriority(prio);
+    cf_current_thread->execLater(func);
 }
 
 void ThreadVerify::execLater(const std::function<void ()> & func) const

@@ -22,7 +22,7 @@ class Version
 {
     SERIALIZE_CLASS
 public:
-    Version(uint major = 0, uint minor = 0, uint revision = 0, const QString & patchLevel = QString()) :
+    Version(cfuint major = 0, cfuint minor = 0, cfuint revision = 0, const CFString & patchLevel = CFString()) :
         major(major), minor(minor), revision(revision), patchLevel(patchLevel) {}
 
     bool isNull() const { return major == 0 && minor == 0 && revision == 0 && patchLevel.isNull(); }
@@ -44,17 +44,17 @@ public:
     bool operator>(const Version & rhs) const { return !rhs.operator>=(*this); }
     bool operator<=(const Version & rhs) const { return rhs.operator>=(*this); }
 
-    QString toString() const;
+    CFString toString() const;
 
     static Version current() { return current_; }
     static void setCurrent(const Version & version);
-    static void setCurrent(uint major = 0, uint minor = 0, uint revision = 0, const QString & patchLevel = QString());
+    static void setCurrent(cfuint major = 0, cfuint minor = 0, cfuint revision = 0, const CFString & patchLevel = CFString());
 
 public serialized:
-    uint major;
-    uint minor;
-    uint revision;
-    QString patchLevel;
+    cfuint major;
+    cfuint minor;
+    cfuint revision;
+    CFString patchLevel;
 
 private:
     static Version current_;

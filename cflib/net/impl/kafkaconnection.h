@@ -19,12 +19,12 @@ class KafkaConnection : protected TCPConn
 public:
     KafkaConnection(TCPConnData * data);
 
-    KafkaRequestWriter request(qint16 apiKey, qint16 apiVersion = 0, qint32 correlationId = 1, quint32 expectedSize = 0);
+    KafkaRequestWriter request(cfint16 apiKey, cfint16 apiVersion = 0, cfint32 correlationId = 1, cfuint32 expectedSize = 0);
     void close() { TCPConn::close(ReadWriteClosed, true); }
     void abort() { TCPConn::close(HardClosed, true); }
 
 protected:
-    virtual void reply(qint32 correlationId, KafkaRawReader & reader) { Q_UNUSED(correlationId) Q_UNUSED(reader) }
+    virtual void reply(cfint32 correlationId, KafkaRawReader & reader) { CF_UNUSED(correlationId); CF_UNUSED(reader); }
     virtual void closed() {}
 
 protected:
@@ -32,7 +32,7 @@ protected:
     void closed(CloseType type) override;
 
 private:
-    QByteArray buffer_;
+    CFByteArray buffer_;
 
     friend class KafkaRequestWriter;
 };
@@ -40,7 +40,7 @@ private:
 class KafkaRequestWriter : public KafkaRawWriter
 {
 public:
-    KafkaRequestWriter(KafkaConnection & connection, quint32 expectedSize = 0);
+    KafkaRequestWriter(KafkaConnection & connection, cfuint32 expectedSize = 0);
 
     void send();
 

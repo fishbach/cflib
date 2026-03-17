@@ -11,10 +11,18 @@
 
 using namespace cflib::serialize;
 
-class Gen_BER_Test: public QObject
+class Gen_BER_Test : public cflib::util::TestBase
 {
-    Q_OBJECT
-private slots:
+public:
+    std::vector<cflib::util::TestMethod> testMethods() const override {
+        auto self = const_cast<Gen_BER_Test *>(this);
+        return {
+            {"serialize",       [self]() { self->serialize(); }},
+            {"deserialize",     [self]() { self->deserialize(); }},
+            {"template_ser",    [self]() { self->template_ser(); }},
+            {"template_deser",  [self]() { self->template_deser(); }}
+        };
+    }
 
     void serialize()
     {
@@ -30,7 +38,7 @@ private slots:
         gt3.f = 8;
         BERSerializer ser;
         ser << gt1 << gt3;
-        QCOMPARE(ser.data(), QByteArray::fromHex(
+        QCOMPARE(ser.data(), CFByteArray::fromHex(
             "                    E10A C20103 C40104 C5027879"
             "E219 C10500E4440B6F E20A C20105 C40106 C5026162 C30107 C40108"
         ));
@@ -38,7 +46,7 @@ private slots:
 
     void deserialize()
     {
-        BERDeserializer ser(QByteArray::fromHex(
+        BERDeserializer ser(CFByteArray::fromHex(
             "                    E10A C20103 C40104 C5027879"
             "E219 C10500E4440B6F E20A C20105 C40106 C5026162 C30107 C40108"
         ));
@@ -47,10 +55,10 @@ private slots:
         ser >> gt1 >> gt3;
         QCOMPARE(gt1.a, 3);
         QCOMPARE(gt1.c, 4);
-        QCOMPARE(gt1.d, QString("xy"));
+        QCOMPARE(gt1.d, CFString("xy"));
         QCOMPARE(gt3.a, 5);
         QCOMPARE(gt3.c, 6);
-        QCOMPARE(gt3.d, QString("ab"));
+        QCOMPARE(gt3.d, CFString("ab"));
         QCOMPARE(gt3.e, 7);
         QCOMPARE(gt3.f, 8);
     }
@@ -58,13 +66,13 @@ private slots:
     void template_ser()
     {
         gentest::gentest2::GenTest4 gt4;
-        gt4 << "AB";
-        gt4 << "";
+        gt4.push_back(CFString("AB"));
+        gt4.push_back(CFString(""));
         gt4.a = 7;
         gt4.b << 13 << 17;
         BERSerializer ser;
         ser << gt4;
-        QCOMPARE(ser.data(), QByteArray::fromHex(
+        QCOMPARE(ser.data(), CFByteArray::fromHex(
             "E11A"
             "C10500FEDBD07E"
             "E206 C0024142 C000"
@@ -75,7 +83,7 @@ private slots:
 
     void template_deser()
     {
-        BERDeserializer ser(QByteArray::fromHex(
+        BERDeserializer ser(CFByteArray::fromHex(
             "E11A"
             "C10500FEDBD07E"
             "E206 C0024142 C000"
@@ -84,16 +92,15 @@ private slots:
         ));
         gentest::gentest2::GenTest4 gt4;
         ser >> gt4;
-        QCOMPARE(gt4.size(), 2);
-        QCOMPARE(gt4[0], QString("AB"));
+        QCOMPARE((int)gt4.size(), 2);
+        QCOMPARE(gt4[0], CFString("AB"));
         QVERIFY(!gt4[1].isNull());
         QVERIFY(gt4[1].isEmpty());
         QCOMPARE(gt4.a, 7);
-        QCOMPARE(gt4.b.size(), 2);
+        QCOMPARE((int)gt4.b.size(), 2);
         QCOMPARE(gt4.b[0], 13);
         QCOMPARE(gt4.b[1], 17);
     }
-
 };
-#include "gen_ber_test.moc"
+
 ADD_TEST(Gen_BER_Test)

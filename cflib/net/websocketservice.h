@@ -7,6 +7,7 @@
 
 #pragma once
 
+#include <cflib/base/cfregex.h>
 #include <cflib/net/request.h>
 #include <cflib/net/requesthandler.h>
 #include <cflib/net/tcpconn.h>
@@ -19,39 +20,39 @@ namespace cflib { namespace net {
 class WebSocketService : public RequestHandler, public util::ThreadVerify
 {
 public:
-    WebSocketService(const QString & path, const QRegularExpression & allowedOrigin = QRegularExpression(),
+    WebSocketService(const CFString & path, const CFRegex & allowedOrigin = CFRegex(),
         uint connectionTimeoutSec = 0);
     ~WebSocketService();
 
 protected:
-    void saveHeaderField(const QByteArray & field);
+    void saveHeaderField(const CFByteArray & field);
 
-    void send(uint connId, const QByteArray & data, bool isBinary);
+    void send(uint connId, const CFByteArray & data, bool isBinary);
     void close(uint connId, TCPConn::CloseType type = TCPConn::ReadWriteClosed);
     void continueRead(uint connId);
 
-    QByteArray getRemoteIP(uint connId) const;
-    QByteArray getHeader(uint connId, const QByteArray & header) const;
+    CFByteArray getRemoteIP(uint connId) const;
+    CFByteArray getHeader(uint connId, const CFByteArray & header) const;
 
     virtual void newConnection(uint connId);
-    virtual void newMsg(uint connId, const QByteArray & data, bool isBinary, bool & stopRead) = 0;
+    virtual void newMsg(uint connId, const CFByteArray & data, bool isBinary, bool & stopRead) = 0;
     virtual void closed(uint connId, TCPConn::CloseType type);
 
     virtual void handleRequest(const Request & request);
 
 private:
-    void addConnection(TCPConnData * connData, const QByteArray & wsKey, bool deflate,
+    void addConnection(TCPConnData * connData, const CFByteArray & wsKey, bool deflate,
         const Request::KeyVal & savedHeaders);
     void startTimer();
     void checkTimeout();
 
 private:
-    const QString path_;
-    const QRegularExpression allowedOrigin_;
+    const CFString path_;
+    const CFRegex allowedOrigin_;
     const uint connectionTimeoutSec_;
-    QSet<QByteArray> saveHeaderFields_;
+    CFSet<CFByteArray> saveHeaderFields_;
     class WSConnHandler;
-    QHash<uint, WSConnHandler *> connections_;
+    CFHash<uint, WSConnHandler *> connections_;
     uint lastConnId_;
     util::EVTimer * timer_;
 };

@@ -21,12 +21,12 @@ LogService::~LogService()
     stopVerifyThread();
 }
 
-void LogService::log(const QString & file, int line, cflib::util::LogCategory category, const QString & str)
+void LogService::log(const CFString & file, int line, cflib::util::LogCategory category, const CFString & str)
 {
     // remove evil chars
-    QByteArray fileBa = file.toUtf8();
+    CFByteArray fileBa = file.toUtf8();
     for (int i = 0 ; i < fileBa.length() ; ++i) {
-        uchar c = (uchar)fileBa[i];
+        cfuint8 c = (cfuint8)fileBa[i];
         if (c < 0x20 || c > 0x7E) fileBa[i] = '_';
     }
 

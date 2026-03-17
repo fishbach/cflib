@@ -19,7 +19,7 @@ namespace cflib { namespace crypt {
 class TLSClient::Impl : public TLS::Callbacks
 {
 public:
-    Impl(TLS::Session_Manager & session_manager, Credentials_Manager & creds, const QByteArray & hostname,
+    Impl(TLS::Session_Manager & session_manager, Credentials_Manager & creds, const CFByteArray & hostname,
         bool highSecurity, bool requireRevocationInfo)
     :
         outgoingEncryptedPtr(&outgoingEncrypteedTmpBuf),
@@ -33,7 +33,7 @@ public:
             detachedShared(creds),
             policy,
             detachedShared(rng),
-            TLS::Server_Information(hostname.toStdString()))
+            TLS::Server_Information(std::string(hostname.constData(), hostname.size())))
     {
     }
 
@@ -44,7 +44,7 @@ public:
 
     void tls_record_received(uint64_t seq_no, std::span<const uint8_t> data) override
     {
-        Q_UNUSED(seq_no)
+        CF_UNUSED(seq_no);
         incomingPlainPtr->append((const char *)data.data(), data.size());
     }
 
@@ -60,7 +60,7 @@ public:
 
     void tls_session_established(const TLS::Session_Summary & session) override
     {
-        Q_UNUSED(session)
+        CF_UNUSED(session);
         isReady = true;
     }
 
@@ -96,10 +96,10 @@ public:
     }
 
 public:
-    QByteArray outgoingEncrypteedTmpBuf;
-    QByteArray outgoingPlainTmpBuf;
-    QByteArray * outgoingEncryptedPtr;
-    QByteArray * incomingPlainPtr;
+    CFByteArray outgoingEncrypteedTmpBuf;
+    CFByteArray outgoingPlainTmpBuf;
+    CFByteArray * outgoingEncryptedPtr;
+    CFByteArray * incomingPlainPtr;
     bool isReady;
     bool hasError;
     std::shared_ptr<TLS::Policy> policy;
@@ -107,7 +107,7 @@ public:
     TLS::Client client;
 };
 
-TLSClient::TLSClient(TLSSessions & sessions, TLSCredentials & credentials, const QByteArray & hostname,
+TLSClient::TLSClient(TLSSessions & sessions, TLSCredentials & credentials, const CFByteArray & hostname,
     bool highSecurity, bool requireRevocationInfo)
 :
     impl_(0)
@@ -122,21 +122,21 @@ TLSClient::~TLSClient()
     delete impl_;
 }
 
-QByteArray TLSClient::initialSend()
+CFByteArray TLSClient::initialSend()
 {
-    QByteArray rv = impl_->outgoingEncrypteedTmpBuf;
+    CFByteArray rv = impl_->outgoingEncrypteedTmpBuf;
     impl_->outgoingEncrypteedTmpBuf.clear();
     return rv;
 }
 
-bool TLSClient::received(const QByteArray & encrypted, QByteArray & plain, QByteArray & sendBack)
+bool TLSClient::received(const CFByteArray & encrypted, CFByteArray & plain, CFByteArray & sendBack)
 {
     if (impl_->hasError) return false;
     impl_->outgoingEncryptedPtr = &sendBack;
     impl_->incomingPlainPtr     = &plain;
     TRY {
         impl_->client.received_data((const byte *)encrypted.constData(), encrypted.size());
-        QByteArray & tmpBuf = impl_->outgoingPlainTmpBuf;
+        CFByteArray & tmpBuf = impl_->outgoingPlainTmpBuf;
         if (!tmpBuf.isEmpty() && impl_->isReady && !impl_->hasError) {
             impl_->client.send((const byte *)tmpBuf.constData(), tmpBuf.size());
             tmpBuf.clear();
@@ -147,7 +147,7 @@ bool TLSClient::received(const QByteArray & encrypted, QByteArray & plain, QByte
     return false;
 }
 
-bool TLSClient::send(const QByteArray & plain, QByteArray & encrypted)
+bool TLSClient::send(const CFByteArray & plain, CFByteArray & encrypted)
 {
     if (impl_->hasError) return false;
     impl_->outgoingEncryptedPtr = &encrypted;

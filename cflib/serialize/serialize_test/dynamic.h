@@ -47,9 +47,9 @@ class DynamicUse
     SERIALIZE_CLASS
 public serialized:
     int y;
-    QSharedPointer<DynamicBase> d;
-    typedef QSharedPointer<DynamicBase> DBase;
-    QList<DBase> e;
+    CFSharedPtr<DynamicBase> d;
+    typedef CFSharedPtr<DynamicBase> DBase;
+    CFList<DBase> e;
     int z;
 
 public:

@@ -7,7 +7,7 @@
 
 #pragma once
 
-#include <QtCore>
+#include <cflib/base/macros.h>
 
 namespace Botan { namespace TLS { class Session_Manager; }}
 
@@ -15,7 +15,7 @@ namespace cflib { namespace crypt {
 
 class TLSSessions
 {
-    Q_DISABLE_COPY(TLSSessions)
+    CF_DISABLE_COPY(TLSSessions)
 public:
     TLSSessions(bool enable = false);
     ~TLSSessions();

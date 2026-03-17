@@ -22,7 +22,7 @@ public:
     HttpThread(uint no, uint count);
     ~HttpThread();
 
-    void newRequest(TCPConnData * data, const QList<RequestHandler *> & handlers);
+    void newRequest(TCPConnData * data, const CFList<RequestHandler *> & handlers);
     void requestFinished();
 
 private:
@@ -31,7 +31,7 @@ private:
 private:
     uint activeRequests_;
     bool shutdown_;
-    QSemaphore sem_;
+    CFSemaphore sem_;
 };
 
 }}}    // namespace

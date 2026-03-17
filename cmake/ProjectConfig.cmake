@@ -40,12 +40,8 @@ if(ENABLE_CCACHE)
     endif()
 endif()
 
-# Qt
-find_package(
-    Qt5 5.15
-    COMPONENTS Core Sql Test
-    REQUIRED
-)
+# Threads (needed by cflib_util)
+find_package(Threads REQUIRED)
 
 # add root include dir
 include_directories(${PROJECT_SOURCE_DIR})

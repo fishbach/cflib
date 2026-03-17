@@ -9,17 +9,17 @@
 
 namespace cflib { namespace util {
 
-qint64 TimeShifter::diff_ = 0;
+cfint64 TimeShifter::diff_ = 0;
 
-void TimeShifter::setDateTime(const QDateTime & newNow)
+void TimeShifter::setDateTime(const CFDateTime & newNow)
 {
     if (newNow.isNull()) diff_ = 0;
-    else diff_ = QDateTime::currentDateTimeUtc().msecsTo(newNow);
+    else diff_ = CFDateTime::nowUTC().msecsTo(newNow);
 }
 
-QDateTime TimeShifter::currentDateTime()
+CFDateTime TimeShifter::currentDateTime()
 {
-    return QDateTime::currentDateTimeUtc().addMSecs(diff_);
+    return CFDateTime::nowUTC().addMSecs(diff_);
 }
 
 }}    // namespace

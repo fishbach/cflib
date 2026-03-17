@@ -42,14 +42,14 @@ public:
         }
     }
 
-    virtual void handleMsg(quint64,
-        const QByteArray & data, int tagLen, int lengthSize, qint32 valueLen,
+    virtual void handleMsg(cfuint64,
+        const CFByteArray & data, int tagLen, int lengthSize, cfint32 valueLen,
         const C & connData, uint connDataId, uint connId)
     {
-        handleCall(data, (const quint8 *)data.constData() + tagLen + lengthSize, valueLen, connData, connDataId, connId);
+        handleCall(data, (const cfuint8 *)data.constData() + tagLen + lengthSize, valueLen, connData, connDataId, connId);
     }
 
-    virtual void connDataChange(const C &, const C & newConnData, uint connDataId, const QSet<uint> & connIds)
+    virtual void connDataChange(const C &, const C & newConnData, uint connDataId, const CFSet<uint> & connIds)
     {
         RMIServerBase::connDataChange(newConnData, connDataId, connIds);
     }

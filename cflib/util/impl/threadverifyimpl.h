@@ -7,8 +7,13 @@
 
 #pragma once
 
+#include <cflib/base/cfstring.h>
+#include <cflib/base/cfthread.h>
 #include <cflib/util/functor.h>
 #include <cflib/util/threadfifo.h>
+
+#include <thread>
+#include <vector>
 
 struct ev_async;
 struct ev_loop;
@@ -19,65 +24,36 @@ class ThreadStats;
 
 namespace impl {
 
-class ThreadHolderEvent : public QEvent
+class ThreadHolder
 {
 public:
-    ThreadHolderEvent(const Functor * func) :
-        QEvent(QEvent::User),
-        func(func)
-    {}
+    ThreadHolder(const CFString & threadName, int threadId, ThreadStats * stats, bool disable);
+    virtual ~ThreadHolder();
 
-    const Functor * func;
-};
-
-class ThreadObject : public QObject
-{
-public:
-    ThreadObject(int threadId, ThreadStats * stats);
-    bool event(QEvent * event) override;
-
-private:
-    const int threadId_;
-    ThreadStats * const stats_;
-};
-
-class ThreadHolder : public QThread
-{
-public:
-    ThreadHolder(const QString & threadName, int threadId, ThreadStats * stats, bool disable);
-    ~ThreadHolder();
-
-    const QString threadName;
+    const CFString threadName;
     bool isActive() const { return isActive_; }
+    bool isRunning() const { return isRunning_; }
     virtual bool doCall(const Functor * func) = 0;
     virtual void stopLoop() = 0;
-    virtual bool isOwnThread() const { return QThread::currentThread() == this || disabled_; }
-    virtual uint threadCount() const { return 1; }
-    virtual uint threadNo() const    { return 0; }
+    virtual bool isOwnThread() const { return cf_current_thread == this || disabled_; }
+    virtual cfuint threadCount() const { return 1; }
+    virtual cfuint threadNo() const    { return 0; }
     virtual void execLater(const Functor * func) const = 0;
 
+    void startThread();
+    void join();
+
 protected:
+    virtual void run() = 0;
+
     const int threadId_;
     ThreadStats * const stats_;
     const bool disabled_;
     bool isActive_;
-};
-
-class ThreadHolderQt : public ThreadHolder
-{
-public:
-    ThreadHolderQt(const QString & threadName, int threadId, ThreadStats * stats, bool disable);
-
-    ThreadObject * threadObject() const { return threadObject_; }
-    bool doCall(const Functor * func) override;
-    void stopLoop() override;
-    void execLater(const Functor * func) const override;
-
-protected:
-    void run() override;
+    bool isRunning_;
 
 private:
-    ThreadObject * threadObject_;
+    std::thread thread_;
 };
 
 class ThreadHolderLibEV : public ThreadHolder
@@ -91,7 +67,7 @@ public:
     void wakeUp();
 
 protected:
-    ThreadHolderLibEV(const QString & threadName, int threadId, ThreadStats * stats, bool isWorkerOnly, bool disable);
+    ThreadHolderLibEV(const CFString & threadName, int threadId, ThreadStats * stats, bool isWorkerOnly, bool disable);
     void run() override;
     virtual void wokeUp() = 0;
 
@@ -107,13 +83,13 @@ private:
 class ThreadHolderWorkerPool : public ThreadHolderLibEV
 {
 public:
-    ThreadHolderWorkerPool(const QString & threadName, int threadId, ThreadStats * stats, bool isWorkerOnly, uint threadCount);
+    ThreadHolderWorkerPool(const CFString & threadName, int threadId, ThreadStats * stats, bool isWorkerOnly, cfuint threadCount);
     ~ThreadHolderWorkerPool();
 
     bool doCall(const Functor * func) override;
     void stopLoop() override;
     bool isOwnThread() const override;
-    uint threadCount() const override;
+    cfuint threadCount() const override;
 
 protected:
     void run() override;
@@ -123,24 +99,24 @@ private:
     class Worker : public ThreadHolderLibEV
     {
     public:
-        Worker(const QString & threadName,
-            int threadId, ThreadStats * stats, uint threadNo, ThreadFifo<const Functor *> & externalCalls);
+        Worker(const CFString & threadName,
+            int threadId, ThreadStats * stats, cfuint threadNo, ThreadFifo<const Functor *> & externalCalls);
 
         bool doCall(const Functor *) override { return false; }
         void stopLoop() override;
-        uint threadNo() const override { return threadNo_; }
+        cfuint threadNo() const override { return threadNo_; }
 
     protected:
         void wokeUp() override;
 
     private:
-        const uint threadNo_;
+        const cfuint threadNo_;
         ThreadFifo<const Functor *> & externalCalls_;
         bool stopLoop_;
     };
 
     ThreadFifo<const Functor *> externalCalls_;
-    QList<Worker *> workers_;
+    std::vector<Worker *> workers_;
     bool stopLoop_;
 };
 

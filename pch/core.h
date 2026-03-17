@@ -5,4 +5,13 @@
  * Licensed under the MIT License.
  */
 
-#include <QtCore>
+#include <cflib/base/cfbytearray.h>
+#include <cflib/base/cfconcurrent.h>
+#include <cflib/base/cfcontainers.h>
+#include <cflib/base/cfdatetime.h>
+#include <cflib/base/cffile.h>
+#include <cflib/base/cfstring.h>
+#include <cflib/base/cfthread.h>
+#include <cflib/base/macros.h>
+#include <cflib/base/types.h>
+

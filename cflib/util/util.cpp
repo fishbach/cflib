@@ -11,21 +11,21 @@
 
 #include <zlib.h>
 
-#ifdef Q_OS_UNIX
-#include <errno.h>
-#include <signal.h>
+#include <cerrno>
+#include <csignal>
+#include <cstdlib>
 #include <sys/stat.h>
 #include <sys/wait.h>
 #include <unistd.h>
-#endif
+#include <fcntl.h>
 
 USE_LOG(LogCat::Etc)
 
 namespace cflib { namespace util {
 
-QByteArray weekDay(const QDate & date)
+CFByteArray weekDay(int dayOfWeek)
 {
-    switch (date.dayOfWeek()) {
+    switch (dayOfWeek) {
         case  1: return "Mon";
         case  2: return "Tue";
         case  3: return "Wed";
@@ -37,37 +37,34 @@ QByteArray weekDay(const QDate & date)
     }
 }
 
-QByteArray dateTimeForHTTP(const QDateTime & dateTime)
+CFByteArray dateTimeForHTTP(const CFDateTime & dateTime)
 {
     // see RFC 2822 section 3.3.
-
-    const QDateTime utc = dateTime.toUTC();
-    QByteArray retval = weekDay(utc.date());
+    CFByteArray retval = weekDay(dateTime.dayOfWeek());
     retval += ", ";
-    retval += utc.toString("dd ___ yyyy hh:mm:ss").toUtf8();
-    switch (utc.date().month()) {
-        case  1: retval.replace("___", "Jan"); break;
-        case  2: retval.replace("___", "Feb"); break;
-        case  3: retval.replace("___", "Mar"); break;
-        case  4: retval.replace("___", "Apr"); break;
-        case  5: retval.replace("___", "May"); break;
-        case  6: retval.replace("___", "Jun"); break;
-        case  7: retval.replace("___", "Jul"); break;
-        case  8: retval.replace("___", "Aug"); break;
-        case  9: retval.replace("___", "Sep"); break;
-        case 10: retval.replace("___", "Oct"); break;
-        case 11: retval.replace("___", "Nov"); break;
-        case 12: retval.replace("___", "Dec"); break;
-        default: retval.replace("___", "");
-    }
+
+    char buf[32];
+    snprintf(buf, sizeof(buf), "%02d ___ %04d %02d:%02d:%02d",
+        dateTime.day(), dateTime.year(),
+        dateTime.hour(), dateTime.minute(), dateTime.second());
+    retval += buf;
+
+    static const char * months[] = {
+        "", "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+        "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
+    };
+    int m = dateTime.month();
+    if (m >= 1 && m <= 12) retval.replace("___", months[m]);
+    else retval.replace("___", "");
+
     retval += " GMT";
     return retval;
 }
 
 namespace {
 
-const quint32 CRCData[] = {
-#if Q_BYTE_ORDER == Q_LITTLE_ENDIAN
+// CRC table - little endian
+const cfuint32 CRCData[] = {
     0x00000000L, 0x77073096L, 0xee0e612cL, 0x990951baL, 0x076dc419L,
     0x706af48fL, 0xe963a535L, 0x9e6495a3L, 0x0edb8832L, 0x79dcb8a4L,
     0xe0d5e91eL, 0x97d2d988L, 0x09b64c2bL, 0x7eb17cbdL, 0xe7b82d07L,
@@ -120,107 +117,93 @@ const quint32 CRCData[] = {
     0xcdd70693L, 0x54de5729L, 0x23d967bfL, 0xb3667a2eL, 0xc4614ab8L,
     0x5d681b02L, 0x2a6f2b94L, 0xb40bbe37L, 0xc30c8ea1L, 0x5a05df1bL,
     0x2d02ef8dL
-#else
-    0x00000000L, 0x96300777L, 0x2c610eeeL, 0xba510999L, 0x19c46d07L,
-    0x8ff46a70L, 0x35a563e9L, 0xa395649eL, 0x3288db0eL, 0xa4b8dc79L,
-    0x1ee9d5e0L, 0x88d9d297L, 0x2b4cb609L, 0xbd7cb17eL, 0x072db8e7L,
-    0x911dbf90L, 0x6410b71dL, 0xf220b06aL, 0x4871b9f3L, 0xde41be84L,
-    0x7dd4da1aL, 0xebe4dd6dL, 0x51b5d4f4L, 0xc785d383L, 0x56986c13L,
-    0xc0a86b64L, 0x7af962fdL, 0xecc9658aL, 0x4f5c0114L, 0xd96c0663L,
-    0x633d0ffaL, 0xf50d088dL, 0xc8206e3bL, 0x5e10694cL, 0xe44160d5L,
-    0x727167a2L, 0xd1e4033cL, 0x47d4044bL, 0xfd850dd2L, 0x6bb50aa5L,
-    0xfaa8b535L, 0x6c98b242L, 0xd6c9bbdbL, 0x40f9bcacL, 0xe36cd832L,
-    0x755cdf45L, 0xcf0dd6dcL, 0x593dd1abL, 0xac30d926L, 0x3a00de51L,
-    0x8051d7c8L, 0x1661d0bfL, 0xb5f4b421L, 0x23c4b356L, 0x9995bacfL,
-    0x0fa5bdb8L, 0x9eb80228L, 0x0888055fL, 0xb2d90cc6L, 0x24e90bb1L,
-    0x877c6f2fL, 0x114c6858L, 0xab1d61c1L, 0x3d2d66b6L, 0x9041dc76L,
-    0x0671db01L, 0xbc20d298L, 0x2a10d5efL, 0x8985b171L, 0x1fb5b606L,
-    0xa5e4bf9fL, 0x33d4b8e8L, 0xa2c90778L, 0x34f9000fL, 0x8ea80996L,
-    0x18980ee1L, 0xbb0d6a7fL, 0x2d3d6d08L, 0x976c6491L, 0x015c63e6L,
-    0xf4516b6bL, 0x62616c1cL, 0xd8306585L, 0x4e0062f2L, 0xed95066cL,
-    0x7ba5011bL, 0xc1f40882L, 0x57c40ff5L, 0xc6d9b065L, 0x50e9b712L,
-    0xeab8be8bL, 0x7c88b9fcL, 0xdf1ddd62L, 0x492dda15L, 0xf37cd38cL,
-    0x654cd4fbL, 0x5861b24dL, 0xce51b53aL, 0x7400bca3L, 0xe230bbd4L,
-    0x41a5df4aL, 0xd795d83dL, 0x6dc4d1a4L, 0xfbf4d6d3L, 0x6ae96943L,
-    0xfcd96e34L, 0x468867adL, 0xd0b860daL, 0x732d0444L, 0xe51d0333L,
-    0x5f4c0aaaL, 0xc97c0dddL, 0x3c710550L, 0xaa410227L, 0x10100bbeL,
-    0x86200cc9L, 0x25b56857L, 0xb3856f20L, 0x09d466b9L, 0x9fe461ceL,
-    0x0ef9de5eL, 0x98c9d929L, 0x2298d0b0L, 0xb4a8d7c7L, 0x173db359L,
-    0x810db42eL, 0x3b5cbdb7L, 0xad6cbac0L, 0x2083b8edL, 0xb6b3bf9aL,
-    0x0ce2b603L, 0x9ad2b174L, 0x3947d5eaL, 0xaf77d29dL, 0x1526db04L,
-    0x8316dc73L, 0x120b63e3L, 0x843b6494L, 0x3e6a6d0dL, 0xa85a6a7aL,
-    0x0bcf0ee4L, 0x9dff0993L, 0x27ae000aL, 0xb19e077dL, 0x44930ff0L,
-    0xd2a30887L, 0x68f2011eL, 0xfec20669L, 0x5d5762f7L, 0xcb676580L,
-    0x71366c19L, 0xe7066b6eL, 0x761bd4feL, 0xe02bd389L, 0x5a7ada10L,
-    0xcc4add67L, 0x6fdfb9f9L, 0xf9efbe8eL, 0x43beb717L, 0xd58eb060L,
-    0xe8a3d6d6L, 0x7e93d1a1L, 0xc4c2d838L, 0x52f2df4fL, 0xf167bbd1L,
-    0x6757bca6L, 0xdd06b53fL, 0x4b36b248L, 0xda2b0dd8L, 0x4c1b0aafL,
-    0xf64a0336L, 0x607a0441L, 0xc3ef60dfL, 0x55df67a8L, 0xef8e6e31L,
-    0x79be6946L, 0x8cb361cbL, 0x1a8366bcL, 0xa0d26f25L, 0x36e26852L,
-    0x95770cccL, 0x03470bbbL, 0xb9160222L, 0x2f260555L, 0xbe3bbac5L,
-    0x280bbdb2L, 0x925ab42bL, 0x046ab35cL, 0xa7ffd7c2L, 0x31cfd0b5L,
-    0x8b9ed92cL, 0x1daede5bL, 0xb0c2649bL, 0x26f263ecL, 0x9ca36a75L,
-    0x0a936d02L, 0xa906099cL, 0x3f360eebL, 0x85670772L, 0x13570005L,
-    0x824abf95L, 0x147ab8e2L, 0xae2bb17bL, 0x381bb60cL, 0x9b8ed292L,
-    0x0dbed5e5L, 0xb7efdc7cL, 0x21dfdb0bL, 0xd4d2d386L, 0x42e2d4f1L,
-    0xf8b3dd68L, 0x6e83da1fL, 0xcd16be81L, 0x5b26b9f6L, 0xe177b06fL,
-    0x7747b718L, 0xe65a0888L, 0x706a0fffL, 0xca3b0666L, 0x5c0b0111L,
-    0xff9e658fL, 0x69ae62f8L, 0xd3ff6b61L, 0x45cf6c16L, 0x78e20aa0L,
-    0xeed20dd7L, 0x5483044eL, 0xc2b30339L, 0x612667a7L, 0xf71660d0L,
-    0x4d476949L, 0xdb776e3eL, 0x4a6ad1aeL, 0xdc5ad6d9L, 0x660bdf40L,
-    0xf03bd837L, 0x53aebca9L, 0xc59ebbdeL, 0x7fcfb247L, 0xe9ffb530L,
-    0x1cf2bdbdL, 0x8ac2bacaL, 0x3093b353L, 0xa6a3b424L, 0x0536d0baL,
-    0x9306d7cdL, 0x2957de54L, 0xbf67d923L, 0x2e7a66b3L, 0xb84a61c4L,
-    0x021b685dL, 0x942b6f2aL, 0x37be0bb4L, 0xa18e0cc3L, 0x1bdf055aL,
-    0x8def022dL
-#endif
 };
 
 }
 
-quint32 calcCRC32Raw(quint32 crc, const char * data, quint64 size)
+cfuint32 calcCRC32Raw(cfuint32 crc, const char * data, cfuint64 size)
 {
-    const quint8 * bytes = (const quint8 *)data;
+    const cfuint8 * bytes = (const cfuint8 *)data;
     while (size--) {
-        #if Q_BYTE_ORDER == Q_LITTLE_ENDIAN
-            crc = CRCData[(crc & 0xff) ^ *(bytes++)] ^ (crc >> 8);
-        #else
-            crc = CRCData[(crc >> 24) ^ *(bytes++)] ^ (crc << 8);
-        #endif
+        crc = CRCData[(crc & 0xff) ^ *(bytes++)] ^ (crc >> 8);
     }
     return crc;
 }
 
-void gzip(QByteArray & data, int compressionLevel)
+void gzip(CFByteArray & data, int compressionLevel)
 {
     if (data.isEmpty()) {
-        data = QByteArray::fromHex("1f8b08000000000000ff03000000000000000000");
+        data = CFByteArray::fromHex("1f8b08000000000000ff03000000000000000000");
         return;
     }
 
-    quint32 len = data.size();
-    const quint32 crc = calcCRC32(data);
-    data = qCompress(data, compressionLevel);
+    const cfuint32 len = data.size();
+    const cfuint32 crc = calcCRC32(data);
 
-    // reformat
-    data.prepend("\x1f\x8b\x08\x00", 4);
-    data.replace(4, 6, "\x00\x00\x00\x00\x00\xff", 6);
-    data.resize(data.size() + 4);
+    // Use zlib deflate with gzip wrapper (windowBits = 31 = 15 + 16)
+    z_stream s;
+    s.zalloc    = Z_NULL;
+    s.zfree     = Z_NULL;
+    s.opaque    = Z_NULL;
+    s.avail_in  = (uInt)data.size();
+    s.next_in   = (Bytef *)data.constData();
+    deflateInit2(&s, compressionLevel, Z_DEFLATED, 31, 8, Z_DEFAULT_STRATEGY);
+    CFByteArray out((cfsize_t)deflateBound(&s, data.size()), '\0');
+    s.avail_out = (uInt)out.size();
+    s.next_out  = (Bytef *)out.data();
+    deflate(&s, Z_FINISH);
+    out.resize(s.total_out);
+    deflateEnd(&s);
 
-    // write crc (byte order is handled above)
-    quint8 * dataPtr = (quint8 *)data.constData();    // constData for performance
-    dataPtr += data.size() - 8;
-    *((quint32 *)dataPtr) = crc;
-    dataPtr += 3;
+    // zlib with windowBits=31 produces a full gzip stream, but we need to fix the
+    // OS field and potentially other fields to match the old qCompress-based output.
+    // The simplest approach: keep zlib's output but patch the header to match.
+    // Actually, let's just use the zlib gzip output directly.
+    // But to match the old behavior exactly (with the specific header bytes), we need
+    // to produce the same format. The old code used qCompress (zlib deflate wrapper)
+    // then manually built gzip headers. Let's use the raw deflate approach instead.
 
-    // write content length
-    for (int i = 0 ; i < 4 ; ++i) {
-        *(++dataPtr) = len & 0xFF;
-        len >>= 8;
-    }
+    // Reset - use raw deflate, then manually build gzip envelope (matching old behavior)
+    z_stream s2;
+    s2.zalloc    = Z_NULL;
+    s2.zfree     = Z_NULL;
+    s2.opaque    = Z_NULL;
+    s2.avail_in  = (uInt)data.size();
+    s2.next_in   = (Bytef *)data.constData();
+    deflateInit2(&s2, compressionLevel, Z_DEFLATED, -15, 8, Z_DEFAULT_STRATEGY);
+    CFByteArray compressed((cfsize_t)deflateBound(&s2, data.size()), '\0');
+    s2.avail_out = (uInt)compressed.size();
+    s2.next_out  = (Bytef *)compressed.data();
+    deflate(&s2, Z_FINISH);
+    compressed.resize(s2.total_out);
+    deflateEnd(&s2);
+
+    // Build gzip: header(10) + compressed + crc(4) + len(4)
+    data.resize(0);
+    data.reserve(10 + compressed.size() + 8);
+    // gzip header
+    data += '\x1f';
+    data += '\x8b';
+    data += '\x08';  // method: deflate
+    data += '\x00';  // flags
+    data += '\x00'; data += '\x00'; data += '\x00'; data += '\x00';  // mtime
+    data += '\x00';  // xfl
+    data += '\xff';  // OS: unknown
+    // compressed data
+    data += compressed;
+    // CRC32 (little-endian)
+    data += (char)(crc & 0xFF);
+    data += (char)((crc >> 8) & 0xFF);
+    data += (char)((crc >> 16) & 0xFF);
+    data += (char)((crc >> 24) & 0xFF);
+    // Original size (little-endian)
+    data += (char)(len & 0xFF);
+    data += (char)((len >> 8) & 0xFF);
+    data += (char)((len >> 16) & 0xFF);
+    data += (char)((len >> 24) & 0xFF);
 }
 
-void deflateRaw(QByteArray & data, int compressionLevel)
+void deflateRaw(CFByteArray & data, int compressionLevel)
 {
     if (data.isEmpty()) {
         data += '\0';
@@ -233,7 +216,7 @@ void deflateRaw(QByteArray & data, int compressionLevel)
     s.avail_in  = (uInt)   data.size();
     s.next_in   = (Bytef *)data.constData();
     deflateInit2(&s, compressionLevel, Z_DEFLATED, -15, 8, Z_DEFAULT_STRATEGY);
-    QByteArray out(deflateBound(&s, data.size()), '\0');
+    CFByteArray out((cfsize_t)deflateBound(&s, data.size()), '\0');
     s.avail_out = (uInt)   out.size();
     s.next_out  = (Bytef *)out.constData();
     deflate(&s, Z_SYNC_FLUSH);
@@ -247,15 +230,15 @@ void deflateRaw(QByteArray & data, int compressionLevel)
     data = out;
 }
 
-void inflateRaw(QByteArray & data)
+void inflateRaw(CFByteArray & data)
 {
     if (data.isEmpty()) return;
     const char fb = data[0];
-    QByteArray in;
+    CFByteArray in;
     in.reserve(data.size() + (fb == 0 ? 0 : 4));
     in.append(data);
     if (fb == 0) in.append("\x00\x00\xFF\xFF", 4);
-    QByteArray out(/*in.size()*/5, '\0');
+    CFByteArray out((cfsize_t)5, '\0');
     z_stream s;
     s.zalloc    = Z_NULL;
     s.zfree     = Z_NULL;
@@ -265,12 +248,12 @@ void inflateRaw(QByteArray & data)
     s.avail_out = (uInt)   out.size();
     s.next_out  = (Bytef *)out.constData();
     inflateInit2(&s, -15);
-    forever {
+    for (;;) {
         int rv = inflate(&s, Z_NO_FLUSH);
         if (rv != Z_OK && rv != Z_BUF_ERROR) logWarn("inflate error: %1", rv);
         if (s.avail_out > 0) break;
-        const int oldSize = out.size();
-        const int ext = oldSize * 3 / 2;
+        const cfsize_t oldSize = out.size();
+        const cfsize_t ext = oldSize * 3 / 2;
         out.resize(oldSize + ext);
         s.avail_out = (uInt)   ext;
         s.next_out  = (Bytef *)out.constData() + oldSize;
@@ -280,26 +263,26 @@ void inflateRaw(QByteArray & data)
     data = out;
 }
 
-QByteArray readFile(const QString & path)
+CFByteArray readFile(const CFString & path)
 {
-    QFile file(path);
-    file.open(QIODevice::ReadOnly);
+    CFFile file(path);
+    file.open(CFFile::ReadOnly);
     return file.readAll();
 }
 
-bool writeFile(const QString & path, const QByteArray & data, QFile::Permissions perm)
+bool writeFile(const CFString & path, const CFByteArray & data, int perm)
 {
-    QFile file(path);
-    if (!file.open(QIODevice::WriteOnly | QIODevice::Truncate)) return false;
+    CFFile file(path);
+    if (!file.open(CFFile::WriteOnly | CFFile::Truncate)) return false;
     file.setPermissions(perm);
-    return file.write(data) == data.size();
+    return file.write(data) == (cfint64)data.size();
 }
 
-QString readTextfile(const QString & path)
+CFString readTextfile(const CFString & path)
 {
-    QFile file(path);
-    file.open(QIODevice::ReadOnly);
-    return QString::fromUtf8(file.readAll());
+    CFFile file(path);
+    file.open(CFFile::ReadOnly);
+    return CFString::fromUtf8(file.readAll());
 }
 
 namespace {
@@ -308,19 +291,19 @@ const char * const Hex = "0123456789ABCDEF";
 
 }
 
-QByteArray encodeQuotedPrintable(const QString & text)
+CFByteArray encodeQuotedPrintable(const CFString & text)
 {
-    QByteArray utf8 = text.toUtf8();
-    const uchar * pos = (const uchar *)utf8.constData();
-    const uchar * second = pos + 1;
-    const uchar * end = pos + utf8.length();
-    QByteArray retval;
+    CFByteArray utf8 = text.toUtf8();
+    const unsigned char * pos = (const unsigned char *)utf8.constData();
+    const unsigned char * second = pos + 1;
+    const unsigned char * end = pos + utf8.length();
+    CFByteArray retval;
     int lineLen = 0;
     while (pos != end) {
-        uchar c = *(pos++);
+        unsigned char c = *(pos++);
         if (c == 13 && pos != end && *pos == 10) {
             if (pos != second) {
-                uchar w = *(pos - 2);
+                unsigned char w = *(pos - 2);
                 if (w == 9 || w == 32) retval += "=\r\n";
             }
             retval += "\r\n";
@@ -348,15 +331,15 @@ QByteArray encodeQuotedPrintable(const QString & text)
     return retval;
 }
 
-QByteArray encodeWord(const QString & str, bool strict)
+CFByteArray encodeWord(const CFString & str, bool strict)
 {
-    QByteArray utf8 = str.toUtf8();
-    const uchar * pos = (const uchar *)utf8.constData();
-    const uchar * end = pos + utf8.length();
-    QByteArray retval = "=?utf-8?Q?";
+    CFByteArray utf8 = str.toUtf8();
+    const unsigned char * pos = (const unsigned char *)utf8.constData();
+    const unsigned char * end = pos + utf8.length();
+    CFByteArray retval = "=?utf-8?Q?";
     bool onlyDirect = true;
     while (pos != end) {
-        uchar c = *(pos++);
+        unsigned char c = *(pos++);
         if (c == 32) {
             retval += '_';
             continue;
@@ -382,18 +365,59 @@ QByteArray encodeWord(const QString & str, bool strict)
 
 }
 
-QString flatten(const QString & str)
+CFString flatten(const CFString & str)
 {
-    QString rv = str;
-    rv
-        .replace(QRegularExpression("[^a-zA-Z0-9\\-\\._\\s]+"), "")
-        .replace(QRegularExpression("^\\s+|\\s+$"), "")
-        .replace(QRegularExpression("\\s+"), "_")
-        .replace(QRegularExpression("__+"), "_");
-    return rv;
+    // Hand-written replacement for QRegularExpression-based flatten
+    // Step 1: remove non-allowed chars (keep a-zA-Z0-9 - . _ and whitespace)
+    std::string rv;
+    rv.reserve(str.size());
+    for (cfsize_t i = 0; i < str.size(); ++i) {
+        char c = str.c_str()[i];
+        if ((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9') ||
+            c == '-' || c == '.' || c == '_' || c == ' ' || c == '\t' || c == '\r' || c == '\n') {
+            rv += c;
+        }
+    }
+    // Step 2: trim leading/trailing whitespace
+    cfsize_t start = 0;
+    while (start < (cfsize_t)rv.size() && (rv[start] == ' ' || rv[start] == '\t' || rv[start] == '\r' || rv[start] == '\n')) ++start;
+    cfsize_t end = (cfsize_t)rv.size();
+    while (end > start && (rv[end-1] == ' ' || rv[end-1] == '\t' || rv[end-1] == '\r' || rv[end-1] == '\n')) --end;
+    rv = rv.substr(start, end - start);
+    // Step 3: collapse whitespace to single underscore
+    std::string result;
+    result.reserve(rv.size());
+    bool inSpace = false;
+    for (char c : rv) {
+        if (c == ' ' || c == '\t' || c == '\r' || c == '\n') {
+            if (!inSpace) {
+                result += '_';
+                inSpace = true;
+            }
+        } else {
+            result += c;
+            inSpace = false;
+        }
+    }
+    // Step 4: collapse multiple underscores
+    std::string final;
+    final.reserve(result.size());
+    bool lastUnderscore = false;
+    for (char c : result) {
+        if (c == '_') {
+            if (!lastUnderscore) {
+                final += '_';
+                lastUnderscore = true;
+            }
+        } else {
+            final += c;
+            lastUnderscore = false;
+        }
+    }
+    return CFString(std::move(final));
 }
 
-bool validWebInputChars(const QString & str)
+bool validWebInputChars(const CFString & str)
 {
     const char * const NotAllowed = "{}[]<>;\"\\";
     const char * pos = NotAllowed;
@@ -402,16 +426,57 @@ bool validWebInputChars(const QString & str)
     return true;
 }
 
-bool isValidEmail(const QString & str)
+bool isValidEmail(const CFString & str)
 {
-    return QRegularExpression("^[\\w.\\-_]+@\\w[\\w.\\-]+\\.\\w+$").match(str).hasMatch();
+    // Hand-written email validation replacing QRegularExpression
+    // Pattern: ^[\w.\-_]+@\w[\w.\-]+\.\w+$
+    const char * s = str.c_str();
+    cfsize_t len = str.size();
+    if (len == 0) return false;
+
+    cfsize_t i = 0;
+    // local part: [\w.\-_]+
+    cfsize_t localStart = i;
+    while (i < len) {
+        char c = s[i];
+        if ((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9') ||
+            c == '_' || c == '.' || c == '-') {
+            ++i;
+        } else break;
+    }
+    if (i == localStart) return false;
+    if (i >= len || s[i] != '@') return false;
+    ++i; // skip @
+
+    // domain: \w[\w.\-]+\.\w+
+    if (i >= len) return false;
+    char c = s[i];
+    if (!((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9') || c == '_'))
+        return false;
+    ++i;
+
+    cfsize_t lastDot = (cfsize_t)-1;
+    while (i < len) {
+        c = s[i];
+        if ((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9') ||
+            c == '_' || c == '.' || c == '-') {
+            if (c == '.') lastDot = i;
+            ++i;
+        } else break;
+    }
+    if (i != len) return false;
+    if (lastDot == (cfsize_t)-1 || lastDot == len - 1) return false;
+    // Check at least one char after the last dot that's a word char
+    for (cfsize_t j = lastDot + 1; j < len; ++j) {
+        c = s[j];
+        if (!((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9') || c == '_'))
+            return false;
+    }
+    return true;
 }
 
 bool daemonize()
 {
-#ifndef Q_OS_UNIX
-    return false;
-#else
     pid_t pid = fork();
     if (pid < 0) return false;
     if (pid > 0) exit(0);
@@ -422,48 +487,19 @@ bool daemonize()
     close(STDERR_FILENO);
     umask(0);
     return true;
-#endif
 }
 
 bool setProcessOwner(int uid, int gid)
 {
-#ifndef Q_OS_UNIX
-    Q_UNUSED(uid) Q_UNUSED(gid)
-    return false;
-#else
-    QCoreApplication::setSetuidAllowed(true);
     return setgid(gid) != -1 && setuid(uid) != -1;
-#endif
 }
 
-#ifndef Q_OS_MAC
+#ifndef __APPLE__
 void preventApplicationSuspend()
 {
 }
 #endif
 
-LogProcStatus::LogProcStatus(uint intervalMsec)
-{
-#ifndef Q_OS_LINUX
-    Q_UNUSED(intervalMsec)
-#else
-    QTimer * timer = new QTimer(this);
-    connect(timer, SIGNAL(timeout()), this, SLOT(timeout()));
-    timer->start(intervalMsec);
-    timeout();
-#endif
-}
-
-void LogProcStatus::timeout()
-{
-#ifdef Q_OS_LINUX
-    QByteArray stat = readFile("/proc/self/status");
-    stat.replace('\n', " | ").replace("    ", " ");
-    logTrace("proc status: %1", stat);
-#endif
-}
-
-#ifdef Q_OS_UNIX
 namespace {
 
 pid_t childPid = -1;
@@ -476,14 +512,10 @@ void signalHandler(int sig)
 }
 
 }
-#endif
 
-bool processRestarter(uint msDelay)
+bool processRestarter(cfuint msDelay)
 {
-#ifndef Q_OS_UNIX
-    return false;
-#else
-    forever {
+    for (;;) {
         childPid = fork();
         if (childPid < 0)  return false;
         if (childPid == 0) return true;
@@ -503,40 +535,38 @@ bool processRestarter(uint msDelay)
         ::signal(2,  oldSigH2);
         ::signal(15, oldSigH15);
     }
-#endif
-}
-
-namespace {
-
-class ThreadSafeExitHelperEvent : public QEvent
-{
-public:
-    ThreadSafeExitHelperEvent(int returnCode) :
-        QEvent(QEvent::User),
-        returnCode(returnCode)
-    {}
-
-    const int returnCode;
-};
-
-class ThreadSafeExitHelper : public QObject
-{
-public:
-    bool event(QEvent * event) override {
-        if (event->type() == QEvent::User) {
-            QCoreApplication::exit(((ThreadSafeExitHelperEvent *)event)->returnCode);
-            return true;
-        }
-        return QObject::event(event);
-    }
-};
-ThreadSafeExitHelper threadSafeExitHelper;
-
 }
 
 void threadSafeExit(int returnCode)
 {
-    QCoreApplication::postEvent(&threadSafeExitHelper, new ThreadSafeExitHelperEvent(returnCode));
+    // Without Qt event loop, we can just call _exit directly
+    // This is safe from any thread
+    _exit(returnCode);
+}
+
+bool mkPath(const CFString & path)
+{
+    if (path.isEmpty()) return false;
+    struct stat st;
+    if (stat(path.c_str(), &st) == 0) return S_ISDIR(st.st_mode);
+
+    // Recursively create parent
+    cfsize_t pos = path.str().rfind('/');
+    if (pos != std::string::npos && pos > 0) {
+        if (!mkPath(path.left(pos))) return false;
+    }
+    return mkdir(path.c_str(), 0755) == 0 || errno == EEXIST;
+}
+
+bool removeFile(const CFString & path)
+{
+    return unlink(path.c_str()) == 0;
+}
+
+bool copyFile(const CFString & src, const CFString & dest)
+{
+    CFByteArray data = readFile(src);
+    return writeFile(dest, data);
 }
 
 }}    // namespace

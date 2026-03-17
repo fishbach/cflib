@@ -21,37 +21,37 @@ KafkaConnector::GroupConnection::GroupConnection(TCPConnData * data, KafkaConnec
 {
 }
 
-void KafkaConnector::GroupConnection::reply(qint32 correlationId, impl::KafkaRawReader & reader)
+void KafkaConnector::GroupConnection::reply(cfint32 correlationId, impl::KafkaRawReader & reader)
 {
     if (correlationId == Impl::JoinGroup) {
 
-        qint16 errorCode;
-        qint32 generationId;
+        cfint16 errorCode;
+        cfint32 generationId;
         impl::KafkaString groupProtocol;
         impl::KafkaString leaderId;
         impl::KafkaString ownMemberId;
         reader >> errorCode >> generationId >> groupProtocol >> leaderId >> ownMemberId;
 
-        QMap<QByteArray, QSet<QByteArray>> memberTopics;
+        CFMap<CFByteArray, CFSet<CFByteArray>> memberTopics;
 
-        qint32 memberCount;
+        cfint32 memberCount;
         reader >> memberCount;
-        for (qint32 i = 0 ; i < memberCount ; ++i) {
+        for (cfint32 i = 0 ; i < memberCount ; ++i) {
             impl::KafkaString memberId;
-            qint32 metaDataSize;
-            qint16 version;
+            cfint32 metaDataSize;
+            cfint16 version;
             reader >> memberId >> metaDataSize >> version;
 
-            qint32 topicCount;
+            cfint32 topicCount;
             reader >> topicCount;
-            for (qint32 i = 0 ; i < topicCount ; ++i) {
+            for (cfint32 i = 0 ; i < topicCount ; ++i) {
                 impl::KafkaString topic;
                 reader >> topic;
 
-                memberTopics[memberId] << topic;
+                memberTopics[CFByteArray(memberId)].insert(CFByteArray(topic));
             }
 
-            QByteArray userData;
+            CFByteArray userData;
             reader >> userData;
         }
 
@@ -68,7 +68,7 @@ void KafkaConnector::GroupConnection::reply(qint32 correlationId, impl::KafkaRaw
 
     } else if (correlationId == Impl::Heartbeat) {
 
-        qint16 errorCode;
+        cfint16 errorCode;
         reader >> errorCode;
         if (errorCode != KafkaConnector::NoError) {
             logInfo("got heartbeat error: %1", errorCode);
@@ -77,31 +77,30 @@ void KafkaConnector::GroupConnection::reply(qint32 correlationId, impl::KafkaRaw
 
     } else if (correlationId == Impl::SyncGroup) {
 
-        QMutableMapIterator<QByteArray, QList<qint32>> it(impl_.groupTopicPartitions_);
-        while (it.hasNext()) it.next().value().clear();
+        for (auto & [key, val] : impl_.groupTopicPartitions_) val.clear();
 
-        qint16 errorCode;
-        qint32 memberAssignmentSize;
-        qint16 version;
+        cfint16 errorCode;
+        cfint32 memberAssignmentSize;
+        cfint16 version;
         reader >> errorCode >> memberAssignmentSize >> version;
 
-        qint32 topicCount;
+        cfint32 topicCount;
         reader >> topicCount;
-        for (qint32 i = 0 ; i < topicCount ; ++i) {
+        for (cfint32 i = 0 ; i < topicCount ; ++i) {
             impl::KafkaString topic;
             reader >> topic;
 
-            QList<qint32> & partitions = impl_.groupTopicPartitions_[topic];
-            qint32 partitionCount;
+            CFList<cfint32> & partitions = impl_.groupTopicPartitions_[topic];
+            cfint32 partitionCount;
             reader >> partitionCount;
-            for (qint32 i = 0 ; i < partitionCount ; ++i) {
-                qint32 partition;
+            for (cfint32 i = 0 ; i < partitionCount ; ++i) {
+                cfint32 partition;
                 reader >> partition;
                 if (errorCode == KafkaConnector::NoError) partitions << partition;
             }
         }
 
-        QByteArray userData;
+        CFByteArray userData;
         reader >> userData;
 
         impl_.main_.groupStateChanged(impl_.groupTopicPartitions_);
@@ -110,7 +109,7 @@ void KafkaConnector::GroupConnection::reply(qint32 correlationId, impl::KafkaRaw
 
     } else if (correlationId == Impl::LeaveGroup) {
 
-        qint16 errorCode;
+        cfint16 errorCode;
         reader >> errorCode;
         if (errorCode != KafkaConnector::NoError) {
             logWarn("group leave error: %1", errorCode);

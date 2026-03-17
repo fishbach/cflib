@@ -13,9 +13,9 @@ USE_LOG(LogCat::Db)
 
 namespace cflib { namespace db {
 
-QMap<QString, QString> getConfigPSql()
+CFMap<CFString, CFString> getConfigPSql()
 {
-    QMap<QString, QString> retval;
+    CFMap<CFString, CFString> retval;
 
     PSqlConn;
     sql.begin();
@@ -26,14 +26,14 @@ QMap<QString, QString> getConfigPSql()
             "config"
         )) return retval;
     while (sql.next()) {
-        retval[sql.get<QString>(0)] = sql.get<QString>(1);
+        retval[sql.get<CFString>(0)] = sql.get<CFString>(1);
     }
     sql.commit();
 
     return retval;
 }
 
-cflib::util::Mail getMailTemplatePSql(const QString & name, const QString & lang)
+cflib::util::Mail getMailTemplatePSql(const CFString & name, const CFString & lang)
 {
     cflib::util::Mail retval;
 

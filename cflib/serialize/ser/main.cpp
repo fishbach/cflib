@@ -8,47 +8,54 @@
 #include <cflib/serialize/ser/codegen.h>
 #include <cflib/serialize/ser/headerparser.h>
 
-int usage()
-{
-    QTextStream(stderr)
-        << "usage: " << QCoreApplication::applicationName() << " serialize <header.h> <source_ser.cpp>" << Qt::endl;
+#include <cstdio>
+#include <cstring>
+#include <string>
 
+int usage(const char * progName)
+{
+    fprintf(stderr, "usage: %s serialize <header.h> <source_ser.cpp>\n", progName);
     return 1;
 }
 
-int serialize(const QString & header, const QString & dest)
+int serialize(const std::string & header, const std::string & dest)
 {
-    QTextStream err(stderr);
-
-    QFile in(header);
-    if (!in.open(QIODevice::ReadOnly)) {
-        err << "cannot read: " << header << Qt::endl;
+    // Read input file
+    FILE * inFile = fopen(header.c_str(), "rb");
+    if (!inFile) {
+        fprintf(stderr, "cannot read: %s\n", header.c_str());
         return 2;
     }
+    std::string contents;
+    char buf[4096];
+    size_t n;
+    while ((n = fread(buf, 1, sizeof(buf), inFile)) > 0) {
+        contents.append(buf, n);
+    }
+    fclose(inFile);
+
     HeaderParser hp;
-    if (!hp.parse(QString::fromUtf8(in.readAll()))) {
-        err << "cannot parse: " << header << " error: " << hp.lastError() << Qt::endl;
+    if (!hp.parse(contents)) {
+        fprintf(stderr, "cannot parse: %s error: %s\n", header.c_str(), hp.lastError().c_str());
         return 3;
     }
-    in.close();
 
-    QFile out(dest);
-    if (!out.open(QIODevice::WriteOnly | QIODevice::Truncate)) {
-        err << "cannot write file: " << dest << Qt::endl;
+    FILE * outFile = fopen(dest.c_str(), "wb");
+    if (!outFile) {
+        fprintf(stderr, "cannot write file: %s\n", dest.c_str());
         return 4;
     }
 
-    return genSerialize(header, hp, out);
+    int rv = genSerialize(header, hp, outFile);
+    fclose(outFile);
+    return rv;
 }
 
 int main(int argc, char *argv[])
 {
-    QCoreApplication app(argc, argv);
-    QStringList args = app.arguments();
-    args.removeFirst();
-    if (args.isEmpty()) return usage();
+    if (argc < 2) return usage(argv[0]);
 
-    if (args[0] == "serialize" && args.size() == 3) return serialize(args[1], args[2]);
+    if (strcmp(argv[1], "serialize") == 0 && argc == 4) return serialize(argv[2], argv[3]);
 
-    return usage();
+    return usage(argv[0]);
 }

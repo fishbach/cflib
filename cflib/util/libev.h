@@ -7,12 +7,10 @@
 
 #pragma once
 
-#include <QtGlobal>
-
 #define EV_COMPAT3 0
 #define EV_MULTIPLICITY 1
 #define EV_STANDALONE 1
-#ifdef Q_OS_BSD4
+#if defined(__FreeBSD__) || defined(__NetBSD__) || defined(__OpenBSD__) || defined(__DragonFly__) || defined(__APPLE__)
     #define EV_USE_KQUEUE 1
 #endif
 

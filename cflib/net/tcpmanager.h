@@ -7,7 +7,8 @@
 
 #pragma once
 
-#include <QtCore>
+#include <cflib/base/cfcontainers.h>
+#include <cflib/base/macros.h>
 
 namespace cflib { namespace crypt { class TLSCredentials; }}
 namespace cflib { namespace util  { class ThreadVerify; }}
@@ -19,27 +20,27 @@ namespace impl { class TCPManagerImpl; }
 
 class TCPManager
 {
-    Q_DISABLE_COPY(TCPManager)
+    CF_DISABLE_COPY(TCPManager)
 public:
     // tlsThreadCount must be set > 0 when TLS is used
     TCPManager(uint tlsThreadCount = 0, util::ThreadVerify * other = 0);
     virtual ~TCPManager();
 
-    bool start(const QByteArray & ip, quint16 port) { return start(openListenSocket(ip, port)); }
-    bool start(const QByteArray & ip, quint16 port, crypt::TLSCredentials & credentials) {
+    bool start(const CFByteArray & ip, cfuint16 port) { return start(openListenSocket(ip, port)); }
+    bool start(const CFByteArray & ip, cfuint16 port, crypt::TLSCredentials & credentials) {
         return start(openListenSocket(ip, port), credentials); }
     void stop();
     bool isRunning() const;
 
-    TCPConnData * openConnection(const QByteArray & destAddress, quint16 destPort, bool preferIPv6 = false);
-    TCPConnData * openConnection(const QByteArray & destAddress, quint16 destPort,
-        const QByteArray & sourceIP, quint16 sourcePort, bool preferIPv6 = false);
+    TCPConnData * openConnection(const CFByteArray & destAddress, cfuint16 destPort, bool preferIPv6 = false);
+    TCPConnData * openConnection(const CFByteArray & destAddress, cfuint16 destPort,
+        const CFByteArray & sourceIP, cfuint16 sourcePort, bool preferIPv6 = false);
 
-    TCPConnData * openTLSConnection(const QByteArray & destAddress, quint16 destPort, bool preferIPv6 = false);
-    TCPConnData * openTLSConnection(const QByteArray & destAddress, quint16 destPort,
-        const QByteArray & sourceIP, quint16 sourcePort, bool preferIPv6 = false);
+    TCPConnData * openTLSConnection(const CFByteArray & destAddress, cfuint16 destPort, bool preferIPv6 = false);
+    TCPConnData * openTLSConnection(const CFByteArray & destAddress, cfuint16 destPort,
+        const CFByteArray & sourceIP, cfuint16 sourcePort, bool preferIPv6 = false);
 
-    static int openListenSocket(const QByteArray & ip, quint16 port);
+    static int openListenSocket(const CFByteArray & ip, cfuint16 port);
     bool start(int listenSocket);
     bool start(int listenSocket, crypt::TLSCredentials & credentials);
 

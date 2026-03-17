@@ -11,6 +11,7 @@
 #include <cflib/net/tcpmanager.h>
 #include <cflib/util/evtimer.h>
 #include <cflib/util/log.h>
+#include <cflib/base/cfregex.h>
 #include <cflib/util/util.h>
 
 USE_LOG(LogCat::Http)
@@ -19,8 +20,8 @@ namespace cflib { namespace net {
 
 namespace {
 
-const QRegularExpression lengthRE("\r?\nContent-Length: (\\d+)\r?\n", QRegularExpression::CaseInsensitiveOption);
-const QRegularExpression statusRE("^HTTP/1.[01] (\\d+)");
+const CFRegex lengthRE("\r?\nContent-Length: (\\d+)\r?\n", true);
+const CFRegex statusRE("^HTTP/1.[01] (\\d+)");
 
 }
 
@@ -28,8 +29,8 @@ class HttpRequest::Conn : public TCPConn, public util::ThreadVerify
 {
 public:
     Conn(HttpRequest * parent, TCPConnData * data,
-        const QUrl & url, const QList<QByteArray> & headers,
-        const QByteArray & postData, const QByteArray & contentType,
+        const CFUrl & url, const CFList<CFByteArray> & headers,
+        const CFByteArray & postData, const CFByteArray & contentType,
         uint timeoutMs)
     :
         TCPConn(data),
@@ -39,18 +40,18 @@ public:
         gotReply_(false)
     {
         // GET / POST
-        QByteArray request = postData.isNull() ? "GET " : "POST ";
+        CFByteArray request = postData.isNull() ? "GET " : "POST ";
 
         // path
-        request += url.path().isEmpty() ? "/" : url.path(QUrl::FullyEncoded).toUtf8();
+        request += url.path().isEmpty() ? CFByteArray("/") : url.path().toUtf8();
 
         // query
-        if (url.hasQuery()) request += "?" + url.query(QUrl::FullyEncoded).toUtf8();
+        if (url.hasQuery()) request += "?" + url.query().toUtf8();
         request += " HTTP/1.0\r\n";
 
         // host
-        request += "Host: " + url.host(QUrl::FullyEncoded).toUtf8();
-        if (url.port() != -1) request += ":" + QByteArray::number(url.port());
+        request += "Host: " + url.host().toUtf8();
+        if (url.port() != -1) request += ":" + CFByteArray::number((cfint64)url.port());
         request += "\r\n";
 
         // login / password
@@ -59,12 +60,12 @@ public:
         }
 
         // additional headers
-        for (const QByteArray & header : headers) request += header.trimmed() + "\r\n";
+        for (const CFByteArray & header : headers) request += header.trimmed() + "\r\n";
 
         if (postData.isNull()) {
             request += "\r\n";
         } else {
-            request += "Content-Length: " + QByteArray::number(postData.size()) + "\r\n";
+            request += "Content-Length: " + CFByteArray::number((cfint64)postData.size()) + "\r\n";
             request += "Content-Type: " + contentType + "\r\n";
             request += "\r\n";
             request += postData;
@@ -103,25 +104,25 @@ protected:
             return;
         }
 
-        QRegularExpressionMatch match = lengthRE.match(buf_);
+        CFRegex::MatchResult match = lengthRE.matchResult(buf_);
         if (!match.hasMatch()) {
             close(HardClosed, true);
             return;
         }
 
-        const int length = match.captured(1).toInt();
+        const int length = CFByteArray(match.captured(1).c_str()).toInt();
         if (buf_.size() < headerEndPos + 4 + length) {
             startReadWatcher();
             return;
         }
 
-        match = statusRE.match(buf_);
+        match = statusRE.matchResult(buf_);
         if (!match.hasMatch()) {
             close(HardClosed, true);
             return;
         }
 
-        const int status = match.captured(1).toInt();
+        const int status = CFByteArray(match.captured(1).c_str()).toInt();
 
         if (parent_) parent_->reply(status, buf_.mid(headerEndPos + 4, length));
         gotReply_ = true;
@@ -159,7 +160,7 @@ private:
     util::EVTimer timeout_;
     HttpRequest * parent_;
     bool gotReply_;
-    QByteArray buf_;
+    CFByteArray buf_;
 };
 
 HttpRequest::HttpRequest(TCPManager & mgr) :
@@ -175,8 +176,8 @@ HttpRequest::~HttpRequest()
     destroy();
 }
 
-void HttpRequest::start(const QUrl & url, const QList<QByteArray> & headers,
-    const QByteArray & postData, const QByteArray & contentType,
+void HttpRequest::start(const CFUrl & url, const CFList<CFByteArray> & headers,
+    const CFByteArray & postData, const CFByteArray & contentType,
     uint timeoutMs)
 {
     if (!verifyThreadCall(&HttpRequest::start, url, headers, postData, contentType, timeoutMs)) return;
@@ -190,11 +191,11 @@ void HttpRequest::start(const QUrl & url, const QList<QByteArray> & headers,
     TCPConnData * cd;
     if (url.scheme() == "http") {
         cd = mgr_.openConnection(
-            url.host(QUrl::FullyEncoded).toUtf8(),
+            url.host().toUtf8(),
             url.port() != -1 ? url.port() : 80);
     } else {
         cd = mgr_.openTLSConnection(
-        url.host(QUrl::FullyEncoded).toUtf8(),
+        url.host().toUtf8(),
         url.port() != -1 ? url.port() : 443);
     }
 

@@ -7,6 +7,7 @@
 
 #pragma once
 
+#include <cflib/base/cfurl.h>
 #include <cflib/util/sig.h>
 #include <cflib/util/threadverify.h>
 
@@ -16,24 +17,24 @@ class TCPManager;
 
 class HttpRequest : public util::ThreadVerify
 {
-    Q_DISABLE_COPY(HttpRequest)
+    CF_DISABLE_COPY(HttpRequest)
 public:
     HttpRequest(TCPManager & mgr);
     ~HttpRequest();
 
-    void start(const QUrl & url, const QList<QByteArray> & headers,
-        const QByteArray & postData = QByteArray(), const QByteArray & contentType = "application/octet-stream",
+    void start(const CFUrl & url, const CFList<CFByteArray> & headers,
+        const CFByteArray & postData = CFByteArray(), const CFByteArray & contentType = "application/octet-stream",
         uint timeoutMs = 10000);
 
-    inline void start(const QUrl & url,
-        const QByteArray & postData = QByteArray(), const QByteArray & contentType = "application/octet-stream",
+    inline void start(const CFUrl & url,
+        const CFByteArray & postData = CFByteArray(), const CFByteArray & contentType = "application/octet-stream",
         uint timeoutMs = 10000)
     {
-        start(url, QList<QByteArray>(), postData, contentType, timeoutMs);
+        start(url, CFList<CFByteArray>(), postData, contentType, timeoutMs);
     }
 
 cfsignals:
-    sig<void (int status, const QByteArray & reply)> reply;
+    sig<void (int status, const CFByteArray & reply)> reply;
 
 private:
     void destroy();

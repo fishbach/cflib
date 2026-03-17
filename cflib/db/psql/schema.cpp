@@ -17,16 +17,7 @@ namespace cflib { namespace db { namespace schema {
 
 namespace {
 
-class MigratorObject : public QObject
-{
-public:
-    MigratorObject(Migrator migrator) : migrator_(migrator) {}
-    bool migrate(const QByteArray & name) { return migrator_(name); }
-private:
-    const Migrator migrator_;
-};
-
-bool insertRevision(const QString & rev)
+bool insertRevision(const CFString & rev)
 {
     PSqlConn;
     sql.prepare(
@@ -38,11 +29,11 @@ bool insertRevision(const QString & rev)
             "$1, $2"
         ") ON CONFLICT DO NOTHING"
     );
-    sql << rev << QDateTime::currentDateTimeUtc();
+    sql << rev << CFDateTime::nowUTC();
     return sql.exec();
 }
 
-bool confirmRevision(const QString & rev)
+bool confirmRevision(const CFString & rev)
 {
     PSqlConn;
     sql.prepare(
@@ -53,17 +44,44 @@ bool confirmRevision(const QString & rev)
         "WHERE "
             "rev = $2"
     );
-    sql << QDateTime::currentDateTimeUtc() << rev;
+    sql << CFDateTime::nowUTC() << rev;
     return sql.exec();
 }
 
-bool execSql(const QString & query)
+// Remove SQL comments (lines starting with --)
+CFString removeComments(const CFString & query)
 {
-    static const QRegularExpression commentRe("(?:^|\n)--.+");
+    CFString result;
+    cfsize_t pos = 0;
+    const CFString & s = query;
+    cfsize_t len = s.size();
 
-    QString cleanQuery = query;
-    cleanQuery.replace(commentRe, "");
-    cleanQuery = cleanQuery.trimmed();
+    while (pos < len) {
+        // Check for comment at start of string or after newline
+        bool isLineStart = (pos == 0) || (s.c_str()[pos - 1] == '\n');
+        if (isLineStart && pos + 1 < len && s.c_str()[pos] == '-' && s.c_str()[pos + 1] == '-') {
+            // Skip to end of line
+            while (pos < len && s.c_str()[pos] != '\n') ++pos;
+            if (pos < len) ++pos; // skip the newline
+            continue;
+        }
+        // Also check for -- after newline within the string
+        if (pos + 1 < len && s.c_str()[pos] == '\n' && pos + 2 < len && s.c_str()[pos + 1] == '-' && s.c_str()[pos + 2] == '-') {
+            result += '\n';
+            pos += 1;
+            // Skip the comment
+            while (pos < len && s.c_str()[pos] != '\n') ++pos;
+            continue;
+        }
+        result += s.c_str()[pos];
+        ++pos;
+    }
+    return result;
+}
+
+bool execSql(const CFString & query)
+{
+    CFString cleanQuery = removeComments(query).trimmed();
     if (cleanQuery.isEmpty()) return true;
 
     PSqlConn;
@@ -71,76 +89,123 @@ bool execSql(const QString & query)
     return sql.execMultiple(cleanQuery);
 }
 
-bool execRevision(const QString & query, QObject * migrator)
+// Find "-- EXEC <name>" pattern at the beginning of a line.
+// Returns -1 if not found, otherwise the position of the start of the match.
+// Sets matchEnd to the end of the match and methodName to the captured name.
+cfsize_t findExecDirective(const CFString & query, cfsize_t startPos, cfsize_t & matchEnd, CFByteArray & methodName)
 {
-    static const QRegularExpression execRe("^-- EXEC (.+)$", QRegularExpression::MultilineOption);
+    const char * data = query.c_str();
+    cfsize_t len = query.size();
+    cfsize_t pos = startPos;
 
-    int start = 0;
-    QRegularExpressionMatch match = execRe.match(query, start);
-    while (match.hasMatch()) {
-        QByteArray method = match.captured(1).toUtf8().trimmed();
+    while (pos < len) {
+        // Must be at start of line
+        bool isLineStart = (pos == 0) || (data[pos - 1] == '\n');
+        if (!isLineStart) {
+            // advance to next newline
+            while (pos < len && data[pos] != '\n') ++pos;
+            if (pos < len) ++pos;
+            continue;
+        }
 
-        if (!execSql(query.mid(start, match.capturedStart() - start))) return false;
+        // Check for "-- EXEC "
+        if (pos + 8 <= len &&
+            data[pos] == '-' && data[pos+1] == '-' && data[pos+2] == ' ' &&
+            data[pos+3] == 'E' && data[pos+4] == 'X' && data[pos+5] == 'E' && data[pos+6] == 'C' && data[pos+7] == ' ')
+        {
+            cfsize_t nameStart = pos + 8;
+            cfsize_t nameEnd = nameStart;
+            while (nameEnd < len && data[nameEnd] != '\n' && data[nameEnd] != '\r') ++nameEnd;
+
+            CFString name = query.mid(nameStart, nameEnd - nameStart).trimmed();
+            methodName = name.toUtf8();
+            matchEnd = nameEnd;
+            return pos;
+        }
+
+        // advance past current character
+        ++pos;
+    }
+    return (cfsize_t)-1;
+}
+
+// Find "-- REVISION <name>" pattern at the beginning of a line.
+cfsize_t findRevisionDirective(const CFString & query, cfsize_t startPos, cfsize_t & matchEnd, CFString & revName)
+{
+    const char * data = query.c_str();
+    cfsize_t len = query.size();
+    cfsize_t pos = startPos;
+
+    while (pos < len) {
+        bool isLineStart = (pos == 0) || (data[pos - 1] == '\n');
+        if (!isLineStart) {
+            while (pos < len && data[pos] != '\n') ++pos;
+            if (pos < len) ++pos;
+            continue;
+        }
+
+        // Check for "-- REVISION "
+        if (pos + 12 <= len &&
+            data[pos] == '-' && data[pos+1] == '-' && data[pos+2] == ' ' &&
+            data[pos+3] == 'R' && data[pos+4] == 'E' && data[pos+5] == 'V' &&
+            data[pos+6] == 'I' && data[pos+7] == 'S' && data[pos+8] == 'I' &&
+            data[pos+9] == 'O' && data[pos+10] == 'N' && data[pos+11] == ' ')
+        {
+            cfsize_t nameStart = pos + 12;
+            cfsize_t nameEnd = nameStart;
+            while (nameEnd < len && data[nameEnd] != '\n' && data[nameEnd] != '\r') ++nameEnd;
+
+            revName = query.mid(nameStart, nameEnd - nameStart);
+            matchEnd = nameEnd;
+            return pos;
+        }
+
+        ++pos;
+    }
+    return (cfsize_t)-1;
+}
+
+bool execRevision(const CFString & query, Migrator & migrator)
+{
+    cfsize_t start = 0;
+    cfsize_t matchEnd;
+    CFByteArray method;
+    cfsize_t matchStart = findExecDirective(query, start, matchEnd, method);
+
+    while (matchStart != (cfsize_t)-1) {
+        if (!execSql(query.mid(start, matchStart - start))) return false;
 
         if (!migrator) {
             logWarn("found EXEC in SQL, but no migrator given");
             return false;
         }
 
-        MigratorObject * migratorObject = dynamic_cast<MigratorObject *>(migrator);
-        if (migratorObject) {
-            if (!migratorObject->migrate(method)) {
-                logWarn("migration %1 failed", method);
-                return false;
-            }
-        } else {
-            const QMetaObject * meta = migrator->metaObject();
-            if (!meta) {
-                logWarn("migrator has no meta Object");
-                return false;
-            }
-            int methodId = meta->indexOfMethod(method + "()");
-            if (methodId == -1) {
-                logWarn("method void %1 not found in migrator", method);
-                return false;
-            }
-            bool ok = false;
-            if (!meta->method(methodId).invoke(migrator, Q_RETURN_ARG(bool, ok))) {
-                logWarn("could not invoke method void %1 of migrator", method);
-                return false;
-            }
-            if (!ok) {
-                logWarn("migration method %1 failed", method);
-                return false;
-            }
+        if (!migrator(method)) {
+            logWarn("migration %1 failed", method);
+            return false;
         }
 
         logInfo("migration %1 finished successfully", method);
 
-        start = match.capturedEnd();
-        match = execRe.match(query, start);
+        start = matchEnd;
+        matchStart = findExecDirective(query, start, matchEnd, method);
     }
     return execSql(query.mid(start));
 }
 
 }
 
-bool update(QObject * migrator, const QString & filename)
+bool update(Migrator migrator, const CFString & filename)
 {
     return update(util::readFile(filename), migrator);
 }
 
-bool update(Migrator migrator, const QString & filename)
-{
-    return update(util::readFile(filename), migrator);
-}
-
-bool update(const QByteArray & schema, QObject * migrator)
+bool update(const CFByteArray & schema, Migrator migrator)
 {
     PSqlConn;
 
     // get existing revisions
-    QSet<QString> existingRevisions;
+    CFSet<CFString> existingRevisions;
     if (!sql.exec("SELECT rev FROM __scheme_revisions__ WHERE success = 1")) {
         logInfo("creating table __scheme_revisions__");
         if (!sql.exec(
@@ -153,34 +218,35 @@ bool update(const QByteArray & schema, QObject * migrator)
         )) return false;
     } else {
         while (sql.next()) {
-            existingRevisions << sql.get<QString>(0);
+            existingRevisions.insert(sql.get<CFString>(0));
         }
     }
 
-    const QRegularExpression revRe("^-- REVISION (.+)$", QRegularExpression::MultilineOption);
+    const CFString utf8Schema = CFString::fromUtf8(schema);
 
-    const QString utf8Schema = QString::fromUtf8(schema);
+    cfsize_t start = 0;
+    cfsize_t matchEnd;
+    CFString revName;
+    cfsize_t matchStart = findRevisionDirective(utf8Schema, start, matchEnd, revName);
+    CFString lastRev = "__initial__";
 
-    int start = 0;
-    QRegularExpressionMatch match = revRe.match(utf8Schema, start);
-    QString lastRev = "__initial__";
-    while (match.hasMatch()) {
-        if (!existingRevisions.contains(lastRev)) {
+    while (matchStart != (cfsize_t)-1) {
+        if (existingRevisions.find(lastRev) == existingRevisions.end()) {
             logInfo("applying revision %1", lastRev);
             if (!insertRevision(lastRev)) return false;
             PSqlConn;
             sql.begin();
-            if (!execRevision(utf8Schema.mid(start, match.capturedStart() - start), migrator)) return false;
+            if (!execRevision(utf8Schema.mid(start, matchStart - start), migrator)) return false;
             if (!confirmRevision(lastRev)) return false;
             if (!sql.commit()) return false;
         }
 
-        lastRev = match.captured(1);
-        start = match.capturedEnd();
-        match = revRe.match(utf8Schema, start);
+        lastRev = revName;
+        start = matchEnd;
+        matchStart = findRevisionDirective(utf8Schema, start, matchEnd, revName);
     }
 
-    if (!existingRevisions.contains(lastRev)) {
+    if (existingRevisions.find(lastRev) == existingRevisions.end()) {
         logInfo("applying revision %1", lastRev);
         if (!insertRevision(lastRev)) return false;
         PSqlConn;
@@ -191,13 +257,6 @@ bool update(const QByteArray & schema, QObject * migrator)
     }
 
     return true;
-}
-
-bool update(const QByteArray & schema, Migrator migrator)
-{
-    if (!migrator) return update(schema);
-    MigratorObject migratorObject(migrator);
-    return update(schema, &migratorObject);
 }
 
 }}}    // namespace

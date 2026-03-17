@@ -7,7 +7,10 @@
 
 #pragma once
 
-#include <QtCore>
+#include <cflib/base/cfbytearray.h>
+#include <cflib/base/cfcontainers.h>
+#include <cflib/base/cfstring.h>
+#include <cflib/base/macros.h>
 
 namespace Botan { class Credentials_Manager; }
 namespace Botan { class X509_Certificate; }
@@ -16,35 +19,35 @@ namespace cflib { namespace crypt {
 
 struct TLSCertInfo
 {
-    QByteArray subjectName;
-    QByteArray issuerName;
+    CFByteArray subjectName;
+    CFByteArray issuerName;
     bool isCA;
     bool isTrusted;
 
-    QString toString() const;
-    bool isNull() const { return subjectName.isNull() && issuerName.isNull(); }
+    CFString toString() const;
+    bool isNull() const { return subjectName.isEmpty() && issuerName.isEmpty(); }
     TLSCertInfo() : isCA(false), isTrusted(false) {}
 };
 
 class TLSCredentials
 {
-    Q_DISABLE_COPY(TLSCredentials)
+    CF_DISABLE_COPY(TLSCredentials)
 public:
     TLSCredentials();
     ~TLSCredentials();
 
     // certificates can be added in arbitrary order
-    uint addCerts(const QByteArray & certs, bool isTrustedCA = false);
-    QList<TLSCertInfo> getCertChainInfos() const;
-    QList<TLSCertInfo> getAllCertInfos() const;
+    uint addCerts(const CFByteArray & certs, bool isTrustedCA = false);
+    CFList<TLSCertInfo> getCertChainInfos() const;
+    CFList<TLSCertInfo> getAllCertInfos() const;
 
-    uint addRevocationLists(const QByteArray & crls);
+    uint addRevocationLists(const CFByteArray & crls);
 
     // private key must be in PKCS8 format
     // fitting certificate must exist
     // builds a certificate chain of added certificates
     // destroys data in parameters
-    bool addPrivateKey(const QByteArray & privateKey, const QByteArray & password = QByteArray());
+    bool addPrivateKey(const CFByteArray & privateKey, const CFByteArray & password = CFByteArray());
 
     // Loads all
     //   certificates ending with: _crt.pem
@@ -53,11 +56,11 @@ public:
     // After load activate has to be called.
     // This is necessary when you do a procsess owner change in between.
     // Otherwise the secure memory of botan will not make the move to the new owner.
-    bool loadFromDir(const QString & path);
+    bool loadFromDir(const CFString & path);
     bool activateLoaded(bool isTrustedCA = false);
 
     // write all certificates to a single .pem file
-    QByteArray getAllCertsPEM() const;
+    CFByteArray getAllCertsPEM() const;
 
 private:
     TLSCertInfo getInfo(const Botan::X509_Certificate & crt) const;

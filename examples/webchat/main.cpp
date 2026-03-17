@@ -15,34 +15,32 @@
 #include <cflib/net/wscommmanager.h>
 #include <cflib/util/cmdline.h>
 #include <cflib/util/log.h>
-#include <cflib/util/unixsignal.h>
 
-#include <QtCore>
+#include <csignal>
+#include <cstdio>
+#include <unistd.h>
 
 using namespace cflib::net;
 using namespace cflib::util;
 
 USE_LOG(LogCat::Etc)
 
-int showUsage(const QByteArray & executable)
+int showUsage(const CFByteArray & executable)
 {
-    QTextStream(stderr)
-        << ""                                                                              << Qt::endl
-        << "Simple Webchat example"                                                        << Qt::endl
-        << "------------------------------------"                                          << Qt::endl
-        << Qt::endl
-        << "To make this example run start the webchat executable and access the url"      << Qt::endl
-        << "http://127.0.0.1:8080/ through your browser."                                  << Qt::endl
-        << "If you have an out of source build you need to redirect the webchat to"        << Qt::endl
-        << "the correct location of the example htdocs directory through:"                 << Qt::endl
-        << "./" <<executable << " --htdocs <path to cflib source>/examples/webchat/htdocs" << Qt::endl
-        << Qt::endl
-        << "Usage: " << executable << " [options]"                                         << Qt::endl
-        << "Options:"                                                                      << Qt::endl
-        << "  -h, --help     => this help"                                                 << Qt::endl
-        << "  -e, --export   => export Classes as Javascrpt classes"                       << Qt::endl
-        << "  -f, --htdocs   => set path to htdocs (default htdocs in current directory)"  << Qt::endl
-        << Qt::endl;
+    fprintf(stderr,
+        "\nSimple Webchat example\n"
+        "------------------------------------\n"
+        "\nTo make this example run start the webchat executable and access the url\n"
+        "http://127.0.0.1:8080/ through your browser.\n"
+        "If you have an out of source build you need to redirect the webchat to\n"
+        "the correct location of the example htdocs directory through:\n"
+        "./%s --htdocs <path to cflib source>/examples/webchat/htdocs\n"
+        "\nUsage: %s [options]\n"
+        "Options:\n"
+        "  -h, --help     => this help\n"
+        "  -e, --export   => export Classes as Javascrpt classes\n"
+        "  -f, --htdocs   => set path to htdocs (default htdocs in current directory)\n\n",
+        executable.constData(), executable.constData());
     return 1;
 }
 
@@ -55,9 +53,6 @@ int main(int argc, char *argv[])
     Option htdocsPathOpt('f', "htdocs", true); cmdLine << htdocsPathOpt;
     if (!cmdLine.parse() || helpOpt.isSet()) return showUsage(cmdLine.executable());
 
-    QCoreApplication a(argc, argv);
-    UnixSignal unixSignal(true);
-
     Log::start("webchat.log");
     logInfo("webchat started");
 
@@ -65,15 +60,16 @@ int main(int argc, char *argv[])
 
     FileServer fs(htdocsPathOpt.value("htdocs"));
 
-    WSCommManager<QString> commMgr("/ws");
-    RMIServer<QString> rmiServer(commMgr);
+    WSCommManager<CFString> commMgr("/ws");
+    RMIServer<CFString> rmiServer(commMgr);
     InfoService infoService; rmiServer.registerService(infoService);
     LogService  logService;  rmiServer.registerService(logService);
 
     if (exportOpt.isSet()) {
-        logInfo("exporting to: %1", exportOpt.value());
-        rmiServer.exportTo(exportOpt.value());
-        fs.exportTo(exportOpt.value());
+        CFString dest(exportOpt.value());
+        logInfo("exporting to: %1", dest.c_str());
+        rmiServer.exportTo(dest);
+        fs.exportTo(dest);
         return 0;
     }
 
@@ -84,7 +80,15 @@ int main(int argc, char *argv[])
     serv.registerHandler(fs);
     serv.start("127.0.0.1", 8080);
 
-    int retval = a.exec();
-    logInfo("terminating softly with retval: %1", retval);
-    return retval;
+    // Block until SIGINT or SIGTERM
+    sigset_t mask;
+    sigemptyset(&mask);
+    sigaddset(&mask, SIGINT);
+    sigaddset(&mask, SIGTERM);
+    sigaddset(&mask, SIGHUP);
+    pthread_sigmask(SIG_BLOCK, &mask, nullptr);
+    int sig = 0;
+    sigwait(&mask, &sig);
+    logInfo("terminating softly after signal: %1", sig);
+    return 0;
 }

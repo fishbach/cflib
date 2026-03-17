@@ -7,11 +7,12 @@
 
 #pragma once
 
-#include <QtCore>
+#include <cflib/base/cfcontainers.h>
+#include <cflib/base/macros.h>
 
 namespace cflib { namespace net {
 
 // Attention: this function may need some time (blocks)
-QList<QByteArray> getIPFromDNS(const QByteArray & name, bool preferIPv6 = false);
+CFList<CFByteArray> getIPFromDNS(const CFByteArray & name, bool preferIPv6 = false);
 
 }}    // namespace

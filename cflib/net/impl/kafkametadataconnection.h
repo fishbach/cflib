@@ -17,7 +17,7 @@ public:
     MetadataConnection(bool isMetaDataRequest, TCPConnData * data, KafkaConnector::Impl & impl);
 
 protected:
-    void reply(qint32, impl::KafkaRawReader & reader) override;
+    void reply(cfint32, impl::KafkaRawReader & reader) override;
     void closed() override;
 
 private:

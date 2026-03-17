@@ -7,26 +7,27 @@
 
 #pragma once
 
-#include <QtCore>
+#include <cflib/util/sig.h>
+
+struct ev_loop;
+struct ev_io;
 
 namespace cflib { namespace util {
 
 // catches signals 1, 2 and 15
-class UnixSignal : public QObject
+class UnixSignal
 {
-    Q_OBJECT
 public:
-    UnixSignal(bool quitQCoreApplication = false);
+    UnixSignal();
     ~UnixSignal();
 
-signals:
-    void catchedSignal(int sig);
-
-private slots:
-    void activated();
+    cfsignals:
+        sig<void (int)> catchedSignal;
 
 private:
-    QSocketNotifier * sn_;
+    static void ioCallback(ev_loop * loop, ev_io * w, int revents);
+
+    ev_io * watcher_;
 };
 
 }}    // namespace

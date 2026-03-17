@@ -7,6 +7,7 @@
 
 #pragma once
 
+#include <cflib/base/macros.h>
 #include <cflib/serialize/common.h>
 #include <cflib/serialize/impl/ber.h>
 
@@ -14,9 +15,9 @@ namespace cflib { namespace serialize { namespace impl {
 
 class BERSerializerBase
 {
-    Q_DISABLE_COPY(BERSerializerBase)
+    CF_DISABLE_COPY(BERSerializerBase)
 public:
-    BERSerializerBase(QByteArray & data, bool disableTagNumbering = false) :
+    BERSerializerBase(CFByteArray & data, bool disableTagNumbering = false) :
         data_(data), tag_(disableTagNumbering ? 0 : 1) {}
 
     template<typename T>
@@ -34,22 +35,22 @@ public:
     }
 
 private:
-    QByteArray & data_;
-    quint64 tag_;
+    CFByteArray & data_;
+    cfuint64 tag_;
 };
 
 class BERDeserializerBase
 {
 public:
-    BERDeserializerBase(const quint8 * data, int len, bool disableTagNumbering = false) :
+    BERDeserializerBase(const cfuint8 * data, int len, bool disableTagNumbering = false) :
         readPos_(data), bytesAvailable_(len), tag_(disableTagNumbering ? 0 : 1) {}
 
     template<typename T>
     BERDeserializerBase & operator>>(T & cl)
     {
-        forever {
+        while (true) {
             // read tlv
-            quint64 tag;
+            cfuint64 tag;
             int tagLen;
             int lengthSize;
             const int valueLen = decodeTLV(readPos_, bytesAvailable_, tag, tagLen, lengthSize);
@@ -93,9 +94,9 @@ public:
     inline bool isAnyAvailable() const { return bytesAvailable_ > 0; }
 
 private:
-    const quint8 * readPos_;
+    const cfuint8 * readPos_;
     int bytesAvailable_;
-    quint64 tag_;
+    cfuint64 tag_;
 };
 
 }}}    // namespace

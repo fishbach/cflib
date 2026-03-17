@@ -7,19 +7,20 @@
 
 #pragma once
 
-#include <QtCore>
+#include <cflib/base/cfbytearray.h>
+#include <cflib/base/macros.h>
 
 namespace cflib { namespace crypt {
 
 class TLSStream
 {
-    Q_DISABLE_COPY(TLSStream)
+    CF_DISABLE_COPY(TLSStream)
 public:
     TLSStream() {}
     virtual ~TLSStream() {}
-    virtual QByteArray initialSend() = 0;
-    virtual bool received(const QByteArray & encrypted, QByteArray & plain, QByteArray & sendBack) = 0;
-    virtual bool send(const QByteArray & plain, QByteArray & encrypted) = 0;
+    virtual CFByteArray initialSend() = 0;
+    virtual bool received(const CFByteArray & encrypted, CFByteArray & plain, CFByteArray & sendBack) = 0;
+    virtual bool send(const CFByteArray & plain, CFByteArray & encrypted) = 0;
 };
 
 }}    // namespace

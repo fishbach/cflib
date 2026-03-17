@@ -24,8 +24,8 @@ public:
     bool operator==(const TriBool & rhs) const { return state_ == rhs.state_; }
     bool operator!=(const TriBool & rhs) const { return !operator==(rhs); }
 
-    quint8 toInt() const { return state_; }
-    static TriBool fromInt(quint8 state) { TriBool b; b.state_ = state; return b; }
+    cfuint8 toInt() const { return state_; }
+    static TriBool fromInt(cfuint8 state) { TriBool b; b.state_ = state; return b; }
 
     template<typename T> void serialize(T & ser) const {
         ser << state_;
@@ -35,15 +35,15 @@ public:
     }
 
 private:
-    quint8 state_;
+    cfuint8 state_;
 };
 
 namespace impl {
 
 class SerializeTypeInfoImpl;
 void serializeTypeInfo(SerializeTypeInfoImpl & si, TriBool *);
-void serializeBER(const TriBool & val, quint64 tag, quint8 tagLen, QByteArray & data, BERSerializerBase &);
-void deserializeBER(TriBool & val, const quint8 * data, int len, BERDeserializerBase &);
+void serializeBER(const TriBool & val, cfuint64 tag, CFByteArray & data, BERSerializerBase &);
+void deserializeBER(TriBool & val, const cfuint8 * data, int len, BERDeserializerBase &);
 
 }
 

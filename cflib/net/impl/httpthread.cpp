@@ -13,7 +13,7 @@
 namespace cflib { namespace net { namespace impl {
 
 HttpThread::HttpThread(uint no, uint count) :
-    ThreadVerify(QString("HTTP-Server %1/%2").arg(no).arg(count), util::ThreadVerify::Worker),
+    ThreadVerify(CFString("HTTP-Server ") + CFString::number(no) + "/" + CFString::number(count), util::ThreadVerify::Worker),
     activeRequests_(0),
     shutdown_(false)
 {
@@ -26,7 +26,7 @@ HttpThread::~HttpThread()
     stopVerifyThread();
 }
 
-void HttpThread::newRequest(TCPConnData * data, const QList<RequestHandler *> & handlers)
+void HttpThread::newRequest(TCPConnData * data, const CFList<RequestHandler *> & handlers)
 {
     ++activeRequests_;
     new impl::RequestParser(data, handlers, this);

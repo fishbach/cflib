@@ -13,11 +13,11 @@ class Dao
 {
     SERIALIZE_CLASS
 public serialized:
-    QString name;
-    quint32 number;
-    typedef QList<quint32> List;
-    typedef QPair<List, QDateTime> Pair;
-    QPair<quint8, Pair> pair;
+    CFString name;
+    cfuint32 number;
+    typedef CFList<cfuint32> List;
+    typedef CFPair<List, CFDateTime> Pair;
+    CFPair<cfuint8, Pair> pair;
 };
 
 class Dao2
@@ -26,7 +26,7 @@ class Dao2
     SERIALIZE_IS_BASE(Dao2)
 public serialized:
     Dao dao;
-    QList<int> numbers;
+    CFList<int> numbers;
     double f;
 };
 
@@ -35,5 +35,5 @@ class Dao3 : public Dao2
     SERIALIZE_CLASS
     SERIALIZE_BASE(Dao3)
 public serialized:
-    QDateTime timestamp;
+    CFDateTime timestamp;
 };

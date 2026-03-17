@@ -9,6 +9,8 @@
 
 #include <cflib/util/log.h>
 
+#include <cstdio>
+
 USE_LOG(LogCat::Compute)
 
 InfoService::InfoService() :
@@ -21,19 +23,19 @@ InfoService::~InfoService()
     stopVerifyThread();
 }
 
-QString InfoService::test()
+CFString InfoService::test()
 {
-    return QString::fromUtf8("hello w\xc3\xb6rld");
+    return CFString("hello w\xc3\xb6rld");
 }
 
-QString InfoService::test(const QString & msg)
+CFString InfoService::test(const CFString & msg)
 {
-    logInfo("msg %1: %2", msg.length(), msg);
-    QTextStream(stdout) << msg << Qt::endl;
+    logInfo("msg %1: %2", msg.charCount(), msg.c_str());
+    printf("%s\n", msg.c_str());
     return msg;
 }
 
-void InfoService::async(qint64 i)
+void InfoService::async(cfint64 i)
 {
     logInfo("async: %1", i);
 }
@@ -48,16 +50,18 @@ Dao InfoService::update(const Dao & dao)
 
 void InfoService::update(Dao2 & dao)
 {
-    dao.numbers << 3 << 4 << 5;
+    dao.numbers.push_back(3);
+    dao.numbers.push_back(4);
+    dao.numbers.push_back(5);
 }
 
 void InfoService::update(Dao3 & dao)
 {
-    dao.timestamp = QDateTime::currentDateTimeUtc();
+    dao.timestamp = CFDateTime::currentDateTimeUtc();
 }
 
-void InfoService::talk(const QString & msg)
+void InfoService::talk(const CFString & msg)
 {
-    QTextStream(stdout) << QString("connId:%1    wrote: %2").arg(connId()).arg(msg) << Qt::endl;
+    printf("connId:%u    wrote: %s\n", connId(), msg.c_str());
     newMessage(connId(), msg);
 }

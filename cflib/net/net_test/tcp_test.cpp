@@ -7,23 +7,26 @@
 
 #include <cflib/crypt/crypt_test/certs.h>
 #include <cflib/crypt/tlscredentials.h>
+#include <cflib/base/cfconcurrent.h>
 #include <cflib/net/tcpconn.h>
 #include <cflib/net/tcpmanager.h>
 #include <cflib/util/test.h>
+
+#include <cstdlib>
 
 using namespace cflib::crypt;
 using namespace cflib::net;
 
 namespace {
 
-QSemaphore msgSem;
-QStringList msgs;
-QMutex mutex;
+CFSemaphore msgSem;
+CFStringList msgs;
+CFMutex mutex;
 
-void msg(const QString & msg)
+void msg(const CFString & m)
 {
-    QMutexLocker ml(&mutex);
-    msgs << msg;
+    CFMutexLocker ml(mutex);
+    msgs << m;
     msgSem.release();
 }
 
@@ -33,7 +36,7 @@ public:
     ServerConn(TCPConnData * data) :
         TCPConn(data)
     {
-        msg(QString("srv new: %1").arg(QString::fromLatin1(peerIP())));
+        msg("srv new: " + CFString(peerIP()));
         startReadWatcher();
     }
 
@@ -45,7 +48,7 @@ public:
 protected:
     virtual void newBytesAvailable()
     {
-        QByteArray in = read();
+        CFByteArray in = read();
         msg("srv read: " + in);
         if (in.startsWith("ping")) {
             in.replace(1, 1, "o");
@@ -62,7 +65,7 @@ protected:
 
     virtual void closed(CloseType type)
     {
-        msg(QString("srv closed: %1").arg((int)type));
+        msg("srv closed: " + CFString::number((int)type));
     }
 
     virtual void writeFinished()
@@ -76,12 +79,12 @@ class Server : public TCPManager
 public:
     Server(uint tlsThreadCount = 0) : TCPManager(tlsThreadCount) {}
 
-    QList<TCPConn *> conns;
+    CFList<TCPConn *> conns;
 
 protected:
     virtual void newConnection(TCPConnData * data)
     {
-        conns << new ServerConn(data);
+        conns.push_back(new ServerConn(data));
     }
 };
 
@@ -91,7 +94,7 @@ public:
     ClientConn(TCPConnData * data) :
         TCPConn(data)
     {
-        msg(QString("cli new: %1:%2").arg(QString::fromLatin1(peerIP())).arg(peerPort()));
+        msg("cli new: " + CFString(peerIP()) + ":" + CFString::number(peerPort()));
         startReadWatcher();
     }
 
@@ -109,7 +112,7 @@ protected:
 
     virtual void closed(CloseType type)
     {
-        msg(QString("cli closed: %1").arg((int)type));
+        msg("cli closed: " + CFString::number((int)type));
     }
 
     virtual void writeFinished()
@@ -120,10 +123,21 @@ protected:
 
 }
 
-class TCP_Test: public QObject
+class TCP_Test : public cflib::util::TestBase
 {
-    Q_OBJECT
-private slots:
+public:
+    std::vector<cflib::util::TestMethod> testMethods() const override {
+        auto self = const_cast<TCP_Test *>(this);
+        return {
+            {"test_writerClose",       [self]() { self->test_writerClose(); }},
+            {"test_readerClose",       [self]() { self->test_readerClose(); }},
+            {"test_hardClose",         [self]() { self->test_hardClose(); }},
+            {"test_sendAndDelete",     [self]() { self->test_sendAndDelete(); }},
+            {"test_connectionRefused", [self]() { self->test_connectionRefused(); }},
+            {"test_encryption",        [self]() { self->test_encryption(); }},
+            {"test_IPv6",              [self]() { self->test_IPv6(); }}
+        };
+    }
 
     void test_writerClose()
     {
@@ -135,47 +149,47 @@ private slots:
         ClientConn * conn = new ClientConn(data);
 
         msgSem.acquire(2);
-        QCOMPARE(msgs.size(), 2);
-        QVERIFY(msgs.contains("cli new: 127.0.0.1:12301"));
-        QVERIFY(msgs.contains("srv new: 127.0.0.1"));
+        QCOMPARE((int)msgs.size(), 2);
+        QVERIFY(cfContains(msgs, "cli new: 127.0.0.1:12301"));
+        QVERIFY(cfContains(msgs, "srv new: 127.0.0.1"));
         msgs.clear();
 
         conn->write("1st msg", true);
         msgSem.acquire(2);
-        QCOMPARE(msgs.size(), 2);
-        QVERIFY(msgs.contains("cli writeFinished"));
-        QVERIFY(msgs.contains("srv read: 1st msg"));
+        QCOMPARE((int)msgs.size(), 2);
+        QVERIFY(cfContains(msgs, "cli writeFinished"));
+        QVERIFY(cfContains(msgs, "srv read: 1st msg"));
         msgs.clear();
 
         conn->write("ping 1");
         msgSem.acquire(2);
-        QCOMPARE(msgs.size(), 2);
-        QVERIFY(msgs.contains("srv read: ping 1"));
-        QVERIFY(msgs.contains("cli read: pong 1"));
+        QCOMPARE((int)msgs.size(), 2);
+        QVERIFY(cfContains(msgs, "srv read: ping 1"));
+        QVERIFY(cfContains(msgs, "cli read: pong 1"));
         msgs.clear();
 
         conn->write("ping 2");
         conn->close(TCPConn::WriteClosed);
         conn->write("no msg");
         msgSem.acquire(3);
-        QCOMPARE(msgs.size(), 3);
-        QVERIFY(msgs.contains("srv read: ping 2"));
-        QVERIFY(msgs.contains("cli read: pong 2"));
-        QVERIFY(msgs.contains("srv closed: 1"));
+        QCOMPARE((int)msgs.size(), 3);
+        QVERIFY(cfContains(msgs, "srv read: ping 2"));
+        QVERIFY(cfContains(msgs, "cli read: pong 2"));
+        QVERIFY(cfContains(msgs, "srv closed: 1"));
         msgs.clear();
 
         conn->close();
         msgSem.acquire(1);
-        QCOMPARE(msgs.size(), 1);
-        QVERIFY(msgs.contains("cli closed: 3"));
+        QCOMPARE((int)msgs.size(), 1);
+        QVERIFY(cfContains(msgs, "cli closed: 3"));
         msgs.clear();
 
         delete conn;
-        foreach (TCPConn * sc, serv.conns) delete sc;
+        for (auto * sc : serv.conns) delete sc;
         msgSem.acquire(2);
-        QCOMPARE(msgs.size(), 2);
-        QVERIFY(msgs.contains("cli deleted"));
-        QVERIFY(msgs.contains("srv deleted"));
+        QCOMPARE((int)msgs.size(), 2);
+        QVERIFY(cfContains(msgs, "cli deleted"));
+        QVERIFY(cfContains(msgs, "srv deleted"));
         msgs.clear();
     }
 
@@ -189,31 +203,31 @@ private slots:
         ClientConn * conn = new ClientConn(data);
 
         msgSem.acquire(2);
-        QCOMPARE(msgs.size(), 2);
-        QVERIFY(msgs.contains("cli new: 127.0.0.1:12301"));
-        QVERIFY(msgs.contains("srv new: 127.0.0.1"));
+        QCOMPARE((int)msgs.size(), 2);
+        QVERIFY(cfContains(msgs, "cli new: 127.0.0.1:12301"));
+        QVERIFY(cfContains(msgs, "srv new: 127.0.0.1"));
         msgs.clear();
 
         conn->write("1st msg");
         msgSem.acquire(1);
-        QCOMPARE(msgs.size(), 1);
-        QVERIFY(msgs.contains("srv read: 1st msg"));
+        QCOMPARE((int)msgs.size(), 1);
+        QVERIFY(cfContains(msgs, "srv read: 1st msg"));
         msgs.clear();
 
         conn->write("close");
         msgSem.acquire(3);
-        QCOMPARE(msgs.size(), 3);
-        QVERIFY(msgs.contains("srv read: close"));
-        QVERIFY(msgs.contains("srv closed: 3"));
-        QVERIFY(msgs.contains("cli closed: 1"));
+        QCOMPARE((int)msgs.size(), 3);
+        QVERIFY(cfContains(msgs, "srv read: close"));
+        QVERIFY(cfContains(msgs, "srv closed: 3"));
+        QVERIFY(cfContains(msgs, "cli closed: 1"));
         msgs.clear();
 
         delete conn;
-        foreach (TCPConn * sc, serv.conns) delete sc;
+        for (auto * sc : serv.conns) delete sc;
         msgSem.acquire(2);
-        QCOMPARE(msgs.size(), 2);
-        QVERIFY(msgs.contains("cli deleted"));
-        QVERIFY(msgs.contains("srv deleted"));
+        QCOMPARE((int)msgs.size(), 2);
+        QVERIFY(cfContains(msgs, "cli deleted"));
+        QVERIFY(cfContains(msgs, "srv deleted"));
         msgs.clear();
     }
 
@@ -227,32 +241,32 @@ private slots:
         ClientConn * conn = new ClientConn(data);
 
         msgSem.acquire(2);
-        QCOMPARE(msgs.size(), 2);
-        QVERIFY(msgs.contains("cli new: 127.0.0.1:12301"));
-        QVERIFY(msgs.contains("srv new: 127.0.0.1"));
+        QCOMPARE((int)msgs.size(), 2);
+        QVERIFY(cfContains(msgs, "cli new: 127.0.0.1:12301"));
+        QVERIFY(cfContains(msgs, "srv new: 127.0.0.1"));
         msgs.clear();
 
         conn->write("1st msg");
         msgSem.acquire(1);
-        QCOMPARE(msgs.size(), 1);
-        QVERIFY(msgs.contains("srv read: 1st msg"));
+        QCOMPARE((int)msgs.size(), 1);
+        QVERIFY(cfContains(msgs, "srv read: 1st msg"));
         msgs.clear();
 
         conn->write("hard");
 
         msgSem.acquire(3);
-        QCOMPARE(msgs.size(), 3);
-        QVERIFY(msgs.contains("srv read: hard"));
-        QVERIFY(msgs.contains("srv closed: 7"));
-        QVERIFY(msgs.contains("cli closed: 7"));
+        QCOMPARE((int)msgs.size(), 3);
+        QVERIFY(cfContains(msgs, "srv read: hard"));
+        QVERIFY(cfContains(msgs, "srv closed: 7"));
+        QVERIFY(cfContains(msgs, "cli closed: 7"));
         msgs.clear();
 
         delete conn;
-        foreach (TCPConn * sc, serv.conns) delete sc;
+        for (auto * sc : serv.conns) delete sc;
         msgSem.acquire(2);
-        QCOMPARE(msgs.size(), 2);
-        QVERIFY(msgs.contains("cli deleted"));
-        QVERIFY(msgs.contains("srv deleted"));
+        QCOMPARE((int)msgs.size(), 2);
+        QVERIFY(cfContains(msgs, "cli deleted"));
+        QVERIFY(cfContains(msgs, "srv deleted"));
         msgs.clear();
     }
 
@@ -266,31 +280,31 @@ private slots:
         ClientConn * conn = new ClientConn(data);
 
         msgSem.acquire(2);
-        QCOMPARE(msgs.size(), 2);
-        QVERIFY(msgs.contains("cli new: 127.0.0.1:12301"));
-        QVERIFY(msgs.contains("srv new: 127.0.0.1"));
+        QCOMPARE((int)msgs.size(), 2);
+        QVERIFY(cfContains(msgs, "cli new: 127.0.0.1:12301"));
+        QVERIFY(cfContains(msgs, "srv new: 127.0.0.1"));
         msgs.clear();
 
         conn->write("writeclose");
         msgSem.acquire(2);
-        QCOMPARE(msgs.size(), 2);
-        QVERIFY(msgs.contains("srv read: writeclose"));
-        QVERIFY(msgs.contains("cli closed: 1"));
+        QCOMPARE((int)msgs.size(), 2);
+        QVERIFY(cfContains(msgs, "srv read: writeclose"));
+        QVERIFY(cfContains(msgs, "cli closed: 1"));
         msgs.clear();
 
         conn->write("1st msg");
         delete conn;
         msgSem.acquire(3);
-        QCOMPARE(msgs.size(), 3);
-        QVERIFY(msgs.contains("cli deleted"));
-        QVERIFY(msgs.contains("srv read: 1st msg"));
-        QVERIFY(msgs.contains("srv closed: 3"));
+        QCOMPARE((int)msgs.size(), 3);
+        QVERIFY(cfContains(msgs, "cli deleted"));
+        QVERIFY(cfContains(msgs, "srv read: 1st msg"));
+        QVERIFY(cfContains(msgs, "srv closed: 3"));
         msgs.clear();
 
-        foreach (TCPConn * sc, serv.conns) delete sc;
+        for (auto * sc : serv.conns) delete sc;
         msgSem.acquire(1);
-        QCOMPARE(msgs.size(), 1);
-        QVERIFY(msgs.contains("srv deleted"));
+        QCOMPARE((int)msgs.size(), 1);
+        QVERIFY(cfContains(msgs, "srv deleted"));
         msgs.clear();
     }
 
@@ -302,16 +316,16 @@ private slots:
         ClientConn * conn = new ClientConn(data);
 
         msgSem.acquire(2);
-        QCOMPARE(msgs.size(), 2);
-        QVERIFY(msgs.contains("cli new: 127.0.0.1:12301"));
-        QVERIFY(msgs.contains("cli closed: 7"));
+        QCOMPARE((int)msgs.size(), 2);
+        QVERIFY(cfContains(msgs, "cli new: 127.0.0.1:12301"));
+        QVERIFY(cfContains(msgs, "cli closed: 7"));
         msgs.clear();
 
         conn->write("no msg", true);
         delete conn;
         msgSem.acquire(1);
-        QCOMPARE(msgs.size(), 1);
-        QVERIFY(msgs.contains("cli deleted"));
+        QCOMPARE((int)msgs.size(), 1);
+        QVERIFY(cfContains(msgs, "cli deleted"));
         msgs.clear();
     }
 
@@ -333,43 +347,42 @@ private slots:
         ClientConn * conn = new ClientConn(data);
 
         msgSem.acquire(2);
-        QCOMPARE(msgs.size(), 2);
-        QVERIFY(msgs.contains("cli new: 127.0.0.1:12301"));
-        QVERIFY(msgs.contains("srv new: 127.0.0.1"));
+        QCOMPARE((int)msgs.size(), 2);
+        QVERIFY(cfContains(msgs, "cli new: 127.0.0.1:12301"));
+        QVERIFY(cfContains(msgs, "srv new: 127.0.0.1"));
         msgs.clear();
 
         conn->write("ping 1", true);
         msgSem.acquire(3);
-        QCOMPARE(msgs.size(), 3);
-        QVERIFY(msgs.contains("cli writeFinished"));
-        QVERIFY(msgs.contains("srv read: ping 1"));
-        QVERIFY(msgs.contains("cli read: pong 1"));
+        QCOMPARE((int)msgs.size(), 3);
+        QVERIFY(cfContains(msgs, "cli writeFinished"));
+        QVERIFY(cfContains(msgs, "srv read: ping 1"));
+        QVERIFY(cfContains(msgs, "cli read: pong 1"));
         msgs.clear();
 
         conn->close(TCPConn::ReadClosed);
         msgSem.acquire(1);
-        QCOMPARE(msgs.size(), 1);
-        QVERIFY(msgs.contains("cli closed: 1"));
+        QCOMPARE((int)msgs.size(), 1);
+        QVERIFY(cfContains(msgs, "cli closed: 1"));
         msgs.clear();
 
         delete conn;
         msgSem.acquire(2);
-        QCOMPARE(msgs.size(), 2);
-        QVERIFY(msgs.contains("cli deleted"));
-        QVERIFY(msgs.contains("srv closed: 1"));
+        QCOMPARE((int)msgs.size(), 2);
+        QVERIFY(cfContains(msgs, "cli deleted"));
+        QVERIFY(cfContains(msgs, "srv closed: 1"));
         msgs.clear();
 
-        foreach (TCPConn * sc, serv.conns) delete sc;
+        for (auto * sc : serv.conns) delete sc;
         msgSem.acquire(1);
-        QCOMPARE(msgs.size(), 1);
-        QVERIFY(msgs.contains("srv deleted"));
+        QCOMPARE((int)msgs.size(), 1);
+        QVERIFY(cfContains(msgs, "srv deleted"));
         msgs.clear();
     }
 
     void test_IPv6()
     {
-        // Do we have an IPv6 loopback device?
-        if (QProcess::execute("sh", { "-c", "ifconfig | grep -q 'inet6 ::1'" }) != 0) {;
+        if (system("ifconfig | grep -q 'inet6 ::1'") != 0) {
             QSKIP("no IPv6 loopback device");
         }
 
@@ -381,41 +394,38 @@ private slots:
         ClientConn * conn = new ClientConn(data);
 
         msgSem.acquire(2);
-        QCOMPARE(msgs.size(), 2);
-        QVERIFY(msgs.contains("cli new: ::1:12301"));
-        QVERIFY(msgs.contains("srv new: ::1"));
+        QCOMPARE((int)msgs.size(), 2);
+        QVERIFY(cfContains(msgs, "cli new: ::1:12301"));
+        QVERIFY(cfContains(msgs, "srv new: ::1"));
         msgs.clear();
 
         conn->write("ping 1", true);
         msgSem.acquire(3);
-        QCOMPARE(msgs.size(), 3);
-        QVERIFY(msgs.contains("cli writeFinished"));
-        QVERIFY(msgs.contains("srv read: ping 1"));
-        QVERIFY(msgs.contains("cli read: pong 1"));
+        QCOMPARE((int)msgs.size(), 3);
+        QVERIFY(cfContains(msgs, "cli writeFinished"));
+        QVERIFY(cfContains(msgs, "srv read: ping 1"));
+        QVERIFY(cfContains(msgs, "cli read: pong 1"));
         msgs.clear();
 
         conn->close(TCPConn::ReadClosed);
         msgSem.acquire(1);
-        QCOMPARE(msgs.size(), 1);
-        QVERIFY(msgs.contains("cli closed: 1"));
+        QCOMPARE((int)msgs.size(), 1);
+        QVERIFY(cfContains(msgs, "cli closed: 1"));
         msgs.clear();
 
         delete conn;
         msgSem.acquire(2);
-        QCOMPARE(msgs.size(), 2);
-        QVERIFY(msgs.contains("cli deleted"));
-        QVERIFY(msgs.contains("srv closed: 1"));
+        QCOMPARE((int)msgs.size(), 2);
+        QVERIFY(cfContains(msgs, "cli deleted"));
+        QVERIFY(cfContains(msgs, "srv closed: 1"));
         msgs.clear();
 
-        foreach (TCPConn * sc, serv.conns) delete sc;
+        for (auto * sc : serv.conns) delete sc;
         msgSem.acquire(1);
-        QCOMPARE(msgs.size(), 1);
-        QVERIFY(msgs.contains("srv deleted"));
+        QCOMPARE((int)msgs.size(), 1);
+        QVERIFY(cfContains(msgs, "srv deleted"));
         msgs.clear();
     }
-
-//    forever { msgSem.acquire(); QTextStream(stdout) << msgs.join("|") << Qt::endl; }
-
 };
-#include "tcp_test.moc"
+
 ADD_TEST(TCP_Test)

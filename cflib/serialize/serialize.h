@@ -13,7 +13,7 @@
 
 #define SERIALIZE_CLASS_USE_NULL(Class) \
     namespace cflib { namespace serialize { namespace impl { \
-    template<> inline void serializeBER(const Class & cl, quint64 tagNo, QByteArray & data, \
+    template<> inline void serializeBER(const Class & cl, cfuint64 tagNo, CFByteArray & data, \
         BERSerializerBase &) \
     { \
         if (cl.isNull()) { writeNull(data, tagNo); return; } \
@@ -33,7 +33,7 @@
     public: \
         virtual ~Class() = default; \
         virtual cflib::serialize::SerializeTypeInfo getSerializeTypeInfo() const { return serializeTypeInfo(); } \
-        static inline QSharedPointer<Class> createByClassId(quint32 classId) { \
+        static inline CFSharedPtr<Class> createByClassId(cfuint32 classId) { \
             return cflib::serialize::impl::RegisterClassBase::create<Class>(classId); } \
 
 #define SERIALIZE_BASE(Class) \

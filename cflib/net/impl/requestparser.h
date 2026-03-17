@@ -23,14 +23,14 @@ class RequestParser : public util::ThreadVerify, public TCPConn
 {
 public:
     RequestParser(TCPConnData * data,
-        const QList<RequestHandler *> & handlers, HttpThread * thread);
+        const CFList<RequestHandler *> & handlers, HttpThread * thread);
     ~RequestParser();
 
-    void sendReply(int id, const QByteArray & reply);
+    void sendReply(int id, const CFByteArray & reply);
 
     void detachRequest();
     void setPassThroughHandler(PassThroughHandler * hdl);
-    QByteArray readPassThrough(bool & isLast);
+    CFByteArray readPassThrough(bool & isLast);
     TCPConnData * detach();
 
 protected:
@@ -40,25 +40,25 @@ protected:
 private:
     void parseRequest();
     bool parseHeader();
-    bool handleRequestLine(const QByteArray & line);
-    void writeReply(const QByteArray & reply);
+    bool handleRequestLine(const CFByteArray & line);
+    void writeReply(const CFByteArray & reply);
 
 private:
-    const QList<RequestHandler *> & handlers_;
+    const CFList<RequestHandler *> & handlers_;
     HttpThread * thread_;
     const int id_;
 
-    QByteArray header_;
+    CFByteArray header_;
 
-    qint64 contentLength_;
-    QMap<QByteArray, QByteArray> headerFields_;
+    cfint64 contentLength_;
+    CFMap<CFByteArray, CFByteArray> headerFields_;
     int method_;
-    QByteArray uri_;
-    QByteArray body_;
+    CFByteArray uri_;
+    CFByteArray body_;
 
     int requestCount_;
     int nextReplyId_;
-    QMap<int, QByteArray> replies_;
+    CFMap<int, CFByteArray> replies_;
 
     int attachedRequests_;
     bool detached_;

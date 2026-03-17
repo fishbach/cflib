@@ -16,7 +16,7 @@ namespace cflib { namespace net {
 
 namespace impl { class RMIServerBase; }
 
-class RMIReplier : public QByteArray
+class RMIReplier : public CFByteArray
 {
 public:
     void send();
@@ -41,14 +41,14 @@ public:
     virtual cflib::serialize::SerializeTypeInfo getServiceInfo() const = 0;
 
 protected:
-    RMIServiceBase(const QString & threadName, uint threadCount = 1, LoopType loopType = Worker);
+    RMIServiceBase(const CFString & threadName, uint threadCount = 1, LoopType loopType = Worker);
     RMIServiceBase(ThreadVerify * other);
 
     inline uint connId() const { return connId_; }
     RMIReplier delayReply();
-    QByteArray getRemoteIP() const;
+    CFByteArray getRemoteIP() const;
     virtual void preCallInit() {}
-    virtual void connectionClosed(bool isLast) { Q_UNUSED(isLast) }
+    virtual void connectionClosed(bool isLast) { CF_UNUSED(isLast); }
 
 protected:
     virtual void processRMIServiceCallImpl(serialize::BERDeserializer & deser, uint callNo) = 0;
@@ -72,7 +72,7 @@ template<typename C>
 class RMIService : public RMIServiceBase
 {
 protected:
-    RMIService(const QString & threadName, uint threadCount = 1, LoopType loopType = Worker) :
+    RMIService(const CFString & threadName, uint threadCount = 1, LoopType loopType = Worker) :
         RMIServiceBase(threadName, threadCount, loopType), connData_(this), connDataId_(this, 0) {}
     RMIService(ThreadVerify * other) : RMIServiceBase(other), connData_(this), connDataId_(this, 0) {}
 
@@ -94,7 +94,7 @@ private:
         connDataId_ = 0;
     }
 
-    void connDataChange(const C & connData, uint connDataId, const QSet<uint> & connIds)
+    void connDataChange(const C & connData, uint connDataId, const CFSet<uint> & connIds)
     {
         if (!verifyThreadCall(&RMIService::connDataChange, connData, connDataId, connIds)) return;
 

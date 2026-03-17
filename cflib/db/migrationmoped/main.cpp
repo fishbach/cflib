@@ -9,6 +9,9 @@
 #include <cflib/db/psql/schema.h>
 #include <cflib/util/cmdline.h>
 #include <cflib/util/log.h>
+#include <cflib/util/util.h>
+
+#include <cstdlib>
 
 using namespace cflib::db;
 using namespace cflib::util;
@@ -17,15 +20,16 @@ USE_LOG(LogCat::Db)
 
 namespace {
 
-int showUsage(const QByteArray & executable)
+int showUsage(const CFByteArray & executable)
 {
-    QTextStream(stderr)
-        << "Usage: " << executable << " [options] <db schema file>"       << Qt::endl
-        << "Options:"                                                     << Qt::endl
-        << "  -h, --help             => this help"                        << Qt::endl
-        << "  -d, --db <param>       => set DB parameters"                << Qt::endl
-        << "  -m, --migrator <param> => set migrator executable"          << Qt::endl
-        << "  -l, --log <level>      => set log level 0 -> all, 7 -> off" << Qt::endl;
+    fprintf(stderr,
+        "Usage: %s [options] <db schema file>\n"
+        "Options:\n"
+        "  -h, --help             => this help\n"
+        "  -d, --db <param>       => set DB parameters\n"
+        "  -m, --migrator <param> => set migrator executable\n"
+        "  -l, --log <level>      => set log level 0 -> all, 7 -> off\n",
+        executable.constData());
     return 1;
 }
 
@@ -41,8 +45,6 @@ int main(int argc, char *argv[])
     Arg    schemaArg  (false                ); cmdLine << schemaArg;
     if (!cmdLine.parse() || help.isSet()) return showUsage(cmdLine.executable());
 
-    QCoreApplication a(argc, argv);
-
     // start logging
     if (logOpt.isSet()) {
         Log::start("migrationmoped.log");
@@ -50,14 +52,23 @@ int main(int argc, char *argv[])
         Log::setLogLevel(logOpt.value().toUInt());
     }
 
-    PSql::setParameter(dbOpt.isSet() ? dbOpt.value() : "");
-    if (!schema::update(!migratorOpt.isSet() ? schema::Migrator() :
-        [&](const QByteArray & name) {
-            return QProcess::execute(QString::fromUtf8(migratorOpt.value()), QStringList() << QString::fromUtf8(name)) == 0;
-        }, QString::fromUtf8(schemaArg.value())))
+    CFString dbParam = dbOpt.isSet() ? CFString::fromUtf8(dbOpt.value()) : CFString();
+    PSql::setParameter(dbParam);
+
+    schema::Migrator migrator;
+    if (migratorOpt.isSet()) {
+        CFString migratorExe = CFString::fromUtf8(migratorOpt.value());
+        migrator = [&migratorExe](const CFByteArray & name) {
+            CFString cmd = migratorExe + " " + CFString::fromUtf8(name);
+            return system(cmd.c_str()) == 0;
+        };
+    }
+
+    CFString schemaFile = CFString::fromUtf8(schemaArg.value());
+    if (!schema::update(migrator, schemaFile))
     {
         logCritical("could not update db schema");
-        QTextStream(stderr) << "could not update db schema" << Qt::endl;
+        fprintf(stderr, "could not update db schema\n");
         return 1;
     }
 

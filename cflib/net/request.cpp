@@ -7,6 +7,8 @@
 
 #include "request.h"
 
+#include <cflib/base/cfregex.h>
+
 #include <cflib/net/requesthandler.h>
 #include <cflib/net/impl/requestparser.h>
 #include <cflib/util/log.h>
@@ -20,9 +22,9 @@ class Request::Shared
 {
 public:
     Shared(int connId, int requestId,
-        const QByteArray & header,
-        const Request::KeyVal & headerFields, Request::Method method, const QByteArray & uri,
-        const QByteArray & body, const QList<RequestHandler *> & handlers, bool passThrough,
+        const CFByteArray & header,
+        const Request::KeyVal & headerFields, Request::Method method, const CFByteArray & uri,
+        const CFByteArray & body, const CFList<RequestHandler *> & handlers, bool passThrough,
         impl::RequestParser * parser)
     :
         ref(1),
@@ -37,13 +39,13 @@ public:
         detached(false)
     {
         if (headerFields.contains("x-remote-ip")) {
-            remoteIP = headerFields.value("x-remote-ip");
+            remoteIP = headerFields.count("x-remote-ip") ? headerFields.at("x-remote-ip") : CFByteArray();
         } else if (parser) {
             remoteIP = parser->peerIP();
         }
         watch.start();
-        id << QByteArray::number(connId) << '-' << QByteArray::number(requestId);
-        logDebug("new request %1 (body len: %2)", id, headerFields.value("content-length"));
+        id << CFByteArray::number(connId) << '-' << CFByteArray::number(requestId);
+        logDebug("new request %1 (body len: %2)", id, headerFields.count("content-length") ? headerFields.at("content-length") : CFByteArray());
     }
 
     ~Shared()
@@ -61,37 +63,35 @@ public:
         if (parser) parser->detachRequest();
     }
 
-    QAtomicInt ref;
+    CFAtomicInt ref;
     int connId;
     int requestId;
-    QByteArray id;
-    QByteArray header;
+    CFByteArray id;
+    CFByteArray header;
     Request::KeyVal headerFields;
     Request::Method method;
-    QByteArray uri;
-    QByteArray body;
-    QList<RequestHandler *> handlers;
+    CFByteArray uri;
+    CFByteArray body;
+    CFList<RequestHandler *> handlers;
     impl::RequestParser * parser;
-    QElapsedTimer watch;
+    CFElapsedTimer watch;
     bool replySent;
-    QByteArray remoteIP;
-    QList<QByteArray> sendHeaderLines;
+    CFByteArray remoteIP;
+    CFList<CFByteArray> sendHeaderLines;
     bool passThrough;
     bool detached;
 
 public:
-    QByteArray getRequestField(const QByteArray & key)
+    CFByteArray getRequestField(const CFByteArray & key)
     {
-        const QByteArray search = key.toLower();
-        QMapIterator<QByteArray, QByteArray> it(headerFields);
-        while (it.hasNext()) {
-            it.next();
-            if (it.key().toLower() == search) return it.value();
+        const CFByteArray search = key.toLower();
+        for (const auto & [k, v] : headerFields) {
+            if (k.toLower() == search) return v;
         }
-        return QByteArray();
+        return CFByteArray();
     }
 
-    void sendReply(QByteArray header, QByteArray body, bool compression)
+    void sendReply(CFByteArray header, CFByteArray body, bool compression)
     {
         if (replySent) {
             logWarn("tried to send two replies for request %1", id);
@@ -109,7 +109,7 @@ public:
 
         if (method != Request::HEAD) {
             header
-                << "Content-Length: " << QByteArray::number(body.size()) << "\r\n"
+                << "Content-Length: " << CFByteArray::number((cfint64)body.size()) << "\r\n"
                 << "\r\n"
                 << body;
         } else {
@@ -121,11 +121,9 @@ public:
 
     void sendNotFound()
     {
-        sendReply(
-            "HTTP/1.1 404 Not Found\r\n"
-            << defaultHeaders() <<
-            "Content-Type: text/html; charset=utf-8\r\n",
-
+        CFByteArray hdr = "HTTP/1.1 404 Not Found\r\n";
+        hdr << defaultHeaders() << "Content-Type: text/html; charset=utf-8\r\n";
+        sendReply(hdr,
             "<html>\r\n"
             "<head><title>404 - Not Found</title></head>\r\n"
             "<body>\r\n"
@@ -135,28 +133,27 @@ public:
             false);
     }
 
-    inline QByteArray defaultHeaders()
+    inline CFByteArray defaultHeaders()
     {
-        QByteArray headers =
-            "Date: " << cflib::util::dateTimeForHTTP(QDateTime::currentDateTimeUtc()) << "\r\n"
+        CFByteArray headers = "Date: ";
+        headers << cflib::util::dateTimeForHTTP(CFDateTime::currentDateTimeUtc()) << "\r\n"
             "Connection: keep-alive\r\n"
             "Server: cflib/0.9\r\n";
-        QListIterator<QByteArray> it(sendHeaderLines);
-        while (it.hasNext()) headers << it.next() << "\r\n";
+        for (const auto & line : sendHeaderLines) headers << line << "\r\n";
         return headers;
     }
 
 };
 
 Request::Request() :
-    d(new Shared(0, 0, QByteArray(), KeyVal(), NONE, QByteArray(), QByteArray(), QList<RequestHandler *>(), false, 0))
+    d(new Shared(0, 0, CFByteArray(), KeyVal(), NONE, CFByteArray(), CFByteArray(), CFList<RequestHandler *>(), false, 0))
 {
 }
 
 Request::Request(int connId, int requestId,
-    const QByteArray & header,
-    const KeyVal & headerFields, Method method, const QByteArray & uri,
-    const QByteArray & body, const QList<RequestHandler *> & handlers, bool passThrough,
+    const CFByteArray & header,
+    const KeyVal & headerFields, Method method, const CFByteArray & uri,
+    const CFByteArray & body, const CFList<RequestHandler *> & handlers, bool passThrough,
     impl::RequestParser * parser)
 :
     d(new Shared(connId, requestId, header, headerFields, method, uri, body, handlers, passThrough, parser))
@@ -166,7 +163,7 @@ Request::Request(int connId, int requestId,
 Request::~Request()
 {
     while (!d->ref.deref()) {
-        if (d->replySent || d->handlers.isEmpty()) {
+        if (d->replySent || d->handlers.empty()) {
             logTrace("request deleted");
             delete d;
             return;
@@ -184,13 +181,17 @@ Request::Request(const Request & other) :
 
 Request & Request::operator=(const Request & other)
 {
-    qAtomicAssign(d, other.d);
+    if (d != other.d) {
+        other.d->ref.ref();
+        if (!d->ref.deref()) delete d;
+        d = other.d;
+    }
     return *this;
 }
 
 Request::Id Request::getId() const
 {
-    return qMakePair(d->connId, d->requestId);
+    return CFPair(d->connId, d->requestId);
 }
 
 bool Request::replySent() const
@@ -198,19 +199,19 @@ bool Request::replySent() const
     return d->replySent;
 }
 
-QByteArray Request::getRawHeader() const
+CFByteArray Request::getRawHeader() const
 {
     return d->header;
 }
 
-QByteArray Request::getHeader(const QByteArray & name) const
+CFByteArray Request::getHeader(const CFByteArray & name) const
 {
-    return d->headerFields.value(name);
+    return cfMapValue(d->headerFields, name);
 }
 
-QByteArray Request::getHostname() const
+CFByteArray Request::getHostname() const
 {
-    return d->headerFields.value("host");
+    return cfMapValue(d->headerFields, CFByteArray("host"));
 }
 
 Request::KeyVal Request::getHeaderFields() const
@@ -223,7 +224,7 @@ Request::Method Request::getMethod() const
     return d->method;
 }
 
-QByteArray Request::getMethodName() const
+CFByteArray Request::getMethodName() const
 {
     switch (d->method) {
         case NONE: return "-";
@@ -231,27 +232,27 @@ QByteArray Request::getMethodName() const
         case POST: return "POST";
         case HEAD: return "HEAD";
     }
-    return QByteArray();
+    return CFByteArray();
 }
 
-QByteArray Request::getUri() const
+CFByteArray Request::getUri() const
 {
     return d->uri;
 }
 
-QByteArray Request::getBody() const
+CFByteArray Request::getBody() const
 {
     return d->body;
 }
 
-QByteArray Request::getRemoteIP() const
+CFByteArray Request::getRemoteIP() const
 {
     return d->remoteIP;
 }
 
 Request::LoginPass Request::getBasicAuth() const
 {
-    return getBasicAuth(d->headerFields.value("authorization"));
+    return getBasicAuth(cfMapValue(d->headerFields, CFByteArray("authorization")));
 }
 
 void Request::sendNotFound() const
@@ -259,14 +260,12 @@ void Request::sendNotFound() const
     d->sendNotFound();
 }
 
-void Request::sendRedirect(const QByteArray & url) const
+void Request::sendRedirect(const CFByteArray & url) const
 {
-    d->sendReply(
-        "HTTP/1.1 307 Temporary Redirect\r\n"
-        "Location: " << url << "\r\n"
-        << d->defaultHeaders() <<
-        "Content-Type: text/html; charset=utf-8\r\n",
-
+    CFByteArray hdr = "HTTP/1.1 307 Temporary Redirect\r\n"
+        "Location: ";
+    hdr << url << "\r\n" << d->defaultHeaders() << "Content-Type: text/html; charset=utf-8\r\n";
+    d->sendReply(hdr,
         "<html>\r\n"
         "<head><title>307 - Temporary Redirect</title></head>\r\n"
         "<body>\r\n"
@@ -276,31 +275,29 @@ void Request::sendRedirect(const QByteArray & url) const
         false);
 }
 
-void Request::sendReply(const QByteArray & reply, const QByteArray & contentType, bool compression) const
+void Request::sendReply(const CFByteArray & reply, const CFByteArray & contentType, bool compression) const
 {
-    d->sendReply(
-        "HTTP/1.1 200 OK\r\n"
-        << d->defaultHeaders() <<
-        "Content-Type: " << contentType << "\r\n",
-        reply, compression);
+    CFByteArray hdr = "HTTP/1.1 200 OK\r\n";
+    hdr << d->defaultHeaders() << "Content-Type: " << contentType << "\r\n";
+    d->sendReply(hdr, reply, compression);
 }
 
-void Request::sendText(const QString & reply, const QByteArray & contentType, bool compression) const
+void Request::sendText(const CFString & reply, const CFByteArray & contentType, bool compression) const
 {
     sendReply(reply.toUtf8(), contentType + "; charset=utf-8", compression);
 }
 
-void Request::sendRaw(const QByteArray & header, const QByteArray & body, bool compression) const
+void Request::sendRaw(const CFByteArray & header, const CFByteArray & body, bool compression) const
 {
     d->sendReply(header, body, compression);
 }
 
-void Request::addHeaderLine(const QByteArray & line) const
+void Request::addHeaderLine(const CFByteArray & line) const
 {
     d->sendHeaderLines << line;
 }
 
-QByteArray Request::defaultHeaders() const
+CFByteArray Request::defaultHeaders() const
 {
     return d->defaultHeaders();
 }
@@ -315,9 +312,9 @@ void Request::setPassThroughHandler(PassThroughHandler * hdl) const
     if (d->parser) d->parser->setPassThroughHandler(hdl);
 }
 
-QByteArray Request::readPassThrough(bool & isLast) const
+CFByteArray Request::readPassThrough(bool & isLast) const
 {
-    if (!d->parser) return QByteArray();
+    if (!d->parser) return CFByteArray();
     return d->parser->readPassThrough(isLast);
 }
 
@@ -345,20 +342,20 @@ TCPManager * Request::tcpManager() const
     return &d->parser->manager();
 }
 
-Request::LoginPass Request::getBasicAuth(const QByteArray & authorization)
+Request::LoginPass Request::getBasicAuth(const CFByteArray & authorization)
 {
-    static const QRegularExpression authRe("^Basic\\s+([A-Za-z0-9+/]+=*)$");
+    static const CFRegex authRe("^Basic\\s+([A-Za-z0-9+/]+=*)$");
 
-    const QRegularExpressionMatch match = authRe.match(authorization);
+    const CFRegex::MatchResult match = authRe.matchResult(authorization);
     if (!match.hasMatch()) return LoginPass();
-    const QList<QByteArray> userPass = QByteArray::fromBase64(match.captured(1).toUtf8()).split(':');
+    const CFList<CFByteArray> userPass = CFByteArray::fromBase64(CFByteArray(match.captured(1).c_str())).split(':');
     if (userPass.size() != 2) return LoginPass();
     return { userPass[0], userPass[1] };
 }
 
 void Request::callNextHandler() const
 {
-    d->handlers.takeFirst()->handleRequest(*this);
+    { auto * hdl = d->handlers.front(); d->handlers.erase(d->handlers.begin()); hdl->handleRequest(*this); }
 }
 
 }}    // namespace

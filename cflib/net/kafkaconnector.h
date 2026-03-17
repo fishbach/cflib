@@ -7,7 +7,8 @@
 
 #pragma once
 
-#include <QtCore>
+#include <cflib/base/cfcontainers.h>
+#include <cflib/base/macros.h>
 
 namespace cflib { namespace util  { class ThreadVerify; }}
 
@@ -15,7 +16,7 @@ namespace cflib { namespace net {
 
 class KafkaConnector
 {
-    Q_DISABLE_COPY(KafkaConnector)
+    CF_DISABLE_COPY(KafkaConnector)
 public:
     enum State
     {
@@ -69,55 +70,55 @@ public:
         RoundRobinAssignment = 2
     };
 
-    typedef QPair<QByteArray /* ip */, quint16 /* port */> Address;
+    typedef CFPair<CFByteArray /* ip */, cfuint16 /* port */> Address;
 
-    typedef QPair<QByteArray /* key */, QByteArray /* value */> Message;
-    typedef QVector<Message> Messages;
-    typedef QList<QByteArray> Topics;
+    typedef CFPair<CFByteArray /* key */, CFByteArray /* value */> Message;
+    typedef CFVector<Message> Messages;
+    typedef CFList<CFByteArray> Topics;
 
 public:
     KafkaConnector(util::ThreadVerify * other = 0);
     virtual ~KafkaConnector();
 
-    void connect(const QByteArray & destAddress, quint16 destPort);
-    void connect(const QList<Address> & cluster);
+    void connect(const CFByteArray & destAddress, cfuint16 destPort);
+    void connect(const CFList<Address> & cluster);
 
     // requiredAcks: 0 -> no response will be send / 1 -> wait for local write / -1 -> wait for all replicas
     // ackTimeoutMs: 0 -> wait for local write only / >0 -> max wait time for acks of replicas
-    void produce(const QByteArray & topic, qint32 partitionId, const Messages & messages,
-        quint16 requiredAcks = 1, quint32 ackTimeoutMs = 0, quint32 correlationId = 1);
+    void produce(const CFByteArray & topic, cfint32 partitionId, const Messages & messages,
+        cfuint16 requiredAcks = 1, cfuint32 ackTimeoutMs = 0, cfuint32 correlationId = 1);
 
     // highwaterMarkOffset -> last offset + 1
-    void getFirstOffset(const QByteArray & topic, qint32 partitionId, quint32 correlationId = 1);
-    void getHighwaterMarkOffset(const QByteArray & topic, qint32 partitionId, quint32 correlationId = 1);
+    void getFirstOffset(const CFByteArray & topic, cfint32 partitionId, cfuint32 correlationId = 1);
+    void getHighwaterMarkOffset(const CFByteArray & topic, cfint32 partitionId, cfuint32 correlationId = 1);
 
-    void fetch(const QByteArray & topic, qint32 partitionId, qint64 offset,
-        quint32 maxWaitTime = 0x7FFFFFFF, quint32 minBytes = 1, quint32 maxBytes = 0x100000 /* 1mb */, quint32 correlationId = 1);
+    void fetch(const CFByteArray & topic, cfint32 partitionId, cfint64 offset,
+        cfuint32 maxWaitTime = 0x7FFFFFFF, cfuint32 minBytes = 1, cfuint32 maxBytes = 0x100000 /* 1mb */, cfuint32 correlationId = 1);
 
     // only one group can be joined simultaneously
-    void joinGroup(const QByteArray & groupId, const Topics & topics, GroupAssignmentStrategy preferredStrategy = RoundRobinAssignment);
-    void fetch(quint32 maxWaitTime = 0x7FFFFFFF, quint32 minBytes = 1, quint32 maxBytes = 0x100000 /* 1mb */);
+    void joinGroup(const CFByteArray & groupId, const Topics & topics, GroupAssignmentStrategy preferredStrategy = RoundRobinAssignment);
+    void fetch(cfuint32 maxWaitTime = 0x7FFFFFFF, cfuint32 minBytes = 1, cfuint32 maxBytes = 0x100000 /* 1mb */);
     void commit();    // commits last fetchResponse
     void leaveGroup();
 
 protected:
-    virtual void stateChanged(State state) { Q_UNUSED(state) }
-    virtual void groupStateChanged(const QMap<QByteArray, QList<qint32>> & responsibility) { Q_UNUSED(responsibility) }
+    virtual void stateChanged(State state) { CF_UNUSED(state); }
+    virtual void groupStateChanged(const CFMap<CFByteArray, CFList<cfint32>> & responsibility) { CF_UNUSED(responsibility); }
 
     // offset -> is offset of first message appended to the kafka log
-    virtual void produceResponse(quint32 correlationId, ErrorCode errorCode, qint64 offset) {
-        Q_UNUSED(correlationId) Q_UNUSED(errorCode) Q_UNUSED(offset) }
+    virtual void produceResponse(cfuint32 correlationId, ErrorCode errorCode, cfint64 offset) {
+        CF_UNUSED(correlationId); CF_UNUSED(errorCode); CF_UNUSED(offset); }
 
-    virtual void offsetResponse(quint32 correlationId, qint64 offset) {
-        Q_UNUSED(correlationId) Q_UNUSED(offset) }
+    virtual void offsetResponse(cfuint32 correlationId, cfint64 offset) {
+        CF_UNUSED(correlationId); CF_UNUSED(offset); }
 
     // highwaterMarkOffset -> last offset + 1
-    virtual void fetchResponse(quint32 correlationId, const Messages & messages,
-        qint64 firstOffset, qint64 highwaterMarkOffset, ErrorCode errorCode) {
-        Q_UNUSED(correlationId) Q_UNUSED(messages) Q_UNUSED(firstOffset) Q_UNUSED(highwaterMarkOffset) Q_UNUSED(errorCode) }
+    virtual void fetchResponse(cfuint32 correlationId, const Messages & messages,
+        cfint64 firstOffset, cfint64 highwaterMarkOffset, ErrorCode errorCode) {
+        CF_UNUSED(correlationId); CF_UNUSED(messages); CF_UNUSED(firstOffset); CF_UNUSED(highwaterMarkOffset); CF_UNUSED(errorCode); }
 
-    virtual void fetchResponse(const QMap<QByteArray, Messages> & messagesPerTopic, ErrorCode errorCode) {
-        Q_UNUSED(messagesPerTopic) Q_UNUSED(errorCode) }
+    virtual void fetchResponse(const CFMap<CFByteArray, Messages> & messagesPerTopic, ErrorCode errorCode) {
+        CF_UNUSED(messagesPerTopic); CF_UNUSED(errorCode); }
 
 private:
     class MetadataConnection;

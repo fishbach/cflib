@@ -16,22 +16,22 @@ KafkaConnector::OffsetConnection::OffsetConnection(TCPConnData * data, KafkaConn
 {
 }
 
-void KafkaConnector::OffsetConnection::reply(qint32 correlationId, impl::KafkaRawReader & reader)
+void KafkaConnector::OffsetConnection::reply(cfint32 correlationId, impl::KafkaRawReader & reader)
 {
-    qint32 topicCount;
+    cfint32 topicCount;
     reader >> topicCount;
-    for (qint32 i = 0 ; i < topicCount ; ++i) {
+    for (cfint32 i = 0 ; i < topicCount ; ++i) {
 
         impl::KafkaString topicName;
         reader >> topicName;
 
-        qint32 partitionCount;
+        cfint32 partitionCount;
         reader >> partitionCount;
-        for (qint32 i = 0 ; i < partitionCount ; ++i) {
-            qint32 partitionId;
-            qint16 errorCode;
-            qint64 timestamp;
-            qint64 offset;
+        for (cfint32 i = 0 ; i < partitionCount ; ++i) {
+            cfint32 partitionId;
+            cfint16 errorCode;
+            cfint64 timestamp;
+            cfint64 offset;
             reader >> partitionId >> errorCode >> timestamp >> offset;
 
             if (errorCode == KafkaConnector::NoError) {

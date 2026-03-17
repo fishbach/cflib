@@ -13,10 +13,17 @@
 
 using namespace cflib::crypt;
 
-class TLSCredentials_test : public QObject
+class TLSCredentials_test : public cflib::util::TestBase
 {
-    Q_OBJECT
-private slots:
+public:
+    std::vector<cflib::util::TestMethod> testMethods() const override {
+        auto self = const_cast<TLSCredentials_test *>(this);
+        return {
+            {"test_addCerts",         [self]() { self->test_addCerts(); }},
+            {"test_addCerts_trusted", [self]() { self->test_addCerts_trusted(); }},
+            {"test_setPrivateKey",    [self]() { self->test_setPrivateKey(); }}
+        };
+    }
 
     void test_addCerts()
     {
@@ -24,7 +31,7 @@ private slots:
 
         QVERIFY(creds.getAllCertsPEM().size() == 0);
 
-        QCOMPARE((int)creds.addCerts(QByteArray()), 0);
+        QCOMPARE((int)creds.addCerts(CFByteArray()), 0);
         QCOMPARE((int)creds.addCerts(cert3 + cert1), 2);
         QCOMPARE((int)creds.addCerts(cert1), 0);
         QCOMPARE((int)creds.addCerts(cert2), 1);
@@ -32,18 +39,18 @@ private slots:
         QVERIFY(!creds.addPrivateKey(detach(cert1PrivateKey), "wrong"));
         QVERIFY(creds.addPrivateKey(detach(cert1PrivateKey), "SuperSecure123"));
 
-        const QList<TLSCertInfo> infos = creds.getCertChainInfos();
-        QCOMPARE(infos.size(), 3);
-        QCOMPARE(infos[0].subjectName.constData(), "127.0.0.1");
-        QCOMPARE(infos[0].issuerName .constData(), "ca");
+        const CFList<TLSCertInfo> infos = creds.getCertChainInfos();
+        QCOMPARE((int)infos.size(), 3);
+        QCOMPARE(infos[0].subjectName, CFByteArray("127.0.0.1"));
+        QCOMPARE(infos[0].issuerName,  CFByteArray("ca"));
         QVERIFY(!infos[0].isCA);
         QVERIFY(!infos[0].isTrusted);
-        QCOMPARE(infos[1].subjectName.constData(), "ca");
-        QCOMPARE(infos[1].issuerName .constData(), "rootca");
+        QCOMPARE(infos[1].subjectName, CFByteArray("ca"));
+        QCOMPARE(infos[1].issuerName,  CFByteArray("rootca"));
         QVERIFY( infos[1].isCA);
         QVERIFY(!infos[1].isTrusted);
-        QCOMPARE(infos[2].subjectName.constData(), "rootca");
-        QCOMPARE(infos[2].issuerName .constData(), "rootca");
+        QCOMPARE(infos[2].subjectName, CFByteArray("rootca"));
+        QCOMPARE(infos[2].issuerName,  CFByteArray("rootca"));
         QVERIFY( infos[2].isCA);
         QVERIFY(!infos[2].isTrusted);
 
@@ -58,13 +65,13 @@ private slots:
         QCOMPARE((int)creds.addCerts(cert3, true), 1);
         QVERIFY(creds.addPrivateKey(detach(cert1PrivateKey), "SuperSecure123"));
 
-        const QList<TLSCertInfo> infos = creds.getCertChainInfos();
-        QCOMPARE(infos.size(), 3);
-        QCOMPARE(infos[0].subjectName.constData(), "127.0.0.1");
+        const CFList<TLSCertInfo> infos = creds.getCertChainInfos();
+        QCOMPARE((int)infos.size(), 3);
+        QCOMPARE(infos[0].subjectName, CFByteArray("127.0.0.1"));
         QVERIFY(!infos[0].isTrusted);
-        QCOMPARE(infos[1].subjectName.constData(), "ca");
+        QCOMPARE(infos[1].subjectName, CFByteArray("ca"));
         QVERIFY(!infos[1].isTrusted);
-        QCOMPARE(infos[2].subjectName.constData(), "rootca");
+        QCOMPARE(infos[2].subjectName, CFByteArray("rootca"));
         QVERIFY( infos[2].isTrusted);
     }
 
@@ -72,7 +79,7 @@ private slots:
     {
         TLSCredentials creds;
 
-        QVERIFY(!creds.addPrivateKey(QByteArray()));
+        QVERIFY(!creds.addPrivateKey(CFByteArray()));
         QVERIFY(!creds.addPrivateKey(detach(cert1PrivateKey)));
 
         QCOMPARE((int)creds.addCerts(cert2), 1);
@@ -81,7 +88,6 @@ private slots:
         QCOMPARE((int)creds.addCerts(cert1), 1);
         QVERIFY(creds.addPrivateKey(detach(cert1PrivateKey), "SuperSecure123"));
     }
-
 };
-#include "tlscredentials_test.moc"
+
 ADD_TEST(TLSCredentials_test)

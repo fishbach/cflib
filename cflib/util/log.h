@@ -7,7 +7,10 @@
 
 #pragma once
 
-#include <QtCore>
+#include <cflib/base/cfbytearray.h>
+#include <cflib/base/cfstring.h>
+#include <cflib/base/macros.h>
+#include <cflib/base/types.h>
 
 #include <cflib/util/impl/logformat.h>
 
@@ -25,7 +28,7 @@
 #define logCustom(category) cflib::util::Log(cflib_util_logFileInfo, __LINE__, (category))
 
 #define logFunctionTrace \
-    const cflib::util::LogFunctionTrace cflib_util_logFunctionTrace(cflib_util_logFileInfo, __LINE__, Q_FUNC_INFO);
+    const cflib::util::LogFunctionTrace cflib_util_logFunctionTrace(cflib_util_logFileInfo, __LINE__, CF_FUNC_INFO);
 
 #define logFunctionTraceParam \
     const cflib::util::LogFunctionTrace cflib_util_logFunctionTrace(cflib_util_logFileInfo, __LINE__); \
@@ -53,8 +56,8 @@ namespace LogCat { enum {
 
 namespace cflib { namespace util {
 
-typedef quint16 LogCategory;
-typedef void (*LogLevelCallback)(const QByteArray & msg);
+typedef cfuint16 LogCategory;
+typedef void (*LogLevelCallback)(const CFByteArray & msg);
 
 struct LogFileInfo
 {
@@ -66,7 +69,7 @@ struct LogFileInfo
 class Log
 {
 public:
-    static void start(const QString & fileName);
+    static void start(const CFString & fileName);
     static void setLevelCallback(LogCategory level, LogLevelCallback callback);
     static void setLogLevel(LogCategory category) { logLevelCategory_ = category; }
 
@@ -82,14 +85,14 @@ public:
         if (check()) writeLog(str);
     }
 
-    inline void operator()(const QByteArray & str) const {
+    inline void operator()(const CFByteArray & str) const {
         if (check()) writeLog(str);
     }
 
     template<typename T1>
     inline void operator()(const char * str, const T1 & t1) const {
         if (!check()) return;
-        QByteArray msg; msg.reserve(128);
+        CFByteArray msg; msg.reserve(128);
         const char * p = str;
         while (*p) {
             if (*p == '%' && *(p+1) == '1') {
@@ -107,7 +110,7 @@ public:
     template<typename T1, typename T2>
     void operator()(const char * str, const T1 &  t1, const T2 & t2) const {
         if (!check()) return;
-        QByteArray msg; msg.reserve(128);
+        CFByteArray msg; msg.reserve(128);
         const char * p = str;
         while (*p) {
             if (*p == '%') {
@@ -129,7 +132,7 @@ public:
     template<typename T1, typename T2, typename T3>
     void operator()(const char * str, const T1 & t1, const T2 & t2, const T3 & t3) const {
         if (!check()) return;
-        QByteArray msg; msg.reserve(128);
+        CFByteArray msg; msg.reserve(128);
         const char * p = str;
         while (*p) {
             if (*p == '%') {
@@ -154,7 +157,7 @@ public:
     template<typename T1, typename T2, typename T3, typename T4>
     void operator()(const char * str, const T1 & t1, const T2 & t2, const T3 & t3, const T4 & t4) const {
         if (!check()) return;
-        QByteArray msg; msg.reserve(128);
+        CFByteArray msg; msg.reserve(128);
         const char * p = str;
         while (*p) {
             if (*p == '%') {
@@ -180,7 +183,7 @@ public:
     template<typename T1, typename T2, typename T3, typename T4, typename T5>
     void operator()(const char * str, const T1 & t1, const T2 & t2, const T3 & t3, const T4 & t4, const T5 & t5) const {
         if (!check()) return;
-        QByteArray msg; msg.reserve(128);
+        CFByteArray msg; msg.reserve(128);
         const char * p = str;
         while (*p) {
             if (*p == '%') {
@@ -209,7 +212,7 @@ public:
         const T6 & t6) const
     {
         if (!check()) return;
-        QByteArray msg; msg.reserve(128);
+        CFByteArray msg; msg.reserve(128);
         const char * p = str;
         while (*p) {
             if (*p == '%') {
@@ -239,7 +242,7 @@ public:
         const T6 & t6, const T7 & t7) const
     {
         if (!check()) return;
-        QByteArray msg; msg.reserve(128);
+        CFByteArray msg; msg.reserve(128);
         const char * p = str;
         while (*p) {
             if (*p == '%') {
@@ -270,14 +273,12 @@ private:
         return (category_ & 0x0F) >= logLevelCategory_;
     }
 
-    virtual void writeLog(const QByteArray & msg) const {
+    virtual void writeLog(const CFByteArray & msg) const {
         writeLog(fi_.file, line_, fi_.category | category_, msg, 0);
     }
 
-    static void writeLog(const char * filename, int lineNo, LogCategory category, const QByteArray & msg,
+    static void writeLog(const char * filename, int lineNo, LogCategory category, const CFByteArray & msg,
         int indent);
-
-    static void qtMessageHandler(QtMsgType type, const QMessageLogContext & context, const QString & msg);
 
 private:
     const LogFileInfo fi_;
@@ -302,11 +303,11 @@ public:
     }
 
     ~LogFunctionTrace() {
-        if (check()) Log::writeLog(fi_.file, line_, fi_.category | category_, QByteArray(), -2);
+        if (check()) Log::writeLog(fi_.file, line_, fi_.category | category_, CFByteArray(), -2);
     }
 
 private:
-    virtual void writeLog(const QByteArray & msg) const {
+    virtual void writeLog(const CFByteArray & msg) const {
         Log::writeLog(fi_.file, line_, fi_.category | category_, msg, 2);
     }
 };

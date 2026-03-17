@@ -22,7 +22,7 @@ KafkaConnector::MetadataConnection::MetadataConnection(bool isMetaDataRequest, T
 {
 }
 
-void KafkaConnector::MetadataConnection::reply(qint32, impl::KafkaRawReader & reader)
+void KafkaConnector::MetadataConnection::reply(cfint32, impl::KafkaRawReader & reader)
 {
     if (isMetaDataRequest_) readMetaData        (reader);
     else                    readGroupCoordinator(reader);
@@ -31,23 +31,23 @@ void KafkaConnector::MetadataConnection::reply(qint32, impl::KafkaRawReader & re
 void KafkaConnector::MetadataConnection::closed()
 {
     if (isMetaDataRequest_) {
-        for (qint32 nodeId : impl_.allBrokers_.keys()) {
+        for (const auto & [nodeId, addr_unused] : impl_.allBrokers_) {
             const KafkaConnector::Address & addr = impl_.allBrokers_[nodeId];
             logInfo("found broker %1 with ip %2 (port: %3)", nodeId, addr.first, addr.second);
         }
 
-        for (const QByteArray & topic : impl_.responsibilities_.keys()) {
-            QByteArray partitionStr;
+        for (const auto & [topic, partMap] : impl_.responsibilities_) {
+            CFByteArray partitionStr;
             bool isFirst = true;
-            for (qint32 partitionId : impl_.responsibilities_[topic].keys()) {
+            for (const auto & [partitionId, nodeInfo] : partMap) {
                 if (isFirst) isFirst = false;
                 else         partitionStr += ' ';
-                partitionStr += QByteArray::number(partitionId);
+                partitionStr += CFByteArray::number(partitionId);
             }
             logInfo("found topic \"%1\" (partitions: %2)", topic, partitionStr);
         }
 
-        if (impl_.allBrokers_.isEmpty()) {
+        if (impl_.allBrokers_.empty()) {
             logWarn("could not retrieve kafka cluster meta data");
             ++impl_.clusterId_;
             util::Timer::singleShot(1.0, &impl_, &Impl::fetchMetaData);
@@ -68,47 +68,47 @@ void KafkaConnector::MetadataConnection::readMetaData(impl::KafkaRawReader & rea
     impl_.allBrokers_.clear();
     impl_.responsibilities_.clear();
 
-    qint32 brokerCount;
+    cfint32 brokerCount;
     reader >> brokerCount;
-    for (qint32 i = 0 ; i < brokerCount ; ++i) {
-        qint32 nodeId;
+    for (cfint32 i = 0 ; i < brokerCount ; ++i) {
+        cfint32 nodeId;
         impl::KafkaString host;
-        qint32 port;
+        cfint32 port;
         reader >> nodeId >> host >> port;
-        impl_.allBrokers_[nodeId] = qMakePair(host, port);
+        impl_.allBrokers_[nodeId] = KafkaConnector::Address(CFByteArray(host), (cfuint16)port);
     }
 
-    qint32 topicCount;
+    cfint32 topicCount;
     reader >> topicCount;
-    for (qint32 i = 0 ; i < topicCount ; ++i) {
+    for (cfint32 i = 0 ; i < topicCount ; ++i) {
 
-        qint16 topicErrorCode;
+        cfint16 topicErrorCode;
         impl::KafkaString topic;
         reader >> topicErrorCode >> topic;
 
-        qint32 partitionCount;
+        cfint32 partitionCount;
         reader >> partitionCount;
-        for (qint32 i = 0 ; i < partitionCount ; ++i) {
+        for (cfint32 i = 0 ; i < partitionCount ; ++i) {
 
-            qint16 partitionErrorCode;
-            qint32 partitionId;
-            qint32 leader;
+            cfint16 partitionErrorCode;
+            cfint32 partitionId;
+            cfint32 leader;
             reader >> partitionErrorCode >> partitionId >> leader;
             if (topicErrorCode == KafkaConnector::NoError && partitionErrorCode == KafkaConnector::NoError && !topic.startsWith("__")) {
                 impl_.responsibilities_[topic][partitionId].id = leader;
             }
 
-            qint32 replicaCount;
+            cfint32 replicaCount;
             reader >> replicaCount;
-            for (qint32 i = 0 ; i < replicaCount ; ++i) {
-                qint32 replica;
+            for (cfint32 i = 0 ; i < replicaCount ; ++i) {
+                cfint32 replica;
                 reader >> replica;
             }
 
-            qint32 isrCount;
+            cfint32 isrCount;
             reader >> isrCount;
-            for (qint32 i = 0 ; i < isrCount ; ++i) {
-                qint32 isr;
+            for (cfint32 i = 0 ; i < isrCount ; ++i) {
+                cfint32 isr;
                 reader >> isr;
             }
         }
@@ -119,10 +119,10 @@ void KafkaConnector::MetadataConnection::readMetaData(impl::KafkaRawReader & rea
 
 void KafkaConnector::MetadataConnection::readGroupCoordinator(impl::KafkaRawReader & reader)
 {
-    qint16 errorCode;
-    qint32 coordinatorId;
+    cfint16 errorCode;
+    cfint32 coordinatorId;
     impl::KafkaString coordinatorHost;
-    qint32 coordinatorPort;
+    cfint32 coordinatorPort;
     reader >> errorCode >> coordinatorId >> coordinatorHost >> coordinatorPort;
 
     if (errorCode != KafkaConnector::NoError) {
@@ -131,7 +131,7 @@ void KafkaConnector::MetadataConnection::readGroupCoordinator(impl::KafkaRawRead
         return;
     }
 
-    logInfo("got group coordinator at ip: %1, port: %2", (QByteArray)coordinatorHost, coordinatorPort);
+    logInfo("got group coordinator at ip: %1, port: %2", (CFByteArray)coordinatorHost, coordinatorPort);
 
     TCPConnData * data = impl_.net_.openConnection(coordinatorHost, coordinatorPort);
     if (!data) {

@@ -7,6 +7,7 @@
 
 #pragma once
 
+#include <cflib/base/cfconcurrent.h>
 #include <cflib/crypt/tlscredentials.h>
 #include <cflib/net/tcpconn.h>
 #include <cflib/util/threadverify.h>
@@ -32,22 +33,22 @@ public:
     bool start(int listenSocket, crypt::TLSCredentials * credentials);
     void stop();
 
-    TCPConnData * openConnection(const QByteArray & destAddress, quint16 destPort,
-        const QByteArray & sourceIP, quint16 sourcePort,
+    TCPConnData * openConnection(const CFByteArray & destAddress, cfuint16 destPort,
+        const CFByteArray & sourceIP, cfuint16 sourcePort,
         crypt::TLSCredentials * credentials, bool preferIPv6);
 
     void startReadWatcher(TCPConnData * conn);
-    void writeToSocket(TCPConnData * conn, const QByteArray & data, bool notifyFinished);
+    void writeToSocket(TCPConnData * conn, const CFByteArray & data, bool notifyFinished);
     void closeConn(TCPConnData * conn, TCPConn::CloseType type, bool notifyClose);
     void deleteOnFinish(TCPConnData * conn);
 
     void tlsStartReadWatcher(TCPConnData * conn);
-    void tlsWrite(TCPConnData * conn, const QByteArray & data, bool notifyFinished) const;
+    void tlsWrite(TCPConnData * conn, const CFByteArray & data, bool notifyFinished) const;
     void tlsCloseConn(TCPConnData * conn, TCPConn::CloseType type, bool notifyClose) const;
     void tlsDeleteOnFinish(TCPConnData * conn) const;
 
     static void setNoDelay(int socket, bool noDelay);
-    static int openListenSocket(const QByteArray & ip, quint16 port);
+    static int openListenSocket(const CFByteArray & ip, cfuint16 port);
 
     static void readable(ev_loop * loop, ev_io * w, int revents);
     static void writeable(ev_loop * loop, ev_io * w, int revents);
@@ -62,17 +63,17 @@ protected:
 private:
     static void listenSocketReadable(ev_loop * loop, ev_io * w, int revents);
     void callClosed(TCPConnData * conn);
-    TCPConnData * addConnection(int sock, const QByteArray & destIP, quint16 destPort,
-        crypt::TLSCredentials * credentials, const QByteArray & destAddress);
+    TCPConnData * addConnection(int sock, const CFByteArray & destIP, cfuint16 destPort,
+        crypt::TLSCredentials * credentials, const CFByteArray & destAddress);
 
 private:
     int listenSock_;
     bool isIPv6Sock_;
     ev_io * readWatcher_;
     crypt::TLSCredentials * credentials_;
-    QVector<TLSThread *> tlsThreads_;
-    QAtomicInteger<uint> tlsConnId_;
-    QSet<TCPConnData *> connections_;
+    CFVector<TLSThread *> tlsThreads_;
+    CFAtomicInteger<uint> tlsConnId_;
+    CFSet<TCPConnData *> connections_;
 };
 
 }}}    // namespace
