@@ -7,10 +7,9 @@
 
 #pragma once
 
+#include <cflib/base.h>
 #include <cflib/net/requesthandler.h>
 
-#include <cflib/base/cfcontainers.h>
-#include <cflib/base/cfregex.h>
 #include <functional>
 
 namespace cflib { namespace net {

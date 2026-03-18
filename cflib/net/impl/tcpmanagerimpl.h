@@ -7,7 +7,7 @@
 
 #pragma once
 
-#include <cflib/base/cfconcurrent.h>
+#include <cflib/base.h>
 #include <cflib/crypt/tlscredentials.h>
 #include <cflib/net/tcpconn.h>
 #include <cflib/util/threadverify.h>

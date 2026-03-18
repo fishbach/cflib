@@ -9,8 +9,7 @@
 
 #include <cflib/util/log.h>
 
-#include <cflib/base/cfcontainers.h>
-#include <cflib/base/cfdatetime.h>
+#include <cflib/base.h>
 
 #define PSqlConn  cflib::db::PSql sql (&::cflib_util_logFileInfo, __LINE__)
 #define PSqlConn2 cflib::db::PSql sql2(&::cflib_util_logFileInfo, __LINE__)

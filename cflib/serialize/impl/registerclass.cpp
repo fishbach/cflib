@@ -7,7 +7,7 @@
 
 #include "registerclass.h"
 
-#include <cflib/base/macros.h>
+#include <cflib/base.h>
 
 #include <cstdlib>
 #include <format>

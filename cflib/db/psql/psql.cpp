@@ -7,7 +7,7 @@
 
 #include "psql.h"
 
-#include <cflib/base/cfconcurrent.h>
+#include <cflib/base.h>
 #include <cflib/util/evtimer.h>
 #include <cflib/util/threadverify.h>
 

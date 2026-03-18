@@ -9,8 +9,7 @@
 
 #include <cflib/net/requesthandler.h>
 
-#include <cflib/base/cfcontainers.h>
-#include <cflib/base/cfdatetime.h>
+#include <cflib/base.h>
 
 namespace cflib { namespace net {
 

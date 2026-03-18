@@ -7,10 +7,7 @@
 
 #pragma once
 
-#include <cflib/base/cfbytearray.h>
-#include <cflib/base/cfcontainers.h>
-#include <cflib/base/cfstring.h>
-#include <cflib/base/macros.h>
+#include <cflib/base.h>
 
 namespace Botan { class Credentials_Manager; }
 namespace Botan { class X509_Certificate; }

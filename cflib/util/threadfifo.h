@@ -7,8 +7,7 @@
 
 #pragma once
 
-#include <cflib/base/cfconcurrent.h>
-#include <cflib/base/macros.h>
+#include <cflib/base.h>
 
 // Threadsafe Fifo
 // put and take from multiple threads possible

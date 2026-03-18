@@ -7,7 +7,7 @@
 
 #pragma once
 
-#include <cflib/base/cfdatetime.h>
+#include <cflib/base.h>
 
 namespace cflib { namespace util {
 

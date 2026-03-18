@@ -9,8 +9,7 @@
 #include <cflib/util/test.h>
 #include <cflib/util/util.h>
 
-#include <cflib/base/cfconcurrent.h>
-#include <cflib/base/cfthread.h>
+#include <cflib/base.h>
 
 #include <cmath>
 #include <thread>

@@ -7,7 +7,7 @@
 
 #include "rmiserverbase.h"
 
-#include <cflib/base/cffile.h>
+#include <cflib/base.h>
 #include <set>
 #include <dirent.h>
 #include <sys/stat.h>

@@ -7,8 +7,7 @@
 
 #pragma once
 
-#include <cflib/base/cfbytearray.h>
-#include <cflib/base/macros.h>
+#include <cflib/base.h>
 
 namespace cflib { namespace crypt {
 

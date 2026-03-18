@@ -7,7 +7,7 @@
 
 #pragma once
 
-#include <cflib/base/cfconcurrent.h>
+#include <cflib/base.h>
 
 #include <functional>
 

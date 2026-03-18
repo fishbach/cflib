@@ -7,7 +7,7 @@
 
 #pragma once
 
-#include <cflib/base/cfregex.h>
+#include <cflib/base.h>
 #include <cflib/net/rmiservice.h>
 #include <cflib/serialize/serializeber.h>
 #include <cflib/serialize/serializetypeinfo.h>

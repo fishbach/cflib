@@ -7,7 +7,7 @@
 
 #include <cflib/crypt/crypt_test/certs.h>
 #include <cflib/crypt/tlscredentials.h>
-#include <cflib/base/cfconcurrent.h>
+#include <cflib/base.h>
 #include <cflib/net/tcpconn.h>
 #include <cflib/net/tcpmanager.h>
 #include <cflib/util/test.h>

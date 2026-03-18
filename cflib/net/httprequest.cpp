@@ -11,7 +11,7 @@
 #include <cflib/net/tcpmanager.h>
 #include <cflib/util/evtimer.h>
 #include <cflib/util/log.h>
-#include <cflib/base/cfregex.h>
+#include <cflib/base.h>
 #include <cflib/util/util.h>
 
 USE_LOG(LogCat::Http)

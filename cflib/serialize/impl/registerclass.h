@@ -7,8 +7,7 @@
 
 #pragma once
 
-#include <cflib/base/cfcontainers.h>
-#include <cflib/base/cfsharedptr.h>
+#include <cflib/base.h>
 #include <cflib/serialize/impl/serializebaseber.h>
 #include <cflib/serialize/serializetypeinfo.h>
 

@@ -7,7 +7,7 @@
 
 #pragma once
 
-#include <cflib/base/macros.h>
+#include <cflib/base.h>
 #include <cflib/serialize/common.h>
 #include <cflib/serialize/impl/ber.h>
 

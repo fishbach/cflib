@@ -7,13 +7,9 @@
 
 #pragma once
 
+#include <cflib/base.h>
 #include <cflib/serialize/impl/registerclass.h>
 #include <cflib/serialize/impl/serializebaseber.h>
-
-#include <cflib/base/cfchar.h>
-#include <cflib/base/cfdatetime.h>
-#include <cflib/base/cfflags.h>
-#include <cflib/base/cfsharedptr.h>
 
 namespace cflib { namespace serialize { namespace impl {
 

@@ -7,8 +7,7 @@
 
 #pragma once
 
-#include <cflib/base/cfstring.h>
-#include <cflib/base/cfthread.h>
+#include <cflib/base.h>
 #include <cflib/util/functor.h>
 #include <cflib/util/threadfifo.h>
 

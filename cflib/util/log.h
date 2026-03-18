@@ -7,10 +7,7 @@
 
 #pragma once
 
-#include <cflib/base/cfbytearray.h>
-#include <cflib/base/cfstring.h>
-#include <cflib/base/macros.h>
-#include <cflib/base/types.h>
+#include <cflib/base.h>
 
 #include <cflib/util/impl/logformat.h>
 

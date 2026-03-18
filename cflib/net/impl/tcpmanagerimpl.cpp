@@ -7,7 +7,7 @@
 
 #include "tcpmanagerimpl.h"
 
-#include <cflib/base/macros.h>
+#include <cflib/base.h>
 
 #include <cflib/crypt/tlsclient.h>
 #include <cflib/crypt/tlsserver.h>

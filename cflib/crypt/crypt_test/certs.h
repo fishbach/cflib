@@ -7,7 +7,7 @@
 
 #pragma once
 
-#include <cflib/base/cfbytearray.h>
+#include <cflib/base.h>
 
 namespace {
 

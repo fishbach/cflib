@@ -7,7 +7,7 @@
 
 #include "dns.h"
 
-#include <cflib/base/cfregex.h>
+#include <cflib/base.h>
 #include <cflib/util/log.h>
 
 #include <arpa/inet.h>

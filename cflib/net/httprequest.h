@@ -7,7 +7,7 @@
 
 #pragma once
 
-#include <cflib/base/cfurl.h>
+#include <cflib/base.h>
 #include <cflib/util/sig.h>
 #include <cflib/util/threadverify.h>
 

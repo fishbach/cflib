@@ -7,13 +7,8 @@
 
 #pragma once
 
+#include <cflib/base.h>
 #include <cflib/util/timer.h>
-
-#include <cflib/base/cfbytearray.h>
-#include <cflib/base/cfcontainers.h>
-#include <cflib/base/cfdatetime.h>
-#include <cflib/base/cffile.h>
-#include <cflib/base/cfstring.h>
 
 #define MultiLineStr(...) #__VA_ARGS__
 

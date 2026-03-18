@@ -7,7 +7,7 @@
 
 #pragma once
 
-#include <cflib/base/macros.h>
+#include <cflib/base.h>
 
 namespace Botan { namespace TLS { class Session_Manager; }}
 

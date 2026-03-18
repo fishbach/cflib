@@ -7,10 +7,7 @@
 
 #include "log.h"
 
-#include <cflib/base/cfconcurrent.h>
-#include <cflib/base/cfdatetime.h>
-#include <cflib/base/cffile.h>
-#include <cflib/base/cfcontainers.h>
+#include <cflib/base.h>
 #include <cflib/util/hex.h>
 
 #include <format>

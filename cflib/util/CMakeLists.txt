@@ -7,7 +7,6 @@
 cf_lib(cflib_util
     PUBLIC cflib_base
     PRIVATE ZLIB::ZLIB Threads::Threads
-    PCH ${PROJECT_SOURCE_DIR}/pch/util.h
     DIRS impl
     OTHER_FILES
         impl/generate_templates.pl

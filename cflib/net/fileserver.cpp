@@ -7,7 +7,7 @@
 
 #include "fileserver.h"
 
-#include <cflib/base/cffile.h>
+#include <cflib/base.h>
 #include <cflib/crypt/util.h>
 #include <cflib/net/request.h>
 #include <cflib/util/log.h>

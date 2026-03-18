@@ -11,7 +11,7 @@
 #include <cflib/util/sig.h>
 #include <cflib/util/tuplecompare.h>
 
-#include <cflib/base/cfcontainers.h>
+#include <cflib/base.h>
 
 namespace cflib { namespace net {
 

@@ -7,9 +7,7 @@
 
 #pragma once
 
-#include <cflib/base/cfcontainers.h>
-#include <cflib/base/cfstring.h>
-#include <cflib/base/types.h>
+#include <cflib/base.h>
 
 #include <memory>
 

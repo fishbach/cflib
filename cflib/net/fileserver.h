@@ -7,7 +7,7 @@
 
 #pragma once
 
-#include <cflib/base/cfregex.h>
+#include <cflib/base.h>
 #include <cflib/net/requesthandler.h>
 #include <cflib/util/threadverify.h>
 

@@ -7,7 +7,7 @@
 
 #include "request.h"
 
-#include <cflib/base/cfregex.h>
+#include <cflib/base.h>
 
 #include <cflib/net/requesthandler.h>
 #include <cflib/net/impl/requestparser.h>

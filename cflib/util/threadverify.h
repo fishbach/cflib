@@ -7,7 +7,7 @@
 
 #pragma once
 
-#include <cflib/base/cfcontainers.h>
+#include <cflib/base.h>
 #include <cflib/util/impl/threadverifyimpl.h>
 
 #include <deque>
