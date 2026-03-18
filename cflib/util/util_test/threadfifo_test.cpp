@@ -75,18 +75,18 @@ public:
     void basic_test()
     {
         ThreadFifo<int> fifo(1023);
-        for (int i =    1 ; i <= 1023 ; ++i) QVERIFY(fifo.put(i));
-        QVERIFY(!fifo.put(1024));
-        for (int i =    1 ; i <= 1023 ; ++i) QCOMPARE(fifo.take(), i);
-        QCOMPARE(fifo.take(), 0);
-        for (int i =    1 ; i <=  500 ; ++i) QVERIFY(fifo.put(i));
-        for (int i =    1 ; i <=  200 ; ++i) QCOMPARE(fifo.take(), i);
-        for (int i =  501 ; i <= 1223 ; ++i) QVERIFY(fifo.put(i));
-        QVERIFY(!fifo.put(1224));
-        for (int i =  201 ; i <=  923 ; ++i) QCOMPARE(fifo.take(), i);
-        for (int i = 1224 ; i <= 1723 ; ++i) QVERIFY(fifo.put(i));
-        for (int i =  924 ; i <= 1723 ; ++i) QCOMPARE(fifo.take(), i);
-        QCOMPARE(fifo.take(), 0);
+        for (int i =    1 ; i <= 1023 ; ++i) TVERIFY(fifo.put(i));
+        TVERIFY(!fifo.put(1024));
+        for (int i =    1 ; i <= 1023 ; ++i) TCOMPARE(fifo.take(), i);
+        TCOMPARE(fifo.take(), 0);
+        for (int i =    1 ; i <=  500 ; ++i) TVERIFY(fifo.put(i));
+        for (int i =    1 ; i <=  200 ; ++i) TCOMPARE(fifo.take(), i);
+        for (int i =  501 ; i <= 1223 ; ++i) TVERIFY(fifo.put(i));
+        TVERIFY(!fifo.put(1224));
+        for (int i =  201 ; i <=  923 ; ++i) TCOMPARE(fifo.take(), i);
+        for (int i = 1224 ; i <= 1723 ; ++i) TVERIFY(fifo.put(i));
+        for (int i =  924 ; i <= 1723 ; ++i) TCOMPARE(fifo.take(), i);
+        TCOMPARE(fifo.take(), 0);
     }
 
     void thread_test()
@@ -109,7 +109,7 @@ public:
         if (w6.ok()) ++i;
         if (w7.ok()) ++i;
         if (w8.ok()) ++i;
-        QCOMPARE(i, 8);
+        TCOMPARE(i, 8);
     }
 
 };

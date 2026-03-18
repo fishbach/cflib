@@ -97,9 +97,9 @@ public:
 
         cli.get("127.0.0.1", 12301, "/test1");
         msgSem.acquire(2);
-        QCOMPARE((int)msgs.size(), 2);
-        QVERIFY(cfContains(msgs, "new request: /test1"));
-        QVERIFY(msgsMatchRegex(
+        TCOMPARE((int)msgs.size(), 2);
+        TVERIFY(cfContains(msgs, "new request: /test1"));
+        TVERIFY(msgsMatchRegex(
             "http reply: HTTP/1\\.1 200 OK\\|"
             "Date: .*\\|"
             "Server: cflib/.*\\|"
@@ -110,9 +110,9 @@ public:
 
         cli.get("127.0.0.1", 12301, "/test2");
         msgSem.acquire(2);
-        QCOMPARE((int)msgs.size(), 2);
-        QVERIFY(cfContains(msgs, "new request: /test2"));
-        QVERIFY(msgsMatchRegex(
+        TCOMPARE((int)msgs.size(), 2);
+        TVERIFY(cfContains(msgs, "new request: /test2"));
+        TVERIFY(msgsMatchRegex(
             "http reply: HTTP/1\\.1 200 OK\\|"
             "Date: .*\\|"
             "Server: cflib/.*\\|"
@@ -123,9 +123,9 @@ public:
 
         cli.get("127.0.0.1", 12301, "/abort");
         msgSem.acquire(2);
-        QCOMPARE((int)msgs.size(), 2);
-        QVERIFY(cfContains(msgs, "new request: /abort"));
-        QVERIFY(cfContains(msgs, "http reply: "));
+        TCOMPARE((int)msgs.size(), 2);
+        TVERIFY(cfContains(msgs, "new request: /abort"));
+        TVERIFY(cfContains(msgs, "http reply: "));
         msgs.clear();
     }
 
@@ -142,9 +142,9 @@ public:
 
         cli.get("127.0.0.1", 12301, "/test1");
         msgSem.acquire(2);
-        QCOMPARE((int)msgs.size(), 2);
-        QVERIFY(cfContains(msgs, "new request: /test1"));
-        QVERIFY(msgsMatchRegex(
+        TCOMPARE((int)msgs.size(), 2);
+        TVERIFY(cfContains(msgs, "new request: /test1"));
+        TVERIFY(msgsMatchRegex(
             "http reply: HTTP/1\\.1 200 OK\\|"
             "Date: .*\\|"
             "Server: cflib/.*\\|"
@@ -155,9 +155,9 @@ public:
 
         cli.get("127.0.0.1", 12301, "/test2");
         msgSem.acquire(2);
-        QCOMPARE((int)msgs.size(), 2);
-        QVERIFY(cfContains(msgs, "new request: /test2"));
-        QVERIFY(msgsMatchRegex(
+        TCOMPARE((int)msgs.size(), 2);
+        TVERIFY(cfContains(msgs, "new request: /test2"));
+        TVERIFY(msgsMatchRegex(
             "http reply: HTTP/1\\.1 200 OK\\|"
             "Date: .*\\|"
             "Server: cflib/.*\\|"

@@ -28,25 +28,25 @@ public:
         int callCount = 0;
         Sig<void (int)> sig;
         sig.bind([&callCount](int x) { callCount += x; });
-        QCOMPARE(callCount, 0);
+        TCOMPARE(callCount, 0);
         sig(3);
-        QCOMPARE(callCount, 3);
+        TCOMPARE(callCount, 3);
         sig(5);
-        QCOMPARE(callCount, 8);
+        TCOMPARE(callCount, 8);
         sig.bind([&callCount](int x) { callCount += 2 * x; });
         sig(2);
-        QCOMPARE(callCount, 14);
+        TCOMPARE(callCount, 14);
         sig.unbindAll();
         sig(7);
-        QCOMPARE(callCount, 14);
+        TCOMPARE(callCount, 14);
     }
 
     void return_test()
     {
         Sig<int (int)> sig;
         sig.bind([](int x) { return x + 7; });
-        QCOMPARE(sig(3), 10);
-        QCOMPARE(sig(7), 14);
+        TCOMPARE(sig(3), 10);
+        TCOMPARE(sig(7), 14);
     }
 
     void ref_test()
@@ -56,7 +56,7 @@ public:
         sig.bind([](int & x) { x *= 3; });
         int x = 5;
         sig(x);
-        QCOMPARE(x, 21);
+        TCOMPARE(x, 21);
     }
 
     void member_test()
@@ -73,19 +73,19 @@ public:
 
         Sig<void ()> sig;
         sig.bind(&t, &Test::test);
-        QCOMPARE(t.x, 0);
+        TCOMPARE(t.x, 0);
         sig();
-        QCOMPARE(t.x, 1);
+        TCOMPARE(t.x, 1);
 
         Sig<int ()> sig2;
         sig2.bind(&t, &Test::rv);
-        QCOMPARE(sig2(), 8);
+        TCOMPARE(sig2(), 8);
         sig();
 
         const Test & t2(t);
         Sig<int ()> sig3;
         sig3.bind(&t2, &Test::rv);
-        QCOMPARE(sig3(), 9);
+        TCOMPARE(sig3(), 9);
     }
 
 };

@@ -62,8 +62,8 @@ public:
         };
     }
     void myTest() {
-        QVERIFY(condition);
-        QCOMPARE(actual, expected);
+        TVERIFY(condition);
+        TCOMPARE(actual, expected);
     }
 };
 ```

@@ -142,169 +142,169 @@ public:
     void test_writerClose()
     {
         Server serv;
-        QVERIFY(serv.start("127.0.0.1", 12301));
+        TVERIFY(serv.start("127.0.0.1", 12301));
         TCPManager cli;
         TCPConnData * data = cli.openConnection("127.0.0.1", 12301);
-        QVERIFY(data != 0);
+        TVERIFY(data != 0);
         ClientConn * conn = new ClientConn(data);
 
         msgSem.acquire(2);
-        QCOMPARE((int)msgs.size(), 2);
-        QVERIFY(cfContains(msgs, "cli new: 127.0.0.1:12301"));
-        QVERIFY(cfContains(msgs, "srv new: 127.0.0.1"));
+        TCOMPARE((int)msgs.size(), 2);
+        TVERIFY(cfContains(msgs, "cli new: 127.0.0.1:12301"));
+        TVERIFY(cfContains(msgs, "srv new: 127.0.0.1"));
         msgs.clear();
 
         conn->write("1st msg", true);
         msgSem.acquire(2);
-        QCOMPARE((int)msgs.size(), 2);
-        QVERIFY(cfContains(msgs, "cli writeFinished"));
-        QVERIFY(cfContains(msgs, "srv read: 1st msg"));
+        TCOMPARE((int)msgs.size(), 2);
+        TVERIFY(cfContains(msgs, "cli writeFinished"));
+        TVERIFY(cfContains(msgs, "srv read: 1st msg"));
         msgs.clear();
 
         conn->write("ping 1");
         msgSem.acquire(2);
-        QCOMPARE((int)msgs.size(), 2);
-        QVERIFY(cfContains(msgs, "srv read: ping 1"));
-        QVERIFY(cfContains(msgs, "cli read: pong 1"));
+        TCOMPARE((int)msgs.size(), 2);
+        TVERIFY(cfContains(msgs, "srv read: ping 1"));
+        TVERIFY(cfContains(msgs, "cli read: pong 1"));
         msgs.clear();
 
         conn->write("ping 2");
         conn->close(TCPConn::WriteClosed);
         conn->write("no msg");
         msgSem.acquire(3);
-        QCOMPARE((int)msgs.size(), 3);
-        QVERIFY(cfContains(msgs, "srv read: ping 2"));
-        QVERIFY(cfContains(msgs, "cli read: pong 2"));
-        QVERIFY(cfContains(msgs, "srv closed: 1"));
+        TCOMPARE((int)msgs.size(), 3);
+        TVERIFY(cfContains(msgs, "srv read: ping 2"));
+        TVERIFY(cfContains(msgs, "cli read: pong 2"));
+        TVERIFY(cfContains(msgs, "srv closed: 1"));
         msgs.clear();
 
         conn->close();
         msgSem.acquire(1);
-        QCOMPARE((int)msgs.size(), 1);
-        QVERIFY(cfContains(msgs, "cli closed: 3"));
+        TCOMPARE((int)msgs.size(), 1);
+        TVERIFY(cfContains(msgs, "cli closed: 3"));
         msgs.clear();
 
         delete conn;
         for (auto * sc : serv.conns) delete sc;
         msgSem.acquire(2);
-        QCOMPARE((int)msgs.size(), 2);
-        QVERIFY(cfContains(msgs, "cli deleted"));
-        QVERIFY(cfContains(msgs, "srv deleted"));
+        TCOMPARE((int)msgs.size(), 2);
+        TVERIFY(cfContains(msgs, "cli deleted"));
+        TVERIFY(cfContains(msgs, "srv deleted"));
         msgs.clear();
     }
 
     void test_readerClose()
     {
         Server serv;
-        QVERIFY(serv.start("127.0.0.1", 12301));
+        TVERIFY(serv.start("127.0.0.1", 12301));
         TCPManager cli;
         TCPConnData * data = cli.openConnection("127.0.0.1", 12301);
-        QVERIFY(data != 0);
+        TVERIFY(data != 0);
         ClientConn * conn = new ClientConn(data);
 
         msgSem.acquire(2);
-        QCOMPARE((int)msgs.size(), 2);
-        QVERIFY(cfContains(msgs, "cli new: 127.0.0.1:12301"));
-        QVERIFY(cfContains(msgs, "srv new: 127.0.0.1"));
+        TCOMPARE((int)msgs.size(), 2);
+        TVERIFY(cfContains(msgs, "cli new: 127.0.0.1:12301"));
+        TVERIFY(cfContains(msgs, "srv new: 127.0.0.1"));
         msgs.clear();
 
         conn->write("1st msg");
         msgSem.acquire(1);
-        QCOMPARE((int)msgs.size(), 1);
-        QVERIFY(cfContains(msgs, "srv read: 1st msg"));
+        TCOMPARE((int)msgs.size(), 1);
+        TVERIFY(cfContains(msgs, "srv read: 1st msg"));
         msgs.clear();
 
         conn->write("close");
         msgSem.acquire(3);
-        QCOMPARE((int)msgs.size(), 3);
-        QVERIFY(cfContains(msgs, "srv read: close"));
-        QVERIFY(cfContains(msgs, "srv closed: 3"));
-        QVERIFY(cfContains(msgs, "cli closed: 1"));
+        TCOMPARE((int)msgs.size(), 3);
+        TVERIFY(cfContains(msgs, "srv read: close"));
+        TVERIFY(cfContains(msgs, "srv closed: 3"));
+        TVERIFY(cfContains(msgs, "cli closed: 1"));
         msgs.clear();
 
         delete conn;
         for (auto * sc : serv.conns) delete sc;
         msgSem.acquire(2);
-        QCOMPARE((int)msgs.size(), 2);
-        QVERIFY(cfContains(msgs, "cli deleted"));
-        QVERIFY(cfContains(msgs, "srv deleted"));
+        TCOMPARE((int)msgs.size(), 2);
+        TVERIFY(cfContains(msgs, "cli deleted"));
+        TVERIFY(cfContains(msgs, "srv deleted"));
         msgs.clear();
     }
 
     void test_hardClose()
     {
         Server serv;
-        QVERIFY(serv.start("127.0.0.1", 12301));
+        TVERIFY(serv.start("127.0.0.1", 12301));
         TCPManager cli;
         TCPConnData * data = cli.openConnection("127.0.0.1", 12301);
-        QVERIFY(data != 0);
+        TVERIFY(data != 0);
         ClientConn * conn = new ClientConn(data);
 
         msgSem.acquire(2);
-        QCOMPARE((int)msgs.size(), 2);
-        QVERIFY(cfContains(msgs, "cli new: 127.0.0.1:12301"));
-        QVERIFY(cfContains(msgs, "srv new: 127.0.0.1"));
+        TCOMPARE((int)msgs.size(), 2);
+        TVERIFY(cfContains(msgs, "cli new: 127.0.0.1:12301"));
+        TVERIFY(cfContains(msgs, "srv new: 127.0.0.1"));
         msgs.clear();
 
         conn->write("1st msg");
         msgSem.acquire(1);
-        QCOMPARE((int)msgs.size(), 1);
-        QVERIFY(cfContains(msgs, "srv read: 1st msg"));
+        TCOMPARE((int)msgs.size(), 1);
+        TVERIFY(cfContains(msgs, "srv read: 1st msg"));
         msgs.clear();
 
         conn->write("hard");
 
         msgSem.acquire(3);
-        QCOMPARE((int)msgs.size(), 3);
-        QVERIFY(cfContains(msgs, "srv read: hard"));
-        QVERIFY(cfContains(msgs, "srv closed: 7"));
-        QVERIFY(cfContains(msgs, "cli closed: 7"));
+        TCOMPARE((int)msgs.size(), 3);
+        TVERIFY(cfContains(msgs, "srv read: hard"));
+        TVERIFY(cfContains(msgs, "srv closed: 7"));
+        TVERIFY(cfContains(msgs, "cli closed: 7"));
         msgs.clear();
 
         delete conn;
         for (auto * sc : serv.conns) delete sc;
         msgSem.acquire(2);
-        QCOMPARE((int)msgs.size(), 2);
-        QVERIFY(cfContains(msgs, "cli deleted"));
-        QVERIFY(cfContains(msgs, "srv deleted"));
+        TCOMPARE((int)msgs.size(), 2);
+        TVERIFY(cfContains(msgs, "cli deleted"));
+        TVERIFY(cfContains(msgs, "srv deleted"));
         msgs.clear();
     }
 
     void test_sendAndDelete()
     {
         Server serv;
-        QVERIFY(serv.start("127.0.0.1", 12301));
+        TVERIFY(serv.start("127.0.0.1", 12301));
         TCPManager cli;
         TCPConnData * data = cli.openConnection("127.0.0.1", 12301);
-        QVERIFY(data != 0);
+        TVERIFY(data != 0);
         ClientConn * conn = new ClientConn(data);
 
         msgSem.acquire(2);
-        QCOMPARE((int)msgs.size(), 2);
-        QVERIFY(cfContains(msgs, "cli new: 127.0.0.1:12301"));
-        QVERIFY(cfContains(msgs, "srv new: 127.0.0.1"));
+        TCOMPARE((int)msgs.size(), 2);
+        TVERIFY(cfContains(msgs, "cli new: 127.0.0.1:12301"));
+        TVERIFY(cfContains(msgs, "srv new: 127.0.0.1"));
         msgs.clear();
 
         conn->write("writeclose");
         msgSem.acquire(2);
-        QCOMPARE((int)msgs.size(), 2);
-        QVERIFY(cfContains(msgs, "srv read: writeclose"));
-        QVERIFY(cfContains(msgs, "cli closed: 1"));
+        TCOMPARE((int)msgs.size(), 2);
+        TVERIFY(cfContains(msgs, "srv read: writeclose"));
+        TVERIFY(cfContains(msgs, "cli closed: 1"));
         msgs.clear();
 
         conn->write("1st msg");
         delete conn;
         msgSem.acquire(3);
-        QCOMPARE((int)msgs.size(), 3);
-        QVERIFY(cfContains(msgs, "cli deleted"));
-        QVERIFY(cfContains(msgs, "srv read: 1st msg"));
-        QVERIFY(cfContains(msgs, "srv closed: 3"));
+        TCOMPARE((int)msgs.size(), 3);
+        TVERIFY(cfContains(msgs, "cli deleted"));
+        TVERIFY(cfContains(msgs, "srv read: 1st msg"));
+        TVERIFY(cfContains(msgs, "srv closed: 3"));
         msgs.clear();
 
         for (auto * sc : serv.conns) delete sc;
         msgSem.acquire(1);
-        QCOMPARE((int)msgs.size(), 1);
-        QVERIFY(cfContains(msgs, "srv deleted"));
+        TCOMPARE((int)msgs.size(), 1);
+        TVERIFY(cfContains(msgs, "srv deleted"));
         msgs.clear();
     }
 
@@ -312,71 +312,71 @@ public:
     {
         TCPManager cli;
         TCPConnData * data = cli.openConnection("127.0.0.1", 12301);
-        QVERIFY(data != 0);
+        TVERIFY(data != 0);
         ClientConn * conn = new ClientConn(data);
 
         msgSem.acquire(2);
-        QCOMPARE((int)msgs.size(), 2);
-        QVERIFY(cfContains(msgs, "cli new: 127.0.0.1:12301"));
-        QVERIFY(cfContains(msgs, "cli closed: 7"));
+        TCOMPARE((int)msgs.size(), 2);
+        TVERIFY(cfContains(msgs, "cli new: 127.0.0.1:12301"));
+        TVERIFY(cfContains(msgs, "cli closed: 7"));
         msgs.clear();
 
         conn->write("no msg", true);
         delete conn;
         msgSem.acquire(1);
-        QCOMPARE((int)msgs.size(), 1);
-        QVERIFY(cfContains(msgs, "cli deleted"));
+        TCOMPARE((int)msgs.size(), 1);
+        TVERIFY(cfContains(msgs, "cli deleted"));
         msgs.clear();
     }
 
     void test_encryption()
     {
         TLSCredentials serverCreds;
-        QCOMPARE((int)serverCreds.addCerts(cert1 + cert2 + cert3), 3);
-        QVERIFY(serverCreds.addPrivateKey(detach(cert1PrivateKey), "SuperSecure123"));
+        TCOMPARE((int)serverCreds.addCerts(cert1 + cert2 + cert3), 3);
+        TVERIFY(serverCreds.addPrivateKey(detach(cert1PrivateKey), "SuperSecure123"));
 
         Server serv(1);
-        QVERIFY(serv.start("127.0.0.1", 12301, serverCreds));
+        TVERIFY(serv.start("127.0.0.1", 12301, serverCreds));
 
         TCPManager cli(1);
-        QCOMPARE((int)cli.clientCredentials().addCerts(cert3, true), 1);
-        QCOMPARE((int)cli.clientCredentials().addRevocationLists(cert2Crl), 1);
+        TCOMPARE((int)cli.clientCredentials().addCerts(cert3, true), 1);
+        TCOMPARE((int)cli.clientCredentials().addRevocationLists(cert2Crl), 1);
 
         TCPConnData * data = cli.openTLSConnection("127.0.0.1", 12301);
-        QVERIFY(data != 0);
+        TVERIFY(data != 0);
         ClientConn * conn = new ClientConn(data);
 
         msgSem.acquire(2);
-        QCOMPARE((int)msgs.size(), 2);
-        QVERIFY(cfContains(msgs, "cli new: 127.0.0.1:12301"));
-        QVERIFY(cfContains(msgs, "srv new: 127.0.0.1"));
+        TCOMPARE((int)msgs.size(), 2);
+        TVERIFY(cfContains(msgs, "cli new: 127.0.0.1:12301"));
+        TVERIFY(cfContains(msgs, "srv new: 127.0.0.1"));
         msgs.clear();
 
         conn->write("ping 1", true);
         msgSem.acquire(3);
-        QCOMPARE((int)msgs.size(), 3);
-        QVERIFY(cfContains(msgs, "cli writeFinished"));
-        QVERIFY(cfContains(msgs, "srv read: ping 1"));
-        QVERIFY(cfContains(msgs, "cli read: pong 1"));
+        TCOMPARE((int)msgs.size(), 3);
+        TVERIFY(cfContains(msgs, "cli writeFinished"));
+        TVERIFY(cfContains(msgs, "srv read: ping 1"));
+        TVERIFY(cfContains(msgs, "cli read: pong 1"));
         msgs.clear();
 
         conn->close(TCPConn::ReadClosed);
         msgSem.acquire(1);
-        QCOMPARE((int)msgs.size(), 1);
-        QVERIFY(cfContains(msgs, "cli closed: 1"));
+        TCOMPARE((int)msgs.size(), 1);
+        TVERIFY(cfContains(msgs, "cli closed: 1"));
         msgs.clear();
 
         delete conn;
         msgSem.acquire(2);
-        QCOMPARE((int)msgs.size(), 2);
-        QVERIFY(cfContains(msgs, "cli deleted"));
-        QVERIFY(cfContains(msgs, "srv closed: 1"));
+        TCOMPARE((int)msgs.size(), 2);
+        TVERIFY(cfContains(msgs, "cli deleted"));
+        TVERIFY(cfContains(msgs, "srv closed: 1"));
         msgs.clear();
 
         for (auto * sc : serv.conns) delete sc;
         msgSem.acquire(1);
-        QCOMPARE((int)msgs.size(), 1);
-        QVERIFY(cfContains(msgs, "srv deleted"));
+        TCOMPARE((int)msgs.size(), 1);
+        TVERIFY(cfContains(msgs, "srv deleted"));
         msgs.clear();
     }
 
@@ -387,43 +387,43 @@ public:
         }
 
         Server serv;
-        QVERIFY(serv.start("::1", 12301));
+        TVERIFY(serv.start("::1", 12301));
         TCPManager cli;
         TCPConnData * data = cli.openConnection("::1", 12301);
-        QVERIFY(data != 0);
+        TVERIFY(data != 0);
         ClientConn * conn = new ClientConn(data);
 
         msgSem.acquire(2);
-        QCOMPARE((int)msgs.size(), 2);
-        QVERIFY(cfContains(msgs, "cli new: ::1:12301"));
-        QVERIFY(cfContains(msgs, "srv new: ::1"));
+        TCOMPARE((int)msgs.size(), 2);
+        TVERIFY(cfContains(msgs, "cli new: ::1:12301"));
+        TVERIFY(cfContains(msgs, "srv new: ::1"));
         msgs.clear();
 
         conn->write("ping 1", true);
         msgSem.acquire(3);
-        QCOMPARE((int)msgs.size(), 3);
-        QVERIFY(cfContains(msgs, "cli writeFinished"));
-        QVERIFY(cfContains(msgs, "srv read: ping 1"));
-        QVERIFY(cfContains(msgs, "cli read: pong 1"));
+        TCOMPARE((int)msgs.size(), 3);
+        TVERIFY(cfContains(msgs, "cli writeFinished"));
+        TVERIFY(cfContains(msgs, "srv read: ping 1"));
+        TVERIFY(cfContains(msgs, "cli read: pong 1"));
         msgs.clear();
 
         conn->close(TCPConn::ReadClosed);
         msgSem.acquire(1);
-        QCOMPARE((int)msgs.size(), 1);
-        QVERIFY(cfContains(msgs, "cli closed: 1"));
+        TCOMPARE((int)msgs.size(), 1);
+        TVERIFY(cfContains(msgs, "cli closed: 1"));
         msgs.clear();
 
         delete conn;
         msgSem.acquire(2);
-        QCOMPARE((int)msgs.size(), 2);
-        QVERIFY(cfContains(msgs, "cli deleted"));
-        QVERIFY(cfContains(msgs, "srv closed: 1"));
+        TCOMPARE((int)msgs.size(), 2);
+        TVERIFY(cfContains(msgs, "cli deleted"));
+        TVERIFY(cfContains(msgs, "srv closed: 1"));
         msgs.clear();
 
         for (auto * sc : serv.conns) delete sc;
         msgSem.acquire(1);
-        QCOMPARE((int)msgs.size(), 1);
-        QVERIFY(cfContains(msgs, "srv deleted"));
+        TCOMPARE((int)msgs.size(), 1);
+        TVERIFY(cfContains(msgs, "srv deleted"));
         msgs.clear();
     }
 };

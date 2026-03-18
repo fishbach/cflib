@@ -24,7 +24,7 @@
 // Lightweight test macros
 // ---------------------------------------------------------------------------
 
-#define QVERIFY(cond) \
+#define TVERIFY(cond) \
     do { \
         if (!(cond)) { \
             std::cerr << std::format("  FAIL: {} at {}:{}\n", #cond, __FILE__, __LINE__); \
@@ -33,7 +33,7 @@
         } \
     } while (0)
 
-#define QCOMPARE(actual, expected) \
+#define TCOMPARE(actual, expected) \
     do { \
         auto _a = (actual); \
         auto _e = (expected); \

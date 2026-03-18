@@ -91,77 +91,77 @@ public:
         PSql::closeThreadConnection();
         PSql sql(connParam("postgres"));
         sql.exec("DROP DATABASE cflib_db_test");
-        QVERIFY(sql.exec("CREATE DATABASE cflib_db_test"));
-        QVERIFY(PSql::setParameter(connParam("cflib_db_test")));
+        TVERIFY(sql.exec("CREATE DATABASE cflib_db_test"));
+        TVERIFY(PSql::setParameter(connParam("cflib_db_test")));
     }
 
     void cleanupTestCase()
     {
         PSql::closeThreadConnection();
         PSql sql(connParam("postgres"));
-        QVERIFY(sql.exec("DROP DATABASE cflib_db_test"));
+        TVERIFY(sql.exec("DROP DATABASE cflib_db_test"));
     }
 
     void basic_test()
     {
-        QVERIFY((schema::update<Migrator>(CFString(SCHEMA_SQL_PATH))));
+        TVERIFY((schema::update<Migrator>(CFString(SCHEMA_SQL_PATH))));
 
         PSqlConn;
-        QVERIFY(sql.exec("SELECT key, value, value2, value3, value4 FROM config ORDER BY key"));
+        TVERIFY(sql.exec("SELECT key, value, value2, value3, value4 FROM config ORDER BY key"));
         CFString key, value;
         cfint32 value2, value3, value4;
 
-        QVERIFY(sql.next());
+        TVERIFY(sql.next());
         sql >> key >> value >> value2 >> value3 >> value4;
-        QCOMPARE(key, CFString("test1"));
-        QCOMPARE(value, CFString("val1"));
-        QCOMPARE(value2, 0);
-        QCOMPARE(value3, 0);
-        QCOMPARE(value4, 0);
+        TCOMPARE(key, CFString("test1"));
+        TCOMPARE(value, CFString("val1"));
+        TCOMPARE(value2, 0);
+        TCOMPARE(value3, 0);
+        TCOMPARE(value4, 0);
 
-        QVERIFY(sql.next());
+        TVERIFY(sql.next());
         sql >> key >> value >> value2 >> value3 >> value4;
-        QCOMPARE(key, CFString("test2"));
-        QCOMPARE(value, CFString("val2"));
-        QCOMPARE(value2, 2);
-        QCOMPARE(value3, 0);
-        QCOMPARE(value4, 0);
+        TCOMPARE(key, CFString("test2"));
+        TCOMPARE(value, CFString("val2"));
+        TCOMPARE(value2, 2);
+        TCOMPARE(value3, 0);
+        TCOMPARE(value4, 0);
 
-        QVERIFY(sql.next());
-        QVERIFY(sql.next());
-        QVERIFY(sql.next());
-        QVERIFY(!sql.next());
+        TVERIFY(sql.next());
+        TVERIFY(sql.next());
+        TVERIFY(sql.next());
+        TVERIFY(!sql.next());
     }
 
     void update_test()
     {
         CFByteArray schema = readFile(CFString(SCHEMA_SQL_PATH));
-        QVERIFY(schema::update(schema));
+        TVERIFY(schema::update(schema));
 
         schema +=
             "-- REVISION neu\n"
             "\n"
             "INSERT INTO config (key) VALUES ('neu')\n"
         ;
-        QVERIFY(schema::update(schema));
+        TVERIFY(schema::update(schema));
         PSqlConn;
-        QVERIFY(sql.exec("SELECT COUNT(*) FROM config WHERE key = 'neu'"));
-        QVERIFY(sql.next());
-        QCOMPARE(sql.get<cfint64>(0), (cfint64)1);
+        TVERIFY(sql.exec("SELECT COUNT(*) FROM config WHERE key = 'neu'"));
+        TVERIFY(sql.next());
+        TCOMPARE(sql.get<cfint64>(0), (cfint64)1);
     }
 
     void resetDB()
     {
         PSql::closeThreadConnection();
         PSql sql(connParam("postgres"));
-        QVERIFY(sql.exec("DROP DATABASE cflib_db_test"));
-        QVERIFY(sql.exec("CREATE DATABASE cflib_db_test"));
-        QVERIFY(PSql::setParameter(connParam("cflib_db_test")));
+        TVERIFY(sql.exec("DROP DATABASE cflib_db_test"));
+        TVERIFY(sql.exec("CREATE DATABASE cflib_db_test"));
+        TVERIFY(PSql::setParameter(connParam("cflib_db_test")));
     }
 
     void empty_head_test()
     {
-        QVERIFY(schema::update(CFByteArray(
+        TVERIFY(schema::update(CFByteArray(
             "-- REVISION first\n"
             "CREATE TABLE config (\n"
             "  key   text NOT NULL, \n"
@@ -171,7 +171,7 @@ public:
         )));
 
         PSqlConn;
-        QVERIFY(sql.exec("SELECT key, value FROM config"));
+        TVERIFY(sql.exec("SELECT key, value FROM config"));
     }
 
 };

@@ -31,35 +31,35 @@ public:
 
     void test_flatten()
     {
-        QCOMPARE(flatten(CFString()), CFString());
-        QCOMPARE(flatten(""), CFString(""));
-        QCOMPARE(flatten("      \r\n"), CFString(""));
-        QCOMPARE(flatten("     ab_c & 1.2-3\r\n"), CFString("ab_c_1.2-3"));
-        QCOMPARE(flatten("     _ \r\n_"), CFString("_"));
+        TCOMPARE(flatten(CFString()), CFString());
+        TCOMPARE(flatten(""), CFString(""));
+        TCOMPARE(flatten("      \r\n"), CFString(""));
+        TCOMPARE(flatten("     ab_c & 1.2-3\r\n"), CFString("ab_c_1.2-3"));
+        TCOMPARE(flatten("     _ \r\n_"), CFString("_"));
     }
 
     void test_CFString()
     {
-        QVERIFY(CFString().isNull());
-        QVERIFY(!CFString("").isNull());
+        TVERIFY(CFString().isNull());
+        TVERIFY(!CFString("").isNull());
     }
 
     void test_CFByteArray()
     {
         CFByteArray ba;
-        QVERIFY(ba.isNull());
+        TVERIFY(ba.isNull());
         ba.reserve(997);
-        QVERIFY(ba.capacity() >= (cfsize_t)997);
+        TVERIFY(ba.capacity() >= (cfsize_t)997);
         ba.resize(123);
-        QCOMPARE(ba.size(), (cfsize_t)123);
-        QVERIFY(ba.capacity() >= (cfsize_t)997);
+        TCOMPARE(ba.size(), (cfsize_t)123);
+        TVERIFY(ba.capacity() >= (cfsize_t)997);
         ba.resize(0);
-        QVERIFY(!ba.isNull());
-        QCOMPARE(ba.size(), (cfsize_t)0);
-        QVERIFY(ba.capacity() >= (cfsize_t)997);
+        TVERIFY(!ba.isNull());
+        TCOMPARE(ba.size(), (cfsize_t)0);
+        TVERIFY(ba.capacity() >= (cfsize_t)997);
         ba.clear();
-        QVERIFY(ba.isNull());
-        QVERIFY(!CFByteArray("").isNull());
+        TVERIFY(ba.isNull());
+        TVERIFY(!CFByteArray("").isNull());
     }
 
     void test_deflate()
@@ -81,46 +81,46 @@ public:
             return true;
         };
 
-        QVERIFY(checkDeflate(CFByteArray(),                 "00",                     1));
-        QVERIFY(checkDeflate(CFByteArray(),                 "00",                     0));
-        QVERIFY(checkDeflate(CFByteArray("\0", 1),          "620000",                 1));
-        QVERIFY(checkDeflate(CFByteArray("A"),              "720400",                 1));
-        QVERIFY(checkDeflate(CFByteArray("A"),              "000100feff4100",         0));
-        QVERIFY(checkDeflate(CFByteArray("bc"),             "4a4a0600",               1));
-        QVERIFY(checkDeflate(CFByteArray("Hello"),          "f248cdc9c90700",         1));
-        QVERIFY(checkDeflate(CFByteArray("Hello"),          "000500faff48656c6c6f00", 0));
+        TVERIFY(checkDeflate(CFByteArray(),                 "00",                     1));
+        TVERIFY(checkDeflate(CFByteArray(),                 "00",                     0));
+        TVERIFY(checkDeflate(CFByteArray("\0", 1),          "620000",                 1));
+        TVERIFY(checkDeflate(CFByteArray("A"),              "720400",                 1));
+        TVERIFY(checkDeflate(CFByteArray("A"),              "000100feff4100",         0));
+        TVERIFY(checkDeflate(CFByteArray("bc"),             "4a4a0600",               1));
+        TVERIFY(checkDeflate(CFByteArray("Hello"),          "f248cdc9c90700",         1));
+        TVERIFY(checkDeflate(CFByteArray("Hello"),          "000500faff48656c6c6f00", 0));
         CFByteArray data;
         inflateRaw(data);
-        QVERIFY(data.isEmpty());
+        TVERIFY(data.isEmpty());
         data = "\x00";
         inflateRaw(data);
-        QVERIFY(data.isEmpty());
+        TVERIFY(data.isEmpty());
     }
 
     void test_tupleCompare()
     {
-        QVERIFY( equal(std::tuple<int, float>(2, 3.14f), 2, 3.14f));
-        QVERIFY(!equal(std::tuple<int, float>(2, 3.14f), 2, 3.2f));
-        QVERIFY( equal(std::tuple<int, float>(2, 3.14f), 2));
-        QVERIFY(!equal(std::tuple<int, float>(2, 3.14f), 3));
-        QVERIFY( equal(std::tuple<int, float>(2, 3.14f)));
+        TVERIFY( equal(std::tuple<int, float>(2, 3.14f), 2, 3.14f));
+        TVERIFY(!equal(std::tuple<int, float>(2, 3.14f), 2, 3.2f));
+        TVERIFY( equal(std::tuple<int, float>(2, 3.14f), 2));
+        TVERIFY(!equal(std::tuple<int, float>(2, 3.14f), 3));
+        TVERIFY( equal(std::tuple<int, float>(2, 3.14f)));
 
-        QVERIFY( partialEqual(std::tuple<int, float>(2, 3.14f), 2, 2, 3.14f));
-        QVERIFY(!partialEqual(std::tuple<int, float>(2, 3.14f), 2, 2, 3.2f));
-        QVERIFY(!partialEqual(std::tuple<int, float>(2, 3.14f), 2, 3, 3.14f));
-        QVERIFY( partialEqual(std::tuple<int, float>(2, 3.14f), 2, 2));
-        QVERIFY(!partialEqual(std::tuple<int, float>(2, 3.14f), 2, 3));
-        QVERIFY( partialEqual(std::tuple<int, float>(2, 3.14f), 2));
+        TVERIFY( partialEqual(std::tuple<int, float>(2, 3.14f), 2, 2, 3.14f));
+        TVERIFY(!partialEqual(std::tuple<int, float>(2, 3.14f), 2, 2, 3.2f));
+        TVERIFY(!partialEqual(std::tuple<int, float>(2, 3.14f), 2, 3, 3.14f));
+        TVERIFY( partialEqual(std::tuple<int, float>(2, 3.14f), 2, 2));
+        TVERIFY(!partialEqual(std::tuple<int, float>(2, 3.14f), 2, 3));
+        TVERIFY( partialEqual(std::tuple<int, float>(2, 3.14f), 2));
 
-        QVERIFY( partialEqual(std::tuple<int, float>(2, 3.14f), 1, 2, 3.14f));
-        QVERIFY( partialEqual(std::tuple<int, float>(2, 3.14f), 1, 2, 3.2f));
-        QVERIFY(!partialEqual(std::tuple<int, float>(2, 3.14f), 1, 3, 3.14f));
-        QVERIFY( partialEqual(std::tuple<int, float>(2, 3.14f), 1, 2));
-        QVERIFY(!partialEqual(std::tuple<int, float>(2, 3.14f), 1, 3));
-        QVERIFY( partialEqual(std::tuple<int, float>(2, 3.14f), 1));
+        TVERIFY( partialEqual(std::tuple<int, float>(2, 3.14f), 1, 2, 3.14f));
+        TVERIFY( partialEqual(std::tuple<int, float>(2, 3.14f), 1, 2, 3.2f));
+        TVERIFY(!partialEqual(std::tuple<int, float>(2, 3.14f), 1, 3, 3.14f));
+        TVERIFY( partialEqual(std::tuple<int, float>(2, 3.14f), 1, 2));
+        TVERIFY(!partialEqual(std::tuple<int, float>(2, 3.14f), 1, 3));
+        TVERIFY( partialEqual(std::tuple<int, float>(2, 3.14f), 1));
 
-        QVERIFY( partialEqual(std::tuple<int, float>(2, 3.14f), 0, 3, 3.2f));
-        QVERIFY( partialEqual(std::tuple<int, float>(2, 3.14f), 0));
+        TVERIFY( partialEqual(std::tuple<int, float>(2, 3.14f), 0, 3, 3.2f));
+        TVERIFY( partialEqual(std::tuple<int, float>(2, 3.14f), 0));
     }
 
     void test_callWithTupleParams()
@@ -128,11 +128,11 @@ public:
         int i = 0;
         float f = 0.0;
         callWithTupleParams<void>([&](int pi, float pf) { i = pi; f = pf; }, std::tuple<int, float>(2, 3.14f));
-        QCOMPARE(i, 2);
-        QCOMPARE(f, 3.14f);
+        TCOMPARE(i, 2);
+        TCOMPARE(f, 3.14f);
         callWithTupleParams<void>([&](int & i, float pf) { ++i; f = pf; }, std::tuple<float>(2.34f), i);
-        QCOMPARE(i, 3);
-        QCOMPARE(f, 2.34f);
+        TCOMPARE(i, 3);
+        TCOMPARE(f, 2.34f);
     }
 
 };

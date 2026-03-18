@@ -38,7 +38,7 @@ public:
         gt3.f = 8;
         BERSerializer ser;
         ser << gt1 << gt3;
-        QCOMPARE(ser.data(), CFByteArray::fromHex(
+        TCOMPARE(ser.data(), CFByteArray::fromHex(
             "                    E10A C20103 C40104 C5027879"
             "E219 C10500E4440B6F E20A C20105 C40106 C5026162 C30107 C40108"
         ));
@@ -53,14 +53,14 @@ public:
         GenTest1 gt1;
         gentest::GenTest3 gt3;
         ser >> gt1 >> gt3;
-        QCOMPARE(gt1.a, 3);
-        QCOMPARE(gt1.c, 4);
-        QCOMPARE(gt1.d, CFString("xy"));
-        QCOMPARE(gt3.a, 5);
-        QCOMPARE(gt3.c, 6);
-        QCOMPARE(gt3.d, CFString("ab"));
-        QCOMPARE(gt3.e, 7);
-        QCOMPARE(gt3.f, 8);
+        TCOMPARE(gt1.a, 3);
+        TCOMPARE(gt1.c, 4);
+        TCOMPARE(gt1.d, CFString("xy"));
+        TCOMPARE(gt3.a, 5);
+        TCOMPARE(gt3.c, 6);
+        TCOMPARE(gt3.d, CFString("ab"));
+        TCOMPARE(gt3.e, 7);
+        TCOMPARE(gt3.f, 8);
     }
 
     void template_ser()
@@ -72,7 +72,7 @@ public:
         gt4.b << 13 << 17;
         BERSerializer ser;
         ser << gt4;
-        QCOMPARE(ser.data(), CFByteArray::fromHex(
+        TCOMPARE(ser.data(), CFByteArray::fromHex(
             "E11A"
             "C10500FEDBD07E"
             "E206 C0024142 C000"
@@ -92,14 +92,14 @@ public:
         ));
         gentest::gentest2::GenTest4 gt4;
         ser >> gt4;
-        QCOMPARE((int)gt4.size(), 2);
-        QCOMPARE(gt4[0], CFString("AB"));
-        QVERIFY(!gt4[1].isNull());
-        QVERIFY(gt4[1].isEmpty());
-        QCOMPARE(gt4.a, 7);
-        QCOMPARE((int)gt4.b.size(), 2);
-        QCOMPARE(gt4.b[0], 13);
-        QCOMPARE(gt4.b[1], 17);
+        TCOMPARE((int)gt4.size(), 2);
+        TCOMPARE(gt4[0], CFString("AB"));
+        TVERIFY(!gt4[1].isNull());
+        TVERIFY(gt4[1].isEmpty());
+        TCOMPARE(gt4.a, 7);
+        TCOMPARE((int)gt4.b.size(), 2);
+        TCOMPARE(gt4.b[0], 13);
+        TCOMPARE(gt4.b[1], 17);
     }
 };
 

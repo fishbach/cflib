@@ -32,10 +32,10 @@ public:
         BERDeserializer deser(ser.data());
         deser >> out;
 
-        QVERIFY(in.y == out.y);
-        QVERIFY(!in.d);
-        QVERIFY(in.e.empty());
-        QVERIFY(in.z == out.z);
+        TVERIFY(in.y == out.y);
+        TVERIFY(!in.d);
+        TVERIFY(in.e.empty());
+        TVERIFY(in.z == out.z);
     }
 
     void serialize()
@@ -55,12 +55,12 @@ public:
         BERDeserializer deser(ser.data());
         deser >> out;
 
-        QCOMPARE(out.y, in.y);
-        QVERIFY(!!in.d);
-        QCOMPARE(std::dynamic_pointer_cast<DynamicA>(in.d)->a, 45);
-        QCOMPARE((int)in.e.size(), 1);
-        QCOMPARE(std::dynamic_pointer_cast<DynamicB>(in.e[0])->b, 123.45);
-        QCOMPARE(out.z, in.z);
+        TCOMPARE(out.y, in.y);
+        TVERIFY(!!in.d);
+        TCOMPARE(std::dynamic_pointer_cast<DynamicA>(in.d)->a, 45);
+        TCOMPARE((int)in.e.size(), 1);
+        TCOMPARE(std::dynamic_pointer_cast<DynamicB>(in.e[0])->b, 123.45);
+        TCOMPARE(out.z, in.z);
     }
 };
 

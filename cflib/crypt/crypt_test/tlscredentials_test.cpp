@@ -29,64 +29,64 @@ public:
     {
         TLSCredentials creds;
 
-        QVERIFY(creds.getAllCertsPEM().size() == 0);
+        TVERIFY(creds.getAllCertsPEM().size() == 0);
 
-        QCOMPARE((int)creds.addCerts(CFByteArray()), 0);
-        QCOMPARE((int)creds.addCerts(cert3 + cert1), 2);
-        QCOMPARE((int)creds.addCerts(cert1), 0);
-        QCOMPARE((int)creds.addCerts(cert2), 1);
-        QVERIFY(!creds.addPrivateKey(detach(cert1PrivateKey)));
-        QVERIFY(!creds.addPrivateKey(detach(cert1PrivateKey), "wrong"));
-        QVERIFY(creds.addPrivateKey(detach(cert1PrivateKey), "SuperSecure123"));
+        TCOMPARE((int)creds.addCerts(CFByteArray()), 0);
+        TCOMPARE((int)creds.addCerts(cert3 + cert1), 2);
+        TCOMPARE((int)creds.addCerts(cert1), 0);
+        TCOMPARE((int)creds.addCerts(cert2), 1);
+        TVERIFY(!creds.addPrivateKey(detach(cert1PrivateKey)));
+        TVERIFY(!creds.addPrivateKey(detach(cert1PrivateKey), "wrong"));
+        TVERIFY(creds.addPrivateKey(detach(cert1PrivateKey), "SuperSecure123"));
 
         const CFList<TLSCertInfo> infos = creds.getCertChainInfos();
-        QCOMPARE((int)infos.size(), 3);
-        QCOMPARE(infos[0].subjectName, CFByteArray("127.0.0.1"));
-        QCOMPARE(infos[0].issuerName,  CFByteArray("ca"));
-        QVERIFY(!infos[0].isCA);
-        QVERIFY(!infos[0].isTrusted);
-        QCOMPARE(infos[1].subjectName, CFByteArray("ca"));
-        QCOMPARE(infos[1].issuerName,  CFByteArray("rootca"));
-        QVERIFY( infos[1].isCA);
-        QVERIFY(!infos[1].isTrusted);
-        QCOMPARE(infos[2].subjectName, CFByteArray("rootca"));
-        QCOMPARE(infos[2].issuerName,  CFByteArray("rootca"));
-        QVERIFY( infos[2].isCA);
-        QVERIFY(!infos[2].isTrusted);
+        TCOMPARE((int)infos.size(), 3);
+        TCOMPARE(infos[0].subjectName, CFByteArray("127.0.0.1"));
+        TCOMPARE(infos[0].issuerName,  CFByteArray("ca"));
+        TVERIFY(!infos[0].isCA);
+        TVERIFY(!infos[0].isTrusted);
+        TCOMPARE(infos[1].subjectName, CFByteArray("ca"));
+        TCOMPARE(infos[1].issuerName,  CFByteArray("rootca"));
+        TVERIFY( infos[1].isCA);
+        TVERIFY(!infos[1].isTrusted);
+        TCOMPARE(infos[2].subjectName, CFByteArray("rootca"));
+        TCOMPARE(infos[2].issuerName,  CFByteArray("rootca"));
+        TVERIFY( infos[2].isCA);
+        TVERIFY(!infos[2].isTrusted);
 
-        QVERIFY(creds.getAllCertsPEM().size() > 0);
+        TVERIFY(creds.getAllCertsPEM().size() > 0);
     }
 
     void test_addCerts_trusted()
     {
         TLSCredentials creds;
 
-        QCOMPARE((int)creds.addCerts(cert2 + cert1), 2);
-        QCOMPARE((int)creds.addCerts(cert3, true), 1);
-        QVERIFY(creds.addPrivateKey(detach(cert1PrivateKey), "SuperSecure123"));
+        TCOMPARE((int)creds.addCerts(cert2 + cert1), 2);
+        TCOMPARE((int)creds.addCerts(cert3, true), 1);
+        TVERIFY(creds.addPrivateKey(detach(cert1PrivateKey), "SuperSecure123"));
 
         const CFList<TLSCertInfo> infos = creds.getCertChainInfos();
-        QCOMPARE((int)infos.size(), 3);
-        QCOMPARE(infos[0].subjectName, CFByteArray("127.0.0.1"));
-        QVERIFY(!infos[0].isTrusted);
-        QCOMPARE(infos[1].subjectName, CFByteArray("ca"));
-        QVERIFY(!infos[1].isTrusted);
-        QCOMPARE(infos[2].subjectName, CFByteArray("rootca"));
-        QVERIFY( infos[2].isTrusted);
+        TCOMPARE((int)infos.size(), 3);
+        TCOMPARE(infos[0].subjectName, CFByteArray("127.0.0.1"));
+        TVERIFY(!infos[0].isTrusted);
+        TCOMPARE(infos[1].subjectName, CFByteArray("ca"));
+        TVERIFY(!infos[1].isTrusted);
+        TCOMPARE(infos[2].subjectName, CFByteArray("rootca"));
+        TVERIFY( infos[2].isTrusted);
     }
 
     void test_setPrivateKey()
     {
         TLSCredentials creds;
 
-        QVERIFY(!creds.addPrivateKey(CFByteArray()));
-        QVERIFY(!creds.addPrivateKey(detach(cert1PrivateKey)));
+        TVERIFY(!creds.addPrivateKey(CFByteArray()));
+        TVERIFY(!creds.addPrivateKey(detach(cert1PrivateKey)));
 
-        QCOMPARE((int)creds.addCerts(cert2), 1);
-        QVERIFY(!creds.addPrivateKey(detach(cert1PrivateKey)));
+        TCOMPARE((int)creds.addCerts(cert2), 1);
+        TVERIFY(!creds.addPrivateKey(detach(cert1PrivateKey)));
 
-        QCOMPARE((int)creds.addCerts(cert1), 1);
-        QVERIFY(creds.addPrivateKey(detach(cert1PrivateKey), "SuperSecure123"));
+        TCOMPARE((int)creds.addCerts(cert1), 1);
+        TVERIFY(creds.addPrivateKey(detach(cert1PrivateKey), "SuperSecure123"));
     }
 };
 
