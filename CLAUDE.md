@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-cflib is a C++ and JavaScript library for Web 2.0 applications with efficient network communication. It is a standalone C++ library (Qt was recently removed) requiring C++20, CMake >= 3.16, Botan >= 3.1.1, and zlib.
+cflib is a C++ and JavaScript library for Web 2.0 applications with efficient network communication. It is a standalone C++ library requiring C++20, CMake >= 3.16, Botan >= 3.1.1, and zlib.
 
 ## Build Commands
 
@@ -50,7 +50,7 @@ Defined in `cmake/Build.cmake`:
 
 ## Test Framework
 
-Tests use a custom lightweight framework (in `cflib/util/test.h`) that replaced QtTest. Test classes inherit `cflib::util::TestBase` and implement `testMethods()`:
+Tests use a custom lightweight framework (in `cflib/util/test.h`). Test classes inherit `cflib::util::TestBase` and implement `testMethods()`:
 
 ```cpp
 class MyTest : public cflib::util::TestBase {

@@ -21,7 +21,7 @@
 #include <vector>
 
 // ---------------------------------------------------------------------------
-// Lightweight test macros (replacing QtTest)
+// Lightweight test macros
 // ---------------------------------------------------------------------------
 
 #define QVERIFY(cond) \

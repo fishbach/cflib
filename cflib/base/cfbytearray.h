@@ -28,7 +28,6 @@ public:
     CFByteArray(std::string_view sv) : data_(sv), isNull_(false) {}
     explicit CFByteArray(std::string s) : data_(std::move(s)), isNull_(false) {}
 
-    // Qt compatibility: accept any type with constData() returning const char* (e.g. QByteArray)
     template<typename T, std::enable_if_t<
         !std::is_same_v<std::decay_t<T>, CFByteArray> &&
         !std::is_pointer_v<std::decay_t<T>> &&

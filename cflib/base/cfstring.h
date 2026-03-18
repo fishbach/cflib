@@ -27,7 +27,6 @@ public:
     CFString(std::string_view sv) : data_(sv), isNull_(false) {}
     CFString(const CFByteArray & ba) : data_(ba.constData(), ba.size()), isNull_(false) {}
 
-    // Qt compatibility: accept any type with toUtf8() (e.g. QString)
     template<typename T, std::enable_if_t<
         !std::is_same_v<std::decay_t<T>, CFString> &&
         !std::is_same_v<std::decay_t<T>, CFByteArray> &&

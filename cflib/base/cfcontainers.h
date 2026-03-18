@@ -43,7 +43,6 @@ using CFPair = std::pair<A, B>;
 
 using CFStringList = CFList<CFString>;
 
-// operator<< for push_back semantics (Qt compatibility)
 template<typename T>
 inline std::vector<T> & operator<<(std::vector<T> & vec, const T & val) {
     vec.push_back(val);
@@ -55,7 +54,6 @@ inline std::vector<T> & operator<<(std::vector<T> & vec, T && val) {
     return vec;
 }
 
-// operator<< for insert semantics on sets (Qt compatibility)
 template<typename T>
 inline std::unordered_set<T> & operator<<(std::unordered_set<T> & set, const T & val) {
     set.insert(val);
@@ -67,7 +65,6 @@ inline std::unordered_set<T> & operator<<(std::unordered_set<T> & set, T && val)
     return set;
 }
 
-// operator+= for set union (Qt compatibility)
 template<typename T>
 inline std::unordered_set<T> & operator+=(std::unordered_set<T> & lhs, const std::unordered_set<T> & rhs) {
     for (const auto & v : rhs) lhs.insert(v);

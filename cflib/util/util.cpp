@@ -538,8 +538,6 @@ bool processRestarter(cfuint msDelay)
 
 void threadSafeExit(int returnCode)
 {
-    // Without Qt event loop, we can just call _exit directly
-    // This is safe from any thread
     _exit(returnCode);
 }
 

@@ -102,7 +102,7 @@ TCPManagerImpl::TCPManagerImpl(TCPManager & parent, uint tlsThreadCount) :
     credentials_(0),
     tlsConnId_(0)
 {
-    setThreadPrio(0); // no-op, was QThread::HighestPriority
+    setThreadPrio(0); // should be HighestPriority
     for (uint i = 1 ; i <= tlsThreadCount ; ++i) tlsThreads_.push_back(new TLSThread(*this, i, tlsThreadCount));
 }
 

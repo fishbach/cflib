@@ -93,7 +93,6 @@ inline void logFormat(CFByteArray & dest, const CFDateTime & dt) {
         dt.hour(), dt.minute(), dt.second(), dt.msec()).c_str();
 }
 
-// Type traits for Qt compatibility
 template<typename T, typename = void>
 struct HasToUtf8 : std::false_type {};
 template<typename T>
@@ -114,7 +113,6 @@ struct HasToStringToUtf8 : std::false_type {};
 template<typename T>
 struct HasToStringToUtf8<T, std::void_t<decltype(std::declval<const T&>().toString().toUtf8())>> : std::true_type {};
 
-// Qt compatibility: QString-like types (has toUtf8())
 template<typename T>
 inline auto logFormat(CFByteArray & dest, const T & val)
     -> std::enable_if_t<!std::is_same_v<T, CFString> && !std::is_same_v<T, CFByteArray> && HasToUtf8<T>::value>
@@ -123,7 +121,6 @@ inline auto logFormat(CFByteArray & dest, const T & val)
     dest.append(utf8.constData(), utf8.size());
 }
 
-// Qt compatibility: QByteArray-like types (has constData() returning const char*, no toUtf8())
 template<typename T>
 inline auto logFormat(CFByteArray & dest, const T & val)
     -> std::enable_if_t<!std::is_same_v<T, CFByteArray> && !std::is_same_v<T, CFString>

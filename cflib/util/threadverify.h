@@ -38,7 +38,7 @@ protected:
     void execLater(const Functor * func) const;
     virtual void deleteThreadData() {}
 
-    // No-op: thread priority is not supported without Qt
+    // No-op: thread priority is not supported yet
     template<typename... Args>
     void setThreadPrio(Args...) {}
 

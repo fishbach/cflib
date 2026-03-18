@@ -277,7 +277,7 @@ WebSocketService::WebSocketService(const CFString & path, const CFRegex & allowe
     lastConnId_(0),
     timer_(connectionTimeoutSec > 0 ? new util::EVTimer(this, &WebSocketService::checkTimeout) : 0)
 {
-    setThreadPrio(0); // no-op, was QThread::HighPriority
+    setThreadPrio(0); // should be HighPriority
     if (timer_) startTimer();
 }
 

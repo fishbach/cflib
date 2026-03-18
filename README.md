@@ -10,10 +10,9 @@ See the provied file COPYING for details.
 
 # Requirements
 
-* C++ compiler which can do c++20
+* C++ compiler which can do C++20
 * cmake >= 3.16
-* Qt >= 5.15 - https://download.qt.io/archive/qt/5.15/
-* Botan >= 3.1.1 - https://botan.randombit.net/releases/
+* Botan (comes by FetchContent)
 * zlib
 
 # Download

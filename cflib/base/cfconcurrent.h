@@ -80,7 +80,7 @@ public:
 
     int fetchAndAddRelaxed(int v) { return val_.fetch_add(v, std::memory_order_relaxed); }
 
-    // Qt QAtomicInt compat: ref() returns true if new value != 0
+    // ref() returns true if new value != 0
     bool ref() { return val_.fetch_add(1, std::memory_order_acq_rel) + 1 != 0; }
     // deref() returns false if new value == 0
     bool deref() { return val_.fetch_sub(1, std::memory_order_acq_rel) - 1 != 0; }
