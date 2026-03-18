@@ -125,7 +125,6 @@ public:
         return *this;
     }
 
-    // replace all occurrences of before with after
     CFByteArray & replace(const char * before, const char * after) {
         const cfsize_t blen = strlen(before);
         const cfsize_t alen = strlen(after);
@@ -149,20 +148,8 @@ public:
     void detach() {} // no-op for std::string (always detached)
 
     // Numeric conversions
-    cfuint32 toUInt(bool * ok = nullptr) const {
-        if (data_.empty()) { if (ok) *ok = false; return 0; }
-        char * end = nullptr;
-        unsigned long v = strtoul(data_.c_str(), &end, 10);
-        if (ok) *ok = (end != data_.c_str() && *end == '\0');
-        return (cfuint32)v;
-    }
-    cfint32 toInt(bool * ok = nullptr) const {
-        if (data_.empty()) { if (ok) *ok = false; return 0; }
-        char * end = nullptr;
-        long v = strtol(data_.c_str(), &end, 10);
-        if (ok) *ok = (end != data_.c_str() && *end == '\0');
-        return (cfint32)v;
-    }
+    cfuint32 toUInt(bool * ok = nullptr) const;
+    cfint32 toInt(bool * ok = nullptr) const;
 
     CFByteArray trimmed() const {
         cfsize_t s = data_.find_first_not_of(" \t\r\n");

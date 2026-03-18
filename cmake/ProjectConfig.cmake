@@ -40,9 +40,6 @@ if(ENABLE_CCACHE)
     endif()
 endif()
 
-# Threads (needed by cflib_util)
-find_package(Threads REQUIRED)
-
 # add root include dir
 include_directories(${PROJECT_SOURCE_DIR})
 

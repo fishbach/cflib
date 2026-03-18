@@ -17,3 +17,6 @@ endif()
 
 # ZLIB
 find_package(ZLIB REQUIRED)
+
+# Threads
+find_package(Threads REQUIRED)

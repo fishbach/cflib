@@ -4,19 +4,11 @@
 #
 # Licensed under the MIT License.
 
-if(ENABLE_PSQL)
-    set(PSQL_CONFIG
-        PRIVATE PostgreSQL::PostgreSQL
-        DIRS psql
-    )
-endif()
-
 cf_lib(cflib_db
     PUBLIC cflib_util
-    ${PSQL_CONFIG}
+    PRIVATE PostgreSQL::PostgreSQL
+    DIRS psql
 )
 
-if(ENABLE_PSQL)
-    add_subdirectory(db_test)
-    add_subdirectory(migrationmoped)
-endif()
+add_subdirectory(db_test)
+add_subdirectory(migrationmoped)

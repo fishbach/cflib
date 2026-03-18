@@ -4,6 +4,4 @@
 #
 # Licensed under the MIT License.
 
-add_library(cflib_base INTERFACE)
-target_include_directories(cflib_base INTERFACE "${PROJECT_SOURCE_DIR}")
-target_compile_features(cflib_base INTERFACE cxx_std_20)
+cf_lib(cflib_base)
