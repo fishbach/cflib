@@ -10,11 +10,14 @@
 
 #include <cstdio>
 #include <cstring>
+#include <format>
+#include <fstream>
+#include <iostream>
 #include <string>
 
 int usage(const char * progName)
 {
-    fprintf(stderr, "usage: %s serialize <header.h> <source_ser.cpp>\n", progName);
+    std::cerr << std::format("usage: {} serialize <header.h> <source_ser.cpp>\n", progName);
     return 1;
 }
 
@@ -23,7 +26,7 @@ int serialize(const std::string & header, const std::string & dest)
     // Read input file
     FILE * inFile = fopen(header.c_str(), "rb");
     if (!inFile) {
-        fprintf(stderr, "cannot read: %s\n", header.c_str());
+        std::cerr << std::format("cannot read: {}\n", header.c_str());
         return 2;
     }
     std::string contents;
@@ -36,19 +39,17 @@ int serialize(const std::string & header, const std::string & dest)
 
     HeaderParser hp;
     if (!hp.parse(contents)) {
-        fprintf(stderr, "cannot parse: %s error: %s\n", header.c_str(), hp.lastError().c_str());
+        std::cerr << std::format("cannot parse: {} error: {}\n", header.c_str(), hp.lastError().c_str());
         return 3;
     }
 
-    FILE * outFile = fopen(dest.c_str(), "wb");
+    std::ofstream outFile(dest, std::ios::binary);
     if (!outFile) {
-        fprintf(stderr, "cannot write file: %s\n", dest.c_str());
+        std::cerr << std::format("cannot write file: {}\n", dest.c_str());
         return 4;
     }
 
-    int rv = genSerialize(header, hp, outFile);
-    fclose(outFile);
-    return rv;
+    return genSerialize(header, hp, outFile);
 }
 
 int main(int argc, char *argv[])

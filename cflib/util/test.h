@@ -12,8 +12,9 @@
 #include <cflib/base/cfcontainers.h>
 
 #include <cmath>
-#include <cstdio>
 #include <cstdlib>
+#include <format>
+#include <iostream>
 #include <cstring>
 #include <functional>
 #include <sstream>
@@ -28,7 +29,7 @@
 #define QVERIFY(cond) \
     do { \
         if (!(cond)) { \
-            fprintf(stderr, "  FAIL: %s at %s:%d\n", #cond, __FILE__, __LINE__); \
+            std::cerr << std::format("  FAIL: {} at {}:{}\n", #cond, __FILE__, __LINE__); \
             cflib::util::detail::currentTestFailed() = true; \
             return; \
         } \
@@ -41,7 +42,7 @@
         if (!(_a == _e)) { \
             std::ostringstream _os; \
             _os << "  FAIL: " #actual " != " #expected; \
-            fprintf(stderr, "%s at %s:%d\n", _os.str().c_str(), __FILE__, __LINE__); \
+            std::cerr << std::format("{} at {}:{}\n", _os.str().c_str(), __FILE__, __LINE__); \
             cflib::util::detail::currentTestFailed() = true; \
             return; \
         } \
@@ -49,7 +50,7 @@
 
 #define QSKIP(msg) \
     do { \
-        fprintf(stdout, "  SKIP: %s at %s:%d\n", msg, __FILE__, __LINE__); \
+        std::cout << std::format("  SKIP: {} at {}:{}\n", msg, __FILE__, __LINE__); \
         return; \
     } while (0)
 

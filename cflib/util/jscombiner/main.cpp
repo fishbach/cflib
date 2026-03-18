@@ -9,6 +9,8 @@
 #include <cflib/util/util.h>
 
 #include <algorithm>
+#include <format>
+#include <iostream>
 #include <map>
 #include <regex>
 #include <set>
@@ -38,7 +40,7 @@ std::set<std::string> excludes;
 
 int usage(const char * progName)
 {
-    fprintf(stderr, "usage: %s <main.js>\n", progName);
+    std::cerr << std::format("usage: {} <main.js>\n", progName);
     return 1;
 }
 
@@ -95,7 +97,7 @@ int findClosing(const std::string & src, int start)
         }
     }
 
-    fprintf(stderr, "cannot find closing bracket\n");
+    std::cerr << "cannot find closing bracket\n";
     return len - 1;
 }
 
@@ -246,6 +248,6 @@ int main(int argc, char * argv[])
         output += "\n";
     }
 
-    printf("%s", output.c_str());
+    std::cout << output;
     return 0;
 }

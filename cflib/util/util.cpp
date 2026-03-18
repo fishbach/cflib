@@ -12,6 +12,7 @@
 #include <zlib.h>
 
 #include <cerrno>
+#include <format>
 #include <csignal>
 #include <cstdlib>
 #include <sys/stat.h>
@@ -43,11 +44,9 @@ CFByteArray dateTimeForHTTP(const CFDateTime & dateTime)
     CFByteArray retval = weekDay(dateTime.dayOfWeek());
     retval += ", ";
 
-    char buf[32];
-    snprintf(buf, sizeof(buf), "%02d ___ %04d %02d:%02d:%02d",
+    retval += std::format("{:02d} ___ {:04d} {:02d}:{:02d}:{:02d}",
         dateTime.day(), dateTime.year(),
-        dateTime.hour(), dateTime.minute(), dateTime.second());
-    retval += buf;
+        dateTime.hour(), dateTime.minute(), dateTime.second()).c_str();
 
     static const char * months[] = {
         "", "Jan", "Feb", "Mar", "Apr", "May", "Jun",

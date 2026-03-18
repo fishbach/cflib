@@ -12,10 +12,6 @@ cf_lib(cflib_util
     OTHER_FILES
         impl/generate_templates.pl
 )
-# testmain.cpp is for tests only (linked separately), not part of cflib_util
-get_target_property(_util_sources cflib_util SOURCES)
-list(REMOVE_ITEM _util_sources testmain.cpp)
-set_target_properties(cflib_util PROPERTIES SOURCES "${_util_sources}")
 
 add_subdirectory(gitversion)
 add_subdirectory(jscombiner)

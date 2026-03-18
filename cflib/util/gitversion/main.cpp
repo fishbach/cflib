@@ -7,13 +7,15 @@
 
 #include <cstdio>
 #include <cstring>
+#include <format>
+#include <iostream>
 #include <fstream>
 #include <iterator>
 #include <string>
 
 static int usage(const char * prog)
 {
-    fprintf(stderr, "usage: %s <create> <git repo path> <path to gitversion.h>\n", prog);
+    std::cerr << std::format("usage: {} <create> <git repo path> <path to gitversion.h>\n", prog);
     return 1;
 }
 
@@ -35,7 +37,7 @@ static int createHeader(const std::string & repoPath, const std::string & filena
 {
     std::string hash = runGit(repoPath);
     if (hash.empty()) {
-        fprintf(stderr, "cannot determine git hash\n");
+        std::cerr << "cannot determine git hash\n";
         return 5;
     }
 
@@ -53,7 +55,7 @@ static int createHeader(const std::string & repoPath, const std::string & filena
 
     std::ofstream out(filename, std::ios::trunc);
     if (!out) {
-        fprintf(stderr, "cannot write: %s\n", filename.c_str());
+        std::cerr << std::format("cannot write: {}\n", filename.c_str());
         return 4;
     }
     out << "#pragma once\n\n#define GIT_VERSION \"" << hash << "\"\n";

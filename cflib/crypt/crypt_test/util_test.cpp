@@ -8,6 +8,9 @@
 #include <cflib/crypt/util.h>
 #include <cflib/util/test.h>
 
+#include <format>
+#include <iostream>
+
 using namespace cflib::crypt;
 
 class Util_test : public cflib::util::TestBase
@@ -53,7 +56,7 @@ public:
 
     void test_memorableRandom()
     {
-        fprintf(stdout, "random: '%s'\n", memorableRandom().data());
+        std::cout << std::format("random: '{}'\n", memorableRandom().data());
         QCOMPARE((int)memorableRandom().size(), 8);
         QVERIFY(memorableRandom() != memorableRandom());
     }

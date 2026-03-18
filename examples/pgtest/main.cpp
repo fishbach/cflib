@@ -9,7 +9,8 @@
 #include <cflib/util/cmdline.h>
 #include <cflib/util/log.h>
 
-#include <cstdio>
+#include <format>
+#include <iostream>
 
 using namespace cflib::db;
 using namespace cflib::util;
@@ -55,7 +56,7 @@ void select()
         sql >> i >> t >> d >> d >> d >> d >> d >> d >> d >> d >> d >> d >> d >> d >> d;
         ++count;
     }
-    printf("count: %u\n", count);
+    std::cout << std::format("count: {}\n", count);
 }
 
 void update(int start, int end)
@@ -98,7 +99,7 @@ void update(int start, int end)
 
         cfint64 now = CFDateTime::currentDateTimeUtc().toMSecsSinceEpoch();
         if (now - last > 1000) {
-            printf("%lld msg/s - latency: %lld / %lld / %lld microsec\n",
+            std::cout << std::format("{} msg/s - latency: {} / {} / {} microsec\n",
                 (long long)(count * 1000 / (now - last)),
                 (long long)minLat, (long long)(sum / count), (long long)maxLat);
             last  = now;
@@ -112,8 +113,8 @@ void update(int start, int end)
 
 int showUsage(const CFByteArray & executable)
 {
-    fprintf(stderr,
-        "Usage: %s [options] 'host=... port=...'\n"
+    std::cerr << std::format(
+        "Usage: {} [options] 'host=... port=...'\n"
         "Options:\n"
         "  -h, --help       => this help\n"
         "  -i <start>-<end> => insert elements with ids >= start and <= end\n"
@@ -176,7 +177,7 @@ int main(int argc, char *argv[])
         update(val.mid(0, sep).toInt(), val.mid(sep + 1).toInt());
     }
 
-    printf("elapsed: %lld\n", (long long)timer.elapsed());
+    std::cout << std::format("elapsed: {}\n", (long long)timer.elapsed());
 
     return 0;
 }

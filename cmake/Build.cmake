@@ -59,7 +59,6 @@ function(cf_test test lib)
     cmake_parse_arguments(ARG "ENABLE_SER" "PCH" "DIRS" ${ARGN})
 
     cf_find_sources(sources . ${ARG_DIRS})
-    list(APPEND sources "${PROJECT_SOURCE_DIR}/cflib/util/testmain.cpp")
     add_executable(${test} ${sources})
     cf_configure_target(${test} ${ARG_ENABLE_SER} "${ARG_PCH}")
     target_link_libraries(${test} PRIVATE ${lib})

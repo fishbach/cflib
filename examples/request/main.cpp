@@ -13,6 +13,8 @@
 #include <cflib/util/util.h>
 
 #include <cstdio>
+#include <format>
+#include <iostream>
 #include <unistd.h>
 
 using namespace cflib::net;
@@ -24,8 +26,8 @@ namespace {
 
 int showUsage(const CFByteArray & executable)
 {
-    fprintf(stderr,
-        "Usage: %s [options] <URL>\n"
+    std::cerr << std::format(
+        "Usage: {} [options] <URL>\n"
         "Options:\n"
         "  -h, --help        => this help\n"
         "  -p, --post        => do POST request\n"
@@ -77,9 +79,9 @@ int main(int argc, char *argv[])
 
     HttpRequest * request = new HttpRequest(mgr);
     request->reply.bind([](int status, const CFByteArray & reply) {
-        printf("Status: %d\n\n", status);
+        std::cout << std::format("Status: {}\n\n", status);
         fwrite(reply.constData(), 1, reply.size(), stdout);
-        printf("\n");
+        std::cout << "\n";
         threadSafeExit(status == 200 ? 0 : 1);
     });
     request->start(CFUrl(CFString(url.value())), postData);

@@ -9,8 +9,9 @@
 
 #include <cflib/base/macros.h>
 
-#include <cstdio>
 #include <cstdlib>
+#include <format>
+#include <iostream>
 
 namespace cflib { namespace serialize { namespace impl {
 
@@ -28,7 +29,7 @@ CFHash<cfuint32, const RegisterClassBase *> & RegisterClassBase::registry()
 
 void RegisterClassBase::duplicateId(cfuint32 classId)
 {
-    fprintf(stderr, "duplicate type id: %u\n", classId);
+    std::cerr << std::format("duplicate type id: {}\n", classId);
     ::abort();
 }
 

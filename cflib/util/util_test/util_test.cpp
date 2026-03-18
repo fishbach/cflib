@@ -9,7 +9,8 @@
 #include <cflib/util/tuplecompare.h>
 #include <cflib/util/util.h>
 
-#include <cstdio>
+#include <format>
+#include <iostream>
 
 using namespace cflib::util;
 
@@ -67,13 +68,13 @@ public:
             CFByteArray data = source;
             deflateRaw(data, level);
             if (data != CFByteArray::fromHex(enc)) {
-                fprintf(stdout, "compressed differs:\nis: %s\nex: %s\n",
+                std::cout << std::format("compressed differs:\nis: {}\nex: {}\n",
                     data.toHex().constData(), enc.constData());
                 return false;
             }
             inflateRaw(data);
             if (data != source) {
-                fprintf(stdout, "decompressed differs:\nis: %s\nex: %s\n",
+                std::cout << std::format("decompressed differs:\nis: {}\nex: {}\n",
                     data.toHex().constData(), source.toHex().constData());
                 return false;
             }

@@ -7,6 +7,9 @@
 
 #include <cflib/crypt/util.h>
 
+#include <format>
+#include <iostream>
+
 #ifdef _WIN32
     #include <stdio.h>
 #else
@@ -17,13 +20,13 @@ int main(int, char *[])
 {
     #ifdef _WIN32
         char pwd[256];
-        printf("Password: ");
+        std::cout << "Password: " << std::flush;
         gets_s(pwd, 256);
     #else
         char * pwd = getpass("Password: ");
     #endif
     CFByteArray hash = cflib::crypt::hashPassword(pwd);
-    fprintf(stdout, "%s\n", hash.constData());
+    std::cout << std::format("{}\n", hash.constData());
 
     return 0;
 }

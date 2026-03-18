@@ -12,7 +12,8 @@
 #include <cflib/util/util.h>
 
 #include <cstdlib>
-#include <cstdio>
+#include <format>
+#include <iostream>
 #include <fcntl.h>
 #include <sys/stat.h>
 #include <sys/wait.h>
@@ -109,7 +110,7 @@ void Mailer::doSend(const Mail & mail)
 
     if (sendmailPath_.isNull()) {
         logInfo("mailer not active, mail from %1 to %2 dropped", mail.from, mail.to);
-        fprintf(stdout, "--------\n%s\n--------\n", mail.raw(fromAddr, toAddr).constData());
+        std::cout << std::format("--------\n{}\n--------\n", mail.raw(fromAddr, toAddr).constData());
         return;
     }
 

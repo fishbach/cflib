@@ -12,6 +12,8 @@
 #include <cflib/base/cfdatetime.h>
 #include <cflib/base/types.h>
 
+#include <format>
+
 namespace cflib { namespace util { namespace log {
 
 namespace {
@@ -89,11 +91,9 @@ inline void logFormat(CFByteArray & dest, const CFString & str)   { dest.append(
 // CFDateTime
 inline void logFormat(CFByteArray & dest, const CFDateTime & dt) {
     if (!dt.isValid()) { dest += "(null)"; return; }
-    char buf[32];
-    snprintf(buf, sizeof(buf), "%02d.%02d.%04d %02d:%02d:%02d.%03d UTC",
+    dest += std::format("{:02d}.{:02d}.{:04d} {:02d}:{:02d}:{:02d}.{:03d} UTC",
         dt.day(), dt.month(), dt.year(),
-        dt.hour(), dt.minute(), dt.second(), dt.msec());
-    dest += buf;
+        dt.hour(), dt.minute(), dt.second(), dt.msec()).c_str();
 }
 
 // Type traits for Qt compatibility

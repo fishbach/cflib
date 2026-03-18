@@ -7,9 +7,9 @@
 
 #pragma once
 
-#include <cstdio>
+#include <ostream>
 #include <string>
 
 class HeaderParser;
 
-int genSerialize(const std::string & headerName, const HeaderParser & hp, FILE * out);
+int genSerialize(const std::string & headerName, const HeaderParser & hp, std::ostream & out);

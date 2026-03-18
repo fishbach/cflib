@@ -8,6 +8,8 @@
 #include "asn1dump.h"
 
 #include <cflib/serialize/util.h>
+
+#include <format>
 #include <cflib/util/hex.h>
 #include <cflib/util/util.h>
 
@@ -72,10 +74,8 @@ CFString showValue(const cfuint8 * data, int len)
             rv += " / ";
             CFDateTime dt = CFDateTime::fromMSecsSinceEpoch(val);
             // Format as ISO date
-            char buf[64];
-            snprintf(buf, sizeof(buf), "%04d-%02d-%02dT%02d:%02d:%02d.%03dZ",
-                dt.year(), dt.month(), dt.day(), dt.hour(), dt.minute(), dt.second(), dt.msec());
-            rv += buf;
+            rv += std::format("{:04d}-{:02d}-{:02d}T{:02d}:{:02d}:{:02d}.{:03d}Z",
+                dt.year(), dt.month(), dt.day(), dt.hour(), dt.minute(), dt.second(), dt.msec()).c_str();
         }
         rv += ") ";
     }
@@ -110,9 +110,7 @@ CFString printAsn1(const cfuint8 * data, int len, int indent)
 
         for (int i = 0 ; i < indent ; ++i) rv += "  ";
         // Format tag number with leading zero
-        char tagBuf[16];
-        snprintf(tagBuf, sizeof(tagBuf), "%02llu", (unsigned long long)tagNo);
-        rv += tagBuf;
+        rv += std::format("{:02}", (unsigned long long)tagNo).c_str();
 
         if (*data & 0x20) {
             rv += ":\n";

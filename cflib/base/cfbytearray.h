@@ -9,8 +9,8 @@
 
 #include <cflib/base/types.h>
 
-#include <cstdio>
 #include <cstring>
+#include <format>
 #include <string>
 #include <string_view>
 #include <type_traits>
@@ -298,19 +298,13 @@ public:
 
     // Number formatting
     static CFByteArray number(cfint64 v) {
-        char buf[32];
-        snprintf(buf, sizeof(buf), "%lld", (long long)v);
-        return CFByteArray(buf);
+        return CFByteArray(std::format("{}", (long long)v).c_str());
     }
     static CFByteArray number(cfuint64 v) {
-        char buf[32];
-        snprintf(buf, sizeof(buf), "%llu", (unsigned long long)v);
-        return CFByteArray(buf);
+        return CFByteArray(std::format("{}", (unsigned long long)v).c_str());
     }
     static CFByteArray number(double v) {
-        char buf[64];
-        snprintf(buf, sizeof(buf), "%g", v);
-        return CFByteArray(buf);
+        return CFByteArray(std::format("{:g}", v).c_str());
     }
     static CFByteArray number(float  v) { return number((double)v); }
     static CFByteArray number(cfint32  v) { return number((cfint64)v); }

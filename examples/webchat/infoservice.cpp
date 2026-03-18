@@ -9,7 +9,8 @@
 
 #include <cflib/util/log.h>
 
-#include <cstdio>
+#include <format>
+#include <iostream>
 
 USE_LOG(LogCat::Compute)
 
@@ -31,7 +32,7 @@ CFString InfoService::test()
 CFString InfoService::test(const CFString & msg)
 {
     logInfo("msg %1: %2", msg.charCount(), msg.c_str());
-    printf("%s\n", msg.c_str());
+    std::cout << std::format("{}\n", msg.c_str());
     return msg;
 }
 
@@ -62,6 +63,6 @@ void InfoService::update(Dao3 & dao)
 
 void InfoService::talk(const CFString & msg)
 {
-    printf("connId:%u    wrote: %s\n", connId(), msg.c_str());
+    std::cout << std::format("connId:{}    wrote: {}\n", connId(), msg.c_str());
     newMessage(connId(), msg);
 }

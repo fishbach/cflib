@@ -19,6 +19,8 @@
 #include <cflib/serialize/asn1dump.h>
 #include <cflib/util/cmdline.h>
 
+#include <format>
+#include <iostream>
 #include <sys/time.h>
 #include <sys/types.h>
 #include <unistd.h>
@@ -30,8 +32,8 @@ namespace {
 
 int showUsage(const CFByteArray & executable)
 {
-    fprintf(stderr,
-        "Usage: %s [options]\n"
+    std::cerr << std::format(
+        "Usage: {} [options]\n"
         "Options:\n"
         "  -h, --help   => this help\n"
         "  -x, --hex    => input is hex encoded\n"
@@ -47,7 +49,7 @@ void show(const CFByteArray & data, bool hex, bool)
         hex ? CFByteArray::fromHex(data) :
         data;
 
-    fprintf(stdout, "%s\n", printAsn1(rawData).c_str());
+    std::cout << std::format("{}\n", printAsn1(rawData).c_str());
 }
 
 }
@@ -74,7 +76,7 @@ int main(int argc, char *argv[])
         FD_SET(0, &fds);
         int retval = select(1, &fds, NULL, NULL, &tv);
         if (retval == -1) {
-            fprintf(stderr, "cannot read from stdin\n");
+            std::cerr << "cannot read from stdin\n";
             return 1;
         }
         if (retval > 0) {

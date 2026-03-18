@@ -11,6 +11,7 @@
 #include <cflib/base/types.h>
 
 #include <cstring>
+#include <format>
 #include <string>
 #include <string_view>
 #include <vector>
@@ -172,16 +173,13 @@ public:
     }
 
     static CFString number(cfint64 v) {
-        char buf[32]; snprintf(buf, sizeof(buf), "%lld", (long long)v);
-        return CFString(buf);
+        return CFString(std::format("{}", (long long)v).c_str());
     }
     static CFString number(cfuint64 v) {
-        char buf[32]; snprintf(buf, sizeof(buf), "%llu", (unsigned long long)v);
-        return CFString(buf);
+        return CFString(std::format("{}", (unsigned long long)v).c_str());
     }
     static CFString number(double v) {
-        char buf[64]; snprintf(buf, sizeof(buf), "%g", v);
-        return CFString(buf);
+        return CFString(std::format("{:g}", v).c_str());
     }
     static CFString number(cfint32  v) { return number((cfint64)v); }
     static CFString number(cfuint32 v) { return number((cfuint64)v); }

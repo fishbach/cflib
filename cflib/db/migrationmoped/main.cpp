@@ -12,6 +12,8 @@
 #include <cflib/util/util.h>
 
 #include <cstdlib>
+#include <format>
+#include <iostream>
 
 using namespace cflib::db;
 using namespace cflib::util;
@@ -22,8 +24,8 @@ namespace {
 
 int showUsage(const CFByteArray & executable)
 {
-    fprintf(stderr,
-        "Usage: %s [options] <db schema file>\n"
+    std::cerr << std::format(
+        "Usage: {} [options] <db schema file>\n"
         "Options:\n"
         "  -h, --help             => this help\n"
         "  -d, --db <param>       => set DB parameters\n"
@@ -68,7 +70,7 @@ int main(int argc, char *argv[])
     if (!schema::update(migrator, schemaFile))
     {
         logCritical("could not update db schema");
-        fprintf(stderr, "could not update db schema\n");
+        std::cerr << "could not update db schema\n";
         return 1;
     }
 

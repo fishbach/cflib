@@ -17,7 +17,8 @@
 #include <cflib/util/log.h>
 
 #include <csignal>
-#include <cstdio>
+#include <format>
+#include <iostream>
 #include <unistd.h>
 
 using namespace cflib::net;
@@ -27,15 +28,15 @@ USE_LOG(LogCat::Etc)
 
 int showUsage(const CFByteArray & executable)
 {
-    fprintf(stderr,
+    std::cerr << std::format(
         "\nSimple Webchat example\n"
         "------------------------------------\n"
         "\nTo make this example run start the webchat executable and access the url\n"
         "http://127.0.0.1:8080/ through your browser.\n"
         "If you have an out of source build you need to redirect the webchat to\n"
         "the correct location of the example htdocs directory through:\n"
-        "./%s --htdocs <path to cflib source>/examples/webchat/htdocs\n"
-        "\nUsage: %s [options]\n"
+        "./{} --htdocs <path to cflib source>/examples/webchat/htdocs\n"
+        "\nUsage: {} [options]\n"
         "Options:\n"
         "  -h, --help     => this help\n"
         "  -e, --export   => export Classes as Javascrpt classes\n"

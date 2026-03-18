@@ -13,6 +13,9 @@
 #include <cflib/base/cfcontainers.h>
 #include <cflib/util/hex.h>
 
+#include <format>
+#include <iostream>
+
 // needed for threadId()
 #include <unistd.h>
 #ifdef __APPLE__
@@ -133,7 +136,7 @@ LogCategory Log::logLevelCategory_ = 0;
 void Log::start(const CFString & fileName)
 {
     if (active) {
-        fprintf(stderr, "logging already started with log file: %s\n", file.fileName().c_str());
+        std::cerr << std::format("logging already started with log file: {}\n", file.fileName().c_str());
         return;
     }
 
@@ -142,7 +145,7 @@ void Log::start(const CFString & fileName)
     } else {
         file.setFileName(fileName);
         if (!file.open(CFFile::WriteOnly | CFFile::Append)) {
-            fprintf(stderr, "could not open log file: %s (%s)\n", fileName.c_str(), file.errorString().c_str());
+            std::cerr << std::format("could not open log file: {} ({})\n", fileName.c_str(), file.errorString().c_str());
             return;
         }
         file.setPermissions(CFFile::ReadOwner | CFFile::WriteOwner | CFFile::ReadGroup);

@@ -8,6 +8,9 @@
 #include <cflib/serialize/serialize_test/test.h>
 #include <cflib/util/test.h>
 
+#include <format>
+#include <iostream>
+
 using namespace cflib::serialize;
 
 namespace {
@@ -19,7 +22,7 @@ bool checkSer(T val, const char * hex)
     ser << val;
     const CFByteArray expected = CFByteArray::fromHex(hex);
     if (ser.data() != expected) {
-        fprintf(stdout, "serialized hex differs:\nis       : %s\nexpected : %s\n",
+        std::cout << std::format("serialized hex differs:\nis       : {}\nexpected : {}\n",
             ser.data().toHex().data(), expected.toHex().data());
         return false;
     }
@@ -33,7 +36,7 @@ bool checkDeser(T val, const char * hex)
     BERDeserializer deser(expected);
     T test; deser >> test;
     if (test != val) {
-        fprintf(stdout, "deserialized values differ\n");
+        std::cout << "deserialized values differ\n";
         return false;
     }
     return true;
@@ -46,7 +49,7 @@ bool checkDeserNull(T val, const char * hex)
     BERDeserializer deser(expected);
     T test; deser >> test;
     if (test.isNull() != val.isNull()) {
-        fprintf(stdout, "deserialized isNull differs: is=%d expected=%d\n",
+        std::cout << std::format("deserialized isNull differs: is={} expected={}\n",
             (int)test.isNull(), (int)val.isNull());
         return false;
     }
@@ -73,7 +76,7 @@ bool testBigTag(int tagNr, const char * hex)
     ser << 0x42;
     const CFByteArray expected = CFByteArray::fromHex(hex) + CFByteArray::fromHex("0142");
     if (ser.data() != expected) {
-        fprintf(stdout, "serialized hex differs:\nis       : %s\nexpected : %s\n",
+        std::cout << std::format("serialized hex differs:\nis       : {}\nexpected : {}\n",
             ser.data().toHex().data(), expected.toHex().data());
         retval = false;
     }
@@ -81,7 +84,7 @@ bool testBigTag(int tagNr, const char * hex)
     for (int i = 0 ; i < tagNr - 1 ; ++i) deser >> Placeholder();
     int test; deser >> test;
     if (test != 0x42) {
-        fprintf(stdout, "deserialized values differ: is=%d expected=%d\n", test, 0x42);
+        std::cout << std::format("deserialized values differ: is={} expected={}\n", test, 0x42);
         return false;
     }
     return retval;
