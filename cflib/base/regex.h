@@ -7,7 +7,7 @@
 
 #pragma once
 
-#include <cflib/base/containers.h>
+#include <cflib/base/container.h>
 #include <cflib/base/string.h>
 
 #include <regex>

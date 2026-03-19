@@ -9,7 +9,7 @@
 
 #include <cflib/base/bytearray.h>
 #include <cflib/base/concurrent.h>
-#include <cflib/base/containers.h>
+#include <cflib/base/container.h>
 #include <cflib/base/datetime.h>
 #include <cflib/base/file.h>
 #include <cflib/base/flags.h>
