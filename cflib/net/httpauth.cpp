@@ -16,7 +16,7 @@
 
 USE_LOG(LogCat::Http)
 
-namespace cflib { namespace net {
+namespace cflib::net {
 
 HttpAuth::HttpAuth(const ByteArray & name, const String & htpasswd) :
     name_(name), htpasswd_(htpasswd)
@@ -90,4 +90,4 @@ void HttpAuth::handleRequest(const Request & request)
         false);
 }
 
-}}    // namespace
+} // namespace

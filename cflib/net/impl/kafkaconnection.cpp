@@ -12,7 +12,7 @@
 
 USE_LOG(LogCat::Network)
 
-namespace cflib { namespace net { namespace impl {
+namespace cflib::net::impl {
 
 namespace {
 
@@ -87,4 +87,4 @@ void KafkaRequestWriter::send()
     connection_.write(getData());
 }
 
-}}}    // namespace
+} // namespace

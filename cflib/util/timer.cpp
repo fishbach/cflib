@@ -10,7 +10,7 @@
 #include <cflib/util/libev.h>
 #include <cflib/util/threadverify.h>
 
-namespace cflib { namespace util {
+namespace cflib::util {
 
 void Timer::singleShot(double afterSecs, const Functor * func)
 {
@@ -30,4 +30,4 @@ void Timer::timeout(int, void * arg)
     delete func;
 }
 
-}}    // namespace
+} // namespace

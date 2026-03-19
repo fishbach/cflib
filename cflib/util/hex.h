@@ -9,7 +9,7 @@
 
 #include <cflib/base.h>
 
-namespace cflib { namespace util {
+namespace cflib::util {
 
 // 0 .. 15 -> '0' .. '9', 'A' .. 'F'
 inline char toHex(cfuint8 b)
@@ -37,4 +37,4 @@ inline ByteArray uint64ToHex(cfuint64 n)
     return rv;
 }
 
-}}    // namespace
+} // namespace

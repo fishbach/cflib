@@ -16,7 +16,7 @@
 
 USE_LOG(LogCat::Etc)
 
-namespace cflib { namespace util {
+namespace cflib::util {
 
 namespace {
 
@@ -108,4 +108,4 @@ void ThreadVerify::shutdownThread()
     verifyThread_->stopLoop();
 }
 
-}}    // namespace
+} // namespace

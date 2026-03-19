@@ -9,7 +9,7 @@
 
 #include <cflib/serialize/serializeber.h>
 
-namespace cflib { namespace serialize { namespace impl {
+namespace cflib::serialize::impl {
 
 template <size_t I, typename... P> struct SomeToByteArray;
 
@@ -49,4 +49,4 @@ struct ToByteArray<>
     void operator()(BERSerializer &) {}
 };
 
-}}}    // namespace
+} // namespace

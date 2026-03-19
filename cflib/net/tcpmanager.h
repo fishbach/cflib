@@ -9,10 +9,10 @@
 
 #include <cflib/base.h>
 
-namespace cflib { namespace crypt { class TLSCredentials; }}
-namespace cflib { namespace util  { class ThreadVerify; }}
+namespace cflib::crypt { class TLSCredentials; }
+namespace cflib::util { class ThreadVerify; }
 
-namespace cflib { namespace net {
+namespace cflib::net {
 
 class TCPConnData;
 namespace impl { class TCPManagerImpl; }
@@ -55,4 +55,4 @@ private:
     friend class impl::TCPManagerImpl;
 };
 
-}}    // namespace
+} // namespace

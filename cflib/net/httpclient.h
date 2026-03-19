@@ -9,7 +9,7 @@
 
 #include <cflib/base.h>
 
-namespace cflib { namespace net {
+namespace cflib::net {
 
 class TCPManager;
 
@@ -33,4 +33,4 @@ private:
     HttpConn * conn_;
 };
 
-}}    // namespace
+} // namespace

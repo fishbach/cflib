@@ -7,7 +7,7 @@
 
 #pragma once
 
-namespace cflib { namespace net {
+namespace cflib::net {
 
 class Request;
 
@@ -21,4 +21,4 @@ protected:
     friend class Request;
 };
 
-}}    // namespace
+} // namespace

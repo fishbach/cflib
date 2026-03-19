@@ -14,7 +14,7 @@
 
 USE_LOG(LogCat::Crypt)
 
-namespace cflib { namespace crypt {
+namespace cflib::crypt {
 
 class TLSServer::Impl : public TLS::Callbacks
 {
@@ -112,4 +112,4 @@ bool TLSServer::send(const ByteArray & plain, ByteArray & encrypted)
     return false;
 }
 
-}}    // namespace
+} // namespace

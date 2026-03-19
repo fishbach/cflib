@@ -14,7 +14,7 @@
 
 USE_LOG(LogCat::Network)
 
-namespace cflib { namespace net {
+namespace cflib::net {
 
 TCPConnData::TCPConnData(impl::TCPManagerImpl & impl,
     int socket, const char * peerIP, cfuint16 peerPort,
@@ -51,4 +51,4 @@ void TCPConnData::callClosed()
     conn->closed(closeType);
 }
 
-}}    // namespace
+} // namespace

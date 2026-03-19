@@ -11,7 +11,7 @@
 #include <cflib/serialize/impl/serializebaseber.h>
 #include <cflib/serialize/serializetypeinfo.h>
 
-namespace cflib { namespace serialize { namespace impl {
+namespace cflib::serialize::impl {
 
 class RegisterClassBase
 {
@@ -105,4 +105,4 @@ public:
     }
 };
 
-}}}    // namespace
+} // namespace

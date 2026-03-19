@@ -9,7 +9,7 @@
 
 #include <cflib/base.h>
 
-namespace cflib { namespace util {
+namespace cflib::util {
 
 class TimeShifter
 {
@@ -21,4 +21,4 @@ private:
     static cfint64 diff_;
 };
 
-}}    // namespace
+} // namespace

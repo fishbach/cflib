@@ -17,7 +17,7 @@
 
 USE_LOG(LogCat::Network)
 
-namespace cflib { namespace net {
+namespace cflib::net {
 
 namespace {
 
@@ -62,4 +62,4 @@ CFList<ByteArray> getIPFromDNS(const ByteArray & name, bool preferIPv6)
     return rv;
 }
 
-}}    // namespace
+} // namespace

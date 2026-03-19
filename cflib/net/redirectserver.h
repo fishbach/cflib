@@ -12,7 +12,7 @@
 
 #include <functional>
 
-namespace cflib { namespace net {
+namespace cflib::net {
 
 class RedirectServer : public RequestHandler
 {
@@ -83,4 +83,4 @@ private:
     CFList<Entry> entries_;
 };
 
-}}    // namespace
+} // namespace

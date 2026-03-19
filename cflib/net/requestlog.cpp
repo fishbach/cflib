@@ -12,11 +12,11 @@
 
 USE_LOG(LogCat::Http)
 
-namespace cflib { namespace net {
+namespace cflib::net {
 
 void RequestLog::handleRequest(const Request & request)
 {
     logInfo("%1 - %2 %3 [%4]", request.getRemoteIP(), request.getMethodName(), request.getUri(), request.getHeader("user-agent"));
 }
 
-}}    // namespace
+} // namespace

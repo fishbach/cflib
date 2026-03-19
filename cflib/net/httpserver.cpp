@@ -13,7 +13,7 @@
 
 USE_LOG(LogCat::Http)
 
-namespace cflib { namespace net {
+namespace cflib::net {
 
 class HttpServer::Impl : public TCPManager
 {
@@ -93,4 +93,4 @@ void HttpServer::registerHandler(RequestHandler & handler)
     impl_->registerHandler(handler);
 }
 
-}}    // namespace
+} // namespace

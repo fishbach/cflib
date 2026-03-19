@@ -11,7 +11,7 @@
 
 USE_LOG(LogCat::Crypt)
 
-namespace cflib { namespace crypt {
+namespace cflib::crypt {
 
 class TLSSessions::Impl
 {
@@ -41,4 +41,4 @@ Botan::TLS::Session_Manager & TLSSessions::session_Manager()
     return *impl_->mgr;
 }
 
-}}    // namespace
+} // namespace

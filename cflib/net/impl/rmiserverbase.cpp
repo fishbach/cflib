@@ -23,7 +23,7 @@ USE_LOG(LogCat::Http)
 
 using namespace cflib::serialize;
 
-namespace cflib { namespace net { namespace impl {
+namespace cflib::net::impl {
 
 namespace {
 
@@ -1156,4 +1156,4 @@ void RMIServerBase::addClassInfo(const SerializeTypeInfo & ti)
     ciEl->ti = ti;
 }
 
-}}}    // namespace
+} // namespace

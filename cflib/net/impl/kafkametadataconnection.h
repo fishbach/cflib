@@ -8,7 +8,7 @@
 #include <cflib/net/impl/kafkaconnection.h>
 #include <cflib/net/impl/kafkaconnectorimpl.h>
 
-namespace cflib { namespace net {
+namespace cflib::net {
 
 class KafkaConnector::MetadataConnection : public impl::KafkaConnection
 {
@@ -29,4 +29,4 @@ private:
     const bool isMetaDataRequest_;
 };
 
-}}    // namespace
+} // namespace

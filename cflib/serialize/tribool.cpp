@@ -9,9 +9,7 @@
 
 #include <cflib/serialize/impl/serializetypeinfoimpl.h>
 
-namespace cflib { namespace serialize {
-
-namespace impl {
+namespace cflib::serialize::impl {
 
 void serializeTypeInfo(SerializeTypeInfoImpl & si, TriBool *)
 {
@@ -31,6 +29,4 @@ void deserializeBER(TriBool & val, const cfuint8 * data, int len, BERDeserialize
     val = TriBool::fromInt(v);
 }
 
-}
-
-}}    // namespace
+} // namespace

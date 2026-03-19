@@ -9,7 +9,7 @@
 
 #import <Cocoa/Cocoa.h>
 
-namespace cflib { namespace util {
+namespace cflib::util {
 
 namespace {
 
@@ -25,4 +25,4 @@ void preventApplicationSuspend()
     }
 }
 
-}}    // namespace
+} // namespace

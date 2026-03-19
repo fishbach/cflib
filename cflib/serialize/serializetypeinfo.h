@@ -11,7 +11,7 @@
 
 #include <memory>
 
-namespace cflib { namespace serialize {
+namespace cflib::serialize {
 
 // Forward declarations
 class SerializeVariableTypeInfo;
@@ -142,4 +142,4 @@ template<typename T> typename TypeInfoList<T>::iterator TypeInfoList<T>::end() {
 template<typename T> typename TypeInfoList<T>::const_iterator TypeInfoList<T>::begin() const { return impl_->data.data(); }
 template<typename T> typename TypeInfoList<T>::const_iterator TypeInfoList<T>::end() const { return impl_->data.data() + impl_->data.size(); }
 
-}}    // namespace
+} // namespace

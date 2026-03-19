@@ -17,7 +17,7 @@
 
 USE_LOG(LogCat::Db)
 
-namespace cflib { namespace db {
+namespace cflib::db {
 
 namespace {
 
@@ -886,4 +886,4 @@ void PSql::removePreparedStatement()
     PQclear(res);
 }
 
-}}    // namespace
+} // namespace

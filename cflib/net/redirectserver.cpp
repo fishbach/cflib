@@ -18,7 +18,7 @@ using namespace cflib::util;
 
 USE_LOG(LogCat::Http)
 
-namespace cflib { namespace net {
+namespace cflib::net {
 
 namespace {
 
@@ -276,4 +276,4 @@ void RedirectServer::handleRequest(const cflib::net::Request & request)
     }
 }
 
-}}    // namespace
+} // namespace

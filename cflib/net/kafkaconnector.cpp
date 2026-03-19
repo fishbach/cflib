@@ -7,7 +7,7 @@
 
 #include <cflib/net/impl/kafkaconnectorimpl.h>
 
-namespace cflib { namespace net {
+namespace cflib::net {
 
 KafkaConnector::KafkaConnector(util::ThreadVerify * other) :
     impl_(other ?
@@ -75,4 +75,4 @@ void KafkaConnector::leaveGroup()
     impl_->leaveGroup();
 }
 
-}}    // namespace
+} // namespace

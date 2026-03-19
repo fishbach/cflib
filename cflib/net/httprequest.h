@@ -11,7 +11,7 @@
 #include <cflib/util/sig.h>
 #include <cflib/util/threadverify.h>
 
-namespace cflib { namespace net {
+namespace cflib::net {
 
 class TCPManager;
 
@@ -45,4 +45,4 @@ private:
     Conn * conn_;
 };
 
-}}    // namespace
+} // namespace

@@ -11,7 +11,7 @@
 
 USE_LOG(LogCat::Crypt)
 
-namespace cflib { namespace crypt {
+namespace cflib::crypt {
 
 ByteArray random(uint size)
 {
@@ -206,4 +206,4 @@ ByteArray der2pem(const ByteArray & der, const ByteArray & label)
     return ByteArray();
 }
 
-}}    // namespace
+} // namespace

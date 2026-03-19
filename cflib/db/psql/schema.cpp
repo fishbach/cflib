@@ -13,7 +13,7 @@
 
 USE_LOG(LogCat::Db)
 
-namespace cflib { namespace db { namespace schema {
+namespace cflib::db::schema {
 
 namespace {
 
@@ -259,4 +259,4 @@ bool update(const ByteArray & schema, Migrator migrator)
     return true;
 }
 
-}}}    // namespace
+} // namespace

@@ -7,8 +7,8 @@
 
 #pragma once
 
-namespace cflib { namespace serialize {
+namespace cflib::serialize {
 
 struct Placeholder {};
 
-}}    // namespace
+} // namespace

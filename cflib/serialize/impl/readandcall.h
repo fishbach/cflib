@@ -11,7 +11,7 @@
 
 #include <type_traits>
 
-namespace cflib { namespace serialize { namespace impl {
+namespace cflib::serialize::impl {
 
 template <typename... P> struct ReadAndCall;
 
@@ -37,4 +37,4 @@ struct ReadAndCall<>
     }
 };
 
-}}}    // namespace
+} // namespace

@@ -16,7 +16,7 @@
     #undef minor
 #endif
 
-namespace cflib { namespace dao {
+namespace cflib::dao {
 
 class Version
 {
@@ -60,4 +60,4 @@ private:
     static Version current_;
 };
 
-}}    // namespace
+} // namespace

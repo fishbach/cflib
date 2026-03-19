@@ -19,7 +19,7 @@ USE_LOG(LogCat::Http)
 // Sec-WebSocket-Extensions: permessage-deflate
 // Sec-WebSocket-Extensions: x-webkit-deflate-frame
 
-namespace cflib { namespace net {
+namespace cflib::net {
 
 class WebSocketService::WSConnHandler : public util::ThreadVerify, public TCPConn
 {
@@ -406,4 +406,4 @@ void WebSocketService::checkTimeout()
     for (auto & [id, hdl] : connections_) hdl->checkTimeout(now);
 }
 
-}}    // namespace
+} // namespace

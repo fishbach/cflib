@@ -13,7 +13,7 @@
 
 USE_LOG(LogCat::Etc)
 
-namespace cflib { namespace util {
+namespace cflib::util {
 
 void EVTimer::init()
 {
@@ -52,4 +52,4 @@ void EVTimer::timeout(ev_loop *, ev_timer * w, int)
     (*timer->func_)();
 }
 
-}}    // namespace
+} // namespace

@@ -11,7 +11,7 @@
 
 #include <functional>
 
-namespace cflib { namespace db { namespace schema {
+namespace cflib::db::schema {
 
 typedef std::function<bool (const ByteArray & name)> Migrator;
 
@@ -27,4 +27,4 @@ bool update(const String & filename = ":/schema.sql")
         filename);
 }
 
-}}}    // namespace
+} // namespace

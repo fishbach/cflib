@@ -13,7 +13,7 @@
 #include <cflib/util/hex.h>
 #include <cflib/util/util.h>
 
-namespace cflib { namespace serialize {
+namespace cflib::serialize {
 
 namespace {
 
@@ -138,4 +138,4 @@ String printAsn1(const ByteArray & data)
     return printAsn1((const cfuint8 *)data.constData(), data.size(), 0);
 }
 
-}}
+}

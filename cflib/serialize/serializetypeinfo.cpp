@@ -7,7 +7,7 @@
 
 #include "serializetypeinfo.h"
 
-namespace cflib { namespace serialize {
+namespace cflib::serialize {
 
 String SerializeTypeInfo::toString() const
 {
@@ -101,4 +101,4 @@ uint SerializeFunctionTypeInfo::returnValueCount() const
     return rv;
 }
 
-}}    // namespace
+} // namespace

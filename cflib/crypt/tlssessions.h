@@ -9,9 +9,9 @@
 
 #include <cflib/base.h>
 
-namespace Botan { namespace TLS { class Session_Manager; }}
+namespace Botan::TLS { class Session_Manager; }
 
-namespace cflib { namespace crypt {
+namespace cflib::crypt {
 
 class TLSSessions
 {
@@ -29,4 +29,4 @@ private:
     Botan::TLS::Session_Manager & session_Manager();
 };
 
-}}    // namespace
+} // namespace

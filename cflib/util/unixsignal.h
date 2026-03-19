@@ -12,7 +12,7 @@
 struct ev_loop;
 struct ev_io;
 
-namespace cflib { namespace util {
+namespace cflib::util {
 
 // catches signals 1, 2 and 15
 class UnixSignal
@@ -30,4 +30,4 @@ private:
     ev_io * watcher_;
 };
 
-}}    // namespace
+} // namespace

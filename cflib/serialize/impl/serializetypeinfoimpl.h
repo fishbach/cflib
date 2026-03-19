@@ -10,7 +10,7 @@
 #include <cflib/base.h>
 #include <cflib/serialize/serializetypeinfo.h>
 
-namespace cflib { namespace serialize { namespace impl {
+namespace cflib::serialize::impl {
 
 class SerializeTypeInfoImpl : public SerializeTypeInfo {};
 
@@ -132,4 +132,4 @@ inline void serializeTypeInfo(SerializeTypeInfoImpl & si, CFSharedPtr<T> *)
     (SerializeTypeInfo &)si = T::serializeTypeInfo();
 }
 
-}}}    // namespace
+} // namespace

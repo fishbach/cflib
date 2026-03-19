@@ -9,9 +9,9 @@
 
 #include <cflib/base.h>
 
-namespace cflib { namespace net {
+namespace cflib::net {
 
 // Attention: this function may need some time (blocks)
 CFList<ByteArray> getIPFromDNS(const ByteArray & name, bool preferIPv6 = false);
 
-}}    // namespace
+} // namespace

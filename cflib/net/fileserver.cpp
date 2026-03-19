@@ -20,7 +20,7 @@
 
 USE_LOG(LogCat::Http)
 
-namespace cflib { namespace net {
+namespace cflib::net {
 
 namespace {
 
@@ -571,4 +571,4 @@ String FileServer::createIndex(const String & fullPath, const String & path)
     return html;
 }
 
-}}    // namespace
+} // namespace

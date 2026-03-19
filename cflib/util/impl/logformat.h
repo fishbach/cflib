@@ -11,7 +11,7 @@
 
 #include <format>
 
-namespace cflib { namespace util { namespace log {
+namespace cflib::util::log {
 
 namespace {
 
@@ -148,4 +148,4 @@ inline auto logFormat(ByteArray & dest, const T & val)
     dest.append(utf8.constData(), utf8.size());
 }
 
-}}}    // namespace
+} // namespace

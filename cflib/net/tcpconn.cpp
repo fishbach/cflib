@@ -13,7 +13,7 @@
 
 USE_LOG(LogCat::Network)
 
-namespace cflib { namespace net {
+namespace cflib::net {
 
 TCPConn::TCPConn(TCPConnData * data, uint readBufferSize, bool notifySomeBytesWritten) :
     data_(data)
@@ -89,4 +89,4 @@ TCPManager & TCPConn::manager() const
     return data_->impl.parent;
 }
 
-}}    // namespace
+} // namespace

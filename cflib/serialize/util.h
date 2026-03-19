@@ -10,7 +10,7 @@
 #include <cflib/serialize/impl/readandcall.h>
 #include <cflib/serialize/impl/sometobytearray.h>
 
-namespace cflib { namespace serialize {
+namespace cflib::serialize {
 
 // returns the value length of the BER TLV
 // returns -1 if not enough data available
@@ -86,4 +86,4 @@ inline void readAndCall(BERDeserializer & deser, F func)
     impl::ReadAndCall<P...>()(deser, func);
 }
 
-}}    // namespace
+} // namespace

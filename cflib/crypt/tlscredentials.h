@@ -12,7 +12,7 @@
 namespace Botan { class Credentials_Manager; }
 namespace Botan { class X509_Certificate; }
 
-namespace cflib { namespace crypt {
+namespace cflib::crypt {
 
 struct TLSCertInfo
 {
@@ -71,4 +71,4 @@ private:
     Botan::Credentials_Manager & credentials_Manager();
 };
 
-}}    // namespace
+} // namespace

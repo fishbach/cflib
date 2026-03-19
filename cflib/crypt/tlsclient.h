@@ -9,7 +9,7 @@
 
 #include <cflib/crypt/tlsstream.h>
 
-namespace cflib { namespace crypt {
+namespace cflib::crypt {
 
 class TLSCredentials;
 class TLSSessions;
@@ -30,4 +30,4 @@ private:
     Impl * impl_;
 };
 
-}}    // namespace
+} // namespace

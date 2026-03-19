@@ -13,7 +13,7 @@
 
 USE_LOG(LogCat::Network)
 
-namespace cflib { namespace net {
+namespace cflib::net {
 
 KafkaConnector::MetadataConnection::MetadataConnection(bool isMetaDataRequest, TCPConnData * data, KafkaConnector::Impl & impl) :
     KafkaConnection(data),
@@ -144,4 +144,4 @@ void KafkaConnector::MetadataConnection::readGroupCoordinator(impl::KafkaRawRead
     close();
 }
 
-}}    // namespace
+} // namespace

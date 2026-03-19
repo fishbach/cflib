@@ -10,7 +10,7 @@
 #include <cflib/base.h>
 #include <cflib/net/requesthandler.h>
 
-namespace cflib { namespace net {
+namespace cflib::net {
 
 class RequestLog : public RequestHandler
 {
@@ -18,4 +18,4 @@ protected:
     virtual void handleRequest(const Request & request);
 };
 
-}}    // namespace
+} // namespace

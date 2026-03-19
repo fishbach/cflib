@@ -18,7 +18,7 @@ USE_LOG(LogCat::Etc)
 // Definition of the thread-local pointer declared in cfthread.h
 thread_local cflib::util::impl::ThreadHolder * cf_current_thread = nullptr;
 
-namespace cflib { namespace util { namespace impl {
+namespace cflib::util::impl {
 
 ThreadHolder::ThreadHolder(const String & threadName, int threadId, ThreadStats * stats, bool disable) :
     threadName(threadName),
@@ -210,4 +210,4 @@ void ThreadHolderWorkerPool::Worker::wokeUp()
     }
 }
 
-}}}    // namespace
+} // namespace

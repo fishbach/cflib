@@ -12,7 +12,7 @@
 #include <cflib/util/evtimer.h>
 #include <cflib/util/threadverify.h>
 
-namespace cflib { namespace net {
+namespace cflib::net {
 
 class KafkaConnector::Impl : public util::ThreadVerify
 {
@@ -97,4 +97,4 @@ public:
     util::EVTimer groupHeartbeatTimer_;
 };
 
-}}    // namespace
+} // namespace

@@ -7,7 +7,7 @@
 
 #include "wscommmanager.h"
 
-namespace cflib { namespace net {
+namespace cflib::net {
 
 void WSCommManagerBase::saveHeaderField(const ByteArray & field)
 {
@@ -48,4 +48,4 @@ WSCommManagerBase::WSCommManagerBase(const String & path, const CFRegex & allowe
 {
 }
 
-}}    // namespace
+} // namespace

@@ -16,7 +16,7 @@
 #define PSqlConn3 cflib::db::PSql sql3(&::cflib_util_logFileInfo, __LINE__)
 #define PSqlConn4 cflib::db::PSql sql4(&::cflib_util_logFileInfo, __LINE__)
 
-namespace cflib { namespace db {
+namespace cflib::db {
 
 /* Attention:
  * PSql uses one DB connection per thread.
@@ -169,4 +169,4 @@ private:
     ByteArray prepareData_;
 };
 
-}}    // namespace
+} // namespace

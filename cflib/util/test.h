@@ -58,7 +58,7 @@
         CF_CONSTRUCTOR_FUNCTION(cflib_util_test_add_##Class) \
     }
 
-namespace cflib { namespace util {
+namespace cflib::util {
 
 namespace detail {
     // Per-test failure flag
@@ -97,4 +97,4 @@ inline StringList allTests() {
     return rv;
 }
 
-}}    // namespace
+} // namespace

@@ -7,7 +7,7 @@
 
 #include "kafkaproduceconnection.h"
 
-namespace cflib { namespace net {
+namespace cflib::net {
 
 KafkaConnector::ProduceConnection::ProduceConnection(TCPConnData * data, KafkaConnector::Impl & impl) :
     KafkaConnection(data),
@@ -44,4 +44,4 @@ void KafkaConnector::ProduceConnection::closed()
     impl_.fetchMetaData();
 }
 
-}}    // namespace
+} // namespace

@@ -9,11 +9,11 @@
 
 #include <cflib/net/impl/rmiserverbase.h>
 
-namespace cflib { namespace net {
+namespace cflib::net {
 
 void RSigBase::send(uint connId, const ByteArray & data)
 {
     server_->send(connId, data);
 }
 
-}}    // namespace
+} // namespace

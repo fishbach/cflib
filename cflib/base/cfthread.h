@@ -13,7 +13,7 @@
 #include <thread>
 
 // Forward declare ThreadHolder for the thread-local pointer
-namespace cflib { namespace util { namespace impl { class ThreadHolder; }}}
+namespace cflib::util::impl { class ThreadHolder; }
 
 // Thread-local pointer to the current cflib-managed thread holder.
 // Set at the start of each managed thread's run() body.

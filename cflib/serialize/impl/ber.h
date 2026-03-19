@@ -12,7 +12,7 @@
 #include <cstdint>
 #include <cstring>
 
-namespace cflib { namespace serialize { namespace impl {
+namespace cflib::serialize::impl {
 
 inline cfuint8 minSizeOfUInt(cfuint64 v)
 {
@@ -222,4 +222,4 @@ private:
     int oldSize_;
 };
 
-}}}    // namespace
+} // namespace

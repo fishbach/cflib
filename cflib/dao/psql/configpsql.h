@@ -9,7 +9,7 @@
 
 #include <cflib/serialize/serialize.h>
 
-namespace cflib { namespace dao {
+namespace cflib::dao {
 
 class ConfigPSql
 {
@@ -33,4 +33,4 @@ private:
     static ConfigPSql * instance_;
 };
 
-}}    // namespace
+} // namespace

@@ -14,7 +14,7 @@
 
 USE_LOG(LogCat::Http)
 
-namespace cflib { namespace net { namespace impl {
+namespace cflib::net::impl {
 
 namespace {
 
@@ -290,4 +290,4 @@ void RequestParser::writeReply(const ByteArray & reply)
     ++nextReplyId_;
 }
 
-}}}    // namespace
+} // namespace

@@ -14,7 +14,7 @@
 
 struct ev_io;
 
-namespace cflib { namespace net {
+namespace cflib::net {
 
 class TCPManager;
 
@@ -76,4 +76,4 @@ private:
     CFSet<TCPConnData *> connections_;
 };
 
-}}}    // namespace
+}} // namespace

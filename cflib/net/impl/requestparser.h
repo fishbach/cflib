@@ -10,7 +10,7 @@
 #include <cflib/net/tcpconn.h>
 #include <cflib/util/threadverify.h>
 
-namespace cflib { namespace net {
+namespace cflib::net {
 
 class PassThroughHandler;
 class RequestHandler;
@@ -66,4 +66,4 @@ private:
     PassThroughHandler * passThroughHandler_;
 };
 
-}}}    // namespace
+}} // namespace

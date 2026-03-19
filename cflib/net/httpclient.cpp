@@ -14,7 +14,7 @@
 
 USE_LOG(LogCat::Http)
 
-namespace cflib { namespace net {
+namespace cflib::net {
 
 class HttpClient::HttpConn : public TCPConn
 {
@@ -81,4 +81,4 @@ void HttpClient::get(const ByteArray & ip, cfuint16 port, const ByteArray & url)
     if (!keepAlive_) conn_ = 0;
 }
 
-}}    // namespace
+} // namespace

@@ -16,7 +16,7 @@
 
 USE_LOG(LogCat::Http)
 
-namespace cflib { namespace net {
+namespace cflib::net {
 
 namespace {
 
@@ -212,4 +212,4 @@ void HttpRequest::destroy()
     if (conn_) conn_->destory();
 }
 
-}}    // namespace
+} // namespace

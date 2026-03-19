@@ -11,7 +11,7 @@
 #include <cflib/net/requesthandler.h>
 #include <cflib/util/threadverify.h>
 
-namespace cflib { namespace net {
+namespace cflib::net {
 
 class FileServer : public RequestHandler, public util::ThreadVerify
 {
@@ -63,4 +63,4 @@ private:
     ByteArray accessControlAllowOrigin_;
 };
 
-}}    // namespace
+} // namespace

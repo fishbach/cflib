@@ -9,7 +9,7 @@
 
 #include <cflib/crypt/impl/botanhelper.h>
 
-namespace Botan { namespace TLS {
+namespace Botan::TLS {
 
 class TLS12Policy : public Policy
 {
@@ -31,4 +31,4 @@ private:
     const bool requireRevocationInfo_;
 };
 
-}}
+} // namespace

@@ -13,7 +13,7 @@
 #include <cflib/util/evtimer.h>
 #include <cflib/util/log.h>
 
-namespace cflib { namespace net {
+namespace cflib::net {
 
 template<typename C> class WSCommManager;
 
@@ -412,4 +412,4 @@ void WSCommManager<C>::checkTimeout()
     }
 }
 
-}}    // namespace
+} // namespace

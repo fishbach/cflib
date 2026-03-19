@@ -9,7 +9,7 @@
 
 #include <cflib/base.h>
 
-namespace cflib { namespace net {
+namespace cflib::net {
 
 class PassThroughHandler;
 class RequestHandler;
@@ -94,4 +94,4 @@ public:
     virtual void morePassThroughData() = 0;
 };
 
-}}    // namespace
+} // namespace

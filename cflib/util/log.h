@@ -51,7 +51,7 @@ namespace LogCat { enum {
     Compute = 1 << 11
 }; }
 
-namespace cflib { namespace util {
+namespace cflib::util {
 
 typedef cfuint16 LogCategory;
 typedef void (*LogLevelCallback)(const ByteArray & msg);
@@ -309,4 +309,4 @@ private:
     }
 };
 
-}}    // namespace
+} // namespace

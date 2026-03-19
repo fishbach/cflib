@@ -11,7 +11,7 @@
 
 #include <functional>
 
-namespace cflib { namespace util {
+namespace cflib::util {
 
 template<typename T> struct RemoveConstRef            { typedef T Type; };
 template<typename T> struct RemoveConstRef<const T &> { typedef T Type; };
@@ -499,4 +499,4 @@ public: RFunctor8C(const C * o, F f, R & r, P1 a1, P2 a2, P3 a3, P4 a4, P5 a5, P
     virtual void operator()() const { r_ = (o_->*f_)(a1_, a2_, a3_, a4_, a5_, a6_, a7_, a8_); if (sem_) sem_->release(); }
 private: const C * o_; F f_; R & r_; A1 a1_; A2 a2_; A3 a3_; A4 a4_; A5 a5_; A6 a6_; A7 a7_; A8 a8_; CFSemaphore * sem_; };
 
-}}    // namespace
+} // namespace

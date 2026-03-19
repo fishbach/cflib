@@ -297,7 +297,7 @@ bool HeaderParser::getMemberBlocks(const std::string & in, int start, int end, C
 bool HeaderParser::getClasses(const std::string & in, int start, int end, Class cl)
 {
     static const std::regex classOrNamespaceRE(
-        R"((class|struct|namespace)\s+(\w+)\s*(?::\s*\w+\s+([\w:]+(?:\s*<[^{]+>)?)\s*)?(?:\s*,[^{]+)?\{)");
+        R"((class|struct|namespace)\s+(\w+(?:\s*::\s*\w+)*)\s*(?::\s*\w+\s+([\w:]+(?:\s*<[^{]+>)?)\s*)?(?:\s*,[^{]+)?\{)");
 
     int state = 0;
     auto searchBegin = in.cbegin() + start;

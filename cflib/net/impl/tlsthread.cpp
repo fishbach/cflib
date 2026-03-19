@@ -11,7 +11,7 @@
 #include <cflib/net/impl/tcpconndata.h>
 #include <cflib/net/impl/tcpmanagerimpl.h>
 
-namespace cflib { namespace net { namespace impl {
+namespace cflib::net::impl {
 
 TLSThread::TLSThread(TCPManagerImpl & impl, uint no, uint total) :
     ThreadVerify(String("TLSThread ") + String::number(no) + "/" + String::number(total), ThreadVerify::Worker),
@@ -80,4 +80,4 @@ void TLSThread::callClosed(TCPConnData * conn)
     conn->callClosed();
 }
 
-}}}    // namespace
+} // namespace

@@ -9,7 +9,7 @@
 
 #include <cflib/serialize/impl/serializeberimpl.h>
 
-namespace cflib { namespace serialize {
+namespace cflib::serialize {
 
 class BERSerializer
 {
@@ -67,4 +67,4 @@ private:
     impl::BERDeserializerBase base_;
 };
 
-}}    // namespace
+} // namespace

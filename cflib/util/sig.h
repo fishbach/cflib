@@ -16,7 +16,7 @@
         template<typename F> class sig : public cflib::util::Sig<F> {}; \
     public
 
-namespace cflib { namespace util {
+namespace cflib::util {
 
 template<typename> class Sig;
 
@@ -100,4 +100,4 @@ private:
     Func listener_;
 };
 
-}}    // namespace
+} // namespace

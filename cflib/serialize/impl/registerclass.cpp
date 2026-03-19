@@ -13,7 +13,7 @@
 #include <format>
 #include <iostream>
 
-namespace cflib { namespace serialize { namespace impl {
+namespace cflib::serialize::impl {
 
 namespace {
 
@@ -33,4 +33,4 @@ void RegisterClassBase::duplicateId(cfuint32 classId)
     ::abort();
 }
 
-}}}    // namespace
+} // namespace

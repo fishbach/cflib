@@ -12,7 +12,7 @@
 struct ev_loop;
 struct ev_child;
 
-namespace cflib { namespace util {
+namespace cflib::util {
 
 class Mail
 {
@@ -59,4 +59,4 @@ private:
     pid_t childPid_;
 };
 
-}}    // namespace
+} // namespace

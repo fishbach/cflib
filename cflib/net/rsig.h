@@ -13,7 +13,7 @@
 
 #include <cflib/base.h>
 
-namespace cflib { namespace net {
+namespace cflib::net {
 
 namespace impl { class RMIServerBase; }
 
@@ -157,4 +157,4 @@ private:
     std::function<Listeners (P... p)> filterFunc_;
 };
 
-}}    // namespace
+} // namespace

@@ -12,7 +12,7 @@
 #include <cflib/serialize/serializeber.h>
 #include <cflib/util/threadverify.h>
 
-namespace cflib { namespace net {
+namespace cflib::net {
 
 namespace impl { class RMIServerBase; }
 
@@ -128,4 +128,4 @@ private:
     friend class impl::RMIServerBase;
 };
 
-}}    // namespace
+} // namespace

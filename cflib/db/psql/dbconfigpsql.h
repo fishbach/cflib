@@ -9,9 +9,9 @@
 
 #include <cflib/util/mailer.h>
 
-namespace cflib { namespace db {
+namespace cflib::db {
 
 CFMap<String, String> getConfigPSql();
 cflib::util::Mail getMailTemplatePSql(const String & name, const String & lang);
 
-}}    // namespace
+} // namespace

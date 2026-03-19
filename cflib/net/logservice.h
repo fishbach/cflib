@@ -10,7 +10,7 @@
 #include <cflib/net/rmiservice.h>
 #include <cflib/util/log.h>
 
-namespace cflib { namespace net {
+namespace cflib::net {
 
 class LogService : public RMIServiceBase
 {
@@ -23,4 +23,4 @@ rmi:
     void log(const String & file, int line, cflib::util::LogCategory category, const String & str);
 };
 
-}}    // namespace
+} // namespace

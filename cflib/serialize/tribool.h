@@ -9,7 +9,7 @@
 
 #include <cflib/serialize/serialize.h>
 
-namespace cflib { namespace serialize {
+namespace cflib::serialize {
 
 class TriBool
 {
@@ -47,4 +47,4 @@ void deserializeBER(TriBool & val, const cfuint8 * data, int len, BERDeserialize
 
 }
 
-}}    // namespace
+} // namespace

@@ -21,7 +21,7 @@
 
 USE_LOG(LogCat::Etc)
 
-namespace cflib { namespace util {
+namespace cflib::util {
 
 Mailer * Mailer::instance_ = nullptr;
 
@@ -247,4 +247,4 @@ ByteArray Mail::raw(String & fromAddr, String & toAddr) const
 }
 
 
-}}    // namespace
+} // namespace

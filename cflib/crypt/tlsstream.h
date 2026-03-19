@@ -9,7 +9,7 @@
 
 #include <cflib/base.h>
 
-namespace cflib { namespace crypt {
+namespace cflib::crypt {
 
 class TLSStream
 {
@@ -22,4 +22,4 @@ public:
     virtual bool send(const ByteArray & plain, ByteArray & encrypted) = 0;
 };
 
-}}    // namespace
+} // namespace

@@ -9,7 +9,7 @@
 
 #include <cflib/util/threadverify.h>
 
-namespace cflib { namespace net {
+namespace cflib::net {
 
 class TCPConnData;
 class RequestHandler;
@@ -34,4 +34,4 @@ private:
     CFSemaphore sem_;
 };
 
-}}}    // namespace
+}} // namespace

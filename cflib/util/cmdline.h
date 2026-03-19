@@ -9,7 +9,7 @@
 
 #include <cflib/base.h>
 
-namespace cflib { namespace util {
+namespace cflib::util {
 
 class ArgBase
 {
@@ -72,4 +72,4 @@ private:
     ByteArray executable_;
 };
 
-}}    // namespace
+} // namespace

@@ -12,7 +12,7 @@
 // Threadsafe Fifo
 // put and take from multiple threads possible
 
-namespace cflib { namespace util {
+namespace cflib::util {
 
 template<typename T>
 class ThreadFifo
@@ -51,4 +51,4 @@ private:
     CFAtomicInt sl_;
 };
 
-}}    // namespace
+} // namespace

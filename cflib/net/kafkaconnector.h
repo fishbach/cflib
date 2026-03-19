@@ -9,9 +9,9 @@
 
 #include <cflib/base.h>
 
-namespace cflib { namespace util  { class ThreadVerify; }}
+namespace cflib::util { class ThreadVerify; }
 
-namespace cflib { namespace net {
+namespace cflib::net {
 
 class KafkaConnector
 {
@@ -129,4 +129,4 @@ private:
     Impl * impl_;
 };
 
-}}    // namespace
+} // namespace

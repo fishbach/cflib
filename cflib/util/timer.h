@@ -9,7 +9,7 @@
 
 #include <cflib/util/functor.h>
 
-namespace cflib { namespace util {
+namespace cflib::util {
 
 class Timer
 {
@@ -32,4 +32,4 @@ private:
     static void timeout(int revents, void * arg);
 };
 
-}}    // namespace
+} // namespace

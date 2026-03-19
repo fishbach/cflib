@@ -10,8 +10,8 @@
 #include <cflib/serialize/util.h>
 #include <cflib/util/hex.h>
 
-namespace cflib { namespace serialize {
+namespace cflib::serialize {
 
 String printAsn1(const ByteArray & data);
 
-}}    // namespace
+} // namespace

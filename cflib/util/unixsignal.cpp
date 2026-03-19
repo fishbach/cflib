@@ -18,7 +18,7 @@
 
 USE_LOG(LogCat::Etc)
 
-namespace cflib { namespace util {
+namespace cflib::util {
 
 namespace {
 
@@ -98,4 +98,4 @@ void UnixSignal::ioCallback(ev_loop *, ev_io * w, int)
     self->catchedSignal(sig);
 }
 
-}}    // namespace
+} // namespace

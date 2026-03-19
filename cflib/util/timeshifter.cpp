@@ -7,7 +7,7 @@
 
 #include "timeshifter.h"
 
-namespace cflib { namespace util {
+namespace cflib::util {
 
 cfint64 TimeShifter::diff_ = 0;
 
@@ -22,4 +22,4 @@ CFDateTime TimeShifter::currentDateTime()
     return CFDateTime::nowUTC().addMSecs(diff_);
 }
 
-}}    // namespace
+} // namespace

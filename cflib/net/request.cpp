@@ -16,7 +16,7 @@
 
 USE_LOG(LogCat::Http)
 
-namespace cflib { namespace net {
+namespace cflib::net {
 
 class Request::Shared
 {
@@ -358,4 +358,4 @@ void Request::callNextHandler() const
     { auto * hdl = d->handlers.front(); d->handlers.erase(d->handlers.begin()); hdl->handleRequest(*this); }
 }
 
-}}    // namespace
+} // namespace

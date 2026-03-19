@@ -9,7 +9,7 @@
 
 #include <cflib/db/psql/dbconfigpsql.h>
 
-namespace cflib { namespace dao {
+namespace cflib::dao {
 
 ConfigPSql * ConfigPSql::instance_ = 0;
 
@@ -36,4 +36,4 @@ void ConfigPSql::loadFromDB()
     init(vals);
 }
 
-}}
+}

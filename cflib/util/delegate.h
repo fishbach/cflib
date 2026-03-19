@@ -9,7 +9,7 @@
 
 #include <utility>
 
-namespace cflib { namespace util {
+namespace cflib::util {
 
 template<typename C, typename R, typename... P> class Delegate;
 
@@ -59,4 +59,4 @@ inline Delegate<const C *, R, P...> delegate(const C * obj, R (C::*func)(P...) c
     return Delegate<const C *, R, P...>(obj, func);
 }
 
-}}    // namespace
+} // namespace

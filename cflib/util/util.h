@@ -12,7 +12,7 @@
 
 #define MultiLineStr(...) #__VA_ARGS__
 
-namespace cflib { namespace util {
+namespace cflib::util {
 
 ByteArray weekDay(int dayOfWeek);
 ByteArray dateTimeForHTTP(const CFDateTime & dateTime);
@@ -56,4 +56,4 @@ bool mkPath(const String & path);
 bool removeFile(const String & path);
 bool copyFile(const String & src, const String & dest);
 
-}}    // namespace
+} // namespace

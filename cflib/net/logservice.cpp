@@ -9,7 +9,7 @@
 
 USE_LOG(LogCat::Http)
 
-namespace cflib { namespace net {
+namespace cflib::net {
 
 LogService::LogService() :
     RMIServiceBase(serializeTypeInfo().typeName)
@@ -34,4 +34,4 @@ void LogService::log(const String & file, int line, cflib::util::LogCategory cat
         line, category)("%1", str.toUtf8());
 }
 
-}}    // namespace
+} // namespace

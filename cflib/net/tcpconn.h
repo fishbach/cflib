@@ -9,7 +9,7 @@
 
 #include <cflib/base.h>
 
-namespace cflib { namespace net {
+namespace cflib::net {
 
 class TCPConnData;
 class TCPManager;
@@ -87,4 +87,4 @@ private:
     friend class impl::TLSThread;
 };
 
-}}    // namespace
+} // namespace

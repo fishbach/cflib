@@ -37,7 +37,7 @@
 
 #include <cstdio>
 
-namespace cflib { namespace util {
+namespace cflib::util {
 
 namespace {
 
@@ -248,4 +248,4 @@ void Log::writeLog(const char * filename, int lineNo, LogCategory category, cons
     if (logLevelCallback && (category & 0x0F) >= logLevelTrigger) logLevelCallback(line);
 }
 
-}}    // namespace
+} // namespace

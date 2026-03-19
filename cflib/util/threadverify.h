@@ -12,7 +12,7 @@
 
 #include <deque>
 
-namespace cflib { namespace util {
+namespace cflib::util {
 
 class ThreadStats;
 
@@ -335,4 +335,4 @@ inline ev_loop * libEVLoopOfThread()
     return thread ? thread->loop() : 0;
 }
 
-}}    // namespace
+} // namespace

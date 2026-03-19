@@ -11,9 +11,9 @@
 
 struct ev_io;
 
-namespace cflib { namespace crypt { class TLSStream; }}
+namespace cflib::crypt { class TLSStream; }
 
-namespace cflib { namespace net {
+namespace cflib::net {
 
 namespace impl { class TCPManagerImpl; }
 
@@ -55,4 +55,4 @@ public:
     TCPConn::CloseType lastInformedCloseType;
 };
 
-}}    // namespace
+} // namespace

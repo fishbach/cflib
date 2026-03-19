@@ -17,7 +17,7 @@
 
 USE_LOG(LogCat::Network)
 
-namespace cflib { namespace net {
+namespace cflib::net {
 
 KafkaConnector::Impl::Impl(KafkaConnector &main) :
     ThreadVerify("KafkaConnector", ThreadVerify::Net),
@@ -499,4 +499,4 @@ CFMap<ByteArray, CFMap<ByteArray, CFList<cfint32>>> KafkaConnector::Impl::comput
     return rv;
 }
 
-}}    // namespace
+} // namespace

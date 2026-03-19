@@ -10,7 +10,7 @@
 #include <cflib/net/impl/requestparser.h>
 #include <cflib/util/util.h>
 
-namespace cflib { namespace net { namespace impl {
+namespace cflib::net::impl {
 
 HttpThread::HttpThread(uint no, uint count) :
     ThreadVerify(String("HTTP-Server ") + String::number(no) + "/" + String::number(count), util::ThreadVerify::Worker),
@@ -46,4 +46,4 @@ void HttpThread::waitForRequestsToFinish()
     else shutdown_ = true;
 }
 
-}}}    // namespace
+} // namespace

@@ -11,7 +11,7 @@
 #include <cflib/serialize/impl/registerclass.h>
 #include <cflib/serialize/impl/serializebaseber.h>
 
-namespace cflib { namespace serialize { namespace impl {
+namespace cflib::serialize::impl {
 
 // ============================================================================
 // integer
@@ -507,4 +507,4 @@ inline void deserializeBER(CFSharedPtr<T> & cl, const cfuint8 * data, int len, B
 }
 
 
-}}}    // namespace
+} // namespace

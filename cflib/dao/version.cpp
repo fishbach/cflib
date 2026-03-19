@@ -7,7 +7,7 @@
 
 #include "version.h"
 
-namespace cflib { namespace dao {
+namespace cflib::dao {
 
 Version Version::current_;
 
@@ -28,4 +28,4 @@ void Version::setCurrent(const Version & version)
     current_ = version;
 }
 
-}}
+} // namespace

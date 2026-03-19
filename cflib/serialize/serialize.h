@@ -12,7 +12,7 @@
 #include <cflib/serialize/serializetypeinfo.h>
 
 #define SERIALIZE_CLASS_USE_NULL(Class) \
-    namespace cflib { namespace serialize { namespace impl { \
+    namespace cflib::serialize::impl { \
     template<> inline void serializeBER(const Class & cl, cfuint64 tagNo, ByteArray & data, \
         BERSerializerBase &) \
     { \
@@ -21,7 +21,7 @@
         BERSerializerBase ser(data); \
         cl.serialize(ser); \
     } \
-    }}} \
+    } \
 
 #define SERIALIZE_CLASS \
     public: \

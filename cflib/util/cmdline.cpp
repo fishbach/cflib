@@ -9,7 +9,7 @@
 
 #include <cstring>
 
-namespace cflib { namespace util {
+namespace cflib::util {
 
 CmdLine::CmdLine(int argc, char *argv[])
 {
@@ -93,4 +93,4 @@ CmdLine & CmdLine::operator<<(Option & opt)
     return *this;
 }
 
-}}    // namespace
+} // namespace

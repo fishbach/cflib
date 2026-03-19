@@ -7,7 +7,7 @@
 
 #include "kafkaoffsetconnection.h"
 
-namespace cflib { namespace net {
+namespace cflib::net {
 
 KafkaConnector::OffsetConnection::OffsetConnection(TCPConnData * data, KafkaConnector::Impl & impl) :
     KafkaConnection(data),
@@ -48,4 +48,4 @@ void KafkaConnector::OffsetConnection::closed()
     if (!ok_) impl_.fetchMetaData();
 }
 
-}}    // namespace
+} // namespace

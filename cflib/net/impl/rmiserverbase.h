@@ -13,7 +13,7 @@
 #include <cflib/serialize/serializetypeinfo.h>
 #include <cflib/util/threadverify.h>
 
-namespace cflib { namespace net {
+namespace cflib::net {
 
 class Request;
 class WSCommManagerBase;
@@ -114,4 +114,4 @@ private:
     CFSet<uint> activeRequests_;
 };
 
-}}}    // namespace
+}} // namespace

@@ -43,7 +43,7 @@ inline T cfFromBigEndian(const cfuint8 * src) {
 
 }
 
-namespace cflib { namespace net { namespace impl {
+namespace cflib::net::impl {
 
 class KafkaString : public ByteArray
 {
@@ -214,4 +214,4 @@ inline KafkaRawReader & operator>>(KafkaRawReader & in, KafkaString & val)
     return in;
 }
 
-}}}    // namespace
+} // namespace

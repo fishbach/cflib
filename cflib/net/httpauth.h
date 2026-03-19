@@ -11,7 +11,7 @@
 
 #include <cflib/base.h>
 
-namespace cflib { namespace net {
+namespace cflib::net {
 
 class HttpAuth : public RequestHandler
 {
@@ -32,4 +32,4 @@ private:
     CFSet<ByteArray> checkedUsers_;
 };
 
-}}    // namespace
+} // namespace

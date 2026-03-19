@@ -8,7 +8,7 @@
 #include <cflib/net/impl/kafkaconnection.h>
 #include <cflib/net/impl/kafkaconnectorimpl.h>
 
-namespace cflib { namespace net {
+namespace cflib::net {
 
 class KafkaConnector::GroupConnection : public impl::KafkaConnection
 {
@@ -24,4 +24,4 @@ private:
     bool leaving_;
 };
 
-}}    // namespace
+} // namespace

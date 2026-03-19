@@ -17,7 +17,7 @@
 struct ev_async;
 struct ev_loop;
 
-namespace cflib { namespace util {
+namespace cflib::util {
 
 class ThreadStats;
 
@@ -119,4 +119,4 @@ private:
     bool stopLoop_;
 };
 
-}}}    // namespace
+}} // namespace

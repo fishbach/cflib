@@ -12,7 +12,7 @@
 
 USE_LOG(LogCat::Network)
 
-namespace cflib { namespace net {
+namespace cflib::net {
 
 KafkaConnector::GroupConnection::GroupConnection(TCPConnData * data, KafkaConnector::Impl & impl) :
     KafkaConnection(data),
@@ -132,4 +132,4 @@ void KafkaConnector::GroupConnection::closed()
     }
 }
 
-}}    // namespace
+} // namespace

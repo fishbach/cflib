@@ -10,7 +10,7 @@
 #include <cflib/util/threadverify.h>
 #include <cflib/util/evtimer.h>
 
-namespace cflib { namespace util {
+namespace cflib::util {
 
 class ThreadStats : private ThreadVerify
 {
@@ -103,4 +103,4 @@ private:
     CFElapsedTimer elapsed_;
 };
 
-}}    // namespace
+} // namespace

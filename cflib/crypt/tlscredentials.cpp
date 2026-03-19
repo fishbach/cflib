@@ -14,7 +14,7 @@
 
 USE_LOG(LogCat::Crypt)
 
-namespace cflib { namespace crypt {
+namespace cflib::crypt {
 
 namespace {
 
@@ -312,4 +312,4 @@ Botan::Credentials_Manager & TLSCredentials::credentials_Manager()
     return *impl_;
 }
 
-}}    // namespace
+} // namespace

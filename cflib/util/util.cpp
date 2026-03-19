@@ -22,7 +22,7 @@
 
 USE_LOG(LogCat::Etc)
 
-namespace cflib { namespace util {
+namespace cflib::util {
 
 ByteArray weekDay(int dayOfWeek)
 {
@@ -566,4 +566,4 @@ bool copyFile(const String & src, const String & dest)
     return writeFile(dest, data);
 }
 
-}}    // namespace
+} // namespace

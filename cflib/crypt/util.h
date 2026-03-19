@@ -9,7 +9,7 @@
 
 #include <cflib/base.h>
 
-namespace cflib { namespace crypt {
+namespace cflib::crypt {
 
 ByteArray random(uint size);
 inline ByteArray randomId() { return random(20).toHex(); }
@@ -35,4 +35,4 @@ ByteArray x509CreateCertReq(const ByteArray & privateKey, const CFList<ByteArray
 
 ByteArray der2pem(const ByteArray & der, const ByteArray & label);
 
-}}    // namespace
+} // namespace

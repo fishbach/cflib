@@ -13,9 +13,9 @@
 #include <cflib/net/tcpconn.h>
 #include <cflib/util/threadverify.h>
 
-namespace cflib { namespace util { class EVTimer; }}
+namespace cflib::util { class EVTimer; }
 
-namespace cflib { namespace net {
+namespace cflib::net {
 
 class WebSocketService : public RequestHandler, public util::ThreadVerify
 {
@@ -57,4 +57,4 @@ private:
     util::EVTimer * timer_;
 };
 
-}}    // namespace
+} // namespace

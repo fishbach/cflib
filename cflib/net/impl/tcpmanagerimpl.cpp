@@ -48,7 +48,7 @@ USE_LOG(LogCat::Network)
 using namespace cflib::crypt;
 using namespace cflib::util;
 
-namespace cflib { namespace net { namespace impl {
+namespace cflib::net::impl {
 
 namespace {
 
@@ -562,4 +562,4 @@ TCPConnData * TCPManagerImpl::addConnection(int sock, const ByteArray & destIP, 
     return conn;
 }
 
-}}}    // namespace
+} // namespace

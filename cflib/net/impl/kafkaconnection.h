@@ -10,7 +10,7 @@
 #include <cflib/net/impl/kafkaraw.h>
 #include <cflib/net/tcpconn.h>
 
-namespace cflib { namespace net { namespace impl {
+namespace cflib::net::impl {
 
 class KafkaRequestWriter;
 
@@ -48,4 +48,4 @@ private:
     KafkaConnection & connection_;
 };
 
-}}}    // namespace
+} // namespace

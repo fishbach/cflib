@@ -11,7 +11,7 @@
 
 #include <algorithm>
 
-namespace cflib { namespace net {
+namespace cflib::net {
 
 RMIServiceBase::RMIServiceBase(const String & threadName, uint threadCount, LoopType loopType) :
     util::ThreadVerify(threadName, loopType, threadCount),
@@ -83,4 +83,4 @@ void RMIReplier::send()
     server_.send(connId_, *this);
 }
 
-}}    // namespace
+} // namespace

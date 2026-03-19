@@ -12,7 +12,7 @@
 struct ev_loop;
 struct ev_timer;
 
-namespace cflib { namespace util {
+namespace cflib::util {
 
 class EVTimer
 {
@@ -41,4 +41,4 @@ private:
     Functor * func_;
 };
 
-}}    // namespace
+} // namespace

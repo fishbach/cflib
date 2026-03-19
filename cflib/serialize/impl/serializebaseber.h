@@ -11,7 +11,7 @@
 #include <cflib/serialize/common.h>
 #include <cflib/serialize/impl/ber.h>
 
-namespace cflib { namespace serialize { namespace impl {
+namespace cflib::serialize::impl {
 
 class BERSerializerBase
 {
@@ -99,4 +99,4 @@ private:
     cfuint64 tag_;
 };
 
-}}}    // namespace
+} // namespace

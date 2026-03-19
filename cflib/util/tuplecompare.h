@@ -9,7 +9,7 @@
 
 #include <tuple>
 
-namespace cflib { namespace util {
+namespace cflib::util {
 
 namespace impl {
 
@@ -93,4 +93,4 @@ inline R callWithTupleParams(F func, std::tuple<T...> & tp, P&&... p)
     return impl::TupleCall<0, sizeof...(T), R>()(func, tp, std::forward<P>(p)...);
 }
 
-}}    // namespace
+} // namespace

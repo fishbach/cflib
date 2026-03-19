@@ -9,7 +9,7 @@
 
 #include <cflib/net/impl/tcpmanagerimpl.h>
 
-namespace cflib { namespace net {
+namespace cflib::net {
 
 TCPManager::TCPManager(uint tlsThreadCount, util::ThreadVerify * other) :
     impl_(other ?
@@ -85,4 +85,4 @@ void TCPManager::newConnection(TCPConnData * data)
     impl_->deleteOnFinish(data);
 }
 
-}}    // namespace
+} // namespace

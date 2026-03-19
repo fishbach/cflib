@@ -12,7 +12,7 @@
 #include <cflib/net/rmiservice.h>
 #include <cflib/net/wscommmanager.h>
 
-namespace cflib { namespace net {
+namespace cflib::net {
 
 template<typename C>
 class RMIServer :
@@ -63,4 +63,4 @@ protected:
     virtual void handleRequest(const Request & request) { RMIServerBase::handleRequest(request); }
 };
 
-}}    // namespace
+} // namespace

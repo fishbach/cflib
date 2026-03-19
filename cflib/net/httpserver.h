@@ -9,9 +9,9 @@
 
 #include <cflib/base.h>
 
-namespace cflib { namespace crypt { class TLSCredentials; }}
+namespace cflib::crypt { class TLSCredentials; }
 
-namespace cflib { namespace net {
+namespace cflib::net {
 
 class RequestHandler;
 
@@ -36,4 +36,4 @@ private:
     Impl * impl_;
 };
 
-}}    // namespace
+} // namespace

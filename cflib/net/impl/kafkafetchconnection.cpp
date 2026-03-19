@@ -11,7 +11,7 @@
 
 USE_LOG(LogCat::Network)
 
-namespace cflib { namespace net {
+namespace cflib::net {
 
 KafkaConnector::FetchConnection::FetchConnection(TCPConnData * data, KafkaConnector::Impl & impl) :
     KafkaConnection(data),
@@ -76,4 +76,4 @@ void KafkaConnector::FetchConnection::closed()
     impl_.fetchMetaData();
 }
 
-}}    // namespace
+} // namespace
