@@ -98,7 +98,7 @@ public:
         cli.get("127.0.0.1", 12301, "/test1");
         msgSem.acquire(2);
         TCOMPARE((int)msgs.size(), 2);
-        TVERIFY(cfContains(msgs, "new request: /test1"));
+        TVERIFY(contains(msgs, "new request: /test1"));
         TVERIFY(msgsMatchRegex(
             "http reply: HTTP/1\\.1 200 OK\\|"
             "Date: .*\\|"
@@ -111,7 +111,7 @@ public:
         cli.get("127.0.0.1", 12301, "/test2");
         msgSem.acquire(2);
         TCOMPARE((int)msgs.size(), 2);
-        TVERIFY(cfContains(msgs, "new request: /test2"));
+        TVERIFY(contains(msgs, "new request: /test2"));
         TVERIFY(msgsMatchRegex(
             "http reply: HTTP/1\\.1 200 OK\\|"
             "Date: .*\\|"
@@ -124,8 +124,8 @@ public:
         cli.get("127.0.0.1", 12301, "/abort");
         msgSem.acquire(2);
         TCOMPARE((int)msgs.size(), 2);
-        TVERIFY(cfContains(msgs, "new request: /abort"));
-        TVERIFY(cfContains(msgs, "http reply: "));
+        TVERIFY(contains(msgs, "new request: /abort"));
+        TVERIFY(contains(msgs, "http reply: "));
         msgs.clear();
     }
 
@@ -143,7 +143,7 @@ public:
         cli.get("127.0.0.1", 12301, "/test1");
         msgSem.acquire(2);
         TCOMPARE((int)msgs.size(), 2);
-        TVERIFY(cfContains(msgs, "new request: /test1"));
+        TVERIFY(contains(msgs, "new request: /test1"));
         TVERIFY(msgsMatchRegex(
             "http reply: HTTP/1\\.1 200 OK\\|"
             "Date: .*\\|"
@@ -156,7 +156,7 @@ public:
         cli.get("127.0.0.1", 12301, "/test2");
         msgSem.acquire(2);
         TCOMPARE((int)msgs.size(), 2);
-        TVERIFY(cfContains(msgs, "new request: /test2"));
+        TVERIFY(contains(msgs, "new request: /test2"));
         TVERIFY(msgsMatchRegex(
             "http reply: HTTP/1\\.1 200 OK\\|"
             "Date: .*\\|"

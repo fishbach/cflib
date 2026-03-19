@@ -339,7 +339,7 @@ void FileServer::handleRequest(const Request & request)
 String FileServer::parseHtml(const String & fullPath, bool isPart, const String & path,
     const StringList & params) const
 {
-    logFunctionTraceParam("FileServer::parseHtml(%1, %2, %3, (%4))", fullPath, isPart, path, cfJoin(params, ','));
+    logFunctionTraceParam("FileServer::parseHtml(%1, %2, %3, (%4))", fullPath, isPart, path, join(params, ','));
 
     String retval;
     String html = util::readTextfile(fullPath);
@@ -360,11 +360,11 @@ String FileServer::parseHtml(const String & fullPath, bool isPart, const String 
             StringList incParams = splitParams(param);
             handleVars(incParams, path, params);
             if (incParams.empty()) continue;
-            String inc = cfTakeFirst(incParams);
+            String inc = takeFirst(incParams);
             if (inc == "nopart") {
                 if (isPart) continue;
                 if (incParams.empty()) continue;
-                inc = cfTakeFirst(incParams);
+                inc = takeFirst(incParams);
             }
             if (inc.indexOf('/') == 0) inc = path_ + inc;
             else                       inc = dirName(canonicalPath(fullPath)) + "/" + inc;
@@ -522,7 +522,7 @@ String FileServer::createIndex(const String & fullPath, const String & path)
 
     } else {
         // remove slash mode - create relative paths
-        const String lastPartOfPrefix = cfLast(prefix_.split("/"));
+        const String lastPartOfPrefix = last(prefix_.split("/"));
         const StringList pathSplitted = path.split("/");
         if (path != "/") { // subdir
             if ((int)pathSplitted.size() >= 3) { // subdir level 2 or greater
@@ -530,7 +530,7 @@ String FileServer::createIndex(const String & fullPath, const String & path)
             } else { // first subdir level
                 backJumpPath = "../" + lastPartOfPrefix;
             }
-            pathStart = cfLast(pathSplitted) + "/";
+            pathStart = last(pathSplitted) + "/";
         } else {
             pathStart = lastPartOfPrefix + "/";
         }
@@ -557,8 +557,8 @@ String FileServer::createIndex(const String & fullPath, const String & path)
         }
         closedir(d);
 
-        cfSort(dirs);
-        cfSort(files);
+        sort(dirs);
+        sort(files);
         for (const auto & entry : dirs) {
             html << "<a href=\"" << pathStart << entry << "\">" << entry << "</a><br>\r\n";
         }

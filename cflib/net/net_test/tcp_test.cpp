@@ -150,22 +150,22 @@ public:
 
         msgSem.acquire(2);
         TCOMPARE((int)msgs.size(), 2);
-        TVERIFY(cfContains(msgs, "cli new: 127.0.0.1:12301"));
-        TVERIFY(cfContains(msgs, "srv new: 127.0.0.1"));
+        TVERIFY(contains(msgs, "cli new: 127.0.0.1:12301"));
+        TVERIFY(contains(msgs, "srv new: 127.0.0.1"));
         msgs.clear();
 
         conn->write("1st msg", true);
         msgSem.acquire(2);
         TCOMPARE((int)msgs.size(), 2);
-        TVERIFY(cfContains(msgs, "cli writeFinished"));
-        TVERIFY(cfContains(msgs, "srv read: 1st msg"));
+        TVERIFY(contains(msgs, "cli writeFinished"));
+        TVERIFY(contains(msgs, "srv read: 1st msg"));
         msgs.clear();
 
         conn->write("ping 1");
         msgSem.acquire(2);
         TCOMPARE((int)msgs.size(), 2);
-        TVERIFY(cfContains(msgs, "srv read: ping 1"));
-        TVERIFY(cfContains(msgs, "cli read: pong 1"));
+        TVERIFY(contains(msgs, "srv read: ping 1"));
+        TVERIFY(contains(msgs, "cli read: pong 1"));
         msgs.clear();
 
         conn->write("ping 2");
@@ -173,23 +173,23 @@ public:
         conn->write("no msg");
         msgSem.acquire(3);
         TCOMPARE((int)msgs.size(), 3);
-        TVERIFY(cfContains(msgs, "srv read: ping 2"));
-        TVERIFY(cfContains(msgs, "cli read: pong 2"));
-        TVERIFY(cfContains(msgs, "srv closed: 1"));
+        TVERIFY(contains(msgs, "srv read: ping 2"));
+        TVERIFY(contains(msgs, "cli read: pong 2"));
+        TVERIFY(contains(msgs, "srv closed: 1"));
         msgs.clear();
 
         conn->close();
         msgSem.acquire(1);
         TCOMPARE((int)msgs.size(), 1);
-        TVERIFY(cfContains(msgs, "cli closed: 3"));
+        TVERIFY(contains(msgs, "cli closed: 3"));
         msgs.clear();
 
         delete conn;
         for (auto * sc : serv.conns) delete sc;
         msgSem.acquire(2);
         TCOMPARE((int)msgs.size(), 2);
-        TVERIFY(cfContains(msgs, "cli deleted"));
-        TVERIFY(cfContains(msgs, "srv deleted"));
+        TVERIFY(contains(msgs, "cli deleted"));
+        TVERIFY(contains(msgs, "srv deleted"));
         msgs.clear();
     }
 
@@ -204,30 +204,30 @@ public:
 
         msgSem.acquire(2);
         TCOMPARE((int)msgs.size(), 2);
-        TVERIFY(cfContains(msgs, "cli new: 127.0.0.1:12301"));
-        TVERIFY(cfContains(msgs, "srv new: 127.0.0.1"));
+        TVERIFY(contains(msgs, "cli new: 127.0.0.1:12301"));
+        TVERIFY(contains(msgs, "srv new: 127.0.0.1"));
         msgs.clear();
 
         conn->write("1st msg");
         msgSem.acquire(1);
         TCOMPARE((int)msgs.size(), 1);
-        TVERIFY(cfContains(msgs, "srv read: 1st msg"));
+        TVERIFY(contains(msgs, "srv read: 1st msg"));
         msgs.clear();
 
         conn->write("close");
         msgSem.acquire(3);
         TCOMPARE((int)msgs.size(), 3);
-        TVERIFY(cfContains(msgs, "srv read: close"));
-        TVERIFY(cfContains(msgs, "srv closed: 3"));
-        TVERIFY(cfContains(msgs, "cli closed: 1"));
+        TVERIFY(contains(msgs, "srv read: close"));
+        TVERIFY(contains(msgs, "srv closed: 3"));
+        TVERIFY(contains(msgs, "cli closed: 1"));
         msgs.clear();
 
         delete conn;
         for (auto * sc : serv.conns) delete sc;
         msgSem.acquire(2);
         TCOMPARE((int)msgs.size(), 2);
-        TVERIFY(cfContains(msgs, "cli deleted"));
-        TVERIFY(cfContains(msgs, "srv deleted"));
+        TVERIFY(contains(msgs, "cli deleted"));
+        TVERIFY(contains(msgs, "srv deleted"));
         msgs.clear();
     }
 
@@ -242,31 +242,31 @@ public:
 
         msgSem.acquire(2);
         TCOMPARE((int)msgs.size(), 2);
-        TVERIFY(cfContains(msgs, "cli new: 127.0.0.1:12301"));
-        TVERIFY(cfContains(msgs, "srv new: 127.0.0.1"));
+        TVERIFY(contains(msgs, "cli new: 127.0.0.1:12301"));
+        TVERIFY(contains(msgs, "srv new: 127.0.0.1"));
         msgs.clear();
 
         conn->write("1st msg");
         msgSem.acquire(1);
         TCOMPARE((int)msgs.size(), 1);
-        TVERIFY(cfContains(msgs, "srv read: 1st msg"));
+        TVERIFY(contains(msgs, "srv read: 1st msg"));
         msgs.clear();
 
         conn->write("hard");
 
         msgSem.acquire(3);
         TCOMPARE((int)msgs.size(), 3);
-        TVERIFY(cfContains(msgs, "srv read: hard"));
-        TVERIFY(cfContains(msgs, "srv closed: 7"));
-        TVERIFY(cfContains(msgs, "cli closed: 7"));
+        TVERIFY(contains(msgs, "srv read: hard"));
+        TVERIFY(contains(msgs, "srv closed: 7"));
+        TVERIFY(contains(msgs, "cli closed: 7"));
         msgs.clear();
 
         delete conn;
         for (auto * sc : serv.conns) delete sc;
         msgSem.acquire(2);
         TCOMPARE((int)msgs.size(), 2);
-        TVERIFY(cfContains(msgs, "cli deleted"));
-        TVERIFY(cfContains(msgs, "srv deleted"));
+        TVERIFY(contains(msgs, "cli deleted"));
+        TVERIFY(contains(msgs, "srv deleted"));
         msgs.clear();
     }
 
@@ -281,30 +281,30 @@ public:
 
         msgSem.acquire(2);
         TCOMPARE((int)msgs.size(), 2);
-        TVERIFY(cfContains(msgs, "cli new: 127.0.0.1:12301"));
-        TVERIFY(cfContains(msgs, "srv new: 127.0.0.1"));
+        TVERIFY(contains(msgs, "cli new: 127.0.0.1:12301"));
+        TVERIFY(contains(msgs, "srv new: 127.0.0.1"));
         msgs.clear();
 
         conn->write("writeclose");
         msgSem.acquire(2);
         TCOMPARE((int)msgs.size(), 2);
-        TVERIFY(cfContains(msgs, "srv read: writeclose"));
-        TVERIFY(cfContains(msgs, "cli closed: 1"));
+        TVERIFY(contains(msgs, "srv read: writeclose"));
+        TVERIFY(contains(msgs, "cli closed: 1"));
         msgs.clear();
 
         conn->write("1st msg");
         delete conn;
         msgSem.acquire(3);
         TCOMPARE((int)msgs.size(), 3);
-        TVERIFY(cfContains(msgs, "cli deleted"));
-        TVERIFY(cfContains(msgs, "srv read: 1st msg"));
-        TVERIFY(cfContains(msgs, "srv closed: 3"));
+        TVERIFY(contains(msgs, "cli deleted"));
+        TVERIFY(contains(msgs, "srv read: 1st msg"));
+        TVERIFY(contains(msgs, "srv closed: 3"));
         msgs.clear();
 
         for (auto * sc : serv.conns) delete sc;
         msgSem.acquire(1);
         TCOMPARE((int)msgs.size(), 1);
-        TVERIFY(cfContains(msgs, "srv deleted"));
+        TVERIFY(contains(msgs, "srv deleted"));
         msgs.clear();
     }
 
@@ -317,15 +317,15 @@ public:
 
         msgSem.acquire(2);
         TCOMPARE((int)msgs.size(), 2);
-        TVERIFY(cfContains(msgs, "cli new: 127.0.0.1:12301"));
-        TVERIFY(cfContains(msgs, "cli closed: 7"));
+        TVERIFY(contains(msgs, "cli new: 127.0.0.1:12301"));
+        TVERIFY(contains(msgs, "cli closed: 7"));
         msgs.clear();
 
         conn->write("no msg", true);
         delete conn;
         msgSem.acquire(1);
         TCOMPARE((int)msgs.size(), 1);
-        TVERIFY(cfContains(msgs, "cli deleted"));
+        TVERIFY(contains(msgs, "cli deleted"));
         msgs.clear();
     }
 
@@ -348,35 +348,35 @@ public:
 
         msgSem.acquire(2);
         TCOMPARE((int)msgs.size(), 2);
-        TVERIFY(cfContains(msgs, "cli new: 127.0.0.1:12301"));
-        TVERIFY(cfContains(msgs, "srv new: 127.0.0.1"));
+        TVERIFY(contains(msgs, "cli new: 127.0.0.1:12301"));
+        TVERIFY(contains(msgs, "srv new: 127.0.0.1"));
         msgs.clear();
 
         conn->write("ping 1", true);
         msgSem.acquire(3);
         TCOMPARE((int)msgs.size(), 3);
-        TVERIFY(cfContains(msgs, "cli writeFinished"));
-        TVERIFY(cfContains(msgs, "srv read: ping 1"));
-        TVERIFY(cfContains(msgs, "cli read: pong 1"));
+        TVERIFY(contains(msgs, "cli writeFinished"));
+        TVERIFY(contains(msgs, "srv read: ping 1"));
+        TVERIFY(contains(msgs, "cli read: pong 1"));
         msgs.clear();
 
         conn->close(TCPConn::ReadClosed);
         msgSem.acquire(1);
         TCOMPARE((int)msgs.size(), 1);
-        TVERIFY(cfContains(msgs, "cli closed: 1"));
+        TVERIFY(contains(msgs, "cli closed: 1"));
         msgs.clear();
 
         delete conn;
         msgSem.acquire(2);
         TCOMPARE((int)msgs.size(), 2);
-        TVERIFY(cfContains(msgs, "cli deleted"));
-        TVERIFY(cfContains(msgs, "srv closed: 1"));
+        TVERIFY(contains(msgs, "cli deleted"));
+        TVERIFY(contains(msgs, "srv closed: 1"));
         msgs.clear();
 
         for (auto * sc : serv.conns) delete sc;
         msgSem.acquire(1);
         TCOMPARE((int)msgs.size(), 1);
-        TVERIFY(cfContains(msgs, "srv deleted"));
+        TVERIFY(contains(msgs, "srv deleted"));
         msgs.clear();
     }
 
@@ -395,35 +395,35 @@ public:
 
         msgSem.acquire(2);
         TCOMPARE((int)msgs.size(), 2);
-        TVERIFY(cfContains(msgs, "cli new: ::1:12301"));
-        TVERIFY(cfContains(msgs, "srv new: ::1"));
+        TVERIFY(contains(msgs, "cli new: ::1:12301"));
+        TVERIFY(contains(msgs, "srv new: ::1"));
         msgs.clear();
 
         conn->write("ping 1", true);
         msgSem.acquire(3);
         TCOMPARE((int)msgs.size(), 3);
-        TVERIFY(cfContains(msgs, "cli writeFinished"));
-        TVERIFY(cfContains(msgs, "srv read: ping 1"));
-        TVERIFY(cfContains(msgs, "cli read: pong 1"));
+        TVERIFY(contains(msgs, "cli writeFinished"));
+        TVERIFY(contains(msgs, "srv read: ping 1"));
+        TVERIFY(contains(msgs, "cli read: pong 1"));
         msgs.clear();
 
         conn->close(TCPConn::ReadClosed);
         msgSem.acquire(1);
         TCOMPARE((int)msgs.size(), 1);
-        TVERIFY(cfContains(msgs, "cli closed: 1"));
+        TVERIFY(contains(msgs, "cli closed: 1"));
         msgs.clear();
 
         delete conn;
         msgSem.acquire(2);
         TCOMPARE((int)msgs.size(), 2);
-        TVERIFY(cfContains(msgs, "cli deleted"));
-        TVERIFY(cfContains(msgs, "srv closed: 1"));
+        TVERIFY(contains(msgs, "cli deleted"));
+        TVERIFY(contains(msgs, "srv closed: 1"));
         msgs.clear();
 
         for (auto * sc : serv.conns) delete sc;
         msgSem.acquire(1);
         TCOMPARE((int)msgs.size(), 1);
-        TVERIFY(cfContains(msgs, "srv deleted"));
+        TVERIFY(contains(msgs, "srv deleted"));
         msgs.clear();
     }
 };

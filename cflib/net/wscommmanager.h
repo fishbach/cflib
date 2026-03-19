@@ -217,8 +217,8 @@ void WSCommManager<C>::getConnData(const ByteArray & clientId, C & connData, uin
 {
     if (!verifySyncedThreadCall<WSCommManager<C>, const ByteArray &>(&WSCommManager<C>::getConnData, clientId, connData, connDataId)) return;
 
-    connDataId = cfMapValue(clientIds_, clientId, 0u);
-    connData = connDataId == 0 ? C() : cfHashValue(connInfos_, connDataId).connData;
+    connDataId = mapValue(clientIds_, clientId, 0u);
+    connData = connDataId == 0 ? C() : hashValue(connInfos_, connDataId).connData;
 }
 
 template<typename C>
@@ -226,8 +226,8 @@ void WSCommManager<C>::getConnData(uint connId, C & connData, uint & connDataId)
 {
     if (!verifySyncedThreadCall<WSCommManager<C>, uint>(&WSCommManager<C>::getConnData, connId, connData, connDataId)) return;
 
-    connDataId = cfHashValue(connId2dataId_, connId, 0u);
-    connData = connDataId == 0 ? C() : cfHashValue(connInfos_, connDataId).connData;
+    connDataId = hashValue(connId2dataId_, connId, 0u);
+    connData = connDataId == 0 ? C() : hashValue(connInfos_, connDataId).connData;
 }
 
 template<typename C>
@@ -245,7 +245,7 @@ bool WSCommManager<C>::connDataOk(WSCommManager::ConnInfo & info, uint connDataI
 template<typename C>
 void WSCommManager<C>::newMsg(uint connId, const ByteArray & data, bool isBinary, bool & stopRead)
 {
-    const uint dataId = cfHashValue(connId2dataId_, connId, 0u);
+    const uint dataId = hashValue(connId2dataId_, connId, 0u);
 
     // handle text msg
     if (!isBinary) {
@@ -283,7 +283,7 @@ void WSCommManager<C>::newMsg(uint connId, const ByteArray & data, bool isBinary
                 dId = sendNewClientId(connId, stopRead);
             } else {
                 const ByteArray clId = serialize::fromByteArray<ByteArray>(data, tagLen, lengthSize, valueLen);
-                dId = cfMapValue(clientIds_, clId, 0u);
+                dId = mapValue(clientIds_, clId, 0u);
                 if (dId == 0) {
                     dId = sendNewClientId(connId, stopRead);
                 } else {
@@ -320,7 +320,7 @@ void WSCommManager<C>::newMsg(uint connId, const ByteArray & data, bool isBinary
     }
 
     // handler
-    MsgHandler * hdl = cfHashValue(msgHandler_, tag, (MsgHandler *)nullptr);
+    MsgHandler * hdl = hashValue(msgHandler_, tag, (MsgHandler *)nullptr);
     if (hdl) {
         hdl->handleMsg(tag, data, tagLen, lengthSize, valueLen, connInfos_[dataId].connData, dataId, connId);
         return;
@@ -336,7 +336,7 @@ void WSCommManager<C>::closed(uint connId, TCPConn::CloseType)
     close(connId, TCPConn::ReadWriteClosed);
 
     // Do we know anything?
-    const uint dataId = cfHashValue(connId2dataId_, connId, 0u);
+    const uint dataId = hashValue(connId2dataId_, connId, 0u);
     if (dataId == 0) return;
 
     connId2dataId_.erase(connId);
@@ -405,7 +405,7 @@ void WSCommManager<C>::checkTimeout()
 
     if (!removedIds.empty()) {
         for (auto it = clientIds_.begin(); it != clientIds_.end(); ) {
-            if (cfContains(removedIds, it->second)) it = clientIds_.erase(it);
+            if (contains(removedIds, it->second)) it = clientIds_.erase(it);
             else ++it;
         }
         logDebug("timeout of %1 sessions", removedIds.size());

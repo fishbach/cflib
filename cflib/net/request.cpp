@@ -206,12 +206,12 @@ ByteArray Request::getRawHeader() const
 
 ByteArray Request::getHeader(const ByteArray & name) const
 {
-    return cfMapValue(d->headerFields, name);
+    return mapValue(d->headerFields, name);
 }
 
 ByteArray Request::getHostname() const
 {
-    return cfMapValue(d->headerFields, ByteArray("host"));
+    return mapValue(d->headerFields, ByteArray("host"));
 }
 
 Request::KeyVal Request::getHeaderFields() const
@@ -252,7 +252,7 @@ ByteArray Request::getRemoteIP() const
 
 Request::LoginPass Request::getBasicAuth() const
 {
-    return getBasicAuth(cfMapValue(d->headerFields, ByteArray("authorization")));
+    return getBasicAuth(mapValue(d->headerFields, ByteArray("authorization")));
 }
 
 void Request::sendNotFound() const
