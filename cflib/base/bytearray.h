@@ -37,7 +37,7 @@ public:
         !std::is_same_v<std::decay_t<T>, std::string_view> &&
         std::is_same_v<decltype(std::declval<const T&>().constData()), const char*>,
         int> = 0>
-    ByteArray(const T & qba) : data_(qba.constData(), qba.size()), isNull_(false) {}
+    ByteArray(const T & ba) : data_(ba.constData(), ba.size()), isNull_(false) {}
 
     static ByteArray fromRawData(const char * data, cfsize_t len) { return ByteArray(data, len); }
 

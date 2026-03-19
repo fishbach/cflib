@@ -95,13 +95,11 @@ inline std::set<T> operator+(const std::set<T> & lhs, const std::set<T> & rhs) {
     return result;
 }
 
-// Helper: convert set to sorted vector (replaces QSet::values())
 template<typename T>
 inline std::vector<T> setValues(const std::unordered_set<T> & set) {
     return std::vector<T>(set.begin(), set.end());
 }
 
-// Helper: join vector of ByteArray/String with separator
 inline ByteArray join(const std::vector<ByteArray> & list, char sep) {
     ByteArray r;
     for (cfsize_t i = 0; i < (cfsize_t)list.size(); ++i) {
@@ -120,13 +118,11 @@ inline String join(const std::vector<String> & list, char sep) {
     return r;
 }
 
-// Helper: sort a vector (replaces QList::sort())
 template<typename T>
 inline void sort(std::vector<T> & vec) {
     std::sort(vec.begin(), vec.end());
 }
 
-// Helper: keys() for map
 template<typename K, typename V>
 inline std::vector<K> keys(const std::map<K, V> & m) {
     std::vector<K> r;
@@ -135,39 +131,33 @@ inline std::vector<K> keys(const std::map<K, V> & m) {
     return r;
 }
 
-// Helper: value() with default for map (replaces QMap::value())
 template<typename K, typename V>
 inline V mapValue(const std::map<K, V> & m, const K & key, const V & def = V()) {
     auto it = m.find(key);
     return it != m.end() ? it->second : def;
 }
 
-// Helper: value() with default for unordered_map
 template<typename K, typename V>
 inline V hashValue(const std::unordered_map<K, V> & m, const K & key, const V & def = V()) {
     auto it = m.find(key);
     return it != m.end() ? it->second : def;
 }
 
-// Helper: contains() for map
 template<typename K, typename V>
 inline bool contains(const std::map<K, V> & m, const K & key) {
     return m.find(key) != m.end();
 }
 
-// Helper: contains() for unordered_set
 template<typename T>
 inline bool contains(const std::unordered_set<T> & s, const T & val) {
     return s.find(val) != s.end();
 }
 
-// Helper: remove() for unordered_set
 template<typename T>
 inline void remove(std::unordered_set<T> & s, const T & val) {
     s.erase(val);
 }
 
-// Helper: takeFirst for vector (replaces QList::takeFirst())
 template<typename T>
 inline T takeFirst(std::vector<T> & vec) {
     T val = std::move(vec.front());
@@ -175,7 +165,6 @@ inline T takeFirst(std::vector<T> & vec) {
     return val;
 }
 
-// Helper: takeLast for vector
 template<typename T>
 inline T takeLast(std::vector<T> & vec) {
     T val = std::move(vec.back());
@@ -183,13 +172,11 @@ inline T takeLast(std::vector<T> & vec) {
     return val;
 }
 
-// Helper: last() for vector
 template<typename T>
 inline const T & last(const std::vector<T> & vec) {
     return vec.back();
 }
 
-// Helper: contains() for vector (flexible — works with T or any type T::operator== accepts)
 template<typename T, typename U>
 inline bool contains(const std::vector<T> & v, const U & val) {
     for (const auto & item : v) if (item == val) return true;

@@ -138,7 +138,6 @@ inline auto logFormat(ByteArray & dest, const T & val)
     dest.append(val.toString().c_str());
 }
 
-// Fallback for types with toString() returning QString-like (has toUtf8(), no c_str())
 template<typename T>
 inline auto logFormat(ByteArray & dest, const T & val)
     -> std::enable_if_t<!std::is_same_v<T, ByteArray> && !std::is_same_v<T, String>

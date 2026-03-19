@@ -114,7 +114,7 @@ public:
     {
         cfint64 readSecs = lastRead_.secsTo(now);
         cfint64 writeSecs = lastWrite_.secsTo(now);
-        uint last = (uint)cfMax(readSecs, writeSecs);
+        uint last = (uint)max(readSecs, writeSecs);
         if (last < connectionSendInterval_) return;
         if (last > connectionDataTimeout_) {
             logInfo("timeout on connection %1", connId_);

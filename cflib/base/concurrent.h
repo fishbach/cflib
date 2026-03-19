@@ -37,7 +37,6 @@ private:
     std::unique_lock<std::mutex> lock_;
 };
 
-// Counting semaphore (matches QSemaphore usage in cflib)
 class Semaphore
 {
     CF_DISABLE_COPY(Semaphore)

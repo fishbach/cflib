@@ -37,8 +37,8 @@ public:
         !std::is_same_v<std::decay_t<T>, std::string_view>,
         int> = 0,
         typename = decltype(std::declval<const T&>().toUtf8().constData())>
-    String(const T & qstr) {
-        auto utf8 = qstr.toUtf8();
+    String(const T & str) {
+        auto utf8 = str.toUtf8();
         data_ = std::string(utf8.constData(), utf8.size());
         isNull_ = false;
     }
