@@ -9,6 +9,8 @@
 
 #include <cflib/base/types.h>
 
+namespace cflib::base {
+
 template<typename E>
 class CFFlags
 {
@@ -37,3 +39,5 @@ public:
 private:
     cfuint32 val_;
 };
+
+} // namespace

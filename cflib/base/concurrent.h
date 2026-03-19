@@ -13,11 +13,13 @@
 #include <condition_variable>
 #include <mutex>
 
-class CFMutex
+namespace cflib::base {
+
+class Mutex
 {
-    CF_DISABLE_COPY(CFMutex)
+    CF_DISABLE_COPY(Mutex)
 public:
-    CFMutex() = default;
+    Mutex() = default;
     void lock()   { m_.lock(); }
     void unlock() { m_.unlock(); }
 
@@ -26,11 +28,11 @@ private:
     std::mutex m_;
 };
 
-class CFMutexLocker
+class MutexLocker
 {
-    CF_DISABLE_COPY(CFMutexLocker)
+    CF_DISABLE_COPY(MutexLocker)
 public:
-    explicit CFMutexLocker(CFMutex & m) : lock_(m.native()) {}
+    explicit MutexLocker(Mutex & m) : lock_(m.native()) {}
 private:
     std::unique_lock<std::mutex> lock_;
 };
@@ -103,3 +105,5 @@ public:
 private:
     std::atomic<T> val_;
 };
+
+} // namespace

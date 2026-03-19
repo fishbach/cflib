@@ -273,7 +273,6 @@ inline bool operator!=(const char * lhs, const String & rhs) { return rhs != lhs
 inline String operator+(const char * lhs, const String & rhs) {
     return String(std::string(lhs) + rhs.str());
 }
-// Free-function operator<< removed: member operator<< covers these cases
 
 } // namespace
 

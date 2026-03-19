@@ -42,7 +42,7 @@ namespace cflib::util {
 namespace {
 
 bool active = false;
-CFMutex mutex;
+Mutex mutex;
 CFFile file;
 LogCategory logLevelTrigger = 15;
 LogLevelCallback logLevelCallback = 0;
@@ -211,7 +211,7 @@ void Log::writeLog(const char * filename, int lineNo, LogCategory category, cons
 
     // get thread info
     {
-        CFMutexLocker lock(mutex);
+        MutexLocker lock(mutex);
         ThreadInfo & info = threadInfos[threadId()];
         if (info.threadId == 0) info.threadId = (cfuint)threadInfos.size();
 

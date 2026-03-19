@@ -9,6 +9,8 @@
 
 #include <memory>
 
+namespace cflib::base {
+
 template<typename T>
 using CFSharedPtr = std::shared_ptr<T>;
 
@@ -24,3 +26,5 @@ template<typename T, typename... Args>
 CFUniquePtr<T> CFMakeUnique(Args&&... args) {
     return std::make_unique<T>(std::forward<Args>(args)...);
 }
+
+} // namespace

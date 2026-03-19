@@ -10,6 +10,8 @@
 #include <cstddef>
 #include <cstdint>
 
+namespace cflib::base {
+
 using cfint8   = std::int8_t;
 using cfuint8  = std::uint8_t;
 using cfint16  = std::int16_t;
@@ -22,3 +24,5 @@ using cfuintptr = std::uintptr_t;
 using cfssize  = std::ptrdiff_t;
 using cfsize_t = std::size_t;
 using cfuint   = unsigned int;
+
+} // namespace

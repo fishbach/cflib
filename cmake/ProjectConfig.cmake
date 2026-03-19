@@ -41,6 +41,11 @@ if(ENABLE_CCACHE)
     endif()
 endif()
 
+# PCH
+if(ENABLE_PCH)
+    message(STATUS "Using PCH")
+endif()
+
 # add root include dir
 include_directories(${PROJECT_SOURCE_DIR})
 

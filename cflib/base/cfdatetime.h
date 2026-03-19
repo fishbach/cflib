@@ -12,6 +12,8 @@
 #include <chrono>
 #include <ctime>
 
+namespace cflib::base {
+
 class CFElapsedTimer
 {
 public:
@@ -125,3 +127,5 @@ private:
     struct tm tm_ = {};
     bool valid_;
 };
+
+} // namespace

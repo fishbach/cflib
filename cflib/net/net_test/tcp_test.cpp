@@ -21,11 +21,11 @@ namespace {
 
 CFSemaphore msgSem;
 StringList msgs;
-CFMutex mutex;
+Mutex mutex;
 
 void msg(const String & m)
 {
-    CFMutexLocker ml(mutex);
+    MutexLocker ml(mutex);
     msgs << m;
     msgSem.release();
 }

@@ -19,6 +19,8 @@ namespace cflib::util::impl { class ThreadHolder; }
 // Set at the start of each managed thread's run() body.
 extern thread_local cflib::util::impl::ThreadHolder * cf_current_thread;
 
+namespace cflib::base {
+
 template<typename T>
 class CFThreadLocal
 {
@@ -37,3 +39,5 @@ public:
 private:
     T * ptr_;
 };
+
+} // namespace

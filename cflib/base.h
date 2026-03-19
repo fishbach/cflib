@@ -8,7 +8,7 @@
 #pragma once
 
 #include <cflib/base/bytearray.h>
-#include <cflib/base/cfconcurrent.h>
+#include <cflib/base/concurrent.h>
 #include <cflib/base/cfcontainers.h>
 #include <cflib/base/cfdatetime.h>
 #include <cflib/base/cffile.h>
