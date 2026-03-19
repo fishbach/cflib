@@ -13,7 +13,8 @@ See the provied file COPYING for details.
 * C++ compiler which can do C++20
 * cmake >= 3.16
 * Botan (comes by FetchContent)
-* zlib
+* zlib (apt install zlib1g-dev)
+* optional: Postgres (apt install libpq-dev)
 
 # Download
 

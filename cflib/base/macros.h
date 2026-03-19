@@ -22,3 +22,5 @@
 // Trigger construction before main()
 #define CF_CONSTRUCTOR_FUNCTION(func) \
     namespace { struct _cf_ctor_##func { _cf_ctor_##func() { func(); } } _cf_ctor_inst_##func; }
+
+#define forever for (;;)
