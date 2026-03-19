@@ -237,23 +237,6 @@ inline void serializeBER(const char * str, cfuint64 tagNo, ByteArray & data, BER
     memcpy(pos + tagLen + lengthSize, str, len);
 }
 
-// ----------------------------------------------------------------------------
-// CFChar
-// ----------------------------------------------------------------------------
-
-inline void serializeBER(const CFChar & c, cfuint64 tagNo, ByteArray & data, BERSerializerBase &)
-{
-    if (c.isNull())  { writeNull(data, tagNo); return; }
-    serializeBERInt((cfuint16)(c.unicode()), tagNo, data);
-}
-
-inline void deserializeBER(CFChar & c, const cfuint8 * data, int len, BERDeserializerBase &)
-{
-    cfuint16 unicode;
-    deserializeBERInt(unicode, data, len);
-    c = CFChar((char32_t)unicode);
-}
-
 
 // ============================================================================
 // CF classes

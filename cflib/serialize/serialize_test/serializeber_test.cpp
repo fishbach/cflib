@@ -169,7 +169,6 @@ public:
         TVERIFY(checkSer<CFList<const char *>>(CFList<const char *>{nullptr},          "e103c08100"));
         TVERIFY(checkSerDeser<CFList<ByteArray>>(CFList<ByteArray>{ByteArray()}, "e103c08100"));
         TVERIFY(checkSerDeser<CFList<String   >>(CFList<String   >{String()},    "e103c08100"));
-        TVERIFY(checkSerDeser<CFList<CFChar     >>(CFList<CFChar     >{CFChar()},      "e103c08100"));
     }
 
     void string()
@@ -192,11 +191,6 @@ public:
         TVERIFY(checkSerDeserNull<String>(String("X"),  "c10158"));
         TVERIFY(checkSerDeserNull<String>(String("XY"), "c1025859"));
         TVERIFY(checkSerDeserNull<String>(String("XäÄöÖüÜßY"), "c1 10 58 c3a4 c384 c3b6 c396 c3bc c39c c39f 59"));
-
-        TVERIFY(checkSerDeserNull<CFChar>(CFChar(),            ""));
-        TVERIFY(checkSerDeserNull<CFChar>(CFChar{char32_t('A')}, "c10141"));
-        TVERIFY(checkSerDeserNull<CFChar>(CFChar{char32_t(0xe4)}, "c10200e4"));
-        TVERIFY(checkSerDeserNull<CFChar>(CFChar{char32_t(0xdf)}, "c10200df"));
     }
 
     void many()

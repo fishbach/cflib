@@ -49,7 +49,6 @@ DO_SERIALIZE_TYPE_INFO(long double, float128)
 
 DO_SERIALIZE_TYPE_INFO(ByteArray, ByteArray)
 DO_SERIALIZE_TYPE_INFO(String,    String)
-DO_SERIALIZE_TYPE_INFO(CFChar,      Char)
 DO_SERIALIZE_TYPE_INFO(CFDateTime,  DateTime)
 
 template<typename T>
