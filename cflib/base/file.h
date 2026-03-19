@@ -19,9 +19,9 @@
 
 namespace cflib::base {
 
-class CFFile
+class File
 {
-    CF_DISABLE_COPY(CFFile)
+    CF_DISABLE_COPY(File)
 public:
     enum OpenMode {
         ReadOnly  = 0x01,
@@ -42,11 +42,11 @@ public:
         WriteOther = 0x0002
     };
 
-    CFFile() : fp_(nullptr) {}
-    explicit CFFile(const String & path) : path_(path.str()), fp_(nullptr) {}
-    ~CFFile() { close(); }
+    File() : fp_(nullptr) {}
+    explicit File(const String & path) : path_(path.str()), fp_(nullptr) {}
+    ~File() { close(); }
 
-    CFFile(CFFile && other) noexcept : path_(std::move(other.path_)), fp_(other.fp_) { other.fp_ = nullptr; }
+    File(File && other) noexcept : path_(std::move(other.path_)), fp_(other.fp_) { other.fp_ = nullptr; }
 
     void setFileName(const String & path) { path_ = path.str(); }
 

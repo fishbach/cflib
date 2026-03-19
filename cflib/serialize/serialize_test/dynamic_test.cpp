@@ -47,7 +47,7 @@ public:
         in.d.reset(dynA);
         DynamicB * dynB = new DynamicB();
         dynB->b = 123.45;
-        in.e.push_back(CFSharedPtr<DynamicBase>(dynB));
+        in.e.push_back(SharedPtr<DynamicBase>(dynB));
         BERSerializer ser;
         ser << in;
 

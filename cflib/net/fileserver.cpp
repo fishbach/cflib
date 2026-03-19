@@ -86,9 +86,9 @@ inline void handleVars(StringList & vars, const String & path, const StringList 
 
 void writeHTMLFile(const String & file, String content)
 {
-    static const CFRegex commentRe("<!--.*?-->");
-    static const CFRegex trimRe("^\\s+|\\s+$");
-    static const CFRegex spaceRe("\\s+");
+    static const Regex commentRe("<!--.*?-->");
+    static const Regex trimRe("^\\s+|\\s+$");
+    static const Regex spaceRe("\\s+");
     content = commentRe.replaceAll(content, "");
     content = trimRe.replaceAll(content, " ");
     content = spaceRe.replaceAll(content, " ");
@@ -170,9 +170,9 @@ void FileServer::exportTo(const String & dest) const
     exportDir(path_, "/", dest);
 }
 
-void FileServer::add404File(const CFRegex & re, const String & dest)
+void FileServer::add404File(const Regex & re, const String & dest)
 {
-    redirects404_ << Pair<CFRegex, String>(re, dest);
+    redirects404_ << Pair<Regex, String>(re, dest);
 }
 
 void FileServer::handleRequest(const Request & request)
@@ -220,7 +220,7 @@ void FileServer::handleRequest(const Request & request)
     }
 
     // check path for valid chars
-    CFRegex::MatchResult reMatch = pathRE_.matchResult(path);
+    Regex::MatchResult reMatch = pathRE_.matchResult(path);
     if (!reMatch.hasMatch()) {
         logInfo("invalid path: %1", path);
         return;
@@ -306,7 +306,7 @@ void FileServer::handleRequest(const Request & request)
     bool cache = true;
     bool compression = false;
     ByteArray contentType = "application/octet-stream";
-    const CFRegex::MatchResult match = endingRE_.matchResult(path);
+    const Regex::MatchResult match = endingRE_.matchResult(path);
     if (match.hasMatch()) {
         const String ending = match.captured(1);
              if (ending == "htm" ) { cache = false; compression = true;  contentType = "text/html; charset=utf-8"; }
@@ -344,7 +344,7 @@ String FileServer::parseHtml(const String & fullPath, bool isPart, const String 
     String retval;
     String html = util::readTextfile(fullPath);
     std::stack<bool> ifStack;
-    CFRegex::MatchResult m;
+    Regex::MatchResult m;
     while ((m = elementRE_.matchResult(html)).hasMatch()) {
         int pos = m.capturedStart();
         const bool skip = !ifStack.empty() && !ifStack.top();
@@ -479,7 +479,7 @@ void FileServer::exportDir(const String & fullPath, const String & path, const S
                 writeHTMLFile(dest + "/404.html",        parseHtml(filePath, false, path));
             } else if (String(name).endsWith(".css")) {
                 String out = parseHtml(filePath, false, path);
-                { CFRegex importRe(String("(@import url\\(\".*?)\\?") + String(eTag_)); out = importRe.replace(out, "$1"); }
+                { Regex importRe(String("(@import url\\(\".*?)\\?") + String(eTag_)); out = importRe.replace(out, "$1"); }
                 cflib::util::writeFile(dest + "/" + name, out.toUtf8());
             } else {
                 cflib::util::copyFile(filePath, dest + "/" + name);

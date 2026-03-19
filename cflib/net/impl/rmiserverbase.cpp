@@ -705,8 +705,8 @@ String RMIServerBase::generateTS(const SerializeTypeInfo & ti) const
         String typePath = type.toLower();
         String typeName = type;
         typePath.replace("::", "/");
-        typePath = CFRegex("^dao/").replaceAll(typePath, "models/");
-        typePath = CFRegex("^cflib/dao/").replaceAll(typePath, "models/cflib/");
+        typePath = Regex("^dao/").replaceAll(typePath, "models/");
+        typePath = Regex("^cflib/dao/").replaceAll(typePath, "models/cflib/");
         typeName.replace("::", "__");
         if (type.contains("::")) type = type.mid(type.lastIndexOf("::") + 2);
         ts << "import {" << type << " as " << typeName << "} from '../" << typePath << "';\n";

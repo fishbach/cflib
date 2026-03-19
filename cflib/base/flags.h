@@ -12,25 +12,25 @@
 namespace cflib::base {
 
 template<typename E>
-class CFFlags
+class Flags
 {
 public:
-    CFFlags() noexcept : val_(0) {}
-    CFFlags(E flag) noexcept : val_((cfuint32)flag) {}
-    explicit CFFlags(cfuint32 v) noexcept : val_(v) {}
+    Flags() noexcept : val_(0) {}
+    Flags(E flag) noexcept : val_((cfuint32)flag) {}
+    explicit Flags(cfuint32 v) noexcept : val_(v) {}
 
     cfuint32 toInt() const noexcept { return val_; }
     bool isNull() const noexcept { return val_ == 0; }
 
-    CFFlags operator|(CFFlags o) const noexcept { return CFFlags(val_ | o.val_); }
-    CFFlags operator&(CFFlags o) const noexcept { return CFFlags(val_ & o.val_); }
-    CFFlags operator^(CFFlags o) const noexcept { return CFFlags(val_ ^ o.val_); }
-    CFFlags operator~()          const noexcept { return CFFlags(~val_); }
-    CFFlags & operator|=(CFFlags o) noexcept { val_ |= o.val_; return *this; }
-    CFFlags & operator&=(CFFlags o) noexcept { val_ &= o.val_; return *this; }
+    Flags operator|(Flags o) const noexcept { return Flags(val_ | o.val_); }
+    Flags operator&(Flags o) const noexcept { return Flags(val_ & o.val_); }
+    Flags operator^(Flags o) const noexcept { return Flags(val_ ^ o.val_); }
+    Flags operator~()          const noexcept { return Flags(~val_); }
+    Flags & operator|=(Flags o) noexcept { val_ |= o.val_; return *this; }
+    Flags & operator&=(Flags o) noexcept { val_ &= o.val_; return *this; }
 
-    bool operator==(CFFlags o) const noexcept { return val_ == o.val_; }
-    bool operator!=(CFFlags o) const noexcept { return val_ != o.val_; }
+    bool operator==(Flags o) const noexcept { return val_ == o.val_; }
+    bool operator!=(Flags o) const noexcept { return val_ != o.val_; }
 
     explicit operator bool() const noexcept { return val_ != 0; }
     explicit operator cfuint32() const noexcept { return val_; }

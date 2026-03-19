@@ -100,7 +100,7 @@ private:
 private:
     ThreadInfos infos_;
     EVTimer timer_;
-    CFElapsedTimer elapsed_;
+    ElapsedTimer elapsed_;
 };
 
 } // namespace

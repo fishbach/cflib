@@ -31,7 +31,7 @@ namespace cflib::db {
  *  701 : double precision          <->  double
  *   25 : text                      <->  String
  *   17 : bytea                     <->  ByteArray
- * 1184 : timestamp with time zone  <->  CFDateTime (UTC)
+ * 1184 : timestamp with time zone  <->  DateTime (UTC)
  *
  * SELECT 21::oid::regtype         -> smallint
  * SELECT 'smallint'::regtype::oid -> 21
@@ -87,7 +87,7 @@ public:
 
     PSql & operator<<(float  val);
     PSql & operator<<(double val);
-    PSql & operator<<(const CFDateTime  & val);
+    PSql & operator<<(const DateTime  & val);
     PSql & operator<<(const ByteArray & val);
     PSql & operator<<(const String    & val);
     PSql & operator<<(const char * val);
@@ -106,7 +106,7 @@ public:
 
     PSql & operator>>(float      & val);
     PSql & operator>>(double     & val);
-    PSql & operator>>(CFDateTime  & val);
+    PSql & operator>>(DateTime  & val);
     PSql & operator>>(ByteArray & val);
     PSql & operator>>(String    & val);
 
@@ -148,7 +148,7 @@ private:
     const ByteArray instanceName_;
     bool nestedTransaction_;
     bool localTransactionActive_;
-    CFElapsedTimer watch_;
+    ElapsedTimer watch_;
 
     bool isFirstResult_;
     void * res_;

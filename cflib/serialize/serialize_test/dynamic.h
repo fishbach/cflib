@@ -47,8 +47,8 @@ class DynamicUse
     SERIALIZE_CLASS
 public serialized:
     int y;
-    CFSharedPtr<DynamicBase> d;
-    typedef CFSharedPtr<DynamicBase> DBase;
+    SharedPtr<DynamicBase> d;
+    typedef SharedPtr<DynamicBase> DBase;
     List<DBase> e;
     int z;
 

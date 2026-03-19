@@ -108,7 +108,7 @@ private:
 
 private:
     WSCommManagerBase & wsService_;
-    const CFRegex containerRE_;
+    const Regex containerRE_;
     Map<String, ServiceFunctions> services_;
     ClassInfoEl classInfos_;
     Set<uint> activeRequests_;

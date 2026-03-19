@@ -74,7 +74,7 @@ public:
     ByteArray body;
     List<RequestHandler *> handlers;
     impl::RequestParser * parser;
-    CFElapsedTimer watch;
+    ElapsedTimer watch;
     bool replySent;
     ByteArray remoteIP;
     List<ByteArray> sendHeaderLines;
@@ -136,7 +136,7 @@ public:
     inline ByteArray defaultHeaders()
     {
         ByteArray headers = "Date: ";
-        headers << cflib::util::dateTimeForHTTP(CFDateTime::currentDateTimeUtc()) << "\r\n"
+        headers << cflib::util::dateTimeForHTTP(DateTime::currentDateTimeUtc()) << "\r\n"
             "Connection: keep-alive\r\n"
             "Server: cflib/0.9\r\n";
         for (const auto & line : sendHeaderLines) headers << line << "\r\n";
@@ -344,9 +344,9 @@ TCPManager * Request::tcpManager() const
 
 Request::LoginPass Request::getBasicAuth(const ByteArray & authorization)
 {
-    static const CFRegex authRe("^Basic\\s+([A-Za-z0-9+/]+=*)$");
+    static const Regex authRe("^Basic\\s+([A-Za-z0-9+/]+=*)$");
 
-    const CFRegex::MatchResult match = authRe.matchResult(authorization);
+    const Regex::MatchResult match = authRe.matchResult(authorization);
     if (!match.hasMatch()) return LoginPass();
     const List<ByteArray> userPass = ByteArray::fromBase64(ByteArray(match.captured(1).c_str())).split(':');
     if (userPass.size() != 2) return LoginPass();

@@ -22,11 +22,11 @@ public:
     HttpRequest(TCPManager & mgr);
     ~HttpRequest();
 
-    void start(const CFUrl & url, const List<ByteArray> & headers,
+    void start(const Url & url, const List<ByteArray> & headers,
         const ByteArray & postData = ByteArray(), const ByteArray & contentType = "application/octet-stream",
         uint timeoutMs = 10000);
 
-    inline void start(const CFUrl & url,
+    inline void start(const Url & url,
         const ByteArray & postData = ByteArray(), const ByteArray & contentType = "application/octet-stream",
         uint timeoutMs = 10000)
     {

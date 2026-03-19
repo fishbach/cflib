@@ -49,10 +49,10 @@ DO_SERIALIZE_TYPE_INFO(long double, float128)
 
 DO_SERIALIZE_TYPE_INFO(ByteArray, ByteArray)
 DO_SERIALIZE_TYPE_INFO(String,    String)
-DO_SERIALIZE_TYPE_INFO(CFDateTime,  DateTime)
+DO_SERIALIZE_TYPE_INFO(DateTime,  DateTime)
 
 template<typename T>
-inline void serializeTypeInfo(SerializeTypeInfoImpl & si, CFFlags<T> *)
+inline void serializeTypeInfo(SerializeTypeInfoImpl & si, Flags<T> *)
 {
     serializeTypeInfo(si, (int *)0);
 }
@@ -127,7 +127,7 @@ inline void serializeTypeInfo(SerializeTypeInfoImpl & si, T *)
 // ============================================================================
 
 template<typename T>
-inline void serializeTypeInfo(SerializeTypeInfoImpl & si, CFSharedPtr<T> *)
+inline void serializeTypeInfo(SerializeTypeInfoImpl & si, SharedPtr<T> *)
 {
     (SerializeTypeInfo &)si = T::serializeTypeInfo();
 }

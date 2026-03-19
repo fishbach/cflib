@@ -14,10 +14,10 @@
 
 namespace cflib::base {
 
-class CFElapsedTimer
+class ElapsedTimer
 {
 public:
-    CFElapsedTimer() : started_(false) {}
+    ElapsedTimer() : started_(false) {}
 
     void start() {
         tp_ = std::chrono::steady_clock::now();
@@ -43,30 +43,30 @@ private:
     bool started_;
 };
 
-class CFDateTime
+class DateTime
 {
 public:
-    CFDateTime() : valid_(false) {}
+    DateTime() : valid_(false) {}
 
-    static CFDateTime currentDateTimeUtc() { return nowUTC(); }
-    static CFDateTime nowUTC() {
-        CFDateTime dt;
+    static DateTime currentDateTimeUtc() { return nowUTC(); }
+    static DateTime nowUTC() {
+        DateTime dt;
         dt.tp_ = std::chrono::system_clock::now();
         dt.valid_ = true;
         dt.fillTm();
         return dt;
     }
 
-    static CFDateTime fromSecsSinceEpoch(cfint64 secs) {
-        CFDateTime dt;
+    static DateTime fromSecsSinceEpoch(cfint64 secs) {
+        DateTime dt;
         dt.tp_ = std::chrono::system_clock::time_point(std::chrono::seconds(secs));
         dt.valid_ = true;
         dt.fillTm();
         return dt;
     }
 
-    static CFDateTime fromMSecsSinceEpoch(cfint64 msecs) {
-        CFDateTime dt;
+    static DateTime fromMSecsSinceEpoch(cfint64 msecs) {
+        DateTime dt;
         dt.tp_ = std::chrono::system_clock::time_point(std::chrono::milliseconds(msecs));
         dt.valid_ = true;
         dt.fillTm();
@@ -97,23 +97,23 @@ public:
         return (cfint64)std::chrono::duration_cast<std::chrono::milliseconds>(tp_.time_since_epoch()).count();
     }
 
-    cfint64 msecsTo(const CFDateTime & other) const {
+    cfint64 msecsTo(const DateTime & other) const {
         return other.toMSecsSinceEpoch() - toMSecsSinceEpoch();
     }
 
-    cfint64 secsTo(const CFDateTime & other) const {
+    cfint64 secsTo(const DateTime & other) const {
         return other.toSecsSinceEpoch() - toSecsSinceEpoch();
     }
 
-    CFDateTime addMSecs(cfint64 ms) const {
+    DateTime addMSecs(cfint64 ms) const {
         return fromMSecsSinceEpoch(toMSecsSinceEpoch() + ms);
     }
 
     // Mon=1..Sun=7
     int dayOfWeek() const { return tm_.tm_wday == 0 ? 7 : tm_.tm_wday; }
 
-    bool operator==(const CFDateTime & other) const { return toMSecsSinceEpoch() == other.toMSecsSinceEpoch(); }
-    bool operator!=(const CFDateTime & other) const { return !(*this == other); }
+    bool operator==(const DateTime & other) const { return toMSecsSinceEpoch() == other.toMSecsSinceEpoch(); }
+    bool operator!=(const DateTime & other) const { return !(*this == other); }
 
     std::chrono::system_clock::time_point timePoint() const { return tp_; }
 

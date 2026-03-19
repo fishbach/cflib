@@ -20,8 +20,8 @@ namespace cflib::net {
 
 namespace {
 
-const CFRegex lengthRE("\r?\nContent-Length: (\\d+)\r?\n", true);
-const CFRegex statusRE("^HTTP/1.[01] (\\d+)");
+const Regex lengthRE("\r?\nContent-Length: (\\d+)\r?\n", true);
+const Regex statusRE("^HTTP/1.[01] (\\d+)");
 
 }
 
@@ -29,7 +29,7 @@ class HttpRequest::Conn : public TCPConn, public util::ThreadVerify
 {
 public:
     Conn(HttpRequest * parent, TCPConnData * data,
-        const CFUrl & url, const List<ByteArray> & headers,
+        const Url & url, const List<ByteArray> & headers,
         const ByteArray & postData, const ByteArray & contentType,
         uint timeoutMs)
     :
@@ -104,7 +104,7 @@ protected:
             return;
         }
 
-        CFRegex::MatchResult match = lengthRE.matchResult(buf_);
+        Regex::MatchResult match = lengthRE.matchResult(buf_);
         if (!match.hasMatch()) {
             close(HardClosed, true);
             return;
@@ -176,7 +176,7 @@ HttpRequest::~HttpRequest()
     destroy();
 }
 
-void HttpRequest::start(const CFUrl & url, const List<ByteArray> & headers,
+void HttpRequest::start(const Url & url, const List<ByteArray> & headers,
     const ByteArray & postData, const ByteArray & contentType,
     uint timeoutMs)
 {

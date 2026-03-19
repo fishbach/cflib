@@ -22,12 +22,12 @@ extern thread_local cflib::util::impl::ThreadHolder * cf_current_thread;
 namespace cflib::base {
 
 template<typename T>
-class CFThreadLocal
+class ThreadLocal
 {
-    CF_DISABLE_COPY(CFThreadLocal)
+    CF_DISABLE_COPY(ThreadLocal)
 public:
-    CFThreadLocal() : ptr_(nullptr) {}
-    ~CFThreadLocal() { delete ptr_; }
+    ThreadLocal() : ptr_(nullptr) {}
+    ~ThreadLocal() { delete ptr_; }
 
     T * localData() { return ptr_; }
     void setLocalData(T * data) {

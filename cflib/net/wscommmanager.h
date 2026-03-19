@@ -79,7 +79,7 @@ public:
     ByteArray getHeader(uint connId, const ByteArray & header) const;
 
 protected:
-    WSCommManagerBase(const String & path, const CFRegex & allowedOrigin, uint connectionTimeoutSec);
+    WSCommManagerBase(const String & path, const Regex & allowedOrigin, uint connectionTimeoutSec);
 };
 
 /*
@@ -102,7 +102,7 @@ public:
     typedef Set<uint> ConnIds;
 
 public:
-    WSCommManager(const String & path, const CFRegex & allowedOrigin = CFRegex(),
+    WSCommManager(const String & path, const Regex & allowedOrigin = Regex(),
         uint connectionTimeoutSec = 10, uint sessionTimeoutSec = 86400);
     ~WSCommManager();
 
@@ -125,7 +125,7 @@ private:
         ConnInfo() : connData(), connDataVerified(true) {}
         C connData;
         ConnIds connIds;
-        CFDateTime lastClosed;
+        DateTime lastClosed;
         bool connDataVerified;
     };
 
@@ -173,7 +173,7 @@ void WSCommStateListener<C>::connectionClosed(const C & connData, uint connDataI
 // ----------------------------------------------------------------------------
 
 template<typename C>
-WSCommManager<C>::WSCommManager(const String & path, const CFRegex & allowedOrigin,
+WSCommManager<C>::WSCommManager(const String & path, const Regex & allowedOrigin,
     uint connectionTimeoutSec, uint sessionTimeoutSec)
 :
     WSCommManagerBase(path, allowedOrigin, connectionTimeoutSec),
@@ -345,7 +345,7 @@ void WSCommManager<C>::closed(uint connId, TCPConn::CloseType)
     const bool isLast = info.connIds.empty();
     if (isLast) {
         info.connDataVerified = false;
-        info.lastClosed = CFDateTime::currentDateTimeUtc();
+        info.lastClosed = DateTime::currentDateTimeUtc();
     }
 
     // inform state listener
@@ -393,7 +393,7 @@ void WSCommManager<C>::checkTimeout()
 
     Set<uint> removedIds;
     {
-        const CFDateTime now = CFDateTime::currentDateTimeUtc();
+        const DateTime now = DateTime::currentDateTimeUtc();
         for (auto it = connInfos_.begin(); it != connInfos_.end(); ) {
             ConnInfo & info = it->second;
             if (info.connIds.empty() && info.lastClosed.secsTo(now) > (cfint64)sessionTimeoutSec_) {

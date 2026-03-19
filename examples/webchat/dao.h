@@ -16,7 +16,7 @@ public serialized:
     String name;
     cfuint32 number;
     typedef List<cfuint32> IList;
-    typedef Pair<IList, CFDateTime> LDPair;
+    typedef Pair<IList, DateTime> LDPair;
     Pair<cfuint8, LDPair> pair;
 };
 
@@ -35,5 +35,5 @@ class Dao3 : public Dao2
     SERIALIZE_CLASS
     SERIALIZE_BASE(Dao3)
 public serialized:
-    CFDateTime timestamp;
+    DateTime timestamp;
 };

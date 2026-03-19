@@ -72,7 +72,7 @@ String showValue(const cfuint8 * data, int len)
             rv += String::number(*((const double *)data));
         } else if (val >= 946681200000 && val < 4102441200000) {
             rv += " / ";
-            CFDateTime dt = CFDateTime::fromMSecsSinceEpoch(val);
+            DateTime dt = DateTime::fromMSecsSinceEpoch(val);
             // Format as ISO date
             rv += std::format("{:04d}-{:02d}-{:02d}T{:02d}:{:02d}:{:02d}.{:03d}Z",
                 dt.year(), dt.month(), dt.day(), dt.hour(), dt.minute(), dt.second(), dt.msec()).c_str();

@@ -37,7 +37,7 @@ void insert(int start, int end)
     sql.prepare("INSERT INTO test VALUES ($14, $15, $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)");
     sql << 2.0 << 3.0 << 4.0 << 5.0 << 6.0 << 7.0 << 8.0 << 9.0 << 10.0 << 11.0 << 12.0 << 13.0 << 14.0;
     for (int i = start ; i <= end ; ++i) {
-        sql << (cfuint32)i << CFDateTime::currentDateTimeUtc();
+        sql << (cfuint32)i << DateTime::currentDateTimeUtc();
         sql.exec(13);
     }
 }
@@ -50,7 +50,7 @@ void select()
 
     uint count = 0;
     cfuint32 i;
-    CFDateTime t;
+    DateTime t;
     double d;
     while (sql.next()) {
         sql >> i >> t >> d >> d >> d >> d >> d >> d >> d >> d >> d >> d >> d >> d >> d;
@@ -74,7 +74,7 @@ void update(int start, int end)
     );
     sql << 2.0 << 3.0 << 4.0 << 5.0 << 6.0 << 7.0 << 8.0 << 9.0 << 10.0 << 11.0 << 12.0 << 13.0 << 14.0;
 
-    static cfint64 last      = CFDateTime::currentDateTimeUtc().toMSecsSinceEpoch();
+    static cfint64 last      = DateTime::currentDateTimeUtc().toMSecsSinceEpoch();
     static cfint64 lastMicro = 0;
     static cfint64 count     = 0;
     static cfint64 minLat    = 0x7fffffff;
@@ -82,7 +82,7 @@ void update(int start, int end)
     static cfint64 sum       = 0;
 
     while (true) {
-        sql << random(start, end) << CFDateTime::currentDateTimeUtc();
+        sql << random(start, end) << DateTime::currentDateTimeUtc();
         sql.exec(13);
 
         cfint64 nowMicro = std::chrono::duration_cast<std::chrono::microseconds>(
@@ -97,7 +97,7 @@ void update(int start, int end)
         sum += latency;
         ++count;
 
-        cfint64 now = CFDateTime::currentDateTimeUtc().toMSecsSinceEpoch();
+        cfint64 now = DateTime::currentDateTimeUtc().toMSecsSinceEpoch();
         if (now - last > 1000) {
             std::cout << std::format("{} msg/s - latency: {} / {} / {} microsec\n",
                 (long long)(count * 1000 / (now - last)),
@@ -163,7 +163,7 @@ int main(int argc, char *argv[])
 
     PSql::setParameter(String(sqlParam.value()));
 
-    CFElapsedTimer timer;
+    ElapsedTimer timer;
 
     if (insertOpt.isSet()) {
         ByteArray val = insertOpt.value();

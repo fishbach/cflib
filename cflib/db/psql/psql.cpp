@@ -172,7 +172,7 @@ public:
 
     void checkConnection()
     {
-        CFElapsedTimer watch;
+        ElapsedTimer watch;
         watch.start();
 
         PGresult * res = PQexec(conn, "SELECT 1");
@@ -387,7 +387,7 @@ bool PSql::commit()
     }
 
     bool ok;
-    CFElapsedTimer watch;
+    ElapsedTimer watch;
     watch.start();
     PGresult * res = PQexec(td_.conn, "COMMIT");
     if (PQresultStatus(res) != PGRES_COMMAND_OK) {
@@ -584,7 +584,7 @@ PSql & PSql::operator<<(double val)
     return *this;
 }
 
-PSql & PSql::operator<<(const CFDateTime & val)
+PSql & PSql::operator<<(const DateTime & val)
 {
     if (val.isNull()) {
         setParamType(PSql_timestampWithTimeZone, 0, true);
@@ -662,13 +662,13 @@ PSql & PSql::operator>>(double & val)
     return *this;
 }
 
-PSql & PSql::operator>>(CFDateTime & val)
+PSql & PSql::operator>>(DateTime & val)
 {
-    val = CFDateTime();
+    val = DateTime();
     if (!checkField(PSql_timestampWithTimeZone, sizeof(cfint64))) return *this;
     if (!lastFieldIsNull_) {
         cfint64 rawTime = (cfint64)readBE64((const cfuint8 *)PQgetvalue((PGresult *)res_, 0, currentFieldId_));
-        val = CFDateTime::fromMSecsSinceEpoch(rawTime / 1000 + MsecDelta);
+        val = DateTime::fromMSecsSinceEpoch(rawTime / 1000 + MsecDelta);
     }
     ++currentFieldId_;
     return *this;

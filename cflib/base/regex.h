@@ -14,23 +14,23 @@
 
 namespace cflib::base {
 
-class CFRegex
+class Regex
 {
 public:
-    CFRegex() : valid_(false) {}
+    Regex() : valid_(false) {}
 
-    explicit CFRegex(const char * pattern)
+    explicit Regex(const char * pattern)
         : re_(pattern), valid_(true) {}
 
-    explicit CFRegex(const String & pattern)
+    explicit Regex(const String & pattern)
         : re_(pattern.str()), valid_(true) {}
 
     // Case-insensitive constructor
-    CFRegex(const char * pattern, bool caseInsensitive)
+    Regex(const char * pattern, bool caseInsensitive)
         : re_(pattern, caseInsensitive ? std::regex::ECMAScript | std::regex::icase : std::regex::ECMAScript)
         , valid_(true) {}
 
-    CFRegex(const String & pattern, bool caseInsensitive)
+    Regex(const String & pattern, bool caseInsensitive)
         : re_(pattern.str(), caseInsensitive ? std::regex::ECMAScript | std::regex::icase : std::regex::ECMAScript)
         , valid_(true) {}
 
@@ -66,7 +66,7 @@ public:
         List<String> groups_;
         List<int> positions_;
         List<int> lengths_;
-        friend class CFRegex;
+        friend class Regex;
     };
 
     MatchResult matchResult(const String & subject) const {
@@ -116,20 +116,20 @@ private:
     bool valid_;
 };
 
-// String::replace overload that takes CFRegex (defined here since String is declared before CFRegex)
-inline String & cfStringReplace(String & s, const CFRegex & re, const char * replacement) {
+// String::replace overload that takes Regex (defined here since String is declared before Regex)
+inline String & cfStringReplace(String & s, const Regex & re, const char * replacement) {
     s = re.replaceAll(s, String(replacement));
     return s;
 }
 
-// Allow chaining: content.replace(CFRegex(...), "...")
+// Allow chaining: content.replace(Regex(...), "...")
 // We do this by making String implicitly work with a helper
 // Actually, for the fileserver pattern content.replace(re, str).replace(re2, str2)
 // we provide a chainable wrapper:
 class StringRegexReplacer {
 public:
     StringRegexReplacer(String & s) : s_(s) {}
-    StringRegexReplacer & replace(const CFRegex & re, const char * replacement) {
+    StringRegexReplacer & replace(const Regex & re, const char * replacement) {
         s_ = re.replaceAll(s_, String(replacement));
         return *this;
     }

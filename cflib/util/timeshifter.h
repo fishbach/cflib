@@ -14,8 +14,8 @@ namespace cflib::util {
 class TimeShifter
 {
 public:
-    static void setDateTime(const CFDateTime & newNow = CFDateTime());
-    static CFDateTime currentDateTime();    // returns UTC
+    static void setDateTime(const DateTime & newNow = DateTime());
+    static DateTime currentDateTime();    // returns UTC
 
 private:
     static cfint64 diff_;

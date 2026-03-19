@@ -29,7 +29,7 @@ bool insertRevision(const String & rev)
             "$1, $2"
         ") ON CONFLICT DO NOTHING"
     );
-    sql << rev << CFDateTime::nowUTC();
+    sql << rev << DateTime::nowUTC();
     return sql.exec();
 }
 
@@ -44,7 +44,7 @@ bool confirmRevision(const String & rev)
         "WHERE "
             "rev = $2"
     );
-    sql << CFDateTime::nowUTC() << rev;
+    sql << DateTime::nowUTC() << rev;
     return sql.exec();
 }
 

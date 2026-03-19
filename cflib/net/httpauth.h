@@ -27,7 +27,7 @@ protected:
 private:
     const ByteArray name_;
     const String htpasswd_;
-    CFDateTime htpasswdLastMod_;
+    DateTime htpasswdLastMod_;
     Map<String, ByteArray> users_;
     Set<ByteArray> checkedUsers_;
 };

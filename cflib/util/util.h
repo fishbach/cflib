@@ -15,7 +15,7 @@
 namespace cflib::util {
 
 ByteArray weekDay(int dayOfWeek);
-ByteArray dateTimeForHTTP(const CFDateTime & dateTime);
+ByteArray dateTimeForHTTP(const DateTime & dateTime);
 
 cfuint32 calcCRC32Raw(cfuint32 crc, const char * data, cfuint64 size);
 inline cfuint32 calcCRC32(const char * data, cfuint64 size) { return calcCRC32Raw(0xffffffffL, data, size) ^ 0xffffffffL; }
@@ -28,8 +28,8 @@ void inflateRaw(ByteArray & data);
 
 ByteArray readFile(const String & path);
 bool writeFile(const String & path, const ByteArray & data, int perm =
-    CFFile::ReadOwner  | CFFile::ReadUser | CFFile::ReadGroup | CFFile::ReadOther |
-    CFFile::WriteOwner | CFFile::WriteUser);
+    File::ReadOwner  | File::ReadUser | File::ReadGroup | File::ReadOther |
+    File::WriteOwner | File::WriteUser);
 String readTextfile(const String & path);
 
 ByteArray encodeQuotedPrintable(const String & text);

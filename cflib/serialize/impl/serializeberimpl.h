@@ -243,38 +243,38 @@ inline void serializeBER(const char * str, cfuint64 tagNo, ByteArray & data, BER
 // ============================================================================
 
 // ----------------------------------------------------------------------------
-// CFDateTime
+// DateTime
 // ----------------------------------------------------------------------------
 
-inline void serializeBER(const CFDateTime & dt, cfuint64 tagNo, ByteArray & data, BERSerializerBase &)
+inline void serializeBER(const DateTime & dt, cfuint64 tagNo, ByteArray & data, BERSerializerBase &)
 {
     if (!dt.isValid()) { writeNull(data, tagNo); return; }
     serializeBERInt(dt.toMSecsSinceEpoch(), tagNo, data);
 }
 
-inline void deserializeBER(CFDateTime & dt, const cfuint8 * data, int len, BERDeserializerBase &)
+inline void deserializeBER(DateTime & dt, const cfuint8 * data, int len, BERDeserializerBase &)
 {
     cfint64 msec;
     deserializeBERInt(msec, data, len);
-    dt = CFDateTime::fromMSecsSinceEpoch(msec);
+    dt = DateTime::fromMSecsSinceEpoch(msec);
 }
 
 // ----------------------------------------------------------------------------
-// CFFlags
+// Flags
 // ----------------------------------------------------------------------------
 
 template<typename T>
-inline void serializeBER(const CFFlags<T> & fl, cfuint64 tagNo, ByteArray & data, BERSerializerBase &)
+inline void serializeBER(const Flags<T> & fl, cfuint64 tagNo, ByteArray & data, BERSerializerBase &)
 {
     serializeBERInt((cfint32)fl.toInt(), tagNo, data);
 }
 
 template<typename T>
-inline void deserializeBER(CFFlags<T> & fl, const cfuint8 * data, int len, BERDeserializerBase &)
+inline void deserializeBER(Flags<T> & fl, const cfuint8 * data, int len, BERDeserializerBase &)
 {
     cfint32 flags;
     deserializeBERInt(flags, data, len);
-    fl = CFFlags<T>((T)flags);
+    fl = Flags<T>((T)flags);
 }
 
 
@@ -491,7 +491,7 @@ inline void deserializeBER(T & cl, const cfuint8 * data, int len, BERDeserialize
 // ============================================================================
 
 template<typename T>
-inline void serializeBER(const CFSharedPtr<T> & cl, cfuint64 tagNo, ByteArray & data, BERSerializerBase &)
+inline void serializeBER(const SharedPtr<T> & cl, cfuint64 tagNo, ByteArray & data, BERSerializerBase &)
 {
     if (!cl) return;
 
@@ -501,7 +501,7 @@ inline void serializeBER(const CFSharedPtr<T> & cl, cfuint64 tagNo, ByteArray & 
 }
 
 template<typename T>
-inline void deserializeBER(CFSharedPtr<T> & cl, const cfuint8 * data, int len, BERDeserializerBase &)
+inline void deserializeBER(SharedPtr<T> & cl, const cfuint8 * data, int len, BERDeserializerBase &)
 {
     RegisterClassBase::deserialize(cl, data, len);
 }

@@ -85,8 +85,8 @@ inline void logFormat(ByteArray & dest, const char * str)      { dest += str; }
 inline void logFormat(ByteArray & dest, const ByteArray & ba) { dest += ba; }
 inline void logFormat(ByteArray & dest, const String & str)   { dest.append(str.c_str()); }
 
-// CFDateTime
-inline void logFormat(ByteArray & dest, const CFDateTime & dt) {
+// DateTime
+inline void logFormat(ByteArray & dest, const DateTime & dt) {
     if (!dt.isValid()) { dest += "(null)"; return; }
     dest += std::format("{:02d}.{:02d}.{:04d} {:02d}:{:02d}:{:02d}.{:03d} UTC",
         dt.day(), dt.month(), dt.year(),

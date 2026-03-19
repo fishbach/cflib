@@ -33,7 +33,7 @@
     public: \
         virtual ~Class() = default; \
         virtual cflib::serialize::SerializeTypeInfo getSerializeTypeInfo() const { return serializeTypeInfo(); } \
-        static inline CFSharedPtr<Class> createByClassId(cfuint32 classId) { \
+        static inline SharedPtr<Class> createByClassId(cfuint32 classId) { \
             return cflib::serialize::impl::RegisterClassBase::create<Class>(classId); } \
 
 #define SERIALIZE_BASE(Class) \

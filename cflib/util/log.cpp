@@ -43,7 +43,7 @@ namespace {
 
 bool active = false;
 Mutex mutex;
-CFFile file;
+File file;
 LogCategory logLevelTrigger = 15;
 LogLevelCallback logLevelCallback = 0;
 
@@ -138,14 +138,14 @@ void Log::start(const String & fileName)
     }
 
     if (fileName == "-") {
-        file.open(1, CFFile::WriteOnly);
+        file.open(1, File::WriteOnly);
     } else {
         file.setFileName(fileName);
-        if (!file.open(CFFile::WriteOnly | CFFile::Append)) {
+        if (!file.open(File::WriteOnly | File::Append)) {
             std::cerr << std::format("could not open log file: {} ({})\n", fileName.c_str(), file.errorString().c_str());
             return;
         }
-        file.setPermissions(CFFile::ReadOwner | CFFile::WriteOwner | CFFile::ReadGroup);
+        file.setPermissions(File::ReadOwner | File::WriteOwner | File::ReadGroup);
     }
     active = true;
 }
@@ -176,7 +176,7 @@ void Log::writeLog(const char * filename, int lineNo, LogCategory category, cons
     #endif
 
     // timestamp
-    const CFDateTime now = CFDateTime::nowUTC();
+    const DateTime now = DateTime::nowUTC();
     writeInt(pos, now.year(),  4); pos += 4;
     writeInt(pos, now.month(), 2); pos += 2;
     writeInt(pos, now.day(),   2); pos += 2;

@@ -165,7 +165,7 @@ void ThreadHolderWorkerPool::wokeUp()
         return;
     }
 
-    CFElapsedTimer elapsed;
+    ElapsedTimer elapsed;
     if (stats_) elapsed.start();
     while (const Functor * func = externalCalls_.take()) {
         (*func)();

@@ -12,18 +12,18 @@
 namespace cflib::base {
 
 template<typename T>
-using CFSharedPtr = std::shared_ptr<T>;
+using SharedPtr = std::shared_ptr<T>;
 
 template<typename T>
-using CFUniquePtr = std::unique_ptr<T>;
+using UniquePtr = std::unique_ptr<T>;
 
 template<typename T, typename... Args>
-CFSharedPtr<T> CFMakeShared(Args&&... args) {
+SharedPtr<T> MakeShared(Args&&... args) {
     return std::make_shared<T>(std::forward<Args>(args)...);
 }
 
 template<typename T, typename... Args>
-CFUniquePtr<T> CFMakeUnique(Args&&... args) {
+UniquePtr<T> MakeUnique(Args&&... args) {
     return std::make_unique<T>(std::forward<Args>(args)...);
 }
 

@@ -12,16 +12,16 @@
 
 namespace cflib::base {
 
-class CFUrl
+class Url
 {
 public:
-    CFUrl() : port_(-1) {}
+    Url() : port_(-1) {}
 
-    explicit CFUrl(const String & url) : port_(-1) {
+    explicit Url(const String & url) : port_(-1) {
         parse(url.str());
     }
 
-    explicit CFUrl(const char * url) : port_(-1) {
+    explicit Url(const char * url) : port_(-1) {
         if (url) parse(std::string(url));
     }
 

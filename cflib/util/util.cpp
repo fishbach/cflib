@@ -38,7 +38,7 @@ ByteArray weekDay(int dayOfWeek)
     }
 }
 
-ByteArray dateTimeForHTTP(const CFDateTime & dateTime)
+ByteArray dateTimeForHTTP(const DateTime & dateTime)
 {
     // see RFC 2822 section 3.3.
     ByteArray retval = weekDay(dateTime.dayOfWeek());
@@ -264,23 +264,23 @@ void inflateRaw(ByteArray & data)
 
 ByteArray readFile(const String & path)
 {
-    CFFile file(path);
-    file.open(CFFile::ReadOnly);
+    File file(path);
+    file.open(File::ReadOnly);
     return file.readAll();
 }
 
 bool writeFile(const String & path, const ByteArray & data, int perm)
 {
-    CFFile file(path);
-    if (!file.open(CFFile::WriteOnly | CFFile::Truncate)) return false;
+    File file(path);
+    if (!file.open(File::WriteOnly | File::Truncate)) return false;
     file.setPermissions(perm);
     return file.write(data) == (cfint64)data.size();
 }
 
 String readTextfile(const String & path)
 {
-    CFFile file(path);
-    file.open(CFFile::ReadOnly);
+    File file(path);
+    file.open(File::ReadOnly);
     return String::fromUtf8(file.readAll());
 }
 

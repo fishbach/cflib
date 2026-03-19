@@ -154,32 +154,32 @@ void TCPReader::closed(CloseType type)
 
 }
 
-void RedirectServer::addValid(const CFRegex & test)
+void RedirectServer::addValid(const Regex & test)
 {
     entries_ << Entry(test);
 }
 
-void RedirectServer::addRedirectIf(const CFRegex & test, const char * destUrl)
+void RedirectServer::addRedirectIf(const Regex & test, const char * destUrl)
 {
     entries_ << Entry(false, test, ByteArray(destUrl));
 }
 
-void RedirectServer::addRedirectIf(const CFRegex & test, const ByteArray & destUrl)
+void RedirectServer::addRedirectIf(const Regex & test, const ByteArray & destUrl)
 {
     entries_ << Entry(false, test, destUrl);
 }
 
-void RedirectServer::addRedirectIf(const CFRegex & test, DestUrlReFunc destUrlReFunc)
+void RedirectServer::addRedirectIf(const Regex & test, DestUrlReFunc destUrlReFunc)
 {
     entries_ << Entry(false, test, destUrlReFunc);
 }
 
-void RedirectServer::addRedirectIfNot(const CFRegex & test, const char * destUrl)
+void RedirectServer::addRedirectIfNot(const Regex & test, const char * destUrl)
 {
     entries_ << Entry(true, test, ByteArray(destUrl));
 }
 
-void RedirectServer::addRedirectIfNot(const CFRegex & test, const ByteArray & destUrl)
+void RedirectServer::addRedirectIfNot(const Regex & test, const ByteArray & destUrl)
 {
     entries_ << Entry(true, test, destUrl);
 }
@@ -199,17 +199,17 @@ void RedirectServer::addDefaultRedirect(DestUrlFunc destUrlFunc)
     entries_ << Entry(destUrlFunc);
 }
 
-void RedirectServer::addForwardIf(const CFRegex & test, const ByteArray & ip, cfuint16 port)
+void RedirectServer::addForwardIf(const Regex & test, const ByteArray & ip, cfuint16 port)
 {
     entries_ << Entry(false, test, Pair(ip, port));
 }
 
-void RedirectServer::addForwardIf(const CFRegex & test, DestHostReFunc destHostReFunc)
+void RedirectServer::addForwardIf(const Regex & test, DestHostReFunc destHostReFunc)
 {
     entries_ << Entry(false, test, destHostReFunc);
 }
 
-void RedirectServer::addForwardIfNot(const CFRegex & test, const ByteArray & ip, cfuint16 port)
+void RedirectServer::addForwardIfNot(const Regex & test, const ByteArray & ip, cfuint16 port)
 {
     entries_ << Entry(true, test, Pair(ip, port));
 }
@@ -232,7 +232,7 @@ void RedirectServer::handleRequest(const cflib::net::Request & request)
     for (const Entry & entry : entries_) {
 
         // check for match
-        CFRegex::MatchResult match;
+        Regex::MatchResult match;
         if (!entry.isDefault) {
             match = entry.test.matchResult(url);
             if (match.hasMatch() == entry.invert) continue;

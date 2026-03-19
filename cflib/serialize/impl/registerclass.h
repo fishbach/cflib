@@ -17,13 +17,13 @@ class RegisterClassBase
 {
 public:
     template<typename T>
-    static inline void serialize(const CFSharedPtr<T> & cl, BERSerializerBase & ser)
+    static inline void serialize(const SharedPtr<T> & cl, BERSerializerBase & ser)
     {
         registry()[cl->getSerializeTypeInfo().classId]->serialize(cl.get(), ser);
     }
 
     template<typename T>
-    static inline void deserialize(CFSharedPtr<T> & cl, const cfuint8 * data, int len)
+    static inline void deserialize(SharedPtr<T> & cl, const cfuint8 * data, int len)
     {
         cfuint32 classId;
         {
@@ -45,9 +45,9 @@ public:
     }
 
     template<typename T>
-    static inline CFSharedPtr<T> create(cfuint32 classId)
+    static inline SharedPtr<T> create(cfuint32 classId)
     {
-        CFSharedPtr<T> rv;
+        SharedPtr<T> rv;
         auto it = registry().find(classId);
         const RegisterClassBase * basePtr = (it != registry().end()) ? it->second : nullptr;
         if (basePtr) rv.reset((T *)basePtr->create());

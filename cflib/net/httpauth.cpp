@@ -40,12 +40,12 @@ void HttpAuth::handleRequest(const Request & request)
         struct stat st;
         bool readable = stat(htpasswd_.c_str(), &st) == 0 && S_ISREG(st.st_mode);
         if (!readable) {
-            htpasswdLastMod_ = CFDateTime();
+            htpasswdLastMod_ = DateTime();
             users_.clear();
             checkedUsers_.clear();
             logWarn("Cannot read HTTP Basic Auth file %1", htpasswd_);
         } else {
-            CFDateTime fileMod = CFDateTime::fromSecsSinceEpoch(st.st_mtime);
+            DateTime fileMod = DateTime::fromSecsSinceEpoch(st.st_mtime);
             if (fileMod.toSecsSinceEpoch() != htpasswdLastMod_.toSecsSinceEpoch()) {
                 htpasswdLastMod_ = fileMod;
                 users_.clear();

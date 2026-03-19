@@ -11,15 +11,15 @@ namespace cflib::util {
 
 cfint64 TimeShifter::diff_ = 0;
 
-void TimeShifter::setDateTime(const CFDateTime & newNow)
+void TimeShifter::setDateTime(const DateTime & newNow)
 {
     if (newNow.isNull()) diff_ = 0;
-    else diff_ = CFDateTime::nowUTC().msecsTo(newNow);
+    else diff_ = DateTime::nowUTC().msecsTo(newNow);
 }
 
-CFDateTime TimeShifter::currentDateTime()
+DateTime TimeShifter::currentDateTime()
 {
-    return CFDateTime::nowUTC().addMSecs(diff_);
+    return DateTime::nowUTC().addMSecs(diff_);
 }
 
 } // namespace

@@ -43,8 +43,8 @@ public:
         setNoDelay(true);
         startReadWatcher();
         if (connectionTimeoutSec > 0) {
-            lastRead_  = CFDateTime::currentDateTimeUtc();
-            lastWrite_ = CFDateTime::currentDateTimeUtc();
+            lastRead_  = DateTime::currentDateTimeUtc();
+            lastWrite_ = DateTime::currentDateTimeUtc();
         }
         if (deflateEnabled_) logDebug("using deflate on connection: %1", connId);
     }
@@ -110,7 +110,7 @@ public:
         write(frame);
     }
 
-    void checkTimeout(const CFDateTime & now)
+    void checkTimeout(const DateTime & now)
     {
         cfint64 readSecs = lastRead_.secsTo(now);
         cfint64 writeSecs = lastWrite_.secsTo(now);
@@ -130,7 +130,7 @@ protected:
         if (!verifyThreadCall(&WSConnHandler::newBytesAvailable)) return;
 
         buf_ += read();
-        if (connectionDataTimeout_ > 0) lastRead_ = CFDateTime::currentDateTimeUtc();
+        if (connectionDataTimeout_ > 0) lastRead_ = DateTime::currentDateTimeUtc();
         continueRead();
     }
 
@@ -148,7 +148,7 @@ protected:
     virtual void someBytesWritten(cfuint64 count)
     {
         if (!verifyThreadCall(&WSConnHandler::someBytesWritten, count)) return;
-        lastWrite_ = CFDateTime::currentDateTimeUtc();
+        lastWrite_ = DateTime::currentDateTimeUtc();
     }
 
 private:
@@ -259,15 +259,15 @@ private:
     ByteArray fragmentBuf_;
     bool isBinary_;
     bool isDeflated_;
-    CFDateTime lastRead_;
-    CFDateTime lastWrite_;
+    DateTime lastRead_;
+    DateTime lastWrite_;
     const ByteArray ping_;
     const bool deflateEnabled_;
 };
 
 // ============================================================================
 
-WebSocketService::WebSocketService(const String & path, const CFRegex & allowedOrigin,
+WebSocketService::WebSocketService(const String & path, const Regex & allowedOrigin,
     uint connectionTimeoutSec)
 :
     ThreadVerify("WebSocketService", LoopType::Worker),
@@ -402,7 +402,7 @@ void WebSocketService::startTimer()
 
 void WebSocketService::checkTimeout()
 {
-    const CFDateTime now = CFDateTime::currentDateTimeUtc();
+    const DateTime now = DateTime::currentDateTimeUtc();
     for (auto & [id, hdl] : connections_) hdl->checkTimeout(now);
 }
 

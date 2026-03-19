@@ -31,7 +31,7 @@ inline bool fuzzyCompare(double a, double b)
     return fabs(a - b) <= 0.000000000001 * fmax(1.0, fmax(fabs(a), fabs(b)));
 }
 
-CFDateTime makeUTCDateTime(int year, int month, int day, int hour, int min, int sec, int msec)
+DateTime makeUTCDateTime(int year, int month, int day, int hour, int min, int sec, int msec)
 {
     struct tm t = {};
     t.tm_year = year - 1900;
@@ -41,7 +41,7 @@ CFDateTime makeUTCDateTime(int year, int month, int day, int hour, int min, int 
     t.tm_min  = min;
     t.tm_sec  = sec;
     time_t epoch = timegm(&t);
-    return CFDateTime::fromMSecsSinceEpoch((cfint64)epoch * 1000 + msec);
+    return DateTime::fromMSecsSinceEpoch((cfint64)epoch * 1000 + msec);
 }
 
 }
@@ -102,7 +102,7 @@ private:
         cfint16     s16;
         cfint32     s32;
         cfint64     s64;
-        CFDateTime  t;
+        DateTime  t;
         ByteArray a;
         String    s;
         float       f;
@@ -332,7 +332,7 @@ private:
         TCOMPARE(tt.id,  (cfuint32)3);
         TCOMPARE(tt.x16, (cfuint16)5);
         TCOMPARE(tt.x64, (cfuint64)7);
-        CFDateTime now = CFDateTime::nowUTC();
+        DateTime now = DateTime::nowUTC();
         TVERIFY(tt.t.toMSecsSinceEpoch() > now.toMSecsSinceEpoch() - 30000);
         TVERIFY(tt.t.toMSecsSinceEpoch() < now.toMSecsSinceEpoch() + 30000);
         TCOMPARE(tt.a, ByteArray(""));

@@ -21,7 +21,7 @@ namespace cflib::net {
 
 namespace {
 
-const CFRegex ipRe("^(?:\\d+\\.\\d+\\.\\d+\\.\\d+|[:0-9A-Fa-f]+)$");
+const Regex ipRe("^(?:\\d+\\.\\d+\\.\\d+\\.\\d+|[:0-9A-Fa-f]+)$");
 
 }
 

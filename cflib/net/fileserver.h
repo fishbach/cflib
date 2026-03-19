@@ -34,7 +34,7 @@ public:
     ~FileServer();
 
     void exportTo(const String & dest) const;
-    void add404File(const CFRegex & re, const String & dest);
+    void add404File(const Regex & re, const String & dest);
     void setAccessControlAllowOrigin(const ByteArray & origin) { accessControlAllowOrigin_ = origin; }
 
 protected:
@@ -55,11 +55,11 @@ private:
     const bool removeSlash_;
     const bool useHostAsDir_;
     const ByteArray eTag_;
-    typedef Pair<CFRegex, String> Redirect;
+    typedef Pair<Regex, String> Redirect;
     List<Redirect> redirects404_;
-    const CFRegex pathRE_;
-    const CFRegex endingRE_;
-    const CFRegex elementRE_;
+    const Regex pathRE_;
+    const Regex endingRE_;
+    const Regex elementRE_;
     ByteArray accessControlAllowOrigin_;
 };
 

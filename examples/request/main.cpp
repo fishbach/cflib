@@ -84,7 +84,7 @@ int main(int argc, char *argv[])
         std::cout << "\n";
         threadSafeExit(status == 200 ? 0 : 1);
     });
-    request->start(CFUrl(String(url.value())), postData);
+    request->start(Url(String(url.value())), postData);
 
     // Block main thread; threadSafeExit() will call _exit() from the reply callback
     for (;;) pause();
