@@ -38,11 +38,11 @@ private:
 };
 
 // Counting semaphore (matches QSemaphore usage in cflib)
-class CFSemaphore
+class Semaphore
 {
-    CF_DISABLE_COPY(CFSemaphore)
+    CF_DISABLE_COPY(Semaphore)
 public:
-    CFSemaphore(int initial = 0) : count_(initial) {}
+    Semaphore(int initial = 0) : count_(initial) {}
 
     void acquire(int n = 1) {
         for (int i = 0; i < n; ++i) {
@@ -67,10 +67,10 @@ private:
     int count_;
 };
 
-class CFAtomicInt
+class AtomicInt
 {
 public:
-    CFAtomicInt(int v = 0) : val_(v) {}
+    AtomicInt(int v = 0) : val_(v) {}
 
     int load() const { return val_.load(std::memory_order_relaxed); }
     void store(int v) { val_.store(v, std::memory_order_relaxed); }
@@ -93,10 +93,10 @@ private:
 };
 
 template<typename T>
-class CFAtomicInteger
+class AtomicInteger
 {
 public:
-    CFAtomicInteger(T v = 0) : val_(v) {}
+    AtomicInteger(T v = 0) : val_(v) {}
     T load() const { return val_.load(std::memory_order_relaxed); }
     void store(T v) { val_.store(v, std::memory_order_relaxed); }
     T operator++() { return val_.fetch_add(1, std::memory_order_relaxed) + 1; }

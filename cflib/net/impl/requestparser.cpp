@@ -18,7 +18,7 @@ namespace cflib::net::impl {
 
 namespace {
 
-CFAtomicInt connCount;
+AtomicInt connCount;
 
 }
 

@@ -48,7 +48,7 @@ private:
     int count_;
     int reader_;
     int writer_;
-    CFAtomicInt sl_;
+    AtomicInt sl_;
 };
 
 } // namespace

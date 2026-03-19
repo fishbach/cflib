@@ -21,7 +21,7 @@ namespace cflib::db {
 
 namespace {
 
-CFAtomicInt connIdCounter(1);
+AtomicInt connIdCounter(1);
 
 enum PostgresTypes {
     PSql_null = 0,

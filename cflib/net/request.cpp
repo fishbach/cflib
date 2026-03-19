@@ -63,7 +63,7 @@ public:
         if (parser) parser->detachRequest();
     }
 
-    CFAtomicInt ref;
+    AtomicInt ref;
     int connId;
     int requestId;
     ByteArray id;

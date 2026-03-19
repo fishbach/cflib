@@ -948,7 +948,7 @@ private:
 
     void transaction_blocking_commit_test()
     {
-        CFSemaphore sem;
+        Semaphore sem;
         bool threadResult = false;
 
         PSqlConn;
@@ -991,7 +991,7 @@ private:
         TVERIFY(threadResult);
 
         // Insert of same key blocks until our transaction has finished.
-        // (We can't easily check sem.available() == 0 with CFSemaphore,
+        // (We can't easily check sem.available() == 0 with Semaphore,
         //  so just sleep a bit and then commit.)
         usleep(1000000); // 1 second
 
@@ -1005,7 +1005,7 @@ private:
 
     void transaction_blocking_rollback_test()
     {
-        CFSemaphore sem;
+        Semaphore sem;
         bool threadResult = false;
 
         PSqlConn;

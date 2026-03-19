@@ -31,7 +31,7 @@ private:
 private:
     uint activeRequests_;
     bool shutdown_;
-    CFSemaphore sem_;
+    Semaphore sem_;
 };
 
 }} // namespace

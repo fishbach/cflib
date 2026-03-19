@@ -72,7 +72,7 @@ private:
     ev_io * readWatcher_;
     crypt::TLSCredentials * credentials_;
     CFVector<TLSThread *> tlsThreads_;
-    CFAtomicInteger<uint> tlsConnId_;
+    AtomicInteger<uint> tlsConnId_;
     CFSet<TCPConnData *> connections_;
 };
 

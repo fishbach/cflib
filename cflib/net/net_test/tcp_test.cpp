@@ -19,7 +19,7 @@ using namespace cflib::net;
 
 namespace {
 
-CFSemaphore msgSem;
+Semaphore msgSem;
 StringList msgs;
 Mutex mutex;
 
