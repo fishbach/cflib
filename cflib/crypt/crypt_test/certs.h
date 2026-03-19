@@ -11,7 +11,7 @@
 
 namespace {
 
-const CFByteArray cert1(
+const ByteArray cert1(
     "-----BEGIN CERTIFICATE-----\r\n"
     "MIIDKzCCAhOgAwIBAgICEAEwDQYJKoZIhvcNAQELBQAwDTELMAkGA1UEAwwCY2Ew\r\n"
     "HhcNMjYwMTExMTEzMTQ5WhcNMzYwMTA5MTEzMTQ5WjAUMRIwEAYDVQQDDAkxMjcu\r\n"
@@ -33,7 +33,7 @@ const CFByteArray cert1(
     "-----END CERTIFICATE-----\r\n"
 );
 
-const CFByteArray cert1PrivateKey(
+const ByteArray cert1PrivateKey(
     "-----BEGIN ENCRYPTED PRIVATE KEY-----\r\n"
     "MIIFJDBWBgkqhkiG9w0BBQ0wSTAxBgkqhkiG9w0BBQwwJAQQI4rALn3ko/KqhwoA\r\n"
     "48iDZQICCAAwDAYIKoZIhvcNAgkFADAUBggqhkiG9w0DBwQIpv61SH+PwEYEggTI\r\n"
@@ -66,7 +66,7 @@ const CFByteArray cert1PrivateKey(
     "-----END ENCRYPTED PRIVATE KEY-----\r\n"
 );
 
-const CFByteArray cert2(
+const ByteArray cert2(
     "-----BEGIN CERTIFICATE-----\r\n"
     "MIIC6jCCAdKgAwIBAgICEAAwDQYJKoZIhvcNAQELBQAwETEPMA0GA1UEAwwGcm9v\r\n"
     "dGNhMB4XDTI2MDExMTExMzE0OVoXDTM2MDEwOTExMzE0OVowDTELMAkGA1UEAwwC\r\n"
@@ -87,7 +87,7 @@ const CFByteArray cert2(
     "-----END CERTIFICATE-----\r\n"
 );
 
-const CFByteArray cert2Crl(
+const ByteArray cert2Crl(
     "-----BEGIN X509 CRL-----\r\n"
     "MIIBZTBPAgEBMA0GCSqGSIb3DQEBCwUAMA0xCzAJBgNVBAMMAmNhFw0yNjAxMTEx\r\n"
     "MTMxNDlaFw0zNjAxMDkxMTMxNDlaoA4wDDAKBgNVHRQEAwIBATANBgkqhkiG9w0B\r\n"
@@ -100,7 +100,7 @@ const CFByteArray cert2Crl(
     "-----END X509 CRL-----\r\n"
 );
 
-const CFByteArray cert3(
+const ByteArray cert3(
     "-----BEGIN CERTIFICATE-----\r\n"
     "MIIDADCCAeigAwIBAgIUR6hzmRwZpLodPwaeXfL1mBfhRBIwDQYJKoZIhvcNAQEL\r\n"
     "BQAwETEPMA0GA1UEAwwGcm9vdGNhMB4XDTI2MDExMTExMzE0OVoXDTM2MDEwOTEx\r\n"
@@ -122,9 +122,9 @@ const CFByteArray cert3(
     "-----END CERTIFICATE-----\r\n"
 );
 
-inline CFByteArray detach(const CFByteArray & ba)
+inline ByteArray detach(const ByteArray & ba)
 {
-    CFByteArray rv(ba);
+    ByteArray rv(ba);
 
     return rv;
 }

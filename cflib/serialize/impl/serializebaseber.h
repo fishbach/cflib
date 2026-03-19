@@ -17,7 +17,7 @@ class BERSerializerBase
 {
     CF_DISABLE_COPY(BERSerializerBase)
 public:
-    BERSerializerBase(CFByteArray & data, bool disableTagNumbering = false) :
+    BERSerializerBase(ByteArray & data, bool disableTagNumbering = false) :
         data_(data), tag_(disableTagNumbering ? 0 : 1) {}
 
     template<typename T>
@@ -35,7 +35,7 @@ public:
     }
 
 private:
-    CFByteArray & data_;
+    ByteArray & data_;
     cfuint64 tag_;
 };
 

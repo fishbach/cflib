@@ -25,7 +25,7 @@ int main(int, char *[])
     #else
         char * pwd = getpass("Password: ");
     #endif
-    CFByteArray hash = cflib::crypt::hashPassword(pwd);
+    ByteArray hash = cflib::crypt::hashPassword(pwd);
     std::cout << std::format("{}\n", hash.constData());
 
     return 0;

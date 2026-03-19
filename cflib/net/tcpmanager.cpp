@@ -33,29 +33,29 @@ bool TCPManager::isRunning() const
     return impl_->isRunning();
 }
 
-TCPConnData * TCPManager::openConnection(const CFByteArray & destAddress, cfuint16 destPort, bool preferIPv6)
+TCPConnData * TCPManager::openConnection(const ByteArray & destAddress, cfuint16 destPort, bool preferIPv6)
 {
-    return impl_->openConnection(destAddress, destPort, CFByteArray(), 0, 0, preferIPv6);
+    return impl_->openConnection(destAddress, destPort, ByteArray(), 0, 0, preferIPv6);
 }
 
-TCPConnData * TCPManager::openConnection(const CFByteArray & destAddress, cfuint16 destPort,
-    const CFByteArray & sourceIP, cfuint16 sourcePort, bool preferIPv6)
+TCPConnData * TCPManager::openConnection(const ByteArray & destAddress, cfuint16 destPort,
+    const ByteArray & sourceIP, cfuint16 sourcePort, bool preferIPv6)
 {
     return impl_->openConnection(destAddress, destPort, sourceIP, sourcePort, 0, preferIPv6);
 }
 
-TCPConnData * TCPManager::openTLSConnection(const CFByteArray & destAddress, cfuint16 destPort, bool preferIPv6)
+TCPConnData * TCPManager::openTLSConnection(const ByteArray & destAddress, cfuint16 destPort, bool preferIPv6)
 {
-    return impl_->openConnection(destAddress, destPort, CFByteArray(), 0, &impl_->clientCredentials, preferIPv6);
+    return impl_->openConnection(destAddress, destPort, ByteArray(), 0, &impl_->clientCredentials, preferIPv6);
 }
 
-TCPConnData * TCPManager::openTLSConnection(const CFByteArray & destAddress, cfuint16 destPort,
-    const CFByteArray & sourceIP, cfuint16 sourcePort, bool preferIPv6)
+TCPConnData * TCPManager::openTLSConnection(const ByteArray & destAddress, cfuint16 destPort,
+    const ByteArray & sourceIP, cfuint16 sourcePort, bool preferIPv6)
 {
     return impl_->openConnection(destAddress, destPort, sourceIP, sourcePort, &impl_->clientCredentials, preferIPv6);
 }
 
-int TCPManager::openListenSocket(const CFByteArray & ip, cfuint16 port)
+int TCPManager::openListenSocket(const ByteArray & ip, cfuint16 port)
 {
     return impl::TCPManagerImpl::openListenSocket(ip, port);
 }

@@ -43,11 +43,11 @@ public:
     virtual ~TCPConn();
 
     // returns all available bytes
-    CFByteArray read();
+    ByteArray read();
 
     // buffers any amount of bytes passed
     // if notifyFinished == true, function writeFinished will be called when all bytes got written.
-    void write(const CFByteArray & data, bool notifyFinished = false);
+    void write(const ByteArray & data, bool notifyFinished = false);
 
     // closes the socket
     // - WriteClosed closes the write channel after all bytes have been written
@@ -64,7 +64,7 @@ public:
     void startReadWatcher();
 
     CloseType isClosed() const;
-    CFByteArray peerIP() const;
+    ByteArray peerIP() const;
     cfuint16 peerPort() const;
 
     TCPConnData * detach();

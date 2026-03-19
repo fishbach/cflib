@@ -21,7 +21,7 @@ KafkaConnector::~KafkaConnector()
     delete impl_;
 }
 
-void KafkaConnector::connect(const CFByteArray & destAddress, cfuint16 destPort)
+void KafkaConnector::connect(const ByteArray & destAddress, cfuint16 destPort)
 {
     CFList<KafkaConnector::Address> cluster;
     cluster.push_back(Address(destAddress, destPort));
@@ -33,29 +33,29 @@ void KafkaConnector::connect(const CFList<KafkaConnector::Address> & cluster)
     impl_->connect(cluster);
 }
 
-void KafkaConnector::produce(const CFByteArray & topic, cfint32 partitionId, const Messages & messages,
+void KafkaConnector::produce(const ByteArray & topic, cfint32 partitionId, const Messages & messages,
     cfuint16 requiredAcks, cfuint32 ackTimeoutMs, cfuint32 correlationId)
 {
     impl_->produce(topic, partitionId, messages, requiredAcks, ackTimeoutMs, correlationId);
 }
 
-void KafkaConnector::getFirstOffset(const CFByteArray & topic, cfint32 partitionId, cfuint32 correlationId)
+void KafkaConnector::getFirstOffset(const ByteArray & topic, cfint32 partitionId, cfuint32 correlationId)
 {
     impl_->getOffsets(topic, partitionId, correlationId, true);
 }
 
-void KafkaConnector::getHighwaterMarkOffset(const CFByteArray & topic, cfint32 partitionId, cfuint32 correlationId)
+void KafkaConnector::getHighwaterMarkOffset(const ByteArray & topic, cfint32 partitionId, cfuint32 correlationId)
 {
     impl_->getOffsets(topic, partitionId, correlationId, false);
 }
 
-void KafkaConnector::fetch(const CFByteArray & topic, cfint32 partitionId, cfint64 offset,
+void KafkaConnector::fetch(const ByteArray & topic, cfint32 partitionId, cfint64 offset,
     cfuint32 maxWaitTime, cfuint32 minBytes, cfuint32 maxBytes, cfuint32 correlationId)
 {
     impl_->fetch(topic, partitionId, offset, maxWaitTime, minBytes, maxBytes, correlationId);
 }
 
-void KafkaConnector::joinGroup(const CFByteArray & groupId, const Topics & topics, GroupAssignmentStrategy preferredStrategy)
+void KafkaConnector::joinGroup(const ByteArray & groupId, const Topics & topics, GroupAssignmentStrategy preferredStrategy)
 {
     impl_->joinGroup(groupId, topics, preferredStrategy);
 }

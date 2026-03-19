@@ -16,28 +16,30 @@
 #include <type_traits>
 #include <vector>
 
-class CFByteArray
+namespace cflib::base {
+
+class ByteArray
 {
 public:
     static constexpr cfsize_t npos = std::string::npos;
 
-    CFByteArray() = default;
-    CFByteArray(const char * data) : data_(data ? data : ""), isNull_(!data) {}
-    CFByteArray(const char * data, cfsize_t len) : data_(data, len), isNull_(false) {}
-    CFByteArray(cfsize_t n, char c) : data_(n, c), isNull_(false) {}
-    CFByteArray(std::string_view sv) : data_(sv), isNull_(false) {}
-    explicit CFByteArray(std::string s) : data_(std::move(s)), isNull_(false) {}
+    ByteArray() = default;
+    ByteArray(const char * data) : data_(data ? data : ""), isNull_(!data) {}
+    ByteArray(const char * data, cfsize_t len) : data_(data, len), isNull_(false) {}
+    ByteArray(cfsize_t n, char c) : data_(n, c), isNull_(false) {}
+    ByteArray(std::string_view sv) : data_(sv), isNull_(false) {}
+    explicit ByteArray(std::string s) : data_(std::move(s)), isNull_(false) {}
 
     template<typename T, std::enable_if_t<
-        !std::is_same_v<std::decay_t<T>, CFByteArray> &&
+        !std::is_same_v<std::decay_t<T>, ByteArray> &&
         !std::is_pointer_v<std::decay_t<T>> &&
         !std::is_same_v<std::decay_t<T>, std::string> &&
         !std::is_same_v<std::decay_t<T>, std::string_view> &&
         std::is_same_v<decltype(std::declval<const T&>().constData()), const char*>,
         int> = 0>
-    CFByteArray(const T & qba) : data_(qba.constData(), qba.size()), isNull_(false) {}
+    ByteArray(const T & qba) : data_(qba.constData(), qba.size()), isNull_(false) {}
 
-    static CFByteArray fromRawData(const char * data, cfsize_t len) { return CFByteArray(data, len); }
+    static ByteArray fromRawData(const char * data, cfsize_t len) { return ByteArray(data, len); }
 
     char *       data()       { return data_.data(); }
     const char * data() const { return data_.data(); }
@@ -58,43 +60,43 @@ public:
     char & operator[](cfsize_t i)       { return data_[i]; }
     char   at(cfsize_t i) const         { return data_[i]; }
 
-    CFByteArray & append(char c)                        { data_ += c; isNull_ = false; return *this; }
-    CFByteArray & append(const char * s)                { data_ += s; isNull_ = false; return *this; }
-    CFByteArray & append(const char * s, cfsize_t len)  { data_.append(s, len); isNull_ = false; return *this; }
-    CFByteArray & append(const CFByteArray & other)     { data_ += other.data_; isNull_ = false; return *this; }
+    ByteArray & append(char c)                        { data_ += c; isNull_ = false; return *this; }
+    ByteArray & append(const char * s)                { data_ += s; isNull_ = false; return *this; }
+    ByteArray & append(const char * s, cfsize_t len)  { data_.append(s, len); isNull_ = false; return *this; }
+    ByteArray & append(const ByteArray & other)     { data_ += other.data_; isNull_ = false; return *this; }
 
-    CFByteArray & prepend(const char * s, cfsize_t len) { data_.insert(0, s, len); isNull_ = false; return *this; }
-    CFByteArray & prepend(const char * s)               { data_.insert(0, s); isNull_ = false; return *this; }
+    ByteArray & prepend(const char * s, cfsize_t len) { data_.insert(0, s, len); isNull_ = false; return *this; }
+    ByteArray & prepend(const char * s)               { data_.insert(0, s); isNull_ = false; return *this; }
 
-    CFByteArray & insert(cfsize_t pos, const CFByteArray & ba) {
+    ByteArray & insert(cfsize_t pos, const ByteArray & ba) {
         data_.insert(pos, ba.data_);
         isNull_ = false;
         return *this;
     }
-    CFByteArray & insert(cfsize_t pos, const char * s, cfsize_t len) {
+    ByteArray & insert(cfsize_t pos, const char * s, cfsize_t len) {
         data_.insert(pos, s, len);
         isNull_ = false;
         return *this;
     }
 
-    CFByteArray mid(cfsize_t pos, cfsize_t len = npos) const {
-        if (pos >= (cfsize_t)data_.size()) return CFByteArray();
-        return CFByteArray(data_.substr(pos, len));
+    ByteArray mid(cfsize_t pos, cfsize_t len = npos) const {
+        if (pos >= (cfsize_t)data_.size()) return ByteArray();
+        return ByteArray(data_.substr(pos, len));
     }
-    CFByteArray left(cfsize_t n) const  { return mid(0, n); }
-    CFByteArray right(cfsize_t n) const {
+    ByteArray left(cfsize_t n) const  { return mid(0, n); }
+    ByteArray right(cfsize_t n) const {
         if (n >= (cfsize_t)data_.size()) return *this;
         return mid(data_.size() - n);
     }
 
     bool startsWith(const char * s) const { return data_.rfind(s, 0) == 0; }
-    bool startsWith(const CFByteArray & other) const { return data_.rfind(other.data_, 0) == 0; }
+    bool startsWith(const ByteArray & other) const { return data_.rfind(other.data_, 0) == 0; }
     bool endsWith(const char * s) const {
         cfsize_t slen = strlen(s);
         if (slen > (cfsize_t)data_.size()) return false;
         return data_.compare(data_.size() - slen, slen, s) == 0;
     }
-    bool endsWith(const CFByteArray & other) const {
+    bool endsWith(const ByteArray & other) const {
         if (other.data_.size() > data_.size()) return false;
         return data_.compare(data_.size() - other.data_.size(), other.data_.size(), other.data_) == 0;
     }
@@ -109,22 +111,22 @@ public:
         cfsize_t pos = data_.find(s, from);
         return pos == std::string::npos ? -1 : (cfsize_t)pos;
     }
-    cfsize_t indexOf(const CFByteArray & other, cfsize_t from = 0) const {
+    cfsize_t indexOf(const ByteArray & other, cfsize_t from = 0) const {
         cfsize_t pos = data_.find(other.data_, from);
         return pos == std::string::npos ? -1 : (cfsize_t)pos;
     }
 
     // replace(pos, len, newData, newLen) -- in-place substitution
-    CFByteArray & replace(cfsize_t pos, cfsize_t len, const char * newData, cfsize_t newLen) {
+    ByteArray & replace(cfsize_t pos, cfsize_t len, const char * newData, cfsize_t newLen) {
         data_.replace(pos, len, newData, newLen);
         return *this;
     }
-    CFByteArray & replace(cfsize_t pos, cfsize_t len, const char * newData) {
+    ByteArray & replace(cfsize_t pos, cfsize_t len, const char * newData) {
         data_.replace(pos, len, newData);
         return *this;
     }
 
-    CFByteArray & replace(const char * before, const char * after) {
+    ByteArray & replace(const char * before, const char * after) {
         const cfsize_t blen = strlen(before);
         const cfsize_t alen = strlen(after);
         cfsize_t pos = 0;
@@ -134,7 +136,7 @@ public:
         }
         return *this;
     }
-    CFByteArray & replace(char before, const char * after) {
+    ByteArray & replace(char before, const char * after) {
         const cfsize_t alen = strlen(after);
         cfsize_t pos = 0;
         while ((pos = data_.find(before, pos)) != std::string::npos) {
@@ -150,11 +152,11 @@ public:
     cfuint32 toUInt(bool * ok = nullptr) const;
     cfint32 toInt(bool * ok = nullptr) const;
 
-    CFByteArray trimmed() const {
+    ByteArray trimmed() const {
         cfsize_t s = data_.find_first_not_of(" \t\r\n");
-        if (s == std::string::npos) return CFByteArray();
+        if (s == std::string::npos) return ByteArray();
         cfsize_t e = data_.find_last_not_of(" \t\r\n");
-        return CFByteArray(data_.substr(s, e - s + 1));
+        return ByteArray(data_.substr(s, e - s + 1));
     }
 
     cfuint64 toULongLong(bool * ok = nullptr) const {
@@ -165,32 +167,32 @@ public:
         return (cfuint64)v;
     }
 
-    CFByteArray toLower() const {
+    ByteArray toLower() const {
         std::string r = data_;
         for (char & c : r) if (c >= 'A' && c <= 'Z') c += 32;
-        return CFByteArray(std::move(r));
+        return ByteArray(std::move(r));
     }
 
     // split by character
-    std::vector<CFByteArray> split(char delim) const {
-        std::vector<CFByteArray> result;
+    std::vector<ByteArray> split(char delim) const {
+        std::vector<ByteArray> result;
         cfsize_t start = 0, pos;
         while ((pos = data_.find(delim, start)) != std::string::npos) {
-            result.push_back(CFByteArray(data_.substr(start, pos - start)));
+            result.push_back(ByteArray(data_.substr(start, pos - start)));
             start = pos + 1;
         }
-        result.push_back(CFByteArray(data_.substr(start)));
+        result.push_back(ByteArray(data_.substr(start)));
         return result;
     }
 
     // remove bytes at position
-    CFByteArray & remove(cfsize_t pos, cfsize_t len) {
+    ByteArray & remove(cfsize_t pos, cfsize_t len) {
         data_.erase(pos, len);
         return *this;
     }
 
     // Base64 encoding/decoding
-    CFByteArray toBase64() const {
+    ByteArray toBase64() const {
         static const char table[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
         std::string out;
         out.reserve(((data_.size() + 2) / 3) * 4);
@@ -216,10 +218,10 @@ public:
             out += table[(n >>  6) & 0x3F];
             out += '=';
         }
-        return CFByteArray(std::move(out));
+        return ByteArray(std::move(out));
     }
 
-    static CFByteArray fromBase64(const CFByteArray & base64) {
+    static ByteArray fromBase64(const ByteArray & base64) {
         auto decode = [](char c) -> int {
             if (c >= 'A' && c <= 'Z') return c - 'A';
             if (c >= 'a' && c <= 'z') return c - 'a' + 26;
@@ -241,15 +243,15 @@ public:
                 out += (char)((buf >> bits) & 0xFF);
             }
         }
-        return CFByteArray(std::move(out));
+        return ByteArray(std::move(out));
     }
 
     const std::string & toStdString() const { return data_; }
     std::string       & toStdString()       { return data_; }
 
     // Hex conversion
-    static CFByteArray fromHex(const char * hex) {
-        CFByteArray out;
+    static ByteArray fromHex(const char * hex) {
+        ByteArray out;
         cfsize_t len = strlen(hex);
         out.reserve(len / 2);
         auto hexVal = [](char c) -> int {
@@ -269,11 +271,11 @@ public:
         }
         return out;
     }
-    static CFByteArray fromHex(const CFByteArray & hex) { return fromHex(hex.constData()); }
+    static ByteArray fromHex(const ByteArray & hex) { return fromHex(hex.constData()); }
 
-    CFByteArray toHex() const {
+    ByteArray toHex() const {
         static const char * digits = "0123456789abcdef";
-        CFByteArray out((cfsize_t)(data_.size() * 2), '\0');
+        ByteArray out((cfsize_t)(data_.size() * 2), '\0');
         for (cfsize_t i = 0; i < (cfsize_t)data_.size(); ++i) {
             cfuint8 c = (cfuint8)data_[i];
             out.data_[i*2]   = digits[c >> 4];
@@ -283,30 +285,30 @@ public:
     }
 
     // Number formatting
-    static CFByteArray number(cfint64 v) {
-        return CFByteArray(std::format("{}", (long long)v).c_str());
+    static ByteArray number(cfint64 v) {
+        return ByteArray(std::format("{}", (long long)v).c_str());
     }
-    static CFByteArray number(cfuint64 v) {
-        return CFByteArray(std::format("{}", (unsigned long long)v).c_str());
+    static ByteArray number(cfuint64 v) {
+        return ByteArray(std::format("{}", (unsigned long long)v).c_str());
     }
-    static CFByteArray number(double v) {
-        return CFByteArray(std::format("{:g}", v).c_str());
+    static ByteArray number(double v) {
+        return ByteArray(std::format("{:g}", v).c_str());
     }
-    static CFByteArray number(float  v) { return number((double)v); }
-    static CFByteArray number(cfint32  v) { return number((cfint64)v); }
-    static CFByteArray number(cfuint32 v) { return number((cfuint64)v); }
+    static ByteArray number(float  v) { return number((double)v); }
+    static ByteArray number(cfint32  v) { return number((cfint64)v); }
+    static ByteArray number(cfuint32 v) { return number((cfuint64)v); }
 
-    CFByteArray & operator+=(char c)               { data_ += c; isNull_ = false; return *this; }
-    CFByteArray & operator+=(const char * s)        { data_ += s; isNull_ = false; return *this; }
-    CFByteArray & operator+=(const CFByteArray & o) { data_ += o.data_; isNull_ = false; return *this; }
+    ByteArray & operator+=(char c)               { data_ += c; isNull_ = false; return *this; }
+    ByteArray & operator+=(const char * s)        { data_ += s; isNull_ = false; return *this; }
+    ByteArray & operator+=(const ByteArray & o) { data_ += o.data_; isNull_ = false; return *this; }
 
-    CFByteArray operator+(char c)               const { CFByteArray r(*this); r += c; return r; }
-    CFByteArray operator+(const char * s)       const { CFByteArray r(*this); r += s; return r; }
-    CFByteArray operator+(const CFByteArray & o)const { CFByteArray r(*this); r += o; return r; }
+    ByteArray operator+(char c)               const { ByteArray r(*this); r += c; return r; }
+    ByteArray operator+(const char * s)       const { ByteArray r(*this); r += s; return r; }
+    ByteArray operator+(const ByteArray & o)const { ByteArray r(*this); r += o; return r; }
 
-    bool operator==(const CFByteArray & o) const { return data_ == o.data_; }
-    bool operator!=(const CFByteArray & o) const { return data_ != o.data_; }
-    bool operator< (const CFByteArray & o) const { return data_ <  o.data_; }
+    bool operator==(const ByteArray & o) const { return data_ == o.data_; }
+    bool operator!=(const ByteArray & o) const { return data_ != o.data_; }
+    bool operator< (const ByteArray & o) const { return data_ <  o.data_; }
     bool operator==(const char * o) const { return data_ == o; }
     bool operator!=(const char * o) const { return data_ != o; }
 
@@ -314,23 +316,25 @@ private:
     std::string data_;
     bool isNull_ = true;
 
-    // grant access for CFByteArray::toHex
-    friend class CFByteArray;
+    // grant access for ByteArray::toHex
+    friend class ByteArray;
 };
 
-inline CFByteArray operator+(const char * lhs, const CFByteArray & rhs) {
-    CFByteArray r(lhs);
+inline ByteArray operator+(const char * lhs, const ByteArray & rhs) {
+    ByteArray r(lhs);
     r += rhs;
     return r;
 }
 
-inline CFByteArray & operator<<(CFByteArray & lhs, const CFByteArray & rhs) { return lhs += rhs; }
-inline CFByteArray & operator<<(CFByteArray & lhs, const char * rhs)        { return lhs += rhs; }
-inline CFByteArray & operator<<(CFByteArray & lhs, char rhs)                { return lhs += rhs; }
+inline ByteArray & operator<<(ByteArray & lhs, const ByteArray & rhs) { return lhs += rhs; }
+inline ByteArray & operator<<(ByteArray & lhs, const char * rhs)        { return lhs += rhs; }
+inline ByteArray & operator<<(ByteArray & lhs, char rhs)                { return lhs += rhs; }
+
+} // namespace
 
 namespace std {
-template<> struct hash<CFByteArray> {
-    size_t operator()(const CFByteArray & ba) const noexcept {
+template<> struct hash<cflib::base::ByteArray> {
+    size_t operator()(const cflib::base::ByteArray & ba) const noexcept {
         return hash<string>()(ba.toStdString());
     }
 };

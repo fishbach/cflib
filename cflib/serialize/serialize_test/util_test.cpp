@@ -29,65 +29,65 @@ public:
         cfuint64 tag;
         int tagLen;
         int lengthSize;
-        TCOMPARE(getTLVLength(CFByteArray::fromHex(""            ), tag, tagLen, lengthSize), -1);
-        TCOMPARE(getTLVLength(CFByteArray::fromHex("c1"          ), tag, tagLen, lengthSize), -1);
-        TCOMPARE(getTLVLength(CFByteArray::fromHex("c100"        ), tag, tagLen, lengthSize),  0); TCOMPARE(lengthSize, 1);
-        TCOMPARE(getTLVLength(CFByteArray::fromHex("c18100"      ), tag, tagLen, lengthSize),  0); TCOMPARE(lengthSize, 2);
-        TCOMPARE(getTLVLength(CFByteArray::fromHex("c180"        ), tag, tagLen, lengthSize), -2);
-        TCOMPARE(getTLVLength(CFByteArray::fromHex("c101"        ), tag, tagLen, lengthSize), -1);
-        TCOMPARE(getTLVLength(CFByteArray::fromHex("c10100"      ), tag, tagLen, lengthSize),  1); TCOMPARE(lengthSize, 1);
-        TCOMPARE(getTLVLength(CFByteArray::fromHex("c1810100"    ), tag, tagLen, lengthSize),  1); TCOMPARE(lengthSize, 2);
-        TCOMPARE(getTLVLength(CFByteArray::fromHex("c1847FFFFFF9"), tag, tagLen, lengthSize), -1);
-        TCOMPARE(getTLVLength(CFByteArray::fromHex("c1847FFFFFFA"), tag, tagLen, lengthSize), -3);
-        TCOMPARE(getTLVLength(CFByteArray::fromHex("c18480000000"), tag, tagLen, lengthSize), -3);
-        TCOMPARE(getTLVLength(CFByteArray::fromHex("c188"        ), tag, tagLen, lengthSize), -1);
-        TCOMPARE(getTLVLength(CFByteArray::fromHex("c189"        ), tag, tagLen, lengthSize), -3);
+        TCOMPARE(getTLVLength(ByteArray::fromHex(""            ), tag, tagLen, lengthSize), -1);
+        TCOMPARE(getTLVLength(ByteArray::fromHex("c1"          ), tag, tagLen, lengthSize), -1);
+        TCOMPARE(getTLVLength(ByteArray::fromHex("c100"        ), tag, tagLen, lengthSize),  0); TCOMPARE(lengthSize, 1);
+        TCOMPARE(getTLVLength(ByteArray::fromHex("c18100"      ), tag, tagLen, lengthSize),  0); TCOMPARE(lengthSize, 2);
+        TCOMPARE(getTLVLength(ByteArray::fromHex("c180"        ), tag, tagLen, lengthSize), -2);
+        TCOMPARE(getTLVLength(ByteArray::fromHex("c101"        ), tag, tagLen, lengthSize), -1);
+        TCOMPARE(getTLVLength(ByteArray::fromHex("c10100"      ), tag, tagLen, lengthSize),  1); TCOMPARE(lengthSize, 1);
+        TCOMPARE(getTLVLength(ByteArray::fromHex("c1810100"    ), tag, tagLen, lengthSize),  1); TCOMPARE(lengthSize, 2);
+        TCOMPARE(getTLVLength(ByteArray::fromHex("c1847FFFFFF9"), tag, tagLen, lengthSize), -1);
+        TCOMPARE(getTLVLength(ByteArray::fromHex("c1847FFFFFFA"), tag, tagLen, lengthSize), -3);
+        TCOMPARE(getTLVLength(ByteArray::fromHex("c18480000000"), tag, tagLen, lengthSize), -3);
+        TCOMPARE(getTLVLength(ByteArray::fromHex("c188"        ), tag, tagLen, lengthSize), -1);
+        TCOMPARE(getTLVLength(ByteArray::fromHex("c189"        ), tag, tagLen, lengthSize), -3);
 
-        getTLVLength(CFByteArray::fromHex("c000"    ), tag, tagLen, lengthSize); TCOMPARE(tag, (cfuint64)  0); TCOMPARE(tagLen, 1);
-        getTLVLength(CFByteArray::fromHex("c100"    ), tag, tagLen, lengthSize); TCOMPARE(tag, (cfuint64)  1); TCOMPARE(tagLen, 1);
-        getTLVLength(CFByteArray::fromHex("DE00"    ), tag, tagLen, lengthSize); TCOMPARE(tag, (cfuint64) 30); TCOMPARE(tagLen, 1);
-        getTLVLength(CFByteArray::fromHex("DF1F00"  ), tag, tagLen, lengthSize); TCOMPARE(tag, (cfuint64) 31); TCOMPARE(tagLen, 2);
-        getTLVLength(CFByteArray::fromHex("DF7F00"  ), tag, tagLen, lengthSize); TCOMPARE(tag, (cfuint64)127); TCOMPARE(tagLen, 2);
-        getTLVLength(CFByteArray::fromHex("DF810000"), tag, tagLen, lengthSize); TCOMPARE(tag, (cfuint64)128); TCOMPARE(tagLen, 3);
-        getTLVLength(CFByteArray::fromHex("DF810100"), tag, tagLen, lengthSize); TCOMPARE(tag, (cfuint64)129); TCOMPARE(tagLen, 3);
+        getTLVLength(ByteArray::fromHex("c000"    ), tag, tagLen, lengthSize); TCOMPARE(tag, (cfuint64)  0); TCOMPARE(tagLen, 1);
+        getTLVLength(ByteArray::fromHex("c100"    ), tag, tagLen, lengthSize); TCOMPARE(tag, (cfuint64)  1); TCOMPARE(tagLen, 1);
+        getTLVLength(ByteArray::fromHex("DE00"    ), tag, tagLen, lengthSize); TCOMPARE(tag, (cfuint64) 30); TCOMPARE(tagLen, 1);
+        getTLVLength(ByteArray::fromHex("DF1F00"  ), tag, tagLen, lengthSize); TCOMPARE(tag, (cfuint64) 31); TCOMPARE(tagLen, 2);
+        getTLVLength(ByteArray::fromHex("DF7F00"  ), tag, tagLen, lengthSize); TCOMPARE(tag, (cfuint64)127); TCOMPARE(tagLen, 2);
+        getTLVLength(ByteArray::fromHex("DF810000"), tag, tagLen, lengthSize); TCOMPARE(tag, (cfuint64)128); TCOMPARE(tagLen, 3);
+        getTLVLength(ByteArray::fromHex("DF810100"), tag, tagLen, lengthSize); TCOMPARE(tag, (cfuint64)129); TCOMPARE(tagLen, 3);
     }
 
     void test_toByteArray()
     {
-        TCOMPARE(toByteArray(0, 0), CFByteArray::fromHex("C08100"));
-        TCOMPARE(toByteArray(0), CFByteArray::fromHex(""));
+        TCOMPARE(toByteArray(0, 0), ByteArray::fromHex("C08100"));
+        TCOMPARE(toByteArray(0), ByteArray::fromHex(""));
 
-        TCOMPARE(toByteArray(1), CFByteArray::fromHex("C10101"));
-        TCOMPARE(toByteArray(-1), CFByteArray::fromHex("C101FF"));
-        TCOMPARE(toByteArray("bla"), CFByteArray::fromHex("C103626C61"));
+        TCOMPARE(toByteArray(1), ByteArray::fromHex("C10101"));
+        TCOMPARE(toByteArray(-1), ByteArray::fromHex("C101FF"));
+        TCOMPARE(toByteArray("bla"), ByteArray::fromHex("C103626C61"));
 
-        TCOMPARE(toByteArray(1,    30), CFByteArray::fromHex("DE0101"));
-        TCOMPARE(toByteArray(1,    31), CFByteArray::fromHex("DF1F0101"));
-        TCOMPARE(toByteArray(1,   127), CFByteArray::fromHex("DF7F0101"));
-        TCOMPARE(toByteArray(1,   128), CFByteArray::fromHex("DF81000101"));
-        TCOMPARE(toByteArray(1,   129), CFByteArray::fromHex("DF81010101"));
-        TCOMPARE(toByteArray(1,   255), CFByteArray::fromHex("DF817F0101"));
-        TCOMPARE(toByteArray(1,   256), CFByteArray::fromHex("DF82000101"));
-        TCOMPARE(toByteArray(1, 16383), CFByteArray::fromHex("DFFF7F0101"));
-        TCOMPARE(toByteArray(1, 16384), CFByteArray::fromHex("DF8180000101"));
+        TCOMPARE(toByteArray(1,    30), ByteArray::fromHex("DE0101"));
+        TCOMPARE(toByteArray(1,    31), ByteArray::fromHex("DF1F0101"));
+        TCOMPARE(toByteArray(1,   127), ByteArray::fromHex("DF7F0101"));
+        TCOMPARE(toByteArray(1,   128), ByteArray::fromHex("DF81000101"));
+        TCOMPARE(toByteArray(1,   129), ByteArray::fromHex("DF81010101"));
+        TCOMPARE(toByteArray(1,   255), ByteArray::fromHex("DF817F0101"));
+        TCOMPARE(toByteArray(1,   256), ByteArray::fromHex("DF82000101"));
+        TCOMPARE(toByteArray(1, 16383), ByteArray::fromHex("DFFF7F0101"));
+        TCOMPARE(toByteArray(1, 16384), ByteArray::fromHex("DF8180000101"));
 
-        TCOMPARE(toByteArray(CFByteArray(),   3), CFByteArray::fromHex(""));
-        TCOMPARE(toByteArray(CFByteArray(""), 3), CFByteArray::fromHex("C300"));
+        TCOMPARE(toByteArray(ByteArray(),   3), ByteArray::fromHex(""));
+        TCOMPARE(toByteArray(ByteArray(""), 3), ByteArray::fromHex("C300"));
     }
 
     void test_fromByteArray()
     {
-        TCOMPARE(fromByteArray<int>(CFByteArray::fromHex("")), 0);
-        TCOMPARE(fromByteArray<int>(CFByteArray::fromHex("C000")), 0);
-        TCOMPARE(fromByteArray<int>(CFByteArray::fromHex("C08100")), 0);
-        TCOMPARE(fromByteArray<int>(CFByteArray::fromHex("C10101")), 1);
-        TCOMPARE(fromByteArray<int>(CFByteArray::fromHex("C101FF")), -1);
-        TCOMPARE(fromByteArray<String>(CFByteArray::fromHex("")), String());
-        TCOMPARE(fromByteArray<String>(CFByteArray::fromHex("C000")), String());
-        TVERIFY(!fromByteArray<String>(CFByteArray::fromHex("C000")).isNull());
-        TCOMPARE(fromByteArray<String>(CFByteArray::fromHex("C08100")), String());
-        TVERIFY(fromByteArray<String>(CFByteArray::fromHex("C08100")).isNull());
-        TCOMPARE(fromByteArray<String>(CFByteArray::fromHex("C103626C61")), String("bla"));
+        TCOMPARE(fromByteArray<int>(ByteArray::fromHex("")), 0);
+        TCOMPARE(fromByteArray<int>(ByteArray::fromHex("C000")), 0);
+        TCOMPARE(fromByteArray<int>(ByteArray::fromHex("C08100")), 0);
+        TCOMPARE(fromByteArray<int>(ByteArray::fromHex("C10101")), 1);
+        TCOMPARE(fromByteArray<int>(ByteArray::fromHex("C101FF")), -1);
+        TCOMPARE(fromByteArray<String>(ByteArray::fromHex("")), String());
+        TCOMPARE(fromByteArray<String>(ByteArray::fromHex("C000")), String());
+        TVERIFY(!fromByteArray<String>(ByteArray::fromHex("C000")).isNull());
+        TCOMPARE(fromByteArray<String>(ByteArray::fromHex("C08100")), String());
+        TVERIFY(fromByteArray<String>(ByteArray::fromHex("C08100")).isNull());
+        TCOMPARE(fromByteArray<String>(ByteArray::fromHex("C103626C61")), String("bla"));
     }
 
     void test_sizes()

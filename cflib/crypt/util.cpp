@@ -13,15 +13,15 @@ USE_LOG(LogCat::Crypt)
 
 namespace cflib { namespace crypt {
 
-CFByteArray random(uint size)
+ByteArray random(uint size)
 {
     TRY {
         AutoSeeded_RNG rng;
-        CFByteArray retval(size, '\0');
+        ByteArray retval(size, '\0');
         rng.randomize((byte *)retval.data(), size);
         return retval;
     } CATCH
-    return CFByteArray();
+    return ByteArray();
 }
 
 cfuint32 randomUInt32()
@@ -46,29 +46,29 @@ cfuint64 randomUInt64()
     return 0;
 }
 
-CFByteArray memorableRandom(const int length)
+ByteArray memorableRandom(const int length)
 {
     const char * vowels     = "aeiou";
     const char * consonants = "bcdfghjklmnpqrstvwxyz";
-    const CFByteArray rnd = random(length+2);
-    if ((int)rnd.size() != length+2) return CFByteArray();
-    CFByteArray rv(length+2, '\0');
+    const ByteArray rnd = random(length+2);
+    if ((int)rnd.size() != length+2) return ByteArray();
+    ByteArray rv(length+2, '\0');
     for (int i = 0 ; i < length ; ++i) rv[i] = (i % 2 == 0) ? consonants[(cfuint8)rnd[i] * 21 / 256] : vowels[(cfuint8)rnd[i] * 5 / 256];
     for (int i = length ; i < length+2 ; ++i) rv[i] = '0' + ((cfuint8)rnd[i] * 10 / 256);
     return rv;
 }
 
-CFByteArray hashPassword(const String & password)
+ByteArray hashPassword(const String & password)
 {
     TRY {
         AutoSeeded_RNG rng;
         std::string hash = generate_bcrypt(password.str(), rng);
-        return CFByteArray(hash.c_str(), (cfsize_t)hash.length());
+        return ByteArray(hash.c_str(), (cfsize_t)hash.length());
     } CATCH
-    return CFByteArray();
+    return ByteArray();
 }
 
-bool checkPassword(const String & password, const CFByteArray & hash)
+bool checkPassword(const String & password, const ByteArray & hash)
 {
     TRY {
         return check_bcrypt(password.str(), std::string(hash.constData(), hash.length()));
@@ -76,40 +76,40 @@ bool checkPassword(const String & password, const CFByteArray & hash)
     return false;
 }
 
-CFByteArray sha1(const CFByteArray & data)
+ByteArray sha1(const ByteArray & data)
 {
     TRY {
         Pipe pipe(new Hash_Filter("SHA-1"));
         pipe.process_msg((const byte *)data.constData(), data.size());
         std::string hash = pipe.read_all_as_string();
-        return CFByteArray(hash.c_str(), (cfsize_t)hash.length());
+        return ByteArray(hash.c_str(), (cfsize_t)hash.length());
     } CATCH
-    return CFByteArray();
+    return ByteArray();
 }
 
-CFByteArray sha256(const CFByteArray & data)
+ByteArray sha256(const ByteArray & data)
 {
     TRY {
         Pipe pipe(new Hash_Filter("SHA-256"));
         pipe.process_msg((const byte *)data.constData(), data.size());
         std::string hash = pipe.read_all_as_string();
-        return CFByteArray(hash.c_str(), (cfsize_t)hash.length());
+        return ByteArray(hash.c_str(), (cfsize_t)hash.length());
     } CATCH
-    return CFByteArray();
+    return ByteArray();
 }
 
-CFByteArray rsaCreateKey(uint bits)
+ByteArray rsaCreateKey(uint bits)
 {
     TRY {
         AutoSeeded_RNG rng;
         const RSA_PrivateKey key(rng, bits);
         const std::string pem = PKCS8::PEM_encode(key);
-        return CFByteArray(pem.c_str(), (cfsize_t)pem.length());
+        return ByteArray(pem.c_str(), (cfsize_t)pem.length());
     } CATCH
-    return CFByteArray();
+    return ByteArray();
 }
 
-bool rsaCheckKey(const CFByteArray & privateKey)
+bool rsaCheckKey(const ByteArray & privateKey)
 {
     TRY {
         DataSource_Memory ds((const byte *)privateKey.constData(), privateKey.size());
@@ -120,7 +120,7 @@ bool rsaCheckKey(const CFByteArray & privateKey)
     return false;
 }
 
-void rsaPublicModulusExponent(const CFByteArray & privateKey, CFByteArray & modulus, CFByteArray & publicExponent)
+void rsaPublicModulusExponent(const ByteArray & privateKey, ByteArray & modulus, ByteArray & publicExponent)
 {
     TRY {
         DataSource_Memory ds((const byte *)privateKey.constData(), privateKey.size());
@@ -128,17 +128,17 @@ void rsaPublicModulusExponent(const CFByteArray & privateKey, CFByteArray & modu
         if (pk) {
             const RSA_PublicKey * rsaKey = dynamic_cast<const RSA_PrivateKey *>(pk.get());
             std::vector<byte> bytes = rsaKey->get_n().serialize<std::vector<uint8_t>>();
-            modulus = CFByteArray((const char *)bytes.data(), (cfsize_t)bytes.size());
+            modulus = ByteArray((const char *)bytes.data(), (cfsize_t)bytes.size());
             bytes = rsaKey->get_e().serialize<std::vector<uint8_t>>();
-            publicExponent = CFByteArray((const char *)bytes.data(), (cfsize_t)bytes.size());
+            publicExponent = ByteArray((const char *)bytes.data(), (cfsize_t)bytes.size());
             return;
         }
     } CATCH
-    modulus = CFByteArray();
-    publicExponent = CFByteArray();
+    modulus = ByteArray();
+    publicExponent = ByteArray();
 }
 
-CFByteArray rsaSign(const CFByteArray & privateKey, const CFByteArray & msg)
+ByteArray rsaSign(const ByteArray & privateKey, const ByteArray & msg)
 {
     TRY {
         DataSource_Memory ds((const byte *)privateKey.constData(), privateKey.size());
@@ -147,25 +147,25 @@ CFByteArray rsaSign(const CFByteArray & privateKey, const CFByteArray & msg)
             AutoSeeded_RNG rng;
             PK_Signer signer(*pk, rng, "EMSA3(SHA-256)");
             std::vector<byte> bytes = signer.sign_message((const byte *)msg.constData(), msg.size(), rng);
-            return CFByteArray((const char *)bytes.data(), (cfsize_t)bytes.size());
+            return ByteArray((const char *)bytes.data(), (cfsize_t)bytes.size());
         }
     } CATCH
-    return CFByteArray();
+    return ByteArray();
 }
 
-CFByteArray x509CreateCertReq(const CFByteArray & privateKey, const CFList<CFByteArray> subjectAltNames)
+ByteArray x509CreateCertReq(const ByteArray & privateKey, const CFList<ByteArray> subjectAltNames)
 {
     TRY {
         DataSource_Memory ds((const byte *)privateKey.constData(), privateKey.size());
         std::unique_ptr<Private_Key> pk(PKCS8::load_key(ds));
-        if (!pk) return CFByteArray();
+        if (!pk) return ByteArray();
 
         const size_t PKCS10_VERSION = 0;
 
         Extensions extensions;
         {
             AlternativeName subjectAN;
-            for (const CFByteArray & an : subjectAltNames) subjectAN.add_dns(std::string(an.constData(), an.size()));
+            for (const ByteArray & an : subjectAltNames) subjectAN.add_dns(std::string(an.constData(), an.size()));
             extensions.add(std::unique_ptr<Certificate_Extension>(new Cert_Extension::Subject_Alternative_Name(subjectAN)));
         }
 
@@ -191,19 +191,19 @@ CFByteArray x509CreateCertReq(const CFByteArray & privateKey, const CFList<CFByt
         PKCS10_Request csr = PKCS10_Request(X509_Object::make_signed(*signer, rng, signer->algorithm_identifier(), der.get_contents()));
 
         std::vector<byte> bytes = csr.BER_encode();
-        return CFByteArray((const char *)bytes.data(), (cfsize_t)bytes.size());
+        return ByteArray((const char *)bytes.data(), (cfsize_t)bytes.size());
     } CATCH
-    return CFByteArray();
+    return ByteArray();
 }
 
-CFByteArray der2pem(const CFByteArray & der, const CFByteArray & label)
+ByteArray der2pem(const ByteArray & der, const ByteArray & label)
 {
     TRY {
         const std::string pem = PEM_Code::encode(
             (const byte *)der.constData(), der.size(), std::string(label.constData(), label.size()));
-        return CFByteArray(pem.c_str(), (cfsize_t)pem.size());
+        return ByteArray(pem.c_str(), (cfsize_t)pem.size());
     } CATCH
-    return CFByteArray();
+    return ByteArray();
 }
 
 }}    // namespace

@@ -7,7 +7,7 @@
 
 #pragma once
 
-#include <cflib/base/cfbytearray.h>
+#include <cflib/base/bytearray.h>
 #include <cflib/base/string.h>
 #include <cflib/base/macros.h>
 
@@ -72,7 +72,7 @@ public:
 
     bool isOpen() const { return fp_ != nullptr; }
 
-    cfint64 write(const CFByteArray & data) {
+    cfint64 write(const ByteArray & data) {
         if (!fp_) return -1;
         return (cfint64)fwrite(data.constData(), 1, data.size(), fp_);
     }
@@ -83,9 +83,9 @@ public:
 
     void flush() { if (fp_) fflush(fp_); }
 
-    CFByteArray readAll() {
-        if (!fp_) return CFByteArray();
-        CFByteArray result;
+    ByteArray readAll() {
+        if (!fp_) return ByteArray();
+        ByteArray result;
         char buf[4096];
         cfsize_t n;
         while ((n = fread(buf, 1, sizeof(buf), fp_)) > 0)

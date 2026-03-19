@@ -31,7 +31,7 @@ public:
 
         TVERIFY(creds.getAllCertsPEM().size() == 0);
 
-        TCOMPARE((int)creds.addCerts(CFByteArray()), 0);
+        TCOMPARE((int)creds.addCerts(ByteArray()), 0);
         TCOMPARE((int)creds.addCerts(cert3 + cert1), 2);
         TCOMPARE((int)creds.addCerts(cert1), 0);
         TCOMPARE((int)creds.addCerts(cert2), 1);
@@ -41,16 +41,16 @@ public:
 
         const CFList<TLSCertInfo> infos = creds.getCertChainInfos();
         TCOMPARE((int)infos.size(), 3);
-        TCOMPARE(infos[0].subjectName, CFByteArray("127.0.0.1"));
-        TCOMPARE(infos[0].issuerName,  CFByteArray("ca"));
+        TCOMPARE(infos[0].subjectName, ByteArray("127.0.0.1"));
+        TCOMPARE(infos[0].issuerName,  ByteArray("ca"));
         TVERIFY(!infos[0].isCA);
         TVERIFY(!infos[0].isTrusted);
-        TCOMPARE(infos[1].subjectName, CFByteArray("ca"));
-        TCOMPARE(infos[1].issuerName,  CFByteArray("rootca"));
+        TCOMPARE(infos[1].subjectName, ByteArray("ca"));
+        TCOMPARE(infos[1].issuerName,  ByteArray("rootca"));
         TVERIFY( infos[1].isCA);
         TVERIFY(!infos[1].isTrusted);
-        TCOMPARE(infos[2].subjectName, CFByteArray("rootca"));
-        TCOMPARE(infos[2].issuerName,  CFByteArray("rootca"));
+        TCOMPARE(infos[2].subjectName, ByteArray("rootca"));
+        TCOMPARE(infos[2].issuerName,  ByteArray("rootca"));
         TVERIFY( infos[2].isCA);
         TVERIFY(!infos[2].isTrusted);
 
@@ -67,11 +67,11 @@ public:
 
         const CFList<TLSCertInfo> infos = creds.getCertChainInfos();
         TCOMPARE((int)infos.size(), 3);
-        TCOMPARE(infos[0].subjectName, CFByteArray("127.0.0.1"));
+        TCOMPARE(infos[0].subjectName, ByteArray("127.0.0.1"));
         TVERIFY(!infos[0].isTrusted);
-        TCOMPARE(infos[1].subjectName, CFByteArray("ca"));
+        TCOMPARE(infos[1].subjectName, ByteArray("ca"));
         TVERIFY(!infos[1].isTrusted);
-        TCOMPARE(infos[2].subjectName, CFByteArray("rootca"));
+        TCOMPARE(infos[2].subjectName, ByteArray("rootca"));
         TVERIFY( infos[2].isTrusted);
     }
 
@@ -79,7 +79,7 @@ public:
     {
         TLSCredentials creds;
 
-        TVERIFY(!creds.addPrivateKey(CFByteArray()));
+        TVERIFY(!creds.addPrivateKey(ByteArray()));
         TVERIFY(!creds.addPrivateKey(detach(cert1PrivateKey)));
 
         TCOMPARE((int)creds.addCerts(cert2), 1);

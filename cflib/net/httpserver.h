@@ -22,8 +22,8 @@ public:
     HttpServer(uint threadCount = 2, uint tlsThreadCount = 0);
     ~HttpServer();
 
-    bool start(const CFByteArray & address, cfuint16 port);
-    bool start(const CFByteArray & address, cfuint16 port, crypt::TLSCredentials & credentials);
+    bool start(const ByteArray & address, cfuint16 port);
+    bool start(const ByteArray & address, cfuint16 port, crypt::TLSCredentials & credentials);
     bool start(int listenSocket);
     bool start(int listenSocket, crypt::TLSCredentials & credentials);
     void stop();

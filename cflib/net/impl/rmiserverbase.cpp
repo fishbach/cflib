@@ -444,7 +444,7 @@ void RMIServerBase::handleRequest(const Request & request)
 {
     if (!verifyThreadCall(&RMIServerBase::handleRequest, request)) return;
 
-    CFByteArray path = request.getUri();
+    ByteArray path = request.getUri();
     {
         int p = path.indexOf('?');
         if (p != -1) path = path.left(p);
@@ -470,14 +470,14 @@ void RMIServerBase::handleRequest(const Request & request)
     }
 }
 
-void RMIServerBase::send(uint connId, const CFByteArray & data)
+void RMIServerBase::send(uint connId, const ByteArray & data)
 {
     if (!verifyThreadCall(&RMIServerBase::send, connId, data)) return;
     activeRequests_.erase(connId);
     wsService_.send(connId, data, true);
 }
 
-CFByteArray RMIServerBase::getRemoteIP(uint connId)
+ByteArray RMIServerBase::getRemoteIP(uint connId)
 {
     return wsService_.getRemoteIP(connId);
 }

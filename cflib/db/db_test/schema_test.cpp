@@ -21,7 +21,7 @@ namespace {
 class Migrator
 {
 public:
-    bool migrate(const CFByteArray & name)
+    bool migrate(const ByteArray & name)
     {
         if (name == "test1") return test1();
         if (name == "test2") return test2();
@@ -135,7 +135,7 @@ public:
 
     void update_test()
     {
-        CFByteArray schema = readFile(String(SCHEMA_SQL_PATH));
+        ByteArray schema = readFile(String(SCHEMA_SQL_PATH));
         TVERIFY(schema::update(schema));
 
         schema +=
@@ -161,7 +161,7 @@ public:
 
     void empty_head_test()
     {
-        TVERIFY(schema::update(CFByteArray(
+        TVERIFY(schema::update(ByteArray(
             "-- REVISION first\n"
             "CREATE TABLE config (\n"
             "  key   text NOT NULL, \n"

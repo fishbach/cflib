@@ -22,7 +22,7 @@ public:
         return {
             {"test_flatten", [self]() { self->test_flatten(); }},
             {"test_String", [self]() { self->test_String(); }},
-            {"test_CFByteArray", [self]() { self->test_CFByteArray(); }},
+            {"test_ByteArray", [self]() { self->test_ByteArray(); }},
             {"test_deflate", [self]() { self->test_deflate(); }},
             {"test_tupleCompare", [self]() { self->test_tupleCompare(); }},
             {"test_callWithTupleParams", [self]() { self->test_callWithTupleParams(); }}
@@ -44,9 +44,9 @@ public:
         TVERIFY(!String("").isNull());
     }
 
-    void test_CFByteArray()
+    void test_ByteArray()
     {
-        CFByteArray ba;
+        ByteArray ba;
         TVERIFY(ba.isNull());
         ba.reserve(997);
         TVERIFY(ba.capacity() >= (cfsize_t)997);
@@ -59,15 +59,15 @@ public:
         TVERIFY(ba.capacity() >= (cfsize_t)997);
         ba.clear();
         TVERIFY(ba.isNull());
-        TVERIFY(!CFByteArray("").isNull());
+        TVERIFY(!ByteArray("").isNull());
     }
 
     void test_deflate()
     {
-        auto checkDeflate = [](const CFByteArray & source, const CFByteArray & enc, int level) -> bool {
-            CFByteArray data = source;
+        auto checkDeflate = [](const ByteArray & source, const ByteArray & enc, int level) -> bool {
+            ByteArray data = source;
             deflateRaw(data, level);
-            if (data != CFByteArray::fromHex(enc)) {
+            if (data != ByteArray::fromHex(enc)) {
                 std::cout << std::format("compressed differs:\nis: {}\nex: {}\n",
                     data.toHex().constData(), enc.constData());
                 return false;
@@ -81,15 +81,15 @@ public:
             return true;
         };
 
-        TVERIFY(checkDeflate(CFByteArray(),                 "00",                     1));
-        TVERIFY(checkDeflate(CFByteArray(),                 "00",                     0));
-        TVERIFY(checkDeflate(CFByteArray("\0", 1),          "620000",                 1));
-        TVERIFY(checkDeflate(CFByteArray("A"),              "720400",                 1));
-        TVERIFY(checkDeflate(CFByteArray("A"),              "000100feff4100",         0));
-        TVERIFY(checkDeflate(CFByteArray("bc"),             "4a4a0600",               1));
-        TVERIFY(checkDeflate(CFByteArray("Hello"),          "f248cdc9c90700",         1));
-        TVERIFY(checkDeflate(CFByteArray("Hello"),          "000500faff48656c6c6f00", 0));
-        CFByteArray data;
+        TVERIFY(checkDeflate(ByteArray(),                 "00",                     1));
+        TVERIFY(checkDeflate(ByteArray(),                 "00",                     0));
+        TVERIFY(checkDeflate(ByteArray("\0", 1),          "620000",                 1));
+        TVERIFY(checkDeflate(ByteArray("A"),              "720400",                 1));
+        TVERIFY(checkDeflate(ByteArray("A"),              "000100feff4100",         0));
+        TVERIFY(checkDeflate(ByteArray("bc"),             "4a4a0600",               1));
+        TVERIFY(checkDeflate(ByteArray("Hello"),          "f248cdc9c90700",         1));
+        TVERIFY(checkDeflate(ByteArray("Hello"),          "000500faff48656c6c6f00", 0));
+        ByteArray data;
         inflateRaw(data);
         TVERIFY(data.isEmpty());
         data = "\x00";

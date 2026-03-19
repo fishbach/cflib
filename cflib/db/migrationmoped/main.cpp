@@ -22,7 +22,7 @@ USE_LOG(LogCat::Db)
 
 namespace {
 
-int showUsage(const CFByteArray & executable)
+int showUsage(const ByteArray & executable)
 {
     std::cerr << std::format(
         "Usage: {} [options] <db schema file>\n"
@@ -60,7 +60,7 @@ int main(int argc, char *argv[])
     schema::Migrator migrator;
     if (migratorOpt.isSet()) {
         String migratorExe = String::fromUtf8(migratorOpt.value());
-        migrator = [&migratorExe](const CFByteArray & name) {
+        migrator = [&migratorExe](const ByteArray & name) {
             String cmd = migratorExe + " " + String::fromUtf8(name);
             return system(cmd.c_str()) == 0;
         };

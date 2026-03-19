@@ -101,9 +101,9 @@ inline std::vector<T> cfSetValues(const std::unordered_set<T> & set) {
     return std::vector<T>(set.begin(), set.end());
 }
 
-// Helper: join vector of CFByteArray/String with separator
-inline CFByteArray cfJoin(const std::vector<CFByteArray> & list, char sep) {
-    CFByteArray r;
+// Helper: join vector of ByteArray/String with separator
+inline ByteArray cfJoin(const std::vector<ByteArray> & list, char sep) {
+    ByteArray r;
     for (cfsize_t i = 0; i < (cfsize_t)list.size(); ++i) {
         if (i > 0) r += sep;
         r += list[i];

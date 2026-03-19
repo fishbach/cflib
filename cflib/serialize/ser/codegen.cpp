@@ -34,7 +34,7 @@ std::vector<std::string> splitStr(const std::string & s, const std::string & del
 std::string calcClassHash(const HeaderParser::Class & cl)
 {
     std::string fullName = cl.ns + "::" + cl.name;
-    CFByteArray ba((const char *)fullName.c_str(), (cfsize_t)fullName.size());
+    ByteArray ba((const char *)fullName.c_str(), (cfsize_t)fullName.size());
     return std::to_string(cflib::util::calcCRC32(ba));
 }
 

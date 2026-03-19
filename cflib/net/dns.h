@@ -12,6 +12,6 @@
 namespace cflib { namespace net {
 
 // Attention: this function may need some time (blocks)
-CFList<CFByteArray> getIPFromDNS(const CFByteArray & name, bool preferIPv6 = false);
+CFList<ByteArray> getIPFromDNS(const ByteArray & name, bool preferIPv6 = false);
 
 }}    // namespace

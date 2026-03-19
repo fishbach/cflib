@@ -17,10 +17,10 @@ namespace cflib { namespace serialize {
 
 namespace {
 
-String writeStr(const CFByteArray & msg)
+String writeStr(const ByteArray & msg)
 {
     uint specialCount = 0;
-    CFByteArray rv;
+    ByteArray rv;
     const char * start = msg.constData();
     const char * p = start;
     for (cfsize_t i = 0 ; i < msg.length() ; ++i) {
@@ -46,7 +46,7 @@ String showValue(const cfuint8 * data, int len)
 
     String rv;
 
-    String str = writeStr(CFByteArray::fromRawData((const char *)data, len));
+    String str = writeStr(ByteArray::fromRawData((const char *)data, len));
     if (!str.isNull()) {
         rv += '"';
         rv += str;
@@ -81,7 +81,7 @@ String showValue(const cfuint8 * data, int len)
     }
 
     rv += "0x";
-    rv += String(CFByteArray::fromRawData((const char *)data, len).toHex().constData()).toUpper();
+    rv += String(ByteArray::fromRawData((const char *)data, len).toHex().constData()).toUpper();
 
     return rv;
 }
@@ -94,7 +94,7 @@ String printAsn1(const cfuint8 * data, int len, int indent)
         cfuint64 tagNo = 0;
         int tagLen = 0;
         int lengthSize = 0;
-        const cfint32 valueLen = getTLVLength(CFByteArray::fromRawData((const char *)data, len), tagNo, tagLen, lengthSize);
+        const cfint32 valueLen = getTLVLength(ByteArray::fromRawData((const char *)data, len), tagNo, tagLen, lengthSize);
         if (valueLen == -1) {
             rv += "not enough data available\n";
             return rv;
@@ -133,7 +133,7 @@ String printAsn1(const cfuint8 * data, int len, int indent)
 
 }
 
-String printAsn1(const CFByteArray & data)
+String printAsn1(const ByteArray & data)
 {
     return printAsn1((const cfuint8 *)data.constData(), data.size(), 0);
 }

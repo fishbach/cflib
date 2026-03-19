@@ -29,8 +29,8 @@ class HttpRequest::Conn : public TCPConn, public util::ThreadVerify
 {
 public:
     Conn(HttpRequest * parent, TCPConnData * data,
-        const CFUrl & url, const CFList<CFByteArray> & headers,
-        const CFByteArray & postData, const CFByteArray & contentType,
+        const CFUrl & url, const CFList<ByteArray> & headers,
+        const ByteArray & postData, const ByteArray & contentType,
         uint timeoutMs)
     :
         TCPConn(data),
@@ -40,10 +40,10 @@ public:
         gotReply_(false)
     {
         // GET / POST
-        CFByteArray request = postData.isNull() ? "GET " : "POST ";
+        ByteArray request = postData.isNull() ? "GET " : "POST ";
 
         // path
-        request += url.path().isEmpty() ? CFByteArray("/") : url.path().toUtf8();
+        request += url.path().isEmpty() ? ByteArray("/") : url.path().toUtf8();
 
         // query
         if (url.hasQuery()) request += "?" + url.query().toUtf8();
@@ -51,7 +51,7 @@ public:
 
         // host
         request += "Host: " + url.host().toUtf8();
-        if (url.port() != -1) request += ":" + CFByteArray::number((cfint64)url.port());
+        if (url.port() != -1) request += ":" + ByteArray::number((cfint64)url.port());
         request += "\r\n";
 
         // login / password
@@ -60,12 +60,12 @@ public:
         }
 
         // additional headers
-        for (const CFByteArray & header : headers) request += header.trimmed() + "\r\n";
+        for (const ByteArray & header : headers) request += header.trimmed() + "\r\n";
 
         if (postData.isNull()) {
             request += "\r\n";
         } else {
-            request += "Content-Length: " + CFByteArray::number((cfint64)postData.size()) + "\r\n";
+            request += "Content-Length: " + ByteArray::number((cfint64)postData.size()) + "\r\n";
             request += "Content-Type: " + contentType + "\r\n";
             request += "\r\n";
             request += postData;
@@ -110,7 +110,7 @@ protected:
             return;
         }
 
-        const int length = CFByteArray(match.captured(1).c_str()).toInt();
+        const int length = ByteArray(match.captured(1).c_str()).toInt();
         if (buf_.size() < headerEndPos + 4 + length) {
             startReadWatcher();
             return;
@@ -122,7 +122,7 @@ protected:
             return;
         }
 
-        const int status = CFByteArray(match.captured(1).c_str()).toInt();
+        const int status = ByteArray(match.captured(1).c_str()).toInt();
 
         if (parent_) parent_->reply(status, buf_.mid(headerEndPos + 4, length));
         gotReply_ = true;
@@ -160,7 +160,7 @@ private:
     util::EVTimer timeout_;
     HttpRequest * parent_;
     bool gotReply_;
-    CFByteArray buf_;
+    ByteArray buf_;
 };
 
 HttpRequest::HttpRequest(TCPManager & mgr) :
@@ -176,8 +176,8 @@ HttpRequest::~HttpRequest()
     destroy();
 }
 
-void HttpRequest::start(const CFUrl & url, const CFList<CFByteArray> & headers,
-    const CFByteArray & postData, const CFByteArray & contentType,
+void HttpRequest::start(const CFUrl & url, const CFList<ByteArray> & headers,
+    const ByteArray & postData, const ByteArray & contentType,
     uint timeoutMs)
 {
     if (!verifyThreadCall(&HttpRequest::start, url, headers, postData, contentType, timeoutMs)) return;

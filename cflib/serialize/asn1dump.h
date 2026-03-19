@@ -12,6 +12,6 @@
 
 namespace cflib { namespace serialize {
 
-String printAsn1(const CFByteArray & data);
+String printAsn1(const ByteArray & data);
 
 }}    // namespace

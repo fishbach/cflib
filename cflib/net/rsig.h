@@ -32,7 +32,7 @@ public:
     Listeners defaultListeners;
 
 protected:
-    void send(uint connId, const CFByteArray & data);
+    void send(uint connId, const ByteArray & data);
 
 private:
     impl::RMIServerBase * server_;
@@ -138,7 +138,7 @@ public:
 private:
     void handleRemote(P... p)
     {
-        CFByteArray encodedParams;
+        ByteArray encodedParams;
         {
             serialize::BERSerializer ser;
             serialize::toByteArray(ser, std::forward<P>(p)...);

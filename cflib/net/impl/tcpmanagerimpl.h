@@ -33,22 +33,22 @@ public:
     bool start(int listenSocket, crypt::TLSCredentials * credentials);
     void stop();
 
-    TCPConnData * openConnection(const CFByteArray & destAddress, cfuint16 destPort,
-        const CFByteArray & sourceIP, cfuint16 sourcePort,
+    TCPConnData * openConnection(const ByteArray & destAddress, cfuint16 destPort,
+        const ByteArray & sourceIP, cfuint16 sourcePort,
         crypt::TLSCredentials * credentials, bool preferIPv6);
 
     void startReadWatcher(TCPConnData * conn);
-    void writeToSocket(TCPConnData * conn, const CFByteArray & data, bool notifyFinished);
+    void writeToSocket(TCPConnData * conn, const ByteArray & data, bool notifyFinished);
     void closeConn(TCPConnData * conn, TCPConn::CloseType type, bool notifyClose);
     void deleteOnFinish(TCPConnData * conn);
 
     void tlsStartReadWatcher(TCPConnData * conn);
-    void tlsWrite(TCPConnData * conn, const CFByteArray & data, bool notifyFinished) const;
+    void tlsWrite(TCPConnData * conn, const ByteArray & data, bool notifyFinished) const;
     void tlsCloseConn(TCPConnData * conn, TCPConn::CloseType type, bool notifyClose) const;
     void tlsDeleteOnFinish(TCPConnData * conn) const;
 
     static void setNoDelay(int socket, bool noDelay);
-    static int openListenSocket(const CFByteArray & ip, cfuint16 port);
+    static int openListenSocket(const ByteArray & ip, cfuint16 port);
 
     static void readable(ev_loop * loop, ev_io * w, int revents);
     static void writeable(ev_loop * loop, ev_io * w, int revents);
@@ -63,8 +63,8 @@ protected:
 private:
     static void listenSocketReadable(ev_loop * loop, ev_io * w, int revents);
     void callClosed(TCPConnData * conn);
-    TCPConnData * addConnection(int sock, const CFByteArray & destIP, cfuint16 destPort,
-        crypt::TLSCredentials * credentials, const CFByteArray & destAddress);
+    TCPConnData * addConnection(int sock, const ByteArray & destIP, cfuint16 destPort,
+        crypt::TLSCredentials * credentials, const ByteArray & destAddress);
 
 private:
     int listenSock_;

@@ -24,7 +24,7 @@ USE_LOG(LogCat::Network)
 
 namespace {
 
-int showUsage(const CFByteArray & executable)
+int showUsage(const ByteArray & executable)
 {
     std::cerr << std::format(
         "Usage: {} [options] <URL>\n"
@@ -62,7 +62,7 @@ int main(int argc, char *argv[])
         Log::setLogLevel(logOpt.value().toUInt());
     }
 
-    CFByteArray postData;
+    ByteArray postData;
     if (postOpt.isSet()) {
         char buf[4096];
         size_t n;
@@ -78,7 +78,7 @@ int main(int argc, char *argv[])
     }
 
     HttpRequest * request = new HttpRequest(mgr);
-    request->reply.bind([](int status, const CFByteArray & reply) {
+    request->reply.bind([](int status, const ByteArray & reply) {
         std::cout << std::format("Status: {}\n\n", status);
         fwrite(reply.constData(), 1, reply.size(), stdout);
         std::cout << "\n";

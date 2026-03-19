@@ -29,11 +29,11 @@ public:
     void registerService(RMIServiceBase & service);
     void exportTo(const String & dest) const;
     void handleRequest(const Request & request);
-    void send(uint connId, const CFByteArray & data);
-    CFByteArray getRemoteIP(uint connId);
+    void send(uint connId, const ByteArray & data);
+    ByteArray getRemoteIP(uint connId);
 
     template<typename C>
-    void handleCall(const CFByteArray & ba, const cfuint8 * data, int len, const C & connData, uint connDataId, uint connId)
+    void handleCall(const ByteArray & ba, const cfuint8 * data, int len, const C & connData, uint connDataId, uint connId)
     {
         if (!verifyThreadCall(&RMIServerBase::handleCall<C>, ba, data, len, connData, connDataId, connId)) return;
 

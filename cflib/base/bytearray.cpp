@@ -5,9 +5,11 @@
  * Licensed under the MIT License.
  */
 
-#include "cfbytearray.h"
+#include "bytearray.h"
 
-cfuint32 CFByteArray::toUInt(bool * ok) const {
+namespace cflib::base {
+
+cfuint32 ByteArray::toUInt(bool * ok) const {
     if (data_.empty()) { if (ok) *ok = false; return 0; }
     char * end = nullptr;
     unsigned long v = strtoul(data_.c_str(), &end, 10);
@@ -15,10 +17,12 @@ cfuint32 CFByteArray::toUInt(bool * ok) const {
     return (cfuint32)v;
 }
 
-cfint32 CFByteArray::toInt(bool * ok) const {
+cfint32 ByteArray::toInt(bool * ok) const {
     if (data_.empty()) { if (ok) *ok = false; return 0; }
     char * end = nullptr;
     long v = strtol(data_.c_str(), &end, 10);
     if (ok) *ok = (end != data_.c_str() && *end == '\0');
     return (cfint32)v;
 }
+
+} // namespace

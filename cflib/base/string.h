@@ -7,7 +7,7 @@
 
 #pragma once
 
-#include <cflib/base/cfbytearray.h>
+#include <cflib/base/bytearray.h>
 #include <cflib/base/types.h>
 
 #include <cstring>
@@ -27,11 +27,11 @@ public:
     String(const char * utf8) : data_(utf8 ? utf8 : ""), isNull_(!utf8) {}
     String(std::string s) : data_(std::move(s)), isNull_(false) {}
     String(std::string_view sv) : data_(sv), isNull_(false) {}
-    String(const CFByteArray & ba) : data_(ba.constData(), ba.size()), isNull_(false) {}
+    String(const ByteArray & ba) : data_(ba.constData(), ba.size()), isNull_(false) {}
 
     template<typename T, std::enable_if_t<
         !std::is_same_v<std::decay_t<T>, String> &&
-        !std::is_same_v<std::decay_t<T>, CFByteArray> &&
+        !std::is_same_v<std::decay_t<T>, ByteArray> &&
         !std::is_pointer_v<std::decay_t<T>> &&
         !std::is_same_v<std::decay_t<T>, std::string> &&
         !std::is_same_v<std::decay_t<T>, std::string_view>,
@@ -51,8 +51,8 @@ public:
     bool                isEmpty() const noexcept { return data_.empty(); }
     bool                isNull()  const noexcept { return isNull_; }
 
-    CFByteArray toUtf8()  const { return CFByteArray(data_.data(), (cfsize_t)data_.size()); }
-    CFByteArray toLatin1() const { return toUtf8(); }
+    ByteArray toUtf8()  const { return ByteArray(data_.data(), (cfsize_t)data_.size()); }
+    ByteArray toLatin1() const { return toUtf8(); }
 
     // Codepoint count
     cfsize_t charCount() const {
@@ -204,7 +204,7 @@ public:
         if (!s) return String();
         return String(len == npos ? std::string(s) : std::string(s, len));
     }
-    static String fromUtf8(const CFByteArray & ba) {
+    static String fromUtf8(const ByteArray & ba) {
         return String(std::string(ba.constData(), ba.size()));
     }
     static String fromLatin1(const char * s) { return s ? String(s) : String(); }

@@ -17,9 +17,9 @@ class TLSStream
 public:
     TLSStream() {}
     virtual ~TLSStream() {}
-    virtual CFByteArray initialSend() = 0;
-    virtual bool received(const CFByteArray & encrypted, CFByteArray & plain, CFByteArray & sendBack) = 0;
-    virtual bool send(const CFByteArray & plain, CFByteArray & encrypted) = 0;
+    virtual ByteArray initialSend() = 0;
+    virtual bool received(const ByteArray & encrypted, ByteArray & plain, ByteArray & sendBack) = 0;
+    virtual bool send(const ByteArray & plain, ByteArray & encrypted) = 0;
 };
 
 }}    // namespace

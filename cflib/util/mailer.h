@@ -29,7 +29,7 @@ public:
 
     bool isValid() const;
 
-    CFByteArray raw(String & fromAddr, String & toAddr) const;
+    ByteArray raw(String & fromAddr, String & toAddr) const;
 };
 
 class Mailer : public ThreadVerify

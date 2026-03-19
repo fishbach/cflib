@@ -26,7 +26,7 @@ using namespace cflib::util;
 
 USE_LOG(LogCat::Etc)
 
-int showUsage(const CFByteArray & executable)
+int showUsage(const ByteArray & executable)
 {
     std::cerr << std::format(
         "\nSimple Webchat example\n"

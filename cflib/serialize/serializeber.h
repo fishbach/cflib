@@ -25,7 +25,7 @@ public:
         }
     }
 
-    CFByteArray data() {
+    ByteArray data() {
         if (lenPos_) {
             impl::insertBERLength(data_, lenPos_);
             lenPos_ = 0;
@@ -40,16 +40,16 @@ public:
 
 private:
     int lenPos_;
-    CFByteArray data_;
+    ByteArray data_;
     impl::BERSerializerBase base_;
 };
 
 class BERDeserializer
 {
 public:
-    BERDeserializer(const CFByteArray & data) :
+    BERDeserializer(const ByteArray & data) :
         data_(data), base_((const cfuint8 *)data_.constData(), data_.size()) {}
-    BERDeserializer(const CFByteArray & ba, const cfuint8 * data, int len) :
+    BERDeserializer(const ByteArray & ba, const cfuint8 * data, int len) :
         data_(ba), base_(data, len) {}
 
     template<typename T>
@@ -63,7 +63,7 @@ public:
     inline bool isAnyAvailable() const { return base_.isAnyAvailable(); }
 
 private:
-    const CFByteArray data_;
+    const ByteArray data_;
     impl::BERDeserializerBase base_;
 };
 

@@ -16,8 +16,8 @@ namespace cflib { namespace crypt {
 
 struct TLSCertInfo
 {
-    CFByteArray subjectName;
-    CFByteArray issuerName;
+    ByteArray subjectName;
+    ByteArray issuerName;
     bool isCA;
     bool isTrusted;
 
@@ -34,17 +34,17 @@ public:
     ~TLSCredentials();
 
     // certificates can be added in arbitrary order
-    uint addCerts(const CFByteArray & certs, bool isTrustedCA = false);
+    uint addCerts(const ByteArray & certs, bool isTrustedCA = false);
     CFList<TLSCertInfo> getCertChainInfos() const;
     CFList<TLSCertInfo> getAllCertInfos() const;
 
-    uint addRevocationLists(const CFByteArray & crls);
+    uint addRevocationLists(const ByteArray & crls);
 
     // private key must be in PKCS8 format
     // fitting certificate must exist
     // builds a certificate chain of added certificates
     // destroys data in parameters
-    bool addPrivateKey(const CFByteArray & privateKey, const CFByteArray & password = CFByteArray());
+    bool addPrivateKey(const ByteArray & privateKey, const ByteArray & password = ByteArray());
 
     // Loads all
     //   certificates ending with: _crt.pem
@@ -57,7 +57,7 @@ public:
     bool activateLoaded(bool isTrustedCA = false);
 
     // write all certificates to a single .pem file
-    CFByteArray getAllCertsPEM() const;
+    ByteArray getAllCertsPEM() const;
 
 private:
     TLSCertInfo getInfo(const Botan::X509_Certificate & crt) const;

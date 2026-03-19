@@ -11,7 +11,7 @@
 
 namespace cflib { namespace net {
 
-void RSigBase::send(uint connId, const CFByteArray & data)
+void RSigBase::send(uint connId, const ByteArray & data)
 {
     server_->send(connId, data);
 }

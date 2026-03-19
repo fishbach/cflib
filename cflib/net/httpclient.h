@@ -21,10 +21,10 @@ public:
     ~HttpClient();
 
     // TODO: getaddrinfo -> dns resolve
-    void get(const CFByteArray & ip, cfuint16 port, const CFByteArray & url);
+    void get(const ByteArray & ip, cfuint16 port, const ByteArray & url);
 
 protected:
-    virtual void reply(const CFByteArray & raw) = 0;
+    virtual void reply(const ByteArray & raw) = 0;
 
 private:
     TCPManager & mgr_;

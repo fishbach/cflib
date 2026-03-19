@@ -30,7 +30,7 @@ namespace cflib { namespace db {
  *  700 : real                      <->  float
  *  701 : double precision          <->  double
  *   25 : text                      <->  String
- *   17 : bytea                     <->  CFByteArray
+ *   17 : bytea                     <->  ByteArray
  * 1184 : timestamp with time zone  <->  CFDateTime (UTC)
  *
  * SELECT 21::oid::regtype         -> smallint
@@ -70,7 +70,7 @@ public:
     // This can be used to execute many statements in one string.
     bool execMultiple(const String & query);
 
-    void prepare(const CFByteArray & query);
+    void prepare(const ByteArray & query);
     bool exec(cfuint keepFields = 0);
 
     bool next();
@@ -88,7 +88,7 @@ public:
     PSql & operator<<(float  val);
     PSql & operator<<(double val);
     PSql & operator<<(const CFDateTime  & val);
-    PSql & operator<<(const CFByteArray & val);
+    PSql & operator<<(const ByteArray & val);
     PSql & operator<<(const String    & val);
     PSql & operator<<(const char * val);
 
@@ -107,7 +107,7 @@ public:
     PSql & operator>>(float      & val);
     PSql & operator>>(double     & val);
     PSql & operator>>(CFDateTime  & val);
-    PSql & operator>>(CFByteArray & val);
+    PSql & operator>>(ByteArray & val);
     PSql & operator>>(String    & val);
 
     PSql & operator>>(Null);
@@ -145,7 +145,7 @@ private:
 
     const cflib::util::LogFileInfo & lfi_;
     const int line_;
-    const CFByteArray instanceName_;
+    const ByteArray instanceName_;
     bool nestedTransaction_;
     bool localTransactionActive_;
     CFElapsedTimer watch_;
@@ -156,7 +156,7 @@ private:
     int resultFieldCount_;
     cfuint resultFieldTypes_[MAX_FIELD_COUNT];
     int currentFieldId_;
-    CFByteArray lastQuery_;
+    ByteArray lastQuery_;
     bool lastFieldIsNull_;
 
     bool prepareUsed_;
@@ -166,7 +166,7 @@ private:
     int prepareParamLengths_[MAX_FIELD_COUNT];
     CFVector<bool> prepareParamIsNull_;
 
-    CFByteArray prepareData_;
+    ByteArray prepareData_;
 };
 
 }}    // namespace

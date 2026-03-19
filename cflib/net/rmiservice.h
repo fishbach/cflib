@@ -16,7 +16,7 @@ namespace cflib { namespace net {
 
 namespace impl { class RMIServerBase; }
 
-class RMIReplier : public CFByteArray
+class RMIReplier : public ByteArray
 {
 public:
     void send();
@@ -46,7 +46,7 @@ protected:
 
     inline uint connId() const { return connId_; }
     RMIReplier delayReply();
-    CFByteArray getRemoteIP() const;
+    ByteArray getRemoteIP() const;
     virtual void preCallInit() {}
     virtual void connectionClosed(bool isLast) { CF_UNUSED(isLast); }
 

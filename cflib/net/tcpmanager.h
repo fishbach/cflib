@@ -25,21 +25,21 @@ public:
     TCPManager(uint tlsThreadCount = 0, util::ThreadVerify * other = 0);
     virtual ~TCPManager();
 
-    bool start(const CFByteArray & ip, cfuint16 port) { return start(openListenSocket(ip, port)); }
-    bool start(const CFByteArray & ip, cfuint16 port, crypt::TLSCredentials & credentials) {
+    bool start(const ByteArray & ip, cfuint16 port) { return start(openListenSocket(ip, port)); }
+    bool start(const ByteArray & ip, cfuint16 port, crypt::TLSCredentials & credentials) {
         return start(openListenSocket(ip, port), credentials); }
     void stop();
     bool isRunning() const;
 
-    TCPConnData * openConnection(const CFByteArray & destAddress, cfuint16 destPort, bool preferIPv6 = false);
-    TCPConnData * openConnection(const CFByteArray & destAddress, cfuint16 destPort,
-        const CFByteArray & sourceIP, cfuint16 sourcePort, bool preferIPv6 = false);
+    TCPConnData * openConnection(const ByteArray & destAddress, cfuint16 destPort, bool preferIPv6 = false);
+    TCPConnData * openConnection(const ByteArray & destAddress, cfuint16 destPort,
+        const ByteArray & sourceIP, cfuint16 sourcePort, bool preferIPv6 = false);
 
-    TCPConnData * openTLSConnection(const CFByteArray & destAddress, cfuint16 destPort, bool preferIPv6 = false);
-    TCPConnData * openTLSConnection(const CFByteArray & destAddress, cfuint16 destPort,
-        const CFByteArray & sourceIP, cfuint16 sourcePort, bool preferIPv6 = false);
+    TCPConnData * openTLSConnection(const ByteArray & destAddress, cfuint16 destPort, bool preferIPv6 = false);
+    TCPConnData * openTLSConnection(const ByteArray & destAddress, cfuint16 destPort,
+        const ByteArray & sourceIP, cfuint16 sourcePort, bool preferIPv6 = false);
 
-    static int openListenSocket(const CFByteArray & ip, cfuint16 port);
+    static int openListenSocket(const ByteArray & ip, cfuint16 port);
     bool start(int listenSocket);
     bool start(int listenSocket, crypt::TLSCredentials & credentials);
 

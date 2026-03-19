@@ -26,7 +26,7 @@ public:
 
     void startReadWatcher(TCPConnData * conn);
     void read(TCPConnData * conn);
-    void write(TCPConnData * conn, const CFByteArray & data, bool notifyFinished);
+    void write(TCPConnData * conn, const ByteArray & data, bool notifyFinished);
     void closeConn(TCPConnData * conn, TCPConn::CloseType type, bool notifyClose);
     void deleteOnFinish(TCPConnData * conn);
     void callClosed(TCPConnData * conn);

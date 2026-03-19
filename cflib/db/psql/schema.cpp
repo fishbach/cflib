@@ -92,7 +92,7 @@ bool execSql(const String & query)
 // Find "-- EXEC <name>" pattern at the beginning of a line.
 // Returns -1 if not found, otherwise the position of the start of the match.
 // Sets matchEnd to the end of the match and methodName to the captured name.
-cfsize_t findExecDirective(const String & query, cfsize_t startPos, cfsize_t & matchEnd, CFByteArray & methodName)
+cfsize_t findExecDirective(const String & query, cfsize_t startPos, cfsize_t & matchEnd, ByteArray & methodName)
 {
     const char * data = query.c_str();
     cfsize_t len = query.size();
@@ -169,7 +169,7 @@ bool execRevision(const String & query, Migrator & migrator)
 {
     cfsize_t start = 0;
     cfsize_t matchEnd;
-    CFByteArray method;
+    ByteArray method;
     cfsize_t matchStart = findExecDirective(query, start, matchEnd, method);
 
     while (matchStart != (cfsize_t)-1) {
@@ -200,7 +200,7 @@ bool update(Migrator migrator, const String & filename)
     return update(util::readFile(filename), migrator);
 }
 
-bool update(const CFByteArray & schema, Migrator migrator)
+bool update(const ByteArray & schema, Migrator migrator)
 {
     PSqlConn;
 

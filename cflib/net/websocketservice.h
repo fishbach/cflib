@@ -25,23 +25,23 @@ public:
     ~WebSocketService();
 
 protected:
-    void saveHeaderField(const CFByteArray & field);
+    void saveHeaderField(const ByteArray & field);
 
-    void send(uint connId, const CFByteArray & data, bool isBinary);
+    void send(uint connId, const ByteArray & data, bool isBinary);
     void close(uint connId, TCPConn::CloseType type = TCPConn::ReadWriteClosed);
     void continueRead(uint connId);
 
-    CFByteArray getRemoteIP(uint connId) const;
-    CFByteArray getHeader(uint connId, const CFByteArray & header) const;
+    ByteArray getRemoteIP(uint connId) const;
+    ByteArray getHeader(uint connId, const ByteArray & header) const;
 
     virtual void newConnection(uint connId);
-    virtual void newMsg(uint connId, const CFByteArray & data, bool isBinary, bool & stopRead) = 0;
+    virtual void newMsg(uint connId, const ByteArray & data, bool isBinary, bool & stopRead) = 0;
     virtual void closed(uint connId, TCPConn::CloseType type);
 
     virtual void handleRequest(const Request & request);
 
 private:
-    void addConnection(TCPConnData * connData, const CFByteArray & wsKey, bool deflate,
+    void addConnection(TCPConnData * connData, const ByteArray & wsKey, bool deflate,
         const Request::KeyVal & savedHeaders);
     void startTimer();
     void checkTimeout();
@@ -50,7 +50,7 @@ private:
     const String path_;
     const CFRegex allowedOrigin_;
     const uint connectionTimeoutSec_;
-    CFSet<CFByteArray> saveHeaderFields_;
+    CFSet<ByteArray> saveHeaderFields_;
     class WSConnHandler;
     CFHash<uint, WSConnHandler *> connections_;
     uint lastConnId_;

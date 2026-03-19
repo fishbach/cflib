@@ -15,22 +15,22 @@ class ArgBase
 {
 public:
     bool isSet() const { return count_ > 0; }
-    CFByteArray value(const CFByteArray & defaultValue = CFByteArray()) const { return values_.empty() ? defaultValue : values_.front(); }
-    CFList<CFByteArray> values() const { return values_; }
+    ByteArray value(const ByteArray & defaultValue = ByteArray()) const { return values_.empty() ? defaultValue : values_.front(); }
+    CFList<ByteArray> values() const { return values_; }
     cfuint count() const { return count_; }
 
 protected:
-    ArgBase(char optionChar, const CFByteArray & optionName, bool hasValue, bool isOptional, bool isRepeatable) :
+    ArgBase(char optionChar, const ByteArray & optionName, bool hasValue, bool isOptional, bool isRepeatable) :
         optionChar_(optionChar), optionName_(optionName), hasValue_(hasValue), isOptional_(isOptional), isRepeatable_(isRepeatable),
         count_(0) {}
 
     char optionChar_;
-    CFByteArray optionName_;
+    ByteArray optionName_;
     bool hasValue_;
     bool isOptional_;
     bool isRepeatable_;
     cfuint count_;
-    CFList<CFByteArray> values_;
+    CFList<ByteArray> values_;
 
     friend class CmdLine;
 };
@@ -39,16 +39,16 @@ class Arg : public ArgBase
 {
 public:
     Arg(bool isOptional = true, bool isRepeatable = false) :
-        ArgBase(0, CFByteArray(), true, isOptional, isRepeatable) {}
+        ArgBase(0, ByteArray(), true, isOptional, isRepeatable) {}
 };
 
 class Option : public ArgBase
 {
 public:
-    Option(const CFByteArray & optionName, bool hasValue = false,
+    Option(const ByteArray & optionName, bool hasValue = false,
         bool isOptional = true, bool isRepeatable = false) :
         ArgBase(0, optionName, hasValue, isOptional, isRepeatable) {}
-    Option(char optionChar, const CFByteArray & optionName = CFByteArray(), bool hasValue = false,
+    Option(char optionChar, const ByteArray & optionName = ByteArray(), bool hasValue = false,
         bool isOptional = true, bool isRepeatable = false) :
         ArgBase(optionChar, optionName, hasValue, isOptional, isRepeatable) {}
 };
@@ -61,15 +61,15 @@ public:
     CmdLine & operator<<(Arg & arg);
     CmdLine & operator<<(Option & arg);
 
-    CFByteArray executable() const { return executable_; }
+    ByteArray executable() const { return executable_; }
 
 private:
-    CFList<CFByteArray> rawArgs_;
+    CFList<ByteArray> rawArgs_;
     CFList<Arg *> args_;
     CFHash<char, Option *> shortOptions_;
-    CFHash<CFByteArray, Option *> options_;
+    CFHash<ByteArray, Option *> options_;
     CFList<ArgBase *> nonOptionals_;
-    CFByteArray executable_;
+    ByteArray executable_;
 };
 
 }}    // namespace

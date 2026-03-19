@@ -37,12 +37,12 @@ void KafkaConnector::MetadataConnection::closed()
         }
 
         for (const auto & [topic, partMap] : impl_.responsibilities_) {
-            CFByteArray partitionStr;
+            ByteArray partitionStr;
             bool isFirst = true;
             for (const auto & [partitionId, nodeInfo] : partMap) {
                 if (isFirst) isFirst = false;
                 else         partitionStr += ' ';
-                partitionStr += CFByteArray::number(partitionId);
+                partitionStr += ByteArray::number(partitionId);
             }
             logInfo("found topic \"%1\" (partitions: %2)", topic, partitionStr);
         }
@@ -75,7 +75,7 @@ void KafkaConnector::MetadataConnection::readMetaData(impl::KafkaRawReader & rea
         impl::KafkaString host;
         cfint32 port;
         reader >> nodeId >> host >> port;
-        impl_.allBrokers_[nodeId] = KafkaConnector::Address(CFByteArray(host), (cfuint16)port);
+        impl_.allBrokers_[nodeId] = KafkaConnector::Address(ByteArray(host), (cfuint16)port);
     }
 
     cfint32 topicCount;
@@ -131,7 +131,7 @@ void KafkaConnector::MetadataConnection::readGroupCoordinator(impl::KafkaRawRead
         return;
     }
 
-    logInfo("got group coordinator at ip: %1, port: %2", (CFByteArray)coordinatorHost, coordinatorPort);
+    logInfo("got group coordinator at ip: %1, port: %2", (ByteArray)coordinatorHost, coordinatorPort);
 
     TCPConnData * data = impl_.net_.openConnection(coordinatorHost, coordinatorPort);
     if (!data) {

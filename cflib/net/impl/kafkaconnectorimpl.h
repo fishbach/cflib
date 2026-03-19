@@ -50,13 +50,13 @@ public:
     void connect(const CFList<KafkaConnector::Address> & cluster);
     void fetchMetaData();
 
-    void produce(const CFByteArray & topic, cfint32 partitionId, const KafkaConnector::Messages & messages,
+    void produce(const ByteArray & topic, cfint32 partitionId, const KafkaConnector::Messages & messages,
         cfuint16 requiredAcks, cfuint32 ackTimeoutMs, cfuint32 correlationId);
-    void getOffsets(const CFByteArray & topic, cfint32 partitionId, cfuint32 correlationId, bool first);
-    void fetch(const CFByteArray & topic, cfint32 partitionId, cfint64 offset,
+    void getOffsets(const ByteArray & topic, cfint32 partitionId, cfuint32 correlationId, bool first);
+    void fetch(const ByteArray & topic, cfint32 partitionId, cfint64 offset,
         cfuint32 maxWaitTime, cfuint32 minBytes, cfuint32 maxBytes, cfuint32 correlationId);
 
-    void joinGroup(const CFByteArray & groupId, const KafkaConnector::Topics & topics, KafkaConnector::GroupAssignmentStrategy preferredStrategy);
+    void joinGroup(const ByteArray & groupId, const KafkaConnector::Topics & topics, KafkaConnector::GroupAssignmentStrategy preferredStrategy);
     void fetch(cfuint32 maxWaitTime, cfuint32 minBytes, cfuint32 maxBytes);
     void commit();
     void leaveGroup();
@@ -65,9 +65,9 @@ public:
     void rejoinGroup();
     void doJoin();
     void sendGroupHeartBeat();
-    void doSync(const CFByteArray & protocol, CFMap<CFByteArray, CFSet<CFByteArray>> memberTopics);
-    CFMap<CFByteArray, CFMap<CFByteArray, CFList<cfint32>>> computeGroupAssignment(
-        const CFByteArray & protocol, CFMap<CFByteArray, CFSet<CFByteArray>> memberTopics);
+    void doSync(const ByteArray & protocol, CFMap<ByteArray, CFSet<ByteArray>> memberTopics);
+    CFMap<ByteArray, CFMap<ByteArray, CFList<cfint32>>> computeGroupAssignment(
+        const ByteArray & protocol, CFMap<ByteArray, CFSet<ByteArray>> memberTopics);
 
 public:
     KafkaConnector & main_;
@@ -78,21 +78,21 @@ public:
 
     CFHash<cfint32 /* nodeId */, KafkaConnector::Address> allBrokers_;
     struct NodeId { cfint32 id; NodeId() : id(-1) {} };
-    CFMap<CFByteArray /* topic */, CFMap<cfint32 /* partitionId */, NodeId>> responsibilities_;
+    CFMap<ByteArray /* topic */, CFMap<cfint32 /* partitionId */, NodeId>> responsibilities_;
 
     KafkaConnector::State currentState_;
 
     CFHash<cfint32 /* nodeId */, KafkaConnector::ProduceConnection *> produceConnections_;
     CFHash<cfint32 /* nodeId */, KafkaConnector::FetchConnection   *> fetchConnections_;
 
-    CFByteArray groupId_;
-    CFMap<CFByteArray, CFList<cfint32>> groupTopicPartitions_;
+    ByteArray groupId_;
+    CFMap<ByteArray, CFList<cfint32>> groupTopicPartitions_;
     KafkaConnector::GroupAssignmentStrategy preferredStrategy_;
 
     KafkaConnector::MetadataConnection * groupCoordinatorRequest_;
     KafkaConnector::GroupConnection * groupConnection_;
     bool joinInProgress_;
-    CFByteArray groupMemberId_;
+    ByteArray groupMemberId_;
     cfint32 generationId_;
     util::EVTimer groupHeartbeatTimer_;
 };

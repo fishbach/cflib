@@ -134,11 +134,11 @@ inline void writeLenBytes(cfuint8 * pos, cfint64 length, cfuint8 lengthSize)
     while (--lengthSize) *(pos++) = (cfuint8)(len >> ((lengthSize - 1) * 8));
 }
 
-inline void insertBERLength(CFByteArray & data, int oldSize)
+inline void insertBERLength(ByteArray & data, int oldSize)
 {
     const cfint64 length = data.size() - oldSize;
     const cfuint8 lengthSize = calcBERlengthSize(length);
-    if (lengthSize > 1) data.insert(oldSize, CFByteArray(lengthSize - 1, '\0'));
+    if (lengthSize > 1) data.insert(oldSize, ByteArray(lengthSize - 1, '\0'));
     writeLenBytes((cfuint8 *)data.data() + oldSize - 1, length, lengthSize);
 }
 
@@ -165,7 +165,7 @@ inline void writeTagBytes(cfuint8 * pos, cfuint64 tagNo, bool constructed, cfuin
     }
 }
 
-inline void writeNull(CFByteArray & data, cfuint64 tagNo)
+inline void writeNull(ByteArray & data, cfuint64 tagNo)
 {
     if (tagNo > 0) return;
     const cfuint8 tagLen = calcTagLen(tagNo);
@@ -177,7 +177,7 @@ inline void writeNull(CFByteArray & data, cfuint64 tagNo)
     pos[tagLen + 1] = 0;
 }
 
-inline void writeZero(CFByteArray & data, cfuint64 tagNo)
+inline void writeZero(ByteArray & data, cfuint64 tagNo)
 {
     const cfuint8 tagLen = calcTagLen(tagNo);
     const int oldSize = data.size();
@@ -190,7 +190,7 @@ inline void writeZero(CFByteArray & data, cfuint64 tagNo)
 class TLWriter
 {
 public:
-    TLWriter(CFByteArray & data, cfuint64 tagNo) :
+    TLWriter(ByteArray & data, cfuint64 tagNo) :
         data_(data), tagNo_(tagNo), tagLen_(calcTagLen(tagNo))
     {
         const int oldSize = data.size();
@@ -216,7 +216,7 @@ public:
     }
 
 private:
-    CFByteArray & data_;
+    ByteArray & data_;
     const cfuint64 tagNo_;
     const cfuint8 tagLen_;
     int oldSize_;

@@ -22,9 +22,9 @@ class Request::Shared
 {
 public:
     Shared(int connId, int requestId,
-        const CFByteArray & header,
-        const Request::KeyVal & headerFields, Request::Method method, const CFByteArray & uri,
-        const CFByteArray & body, const CFList<RequestHandler *> & handlers, bool passThrough,
+        const ByteArray & header,
+        const Request::KeyVal & headerFields, Request::Method method, const ByteArray & uri,
+        const ByteArray & body, const CFList<RequestHandler *> & handlers, bool passThrough,
         impl::RequestParser * parser)
     :
         ref(1),
@@ -39,13 +39,13 @@ public:
         detached(false)
     {
         if (headerFields.contains("x-remote-ip")) {
-            remoteIP = headerFields.count("x-remote-ip") ? headerFields.at("x-remote-ip") : CFByteArray();
+            remoteIP = headerFields.count("x-remote-ip") ? headerFields.at("x-remote-ip") : ByteArray();
         } else if (parser) {
             remoteIP = parser->peerIP();
         }
         watch.start();
-        id << CFByteArray::number(connId) << '-' << CFByteArray::number(requestId);
-        logDebug("new request %1 (body len: %2)", id, headerFields.count("content-length") ? headerFields.at("content-length") : CFByteArray());
+        id << ByteArray::number(connId) << '-' << ByteArray::number(requestId);
+        logDebug("new request %1 (body len: %2)", id, headerFields.count("content-length") ? headerFields.at("content-length") : ByteArray());
     }
 
     ~Shared()
@@ -66,32 +66,32 @@ public:
     CFAtomicInt ref;
     int connId;
     int requestId;
-    CFByteArray id;
-    CFByteArray header;
+    ByteArray id;
+    ByteArray header;
     Request::KeyVal headerFields;
     Request::Method method;
-    CFByteArray uri;
-    CFByteArray body;
+    ByteArray uri;
+    ByteArray body;
     CFList<RequestHandler *> handlers;
     impl::RequestParser * parser;
     CFElapsedTimer watch;
     bool replySent;
-    CFByteArray remoteIP;
-    CFList<CFByteArray> sendHeaderLines;
+    ByteArray remoteIP;
+    CFList<ByteArray> sendHeaderLines;
     bool passThrough;
     bool detached;
 
 public:
-    CFByteArray getRequestField(const CFByteArray & key)
+    ByteArray getRequestField(const ByteArray & key)
     {
-        const CFByteArray search = key.toLower();
+        const ByteArray search = key.toLower();
         for (const auto & [k, v] : headerFields) {
             if (k.toLower() == search) return v;
         }
-        return CFByteArray();
+        return ByteArray();
     }
 
-    void sendReply(CFByteArray header, CFByteArray body, bool compression)
+    void sendReply(ByteArray header, ByteArray body, bool compression)
     {
         if (replySent) {
             logWarn("tried to send two replies for request %1", id);
@@ -109,7 +109,7 @@ public:
 
         if (method != Request::HEAD) {
             header
-                << "Content-Length: " << CFByteArray::number((cfint64)body.size()) << "\r\n"
+                << "Content-Length: " << ByteArray::number((cfint64)body.size()) << "\r\n"
                 << "\r\n"
                 << body;
         } else {
@@ -121,7 +121,7 @@ public:
 
     void sendNotFound()
     {
-        CFByteArray hdr = "HTTP/1.1 404 Not Found\r\n";
+        ByteArray hdr = "HTTP/1.1 404 Not Found\r\n";
         hdr << defaultHeaders() << "Content-Type: text/html; charset=utf-8\r\n";
         sendReply(hdr,
             "<html>\r\n"
@@ -133,9 +133,9 @@ public:
             false);
     }
 
-    inline CFByteArray defaultHeaders()
+    inline ByteArray defaultHeaders()
     {
-        CFByteArray headers = "Date: ";
+        ByteArray headers = "Date: ";
         headers << cflib::util::dateTimeForHTTP(CFDateTime::currentDateTimeUtc()) << "\r\n"
             "Connection: keep-alive\r\n"
             "Server: cflib/0.9\r\n";
@@ -146,14 +146,14 @@ public:
 };
 
 Request::Request() :
-    d(new Shared(0, 0, CFByteArray(), KeyVal(), NONE, CFByteArray(), CFByteArray(), CFList<RequestHandler *>(), false, 0))
+    d(new Shared(0, 0, ByteArray(), KeyVal(), NONE, ByteArray(), ByteArray(), CFList<RequestHandler *>(), false, 0))
 {
 }
 
 Request::Request(int connId, int requestId,
-    const CFByteArray & header,
-    const KeyVal & headerFields, Method method, const CFByteArray & uri,
-    const CFByteArray & body, const CFList<RequestHandler *> & handlers, bool passThrough,
+    const ByteArray & header,
+    const KeyVal & headerFields, Method method, const ByteArray & uri,
+    const ByteArray & body, const CFList<RequestHandler *> & handlers, bool passThrough,
     impl::RequestParser * parser)
 :
     d(new Shared(connId, requestId, header, headerFields, method, uri, body, handlers, passThrough, parser))
@@ -199,19 +199,19 @@ bool Request::replySent() const
     return d->replySent;
 }
 
-CFByteArray Request::getRawHeader() const
+ByteArray Request::getRawHeader() const
 {
     return d->header;
 }
 
-CFByteArray Request::getHeader(const CFByteArray & name) const
+ByteArray Request::getHeader(const ByteArray & name) const
 {
     return cfMapValue(d->headerFields, name);
 }
 
-CFByteArray Request::getHostname() const
+ByteArray Request::getHostname() const
 {
-    return cfMapValue(d->headerFields, CFByteArray("host"));
+    return cfMapValue(d->headerFields, ByteArray("host"));
 }
 
 Request::KeyVal Request::getHeaderFields() const
@@ -224,7 +224,7 @@ Request::Method Request::getMethod() const
     return d->method;
 }
 
-CFByteArray Request::getMethodName() const
+ByteArray Request::getMethodName() const
 {
     switch (d->method) {
         case NONE: return "-";
@@ -232,27 +232,27 @@ CFByteArray Request::getMethodName() const
         case POST: return "POST";
         case HEAD: return "HEAD";
     }
-    return CFByteArray();
+    return ByteArray();
 }
 
-CFByteArray Request::getUri() const
+ByteArray Request::getUri() const
 {
     return d->uri;
 }
 
-CFByteArray Request::getBody() const
+ByteArray Request::getBody() const
 {
     return d->body;
 }
 
-CFByteArray Request::getRemoteIP() const
+ByteArray Request::getRemoteIP() const
 {
     return d->remoteIP;
 }
 
 Request::LoginPass Request::getBasicAuth() const
 {
-    return getBasicAuth(cfMapValue(d->headerFields, CFByteArray("authorization")));
+    return getBasicAuth(cfMapValue(d->headerFields, ByteArray("authorization")));
 }
 
 void Request::sendNotFound() const
@@ -260,9 +260,9 @@ void Request::sendNotFound() const
     d->sendNotFound();
 }
 
-void Request::sendRedirect(const CFByteArray & url) const
+void Request::sendRedirect(const ByteArray & url) const
 {
-    CFByteArray hdr = "HTTP/1.1 307 Temporary Redirect\r\n"
+    ByteArray hdr = "HTTP/1.1 307 Temporary Redirect\r\n"
         "Location: ";
     hdr << url << "\r\n" << d->defaultHeaders() << "Content-Type: text/html; charset=utf-8\r\n";
     d->sendReply(hdr,
@@ -275,29 +275,29 @@ void Request::sendRedirect(const CFByteArray & url) const
         false);
 }
 
-void Request::sendReply(const CFByteArray & reply, const CFByteArray & contentType, bool compression) const
+void Request::sendReply(const ByteArray & reply, const ByteArray & contentType, bool compression) const
 {
-    CFByteArray hdr = "HTTP/1.1 200 OK\r\n";
+    ByteArray hdr = "HTTP/1.1 200 OK\r\n";
     hdr << d->defaultHeaders() << "Content-Type: " << contentType << "\r\n";
     d->sendReply(hdr, reply, compression);
 }
 
-void Request::sendText(const String & reply, const CFByteArray & contentType, bool compression) const
+void Request::sendText(const String & reply, const ByteArray & contentType, bool compression) const
 {
     sendReply(reply.toUtf8(), contentType + "; charset=utf-8", compression);
 }
 
-void Request::sendRaw(const CFByteArray & header, const CFByteArray & body, bool compression) const
+void Request::sendRaw(const ByteArray & header, const ByteArray & body, bool compression) const
 {
     d->sendReply(header, body, compression);
 }
 
-void Request::addHeaderLine(const CFByteArray & line) const
+void Request::addHeaderLine(const ByteArray & line) const
 {
     d->sendHeaderLines << line;
 }
 
-CFByteArray Request::defaultHeaders() const
+ByteArray Request::defaultHeaders() const
 {
     return d->defaultHeaders();
 }
@@ -312,9 +312,9 @@ void Request::setPassThroughHandler(PassThroughHandler * hdl) const
     if (d->parser) d->parser->setPassThroughHandler(hdl);
 }
 
-CFByteArray Request::readPassThrough(bool & isLast) const
+ByteArray Request::readPassThrough(bool & isLast) const
 {
-    if (!d->parser) return CFByteArray();
+    if (!d->parser) return ByteArray();
     return d->parser->readPassThrough(isLast);
 }
 
@@ -342,13 +342,13 @@ TCPManager * Request::tcpManager() const
     return &d->parser->manager();
 }
 
-Request::LoginPass Request::getBasicAuth(const CFByteArray & authorization)
+Request::LoginPass Request::getBasicAuth(const ByteArray & authorization)
 {
     static const CFRegex authRe("^Basic\\s+([A-Za-z0-9+/]+=*)$");
 
     const CFRegex::MatchResult match = authRe.matchResult(authorization);
     if (!match.hasMatch()) return LoginPass();
-    const CFList<CFByteArray> userPass = CFByteArray::fromBase64(CFByteArray(match.captured(1).c_str())).split(':');
+    const CFList<ByteArray> userPass = ByteArray::fromBase64(ByteArray(match.captured(1).c_str())).split(':');
     if (userPass.size() != 2) return LoginPass();
     return { userPass[0], userPass[1] };
 }

@@ -17,9 +17,9 @@ namespace cflib { namespace net {
 class RedirectServer : public RequestHandler
 {
 public:
-    typedef CFPair<CFByteArray /*ip*/, cfuint16 /*port*/> DestHost;
-    typedef std::function<CFByteArray (const Request &                                 )> DestUrlFunc;
-    typedef std::function<CFByteArray (const Request &, const CFRegex::MatchResult &)> DestUrlReFunc;
+    typedef CFPair<ByteArray /*ip*/, cfuint16 /*port*/> DestHost;
+    typedef std::function<ByteArray (const Request &                                 )> DestUrlFunc;
+    typedef std::function<ByteArray (const Request &, const CFRegex::MatchResult &)> DestUrlReFunc;
     typedef std::function<DestHost   (const Request &                                 )> DestHostFunc;
     typedef std::function<DestHost   (const Request &, const CFRegex::MatchResult &)> DestHostReFunc;
 
@@ -27,18 +27,18 @@ public:
     void addValid          (const CFRegex & test);
 
     void addRedirectIf     (const CFRegex & test, const char * destUrl);
-    void addRedirectIf     (const CFRegex & test, const CFByteArray & destUrl);
+    void addRedirectIf     (const CFRegex & test, const ByteArray & destUrl);
     void addRedirectIf     (const CFRegex & test, DestUrlReFunc destUrlReFunc);
     void addRedirectIfNot  (const CFRegex & test, const char * destUrl);
-    void addRedirectIfNot  (const CFRegex & test, const CFByteArray & destUrl);
+    void addRedirectIfNot  (const CFRegex & test, const ByteArray & destUrl);
     void addDefaultRedirect(const char * destUrl);
-    void addDefaultRedirect(const CFByteArray & destUrl);
+    void addDefaultRedirect(const ByteArray & destUrl);
     void addDefaultRedirect(DestUrlFunc destUrlFunc);
 
-    void addForwardIf      (const CFRegex & test, const CFByteArray & ip, cfuint16 port);
+    void addForwardIf      (const CFRegex & test, const ByteArray & ip, cfuint16 port);
     void addForwardIf      (const CFRegex & test, DestHostReFunc destHostReFunc);
-    void addForwardIfNot   (const CFRegex & test, const CFByteArray & ip, cfuint16 port);
-    void addDefaultForward (const CFByteArray & ip, cfuint16 port);
+    void addForwardIfNot   (const CFRegex & test, const ByteArray & ip, cfuint16 port);
+    void addDefaultForward (const ByteArray & ip, cfuint16 port);
     void addDefaultForward (DestHostFunc destHostFunc);
 
 protected:
@@ -52,7 +52,7 @@ private:
         bool isDefault;
         bool invert;
         CFRegex test;
-        CFByteArray destUrl;
+        ByteArray destUrl;
         DestUrlFunc destUrlFunc;
         DestUrlReFunc destUrlReFunc;
         DestHost destHost;
@@ -62,11 +62,11 @@ private:
         Entry(const CFRegex & test) :
             isValid(true), isRedirect(false), isDefault(false), invert(false), test(test) {}
 
-        Entry(bool invert, const CFRegex & test, const CFByteArray & destUrl) :
+        Entry(bool invert, const CFRegex & test, const ByteArray & destUrl) :
             isValid(false), isRedirect(true), isDefault(false), invert(invert), test(test), destUrl(destUrl) {}
         Entry(bool invert, const CFRegex & test, DestUrlReFunc destUrlReFunc) :
             isValid(false), isRedirect(true), isDefault(false), invert(invert), test(test), destUrlReFunc(destUrlReFunc) {}
-        Entry(const CFByteArray & destUrl) :
+        Entry(const ByteArray & destUrl) :
             isValid(false), isRedirect(true), isDefault(true), invert(false), destUrl(destUrl) {}
         Entry(DestUrlFunc destUrlFunc) :
             isValid(false), isRedirect(true), isDefault(true), invert(false), destUrlFunc(destUrlFunc) {}

@@ -11,28 +11,28 @@
 
 namespace cflib { namespace crypt {
 
-CFByteArray random(uint size);
-inline CFByteArray randomId() { return random(20).toHex(); }
+ByteArray random(uint size);
+inline ByteArray randomId() { return random(20).toHex(); }
 cfuint32 randomUInt32();
 cfuint64 randomUInt64();
-CFByteArray memorableRandom(const int length = 6);
+ByteArray memorableRandom(const int length = 6);
 
-CFByteArray hashPassword(const String & password);
-bool checkPassword(const String & password, const CFByteArray & hash);
+ByteArray hashPassword(const String & password);
+bool checkPassword(const String & password, const ByteArray & hash);
 
-CFByteArray sha1(const CFByteArray & data);
-CFByteArray sha256(const CFByteArray & data);
+ByteArray sha1(const ByteArray & data);
+ByteArray sha256(const ByteArray & data);
 
 // PKCS#8 PEM encoded
-CFByteArray rsaCreateKey(uint bits);
-bool rsaCheckKey(const CFByteArray & privateKey);
-void rsaPublicModulusExponent(const CFByteArray & privateKey, CFByteArray & modulus, CFByteArray & publicExponent);
+ByteArray rsaCreateKey(uint bits);
+bool rsaCheckKey(const ByteArray & privateKey);
+void rsaPublicModulusExponent(const ByteArray & privateKey, ByteArray & modulus, ByteArray & publicExponent);
 // PKCS#1 v1.5 SHA-256
-CFByteArray rsaSign(const CFByteArray & privateKey, const CFByteArray & msg);
+ByteArray rsaSign(const ByteArray & privateKey, const ByteArray & msg);
 
 // DER encoded
-CFByteArray x509CreateCertReq(const CFByteArray & privateKey, const CFList<CFByteArray> subjectAltNames);
+ByteArray x509CreateCertReq(const ByteArray & privateKey, const CFList<ByteArray> subjectAltNames);
 
-CFByteArray der2pem(const CFByteArray & der, const CFByteArray & label);
+ByteArray der2pem(const ByteArray & der, const ByteArray & label);
 
 }}    // namespace

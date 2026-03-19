@@ -32,7 +32,7 @@ protected:
     void closed(CloseType type) override;
 
 private:
-    CFByteArray buffer_;
+    ByteArray buffer_;
 
     friend class KafkaRequestWriter;
 };

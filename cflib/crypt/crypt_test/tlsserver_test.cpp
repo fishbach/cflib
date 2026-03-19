@@ -46,9 +46,9 @@ public:
         TLSSessions clientSessions;
         TLSClient client(clientSessions, clientCreds);
 
-        CFByteArray enc1;
-        CFByteArray enc2;
-        CFByteArray plain;
+        ByteArray enc1;
+        ByteArray enc2;
+        ByteArray plain;
 
         // client starts handshake
         TVERIFY(server.initialSend().isEmpty());
@@ -57,50 +57,50 @@ public:
         TVERIFY(client.initialSend().isEmpty());
 
         // first handshake req -> reply
-        enc2 = CFByteArray();
+        enc2 = ByteArray();
         TVERIFY(server.received(enc1, plain, enc2));
         TVERIFY(plain.isEmpty());
         TVERIFY(!enc2.isEmpty());
-        enc1 = CFByteArray();
+        enc1 = ByteArray();
         TVERIFY(client.received(enc2, plain, enc1));
         TVERIFY(plain.isEmpty());
         TVERIFY(!enc1.isEmpty());
 
         // second handshake req -> reply
-        enc2 = CFByteArray();
+        enc2 = ByteArray();
         TVERIFY(server.received(enc1, plain, enc2));
         TVERIFY(plain.isEmpty());
         TVERIFY(!enc2.isEmpty());
-        enc1 = CFByteArray();
+        enc1 = ByteArray();
         TVERIFY(client.received(enc2, plain, enc1));
         TVERIFY(plain.isEmpty());
         TVERIFY(!enc1.isEmpty());
 
         // third handshake req, no reply
-        enc2 = CFByteArray();
+        enc2 = ByteArray();
         TVERIFY(server.received(enc1, plain, enc2));
         TVERIFY(plain.isEmpty());
         TVERIFY(enc2.isEmpty());
 
         // send plain to server
-        CFByteArray msg = "hello dear server";
-        enc1 = CFByteArray();
+        ByteArray msg = "hello dear server";
+        enc1 = ByteArray();
         client.send(msg, enc1);
         TVERIFY(!enc1.isEmpty());
         TVERIFY(enc1.indexOf(msg) == -1);
-        enc2 = CFByteArray();
+        enc2 = ByteArray();
         TVERIFY(server.received(enc1, plain, enc2));
         TCOMPARE(plain, msg);
         TVERIFY(enc2.isEmpty());
 
         // send plain to client
         msg = "hello dear client";
-        enc2 = CFByteArray();
+        enc2 = ByteArray();
         server.send(msg, enc2);
         TVERIFY(!enc2.isEmpty());
         TVERIFY(enc2.indexOf(msg) == -1);
-        plain = CFByteArray();
-        enc1 = CFByteArray();
+        plain = ByteArray();
+        enc1 = ByteArray();
         TVERIFY(client.received(enc2, plain, enc1));
         TCOMPARE(plain, msg);
         TVERIFY(enc1.isEmpty());
@@ -120,19 +120,19 @@ public:
         TLSSessions clientSessions;
         TLSClient client(clientSessions, clientCreds);
 
-        CFByteArray enc1;
-        CFByteArray enc2;
-        CFByteArray plain;
+        ByteArray enc1;
+        ByteArray enc2;
+        ByteArray plain;
 
         // send before handshake
-        CFByteArray serverMsg = "hello dear client";
-        enc2 = CFByteArray();
+        ByteArray serverMsg = "hello dear client";
+        enc2 = ByteArray();
         TVERIFY(server.send(serverMsg, enc2));
         TVERIFY(enc2.isEmpty());
 
         // send before handshake
-        CFByteArray clientMsg = "hello dear server";
-        enc1 = CFByteArray();
+        ByteArray clientMsg = "hello dear server";
+        enc1 = ByteArray();
         TVERIFY(client.send(clientMsg, enc1));
         TVERIFY(enc1.isEmpty());
 
@@ -142,32 +142,32 @@ public:
         TVERIFY(enc1.indexOf(clientMsg) == -1);
 
         // first handshake req -> reply
-        enc2 = CFByteArray();
+        enc2 = ByteArray();
         TVERIFY(server.received(enc1, plain, enc2));
         TVERIFY(plain.isEmpty());
         TVERIFY(!enc2.isEmpty());
-        enc1 = CFByteArray();
+        enc1 = ByteArray();
         TVERIFY(client.received(enc2, plain, enc1));
         TVERIFY(plain.isEmpty());
         TVERIFY(!enc1.isEmpty());
 
         // second handshake req -> reply
-        enc2 = CFByteArray();
+        enc2 = ByteArray();
         TVERIFY(server.received(enc1, plain, enc2));
         TVERIFY(plain.isEmpty());
         TVERIFY(!enc2.isEmpty());
-        enc1 = CFByteArray();
+        enc1 = ByteArray();
         TVERIFY(client.received(enc2, plain, enc1));
         TVERIFY(plain.isEmpty());
         TVERIFY(!enc1.isEmpty());
 
         // third handshake req, no reply
-        enc2 = CFByteArray();
+        enc2 = ByteArray();
         TVERIFY(server.received(enc1, plain, enc2));
         TCOMPARE(plain, clientMsg);
-        plain = CFByteArray();
+        plain = ByteArray();
         TVERIFY(!enc2.isEmpty());
-        enc1 = CFByteArray();
+        enc1 = ByteArray();
         TVERIFY(client.received(enc2, plain, enc1));
         TCOMPARE(plain, serverMsg);
         TVERIFY(enc1.isEmpty());
@@ -185,30 +185,30 @@ public:
         TLSSessions clientSessions;
         TLSClient client(clientSessions, clientCreds);
 
-        CFByteArray enc1;
-        CFByteArray enc2;
-        CFByteArray plain;
+        ByteArray enc1;
+        ByteArray enc2;
+        ByteArray plain;
 
         // client starts handshake
         enc1 = client.initialSend();
         TVERIFY(!enc1.isEmpty());
 
         // first handshake req -> reply
-        enc2 = CFByteArray();
+        enc2 = ByteArray();
         TVERIFY(server.received(enc1, plain, enc2));
         TVERIFY(plain.isEmpty());
         TVERIFY(!enc2.isEmpty());
-        enc1 = CFByteArray();
+        enc1 = ByteArray();
         TVERIFY(client.received(enc2, plain, enc1));
         TVERIFY(plain.isEmpty());
         TVERIFY(!enc1.isEmpty());
 
         // second handshake req -> reply
-        enc2 = CFByteArray();
+        enc2 = ByteArray();
         TVERIFY(server.received(enc1, plain, enc2));
         TVERIFY(plain.isEmpty());
         TVERIFY(!enc2.isEmpty());
-        enc1 = CFByteArray();
+        enc1 = ByteArray();
         TVERIFY(!client.received(enc2, plain, enc1));
         TVERIFY(plain.isEmpty());
     }
@@ -227,59 +227,59 @@ public:
         TLSSessions clientSessions;
         TLSClient client(clientSessions, clientCreds, "127.0.0.1");
 
-        CFByteArray enc1;
-        CFByteArray enc2;
-        CFByteArray plain;
+        ByteArray enc1;
+        ByteArray enc2;
+        ByteArray plain;
 
         // client starts handshake
         enc1 = client.initialSend();
         TVERIFY(!enc1.isEmpty());
 
         // first handshake req -> reply
-        enc2 = CFByteArray();
+        enc2 = ByteArray();
         TVERIFY(server.received(enc1, plain, enc2));
         TVERIFY(plain.isEmpty());
         TVERIFY(!enc2.isEmpty());
-        enc1 = CFByteArray();
+        enc1 = ByteArray();
         TVERIFY(client.received(enc2, plain, enc1));
         TVERIFY(plain.isEmpty());
         TVERIFY(!enc1.isEmpty());
 
         // second handshake req -> reply
-        enc2 = CFByteArray();
+        enc2 = ByteArray();
         TVERIFY(server.received(enc1, plain, enc2));
         TVERIFY(plain.isEmpty());
         TVERIFY(!enc2.isEmpty());
-        enc1 = CFByteArray();
+        enc1 = ByteArray();
         TVERIFY(client.received(enc2, plain, enc1));
         TVERIFY(plain.isEmpty());
         TVERIFY(!enc1.isEmpty());
 
         // third handshake req, no reply
-        enc2 = CFByteArray();
+        enc2 = ByteArray();
         TVERIFY(server.received(enc1, plain, enc2));
         TVERIFY(plain.isEmpty());
         TVERIFY(enc2.isEmpty());
 
         // send plain to server
-        CFByteArray msg = "hello dear server";
-        enc1 = CFByteArray();
+        ByteArray msg = "hello dear server";
+        enc1 = ByteArray();
         TVERIFY(client.send(msg, enc1));
         TVERIFY(!enc1.isEmpty());
         TVERIFY(enc1.indexOf(msg) == -1);
-        enc2 = CFByteArray();
+        enc2 = ByteArray();
         TVERIFY(server.received(enc1, plain, enc2));
         TCOMPARE(plain, msg);
         TVERIFY(enc2.isEmpty());
 
         // send plain to client
         msg = "hello dear client";
-        enc2 = CFByteArray();
+        enc2 = ByteArray();
         TVERIFY(server.send(msg, enc2));
         TVERIFY(!enc2.isEmpty());
         TVERIFY(enc2.indexOf(msg) == -1);
-        plain = CFByteArray();
-        enc1 = CFByteArray();
+        plain = ByteArray();
+        enc1 = ByteArray();
         TVERIFY(client.received(enc2, plain, enc1));
         TCOMPARE(plain, msg);
         TVERIFY(enc1.isEmpty());
@@ -298,26 +298,26 @@ public:
         TLSSessions clientSessions;
         TLSClient client(clientSessions, clientCreds, "fucking.hell");
 
-        CFByteArray enc1;
-        CFByteArray enc2;
-        CFByteArray plain;
+        ByteArray enc1;
+        ByteArray enc2;
+        ByteArray plain;
 
         // client starts handshake
         enc1 = client.initialSend();
         TVERIFY(!enc1.isEmpty());
 
         // first handshake req -> reply
-        enc2 = CFByteArray();
+        enc2 = ByteArray();
         TVERIFY(server.received(enc1, plain, enc2));
         TVERIFY(plain.isEmpty());
         TVERIFY(!enc2.isEmpty());
-        enc1 = CFByteArray();
+        enc1 = ByteArray();
         TVERIFY(client.received(enc2, plain, enc1));
         TVERIFY(plain.isEmpty());
         TVERIFY(!enc1.isEmpty());
 
         // second handshake req -> reply
-        enc2 = CFByteArray();
+        enc2 = ByteArray();
         TVERIFY(!server.received(enc1, plain, enc2));
     }
 
@@ -333,61 +333,61 @@ public:
         TCOMPARE((int)clientCreds.addCerts(cert3, true), 1);
         TCOMPARE((int)clientCreds.addRevocationLists(cert2Crl), 1);
         TLSSessions clientSessions;
-        TLSClient client(clientSessions, clientCreds, CFByteArray(), true);
+        TLSClient client(clientSessions, clientCreds, ByteArray(), true);
 
-        CFByteArray enc1;
-        CFByteArray enc2;
-        CFByteArray plain;
+        ByteArray enc1;
+        ByteArray enc2;
+        ByteArray plain;
 
         // client starts handshake
         enc1 = client.initialSend();
         TVERIFY(!enc1.isEmpty());
 
         // first handshake req -> reply
-        enc2 = CFByteArray();
+        enc2 = ByteArray();
         TVERIFY(server.received(enc1, plain, enc2));
         TVERIFY(plain.isEmpty());
         TVERIFY(!enc2.isEmpty());
-        enc1 = CFByteArray();
+        enc1 = ByteArray();
         TVERIFY(client.received(enc2, plain, enc1));
         TVERIFY(plain.isEmpty());
         TVERIFY(!enc1.isEmpty());
 
         // second handshake req -> reply
-        enc2 = CFByteArray();
+        enc2 = ByteArray();
         TVERIFY(server.received(enc1, plain, enc2));
         TVERIFY(plain.isEmpty());
         TVERIFY(!enc2.isEmpty());
-        enc1 = CFByteArray();
+        enc1 = ByteArray();
         TVERIFY(client.received(enc2, plain, enc1));
         TVERIFY(plain.isEmpty());
         TVERIFY(!enc1.isEmpty());
 
         // third handshake req, no reply
-        enc2 = CFByteArray();
+        enc2 = ByteArray();
         TVERIFY(server.received(enc1, plain, enc2));
         TVERIFY(plain.isEmpty());
         TVERIFY(enc2.isEmpty());
 
         // send plain to server
-        CFByteArray msg = "hello dear server";
-        enc1 = CFByteArray();
+        ByteArray msg = "hello dear server";
+        enc1 = ByteArray();
         client.send(msg, enc1);
         TVERIFY(!enc1.isEmpty());
         TVERIFY(enc1.indexOf(msg) == -1);
-        enc2 = CFByteArray();
+        enc2 = ByteArray();
         TVERIFY(server.received(enc1, plain, enc2));
         TCOMPARE(plain, msg);
         TVERIFY(enc2.isEmpty());
 
         // send plain to client
         msg = "hello dear client";
-        enc2 = CFByteArray();
+        enc2 = ByteArray();
         server.send(msg, enc2);
         TVERIFY(!enc2.isEmpty());
         TVERIFY(enc2.indexOf(msg) == -1);
-        plain = CFByteArray();
-        enc1 = CFByteArray();
+        plain = ByteArray();
+        enc1 = ByteArray();
         TVERIFY(client.received(enc2, plain, enc1));
         TCOMPARE(plain, msg);
         TVERIFY(enc1.isEmpty());
@@ -407,59 +407,59 @@ public:
         TLSSessions clientSessions;
         TLSClient client(clientSessions, clientCreds);
 
-        CFByteArray enc1;
-        CFByteArray enc2;
-        CFByteArray plain;
+        ByteArray enc1;
+        ByteArray enc2;
+        ByteArray plain;
 
         // client starts handshake
         enc1 = client.initialSend();
         TVERIFY(!enc1.isEmpty());
 
         // first handshake req -> reply
-        enc2 = CFByteArray();
+        enc2 = ByteArray();
         TVERIFY(server.received(enc1, plain, enc2));
         TVERIFY(plain.isEmpty());
         TVERIFY(!enc2.isEmpty());
-        enc1 = CFByteArray();
+        enc1 = ByteArray();
         TVERIFY(client.received(enc2, plain, enc1));
         TVERIFY(plain.isEmpty());
         TVERIFY(!enc1.isEmpty());
 
         // second handshake req -> reply
-        enc2 = CFByteArray();
+        enc2 = ByteArray();
         TVERIFY(server.received(enc1, plain, enc2));
         TVERIFY(plain.isEmpty());
         TVERIFY(!enc2.isEmpty());
-        enc1 = CFByteArray();
+        enc1 = ByteArray();
         TVERIFY(client.received(enc2, plain, enc1));
         TVERIFY(plain.isEmpty());
         TVERIFY(!enc1.isEmpty());
 
         // third handshake req, no reply
-        enc2 = CFByteArray();
+        enc2 = ByteArray();
         TVERIFY(server.received(enc1, plain, enc2));
         TVERIFY(plain.isEmpty());
         TVERIFY(enc2.isEmpty());
 
         // send plain to server
-        CFByteArray msg = "hello dear server";
-        enc1 = CFByteArray();
+        ByteArray msg = "hello dear server";
+        enc1 = ByteArray();
         client.send(msg, enc1);
         TVERIFY(!enc1.isEmpty());
         TVERIFY(enc1.indexOf(msg) == -1);
-        enc2 = CFByteArray();
+        enc2 = ByteArray();
         TVERIFY(server.received(enc1, plain, enc2));
         TCOMPARE(plain, msg);
         TVERIFY(enc2.isEmpty());
 
         // send plain to client
         msg = "hello dear client";
-        enc2 = CFByteArray();
+        enc2 = ByteArray();
         server.send(msg, enc2);
         TVERIFY(!enc2.isEmpty());
         TVERIFY(enc2.indexOf(msg) == -1);
-        plain = CFByteArray();
-        enc1 = CFByteArray();
+        plain = ByteArray();
+        enc1 = ByteArray();
         TVERIFY(client.received(enc2, plain, enc1));
         TCOMPARE(plain, msg);
         TVERIFY(enc1.isEmpty());

@@ -16,7 +16,7 @@ namespace cflib { namespace serialize {
 // returns -1 if not enough data available
 // returns -2 if length is undefined (one byte: 0x80)
 // returns -3 if too big length was found (max TLV size is 2^32 - 1)
-inline cfint32 getTLVLength(const CFByteArray & data, cfuint64 & tagNo, int & tagLen, int & lengthSize)
+inline cfint32 getTLVLength(const ByteArray & data, cfuint64 & tagNo, int & tagLen, int & lengthSize)
 {
     const cfint64 valueLen = impl::decodeTLV((const cfuint8 *)data.constData(), data.size(), tagNo, tagLen, lengthSize);
     if (valueLen < 0) return valueLen;
@@ -25,18 +25,18 @@ inline cfint32 getTLVLength(const CFByteArray & data, cfuint64 & tagNo, int & ta
     return valueLen;
 }
 
-inline CFByteArray emptyTag(cfuint64 tagNo)
+inline ByteArray emptyTag(cfuint64 tagNo)
 {
     const cfuint8 tagLen = impl::calcTagLen(tagNo);
-    CFByteArray rv(tagLen + 1, '\0');
+    ByteArray rv(tagLen + 1, '\0');
     impl::writeTagBytes((cfuint8 *)rv.data(), tagNo, false, tagLen);
     return rv;
 }
 
 template<typename T>
-inline CFByteArray toByteArray(const T & v, cfuint64 tagNo = 1)
+inline ByteArray toByteArray(const T & v, cfuint64 tagNo = 1)
 {
-    CFByteArray rv;
+    ByteArray rv;
     impl::BERSerializerBase * dummy = 0;
     impl::serializeBER(v, tagNo, rv, *dummy);
     return rv;
@@ -55,7 +55,7 @@ inline void someToByteArray(BERSerializer & ser, uint start, uint count, P... p)
 }
 
 template<typename T>
-inline T fromByteArray(const CFByteArray & data, int tagLen, int lengthSize, cfint32 valueLen)
+inline T fromByteArray(const ByteArray & data, int tagLen, int lengthSize, cfint32 valueLen)
 {
     if (valueLen == 0 && lengthSize == 2) return T();
     T retval;
@@ -65,7 +65,7 @@ inline T fromByteArray(const CFByteArray & data, int tagLen, int lengthSize, cfi
 }
 
 template<typename T>
-inline T fromByteArray(const CFByteArray & data)
+inline T fromByteArray(const ByteArray & data)
 {
     cfuint64 tag = 0;
     int tagLen = 0;

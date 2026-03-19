@@ -24,7 +24,7 @@ USE_LOG(LogCat::Etc)
 
 namespace cflib { namespace util {
 
-CFByteArray weekDay(int dayOfWeek)
+ByteArray weekDay(int dayOfWeek)
 {
     switch (dayOfWeek) {
         case  1: return "Mon";
@@ -38,10 +38,10 @@ CFByteArray weekDay(int dayOfWeek)
     }
 }
 
-CFByteArray dateTimeForHTTP(const CFDateTime & dateTime)
+ByteArray dateTimeForHTTP(const CFDateTime & dateTime)
 {
     // see RFC 2822 section 3.3.
-    CFByteArray retval = weekDay(dateTime.dayOfWeek());
+    ByteArray retval = weekDay(dateTime.dayOfWeek());
     retval += ", ";
 
     retval += std::format("{:02d} ___ {:04d} {:02d}:{:02d}:{:02d}",
@@ -129,10 +129,10 @@ cfuint32 calcCRC32Raw(cfuint32 crc, const char * data, cfuint64 size)
     return crc;
 }
 
-void gzip(CFByteArray & data, int compressionLevel)
+void gzip(ByteArray & data, int compressionLevel)
 {
     if (data.isEmpty()) {
-        data = CFByteArray::fromHex("1f8b08000000000000ff03000000000000000000");
+        data = ByteArray::fromHex("1f8b08000000000000ff03000000000000000000");
         return;
     }
 
@@ -147,7 +147,7 @@ void gzip(CFByteArray & data, int compressionLevel)
     s.avail_in  = (uInt)data.size();
     s.next_in   = (Bytef *)data.constData();
     deflateInit2(&s, compressionLevel, Z_DEFLATED, 31, 8, Z_DEFAULT_STRATEGY);
-    CFByteArray out((cfsize_t)deflateBound(&s, data.size()), '\0');
+    ByteArray out((cfsize_t)deflateBound(&s, data.size()), '\0');
     s.avail_out = (uInt)out.size();
     s.next_out  = (Bytef *)out.data();
     deflate(&s, Z_FINISH);
@@ -170,7 +170,7 @@ void gzip(CFByteArray & data, int compressionLevel)
     s2.avail_in  = (uInt)data.size();
     s2.next_in   = (Bytef *)data.constData();
     deflateInit2(&s2, compressionLevel, Z_DEFLATED, -15, 8, Z_DEFAULT_STRATEGY);
-    CFByteArray compressed((cfsize_t)deflateBound(&s2, data.size()), '\0');
+    ByteArray compressed((cfsize_t)deflateBound(&s2, data.size()), '\0');
     s2.avail_out = (uInt)compressed.size();
     s2.next_out  = (Bytef *)compressed.data();
     deflate(&s2, Z_FINISH);
@@ -202,7 +202,7 @@ void gzip(CFByteArray & data, int compressionLevel)
     data += (char)((len >> 24) & 0xFF);
 }
 
-void deflateRaw(CFByteArray & data, int compressionLevel)
+void deflateRaw(ByteArray & data, int compressionLevel)
 {
     if (data.isEmpty()) {
         data += '\0';
@@ -215,7 +215,7 @@ void deflateRaw(CFByteArray & data, int compressionLevel)
     s.avail_in  = (uInt)   data.size();
     s.next_in   = (Bytef *)data.constData();
     deflateInit2(&s, compressionLevel, Z_DEFLATED, -15, 8, Z_DEFAULT_STRATEGY);
-    CFByteArray out((cfsize_t)deflateBound(&s, data.size()), '\0');
+    ByteArray out((cfsize_t)deflateBound(&s, data.size()), '\0');
     s.avail_out = (uInt)   out.size();
     s.next_out  = (Bytef *)out.constData();
     deflate(&s, Z_SYNC_FLUSH);
@@ -229,15 +229,15 @@ void deflateRaw(CFByteArray & data, int compressionLevel)
     data = out;
 }
 
-void inflateRaw(CFByteArray & data)
+void inflateRaw(ByteArray & data)
 {
     if (data.isEmpty()) return;
     const char fb = data[0];
-    CFByteArray in;
+    ByteArray in;
     in.reserve(data.size() + (fb == 0 ? 0 : 4));
     in.append(data);
     if (fb == 0) in.append("\x00\x00\xFF\xFF", 4);
-    CFByteArray out((cfsize_t)5, '\0');
+    ByteArray out((cfsize_t)5, '\0');
     z_stream s;
     s.zalloc    = Z_NULL;
     s.zfree     = Z_NULL;
@@ -262,14 +262,14 @@ void inflateRaw(CFByteArray & data)
     data = out;
 }
 
-CFByteArray readFile(const String & path)
+ByteArray readFile(const String & path)
 {
     CFFile file(path);
     file.open(CFFile::ReadOnly);
     return file.readAll();
 }
 
-bool writeFile(const String & path, const CFByteArray & data, int perm)
+bool writeFile(const String & path, const ByteArray & data, int perm)
 {
     CFFile file(path);
     if (!file.open(CFFile::WriteOnly | CFFile::Truncate)) return false;
@@ -290,13 +290,13 @@ const char * const Hex = "0123456789ABCDEF";
 
 }
 
-CFByteArray encodeQuotedPrintable(const String & text)
+ByteArray encodeQuotedPrintable(const String & text)
 {
-    CFByteArray utf8 = text.toUtf8();
+    ByteArray utf8 = text.toUtf8();
     const unsigned char * pos = (const unsigned char *)utf8.constData();
     const unsigned char * second = pos + 1;
     const unsigned char * end = pos + utf8.length();
-    CFByteArray retval;
+    ByteArray retval;
     int lineLen = 0;
     while (pos != end) {
         unsigned char c = *(pos++);
@@ -330,12 +330,12 @@ CFByteArray encodeQuotedPrintable(const String & text)
     return retval;
 }
 
-CFByteArray encodeWord(const String & str, bool strict)
+ByteArray encodeWord(const String & str, bool strict)
 {
-    CFByteArray utf8 = str.toUtf8();
+    ByteArray utf8 = str.toUtf8();
     const unsigned char * pos = (const unsigned char *)utf8.constData();
     const unsigned char * end = pos + utf8.length();
-    CFByteArray retval = "=?utf-8?Q?";
+    ByteArray retval = "=?utf-8?Q?";
     bool onlyDirect = true;
     while (pos != end) {
         unsigned char c = *(pos++);
@@ -562,7 +562,7 @@ bool removeFile(const String & path)
 
 bool copyFile(const String & src, const String & dest)
 {
-    CFByteArray data = readFile(src);
+    ByteArray data = readFile(src);
     return writeFile(dest, data);
 }
 

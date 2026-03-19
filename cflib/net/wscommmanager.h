@@ -53,7 +53,7 @@ template<typename C>
 class WSCommTextMsgHandler : public virtual WSCommConnMgrAccess<C>
 {
 public:
-    virtual bool handleTextMsg(const CFByteArray & data, const C & connData, uint connId) = 0;
+    virtual bool handleTextMsg(const ByteArray & data, const C & connData, uint connId) = 0;
 };
 
 template<typename C>
@@ -61,7 +61,7 @@ class WSCommMsgHandler : public virtual WSCommConnMgrAccess<C>
 {
 public:
     virtual void handleMsg(cfuint64 tag,
-        const CFByteArray & data, int tagLen, int lengthSize, cfint32 valueLen,
+        const ByteArray & data, int tagLen, int lengthSize, cfint32 valueLen,
         const C & connData, uint connDataId, uint connId) = 0;
 };
 
@@ -70,13 +70,13 @@ public:
 class WSCommManagerBase : public WebSocketService
 {
 public:
-    void saveHeaderField(const CFByteArray & field);
+    void saveHeaderField(const ByteArray & field);
 
-    void send(uint connId, const CFByteArray & data, bool isBinary);
+    void send(uint connId, const ByteArray & data, bool isBinary);
     void close(uint connId, TCPConn::CloseType type = TCPConn::ReadWriteClosed);
 
-    CFByteArray getRemoteIP(uint connId) const;
-    CFByteArray getHeader(uint connId, const CFByteArray & header) const;
+    ByteArray getRemoteIP(uint connId) const;
+    ByteArray getHeader(uint connId, const ByteArray & header) const;
 
 protected:
     WSCommManagerBase(const String & path, const CFRegex & allowedOrigin, uint connectionTimeoutSec);
@@ -112,11 +112,11 @@ public:
     void registerMsgHandler(cfuint64 tag, MsgHandler & hdl) { msgHandler_[tag] = &hdl; hdl.mgr_ = this; }
     void updateConnData(uint connDataId, const C & connData);
     void connDataOk(uint connDataId);
-    void getConnData(const CFByteArray & clientId, C & connData, uint & connDataId);
+    void getConnData(const ByteArray & clientId, C & connData, uint & connDataId);
     void getConnData(uint connId, C & connData, uint & connDataId);
 
 protected:
-    virtual void newMsg(uint connId, const CFByteArray & data, bool isBinary, bool & stopRead);
+    virtual void newMsg(uint connId, const ByteArray & data, bool isBinary, bool & stopRead);
     virtual void closed(uint connId, TCPConn::CloseType type);
 
 private:
@@ -143,7 +143,7 @@ private:
 
     CFHash<uint, uint> connId2dataId_;
     CFHash<uint, ConnInfo> connInfos_;
-    CFMap<CFByteArray, uint> clientIds_;
+    CFMap<ByteArray, uint> clientIds_;
 
     util::EVTimer timer_;
     uint sessionTimeoutSec_;
@@ -213,9 +213,9 @@ void WSCommManager<C>::connDataOk(uint connDataId)
 }
 
 template<typename C>
-void WSCommManager<C>::getConnData(const CFByteArray & clientId, C & connData, uint & connDataId)
+void WSCommManager<C>::getConnData(const ByteArray & clientId, C & connData, uint & connDataId)
 {
-    if (!verifySyncedThreadCall<WSCommManager<C>, const CFByteArray &>(&WSCommManager<C>::getConnData, clientId, connData, connDataId)) return;
+    if (!verifySyncedThreadCall<WSCommManager<C>, const ByteArray &>(&WSCommManager<C>::getConnData, clientId, connData, connDataId)) return;
 
     connDataId = cfMapValue(clientIds_, clientId, 0u);
     connData = connDataId == 0 ? C() : cfHashValue(connInfos_, connDataId).connData;
@@ -243,7 +243,7 @@ bool WSCommManager<C>::connDataOk(WSCommManager::ConnInfo & info, uint connDataI
 }
 
 template<typename C>
-void WSCommManager<C>::newMsg(uint connId, const CFByteArray & data, bool isBinary, bool & stopRead)
+void WSCommManager<C>::newMsg(uint connId, const ByteArray & data, bool isBinary, bool & stopRead)
 {
     const uint dataId = cfHashValue(connId2dataId_, connId, 0u);
 
@@ -282,7 +282,7 @@ void WSCommManager<C>::newMsg(uint connId, const CFByteArray & data, bool isBina
             if (valueLen != 20) {
                 dId = sendNewClientId(connId, stopRead);
             } else {
-                const CFByteArray clId = serialize::fromByteArray<CFByteArray>(data, tagLen, lengthSize, valueLen);
+                const ByteArray clId = serialize::fromByteArray<ByteArray>(data, tagLen, lengthSize, valueLen);
                 dId = cfMapValue(clientIds_, clId, 0u);
                 if (dId == 0) {
                     dId = sendNewClientId(connId, stopRead);
@@ -363,7 +363,7 @@ template<typename C>
 uint WSCommManager<C>::sendNewClientId(uint connId, bool & stopRead)
 {
     // create clientId
-    const CFByteArray clId = crypt::random(20);
+    const ByteArray clId = crypt::random(20);
 
     // get free id
     uint dataId;

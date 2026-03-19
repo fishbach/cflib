@@ -34,7 +34,7 @@ public:
 
     // connection
     const int socket;
-    const CFByteArray peerIP;
+    const ByteArray peerIP;
     const cfuint16 peerPort;
 
     // TLS handling
@@ -44,9 +44,9 @@ public:
     // state
     ev_io * readWatcher;
     ev_io * writeWatcher;
-    CFByteArray readBuf;
-    CFByteArray readData;
-    CFByteArray writeBuf;
+    ByteArray readBuf;
+    ByteArray readData;
+    ByteArray writeBuf;
     bool notifySomeBytesWritten;
     bool closeAfterWriting;
     bool deleteAfterWriting;

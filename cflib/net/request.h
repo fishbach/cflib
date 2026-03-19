@@ -21,7 +21,7 @@ class Request
 {
 public:
     typedef CFPair<int, int> Id;
-    typedef CFMap<CFByteArray, CFByteArray> KeyVal;
+    typedef CFMap<ByteArray, ByteArray> KeyVal;
     enum Method {
         NONE = 0,
         GET,
@@ -33,9 +33,9 @@ public:
 public:
     Request();
     Request(int connId, int requestId,
-        const CFByteArray & header,
-        const KeyVal & headerFields, Method method, const CFByteArray & uri,
-        const CFByteArray & body, const CFList<RequestHandler *> & handlers, bool passThrough,
+        const ByteArray & header,
+        const KeyVal & headerFields, Method method, const ByteArray & uri,
+        const ByteArray & body, const CFList<RequestHandler *> & handlers, bool passThrough,
         impl::RequestParser * parser);
 
     // implicit sharing
@@ -46,38 +46,38 @@ public:
     Id getId() const;
     bool replySent() const;
 
-    CFByteArray getRawHeader() const;
-    CFByteArray getHeader(const CFByteArray & name) const;
-    CFByteArray getHostname() const;
+    ByteArray getRawHeader() const;
+    ByteArray getHeader(const ByteArray & name) const;
+    ByteArray getHostname() const;
     KeyVal getHeaderFields() const;
     Method getMethod() const;
-    CFByteArray getMethodName() const;
+    ByteArray getMethodName() const;
     inline bool isGET()  const { return getMethod() == GET; }
     inline bool isPOST() const { return getMethod() == POST; }
     inline bool isHEAD() const { return getMethod() == HEAD; }
-    CFByteArray getUri() const;
-    CFByteArray getBody() const;
-    CFByteArray getRemoteIP() const;
+    ByteArray getUri() const;
+    ByteArray getBody() const;
+    ByteArray getRemoteIP() const;
     LoginPass getBasicAuth() const;
 
     void sendNotFound() const;
-    void sendRedirect(const CFByteArray & url) const;
-    void sendReply(const CFByteArray & reply, const CFByteArray & contentType, bool compression = true) const;
-    void sendText(const String & reply, const CFByteArray & contentType = "text/html", bool compression = true) const;
-    void sendRaw(const CFByteArray & header, const CFByteArray & body, bool compression) const;
-    void addHeaderLine(const CFByteArray & line) const;
-    CFByteArray defaultHeaders() const;
+    void sendRedirect(const ByteArray & url) const;
+    void sendReply(const ByteArray & reply, const ByteArray & contentType, bool compression = true) const;
+    void sendText(const String & reply, const ByteArray & contentType = "text/html", bool compression = true) const;
+    void sendRaw(const ByteArray & header, const ByteArray & body, bool compression) const;
+    void addHeaderLine(const ByteArray & line) const;
+    ByteArray defaultHeaders() const;
 
     bool isPassThrough() const;
     void setPassThroughHandler(PassThroughHandler * hdl) const;
-    CFByteArray readPassThrough(bool & isLast) const;
+    ByteArray readPassThrough(bool & isLast) const;
     void startWatcher() const;
     void abort() const;
 
     TCPConnData * detach() const;
     TCPManager * tcpManager() const;
 
-    static LoginPass getBasicAuth(const CFByteArray & authorization);
+    static LoginPass getBasicAuth(const ByteArray & authorization);
 
 private:
     void callNextHandler() const;

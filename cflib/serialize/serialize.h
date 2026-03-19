@@ -13,7 +13,7 @@
 
 #define SERIALIZE_CLASS_USE_NULL(Class) \
     namespace cflib { namespace serialize { namespace impl { \
-    template<> inline void serializeBER(const Class & cl, cfuint64 tagNo, CFByteArray & data, \
+    template<> inline void serializeBER(const Class & cl, cfuint64 tagNo, ByteArray & data, \
         BERSerializerBase &) \
     { \
         if (cl.isNull()) { writeNull(data, tagNo); return; } \

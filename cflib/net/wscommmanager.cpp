@@ -9,13 +9,13 @@
 
 namespace cflib { namespace net {
 
-void WSCommManagerBase::saveHeaderField(const CFByteArray & field)
+void WSCommManagerBase::saveHeaderField(const ByteArray & field)
 {
     if (!verifyThreadCall(&WSCommManagerBase::saveHeaderField, field)) return;
     WebSocketService::saveHeaderField(field);
 }
 
-void WSCommManagerBase::send(uint connId, const CFByteArray & data, bool isBinary)
+void WSCommManagerBase::send(uint connId, const ByteArray & data, bool isBinary)
 {
     if (!verifyThreadCall(&WSCommManagerBase::send, connId, data, isBinary)) return;
     WebSocketService::send(connId, data, isBinary);
@@ -27,16 +27,16 @@ void WSCommManagerBase::close(uint connId, TCPConn::CloseType type)
     WebSocketService::close(connId, type);
 }
 
-CFByteArray WSCommManagerBase::getRemoteIP(uint connId) const
+ByteArray WSCommManagerBase::getRemoteIP(uint connId) const
 {
-    SyncedThreadCall<CFByteArray> stc(this);
+    SyncedThreadCall<ByteArray> stc(this);
     if (!stc.verify(&WSCommManagerBase::getRemoteIP, connId)) return stc.retval();
     return WebSocketService::getRemoteIP(connId);
 }
 
-CFByteArray WSCommManagerBase::getHeader(uint connId, const CFByteArray & header) const
+ByteArray WSCommManagerBase::getHeader(uint connId, const ByteArray & header) const
 {
-    SyncedThreadCall<CFByteArray> stc(this);
+    SyncedThreadCall<ByteArray> stc(this);
     if (!stc.verify(&WSCommManagerBase::getHeader, connId, header)) return stc.retval();
     return WebSocketService::getHeader(connId, header);
 }

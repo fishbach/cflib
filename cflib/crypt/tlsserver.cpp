@@ -58,9 +58,9 @@ public:
     }
 
 public:
-    CFByteArray outgoingPlainTmpBuf;
-    CFByteArray * outgoingEncryptedPtr;
-    CFByteArray * incomingPlainPtr;
+    ByteArray outgoingPlainTmpBuf;
+    ByteArray * outgoingEncryptedPtr;
+    ByteArray * incomingPlainPtr;
     bool isReady;
     bool hasError;
     std::shared_ptr<TLS::Policy> policy;
@@ -81,14 +81,14 @@ TLSServer::~TLSServer()
     delete impl_;
 }
 
-bool TLSServer::received(const CFByteArray & encrypted, CFByteArray & plain, CFByteArray & sendBack)
+bool TLSServer::received(const ByteArray & encrypted, ByteArray & plain, ByteArray & sendBack)
 {
     if (impl_->hasError) return false;
     impl_->outgoingEncryptedPtr = &sendBack;
     impl_->incomingPlainPtr     = &plain;
     TRY {
         impl_->server.received_data((const byte *)encrypted.constData(), encrypted.size());
-        CFByteArray & tmpBuf = impl_->outgoingPlainTmpBuf;
+        ByteArray & tmpBuf = impl_->outgoingPlainTmpBuf;
         if (!tmpBuf.isEmpty() && impl_->isReady && !impl_->hasError) {
             impl_->server.send((const byte *)tmpBuf.constData(), tmpBuf.size());
             tmpBuf.clear();
@@ -99,7 +99,7 @@ bool TLSServer::received(const CFByteArray & encrypted, CFByteArray & plain, CFB
     return false;
 }
 
-bool TLSServer::send(const CFByteArray & plain, CFByteArray & encrypted)
+bool TLSServer::send(const ByteArray & plain, ByteArray & encrypted)
 {
     if (impl_->hasError) return false;
     impl_->outgoingEncryptedPtr = &encrypted;

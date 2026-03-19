@@ -107,7 +107,7 @@ inline void writeCategory(char * dest, LogCategory cat)
 }
 
 // allow only ASCII for security reasons
-inline void writeMsg(CFByteArray & out, const CFByteArray & msg)
+inline void writeMsg(ByteArray & out, const ByteArray & msg)
 {
     const char * start = msg.constData();
     const char * p = start;
@@ -156,13 +156,13 @@ void Log::setLevelCallback(LogCategory level, LogLevelCallback callback)
     logLevelCallback = callback;
 }
 
-void Log::writeLog(const char * filename, int lineNo, LogCategory category, const CFByteArray & msg,
+void Log::writeLog(const char * filename, int lineNo, LogCategory category, const ByteArray & msg,
     int indent)
 {
     if (!active) return;
 
     // construct message
-    CFByteArray line;
+    ByteArray line;
     line.reserve(256);
     line.resize(54);
     char * pos = (char *)line.constData();    // constData for performance
@@ -224,10 +224,10 @@ void Log::writeLog(const char * filename, int lineNo, LogCategory category, cons
         // indent for log function trace
         if (indent < 0) {
             info.indent += indent;
-            if (info.indent > 0) line += CFByteArray((cfsize_t)info.indent, ' ');
+            if (info.indent > 0) line += ByteArray((cfsize_t)info.indent, ' ');
             line += "}\n";
         } else {
-            if (info.indent > 0) line += CFByteArray((cfsize_t)info.indent, ' ');
+            if (info.indent > 0) line += ByteArray((cfsize_t)info.indent, ' ');
             if (indent > 0) {
                 line += msg;
                 line += " {\n";

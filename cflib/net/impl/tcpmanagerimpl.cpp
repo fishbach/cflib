@@ -72,7 +72,7 @@ inline bool setNonBlocking(int fd)
     return true;
 }
 
-inline bool callWithSockaddr(const CFByteArray & ip, cfuint16 port, std::function<bool (const struct sockaddr *, socklen_t)> func)
+inline bool callWithSockaddr(const ByteArray & ip, cfuint16 port, std::function<bool (const struct sockaddr *, socklen_t)> func)
 {
     if (ip.indexOf('.') == -1) {
         struct sockaddr_in6 addr;
@@ -188,8 +188,8 @@ void TCPManagerImpl::stop()
 }
 
 TCPConnData * TCPManagerImpl::openConnection(
-    const CFByteArray & destAddress, cfuint16 destPort,
-    const CFByteArray & sourceIP, cfuint16 sourcePort,
+    const ByteArray & destAddress, cfuint16 destPort,
+    const ByteArray & sourceIP, cfuint16 sourcePort,
     TLSCredentials * credentials, bool preferIPv6)
 {
     // no thread verify needed here
@@ -200,9 +200,9 @@ TCPConnData * TCPManagerImpl::openConnection(
     }
 
     // resolve dns
-    CFByteArray destIP;
+    ByteArray destIP;
     {
-        const CFList<CFByteArray> ips = getIPFromDNS(destAddress, preferIPv6);
+        const CFList<ByteArray> ips = getIPFromDNS(destAddress, preferIPv6);
         if (ips.empty()) {
             logWarn("cannot resolve host: %1", destAddress);
             return 0;
@@ -255,7 +255,7 @@ void TCPManagerImpl::startReadWatcher(TCPConnData * conn)
     ev_io_start(libEVLoop(), conn->readWatcher);
 }
 
-void TCPManagerImpl::writeToSocket(TCPConnData * conn, const CFByteArray & data, bool notifyFinished)
+void TCPManagerImpl::writeToSocket(TCPConnData * conn, const ByteArray & data, bool notifyFinished)
 {
     if (!verifyThreadCall(&TCPManagerImpl::writeToSocket, conn, data, notifyFinished)) return;
 
@@ -364,7 +364,7 @@ void TCPManagerImpl::tlsStartReadWatcher(TCPConnData * conn)
     tlsThreads_[conn->tlsThreadId]->startReadWatcher(conn);
 }
 
-void TCPManagerImpl::tlsWrite(TCPConnData * conn, const CFByteArray & data, bool notifyFinished) const
+void TCPManagerImpl::tlsWrite(TCPConnData * conn, const ByteArray & data, bool notifyFinished) const
 {
     tlsThreads_[conn->tlsThreadId]->write(conn, data, notifyFinished);
 }
@@ -385,7 +385,7 @@ void TCPManagerImpl::setNoDelay(int socket, bool noDelay)
     setsockopt(socket, IPPROTO_TCP, TCP_NODELAY, (char *)&on, sizeof(on));
 }
 
-int TCPManagerImpl::openListenSocket(const CFByteArray & ip, cfuint16 port)
+int TCPManagerImpl::openListenSocket(const ByteArray & ip, cfuint16 port)
 {
     // create non blocking socket
     int rv = socket(ip.indexOf('.') == -1 ? AF_INET6 : AF_INET, SOCK_STREAM, 0);
@@ -452,7 +452,7 @@ void TCPManagerImpl::writeable(ev_loop * loop, ev_io * w, int)
     TCPConnData * conn = (TCPConnData *)w->data;
     TCPManagerImpl & impl = conn->impl;
 
-    CFByteArray & buf = conn->writeBuf;
+    ByteArray & buf = conn->writeBuf;
     const int fd = conn->socket;
 
 #ifdef __linux__
@@ -548,8 +548,8 @@ void TCPManagerImpl::callClosed(TCPConnData * conn)
     else                 execLater(new Functor0<TCPConnData>(conn, &TCPConnData::callClosed));
 }
 
-TCPConnData * TCPManagerImpl::addConnection(int sock, const CFByteArray & destIP, cfuint16 destPort,
-    TLSCredentials * credentials, const CFByteArray & destAddress)
+TCPConnData * TCPManagerImpl::addConnection(int sock, const ByteArray & destIP, cfuint16 destPort,
+    TLSCredentials * credentials, const ByteArray & destAddress)
 {
     SyncedThreadCall<TCPConnData *> stc(this);
     if (!stc.verify(&TCPManagerImpl::addConnection, sock, destIP, destPort, credentials, destAddress)) return stc.retval();

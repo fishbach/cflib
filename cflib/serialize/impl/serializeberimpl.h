@@ -18,7 +18,7 @@ namespace cflib { namespace serialize { namespace impl {
 // ============================================================================
 
 template<typename T>
-inline void serializeBERInt(T v, cfuint64 tagNo, CFByteArray & data, bool isMaxUInt = false)
+inline void serializeBERInt(T v, cfuint64 tagNo, ByteArray & data, bool isMaxUInt = false)
 {
     if (v == 0) { writeNull(data, tagNo); return; }
 
@@ -50,7 +50,7 @@ inline void serializeBERInt(T v, cfuint64 tagNo, CFByteArray & data, bool isMaxU
 }
 
 template<>
-inline void serializeBERInt(bool v, cfuint64 tagNo, CFByteArray & data, bool)
+inline void serializeBERInt(bool v, cfuint64 tagNo, ByteArray & data, bool)
 {
     if (!v) { writeNull(data, tagNo); return; }
 
@@ -69,7 +69,7 @@ inline void serializeBERInt(bool v, cfuint64 tagNo, CFByteArray & data, bool)
     p[tagLen + 1] = 1;
 }
 
-inline void serializeBERInt(cfuint64 v, cfuint64 tagNo, CFByteArray & data)
+inline void serializeBERInt(cfuint64 v, cfuint64 tagNo, ByteArray & data)
 {
     serializeBERInt<cfuint64>(v, tagNo, data, (v >> 63));
 }
@@ -96,7 +96,7 @@ inline void deserializeBERInt(bool & v, const cfuint8 * data, int len)
 // ----------------------------------------------------------------------------
 
 #define DO_SERIALIZE_BER(typ) \
-    inline void serializeBER(typ val, cfuint64 tag, CFByteArray & data, BERSerializerBase &) { \
+    inline void serializeBER(typ val, cfuint64 tag, ByteArray & data, BERSerializerBase &) { \
         serializeBERInt(val, tag, data); } \
     inline void deserializeBER(typ & val, const cfuint8 * data, int len, BERDeserializerBase &) { \
         deserializeBERInt(val, data, len); } \
@@ -116,7 +116,7 @@ DO_SERIALIZE_BER(cfuint64)
 // float
 // ============================================================================
 
-inline void serializeBER(float d, cfuint64 tagNo, CFByteArray & data, BERSerializerBase &)
+inline void serializeBER(float d, cfuint64 tagNo, ByteArray & data, BERSerializerBase &)
 {
     if (d == 0) { writeNull(data, tagNo); return; }
     const cfuint8 tagLen = calcTagLen(tagNo);
@@ -134,7 +134,7 @@ inline void deserializeBER(float & d, const cfuint8 * data, int len, BERDeserial
     d = len != 4 ? 0 : *((const float *)data);
 }
 
-inline void serializeBER(double d, cfuint64 tagNo, CFByteArray & data, BERSerializerBase &)
+inline void serializeBER(double d, cfuint64 tagNo, ByteArray & data, BERSerializerBase &)
 {
     if (d == 0) { writeNull(data, tagNo); return; }
     const cfuint8 tagLen = calcTagLen(tagNo);
@@ -152,7 +152,7 @@ inline void deserializeBER(double & d, const cfuint8 * data, int len, BERDeseria
     d = len != 8 ? 0 : *((const double *)data);
 }
 
-inline void serializeBER(long double d, cfuint64 tagNo, CFByteArray & data, BERSerializerBase &)
+inline void serializeBER(long double d, cfuint64 tagNo, ByteArray & data, BERSerializerBase &)
 {
     if (d == 0) { writeNull(data, tagNo); return; }
     const cfuint8 tagLen = calcTagLen(tagNo);
@@ -176,10 +176,10 @@ inline void deserializeBER(long double & d, const cfuint8 * data, int len, BERDe
 // ============================================================================
 
 // ----------------------------------------------------------------------------
-// CFByteArray
+// ByteArray
 // ----------------------------------------------------------------------------
 
-inline void serializeBER(const CFByteArray & ba, cfuint64 tagNo, CFByteArray & data, BERSerializerBase &)
+inline void serializeBER(const ByteArray & ba, cfuint64 tagNo, ByteArray & data, BERSerializerBase &)
 {
     if (ba.isNull())  { writeNull(data, tagNo); return; }
     if (ba.isEmpty()) { writeZero(data, tagNo); return; }
@@ -194,20 +194,20 @@ inline void serializeBER(const CFByteArray & ba, cfuint64 tagNo, CFByteArray & d
     memcpy(pos + tagLen + lengthSize, ba.constData(), ba.size());
 }
 
-inline void deserializeBER(CFByteArray & ba, const cfuint8 * data, int len, BERDeserializerBase &)
+inline void deserializeBER(ByteArray & ba, const cfuint8 * data, int len, BERDeserializerBase &)
 {
-    ba = CFByteArray((const char *)data, (cfsize_t)len);
+    ba = ByteArray((const char *)data, (cfsize_t)len);
 }
 
 // ----------------------------------------------------------------------------
 // String
 // ----------------------------------------------------------------------------
 
-inline void serializeBER(const String & str, cfuint64 tagNo, CFByteArray & data, BERSerializerBase & ser)
+inline void serializeBER(const String & str, cfuint64 tagNo, ByteArray & data, BERSerializerBase & ser)
 {
     if (str.isNull())  { writeNull(data, tagNo); return; }
     if (str.isEmpty()) { writeZero(data, tagNo); return; }
-    CFByteArray utf8 = str.toUtf8();
+    ByteArray utf8 = str.toUtf8();
     serializeBER(utf8, tagNo, data, ser);
 }
 
@@ -217,10 +217,10 @@ inline void deserializeBER(String & str, const cfuint8 * data, int len, BERDeser
 }
 
 // ----------------------------------------------------------------------------
-// const char * (use CFByteArray for deserialization)
+// const char * (use ByteArray for deserialization)
 // ----------------------------------------------------------------------------
 
-inline void serializeBER(const char * str, cfuint64 tagNo, CFByteArray & data, BERSerializerBase &)
+inline void serializeBER(const char * str, cfuint64 tagNo, ByteArray & data, BERSerializerBase &)
 {
     if (str == 0) { writeNull(data, tagNo); return; }
 
@@ -241,7 +241,7 @@ inline void serializeBER(const char * str, cfuint64 tagNo, CFByteArray & data, B
 // CFChar
 // ----------------------------------------------------------------------------
 
-inline void serializeBER(const CFChar & c, cfuint64 tagNo, CFByteArray & data, BERSerializerBase &)
+inline void serializeBER(const CFChar & c, cfuint64 tagNo, ByteArray & data, BERSerializerBase &)
 {
     if (c.isNull())  { writeNull(data, tagNo); return; }
     serializeBERInt((cfuint16)(c.unicode()), tagNo, data);
@@ -263,7 +263,7 @@ inline void deserializeBER(CFChar & c, const cfuint8 * data, int len, BERDeseria
 // CFDateTime
 // ----------------------------------------------------------------------------
 
-inline void serializeBER(const CFDateTime & dt, cfuint64 tagNo, CFByteArray & data, BERSerializerBase &)
+inline void serializeBER(const CFDateTime & dt, cfuint64 tagNo, ByteArray & data, BERSerializerBase &)
 {
     if (!dt.isValid()) { writeNull(data, tagNo); return; }
     serializeBERInt(dt.toMSecsSinceEpoch(), tagNo, data);
@@ -281,7 +281,7 @@ inline void deserializeBER(CFDateTime & dt, const cfuint8 * data, int len, BERDe
 // ----------------------------------------------------------------------------
 
 template<typename T>
-inline void serializeBER(const CFFlags<T> & fl, cfuint64 tagNo, CFByteArray & data, BERSerializerBase &)
+inline void serializeBER(const CFFlags<T> & fl, cfuint64 tagNo, ByteArray & data, BERSerializerBase &)
 {
     serializeBERInt((cfint32)fl.toInt(), tagNo, data);
 }
@@ -304,7 +304,7 @@ inline void deserializeBER(CFFlags<T> & fl, const cfuint8 * data, int len, BERDe
 // ----------------------------------------------------------------------------
 
 template<typename T1, typename T2>
-inline void serializeBER(const CFPair<T1, T2> & cl, cfuint64 tagNo, CFByteArray & data, BERSerializerBase &)
+inline void serializeBER(const CFPair<T1, T2> & cl, cfuint64 tagNo, ByteArray & data, BERSerializerBase &)
 {
     TLWriter tlw(data, tagNo);
     BERSerializerBase ser(data);
@@ -323,7 +323,7 @@ inline void deserializeBER(CFPair<T1, T2> & cl, const cfuint8 * data, int len, B
 // ----------------------------------------------------------------------------
 
 template<typename T>
-inline void serializeBER(const CFList<T> & cl, cfuint64 tagNo, CFByteArray & data, BERSerializerBase &)
+inline void serializeBER(const CFList<T> & cl, cfuint64 tagNo, ByteArray & data, BERSerializerBase &)
 {
     TLWriter tlw(data, tagNo);
     BERSerializerBase ser(data, true);
@@ -355,7 +355,7 @@ inline void deserializeBER(CFList<T> & cl, const cfuint8 * data, int len, BERDes
 // ----------------------------------------------------------------------------
 
 template<typename T>
-inline void serializeBER(const CFSet<T> & cl, cfuint64 tagNo, CFByteArray & data, BERSerializerBase &)
+inline void serializeBER(const CFSet<T> & cl, cfuint64 tagNo, ByteArray & data, BERSerializerBase &)
 {
     TLWriter tlw(data, tagNo);
     BERSerializerBase ser(data, true);
@@ -379,7 +379,7 @@ inline void deserializeBER(CFSet<T> & cl, const cfuint8 * data, int len, BERDese
 // ----------------------------------------------------------------------------
 
 template<typename Key, typename T>
-inline void serializeBER(const CFHash<Key, T> & cl, cfuint64 tagNo, CFByteArray & data, BERSerializerBase &)
+inline void serializeBER(const CFHash<Key, T> & cl, cfuint64 tagNo, ByteArray & data, BERSerializerBase &)
 {
     TLWriter tlw(data, tagNo);
     BERSerializerBase ser(data, true);
@@ -406,7 +406,7 @@ inline void deserializeBER(CFHash<Key, T> & cl, const cfuint8 * data, int len, B
 // ----------------------------------------------------------------------------
 
 template<typename Key, typename T>
-inline void serializeBER(const CFMultiHash<Key, T> & cl, cfuint64 tagNo, CFByteArray & data, BERSerializerBase &)
+inline void serializeBER(const CFMultiHash<Key, T> & cl, cfuint64 tagNo, ByteArray & data, BERSerializerBase &)
 {
     TLWriter tlw(data, tagNo);
     BERSerializerBase ser(data, true);
@@ -433,7 +433,7 @@ inline void deserializeBER(CFMultiHash<Key, T> & cl, const cfuint8 * data, int l
 // ----------------------------------------------------------------------------
 
 template<typename Key, typename T>
-inline void serializeBER(const CFMap<Key, T> & cl, cfuint64 tagNo, CFByteArray & data, BERSerializerBase &)
+inline void serializeBER(const CFMap<Key, T> & cl, cfuint64 tagNo, ByteArray & data, BERSerializerBase &)
 {
     TLWriter tlw(data, tagNo);
     BERSerializerBase ser(data, true);
@@ -460,7 +460,7 @@ inline void deserializeBER(CFMap<Key, T> & cl, const cfuint8 * data, int len, BE
 // ----------------------------------------------------------------------------
 
 template<typename Key, typename T>
-inline void serializeBER(const CFMultiMap<Key, T> & cl, cfuint64 tagNo, CFByteArray & data, BERSerializerBase &)
+inline void serializeBER(const CFMultiMap<Key, T> & cl, cfuint64 tagNo, ByteArray & data, BERSerializerBase &)
 {
     TLWriter tlw(data, tagNo);
     BERSerializerBase ser(data, true);
@@ -488,7 +488,7 @@ inline void deserializeBER(CFMultiMap<Key, T> & cl, const cfuint8 * data, int le
 // ============================================================================
 
 template<typename T>
-inline void serializeBER(const T & cl, cfuint64 tagNo, CFByteArray & data, BERSerializerBase &)
+inline void serializeBER(const T & cl, cfuint64 tagNo, ByteArray & data, BERSerializerBase &)
 {
     TLWriter tlw(data, tagNo);
     BERSerializerBase ser(data);
@@ -508,7 +508,7 @@ inline void deserializeBER(T & cl, const cfuint8 * data, int len, BERDeserialize
 // ============================================================================
 
 template<typename T>
-inline void serializeBER(const CFSharedPtr<T> & cl, cfuint64 tagNo, CFByteArray & data, BERSerializerBase &)
+inline void serializeBER(const CFSharedPtr<T> & cl, cfuint64 tagNo, ByteArray & data, BERSerializerBase &)
 {
     if (!cl) return;
 

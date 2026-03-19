@@ -47,7 +47,7 @@ DO_SERIALIZE_TYPE_INFO(float,       float32)
 DO_SERIALIZE_TYPE_INFO(double,      float64)
 DO_SERIALIZE_TYPE_INFO(long double, float128)
 
-DO_SERIALIZE_TYPE_INFO(CFByteArray, ByteArray)
+DO_SERIALIZE_TYPE_INFO(ByteArray, ByteArray)
 DO_SERIALIZE_TYPE_INFO(String,    String)
 DO_SERIALIZE_TYPE_INFO(CFChar,      Char)
 DO_SERIALIZE_TYPE_INFO(CFDateTime,  DateTime)

@@ -25,11 +25,11 @@ const CFRegex ipRe("^(?:\\d+\\.\\d+\\.\\d+\\.\\d+|[:0-9A-Fa-f]+)$");
 
 }
 
-CFList<CFByteArray> getIPFromDNS(const CFByteArray & name, bool preferIPv6)
+CFList<ByteArray> getIPFromDNS(const ByteArray & name, bool preferIPv6)
 {
     if (ipRe.match(name)) {
         logTrace("getIPFromDNS(\"%1\", %2) -> %1", name, preferIPv6);
-        CFList<CFByteArray> rv;
+        CFList<ByteArray> rv;
         rv.push_back(name);
         return rv;
     }
@@ -38,25 +38,25 @@ CFList<CFByteArray> getIPFromDNS(const CFByteArray & name, bool preferIPv6)
     int err = getaddrinfo(name.constData(), 0, 0, &res);
     if (err != 0) {
         logWarn("getaddrinfo failed with error: %1", err);
-        return CFList<CFByteArray>();
+        return CFList<ByteArray>();
     }
 
-    CFSet<CFByteArray> ipv4;
-    CFSet<CFByteArray> ipv6;
+    CFSet<ByteArray> ipv4;
+    CFSet<ByteArray> ipv6;
     for ( ; res ; res = res->ai_next) {
         char ip[40];
         if (res->ai_family == AF_INET) {
             inet_ntop(AF_INET, &((struct sockaddr_in *)res->ai_addr)->sin_addr, ip, sizeof(ip));
-            ipv4.insert(CFByteArray(ip));
+            ipv4.insert(ByteArray(ip));
         } else if (res->ai_family == AF_INET6) {
             inet_ntop(AF_INET6, &((struct sockaddr_in6 *)res->ai_addr)->sin6_addr, ip, sizeof(ip));
-            ipv6.insert(CFByteArray(ip));
+            ipv6.insert(ByteArray(ip));
         }
     }
 
     freeaddrinfo(res);
 
-    CFList<CFByteArray> rv = ipv4.empty() || (preferIPv6 && !ipv6.empty()) ? cfSetValues(ipv6) : cfSetValues(ipv4);
+    CFList<ByteArray> rv = ipv4.empty() || (preferIPv6 && !ipv6.empty()) ? cfSetValues(ipv6) : cfSetValues(ipv4);
     std::sort(rv.begin(), rv.end());
     logTrace("getIPFromDNS(\"%1\", %2) -> %3", name, preferIPv6, cfJoin(rv, ' '));
     return rv;

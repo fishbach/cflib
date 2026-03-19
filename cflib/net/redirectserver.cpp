@@ -65,7 +65,7 @@ public:
         logFunctionTrace
 
         // write request
-        CFByteArray requestData = request.getRawHeader();
+        ByteArray requestData = request.getRawHeader();
         requestData += "\r\n\r\n";
         requestData += request.getBody();
         write(requestData);
@@ -101,7 +101,7 @@ protected:
         // we might get called by TLS-Thread here
         if (!verifyThreadCall(&TCPForwarder::newBytesAvailable)) return;
 
-        const CFByteArray data = read();
+        const ByteArray data = read();
         logTrace("read %1 bytes from outgoing connection", data.size());
         if (reader_) reader_->write(data);
         startReadWatcher();
@@ -131,7 +131,7 @@ void TCPReader::newBytesAvailable()
     // we might get called by TLS-Thread here
     if (!verifyThreadCall(&TCPReader::newBytesAvailable)) return;
 
-    const CFByteArray data = read();
+    const ByteArray data = read();
     logTrace("read %1 bytes from incoming connection", data.size());
     if (forwarder_) forwarder_->write(data);
     startReadWatcher();
@@ -161,10 +161,10 @@ void RedirectServer::addValid(const CFRegex & test)
 
 void RedirectServer::addRedirectIf(const CFRegex & test, const char * destUrl)
 {
-    entries_ << Entry(false, test, CFByteArray(destUrl));
+    entries_ << Entry(false, test, ByteArray(destUrl));
 }
 
-void RedirectServer::addRedirectIf(const CFRegex & test, const CFByteArray & destUrl)
+void RedirectServer::addRedirectIf(const CFRegex & test, const ByteArray & destUrl)
 {
     entries_ << Entry(false, test, destUrl);
 }
@@ -176,20 +176,20 @@ void RedirectServer::addRedirectIf(const CFRegex & test, DestUrlReFunc destUrlRe
 
 void RedirectServer::addRedirectIfNot(const CFRegex & test, const char * destUrl)
 {
-    entries_ << Entry(true, test, CFByteArray(destUrl));
+    entries_ << Entry(true, test, ByteArray(destUrl));
 }
 
-void RedirectServer::addRedirectIfNot(const CFRegex & test, const CFByteArray & destUrl)
+void RedirectServer::addRedirectIfNot(const CFRegex & test, const ByteArray & destUrl)
 {
     entries_ << Entry(true, test, destUrl);
 }
 
 void RedirectServer::addDefaultRedirect(const char * destUrl)
 {
-    entries_ << Entry(CFByteArray(destUrl));
+    entries_ << Entry(ByteArray(destUrl));
 }
 
-void RedirectServer::addDefaultRedirect(const CFByteArray & destUrl)
+void RedirectServer::addDefaultRedirect(const ByteArray & destUrl)
 {
     entries_ << Entry(destUrl);
 }
@@ -199,7 +199,7 @@ void RedirectServer::addDefaultRedirect(DestUrlFunc destUrlFunc)
     entries_ << Entry(destUrlFunc);
 }
 
-void RedirectServer::addForwardIf(const CFRegex & test, const CFByteArray & ip, cfuint16 port)
+void RedirectServer::addForwardIf(const CFRegex & test, const ByteArray & ip, cfuint16 port)
 {
     entries_ << Entry(false, test, CFPair(ip, port));
 }
@@ -209,12 +209,12 @@ void RedirectServer::addForwardIf(const CFRegex & test, DestHostReFunc destHostR
     entries_ << Entry(false, test, destHostReFunc);
 }
 
-void RedirectServer::addForwardIfNot(const CFRegex & test, const CFByteArray & ip, cfuint16 port)
+void RedirectServer::addForwardIfNot(const CFRegex & test, const ByteArray & ip, cfuint16 port)
 {
     entries_ << Entry(true, test, CFPair(ip, port));
 }
 
-void RedirectServer::addDefaultForward(const CFByteArray & ip, cfuint16 port)
+void RedirectServer::addDefaultForward(const ByteArray & ip, cfuint16 port)
 {
     entries_ << Entry(CFPair(ip, port));
 }

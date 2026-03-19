@@ -64,9 +64,9 @@ public:
     TestClient(TCPManager & mgr, bool keepAlive) : HttpClient(mgr, keepAlive) {}
 
 protected:
-    virtual void reply(const CFByteArray & raw)
+    virtual void reply(const ByteArray & raw)
     {
-        CFByteArray r = raw;
+        ByteArray r = raw;
         r.replace("\r\n", "|");
         msg("http reply: " + r);
     }

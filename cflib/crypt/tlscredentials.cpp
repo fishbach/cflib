@@ -18,10 +18,10 @@ namespace cflib { namespace crypt {
 
 namespace {
 
-CFByteArray fromStdVector(const std::vector<std::string> & vec)
+ByteArray fromStdVector(const std::vector<std::string> & vec)
 {
-    if (vec.size() == 0) return CFByteArray();
-    return CFByteArray(vec[0].c_str(), (cfsize_t)vec[0].size());
+    if (vec.size() == 0) return ByteArray();
+    return ByteArray(vec[0].c_str(), (cfsize_t)vec[0].size());
 }
 
 }
@@ -82,9 +82,9 @@ public:
     CFList<CertsPrivKey> chains;
     CFList<X509_Certificate> allCerts;
     Certificate_Store_In_Memory trustedCAs;
-    CFList<CFByteArray> loadedCerts;
-    CFList<CFByteArray> loadedKeys;
-    CFList<CFByteArray> loadedCrls;
+    CFList<ByteArray> loadedCerts;
+    CFList<ByteArray> loadedKeys;
+    CFList<ByteArray> loadedCrls;
 };
 
 TLSCredentials::TLSCredentials() :
@@ -97,7 +97,7 @@ TLSCredentials::~TLSCredentials()
     delete impl_;
 }
 
-uint TLSCredentials::addCerts(const CFByteArray & certs, bool isTrustedCA)
+uint TLSCredentials::addCerts(const ByteArray & certs, bool isTrustedCA)
 {
     uint rv = 0;
     try {
@@ -117,7 +117,7 @@ uint TLSCredentials::addCerts(const CFByteArray & certs, bool isTrustedCA)
     return rv;
 }
 
-uint TLSCredentials::addRevocationLists(const CFByteArray & crls)
+uint TLSCredentials::addRevocationLists(const ByteArray & crls)
 {
     uint rv = 0;
     try {
@@ -131,7 +131,7 @@ uint TLSCredentials::addRevocationLists(const CFByteArray & crls)
     return rv;
 }
 
-bool TLSCredentials::addPrivateKey(const CFByteArray & privateKey, const CFByteArray & password)
+bool TLSCredentials::addPrivateKey(const ByteArray & privateKey, const ByteArray & password)
 {
     TRY {
         DataSource_Memory ds((const byte *)privateKey.constData(), privateKey.size());
@@ -191,21 +191,21 @@ bool TLSCredentials::loadFromDir(const String & path)
         String name(entry->d_name);
         String file = String(path.str() + "/" + name.str());
         if (name.endsWith("_crt.pem")) {
-            CFByteArray data = util::readFile(file);
+            ByteArray data = util::readFile(file);
             if (data.isEmpty()) {
                 logWarn("could not read certificate: %1", file);
                 continue;
             }
             impl_->loadedCerts.push_back(data);
         } else if (name.endsWith("_key.pem")) {
-            CFByteArray data = util::readFile(file);
+            ByteArray data = util::readFile(file);
             if (data.isEmpty()) {
                 logWarn("could not read key: %1", file);
                 continue;
             }
             impl_->loadedKeys.push_back(data);
         } else if (name.endsWith("_crl.pem")) {
-            CFByteArray data = util::readFile(file);
+            ByteArray data = util::readFile(file);
             if (data.isEmpty()) {
                 logWarn("could not read revocation list: %1", file);
                 continue;
@@ -220,21 +220,21 @@ bool TLSCredentials::loadFromDir(const String & path)
 bool TLSCredentials::activateLoaded(bool isTrustedCA)
 {
     bool ok = true;
-    for (const CFByteArray & data : impl_->loadedCerts) {
+    for (const ByteArray & data : impl_->loadedCerts) {
         if (addCerts(data, isTrustedCA) == 0) {
             logWarn("could not handle certificate: %1", data);
             ok = false;
         }
     }
     impl_->loadedCerts.clear();
-    for (const CFByteArray & data : impl_->loadedKeys) {
+    for (const ByteArray & data : impl_->loadedKeys) {
         if (!addPrivateKey(data)) {
             logWarn("could not handle key: %1", data.left(40));
             ok = false;
         }
     }
     impl_->loadedKeys.clear();
-    for (const CFByteArray & data : impl_->loadedCrls) {
+    for (const ByteArray & data : impl_->loadedCrls) {
         if (addRevocationLists(data) == 0) {
             logWarn("could not handle revocation list: %1", data);
             ok = false;
@@ -291,20 +291,20 @@ CFList<TLSCertInfo> TLSCredentials::getAllCertInfos() const
     return rv;
 }
 
-CFByteArray TLSCredentials::getAllCertsPEM() const
+ByteArray TLSCredentials::getAllCertsPEM() const
 {
     TRY {
-        CFByteArray rv("");    // not null
+        ByteArray rv("");    // not null
         for (const X509_Certificate & cert : impl_->allCerts) {
             DER_Encoder enc;
             cert.encode_into(enc);
             const std::string pem = PEM_Code::encode(enc.get_contents(), "CERTIFICATE");
-            rv += CFByteArray(pem.c_str(), (cfsize_t)pem.size());
+            rv += ByteArray(pem.c_str(), (cfsize_t)pem.size());
             rv += '\n';
         }
         return rv;
     } CATCH
-    return CFByteArray();
+    return ByteArray();
 }
 
 Botan::Credentials_Manager & TLSCredentials::credentials_Manager()

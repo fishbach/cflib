@@ -72,16 +72,16 @@ public:
 
     void test_sha1()
     {
-        TCOMPARE(sha1(""),    CFByteArray::fromHex("da39a3ee5e6b4b0d3255bfef95601890afd80709"));
-        TCOMPARE(sha1("a"),   CFByteArray::fromHex("86f7e437faa5a7fce15d1ddcb9eaeaea377667b8"));
-        TCOMPARE(sha1("abc"), CFByteArray::fromHex("a9993e364706816aba3e25717850c26c9cd0d89d"));
+        TCOMPARE(sha1(""),    ByteArray::fromHex("da39a3ee5e6b4b0d3255bfef95601890afd80709"));
+        TCOMPARE(sha1("a"),   ByteArray::fromHex("86f7e437faa5a7fce15d1ddcb9eaeaea377667b8"));
+        TCOMPARE(sha1("abc"), ByteArray::fromHex("a9993e364706816aba3e25717850c26c9cd0d89d"));
     }
 
     void test_sha1ForWebSocket()
     {
         TCOMPARE(
             sha1("x3JJHMbDL1EzLkh9GBhXDw==258EAFA5-E914-47DA-95CA-C5AB0DC85B11").toBase64(),
-            CFByteArray("HSmrc0sMlYUkAGmm5OPpG2HaGWk=")
+            ByteArray("HSmrc0sMlYUkAGmm5OPpG2HaGWk=")
         );
     }
 };

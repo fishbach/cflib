@@ -26,9 +26,9 @@ inline cfuint8 fromHex(char c)
     return (cfuint8)c;
 }
 
-inline CFByteArray uint64ToHex(cfuint64 n)
+inline ByteArray uint64ToHex(cfuint64 n)
 {
-    CFByteArray rv((cfsize_t)16, '0');
+    ByteArray rv((cfsize_t)16, '0');
     cfuint p = 16;
     while (n > 0) {
         rv[--p] = toHex(n & 0xF);

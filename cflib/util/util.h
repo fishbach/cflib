@@ -14,26 +14,26 @@
 
 namespace cflib { namespace util {
 
-CFByteArray weekDay(int dayOfWeek);
-CFByteArray dateTimeForHTTP(const CFDateTime & dateTime);
+ByteArray weekDay(int dayOfWeek);
+ByteArray dateTimeForHTTP(const CFDateTime & dateTime);
 
 cfuint32 calcCRC32Raw(cfuint32 crc, const char * data, cfuint64 size);
 inline cfuint32 calcCRC32(const char * data, cfuint64 size) { return calcCRC32Raw(0xffffffffL, data, size) ^ 0xffffffffL; }
-inline cfuint32 calcCRC32(const CFByteArray & data) { return calcCRC32(data.constData(), data.size()); }
+inline cfuint32 calcCRC32(const ByteArray & data) { return calcCRC32(data.constData(), data.size()); }
 
 // 0 -> no compression, 1 -> fast, 9 -> small
-void gzip(CFByteArray & data, int compressionLevel = -1);
-void deflateRaw(CFByteArray & data, int compressionLevel = -1);
-void inflateRaw(CFByteArray & data);
+void gzip(ByteArray & data, int compressionLevel = -1);
+void deflateRaw(ByteArray & data, int compressionLevel = -1);
+void inflateRaw(ByteArray & data);
 
-CFByteArray readFile(const String & path);
-bool writeFile(const String & path, const CFByteArray & data, int perm =
+ByteArray readFile(const String & path);
+bool writeFile(const String & path, const ByteArray & data, int perm =
     CFFile::ReadOwner  | CFFile::ReadUser | CFFile::ReadGroup | CFFile::ReadOther |
     CFFile::WriteOwner | CFFile::WriteUser);
 String readTextfile(const String & path);
 
-CFByteArray encodeQuotedPrintable(const String & text);
-CFByteArray encodeWord(const String & str, bool strict);
+ByteArray encodeQuotedPrintable(const String & text);
+ByteArray encodeWord(const String & str, bool strict);
 
 String flatten(const String & str);
 

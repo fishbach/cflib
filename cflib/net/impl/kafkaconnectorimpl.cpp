@@ -100,7 +100,7 @@ void KafkaConnector::Impl::fetchMetaData()
     req.send();
 }
 
-void KafkaConnector::Impl::produce(const CFByteArray & topic, cfint32 partitionId, const Messages & messages,
+void KafkaConnector::Impl::produce(const ByteArray & topic, cfint32 partitionId, const Messages & messages,
     cfuint16 requiredAcks, cfuint32 ackTimeoutMs, cfuint32 correlationId)
 {
     if (!verifyThreadCall(&Impl::produce, topic, partitionId, messages, requiredAcks, ackTimeoutMs, correlationId)) return;
@@ -168,7 +168,7 @@ void KafkaConnector::Impl::produce(const CFByteArray & topic, cfint32 partitionI
     req.send();
 }
 
-void KafkaConnector::Impl::getOffsets(const CFByteArray & topic, cfint32 partitionId, cfuint32 correlationId, bool first)
+void KafkaConnector::Impl::getOffsets(const ByteArray & topic, cfint32 partitionId, cfuint32 correlationId, bool first)
 {
     if (!verifyThreadCall(&Impl::getOffsets, topic, partitionId, correlationId, first)) return;
 
@@ -204,7 +204,7 @@ void KafkaConnector::Impl::getOffsets(const CFByteArray & topic, cfint32 partiti
     req.send();
 }
 
-void KafkaConnector::Impl::fetch(const CFByteArray & topic, cfint32 partitionId, cfint64 offset,
+void KafkaConnector::Impl::fetch(const ByteArray & topic, cfint32 partitionId, cfint64 offset,
     cfuint32 maxWaitTime, cfuint32 minBytes, cfuint32 maxBytes, cfuint32 correlationId)
 {
     if (!verifyThreadCall(&Impl::fetch, topic, partitionId, offset, maxWaitTime, minBytes, maxBytes, correlationId)) return;
@@ -247,7 +247,7 @@ void KafkaConnector::Impl::fetch(const CFByteArray & topic, cfint32 partitionId,
     req.send();
 }
 
-void KafkaConnector::Impl::joinGroup(const CFByteArray & groupId, const Topics & topics, GroupAssignmentStrategy preferredStrategy)
+void KafkaConnector::Impl::joinGroup(const ByteArray & groupId, const Topics & topics, GroupAssignmentStrategy preferredStrategy)
 {
     if (!verifyThreadCall(&Impl::joinGroup, groupId, topics, preferredStrategy)) return;
 
@@ -256,7 +256,7 @@ void KafkaConnector::Impl::joinGroup(const CFByteArray & groupId, const Topics &
     if (groupId_ != groupId) leaveGroup();
     groupId_ = groupId;
     groupTopicPartitions_.clear();
-    for (const CFByteArray & topic : topics) groupTopicPartitions_[topic] = CFList<cfint32>();
+    for (const ByteArray & topic : topics) groupTopicPartitions_[topic] = CFList<cfint32>();
     preferredStrategy_ = preferredStrategy;
     rejoinGroup();
 }
@@ -344,7 +344,7 @@ void KafkaConnector::Impl::doJoin()
     logFunctionTrace
 
     cfint32 metaDataSize = 2 + 4 + 4;
-    for (const CFByteArray & topic : cfKeys(groupTopicPartitions_)) metaDataSize += 2 + topic.size();
+    for (const ByteArray & topic : cfKeys(groupTopicPartitions_)) metaDataSize += 2 + topic.size();
 
     impl::KafkaRequestWriter req = groupConnection_->request(JoinGroup, 1, JoinGroup);
     req
@@ -358,16 +358,16 @@ void KafkaConnector::Impl::doJoin()
         << metaDataSize
         << (cfint16)0                                // Version
         << (cfint32)groupTopicPartitions_.size();    // Topics
-    for (const CFByteArray & topic : cfKeys(groupTopicPartitions_)) req << (impl::KafkaString)topic;
+    for (const ByteArray & topic : cfKeys(groupTopicPartitions_)) req << (impl::KafkaString)topic;
     req
-        << CFByteArray()                                // UserData
+        << ByteArray()                                // UserData
         << (impl::KafkaString)(preferredStrategy_ != RangeAssignment ? "range" : "roundrobin")
         << metaDataSize
         << (cfint16)0                                // Version
         << (cfint32)groupTopicPartitions_.size();    // Topics
-    for (const CFByteArray & topic : cfKeys(groupTopicPartitions_)) req << (impl::KafkaString)topic;
+    for (const ByteArray & topic : cfKeys(groupTopicPartitions_)) req << (impl::KafkaString)topic;
     req
-        << CFByteArray();                            // UserData
+        << ByteArray();                            // UserData
     req.send();
 }
 
@@ -383,14 +383,14 @@ void KafkaConnector::Impl::sendGroupHeartBeat()
     req.send();
 }
 
-void KafkaConnector::Impl::doSync(const CFByteArray & protocol, CFMap<CFByteArray, CFSet<CFByteArray>> memberTopics)
+void KafkaConnector::Impl::doSync(const ByteArray & protocol, CFMap<ByteArray, CFSet<ByteArray>> memberTopics)
 {
     logFunctionTrace
 
-    CFMap<CFByteArray, CFMap<CFByteArray, CFList<cfint32>>> groupAssignment = computeGroupAssignment(protocol, memberTopics);
-    CFMap<CFByteArray, CFByteArray> rawAssignment;
-    for (const CFByteArray & member : cfKeys(groupAssignment)) {
-        const CFMap<CFByteArray, CFList<cfint32>> & topics = groupAssignment[member];
+    CFMap<ByteArray, CFMap<ByteArray, CFList<cfint32>>> groupAssignment = computeGroupAssignment(protocol, memberTopics);
+    CFMap<ByteArray, ByteArray> rawAssignment;
+    for (const ByteArray & member : cfKeys(groupAssignment)) {
+        const CFMap<ByteArray, CFList<cfint32>> & topics = groupAssignment[member];
 
         impl::KafkaRawWriter writer;
         writer
@@ -405,7 +405,7 @@ void KafkaConnector::Impl::doSync(const CFByteArray & protocol, CFMap<CFByteArra
             for (cfint32 partition : partitions) writer << partition;
         }
         writer
-            << CFByteArray();    // UserData
+            << ByteArray();    // UserData
 
         rawAssignment[member] = writer.getRawContent();
     }
@@ -416,8 +416,8 @@ void KafkaConnector::Impl::doSync(const CFByteArray & protocol, CFMap<CFByteArra
         << generationId_
         << (impl::KafkaString)groupMemberId_
         << (cfint32)rawAssignment.size();
-    for (const CFByteArray & member : cfKeys(rawAssignment)) {
-        const CFByteArray & assignment = rawAssignment[member];
+    for (const ByteArray & member : cfKeys(rawAssignment)) {
+        const ByteArray & assignment = rawAssignment[member];
         req
             << (impl::KafkaString)member
             << assignment;
@@ -425,32 +425,32 @@ void KafkaConnector::Impl::doSync(const CFByteArray & protocol, CFMap<CFByteArra
     req.send();
 }
 
-CFMap<CFByteArray, CFMap<CFByteArray, CFList<cfint32>>> KafkaConnector::Impl::computeGroupAssignment(
-    const CFByteArray & protocol, CFMap<CFByteArray, CFSet<CFByteArray>> memberTopics)
+CFMap<ByteArray, CFMap<ByteArray, CFList<cfint32>>> KafkaConnector::Impl::computeGroupAssignment(
+    const ByteArray & protocol, CFMap<ByteArray, CFSet<ByteArray>> memberTopics)
 {
-    CFMap<CFByteArray, CFMap<CFByteArray, CFList<cfint32>>> rv;
+    CFMap<ByteArray, CFMap<ByteArray, CFList<cfint32>>> rv;
     if (memberTopics.empty()) return rv;
 
     logFunctionTraceParam("computeGroupAssignment with %1", protocol);
 
     if (protocol == "range") {
 
-        CFMap<CFByteArray, CFList<CFByteArray>> topicMembers;
-        for (const CFByteArray & member : cfKeys(memberTopics)) {
-            for (const CFByteArray & topic : memberTopics[member]) {
+        CFMap<ByteArray, CFList<ByteArray>> topicMembers;
+        for (const ByteArray & member : cfKeys(memberTopics)) {
+            for (const ByteArray & topic : memberTopics[member]) {
                 if (!cfMapValue(responsibilities_, topic).empty()) topicMembers[topic] << member;
             }
         }
 
-        for (const CFByteArray & topic : cfKeys(topicMembers)) {
-            CFList<CFByteArray> & members = topicMembers[topic];
+        for (const ByteArray & topic : cfKeys(topicMembers)) {
+            CFList<ByteArray> & members = topicMembers[topic];
             std::sort(members.begin(), members.end());
 
             int partitionCount = responsibilities_[topic].size();
             int partitionsPerMember  = partitionCount / members.size();
             int unassignedPartitions = partitionCount % members.size();
             int pId = 0;
-            for (const CFByteArray & member : members) {
+            for (const ByteArray & member : members) {
                 for (int j = 0 ; j < partitionsPerMember ; ++j) {
                     rv[member][topic] << pId++;
                 }
@@ -463,23 +463,23 @@ CFMap<CFByteArray, CFMap<CFByteArray, CFList<cfint32>>> KafkaConnector::Impl::co
 
     } else if (protocol == "roundrobin") {
 
-        CFSet<CFByteArray> allTopics;
+        CFSet<ByteArray> allTopics;
         for (const auto & [member, topics] : memberTopics) allTopics += topics;
 
-        CFVector<CFPair<CFByteArray, cfint32>> allTopicPartitions;
-        for (const CFByteArray & topic : allTopics) {
+        CFVector<CFPair<ByteArray, cfint32>> allTopicPartitions;
+        for (const ByteArray & topic : allTopics) {
             for (cfint32 i = 0 ; i < (cfint32)cfMapValue(responsibilities_, topic).size() ; ++i) {
                 allTopicPartitions << CFPair(topic, i);
             }
         }
         std::sort(allTopicPartitions.begin(), allTopicPartitions.end());
 
-        CFList<CFByteArray> members = cfKeys(memberTopics);
+        CFList<ByteArray> members = cfKeys(memberTopics);
         int memberId = 0;
         while (!allTopicPartitions.empty()) {
             bool assigned = false;
             for (auto it = allTopicPartitions.begin(); it != allTopicPartitions.end(); ++it) {
-                const CFByteArray & member = members[memberId];
+                const ByteArray & member = members[memberId];
                 if (cfContains(memberTopics[member], it->first)) {
                     rv[member][it->first] << it->second;
                     logInfo("assigning %1/%2 to %3", it->first, it->second, member);

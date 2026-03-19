@@ -73,7 +73,7 @@ RMIReplier RMIServiceBase::delayReply()
     return RMIReplier(*server_, connId_);
 }
 
-CFByteArray RMIServiceBase::getRemoteIP() const
+ByteArray RMIServiceBase::getRemoteIP() const
 {
     return server_->getRemoteIP(connId_);
 }

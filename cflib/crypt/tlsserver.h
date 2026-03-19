@@ -21,9 +21,9 @@ public:
         bool highSecurity = false, bool requireRevocationInfo = false);
     ~TLSServer();
 
-    CFByteArray initialSend() override { return CFByteArray(); }
-    bool received(const CFByteArray & encrypted, CFByteArray & plain, CFByteArray & sendBack) override;
-    bool send(const CFByteArray & plain, CFByteArray & encrypted) override;
+    ByteArray initialSend() override { return ByteArray(); }
+    bool received(const ByteArray & encrypted, ByteArray & plain, ByteArray & sendBack) override;
+    bool send(const ByteArray & plain, ByteArray & encrypted) override;
 
 private:
     class Impl;

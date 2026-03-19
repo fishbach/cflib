@@ -19,7 +19,7 @@ TCPConn::TCPConn(TCPConnData * data, uint readBufferSize, bool notifySomeBytesWr
     data_(data)
 {
     data_->conn = this;
-    data_->readBuf = CFByteArray(readBufferSize, '\0');
+    data_->readBuf = ByteArray(readBufferSize, '\0');
     data_->notifySomeBytesWritten = notifySomeBytesWritten;
 }
 
@@ -31,14 +31,14 @@ TCPConn::~TCPConn()
     else                  data_->impl.deleteOnFinish(data_);
 }
 
-CFByteArray TCPConn::read()
+ByteArray TCPConn::read()
 {
-    const CFByteArray retval = data_->readData;
+    const ByteArray retval = data_->readData;
     data_->readData.resize(0);
     return retval;
 }
 
-void TCPConn::write(const CFByteArray & data, bool notifyFinished)
+void TCPConn::write(const ByteArray & data, bool notifyFinished)
 {
     if (data_->tlsStream) data_->impl.tlsWrite(data_, data, notifyFinished);
     else                  data_->impl.writeToSocket(data_, data, notifyFinished);
@@ -61,7 +61,7 @@ TCPConn::CloseType TCPConn::isClosed() const
     return data_->closeType;
 }
 
-CFByteArray TCPConn::peerIP() const
+ByteArray TCPConn::peerIP() const
 {
     return data_->peerIP;
 }

@@ -49,7 +49,7 @@ RequestParser::~RequestParser()
     thread_->requestFinished();
 }
 
-void RequestParser::sendReply(int id, const CFByteArray & reply)
+void RequestParser::sendReply(int id, const ByteArray & reply)
 {
     if (!verifyThreadCall(&RequestParser::sendReply, id, reply)) return;
 
@@ -79,13 +79,13 @@ void RequestParser::setPassThroughHandler(PassThroughHandler * hdl)
     passThroughHandler_ = hdl;
 }
 
-CFByteArray RequestParser::readPassThrough(bool & isLast)
+ByteArray RequestParser::readPassThrough(bool & isLast)
 {
     if (!passThrough_ || (isClosed() & ReadClosed)) {
         isLast = true;
-        return CFByteArray();
+        return ByteArray();
     }
-    CFByteArray retval = read();
+    ByteArray retval = read();
     isLast = retval.size() >= contentLength_;
     if (isLast) {
         passThrough_ = false;
@@ -122,7 +122,7 @@ void RequestParser::newBytesAvailable()
         return;
     }
 
-    CFByteArray newBytes = read();
+    ByteArray newBytes = read();
     logCustom(LogCat::Network | LogCat::Trace)("received %1 bytes on connection %2", newBytes.size(), id_);
 
     if (contentLength_ == -1) header_ += newBytes;
@@ -169,7 +169,7 @@ void RequestParser::parseRequest()
         }
 
         // to much bytes?
-        CFByteArray nextHeader;
+        ByteArray nextHeader;
         if (body_.size() > size) {
             nextHeader = body_.mid(size);
             body_.resize(size);
@@ -201,7 +201,7 @@ bool RequestParser::parseHeader()
     int end = header_.indexOf("\r\n", 0);
     if (end < 0) end = header_.size();
     while (start < end) {
-        const CFByteArray line = header_.mid(start, end - start);
+        const ByteArray line = header_.mid(start, end - start);
         start = end + 2;
         end = header_.indexOf("\r\n", start);
         if (end < 0) end = header_.size();
@@ -217,8 +217,8 @@ bool RequestParser::parseHeader()
             logWarn("funny line in header: %1", line);
             return false;
         }
-        CFByteArray key   = line.left(pos).toLower();
-        CFByteArray value = line.mid(pos + (line[pos + 1] == ' ' ? 2 : 1));
+        ByteArray key   = line.left(pos).toLower();
+        ByteArray value = line.mid(pos + (line[pos + 1] == ' ' ? 2 : 1));
 
         headerFields_[key] = value;
 
@@ -240,15 +240,15 @@ bool RequestParser::parseHeader()
     return true;
 }
 
-bool RequestParser::handleRequestLine(const CFByteArray & line)
+bool RequestParser::handleRequestLine(const ByteArray & line)
 {
-    CFList<CFByteArray> parts = line.split(' ');
+    CFList<ByteArray> parts = line.split(' ');
     if (parts.size() != 3) {
         logWarn("unknown request on connection %1: %2", id_, line);
         return false;
     }
 
-    const CFByteArray & method = parts[0];
+    const ByteArray & method = parts[0];
     if      (method == "GET" ) method_ = Request::GET;
     else if (method == "POST") method_ = Request::POST;
     else if (method == "HEAD") method_ = Request::HEAD;
@@ -263,7 +263,7 @@ bool RequestParser::handleRequestLine(const CFByteArray & line)
         return false;
     }
 
-    const CFByteArray & proto = parts[2];
+    const ByteArray & proto = parts[2];
     if (!proto.startsWith("HTTP/")) {
         logWarn("unknown protocol on connection %1: %2", id_, line);
         return false;
@@ -272,7 +272,7 @@ bool RequestParser::handleRequestLine(const CFByteArray & line)
     return true;
 }
 
-void RequestParser::writeReply(const CFByteArray & reply)
+void RequestParser::writeReply(const ByteArray & reply)
 {
     if (isClosed() & WriteClosed) {
         logCustom(LogCat::Network | LogCat::Warn)("cannot write %1 bytes of request %2 on closed connection %3",

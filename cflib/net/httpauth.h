@@ -16,20 +16,20 @@ namespace cflib { namespace net {
 class HttpAuth : public RequestHandler
 {
 public:
-    HttpAuth(const CFByteArray & name, const String & htpasswd = String());
+    HttpAuth(const ByteArray & name, const String & htpasswd = String());
 
-    void addUser(const String & name, const CFByteArray & passwordHash);
+    void addUser(const String & name, const ByteArray & passwordHash);
     void reset();
 
 protected:
     virtual void handleRequest(const Request & request);
 
 private:
-    const CFByteArray name_;
+    const ByteArray name_;
     const String htpasswd_;
     CFDateTime htpasswdLastMod_;
-    CFMap<String, CFByteArray> users_;
-    CFSet<CFByteArray> checkedUsers_;
+    CFMap<String, ByteArray> users_;
+    CFSet<ByteArray> checkedUsers_;
 };
 
 }}    // namespace

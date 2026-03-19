@@ -37,7 +37,7 @@ protected:
 
     virtual void closed(CloseType)
     {
-        parent_.reply(CFByteArray());
+        parent_.reply(ByteArray());
         if (!parent_.keepAlive_) {
             delete this;
         }
@@ -58,21 +58,21 @@ HttpClient::~HttpClient()
     delete conn_;
 }
 
-void HttpClient::get(const CFByteArray & ip, cfuint16 port, const CFByteArray & url)
+void HttpClient::get(const ByteArray & ip, cfuint16 port, const ByteArray & url)
 {
     if (!conn_) {
         TCPConnData * data = mgr_.openConnection(ip, port);
         if (!data) {
-            reply(CFByteArray());
+            reply(ByteArray());
             return;
         }
         conn_ = new HttpConn(data, *this);
     }
 
-    CFByteArray request;
+    ByteArray request;
     request <<
         "GET " << url << " HTTP/1.1\r\n"
-        "Host: " << ip << ":" << CFByteArray::number(port) << "\r\n"
+        "Host: " << ip << ":" << ByteArray::number(port) << "\r\n"
         << (keepAlive_ ? "Connection: keep-alive\r\n" : "") <<
         "\r\n";
     conn_->write(request);

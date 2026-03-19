@@ -196,14 +196,14 @@ void FileServer::handleRequest(const Request & request)
     }
 
     if (!accessControlAllowOrigin_.isNull()) {
-        CFByteArray acoLine = "Access-Control-Allow-Origin: ";
+        ByteArray acoLine = "Access-Control-Allow-Origin: ";
         acoLine << accessControlAllowOrigin_;
         request.addHeaderLine(acoLine);
     }
 
     // check eTag
     if (!noCache_ && request.getHeader("if-none-match") == eTag_) {
-        CFByteArray hdr = "HTTP/1.1 304 Not Modified\r\n";
+        ByteArray hdr = "HTTP/1.1 304 Not Modified\r\n";
         hdr << request.defaultHeaders()
             << "Cache-Control: no-cache\r\n"
                "ETag: " << eTag_ << "\r\n"
@@ -282,14 +282,14 @@ void FileServer::handleRequest(const Request & request)
     // parse html files
     if (fullPath.endsWith(".html")) {
         request.addHeaderLine("Cache-Control: no-cache");
-        if (!noCache_) { CFByteArray el = "ETag: "; el << eTag_; request.addHeaderLine(el); }
+        if (!noCache_) { ByteArray el = "ETag: "; el << eTag_; request.addHeaderLine(el); }
         if (request.isHEAD()) request.sendText("");
         else if (parseHtml_)  request.sendText(parseHtml(fullPath, isPart, path));
         else                  request.sendText(String(util::readFile(fullPath)));
         return;
     }
 
-    CFByteArray replyData;
+    ByteArray replyData;
     if (!request.isHEAD()) {
         if (parseHtml_ && (
             fullPath.endsWith(".css") ||
@@ -305,7 +305,7 @@ void FileServer::handleRequest(const Request & request)
     // deliver static content
     bool cache = true;
     bool compression = false;
-    CFByteArray contentType = "application/octet-stream";
+    ByteArray contentType = "application/octet-stream";
     const CFRegex::MatchResult match = endingRE_.matchResult(path);
     if (match.hasMatch()) {
         const String ending = match.captured(1);
@@ -330,7 +330,7 @@ void FileServer::handleRequest(const Request & request)
         request.addHeaderLine("Cache-Control: max-age=31536000");
     } else {
         request.addHeaderLine("Cache-Control: no-cache");
-        if (!noCache_) { CFByteArray el = "ETag: "; el << eTag_; request.addHeaderLine(el); }
+        if (!noCache_) { ByteArray el = "ETag: "; el << eTag_; request.addHeaderLine(el); }
     }
     if (request.isHEAD()) request.sendReply("", contentType);
     else                  request.sendReply(replyData, contentType, compression);

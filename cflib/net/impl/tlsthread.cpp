@@ -34,8 +34,8 @@ void TLSThread::read(TCPConnData * conn)
 {
     if (!verifyThreadCall(&TLSThread::read, conn)) return;
 
-    CFByteArray sendBack;
-    CFByteArray plain;
+    ByteArray sendBack;
+    ByteArray plain;
     bool ok = conn->tlsStream->received(conn->readData, plain, sendBack);
     if (!sendBack.isEmpty()) impl_.writeToSocket(conn, sendBack, false);
 
@@ -50,11 +50,11 @@ void TLSThread::read(TCPConnData * conn)
     }
 }
 
-void TLSThread::write(TCPConnData * conn, const CFByteArray & data, bool notifyFinished)
+void TLSThread::write(TCPConnData * conn, const ByteArray & data, bool notifyFinished)
 {
     if (!verifyThreadCall(&TLSThread::write, conn, data, notifyFinished)) return;
 
-    CFByteArray enc;
+    ByteArray enc;
     if (!conn->tlsStream->send(data, enc)) {
         impl_.closeConn(conn, TCPConn::ReadWriteClosed, notifyFinished);
     } else {

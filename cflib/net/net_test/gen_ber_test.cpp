@@ -38,7 +38,7 @@ public:
         gt3.f = 8;
         BERSerializer ser;
         ser << gt1 << gt3;
-        TCOMPARE(ser.data(), CFByteArray::fromHex(
+        TCOMPARE(ser.data(), ByteArray::fromHex(
             "                    E10A C20103 C40104 C5027879"
             "E219 C10500E4440B6F E20A C20105 C40106 C5026162 C30107 C40108"
         ));
@@ -46,7 +46,7 @@ public:
 
     void deserialize()
     {
-        BERDeserializer ser(CFByteArray::fromHex(
+        BERDeserializer ser(ByteArray::fromHex(
             "                    E10A C20103 C40104 C5027879"
             "E219 C10500E4440B6F E20A C20105 C40106 C5026162 C30107 C40108"
         ));
@@ -72,7 +72,7 @@ public:
         gt4.b << 13 << 17;
         BERSerializer ser;
         ser << gt4;
-        TCOMPARE(ser.data(), CFByteArray::fromHex(
+        TCOMPARE(ser.data(), ByteArray::fromHex(
             "E11A"
             "C10500FEDBD07E"
             "E206 C0024142 C000"
@@ -83,7 +83,7 @@ public:
 
     void template_deser()
     {
-        BERDeserializer ser(CFByteArray::fromHex(
+        BERDeserializer ser(ByteArray::fromHex(
             "E11A"
             "C10500FEDBD07E"
             "E206 C0024142 C000"

@@ -48,7 +48,7 @@ public:
 protected:
     virtual void newBytesAvailable()
     {
-        CFByteArray in = read();
+        ByteArray in = read();
         msg("srv read: " + in);
         if (in.startsWith("ping")) {
             in.replace(1, 1, "o");

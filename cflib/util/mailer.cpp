@@ -120,7 +120,7 @@ void Mailer::doSend(const Mail & mail)
 
 namespace {
 
-CFByteArray encodeAddress(const String & address, String & plain)
+ByteArray encodeAddress(const String & address, String & plain)
 {
     // Simple parse: look for "name <addr>" pattern
     cfsize_t lt = address.indexOf('<');
@@ -142,7 +142,7 @@ void Mailer::startProcess()
     const Mail & mail = queue_.front();
     String from;
     String to;
-    const CFByteArray raw = mail.raw(from, to);
+    const ByteArray raw = mail.raw(from, to);
     logDebug("exec: %1 -f %2 %3", sendmailPath_, from, to);
 
     int pipefd[2];
@@ -233,9 +233,9 @@ bool Mail::isValid() const
     return !from.isEmpty() && !to.isEmpty();
 }
 
-CFByteArray Mail::raw(String & fromAddr, String & toAddr) const
+ByteArray Mail::raw(String & fromAddr, String & toAddr) const
 {
-    CFByteArray rv;
+    ByteArray rv;
     rv  << "Content-type: text/plain; charset=utf-8\r\n"
         << "Content-transfer-encoding: quoted-printable\r\n"
         << "From: "    << encodeAddress(from, fromAddr)           << "\r\n"

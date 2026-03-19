@@ -20,7 +20,7 @@ bool checkSer(T val, const char * hex)
 {
     BERSerializer ser;
     ser << val;
-    const CFByteArray expected = CFByteArray::fromHex(hex);
+    const ByteArray expected = ByteArray::fromHex(hex);
     if (ser.data() != expected) {
         std::cout << std::format("serialized hex differs:\nis       : {}\nexpected : {}\n",
             ser.data().toHex().data(), expected.toHex().data());
@@ -32,7 +32,7 @@ bool checkSer(T val, const char * hex)
 template<typename T>
 bool checkDeser(T val, const char * hex)
 {
-    const CFByteArray expected = CFByteArray::fromHex(hex);
+    const ByteArray expected = ByteArray::fromHex(hex);
     BERDeserializer deser(expected);
     T test; deser >> test;
     if (test != val) {
@@ -45,7 +45,7 @@ bool checkDeser(T val, const char * hex)
 template<typename T>
 bool checkDeserNull(T val, const char * hex)
 {
-    const CFByteArray expected = CFByteArray::fromHex(hex);
+    const ByteArray expected = ByteArray::fromHex(hex);
     BERDeserializer deser(expected);
     T test; deser >> test;
     if (test.isNull() != val.isNull()) {
@@ -74,7 +74,7 @@ bool testBigTag(int tagNr, const char * hex)
     BERSerializer ser;
     for (int i = 0 ; i < tagNr - 1 ; ++i) ser << Placeholder();
     ser << 0x42;
-    const CFByteArray expected = CFByteArray::fromHex(hex) + CFByteArray::fromHex("0142");
+    const ByteArray expected = ByteArray::fromHex(hex) + ByteArray::fromHex("0142");
     if (ser.data() != expected) {
         std::cout << std::format("serialized hex differs:\nis       : {}\nexpected : {}\n",
             ser.data().toHex().data(), expected.toHex().data());
@@ -167,7 +167,7 @@ public:
         TVERIFY(checkSerDeser<CFList<cfuint64  >>(CFList<cfuint64  >{0},     "e103c08100"));
 
         TVERIFY(checkSer<CFList<const char *>>(CFList<const char *>{nullptr},          "e103c08100"));
-        TVERIFY(checkSerDeser<CFList<CFByteArray>>(CFList<CFByteArray>{CFByteArray()}, "e103c08100"));
+        TVERIFY(checkSerDeser<CFList<ByteArray>>(CFList<ByteArray>{ByteArray()}, "e103c08100"));
         TVERIFY(checkSerDeser<CFList<String   >>(CFList<String   >{String()},    "e103c08100"));
         TVERIFY(checkSerDeser<CFList<CFChar     >>(CFList<CFChar     >{CFChar()},      "e103c08100"));
     }
@@ -179,13 +179,13 @@ public:
         TVERIFY(checkSer<const char *>("X",     "c10158"));
         TVERIFY(checkSer<const char *>("XY",    "c1025859"));
 
-        TVERIFY(checkSerDeserNull<CFByteArray>(CFByteArray(),     ""));
-        TVERIFY(checkSerDeserNull<CFByteArray>(CFByteArray(""),   "c100"));
-        TVERIFY(checkSerDeserNull<CFByteArray>(CFByteArray("X"),  "c10158"));
-        TVERIFY(checkSerDeserNull<CFByteArray>(CFByteArray("XY"), "c1025859"));
-        TVERIFY(checkSerDeserNull<CFByteArray>(CFByteArray::fromHex("003132"), "c103 003132"));
-        TVERIFY(checkSerDeserNull<CFByteArray>(CFByteArray::fromHex("310032"), "c103 310032"));
-        TVERIFY(checkSerDeserNull<CFByteArray>(CFByteArray::fromHex("313200"), "c103 313200"));
+        TVERIFY(checkSerDeserNull<ByteArray>(ByteArray(),     ""));
+        TVERIFY(checkSerDeserNull<ByteArray>(ByteArray(""),   "c100"));
+        TVERIFY(checkSerDeserNull<ByteArray>(ByteArray("X"),  "c10158"));
+        TVERIFY(checkSerDeserNull<ByteArray>(ByteArray("XY"), "c1025859"));
+        TVERIFY(checkSerDeserNull<ByteArray>(ByteArray::fromHex("003132"), "c103 003132"));
+        TVERIFY(checkSerDeserNull<ByteArray>(ByteArray::fromHex("310032"), "c103 310032"));
+        TVERIFY(checkSerDeserNull<ByteArray>(ByteArray::fromHex("313200"), "c103 313200"));
 
         TVERIFY(checkSerDeserNull<String>(String(),     ""));
         TVERIFY(checkSerDeserNull<String>(String(""),   "c100"));
@@ -204,7 +204,7 @@ public:
         {
             BERSerializer ser;
             ser << 17 << 18 << 0 << 20;
-            const CFByteArray hex = CFByteArray::fromHex("C10111 C20112        C40114");
+            const ByteArray hex = ByteArray::fromHex("C10111 C20112        C40114");
             TCOMPARE(ser.data(), hex);
             BERDeserializer deser(hex);
             int a, b, c, d; deser >> a >> b >> c >> d;
@@ -215,14 +215,14 @@ public:
         }{
             BERSerializer ser;
             ser << 17 << Placeholder() << 19;
-            const CFByteArray hex = CFByteArray::fromHex("C10111        C30113");
+            const ByteArray hex = ByteArray::fromHex("C10111        C30113");
             TCOMPARE(ser.data(), hex);
             BERDeserializer deser(hex);
             int a, b; deser >> a >> Placeholder() >> b;
             TCOMPARE(a, 17);
             TCOMPARE(b, 19);
         }{
-            const CFByteArray hex = CFByteArray::fromHex("C10111 C20112 C30113");
+            const ByteArray hex = ByteArray::fromHex("C10111 C20112 C30113");
             BERDeserializer deser(hex);
             int a, c; deser >> a >> Placeholder() >> c;
             TCOMPARE(a, 17);
@@ -267,7 +267,7 @@ public:
         TVERIFY(checkSerDeser<StringList>(StringList{"XY", String(), "", "A"},
             "e10c c0025859 c08100 c000 c00141"));
 
-        BERDeserializer ser(CFByteArray::fromHex("e105 c08100 c000"));
+        BERDeserializer ser(ByteArray::fromHex("e105 c08100 c000"));
         StringList list; ser >> list;
         TVERIFY(list[0].isNull());
         TVERIFY(!list[1].isNull());

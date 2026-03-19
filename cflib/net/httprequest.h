@@ -22,19 +22,19 @@ public:
     HttpRequest(TCPManager & mgr);
     ~HttpRequest();
 
-    void start(const CFUrl & url, const CFList<CFByteArray> & headers,
-        const CFByteArray & postData = CFByteArray(), const CFByteArray & contentType = "application/octet-stream",
+    void start(const CFUrl & url, const CFList<ByteArray> & headers,
+        const ByteArray & postData = ByteArray(), const ByteArray & contentType = "application/octet-stream",
         uint timeoutMs = 10000);
 
     inline void start(const CFUrl & url,
-        const CFByteArray & postData = CFByteArray(), const CFByteArray & contentType = "application/octet-stream",
+        const ByteArray & postData = ByteArray(), const ByteArray & contentType = "application/octet-stream",
         uint timeoutMs = 10000)
     {
-        start(url, CFList<CFByteArray>(), postData, contentType, timeoutMs);
+        start(url, CFList<ByteArray>(), postData, contentType, timeoutMs);
     }
 
 cfsignals:
-    sig<void (int status, const CFByteArray & reply)> reply;
+    sig<void (int status, const ByteArray & reply)> reply;
 
 private:
     void destroy();

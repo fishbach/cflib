@@ -13,7 +13,7 @@ namespace cflib { namespace util {
 
 CmdLine::CmdLine(int argc, char *argv[])
 {
-    for (int i = 0 ; i < argc ; ++i) rawArgs_.push_back(CFByteArray(argv[i]));
+    for (int i = 0 ; i < argc ; ++i) rawArgs_.push_back(ByteArray(argv[i]));
 }
 
 bool CmdLine::parse()
@@ -21,7 +21,7 @@ bool CmdLine::parse()
     if (rawArgs_.empty()) return false;
 
     // Extract executable basename
-    const CFByteArray & fullPath = rawArgs_[0];
+    const ByteArray & fullPath = rawArgs_[0];
     cfsize_t lastSlash = fullPath.indexOf('/');
     cfsize_t pos = lastSlash;
     while (pos >= 0) {
@@ -34,7 +34,7 @@ bool CmdLine::parse()
     int argCount = 0;
     bool parseMoreOptions = true;
     while (rawIdx < (cfsize_t)rawArgs_.size()) {
-        const CFByteArray & raw = rawArgs_[rawIdx++];
+        const ByteArray & raw = rawArgs_[rawIdx++];
 
         if (parseMoreOptions && raw.startsWith("--")) {
             if (raw.length() == 2) {

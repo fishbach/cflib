@@ -111,7 +111,7 @@ void update(int start, int end)
     }
 }
 
-int showUsage(const CFByteArray & executable)
+int showUsage(const ByteArray & executable)
 {
     std::cerr << std::format(
         "Usage: {} [options] 'host=... port=...'\n"
@@ -149,9 +149,9 @@ int main(int argc, char *argv[])
 {
     CmdLine cmdLine(argc, argv);
     Option help     ('h', "help"                      ); cmdLine << help;
-    Option insertOpt('i', CFByteArray(), true          ); cmdLine << insertOpt;
+    Option insertOpt('i', ByteArray(), true          ); cmdLine << insertOpt;
     Option selectOpt('s'                              ); cmdLine << selectOpt;
-    Option updateOpt('u', CFByteArray(), true          ); cmdLine << updateOpt;
+    Option updateOpt('u', ByteArray(), true          ); cmdLine << updateOpt;
     Arg    sqlParam (false);                             cmdLine << sqlParam;
     if (!cmdLine.parse() || help.isSet() ||
         (insertOpt.isSet() ? 1 : 0) +
@@ -166,13 +166,13 @@ int main(int argc, char *argv[])
     CFElapsedTimer timer;
 
     if (insertOpt.isSet()) {
-        CFByteArray val = insertOpt.value();
+        ByteArray val = insertOpt.value();
         cfsize_t sep = val.indexOf('-');
         insert(val.mid(0, sep).toInt(), val.mid(sep + 1).toInt());
     }
     if (selectOpt.isSet()) select();
     if (updateOpt.isSet()) {
-        CFByteArray val = updateOpt.value();
+        ByteArray val = updateOpt.value();
         cfsize_t sep = val.indexOf('-');
         update(val.mid(0, sep).toInt(), val.mid(sep + 1).toInt());
     }

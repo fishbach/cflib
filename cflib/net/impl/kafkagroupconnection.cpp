@@ -32,7 +32,7 @@ void KafkaConnector::GroupConnection::reply(cfint32 correlationId, impl::KafkaRa
         impl::KafkaString ownMemberId;
         reader >> errorCode >> generationId >> groupProtocol >> leaderId >> ownMemberId;
 
-        CFMap<CFByteArray, CFSet<CFByteArray>> memberTopics;
+        CFMap<ByteArray, CFSet<ByteArray>> memberTopics;
 
         cfint32 memberCount;
         reader >> memberCount;
@@ -48,10 +48,10 @@ void KafkaConnector::GroupConnection::reply(cfint32 correlationId, impl::KafkaRa
                 impl::KafkaString topic;
                 reader >> topic;
 
-                memberTopics[CFByteArray(memberId)].insert(CFByteArray(topic));
+                memberTopics[ByteArray(memberId)].insert(ByteArray(topic));
             }
 
-            CFByteArray userData;
+            ByteArray userData;
             reader >> userData;
         }
 
@@ -100,7 +100,7 @@ void KafkaConnector::GroupConnection::reply(cfint32 correlationId, impl::KafkaRa
             }
         }
 
-        CFByteArray userData;
+        ByteArray userData;
         reader >> userData;
 
         impl_.main_.groupStateChanged(impl_.groupTopicPartitions_);

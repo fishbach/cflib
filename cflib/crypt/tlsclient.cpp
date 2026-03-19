@@ -19,7 +19,7 @@ namespace cflib { namespace crypt {
 class TLSClient::Impl : public TLS::Callbacks
 {
 public:
-    Impl(TLS::Session_Manager & session_manager, Credentials_Manager & creds, const CFByteArray & hostname,
+    Impl(TLS::Session_Manager & session_manager, Credentials_Manager & creds, const ByteArray & hostname,
         bool highSecurity, bool requireRevocationInfo)
     :
         outgoingEncryptedPtr(&outgoingEncrypteedTmpBuf),
@@ -96,10 +96,10 @@ public:
     }
 
 public:
-    CFByteArray outgoingEncrypteedTmpBuf;
-    CFByteArray outgoingPlainTmpBuf;
-    CFByteArray * outgoingEncryptedPtr;
-    CFByteArray * incomingPlainPtr;
+    ByteArray outgoingEncrypteedTmpBuf;
+    ByteArray outgoingPlainTmpBuf;
+    ByteArray * outgoingEncryptedPtr;
+    ByteArray * incomingPlainPtr;
     bool isReady;
     bool hasError;
     std::shared_ptr<TLS::Policy> policy;
@@ -107,7 +107,7 @@ public:
     TLS::Client client;
 };
 
-TLSClient::TLSClient(TLSSessions & sessions, TLSCredentials & credentials, const CFByteArray & hostname,
+TLSClient::TLSClient(TLSSessions & sessions, TLSCredentials & credentials, const ByteArray & hostname,
     bool highSecurity, bool requireRevocationInfo)
 :
     impl_(0)
@@ -122,21 +122,21 @@ TLSClient::~TLSClient()
     delete impl_;
 }
 
-CFByteArray TLSClient::initialSend()
+ByteArray TLSClient::initialSend()
 {
-    CFByteArray rv = impl_->outgoingEncrypteedTmpBuf;
+    ByteArray rv = impl_->outgoingEncrypteedTmpBuf;
     impl_->outgoingEncrypteedTmpBuf.clear();
     return rv;
 }
 
-bool TLSClient::received(const CFByteArray & encrypted, CFByteArray & plain, CFByteArray & sendBack)
+bool TLSClient::received(const ByteArray & encrypted, ByteArray & plain, ByteArray & sendBack)
 {
     if (impl_->hasError) return false;
     impl_->outgoingEncryptedPtr = &sendBack;
     impl_->incomingPlainPtr     = &plain;
     TRY {
         impl_->client.received_data((const byte *)encrypted.constData(), encrypted.size());
-        CFByteArray & tmpBuf = impl_->outgoingPlainTmpBuf;
+        ByteArray & tmpBuf = impl_->outgoingPlainTmpBuf;
         if (!tmpBuf.isEmpty() && impl_->isReady && !impl_->hasError) {
             impl_->client.send((const byte *)tmpBuf.constData(), tmpBuf.size());
             tmpBuf.clear();
@@ -147,7 +147,7 @@ bool TLSClient::received(const CFByteArray & encrypted, CFByteArray & plain, CFB
     return false;
 }
 
-bool TLSClient::send(const CFByteArray & plain, CFByteArray & encrypted)
+bool TLSClient::send(const ByteArray & plain, ByteArray & encrypted)
 {
     if (impl_->hasError) return false;
     impl_->outgoingEncryptedPtr = &encrypted;

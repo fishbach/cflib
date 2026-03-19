@@ -41,7 +41,7 @@ public:
         return std::regex_search(subject.str(), re_);
     }
 
-    bool match(const CFByteArray & subject) const {
+    bool match(const ByteArray & subject) const {
         if (!valid_) return false;
         return std::regex_search(subject.toStdString(), re_);
     }
@@ -83,7 +83,7 @@ public:
         return result;
     }
 
-    MatchResult matchResult(const CFByteArray & subject) const {
+    MatchResult matchResult(const ByteArray & subject) const {
         MatchResult result;
         if (!valid_) return result;
         std::smatch m;

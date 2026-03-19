@@ -64,7 +64,7 @@ public:
         startReadWatcher();
     }
 
-    void send(const CFByteArray & data, bool isBinary)
+    void send(const ByteArray & data, bool isBinary)
     {
         if (logTrace) {
             if (isBinary) logTrace("binary out %1: %2", connId_, data.toHex());
@@ -72,7 +72,7 @@ public:
         }
 
         bool deflate = false;
-        CFByteArray deflateBuf;
+        ByteArray deflateBuf;
         if (deflateEnabled_ && data.size() > 256) {
             deflate = true;
             deflateBuf = data;
@@ -81,7 +81,7 @@ public:
         }
 
         const uint len = deflate ? deflateBuf.size() : data.size();
-        CFByteArray frame;
+        ByteArray frame;
         frame.reserve(len + 10);
 
         // write first start byte
@@ -217,7 +217,7 @@ private:
                 isDeflated_ = deflate;
                 fragmentBuf_.append((const char *)data, len);
             } else {
-                CFByteArray msg((const char *)data, len);
+                ByteArray msg((const char *)data, len);
                 if (deflate) util::inflateRaw(msg);
                 if (logTrace) {
                     if (opcode == 2) logTrace("binary in %1: %2", connId_, msg.toHex());
@@ -234,7 +234,7 @@ private:
             cfuint8 * orig = (cfuint8 *)buf_.constData();
             orig[0] = (orig[0] & 0xF0) | 0xA;
             orig[1] &= 0x7F;
-            CFByteArray pong((const char *)orig, buf_.size() - dLen - 4);
+            ByteArray pong((const char *)orig, buf_.size() - dLen - 4);
             pong.append((const char *)data, len);
             write(pong);
         } else if (opcode == 0xA) {
@@ -255,13 +255,13 @@ private:
     const uint connId_;
     const uint connectionSendInterval_;
     const uint connectionDataTimeout_;
-    CFByteArray buf_;
-    CFByteArray fragmentBuf_;
+    ByteArray buf_;
+    ByteArray fragmentBuf_;
     bool isBinary_;
     bool isDeflated_;
     CFDateTime lastRead_;
     CFDateTime lastWrite_;
-    const CFByteArray ping_;
+    const ByteArray ping_;
     const bool deflateEnabled_;
 };
 
@@ -286,12 +286,12 @@ WebSocketService::~WebSocketService()
     delete timer_;
 }
 
-void WebSocketService::saveHeaderField(const CFByteArray & field)
+void WebSocketService::saveHeaderField(const ByteArray & field)
 {
     saveHeaderFields_ << field;
 }
 
-void WebSocketService::send(uint connId, const CFByteArray & data, bool isBinary)
+void WebSocketService::send(uint connId, const ByteArray & data, bool isBinary)
 {
     WSConnHandler * wsHdl = cfHashValue(connections_, connId, (WSConnHandler *)nullptr);
     if (wsHdl) wsHdl->send(data, isBinary);
@@ -303,18 +303,18 @@ void WebSocketService::close(uint connId, TCPConn::CloseType type)
     if (wsHdl) wsHdl->close(type, true);
 }
 
-CFByteArray WebSocketService::getRemoteIP(uint connId) const
+ByteArray WebSocketService::getRemoteIP(uint connId) const
 {
     WSConnHandler * wsHdl = cfHashValue(connections_, connId, (WSConnHandler *)nullptr);
     if (wsHdl) return wsHdl->peerIP();
-    return CFByteArray();
+    return ByteArray();
 }
 
-CFByteArray WebSocketService::getHeader(uint connId, const CFByteArray & header) const
+ByteArray WebSocketService::getHeader(uint connId, const ByteArray & header) const
 {
     WSConnHandler * wsHdl = cfHashValue(connections_, connId, (WSConnHandler *)nullptr);
     if (wsHdl) return cfMapValue(wsHdl->savedHeaders, header);
-    return CFByteArray();
+    return ByteArray();
 }
 
 void WebSocketService::continueRead(uint connId)
@@ -337,22 +337,22 @@ void WebSocketService::handleRequest(const Request & request)
 
     // check WS headers
     const Request::KeyVal headers = request.getHeaderFields();
-    const CFByteArray wsKey = cfMapValue(headers, CFByteArray("sec-websocket-key"));
-    if (cfMapValue(headers, CFByteArray("upgrade")).toLower() != "websocket" || wsKey.isEmpty()) {
+    const ByteArray wsKey = cfMapValue(headers, ByteArray("sec-websocket-key"));
+    if (cfMapValue(headers, ByteArray("upgrade")).toLower() != "websocket" || wsKey.isEmpty()) {
         request.sendNotFound();
         return;
     }
-    const bool deflate = cfMapValue(headers, CFByteArray("sec-websocket-extensions")).toLower().indexOf("permessage-deflate") != -1;
+    const bool deflate = cfMapValue(headers, ByteArray("sec-websocket-extensions")).toLower().indexOf("permessage-deflate") != -1;
 
     // check origin
-    if (allowedOrigin_.isValid() && !allowedOrigin_.match(cfMapValue(headers, CFByteArray("origin")).toLower())) {
-        logWarn("wrong Origin: %1", cfMapValue(headers, CFByteArray("origin")));
+    if (allowedOrigin_.isValid() && !allowedOrigin_.match(cfMapValue(headers, ByteArray("origin")).toLower())) {
+        logWarn("wrong Origin: %1", cfMapValue(headers, ByteArray("origin")));
         request.sendNotFound();
         return;
     }
 
     Request::KeyVal savedHeaders;
-    for (const CFByteArray & header : saveHeaderFields_) {
+    for (const ByteArray & header : saveHeaderFields_) {
         auto it = headers.find(header);
         if (it != headers.end()) savedHeaders[header] = it->second;
     }
@@ -367,7 +367,7 @@ void WebSocketService::handleRequest(const Request & request)
     addConnection(connData, wsKey, deflate, savedHeaders);
 }
 
-void WebSocketService::addConnection(TCPConnData * connData, const CFByteArray & wsKey, bool deflate,
+void WebSocketService::addConnection(TCPConnData * connData, const ByteArray & wsKey, bool deflate,
     const Request::KeyVal & savedHeaders)
 {
     if (!verifyThreadCall(&WebSocketService::addConnection, connData, wsKey, deflate, savedHeaders)) return;
@@ -379,7 +379,7 @@ void WebSocketService::addConnection(TCPConnData * connData, const CFByteArray &
     connections_[connId] = wsHdl;
 
     // write WS header
-    CFByteArray header =
+    ByteArray header =
         "HTTP/1.1 101 Switching Protocols\r\n"
         "Upgrade: websocket\r\n"
         "Connection: Upgrade\r\n"

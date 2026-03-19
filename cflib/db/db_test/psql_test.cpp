@@ -103,7 +103,7 @@ private:
         cfint32     s32;
         cfint64     s64;
         CFDateTime  t;
-        CFByteArray a;
+        ByteArray a;
         String    s;
         float       f;
         double      d;
@@ -239,7 +239,7 @@ private:
         TCOMPARE(tt.x32, (cfuint32)0xFFFFFFFF);
         TCOMPARE(tt.x64, (cfuint64)4);
         TCOMPARE(tt.t.toMSecsSinceEpoch(), makeUTCDateTime(2017, 2, 27, 14, 47, 34, 123).toMSecsSinceEpoch());
-        TCOMPARE(tt.a, CFByteArray("A0"));
+        TCOMPARE(tt.a, ByteArray("A0"));
         TCOMPARE(tt.s, String::fromUtf8("ABC\xC3\xB6\xC3\x9F"));
         TVERIFY(fuzzyCompare(tt.f, 1.23f));
         TVERIFY(fuzzyCompare(tt.d, 3.45));
@@ -289,7 +289,7 @@ private:
         TCOMPARE(tt.s32, (cfint32)-2147483648l);
         TCOMPARE(tt.s64, (cfint64)(-9223372036854775807LL));
         TCOMPARE(tt.t.toMSecsSinceEpoch(), makeUTCDateTime(1970, 1, 1, 0, 0, 0, 0).toMSecsSinceEpoch());
-        TCOMPARE(tt.a, CFByteArray("A0"));
+        TCOMPARE(tt.a, ByteArray("A0"));
         TCOMPARE(tt.s, String::fromUtf8("ABC\xC3\xB6\xC3\x9F"));
         TVERIFY(fuzzyCompare(tt.f, -1.23f));
         TVERIFY(fuzzyCompare(tt.d, -3.45));
@@ -335,7 +335,7 @@ private:
         CFDateTime now = CFDateTime::nowUTC();
         TVERIFY(tt.t.toMSecsSinceEpoch() > now.toMSecsSinceEpoch() - 30000);
         TVERIFY(tt.t.toMSecsSinceEpoch() < now.toMSecsSinceEpoch() + 30000);
-        TCOMPARE(tt.a, CFByteArray(""));
+        TCOMPARE(tt.a, ByteArray(""));
         TCOMPARE(tt.s, String(""));
         TCOMPARE(tt.f, 0.0f);
         TVERIFY(std::isnan(tt.d));
@@ -576,7 +576,7 @@ private:
         TCOMPARE(tt.x32, (cfuint32)3);
         TCOMPARE(tt.x64, (cfuint64)4);
         TCOMPARE(tt.t.toMSecsSinceEpoch(), makeUTCDateTime(2017, 2, 27, 14, 47, 34, 123).toMSecsSinceEpoch());
-        TCOMPARE(tt.a, CFByteArray("\xC3\x96\xC3\x84\xC3\x9C"));
+        TCOMPARE(tt.a, ByteArray("\xC3\x96\xC3\x84\xC3\x9C"));
         TCOMPARE(tt.s, String::fromUtf8("\xC3\x96\xC3\x84\xC3\x9C"));
         TVERIFY(fuzzyCompare(tt.f, 1.23f));
         TVERIFY(fuzzyCompare(tt.d, 3.45));
@@ -627,7 +627,7 @@ private:
         TCOMPARE(tt.x32, (cfuint32)3);
         TCOMPARE(tt.x64, (cfuint64)4);
         TCOMPARE(tt.t.toMSecsSinceEpoch(), makeUTCDateTime(2017, 2, 27, 14, 47, 34, 123).toMSecsSinceEpoch());
-        TCOMPARE(tt.a, CFByteArray("\xe6\xbc\xa2\xe5\xad\x97"));
+        TCOMPARE(tt.a, ByteArray("\xe6\xbc\xa2\xe5\xad\x97"));
         TCOMPARE(tt.s, String::fromUtf8("Hello World!"));
         TVERIFY(fuzzyCompare(tt.f, 1.23f));
         TVERIFY(fuzzyCompare(tt.d, 3.45));
@@ -664,7 +664,7 @@ private:
         TCOMPARE(tt.x32, (cfuint32)345);
         TCOMPARE(tt.x64, (cfuint64)1234567);
         TCOMPARE(tt.t.toMSecsSinceEpoch(), makeUTCDateTime(2017, 2, 27, 14, 47, 34, 123).toMSecsSinceEpoch());
-        TCOMPARE(tt.a, CFByteArray("2017-02-27T14:47:34.123Z"));
+        TCOMPARE(tt.a, ByteArray("2017-02-27T14:47:34.123Z"));
         TCOMPARE(tt.s, String::fromUtf8("Hello again"));
         TVERIFY(fuzzyCompare(tt.f, 123.456f));
         TVERIFY(fuzzyCompare(tt.d, 12345.6789));

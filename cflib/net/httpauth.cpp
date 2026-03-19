@@ -18,12 +18,12 @@ USE_LOG(LogCat::Http)
 
 namespace cflib { namespace net {
 
-HttpAuth::HttpAuth(const CFByteArray & name, const String & htpasswd) :
+HttpAuth::HttpAuth(const ByteArray & name, const String & htpasswd) :
     name_(name), htpasswd_(htpasswd)
 {
 }
 
-void HttpAuth::addUser(const String & name, const CFByteArray & passwordHash)
+void HttpAuth::addUser(const String & name, const ByteArray & passwordHash)
 {
     users_[name] = passwordHash;
 }
@@ -51,10 +51,10 @@ void HttpAuth::handleRequest(const Request & request)
                 users_.clear();
                 checkedUsers_.clear();
 
-                CFByteArray content = util::readFile(htpasswd_);
-                CFList<CFByteArray> lines = content.split('\n');
+                ByteArray content = util::readFile(htpasswd_);
+                CFList<ByteArray> lines = content.split('\n');
                 for (const auto & line : lines) {
-                    CFList<CFByteArray> parts = line.split(':');
+                    CFList<ByteArray> parts = line.split(':');
                     if (parts.size() == 2) {
                         users_[String(parts[0].trimmed().toStdString())] = parts[1].trimmed();
                     }
@@ -64,20 +64,20 @@ void HttpAuth::handleRequest(const Request & request)
         }
     }
 
-    const CFByteArray auth = request.getHeader("authorization");
+    const ByteArray auth = request.getHeader("authorization");
     if (cfContains(checkedUsers_, auth)) return;
 
     const Request::LoginPass loginPass = Request::getBasicAuth(auth);
     if (!loginPass.login.isEmpty()) {
         auto it = users_.find(loginPass.login);
-        const CFByteArray hash = it != users_.end() ? it->second : CFByteArray();
+        const ByteArray hash = it != users_.end() ? it->second : ByteArray();
         if (!hash.isEmpty() && crypt::checkPassword(loginPass.password.toUtf8(), hash)) {
             checkedUsers_.insert(auth);
             return;
         }
     }
 
-    CFByteArray hdr = "HTTP/1.1 401 Not Authorized\r\n"
+    ByteArray hdr = "HTTP/1.1 401 Not Authorized\r\n"
         "WWW-Authenticate: Basic realm=\"";
     hdr << name_ << "\"\r\n" << request.defaultHeaders() << "Content-Type: text/html; charset=utf-8\r\n";
     request.sendRaw(hdr,

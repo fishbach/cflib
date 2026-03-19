@@ -33,7 +33,7 @@ TCPConnData::TCPConnData(impl::TCPManagerImpl & impl,
     writeWatcher->data = this;
 
     if (tlsStream) {
-        const CFByteArray data = tlsStream->initialSend();
+        const ByteArray data = tlsStream->initialSend();
         if (!data.isEmpty()) impl.writeToSocket(this, data, false);
     }
 }

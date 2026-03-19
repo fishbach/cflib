@@ -30,7 +30,7 @@ using namespace cflib::util;
 
 namespace {
 
-int showUsage(const CFByteArray & executable)
+int showUsage(const ByteArray & executable)
 {
     std::cerr << std::format(
         "Usage: {} [options]\n"
@@ -43,10 +43,10 @@ int showUsage(const CFByteArray & executable)
 }
 
 
-void show(const CFByteArray & data, bool hex, bool)
+void show(const ByteArray & data, bool hex, bool)
 {
-    const CFByteArray rawData =
-        hex ? CFByteArray::fromHex(data) :
+    const ByteArray rawData =
+        hex ? ByteArray::fromHex(data) :
         data;
 
     std::cout << std::format("{}\n", printAsn1(rawData).c_str());
@@ -62,8 +62,8 @@ int main(int argc, char *argv[])
     Option base64Opt('b', "base64"); cmdLine << base64Opt;
     if (!cmdLine.parse() || help.isSet() || (hexOpt.isSet() && base64Opt.isSet())) return showUsage(cmdLine.executable());
 
-    const CFByteArray buf(0x10000, '\0');
-    CFByteArray data;
+    const ByteArray buf(0x10000, '\0');
+    ByteArray data;
 
     struct timeval tv;
     tv.tv_sec  = 0;

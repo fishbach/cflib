@@ -42,7 +42,7 @@ namespace impl {
 
 class SerializeTypeInfoImpl;
 void serializeTypeInfo(SerializeTypeInfoImpl & si, TriBool *);
-void serializeBER(const TriBool & val, cfuint64 tag, CFByteArray & data, BERSerializerBase &);
+void serializeBER(const TriBool & val, cfuint64 tag, ByteArray & data, BERSerializerBase &);
 void deserializeBER(TriBool & val, const cfuint8 * data, int len, BERDeserializerBase &);
 
 }

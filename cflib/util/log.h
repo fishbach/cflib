@@ -54,7 +54,7 @@ namespace LogCat { enum {
 namespace cflib { namespace util {
 
 typedef cfuint16 LogCategory;
-typedef void (*LogLevelCallback)(const CFByteArray & msg);
+typedef void (*LogLevelCallback)(const ByteArray & msg);
 
 struct LogFileInfo
 {
@@ -82,14 +82,14 @@ public:
         if (check()) writeLog(str);
     }
 
-    inline void operator()(const CFByteArray & str) const {
+    inline void operator()(const ByteArray & str) const {
         if (check()) writeLog(str);
     }
 
     template<typename T1>
     inline void operator()(const char * str, const T1 & t1) const {
         if (!check()) return;
-        CFByteArray msg; msg.reserve(128);
+        ByteArray msg; msg.reserve(128);
         const char * p = str;
         while (*p) {
             if (*p == '%' && *(p+1) == '1') {
@@ -107,7 +107,7 @@ public:
     template<typename T1, typename T2>
     void operator()(const char * str, const T1 &  t1, const T2 & t2) const {
         if (!check()) return;
-        CFByteArray msg; msg.reserve(128);
+        ByteArray msg; msg.reserve(128);
         const char * p = str;
         while (*p) {
             if (*p == '%') {
@@ -129,7 +129,7 @@ public:
     template<typename T1, typename T2, typename T3>
     void operator()(const char * str, const T1 & t1, const T2 & t2, const T3 & t3) const {
         if (!check()) return;
-        CFByteArray msg; msg.reserve(128);
+        ByteArray msg; msg.reserve(128);
         const char * p = str;
         while (*p) {
             if (*p == '%') {
@@ -154,7 +154,7 @@ public:
     template<typename T1, typename T2, typename T3, typename T4>
     void operator()(const char * str, const T1 & t1, const T2 & t2, const T3 & t3, const T4 & t4) const {
         if (!check()) return;
-        CFByteArray msg; msg.reserve(128);
+        ByteArray msg; msg.reserve(128);
         const char * p = str;
         while (*p) {
             if (*p == '%') {
@@ -180,7 +180,7 @@ public:
     template<typename T1, typename T2, typename T3, typename T4, typename T5>
     void operator()(const char * str, const T1 & t1, const T2 & t2, const T3 & t3, const T4 & t4, const T5 & t5) const {
         if (!check()) return;
-        CFByteArray msg; msg.reserve(128);
+        ByteArray msg; msg.reserve(128);
         const char * p = str;
         while (*p) {
             if (*p == '%') {
@@ -209,7 +209,7 @@ public:
         const T6 & t6) const
     {
         if (!check()) return;
-        CFByteArray msg; msg.reserve(128);
+        ByteArray msg; msg.reserve(128);
         const char * p = str;
         while (*p) {
             if (*p == '%') {
@@ -239,7 +239,7 @@ public:
         const T6 & t6, const T7 & t7) const
     {
         if (!check()) return;
-        CFByteArray msg; msg.reserve(128);
+        ByteArray msg; msg.reserve(128);
         const char * p = str;
         while (*p) {
             if (*p == '%') {
@@ -270,11 +270,11 @@ private:
         return (category_ & 0x0F) >= logLevelCategory_;
     }
 
-    virtual void writeLog(const CFByteArray & msg) const {
+    virtual void writeLog(const ByteArray & msg) const {
         writeLog(fi_.file, line_, fi_.category | category_, msg, 0);
     }
 
-    static void writeLog(const char * filename, int lineNo, LogCategory category, const CFByteArray & msg,
+    static void writeLog(const char * filename, int lineNo, LogCategory category, const ByteArray & msg,
         int indent);
 
 private:
@@ -300,11 +300,11 @@ public:
     }
 
     ~LogFunctionTrace() {
-        if (check()) Log::writeLog(fi_.file, line_, fi_.category | category_, CFByteArray(), -2);
+        if (check()) Log::writeLog(fi_.file, line_, fi_.category | category_, ByteArray(), -2);
     }
 
 private:
-    virtual void writeLog(const CFByteArray & msg) const {
+    virtual void writeLog(const ByteArray & msg) const {
         Log::writeLog(fi_.file, line_, fi_.category | category_, msg, 2);
     }
 };

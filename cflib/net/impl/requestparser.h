@@ -26,11 +26,11 @@ public:
         const CFList<RequestHandler *> & handlers, HttpThread * thread);
     ~RequestParser();
 
-    void sendReply(int id, const CFByteArray & reply);
+    void sendReply(int id, const ByteArray & reply);
 
     void detachRequest();
     void setPassThroughHandler(PassThroughHandler * hdl);
-    CFByteArray readPassThrough(bool & isLast);
+    ByteArray readPassThrough(bool & isLast);
     TCPConnData * detach();
 
 protected:
@@ -40,25 +40,25 @@ protected:
 private:
     void parseRequest();
     bool parseHeader();
-    bool handleRequestLine(const CFByteArray & line);
-    void writeReply(const CFByteArray & reply);
+    bool handleRequestLine(const ByteArray & line);
+    void writeReply(const ByteArray & reply);
 
 private:
     const CFList<RequestHandler *> & handlers_;
     HttpThread * thread_;
     const int id_;
 
-    CFByteArray header_;
+    ByteArray header_;
 
     cfint64 contentLength_;
-    CFMap<CFByteArray, CFByteArray> headerFields_;
+    CFMap<ByteArray, ByteArray> headerFields_;
     int method_;
-    CFByteArray uri_;
-    CFByteArray body_;
+    ByteArray uri_;
+    ByteArray body_;
 
     int requestCount_;
     int nextReplyId_;
-    CFMap<int, CFByteArray> replies_;
+    CFMap<int, ByteArray> replies_;
 
     int attachedRequests_;
     bool detached_;

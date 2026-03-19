@@ -43,7 +43,7 @@ public:
     }
 
     virtual void handleMsg(cfuint64,
-        const CFByteArray & data, int tagLen, int lengthSize, cfint32 valueLen,
+        const ByteArray & data, int tagLen, int lengthSize, cfint32 valueLen,
         const C & connData, uint connDataId, uint connId)
     {
         handleCall(data, (const cfuint8 *)data.constData() + tagLen + lengthSize, valueLen, connData, connDataId, connId);

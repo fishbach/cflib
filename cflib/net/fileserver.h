@@ -35,7 +35,7 @@ public:
 
     void exportTo(const String & dest) const;
     void add404File(const CFRegex & re, const String & dest);
-    void setAccessControlAllowOrigin(const CFByteArray & origin) { accessControlAllowOrigin_ = origin; }
+    void setAccessControlAllowOrigin(const ByteArray & origin) { accessControlAllowOrigin_ = origin; }
 
 protected:
     virtual void handleRequest(const Request & request);
@@ -54,13 +54,13 @@ private:
     const bool noCache_;
     const bool removeSlash_;
     const bool useHostAsDir_;
-    const CFByteArray eTag_;
+    const ByteArray eTag_;
     typedef CFPair<CFRegex, String> Redirect;
     CFList<Redirect> redirects404_;
     const CFRegex pathRE_;
     const CFRegex endingRE_;
     const CFRegex elementRE_;
-    CFByteArray accessControlAllowOrigin_;
+    ByteArray accessControlAllowOrigin_;
 };
 
 }}    // namespace

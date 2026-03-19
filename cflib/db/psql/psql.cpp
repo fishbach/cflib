@@ -128,7 +128,7 @@ public:
     PGconn * conn;
     bool transactionActive;
     bool doRollback;
-    CFList<CFByteArray> preparedStatements;
+    CFList<ByteArray> preparedStatements;
     cfuint instanceCount;
 
 public:
@@ -228,7 +228,7 @@ bool PSql::setParameter(const String & connectionParameterRef, const String & ov
     // query oids
     typeOids[PSql_null] = (Oid)0;
     for (Oid oid = PSql_null + 1 ; oid < PSql_lastEntry ; ++oid) {
-        CFByteArray query = CFByteArray("SELECT '") + PostgresTypeNames[oid] + "'::regtype::oid";
+        ByteArray query = ByteArray("SELECT '") + PostgresTypeNames[oid] + "'::regtype::oid";
         PGresult * res = PQexec(conn, query.constData());
         if (PQresultStatus(res) != PGRES_TUPLES_OK) {
             logWarn("cannot get oids (error: %1)", PQerrorMessage(conn));
@@ -244,7 +244,7 @@ bool PSql::setParameter(const String & connectionParameterRef, const String & ov
             return false;
         }
 
-        typeOids[oid] = (Oid)CFByteArray(PQgetvalue(res, 0, 0)).toUInt();
+        typeOids[oid] = (Oid)ByteArray(PQgetvalue(res, 0, 0)).toUInt();
 
         PQclear(res);
     }
@@ -254,13 +254,13 @@ bool PSql::setParameter(const String & connectionParameterRef, const String & ov
     if (!conninfo) {
         logWarn("cannot get connection info");
     } else {
-        CFMap<CFByteArray, CFByteArray> vals;
+        CFMap<ByteArray, ByteArray> vals;
         for (PQconninfoOption * it = conninfo ; it->keyword != NULL ; ++it) {
-            if (it->val != NULL) vals[CFByteArray(it->keyword)] = CFByteArray(it->val);
+            if (it->val != NULL) vals[ByteArray(it->keyword)] = ByteArray(it->val);
         }
         PQconninfoFree(conninfo);
 
-        logInfo("connected to psql://%1@%2:%3/%4", vals[CFByteArray("user")], vals[CFByteArray("host")], vals[CFByteArray("port")], vals[CFByteArray("dbname")]);
+        logInfo("connected to psql://%1@%2:%3/%4", vals[ByteArray("user")], vals[ByteArray("host")], vals[ByteArray("port")], vals[ByteArray("dbname")]);
     }
 
     PQfinish(conn);
@@ -311,7 +311,7 @@ PSql::PSql(const String & connectionParameter) :
 PSql::PSql(ThreadData & td, const util::LogFileInfo & lfi, int line) :
     td_(td),
     lfi_(lfi), line_(line),
-    instanceName_("i" + CFByteArray::number((cfint64)(++td_.instanceCount))),
+    instanceName_("i" + ByteArray::number((cfint64)(++td_.instanceCount))),
     nestedTransaction_(false),
     localTransactionActive_(false),
     isFirstResult_(true),
@@ -402,7 +402,7 @@ bool PSql::commit()
     PQclear(res);
 
     // try again to remove prepared statements
-    for (const CFByteArray & in : td_.preparedStatements) {
+    for (const ByteArray & in : td_.preparedStatements) {
         PQclear(PQexec(td_.conn, ("DEALLOCATE " + in).constData()));
     }
     td_.preparedStatements.clear();
@@ -435,7 +435,7 @@ void PSql::rollback()
     PQclear(res);
 
     // try again to remove prepared statements
-    for (const CFByteArray & in : td_.preparedStatements) {
+    for (const ByteArray & in : td_.preparedStatements) {
         PQclear(PQexec(td_.conn, ("DEALLOCATE " + in).constData()));
     }
     td_.preparedStatements.clear();
@@ -462,7 +462,7 @@ bool PSql::exec(const String & query)
 
 bool PSql::execMultiple(const String & query)
 {
-    const CFByteArray utf8 = query.toUtf8();
+    const ByteArray utf8 = query.toUtf8();
     PGresult * res = PQexec(td_.conn, utf8.constData());
     if (PQresultStatus(res) != PGRES_TUPLES_OK && PQresultStatus(res) != PGRES_COMMAND_OK) {
         cflib::util::Log(lfi_, line_ ? line_ : __LINE__, LogCat::Debug | LogCat::Db)("query: %1", lastQuery_);
@@ -474,7 +474,7 @@ bool PSql::execMultiple(const String & query)
     return true;
 }
 
-void PSql::prepare(const CFByteArray & query)
+void PSql::prepare(const ByteArray & query)
 {
     lastQuery_ = query;
     isPrepared_ = false;
@@ -595,7 +595,7 @@ PSql & PSql::operator<<(const CFDateTime & val)
     return *this;
 }
 
-PSql & PSql::operator<<(const CFByteArray & val)
+PSql & PSql::operator<<(const ByteArray & val)
 {
     if (val.isNull()) {
         setParamType(PSql_binary, 0, true);
@@ -611,7 +611,7 @@ PSql & PSql::operator<<(const String & val)
     if (val.isNull()) {
         setParamType(PSql_string, 0, true);
     } else {
-        const CFByteArray utf8 = val.toUtf8();
+        const ByteArray utf8 = val.toUtf8();
         cfuint8 * dest = setParamType(PSql_string, utf8.size(), false);
         if (dest) memcpy(dest, utf8.constData(), utf8.size());
     }
@@ -674,12 +674,12 @@ PSql & PSql::operator>>(CFDateTime & val)
     return *this;
 }
 
-PSql & PSql::operator>>(CFByteArray & val)
+PSql & PSql::operator>>(ByteArray & val)
 {
-    val = CFByteArray();
+    val = ByteArray();
     if (!checkField(PSql_binary, 0)) return *this;
     if (!lastFieldIsNull_) {
-        val = CFByteArray(PQgetvalue((PGresult *)res_, 0, currentFieldId_), PQgetlength((PGresult *)res_, 0, currentFieldId_));
+        val = ByteArray(PQgetvalue((PGresult *)res_, 0, currentFieldId_), PQgetlength((PGresult *)res_, 0, currentFieldId_));
     }
     ++currentFieldId_;
     return *this;
