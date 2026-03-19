@@ -199,7 +199,7 @@ void RedirectServer::addDefaultRedirect(DestUrlFunc destUrlFunc)
     entries_ << Entry(destUrlFunc);
 }
 
-void RedirectServer::addForwardIf(const Regex & test, const ByteArray & ip, cfuint16 port)
+void RedirectServer::addForwardIf(const Regex & test, const ByteArray & ip, uint16 port)
 {
     entries_ << Entry(false, test, Pair(ip, port));
 }
@@ -209,12 +209,12 @@ void RedirectServer::addForwardIf(const Regex & test, DestHostReFunc destHostReF
     entries_ << Entry(false, test, destHostReFunc);
 }
 
-void RedirectServer::addForwardIfNot(const Regex & test, const ByteArray & ip, cfuint16 port)
+void RedirectServer::addForwardIfNot(const Regex & test, const ByteArray & ip, uint16 port)
 {
     entries_ << Entry(true, test, Pair(ip, port));
 }
 
-void RedirectServer::addDefaultForward(const ByteArray & ip, cfuint16 port)
+void RedirectServer::addDefaultForward(const ByteArray & ip, uint16 port)
 {
     entries_ << Entry(Pair(ip, port));
 }

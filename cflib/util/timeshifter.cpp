@@ -9,7 +9,7 @@
 
 namespace cflib::util {
 
-cfint64 TimeShifter::diff_ = 0;
+int64 TimeShifter::diff_ = 0;
 
 void TimeShifter::setDateTime(const DateTime & newNow)
 {

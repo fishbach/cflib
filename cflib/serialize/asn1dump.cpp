@@ -23,8 +23,8 @@ String writeStr(const ByteArray & msg)
     ByteArray rv;
     const char * start = msg.constData();
     const char * p = start;
-    for (cfsize_t i = 0 ; i < msg.length() ; ++i) {
-        const cfuint8 c = (cfuint8)*p;
+    for (size_t i = 0 ; i < msg.length() ; ++i) {
+        const uint8 c = (uint8)*p;
         if (c < 0x20 || c > 0x7E) {
             if (p > start) rv.append(start, p - start);
             ++p; start = p;
@@ -40,7 +40,7 @@ String writeStr(const ByteArray & msg)
     return 100 * specialCount / msg.size() > 10 ? String() : String(rv.constData());
 }
 
-String showValue(const cfuint8 * data, int len)
+String showValue(const uint8 * data, int len)
 {
     if (len == 0) return "null";
 
@@ -54,13 +54,13 @@ String showValue(const cfuint8 * data, int len)
     }
 
     if (len == 9 && *data == 0) {
-        cfuint64 val;
+        uint64 val;
         impl::deserializeBERInt(val, data, len);
         rv += '(';
         rv += String::number(val);
         rv += ") ";
     } else if (len < 9) {
-        cfint64 val;
+        int64 val;
         impl::deserializeBERInt(val, data, len);
         rv += '(';
         rv += String::number(val);
@@ -86,15 +86,15 @@ String showValue(const cfuint8 * data, int len)
     return rv;
 }
 
-String printAsn1(const cfuint8 * data, int len, int indent)
+String printAsn1(const uint8 * data, int len, int indent)
 {
     String rv;
 
     while (true) {
-        cfuint64 tagNo = 0;
+        uint64 tagNo = 0;
         int tagLen = 0;
         int lengthSize = 0;
-        const cfint32 valueLen = getTLVLength(ByteArray::fromRawData((const char *)data, len), tagNo, tagLen, lengthSize);
+        const int32 valueLen = getTLVLength(ByteArray::fromRawData((const char *)data, len), tagNo, tagLen, lengthSize);
         if (valueLen == -1) {
             rv += "not enough data available\n";
             return rv;
@@ -121,7 +121,7 @@ String printAsn1(const cfuint8 * data, int len, int indent)
             rv += "\n";
         }
 
-        const cfint32 total = tagLen + lengthSize + valueLen;
+        const int32 total = tagLen + lengthSize + valueLen;
         if (len <= total) return rv;
 
         data += total;
@@ -135,7 +135,7 @@ String printAsn1(const cfuint8 * data, int len, int indent)
 
 String printAsn1(const ByteArray & data)
 {
-    return printAsn1((const cfuint8 *)data.constData(), data.size(), 0);
+    return printAsn1((const uint8 *)data.constData(), data.size(), 0);
 }
 
 }

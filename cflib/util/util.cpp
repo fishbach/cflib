@@ -63,7 +63,7 @@ ByteArray dateTimeForHTTP(const DateTime & dateTime)
 namespace {
 
 // CRC table - little endian
-const cfuint32 CRCData[] = {
+const uint32 CRCData[] = {
     0x00000000L, 0x77073096L, 0xee0e612cL, 0x990951baL, 0x076dc419L,
     0x706af48fL, 0xe963a535L, 0x9e6495a3L, 0x0edb8832L, 0x79dcb8a4L,
     0xe0d5e91eL, 0x97d2d988L, 0x09b64c2bL, 0x7eb17cbdL, 0xe7b82d07L,
@@ -120,9 +120,9 @@ const cfuint32 CRCData[] = {
 
 }
 
-cfuint32 calcCRC32Raw(cfuint32 crc, const char * data, cfuint64 size)
+uint32 calcCRC32Raw(uint32 crc, const char * data, uint64 size)
 {
-    const cfuint8 * bytes = (const cfuint8 *)data;
+    const uint8 * bytes = (const uint8 *)data;
     while (size--) {
         crc = CRCData[(crc & 0xff) ^ *(bytes++)] ^ (crc >> 8);
     }
@@ -136,8 +136,8 @@ void gzip(ByteArray & data, int compressionLevel)
         return;
     }
 
-    const cfuint32 len = data.size();
-    const cfuint32 crc = calcCRC32(data);
+    const uint32 len = data.size();
+    const uint32 crc = calcCRC32(data);
 
     // Use zlib deflate with gzip wrapper (windowBits = 31 = 15 + 16)
     z_stream s;
@@ -147,7 +147,7 @@ void gzip(ByteArray & data, int compressionLevel)
     s.avail_in  = (uInt)data.size();
     s.next_in   = (Bytef *)data.constData();
     deflateInit2(&s, compressionLevel, Z_DEFLATED, 31, 8, Z_DEFAULT_STRATEGY);
-    ByteArray out((cfsize_t)deflateBound(&s, data.size()), '\0');
+    ByteArray out((size_t)deflateBound(&s, data.size()), '\0');
     s.avail_out = (uInt)out.size();
     s.next_out  = (Bytef *)out.data();
     deflate(&s, Z_FINISH);
@@ -170,7 +170,7 @@ void gzip(ByteArray & data, int compressionLevel)
     s2.avail_in  = (uInt)data.size();
     s2.next_in   = (Bytef *)data.constData();
     deflateInit2(&s2, compressionLevel, Z_DEFLATED, -15, 8, Z_DEFAULT_STRATEGY);
-    ByteArray compressed((cfsize_t)deflateBound(&s2, data.size()), '\0');
+    ByteArray compressed((size_t)deflateBound(&s2, data.size()), '\0');
     s2.avail_out = (uInt)compressed.size();
     s2.next_out  = (Bytef *)compressed.data();
     deflate(&s2, Z_FINISH);
@@ -215,7 +215,7 @@ void deflateRaw(ByteArray & data, int compressionLevel)
     s.avail_in  = (uInt)   data.size();
     s.next_in   = (Bytef *)data.constData();
     deflateInit2(&s, compressionLevel, Z_DEFLATED, -15, 8, Z_DEFAULT_STRATEGY);
-    ByteArray out((cfsize_t)deflateBound(&s, data.size()), '\0');
+    ByteArray out((size_t)deflateBound(&s, data.size()), '\0');
     s.avail_out = (uInt)   out.size();
     s.next_out  = (Bytef *)out.constData();
     deflate(&s, Z_SYNC_FLUSH);
@@ -237,7 +237,7 @@ void inflateRaw(ByteArray & data)
     in.reserve(data.size() + (fb == 0 ? 0 : 4));
     in.append(data);
     if (fb == 0) in.append("\x00\x00\xFF\xFF", 4);
-    ByteArray out((cfsize_t)5, '\0');
+    ByteArray out((size_t)5, '\0');
     z_stream s;
     s.zalloc    = Z_NULL;
     s.zfree     = Z_NULL;
@@ -251,8 +251,8 @@ void inflateRaw(ByteArray & data)
         int rv = inflate(&s, Z_NO_FLUSH);
         if (rv != Z_OK && rv != Z_BUF_ERROR) logWarn("inflate error: %1", rv);
         if (s.avail_out > 0) break;
-        const cfsize_t oldSize = out.size();
-        const cfsize_t ext = oldSize * 3 / 2;
+        const size_t oldSize = out.size();
+        const size_t ext = oldSize * 3 / 2;
         out.resize(oldSize + ext);
         s.avail_out = (uInt)   ext;
         s.next_out  = (Bytef *)out.constData() + oldSize;
@@ -274,7 +274,7 @@ bool writeFile(const String & path, const ByteArray & data, int perm)
     File file(path);
     if (!file.open(File::WriteOnly | File::Truncate)) return false;
     file.setPermissions(perm);
-    return file.write(data) == (cfint64)data.size();
+    return file.write(data) == (int64)data.size();
 }
 
 String readTextfile(const String & path)
@@ -370,7 +370,7 @@ String flatten(const String & str)
     // Step 1: remove non-allowed chars (keep a-zA-Z0-9 - . _ and whitespace)
     std::string rv;
     rv.reserve(str.size());
-    for (cfsize_t i = 0; i < str.size(); ++i) {
+    for (size_t i = 0; i < str.size(); ++i) {
         char c = str.c_str()[i];
         if ((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9') ||
             c == '-' || c == '.' || c == '_' || c == ' ' || c == '\t' || c == '\r' || c == '\n') {
@@ -378,9 +378,9 @@ String flatten(const String & str)
         }
     }
     // Step 2: trim leading/trailing whitespace
-    cfsize_t start = 0;
-    while (start < (cfsize_t)rv.size() && (rv[start] == ' ' || rv[start] == '\t' || rv[start] == '\r' || rv[start] == '\n')) ++start;
-    cfsize_t end = (cfsize_t)rv.size();
+    size_t start = 0;
+    while (start < (size_t)rv.size() && (rv[start] == ' ' || rv[start] == '\t' || rv[start] == '\r' || rv[start] == '\n')) ++start;
+    size_t end = (size_t)rv.size();
     while (end > start && (rv[end-1] == ' ' || rv[end-1] == '\t' || rv[end-1] == '\r' || rv[end-1] == '\n')) --end;
     rv = rv.substr(start, end - start);
     // Step 3: collapse whitespace to single underscore
@@ -430,12 +430,12 @@ bool isValidEmail(const String & str)
     // Hand-written email validation replacing QRegularExpression
     // Pattern: ^[\w.\-_]+@\w[\w.\-]+\.\w+$
     const char * s = str.c_str();
-    cfsize_t len = str.size();
+    size_t len = str.size();
     if (len == 0) return false;
 
-    cfsize_t i = 0;
+    size_t i = 0;
     // local part: [\w.\-_]+
-    cfsize_t localStart = i;
+    size_t localStart = i;
     while (i < len) {
         char c = s[i];
         if ((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9') ||
@@ -454,7 +454,7 @@ bool isValidEmail(const String & str)
         return false;
     ++i;
 
-    cfsize_t lastDot = (cfsize_t)-1;
+    size_t lastDot = (size_t)-1;
     while (i < len) {
         c = s[i];
         if ((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9') ||
@@ -464,9 +464,9 @@ bool isValidEmail(const String & str)
         } else break;
     }
     if (i != len) return false;
-    if (lastDot == (cfsize_t)-1 || lastDot == len - 1) return false;
+    if (lastDot == (size_t)-1 || lastDot == len - 1) return false;
     // Check at least one char after the last dot that's a word char
-    for (cfsize_t j = lastDot + 1; j < len; ++j) {
+    for (size_t j = lastDot + 1; j < len; ++j) {
         c = s[j];
         if (!((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9') || c == '_'))
             return false;
@@ -512,7 +512,7 @@ void signalHandler(int sig)
 
 }
 
-bool processRestarter(cfuint msDelay)
+bool processRestarter(uint msDelay)
 {
     for (;;) {
         childPid = fork();
@@ -548,7 +548,7 @@ bool mkPath(const String & path)
     if (stat(path.c_str(), &st) == 0) return S_ISDIR(st.st_mode);
 
     // Recursively create parent
-    cfsize_t pos = path.str().rfind('/');
+    size_t pos = path.str().rfind('/');
     if (pos != std::string::npos && pos > 0) {
         if (!mkPath(path.left(pos))) return false;
     }

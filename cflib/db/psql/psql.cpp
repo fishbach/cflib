@@ -56,7 +56,7 @@ String connInfo;
 // PostgreSQL epoch is 2000-01-01 00:00:00 UTC
 // Unix epoch is 1970-01-01 00:00:00 UTC
 // Difference in milliseconds: 946684800000
-const cfint64 MsecDelta = 946684800000LL;
+const int64 MsecDelta = 946684800000LL;
 const int ParamFormats[PSql::MAX_FIELD_COUNT] = {
     1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
     1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1
@@ -64,58 +64,58 @@ const int ParamFormats[PSql::MAX_FIELD_COUNT] = {
 
 union FloatInt {
     float f;
-    cfuint32 i;
+    uint32 i;
 };
 
 union DoubleInt {
     double d;
-    cfuint64 i;
+    uint64 i;
 };
 
 // Big-endian byte-order helpers
-inline void writeBE16(cfuint8 * dest, cfuint16 val)
+inline void writeBE16(uint8 * dest, uint16 val)
 {
-    dest[0] = (cfuint8)(val >> 8);
-    dest[1] = (cfuint8)(val);
+    dest[0] = (uint8)(val >> 8);
+    dest[1] = (uint8)(val);
 }
 
-inline void writeBE32(cfuint8 * dest, cfuint32 val)
+inline void writeBE32(uint8 * dest, uint32 val)
 {
-    dest[0] = (cfuint8)(val >> 24);
-    dest[1] = (cfuint8)(val >> 16);
-    dest[2] = (cfuint8)(val >> 8);
-    dest[3] = (cfuint8)(val);
+    dest[0] = (uint8)(val >> 24);
+    dest[1] = (uint8)(val >> 16);
+    dest[2] = (uint8)(val >> 8);
+    dest[3] = (uint8)(val);
 }
 
-inline void writeBE64(cfuint8 * dest, cfuint64 val)
+inline void writeBE64(uint8 * dest, uint64 val)
 {
-    dest[0] = (cfuint8)(val >> 56);
-    dest[1] = (cfuint8)(val >> 48);
-    dest[2] = (cfuint8)(val >> 40);
-    dest[3] = (cfuint8)(val >> 32);
-    dest[4] = (cfuint8)(val >> 24);
-    dest[5] = (cfuint8)(val >> 16);
-    dest[6] = (cfuint8)(val >> 8);
-    dest[7] = (cfuint8)(val);
+    dest[0] = (uint8)(val >> 56);
+    dest[1] = (uint8)(val >> 48);
+    dest[2] = (uint8)(val >> 40);
+    dest[3] = (uint8)(val >> 32);
+    dest[4] = (uint8)(val >> 24);
+    dest[5] = (uint8)(val >> 16);
+    dest[6] = (uint8)(val >> 8);
+    dest[7] = (uint8)(val);
 }
 
-inline cfuint16 readBE16(const cfuint8 * src)
+inline uint16 readBE16(const uint8 * src)
 {
-    return ((cfuint16)src[0] << 8) | (cfuint16)src[1];
+    return ((uint16)src[0] << 8) | (uint16)src[1];
 }
 
-inline cfuint32 readBE32(const cfuint8 * src)
+inline uint32 readBE32(const uint8 * src)
 {
-    return ((cfuint32)src[0] << 24) | ((cfuint32)src[1] << 16) |
-           ((cfuint32)src[2] << 8)  | (cfuint32)src[3];
+    return ((uint32)src[0] << 24) | ((uint32)src[1] << 16) |
+           ((uint32)src[2] << 8)  | (uint32)src[3];
 }
 
-inline cfuint64 readBE64(const cfuint8 * src)
+inline uint64 readBE64(const uint8 * src)
 {
-    return ((cfuint64)src[0] << 56) | ((cfuint64)src[1] << 48) |
-           ((cfuint64)src[2] << 40) | ((cfuint64)src[3] << 32) |
-           ((cfuint64)src[4] << 24) | ((cfuint64)src[5] << 16) |
-           ((cfuint64)src[6] << 8)  | (cfuint64)src[7];
+    return ((uint64)src[0] << 56) | ((uint64)src[1] << 48) |
+           ((uint64)src[2] << 40) | ((uint64)src[3] << 32) |
+           ((uint64)src[4] << 24) | ((uint64)src[5] << 16) |
+           ((uint64)src[6] << 8)  | (uint64)src[7];
 }
 
 }
@@ -129,7 +129,7 @@ public:
     bool transactionActive;
     bool doRollback;
     List<ByteArray> preparedStatements;
-    cfuint instanceCount;
+    uint instanceCount;
 
 public:
     ThreadData(const String & connectionParameter = String(), bool isDedicated = false) :
@@ -188,7 +188,7 @@ public:
                 PQfinish(conn);
             }
         } else {
-            cfint64 elapsed = watch.elapsed();
+            int64 elapsed = watch.elapsed();
             if (elapsed >= 5) logTrace("DB connection %1 responsiveness: %2 msec", connId_, elapsed);
             PQclear(res);
         }
@@ -311,7 +311,7 @@ PSql::PSql(const String & connectionParameter) :
 PSql::PSql(ThreadData & td, const util::LogFileInfo & lfi, int line) :
     td_(td),
     lfi_(lfi), line_(line),
-    instanceName_("i" + ByteArray::number((cfint64)(++td_.instanceCount))),
+    instanceName_("i" + ByteArray::number((int64)(++td_.instanceCount))),
     nestedTransaction_(false),
     localTransactionActive_(false),
     isFirstResult_(true),
@@ -482,7 +482,7 @@ void PSql::prepare(const ByteArray & query)
     prepareData_.clear();
 }
 
-bool PSql::exec(cfuint keepFields)
+bool PSql::exec(uint keepFields)
 {
     if (lastQuery_.isNull()) {
         cflib::util::Log(lfi_, line_ ? line_ : __LINE__, LogCat::Warn | LogCat::Db)(
@@ -572,14 +572,14 @@ bool PSql::next()
 
 PSql & PSql::operator<<(float val)
 {
-    cfuint8 * dest = setParamType(PSql_float, sizeof(float), false);
+    uint8 * dest = setParamType(PSql_float, sizeof(float), false);
     if (dest) writeBE32(dest, FloatInt{val}.i);
     return *this;
 }
 
 PSql & PSql::operator<<(double val)
 {
-    cfuint8 * dest = setParamType(PSql_double, sizeof(double), false);
+    uint8 * dest = setParamType(PSql_double, sizeof(double), false);
     if (dest) writeBE64(dest, DoubleInt{val}.i);
     return *this;
 }
@@ -589,8 +589,8 @@ PSql & PSql::operator<<(const DateTime & val)
     if (val.isNull()) {
         setParamType(PSql_timestampWithTimeZone, 0, true);
     } else {
-        cfuint8 * dest = setParamType(PSql_timestampWithTimeZone, sizeof(cfint64), false);
-        if (dest) writeBE64(dest, (cfuint64)((val.toMSecsSinceEpoch() - MsecDelta) * 1000));
+        uint8 * dest = setParamType(PSql_timestampWithTimeZone, sizeof(int64), false);
+        if (dest) writeBE64(dest, (uint64)((val.toMSecsSinceEpoch() - MsecDelta) * 1000));
     }
     return *this;
 }
@@ -600,7 +600,7 @@ PSql & PSql::operator<<(const ByteArray & val)
     if (val.isNull()) {
         setParamType(PSql_binary, 0, true);
     } else {
-        cfuint8 * dest = setParamType(PSql_binary, val.size(), false);
+        uint8 * dest = setParamType(PSql_binary, val.size(), false);
         if (dest) memcpy(dest, val.constData(), val.size());
     }
     return *this;
@@ -612,7 +612,7 @@ PSql & PSql::operator<<(const String & val)
         setParamType(PSql_string, 0, true);
     } else {
         const ByteArray utf8 = val.toUtf8();
-        cfuint8 * dest = setParamType(PSql_string, utf8.size(), false);
+        uint8 * dest = setParamType(PSql_string, utf8.size(), false);
         if (dest) memcpy(dest, utf8.constData(), utf8.size());
     }
     return *this;
@@ -623,8 +623,8 @@ PSql & PSql::operator<<(const char * val)
     if (!val) {
         setParamType(PSql_string, 0, true);
     } else {
-        cfuint len = strlen(val);
-        cfuint8 * dest = setParamType(PSql_string, len, false);
+        uint len = strlen(val);
+        uint8 * dest = setParamType(PSql_string, len, false);
         if (dest) memcpy(dest, val, len);
     }
     return *this;
@@ -642,7 +642,7 @@ PSql & PSql::operator>>(float & val)
     if (!checkField(PSql_float, sizeof(float))) return *this;
     if (!lastFieldIsNull_) {
         FloatInt fi;
-        fi.i = readBE32((const cfuint8 *)PQgetvalue((PGresult *)res_, 0, currentFieldId_));
+        fi.i = readBE32((const uint8 *)PQgetvalue((PGresult *)res_, 0, currentFieldId_));
         val = fi.f;
     }
     ++currentFieldId_;
@@ -655,7 +655,7 @@ PSql & PSql::operator>>(double & val)
     if (!checkField(PSql_double, sizeof(double))) return *this;
     if (!lastFieldIsNull_) {
         DoubleInt di;
-        di.i = readBE64((const cfuint8 *)PQgetvalue((PGresult *)res_, 0, currentFieldId_));
+        di.i = readBE64((const uint8 *)PQgetvalue((PGresult *)res_, 0, currentFieldId_));
         val = di.d;
     }
     ++currentFieldId_;
@@ -665,9 +665,9 @@ PSql & PSql::operator>>(double & val)
 PSql & PSql::operator>>(DateTime & val)
 {
     val = DateTime();
-    if (!checkField(PSql_timestampWithTimeZone, sizeof(cfint64))) return *this;
+    if (!checkField(PSql_timestampWithTimeZone, sizeof(int64))) return *this;
     if (!lastFieldIsNull_) {
-        cfint64 rawTime = (cfint64)readBE64((const cfuint8 *)PQgetvalue((PGresult *)res_, 0, currentFieldId_));
+        int64 rawTime = (int64)readBE64((const uint8 *)PQgetvalue((PGresult *)res_, 0, currentFieldId_));
         val = DateTime::fromMSecsSinceEpoch(rawTime / 1000 + MsecDelta);
     }
     ++currentFieldId_;
@@ -703,7 +703,7 @@ PSql & PSql::operator>>(Null)
     return *this;
 }
 
-bool PSql::isNull(cfuint fieldId)
+bool PSql::isNull(uint fieldId)
 {
     currentFieldId_ = fieldId;
     return checkField(PSql_null, 0) && lastFieldIsNull_;
@@ -711,26 +711,26 @@ bool PSql::isNull(cfuint fieldId)
 
 void PSql::setBool(bool val)
 {
-    cfuint8 * dest = setParamType(PSql_bool, 1, false);
+    uint8 * dest = setParamType(PSql_bool, 1, false);
     if (dest) *dest = val;
 }
 
-void PSql::setInt16(cfint16 val)
+void PSql::setInt16(int16 val)
 {
-    cfuint8 * dest = setParamType(PSql_int16, sizeof(cfint16), false);
-    if (dest) writeBE16(dest, (cfuint16)val);
+    uint8 * dest = setParamType(PSql_int16, sizeof(int16), false);
+    if (dest) writeBE16(dest, (uint16)val);
 }
 
-void PSql::setInt32(cfint32 val)
+void PSql::setInt32(int32 val)
 {
-    cfuint8 * dest = setParamType(PSql_int32, sizeof(cfint32), false);
-    if (dest) writeBE32(dest, (cfuint32)val);
+    uint8 * dest = setParamType(PSql_int32, sizeof(int32), false);
+    if (dest) writeBE32(dest, (uint32)val);
 }
 
-void PSql::setInt64(cfint64 val)
+void PSql::setInt64(int64 val)
 {
-    cfuint8 * dest = setParamType(PSql_int64, sizeof(cfint64), false);
-    if (dest) writeBE64(dest, (cfuint64)val);
+    uint8 * dest = setParamType(PSql_int64, sizeof(int64), false);
+    if (dest) writeBE64(dest, (uint64)val);
 }
 
 void PSql::getBool(bool & val)
@@ -743,32 +743,32 @@ void PSql::getBool(bool & val)
     ++currentFieldId_;
 }
 
-void PSql::getInt16(cfint16 & val)
+void PSql::getInt16(int16 & val)
 {
     val = 0;
-    if (!checkField(PSql_int16, sizeof(cfint16))) return;
+    if (!checkField(PSql_int16, sizeof(int16))) return;
     if (!lastFieldIsNull_) {
-        val = (cfint16)readBE16((const cfuint8 *)PQgetvalue((PGresult *)res_, 0, currentFieldId_));
+        val = (int16)readBE16((const uint8 *)PQgetvalue((PGresult *)res_, 0, currentFieldId_));
     }
     ++currentFieldId_;
 }
 
-void PSql::getInt32(cfint32 & val)
+void PSql::getInt32(int32 & val)
 {
     val = 0;
-    if (!checkField(PSql_int32, sizeof(cfint32))) return;
+    if (!checkField(PSql_int32, sizeof(int32))) return;
     if (!lastFieldIsNull_) {
-        val = (cfint32)readBE32((const cfuint8 *)PQgetvalue((PGresult *)res_, 0, currentFieldId_));
+        val = (int32)readBE32((const uint8 *)PQgetvalue((PGresult *)res_, 0, currentFieldId_));
     }
     ++currentFieldId_;
 }
 
-void PSql::getInt64(cfint64 & val)
+void PSql::getInt64(int64 & val)
 {
     val = 0;
-    if (!checkField(PSql_int64, sizeof(cfint64))) return;
+    if (!checkField(PSql_int64, sizeof(int64))) return;
     if (!lastFieldIsNull_) {
-        val = (cfint64)readBE64((const cfuint8 *)PQgetvalue((PGresult *)res_, 0, currentFieldId_));
+        val = (int64)readBE64((const uint8 *)PQgetvalue((PGresult *)res_, 0, currentFieldId_));
     }
     ++currentFieldId_;
 }
@@ -846,7 +846,7 @@ bool PSql::checkField(int fieldType, int fieldSize)
     return true;
 }
 
-cfuint8 * PSql::setParamType(int fieldType, int fieldSize, bool isNull)
+uint8 * PSql::setParamType(int fieldType, int fieldSize, bool isNull)
 {
     if (prepareParamCount_ >= MAX_FIELD_COUNT) {
         cflib::util::Log(lfi_, line_ ? line_ : __LINE__, LogCat::Warn | LogCat::Db)(
@@ -871,7 +871,7 @@ cfuint8 * PSql::setParamType(int fieldType, int fieldSize, bool isNull)
 
     const int oldSize = prepareData_.size();
     prepareData_.resize(oldSize + fieldSize);
-    return (cfuint8 *)prepareData_.constData() + oldSize;
+    return (uint8 *)prepareData_.constData() + oldSize;
 }
 
 void PSql::removePreparedStatement()

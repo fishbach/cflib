@@ -26,7 +26,7 @@ public:
     };
 
 public:
-    ThreadVerify(const String & threadName, LoopType loopType, cfuint threadCount = 1);
+    ThreadVerify(const String & threadName, LoopType loopType, uint threadCount = 1);
     ThreadVerify(ThreadVerify * other);
     virtual ~ThreadVerify();
 

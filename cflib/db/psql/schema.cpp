@@ -52,9 +52,9 @@ bool confirmRevision(const String & rev)
 String removeComments(const String & query)
 {
     String result;
-    cfsize_t pos = 0;
+    size_t pos = 0;
     const String & s = query;
-    cfsize_t len = s.size();
+    size_t len = s.size();
 
     while (pos < len) {
         // Check for comment at start of string or after newline
@@ -92,11 +92,11 @@ bool execSql(const String & query)
 // Find "-- EXEC <name>" pattern at the beginning of a line.
 // Returns -1 if not found, otherwise the position of the start of the match.
 // Sets matchEnd to the end of the match and methodName to the captured name.
-cfsize_t findExecDirective(const String & query, cfsize_t startPos, cfsize_t & matchEnd, ByteArray & methodName)
+size_t findExecDirective(const String & query, size_t startPos, size_t & matchEnd, ByteArray & methodName)
 {
     const char * data = query.c_str();
-    cfsize_t len = query.size();
-    cfsize_t pos = startPos;
+    size_t len = query.size();
+    size_t pos = startPos;
 
     while (pos < len) {
         // Must be at start of line
@@ -113,8 +113,8 @@ cfsize_t findExecDirective(const String & query, cfsize_t startPos, cfsize_t & m
             data[pos] == '-' && data[pos+1] == '-' && data[pos+2] == ' ' &&
             data[pos+3] == 'E' && data[pos+4] == 'X' && data[pos+5] == 'E' && data[pos+6] == 'C' && data[pos+7] == ' ')
         {
-            cfsize_t nameStart = pos + 8;
-            cfsize_t nameEnd = nameStart;
+            size_t nameStart = pos + 8;
+            size_t nameEnd = nameStart;
             while (nameEnd < len && data[nameEnd] != '\n' && data[nameEnd] != '\r') ++nameEnd;
 
             String name = query.mid(nameStart, nameEnd - nameStart).trimmed();
@@ -126,15 +126,15 @@ cfsize_t findExecDirective(const String & query, cfsize_t startPos, cfsize_t & m
         // advance past current character
         ++pos;
     }
-    return (cfsize_t)-1;
+    return (size_t)-1;
 }
 
 // Find "-- REVISION <name>" pattern at the beginning of a line.
-cfsize_t findRevisionDirective(const String & query, cfsize_t startPos, cfsize_t & matchEnd, String & revName)
+size_t findRevisionDirective(const String & query, size_t startPos, size_t & matchEnd, String & revName)
 {
     const char * data = query.c_str();
-    cfsize_t len = query.size();
-    cfsize_t pos = startPos;
+    size_t len = query.size();
+    size_t pos = startPos;
 
     while (pos < len) {
         bool isLineStart = (pos == 0) || (data[pos - 1] == '\n');
@@ -151,8 +151,8 @@ cfsize_t findRevisionDirective(const String & query, cfsize_t startPos, cfsize_t
             data[pos+6] == 'I' && data[pos+7] == 'S' && data[pos+8] == 'I' &&
             data[pos+9] == 'O' && data[pos+10] == 'N' && data[pos+11] == ' ')
         {
-            cfsize_t nameStart = pos + 12;
-            cfsize_t nameEnd = nameStart;
+            size_t nameStart = pos + 12;
+            size_t nameEnd = nameStart;
             while (nameEnd < len && data[nameEnd] != '\n' && data[nameEnd] != '\r') ++nameEnd;
 
             revName = query.mid(nameStart, nameEnd - nameStart);
@@ -162,17 +162,17 @@ cfsize_t findRevisionDirective(const String & query, cfsize_t startPos, cfsize_t
 
         ++pos;
     }
-    return (cfsize_t)-1;
+    return (size_t)-1;
 }
 
 bool execRevision(const String & query, Migrator & migrator)
 {
-    cfsize_t start = 0;
-    cfsize_t matchEnd;
+    size_t start = 0;
+    size_t matchEnd;
     ByteArray method;
-    cfsize_t matchStart = findExecDirective(query, start, matchEnd, method);
+    size_t matchStart = findExecDirective(query, start, matchEnd, method);
 
-    while (matchStart != (cfsize_t)-1) {
+    while (matchStart != (size_t)-1) {
         if (!execSql(query.mid(start, matchStart - start))) return false;
 
         if (!migrator) {
@@ -224,13 +224,13 @@ bool update(const ByteArray & schema, Migrator migrator)
 
     const String utf8Schema = String::fromUtf8(schema);
 
-    cfsize_t start = 0;
-    cfsize_t matchEnd;
+    size_t start = 0;
+    size_t matchEnd;
     String revName;
-    cfsize_t matchStart = findRevisionDirective(utf8Schema, start, matchEnd, revName);
+    size_t matchStart = findRevisionDirective(utf8Schema, start, matchEnd, revName);
     String lastRev = "__initial__";
 
-    while (matchStart != (cfsize_t)-1) {
+    while (matchStart != (size_t)-1) {
         if (existingRevisions.find(lastRev) == existingRevisions.end()) {
             logInfo("applying revision %1", lastRev);
             if (!insertRevision(lastRev)) return false;

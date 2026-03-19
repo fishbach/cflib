@@ -80,7 +80,7 @@ int main(int argc, char *argv[])
             return 1;
         }
         if (retval > 0) {
-            cfint64 count = read(0, (void *)buf.constData(), buf.size());
+            int64 count = read(0, (void *)buf.constData(), buf.size());
             if (count == 0) {
                 // eof
                 if (!data.isEmpty()) show(data, hexOpt.isSet(), base64Opt.isSet());

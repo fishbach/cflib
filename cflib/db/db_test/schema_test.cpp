@@ -109,7 +109,7 @@ public:
         PSqlConn;
         TVERIFY(sql.exec("SELECT key, value, value2, value3, value4 FROM config ORDER BY key"));
         String key, value;
-        cfint32 value2, value3, value4;
+        int32 value2, value3, value4;
 
         TVERIFY(sql.next());
         sql >> key >> value >> value2 >> value3 >> value4;
@@ -147,7 +147,7 @@ public:
         PSqlConn;
         TVERIFY(sql.exec("SELECT COUNT(*) FROM config WHERE key = 'neu'"));
         TVERIFY(sql.next());
-        TCOMPARE(sql.get<cfint64>(0), (cfint64)1);
+        TCOMPARE(sql.get<int64>(0), (int64)1);
     }
 
     void resetDB()

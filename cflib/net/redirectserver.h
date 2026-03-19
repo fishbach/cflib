@@ -17,7 +17,7 @@ namespace cflib::net {
 class RedirectServer : public RequestHandler
 {
 public:
-    typedef Pair<ByteArray /*ip*/, cfuint16 /*port*/> DestHost;
+    typedef Pair<ByteArray /*ip*/, uint16 /*port*/> DestHost;
     typedef std::function<ByteArray (const Request &                                 )> DestUrlFunc;
     typedef std::function<ByteArray (const Request &, const Regex::MatchResult &)> DestUrlReFunc;
     typedef std::function<DestHost   (const Request &                                 )> DestHostFunc;
@@ -35,10 +35,10 @@ public:
     void addDefaultRedirect(const ByteArray & destUrl);
     void addDefaultRedirect(DestUrlFunc destUrlFunc);
 
-    void addForwardIf      (const Regex & test, const ByteArray & ip, cfuint16 port);
+    void addForwardIf      (const Regex & test, const ByteArray & ip, uint16 port);
     void addForwardIf      (const Regex & test, DestHostReFunc destHostReFunc);
-    void addForwardIfNot   (const Regex & test, const ByteArray & ip, cfuint16 port);
-    void addDefaultForward (const ByteArray & ip, cfuint16 port);
+    void addForwardIfNot   (const Regex & test, const ByteArray & ip, uint16 port);
+    void addDefaultForward (const ByteArray & ip, uint16 port);
     void addDefaultForward (DestHostFunc destHostFunc);
 
 protected:

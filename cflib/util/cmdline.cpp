@@ -22,18 +22,18 @@ bool CmdLine::parse()
 
     // Extract executable basename
     const ByteArray & fullPath = rawArgs_[0];
-    cfsize_t lastSlash = fullPath.indexOf('/');
-    cfsize_t pos = lastSlash;
+    size_t lastSlash = fullPath.indexOf('/');
+    size_t pos = lastSlash;
     while (pos >= 0) {
         lastSlash = pos;
         pos = fullPath.indexOf('/', lastSlash + 1);
     }
     executable_ = (lastSlash >= 0) ? fullPath.mid(lastSlash + 1) : fullPath;
 
-    cfsize_t rawIdx = 1;
+    size_t rawIdx = 1;
     int argCount = 0;
     bool parseMoreOptions = true;
-    while (rawIdx < (cfsize_t)rawArgs_.size()) {
+    while (rawIdx < (size_t)rawArgs_.size()) {
         const ByteArray & raw = rawArgs_[rawIdx++];
 
         if (parseMoreOptions && raw.startsWith("--")) {
@@ -47,12 +47,12 @@ bool CmdLine::parse()
             if (!opt->isRepeatable_ && opt->count_ > 0) return false;
             opt->count_++;
             if (opt->hasValue_) {
-                if (rawIdx >= (cfsize_t)rawArgs_.size()) return false;
+                if (rawIdx >= (size_t)rawArgs_.size()) return false;
                 opt->values_.push_back(rawArgs_[rawIdx++]);
             }
         } else if (parseMoreOptions && raw.startsWith("-")) {
             if (raw.length() < 2) return false;
-            cfsize_t p = 0;
+            size_t p = 0;
             while (++p < raw.length()) {
                 auto it = shortOptions_.find(raw.at(p));
                 if (it == shortOptions_.end()) return false;
@@ -60,7 +60,7 @@ bool CmdLine::parse()
                 if (!opt->isRepeatable_ && opt->count_ > 0) return false;
                 opt->count_++;
                 if (opt->hasValue_) {
-                    if (p < raw.length() - 1 || rawIdx >= (cfsize_t)rawArgs_.size()) return false;
+                    if (p < raw.length() - 1 || rawIdx >= (size_t)rawArgs_.size()) return false;
                     opt->values_.push_back(rawArgs_[rawIdx++]);
                 }
             }

@@ -69,7 +69,7 @@ public:
         RoundRobinAssignment = 2
     };
 
-    typedef Pair<ByteArray /* ip */, cfuint16 /* port */> Address;
+    typedef Pair<ByteArray /* ip */, uint16 /* port */> Address;
 
     typedef Pair<ByteArray /* key */, ByteArray /* value */> Message;
     typedef Vector<Message> Messages;
@@ -79,41 +79,41 @@ public:
     KafkaConnector(util::ThreadVerify * other = 0);
     virtual ~KafkaConnector();
 
-    void connect(const ByteArray & destAddress, cfuint16 destPort);
+    void connect(const ByteArray & destAddress, uint16 destPort);
     void connect(const List<Address> & cluster);
 
     // requiredAcks: 0 -> no response will be send / 1 -> wait for local write / -1 -> wait for all replicas
     // ackTimeoutMs: 0 -> wait for local write only / >0 -> max wait time for acks of replicas
-    void produce(const ByteArray & topic, cfint32 partitionId, const Messages & messages,
-        cfuint16 requiredAcks = 1, cfuint32 ackTimeoutMs = 0, cfuint32 correlationId = 1);
+    void produce(const ByteArray & topic, int32 partitionId, const Messages & messages,
+        uint16 requiredAcks = 1, uint32 ackTimeoutMs = 0, uint32 correlationId = 1);
 
     // highwaterMarkOffset -> last offset + 1
-    void getFirstOffset(const ByteArray & topic, cfint32 partitionId, cfuint32 correlationId = 1);
-    void getHighwaterMarkOffset(const ByteArray & topic, cfint32 partitionId, cfuint32 correlationId = 1);
+    void getFirstOffset(const ByteArray & topic, int32 partitionId, uint32 correlationId = 1);
+    void getHighwaterMarkOffset(const ByteArray & topic, int32 partitionId, uint32 correlationId = 1);
 
-    void fetch(const ByteArray & topic, cfint32 partitionId, cfint64 offset,
-        cfuint32 maxWaitTime = 0x7FFFFFFF, cfuint32 minBytes = 1, cfuint32 maxBytes = 0x100000 /* 1mb */, cfuint32 correlationId = 1);
+    void fetch(const ByteArray & topic, int32 partitionId, int64 offset,
+        uint32 maxWaitTime = 0x7FFFFFFF, uint32 minBytes = 1, uint32 maxBytes = 0x100000 /* 1mb */, uint32 correlationId = 1);
 
     // only one group can be joined simultaneously
     void joinGroup(const ByteArray & groupId, const Topics & topics, GroupAssignmentStrategy preferredStrategy = RoundRobinAssignment);
-    void fetch(cfuint32 maxWaitTime = 0x7FFFFFFF, cfuint32 minBytes = 1, cfuint32 maxBytes = 0x100000 /* 1mb */);
+    void fetch(uint32 maxWaitTime = 0x7FFFFFFF, uint32 minBytes = 1, uint32 maxBytes = 0x100000 /* 1mb */);
     void commit();    // commits last fetchResponse
     void leaveGroup();
 
 protected:
     virtual void stateChanged(State state) { CF_UNUSED(state); }
-    virtual void groupStateChanged(const Map<ByteArray, List<cfint32>> & responsibility) { CF_UNUSED(responsibility); }
+    virtual void groupStateChanged(const Map<ByteArray, List<int32>> & responsibility) { CF_UNUSED(responsibility); }
 
     // offset -> is offset of first message appended to the kafka log
-    virtual void produceResponse(cfuint32 correlationId, ErrorCode errorCode, cfint64 offset) {
+    virtual void produceResponse(uint32 correlationId, ErrorCode errorCode, int64 offset) {
         CF_UNUSED(correlationId); CF_UNUSED(errorCode); CF_UNUSED(offset); }
 
-    virtual void offsetResponse(cfuint32 correlationId, cfint64 offset) {
+    virtual void offsetResponse(uint32 correlationId, int64 offset) {
         CF_UNUSED(correlationId); CF_UNUSED(offset); }
 
     // highwaterMarkOffset -> last offset + 1
-    virtual void fetchResponse(cfuint32 correlationId, const Messages & messages,
-        cfint64 firstOffset, cfint64 highwaterMarkOffset, ErrorCode errorCode) {
+    virtual void fetchResponse(uint32 correlationId, const Messages & messages,
+        int64 firstOffset, int64 highwaterMarkOffset, ErrorCode errorCode) {
         CF_UNUSED(correlationId); CF_UNUSED(messages); CF_UNUSED(firstOffset); CF_UNUSED(highwaterMarkOffset); CF_UNUSED(errorCode); }
 
     virtual void fetchResponse(const Map<ByteArray, Messages> & messagesPerTopic, ErrorCode errorCode) {

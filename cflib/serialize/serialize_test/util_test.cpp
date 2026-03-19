@@ -26,7 +26,7 @@ public:
 
     void test_getTLVLength()
     {
-        cfuint64 tag;
+        uint64 tag;
         int tagLen;
         int lengthSize;
         TCOMPARE(getTLVLength(ByteArray::fromHex(""            ), tag, tagLen, lengthSize), -1);
@@ -43,13 +43,13 @@ public:
         TCOMPARE(getTLVLength(ByteArray::fromHex("c188"        ), tag, tagLen, lengthSize), -1);
         TCOMPARE(getTLVLength(ByteArray::fromHex("c189"        ), tag, tagLen, lengthSize), -3);
 
-        getTLVLength(ByteArray::fromHex("c000"    ), tag, tagLen, lengthSize); TCOMPARE(tag, (cfuint64)  0); TCOMPARE(tagLen, 1);
-        getTLVLength(ByteArray::fromHex("c100"    ), tag, tagLen, lengthSize); TCOMPARE(tag, (cfuint64)  1); TCOMPARE(tagLen, 1);
-        getTLVLength(ByteArray::fromHex("DE00"    ), tag, tagLen, lengthSize); TCOMPARE(tag, (cfuint64) 30); TCOMPARE(tagLen, 1);
-        getTLVLength(ByteArray::fromHex("DF1F00"  ), tag, tagLen, lengthSize); TCOMPARE(tag, (cfuint64) 31); TCOMPARE(tagLen, 2);
-        getTLVLength(ByteArray::fromHex("DF7F00"  ), tag, tagLen, lengthSize); TCOMPARE(tag, (cfuint64)127); TCOMPARE(tagLen, 2);
-        getTLVLength(ByteArray::fromHex("DF810000"), tag, tagLen, lengthSize); TCOMPARE(tag, (cfuint64)128); TCOMPARE(tagLen, 3);
-        getTLVLength(ByteArray::fromHex("DF810100"), tag, tagLen, lengthSize); TCOMPARE(tag, (cfuint64)129); TCOMPARE(tagLen, 3);
+        getTLVLength(ByteArray::fromHex("c000"    ), tag, tagLen, lengthSize); TCOMPARE(tag, (uint64)  0); TCOMPARE(tagLen, 1);
+        getTLVLength(ByteArray::fromHex("c100"    ), tag, tagLen, lengthSize); TCOMPARE(tag, (uint64)  1); TCOMPARE(tagLen, 1);
+        getTLVLength(ByteArray::fromHex("DE00"    ), tag, tagLen, lengthSize); TCOMPARE(tag, (uint64) 30); TCOMPARE(tagLen, 1);
+        getTLVLength(ByteArray::fromHex("DF1F00"  ), tag, tagLen, lengthSize); TCOMPARE(tag, (uint64) 31); TCOMPARE(tagLen, 2);
+        getTLVLength(ByteArray::fromHex("DF7F00"  ), tag, tagLen, lengthSize); TCOMPARE(tag, (uint64)127); TCOMPARE(tagLen, 2);
+        getTLVLength(ByteArray::fromHex("DF810000"), tag, tagLen, lengthSize); TCOMPARE(tag, (uint64)128); TCOMPARE(tagLen, 3);
+        getTLVLength(ByteArray::fromHex("DF810100"), tag, tagLen, lengthSize); TCOMPARE(tag, (uint64)129); TCOMPARE(tagLen, 3);
     }
 
     void test_toByteArray()

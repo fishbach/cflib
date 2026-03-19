@@ -36,27 +36,27 @@ public:
 
 private:
     void parse(const std::string & url) {
-        cfsize_t pos = 0;
+        size_t pos = 0;
 
         // scheme
-        cfsize_t schemeEnd = url.find("://");
+        size_t schemeEnd = url.find("://");
         if (schemeEnd != std::string::npos) {
             scheme_ = String(url.substr(0, schemeEnd));
             pos = schemeEnd + 3;
         }
 
         // userinfo@host:port
-        cfsize_t pathStart = url.find('/', pos);
-        cfsize_t queryStart = url.find('?', pos);
-        cfsize_t authorityEnd = std::min(
+        size_t pathStart = url.find('/', pos);
+        size_t queryStart = url.find('?', pos);
+        size_t authorityEnd = std::min(
             pathStart  != std::string::npos ? pathStart  : url.size(),
             queryStart != std::string::npos ? queryStart : url.size()
         );
         std::string authority = url.substr(pos, authorityEnd - pos);
 
         // userinfo
-        cfsize_t atPos = authority.find('@');
-        cfsize_t hostStart = 0;
+        size_t atPos = authority.find('@');
+        size_t hostStart = 0;
         if (atPos != std::string::npos) {
             userInfo_ = String(authority.substr(0, atPos));
             hostStart = atPos + 1;
@@ -64,10 +64,10 @@ private:
 
         // host:port
         std::string hostPort = authority.substr(hostStart);
-        cfsize_t colonPos;
+        size_t colonPos;
         if (!hostPort.empty() && hostPort[0] == '[') {
             // IPv6
-            cfsize_t bracket = hostPort.find(']');
+            size_t bracket = hostPort.find(']');
             if (bracket != std::string::npos) {
                 host_ = String(hostPort.substr(1, bracket - 1));
                 if (bracket + 1 < hostPort.size() && hostPort[bracket + 1] == ':')
@@ -85,7 +85,7 @@ private:
 
         // path
         if (pathStart != std::string::npos) {
-            cfsize_t pEnd = queryStart != std::string::npos ? queryStart : url.size();
+            size_t pEnd = queryStart != std::string::npos ? queryStart : url.size();
             path_ = String(url.substr(pathStart, pEnd - pathStart));
         }
 

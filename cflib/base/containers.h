@@ -102,7 +102,7 @@ inline std::vector<T> setValues(const std::unordered_set<T> & set) {
 
 inline ByteArray join(const std::vector<ByteArray> & list, char sep) {
     ByteArray r;
-    for (cfsize_t i = 0; i < (cfsize_t)list.size(); ++i) {
+    for (size_t i = 0; i < (size_t)list.size(); ++i) {
         if (i > 0) r += sep;
         r += list[i];
     }
@@ -111,7 +111,7 @@ inline ByteArray join(const std::vector<ByteArray> & list, char sep) {
 
 inline String join(const std::vector<String> & list, char sep) {
     String r;
-    for (cfsize_t i = 0; i < (cfsize_t)list.size(); ++i) {
+    for (size_t i = 0; i < (size_t)list.size(); ++i) {
         if (i > 0) r += sep;
         r += list[i];
     }

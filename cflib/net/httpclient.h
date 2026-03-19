@@ -21,7 +21,7 @@ public:
     ~HttpClient();
 
     // TODO: getaddrinfo -> dns resolve
-    void get(const ByteArray & ip, cfuint16 port, const ByteArray & url);
+    void get(const ByteArray & ip, uint16 port, const ByteArray & url);
 
 protected:
     virtual void reply(const ByteArray & raw) = 0;

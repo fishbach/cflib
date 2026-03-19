@@ -14,10 +14,10 @@ class Dao
     SERIALIZE_CLASS
 public serialized:
     String name;
-    cfuint32 number;
-    typedef List<cfuint32> IList;
+    uint32 number;
+    typedef List<uint32> IList;
     typedef Pair<IList, DateTime> LDPair;
-    Pair<cfuint8, LDPair> pair;
+    Pair<uint8, LDPair> pair;
 };
 
 class Dao2

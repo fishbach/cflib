@@ -24,22 +24,22 @@ ByteArray random(uint size)
     return ByteArray();
 }
 
-cfuint32 randomUInt32()
+uint32 randomUInt32()
 {
     TRY {
         AutoSeeded_RNG rng;
-        cfuint32 retval = 0;
+        uint32 retval = 0;
         rng.randomize((byte *)&retval, 4);
         return retval;
     } CATCH
     return 0;
 }
 
-cfuint64 randomUInt64()
+uint64 randomUInt64()
 {
     TRY {
         AutoSeeded_RNG rng;
-        cfuint64 retval = 0;
+        uint64 retval = 0;
         rng.randomize((byte *)&retval, 8);
         return retval;
     } CATCH
@@ -53,8 +53,8 @@ ByteArray memorableRandom(const int length)
     const ByteArray rnd = random(length+2);
     if ((int)rnd.size() != length+2) return ByteArray();
     ByteArray rv(length+2, '\0');
-    for (int i = 0 ; i < length ; ++i) rv[i] = (i % 2 == 0) ? consonants[(cfuint8)rnd[i] * 21 / 256] : vowels[(cfuint8)rnd[i] * 5 / 256];
-    for (int i = length ; i < length+2 ; ++i) rv[i] = '0' + ((cfuint8)rnd[i] * 10 / 256);
+    for (int i = 0 ; i < length ; ++i) rv[i] = (i % 2 == 0) ? consonants[(uint8)rnd[i] * 21 / 256] : vowels[(uint8)rnd[i] * 5 / 256];
+    for (int i = length ; i < length+2 ; ++i) rv[i] = '0' + ((uint8)rnd[i] * 10 / 256);
     return rv;
 }
 
@@ -63,7 +63,7 @@ ByteArray hashPassword(const String & password)
     TRY {
         AutoSeeded_RNG rng;
         std::string hash = generate_bcrypt(password.str(), rng);
-        return ByteArray(hash.c_str(), (cfsize_t)hash.length());
+        return ByteArray(hash.c_str(), (size_t)hash.length());
     } CATCH
     return ByteArray();
 }
@@ -82,7 +82,7 @@ ByteArray sha1(const ByteArray & data)
         Pipe pipe(new Hash_Filter("SHA-1"));
         pipe.process_msg((const byte *)data.constData(), data.size());
         std::string hash = pipe.read_all_as_string();
-        return ByteArray(hash.c_str(), (cfsize_t)hash.length());
+        return ByteArray(hash.c_str(), (size_t)hash.length());
     } CATCH
     return ByteArray();
 }
@@ -93,7 +93,7 @@ ByteArray sha256(const ByteArray & data)
         Pipe pipe(new Hash_Filter("SHA-256"));
         pipe.process_msg((const byte *)data.constData(), data.size());
         std::string hash = pipe.read_all_as_string();
-        return ByteArray(hash.c_str(), (cfsize_t)hash.length());
+        return ByteArray(hash.c_str(), (size_t)hash.length());
     } CATCH
     return ByteArray();
 }
@@ -104,7 +104,7 @@ ByteArray rsaCreateKey(uint bits)
         AutoSeeded_RNG rng;
         const RSA_PrivateKey key(rng, bits);
         const std::string pem = PKCS8::PEM_encode(key);
-        return ByteArray(pem.c_str(), (cfsize_t)pem.length());
+        return ByteArray(pem.c_str(), (size_t)pem.length());
     } CATCH
     return ByteArray();
 }
@@ -128,9 +128,9 @@ void rsaPublicModulusExponent(const ByteArray & privateKey, ByteArray & modulus,
         if (pk) {
             const RSA_PublicKey * rsaKey = dynamic_cast<const RSA_PrivateKey *>(pk.get());
             std::vector<byte> bytes = rsaKey->get_n().serialize<std::vector<uint8_t>>();
-            modulus = ByteArray((const char *)bytes.data(), (cfsize_t)bytes.size());
+            modulus = ByteArray((const char *)bytes.data(), (size_t)bytes.size());
             bytes = rsaKey->get_e().serialize<std::vector<uint8_t>>();
-            publicExponent = ByteArray((const char *)bytes.data(), (cfsize_t)bytes.size());
+            publicExponent = ByteArray((const char *)bytes.data(), (size_t)bytes.size());
             return;
         }
     } CATCH
@@ -147,7 +147,7 @@ ByteArray rsaSign(const ByteArray & privateKey, const ByteArray & msg)
             AutoSeeded_RNG rng;
             PK_Signer signer(*pk, rng, "EMSA3(SHA-256)");
             std::vector<byte> bytes = signer.sign_message((const byte *)msg.constData(), msg.size(), rng);
-            return ByteArray((const char *)bytes.data(), (cfsize_t)bytes.size());
+            return ByteArray((const char *)bytes.data(), (size_t)bytes.size());
         }
     } CATCH
     return ByteArray();
@@ -191,7 +191,7 @@ ByteArray x509CreateCertReq(const ByteArray & privateKey, const List<ByteArray> 
         PKCS10_Request csr = PKCS10_Request(X509_Object::make_signed(*signer, rng, signer->algorithm_identifier(), der.get_contents()));
 
         std::vector<byte> bytes = csr.BER_encode();
-        return ByteArray((const char *)bytes.data(), (cfsize_t)bytes.size());
+        return ByteArray((const char *)bytes.data(), (size_t)bytes.size());
     } CATCH
     return ByteArray();
 }
@@ -201,7 +201,7 @@ ByteArray der2pem(const ByteArray & der, const ByteArray & label)
     TRY {
         const std::string pem = PEM_Code::encode(
             (const byte *)der.constData(), der.size(), std::string(label.constData(), label.size()));
-        return ByteArray(pem.c_str(), (cfsize_t)pem.size());
+        return ByteArray(pem.c_str(), (size_t)pem.size());
     } CATCH
     return ByteArray();
 }

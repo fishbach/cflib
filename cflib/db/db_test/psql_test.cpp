@@ -41,7 +41,7 @@ DateTime makeUTCDateTime(int year, int month, int day, int hour, int min, int se
     t.tm_min  = min;
     t.tm_sec  = sec;
     time_t epoch = timegm(&t);
-    return DateTime::fromMSecsSinceEpoch((cfint64)epoch * 1000 + msec);
+    return DateTime::fromMSecsSinceEpoch((int64)epoch * 1000 + msec);
 }
 
 }
@@ -95,13 +95,13 @@ private:
 
     struct TestTypes
     {
-        cfuint32    id;
-        cfuint16    x16;
-        cfuint32    x32;
-        cfuint64    x64;
-        cfint16     s16;
-        cfint32     s32;
-        cfint64     s64;
+        uint32    id;
+        uint16    x16;
+        uint32    x32;
+        uint64    x64;
+        int16     s16;
+        int32     s32;
+        int64     s64;
         DateTime  t;
         ByteArray a;
         String    s;
@@ -234,10 +234,10 @@ private:
 
         TVERIFY(sql.next());
         sql >> tt.id >> tt.x16 >> tt.x32 >> tt.x64 >> tt.t >> tt.a >> tt.s >> tt.f >> tt.d >> tt.b;
-        TCOMPARE(tt.id,  (cfuint32)1);
-        TCOMPARE(tt.x16, (cfuint16)2);
-        TCOMPARE(tt.x32, (cfuint32)0xFFFFFFFF);
-        TCOMPARE(tt.x64, (cfuint64)4);
+        TCOMPARE(tt.id,  (uint32)1);
+        TCOMPARE(tt.x16, (uint16)2);
+        TCOMPARE(tt.x32, (uint32)0xFFFFFFFF);
+        TCOMPARE(tt.x64, (uint64)4);
         TCOMPARE(tt.t.toMSecsSinceEpoch(), makeUTCDateTime(2017, 2, 27, 14, 47, 34, 123).toMSecsSinceEpoch());
         TCOMPARE(tt.a, ByteArray("A0"));
         TCOMPARE(tt.s, String::fromUtf8("ABC\xC3\xB6\xC3\x9F"));
@@ -284,10 +284,10 @@ private:
 
         TVERIFY(sql.next());
         sql >> tt.id >> tt.s16 >> tt.s32 >> tt.s64 >> tt.t >> tt.a >> tt.s >> tt.f >> tt.d >> tt.b;
-        TCOMPARE(tt.id,  (cfint32)1);
-        TCOMPARE(tt.s16, (cfint16)-32768);
-        TCOMPARE(tt.s32, (cfint32)-2147483648l);
-        TCOMPARE(tt.s64, (cfint64)(-9223372036854775807LL));
+        TCOMPARE(tt.id,  (int32)1);
+        TCOMPARE(tt.s16, (int16)-32768);
+        TCOMPARE(tt.s32, (int32)-2147483648l);
+        TCOMPARE(tt.s64, (int64)(-9223372036854775807LL));
         TCOMPARE(tt.t.toMSecsSinceEpoch(), makeUTCDateTime(1970, 1, 1, 0, 0, 0, 0).toMSecsSinceEpoch());
         TCOMPARE(tt.a, ByteArray("A0"));
         TCOMPARE(tt.s, String::fromUtf8("ABC\xC3\xB6\xC3\x9F"));
@@ -329,9 +329,9 @@ private:
 
         TVERIFY(sql.next());
         sql >> tt.id >> tt.x16 >> tt.x32 >> tt.x64 >> tt.t >> tt.a >> tt.s >> tt.f >> tt.d >> tt.b;
-        TCOMPARE(tt.id,  (cfuint32)3);
-        TCOMPARE(tt.x16, (cfuint16)5);
-        TCOMPARE(tt.x64, (cfuint64)7);
+        TCOMPARE(tt.id,  (uint32)3);
+        TCOMPARE(tt.x16, (uint16)5);
+        TCOMPARE(tt.x64, (uint64)7);
         DateTime now = DateTime::nowUTC();
         TVERIFY(tt.t.toMSecsSinceEpoch() > now.toMSecsSinceEpoch() - 30000);
         TVERIFY(tt.t.toMSecsSinceEpoch() < now.toMSecsSinceEpoch() + 30000);
@@ -371,23 +371,23 @@ private:
         TVERIFY(sql.exec());
         TVERIFY(sql.next());
         sql >> tt.id;
-        TCOMPARE(tt.id,  (cfuint32)1);
+        TCOMPARE(tt.id,  (uint32)1);
 
         sql << 23;
         TVERIFY(sql.exec());
         TVERIFY(sql.next());
         sql >> tt.id;
-        TCOMPARE(tt.id,  (cfuint32)2);
+        TCOMPARE(tt.id,  (uint32)2);
 
         TVERIFY(sql.exec("SELECT id, x32 FROM cflib_db_test_2"));
         TVERIFY(sql.next());
         sql >> tt.id >> tt.x32;
-        TCOMPARE(tt.id,  (cfuint32)1);
-        TCOMPARE(tt.x32, (cfuint32)42);
+        TCOMPARE(tt.id,  (uint32)1);
+        TCOMPARE(tt.x32, (uint32)42);
         TVERIFY(sql.next());
         sql >> tt.id >> tt.x32;
-        TCOMPARE(tt.id,  (cfuint32)2);
-        TCOMPARE(tt.x32, (cfuint32)23);
+        TCOMPARE(tt.id,  (uint32)2);
+        TCOMPARE(tt.x32, (uint32)23);
         TVERIFY(!sql.next());
     }
 
@@ -409,23 +409,23 @@ private:
         TVERIFY(sql.exec());
         TVERIFY(sql.next());
         sql >> tt.x64;
-        TCOMPARE(tt.x64,  (cfuint64)1);
+        TCOMPARE(tt.x64,  (uint64)1);
 
         sql << 765;
         TVERIFY(sql.exec());
         TVERIFY(sql.next());
         sql >> tt.x64;
-        TCOMPARE(tt.x64,  (cfuint64)2);
+        TCOMPARE(tt.x64,  (uint64)2);
 
         TVERIFY(sql.exec("SELECT id, x32 FROM cflib_db_test_3"));
         TVERIFY(sql.next());
         sql >> tt.x64 >> tt.x32;
-        TCOMPARE(tt.x64,  (cfuint64)1);
-        TCOMPARE(tt.x32, (cfuint32)456);
+        TCOMPARE(tt.x64,  (uint64)1);
+        TCOMPARE(tt.x32, (uint32)456);
         TVERIFY(sql.next());
         sql >> tt.x64 >> tt.x32;
-        TCOMPARE(tt.x64,  (cfuint64)2);
-        TCOMPARE(tt.x32, (cfuint32)765);
+        TCOMPARE(tt.x64,  (uint64)2);
+        TCOMPARE(tt.x32, (uint32)765);
         TVERIFY(!sql.next());
     }
 
@@ -445,14 +445,14 @@ private:
             ")"
         );
         sql << 3
-            << (cfuint16)0xFFFA << 67 << 89
+            << (uint16)0xFFFA << 67 << 89
             << makeUTCDateTime(2017, 2, 27, 10, 47, 34, 123)
             << sql.null << "d\xC3\xB6""d\xC3\xAF""d\xC3\xBC\xC3\x9F"
             << 123.456f << 789.123
             << true;
         TVERIFY(sql.exec());
         sql << 4
-            << (cfint8)-45 << sql.null << (cfint32)-89
+            << (int8)-45 << sql.null << (int32)-89
             << sql.null
             << sql.null << sql.null
             << sql.null << sql.null
@@ -469,10 +469,10 @@ private:
         TVERIFY(sql.next());
         TVERIFY(!sql.isNull());
         sql >> tt.id >> tt.x16 >> tt.x32 >> tt.x64;
-        TCOMPARE(tt.id,  (cfuint32)3);
-        TCOMPARE(tt.x16, (cfuint16)0xFFFA);
-        TCOMPARE(tt.x32, (cfuint32)67);
-        TCOMPARE(tt.x64, (cfuint64)89);
+        TCOMPARE(tt.id,  (uint32)3);
+        TCOMPARE(tt.x16, (uint16)0xFFFA);
+        TCOMPARE(tt.x32, (uint32)67);
+        TCOMPARE(tt.x64, (uint64)89);
         TVERIFY(!sql.isNull());
         sql >> tt.t;
         TCOMPARE(tt.t.toMSecsSinceEpoch(), makeUTCDateTime(2017, 2, 27, 10, 47, 34, 123).toMSecsSinceEpoch());
@@ -510,21 +510,21 @@ private:
         sql >> sql.null;
         TVERIFY(!sql.lastFieldIsNull());
 
-        cfint16 sx16;
-        cfint32 sx32;
-        cfint64 sx64;
+        int16 sx16;
+        int32 sx32;
+        int64 sx64;
 
         TVERIFY(sql.next());
 
         sql >> tt.id >> sx16;   // id, x16
-        TCOMPARE(tt.id,  (cfuint32)4);
-        TCOMPARE(sx16, (cfint16)-45);
+        TCOMPARE(tt.id,  (uint32)4);
+        TCOMPARE(sx16, (int16)-45);
         TVERIFY(!sql.lastFieldIsNull());
         TVERIFY(sql.isNull());  // x32
         sql >> sx32;
         TVERIFY(sql.lastFieldIsNull());
         sql >> sx64;
-        TCOMPARE(sx64, (cfint64)-89);
+        TCOMPARE(sx64, (int64)-89);
         TVERIFY(!sql.lastFieldIsNull());
         TVERIFY(!sql.isNull(1));    // x16
         TVERIFY(!sql.isNull(3));    // x64
@@ -571,10 +571,10 @@ private:
 
         TVERIFY(sql.next());
         sql >> tt.id >> tt.x16 >> tt.x32 >> tt.x64 >> tt.t >> tt.a >> tt.s >> tt.f >> tt.d;
-        TCOMPARE(tt.id,  (cfuint32)1);
-        TCOMPARE(tt.x16, (cfuint16)2);
-        TCOMPARE(tt.x32, (cfuint32)3);
-        TCOMPARE(tt.x64, (cfuint64)4);
+        TCOMPARE(tt.id,  (uint32)1);
+        TCOMPARE(tt.x16, (uint16)2);
+        TCOMPARE(tt.x32, (uint32)3);
+        TCOMPARE(tt.x64, (uint64)4);
         TCOMPARE(tt.t.toMSecsSinceEpoch(), makeUTCDateTime(2017, 2, 27, 14, 47, 34, 123).toMSecsSinceEpoch());
         TCOMPARE(tt.a, ByteArray("\xC3\x96\xC3\x84\xC3\x9C"));
         TCOMPARE(tt.s, String::fromUtf8("\xC3\x96\xC3\x84\xC3\x9C"));
@@ -622,10 +622,10 @@ private:
 
         TVERIFY(sql.next());
         sql >> tt.id >> tt.x16 >> tt.x32 >> tt.x64 >> tt.a >> tt.s >> tt.f >> tt.d >> tt.t;
-        TCOMPARE(tt.id,  (cfuint32)1);
-        TCOMPARE(tt.x16, (cfuint16)2);
-        TCOMPARE(tt.x32, (cfuint32)3);
-        TCOMPARE(tt.x64, (cfuint64)4);
+        TCOMPARE(tt.id,  (uint32)1);
+        TCOMPARE(tt.x16, (uint16)2);
+        TCOMPARE(tt.x32, (uint32)3);
+        TCOMPARE(tt.x64, (uint64)4);
         TCOMPARE(tt.t.toMSecsSinceEpoch(), makeUTCDateTime(2017, 2, 27, 14, 47, 34, 123).toMSecsSinceEpoch());
         TCOMPARE(tt.a, ByteArray("\xe6\xbc\xa2\xe5\xad\x97"));
         TCOMPARE(tt.s, String::fromUtf8("Hello World!"));
@@ -659,10 +659,10 @@ private:
 
         TVERIFY(sql.next());
         sql >> tt.id >> tt.x16 >> tt.x32 >> tt.x64 >> tt.a >> tt.s >> tt.f >> tt.d >> tt.t;
-        TCOMPARE(tt.id,  (cfuint32)2);
-        TCOMPARE(tt.x16, (cfuint16)123);
-        TCOMPARE(tt.x32, (cfuint32)345);
-        TCOMPARE(tt.x64, (cfuint64)1234567);
+        TCOMPARE(tt.id,  (uint32)2);
+        TCOMPARE(tt.x16, (uint16)123);
+        TCOMPARE(tt.x32, (uint32)345);
+        TCOMPARE(tt.x64, (uint64)1234567);
         TCOMPARE(tt.t.toMSecsSinceEpoch(), makeUTCDateTime(2017, 2, 27, 14, 47, 34, 123).toMSecsSinceEpoch());
         TCOMPARE(tt.a, ByteArray("2017-02-27T14:47:34.123Z"));
         TCOMPARE(tt.s, String::fromUtf8("Hello again"));
@@ -759,13 +759,13 @@ private:
         TVERIFY(sql.exec());
         TVERIFY(sql.next());
         sql >> tt.x32;
-        TCOMPARE(tt.x32, (cfuint32)123);
+        TCOMPARE(tt.x32, (uint32)123);
 
         sql << 6;
         TVERIFY(sql.exec());
         TVERIFY(sql.next());
         sql >> tt.x32;
-        TCOMPARE(tt.x32, (cfuint32)123);
+        TCOMPARE(tt.x32, (uint32)123);
     }
 
     // -----------------------------------------------------------
@@ -794,7 +794,7 @@ private:
         TVERIFY(sql2.exec());
         TVERIFY(sql2.next());
         sql2 >> tt.id;
-        TCOMPARE(tt.id, (cfuint32)6);
+        TCOMPARE(tt.id, (uint32)6);
         TVERIFY(!sql2.next());
 
         sql << 8;
@@ -803,7 +803,7 @@ private:
         TVERIFY(sql2.exec());
         TVERIFY(sql2.next());
         sql2 >> tt.id;
-        TCOMPARE(tt.id, (cfuint32)7);
+        TCOMPARE(tt.id, (uint32)7);
         TVERIFY(!sql2.next());
     }
 
@@ -851,7 +851,7 @@ private:
         TVERIFY(sql.exec("SELECT COUNT(*) FROM cflib_db_test"));
         TVERIFY(sql.next());
         sql >> tt.x64;
-        TVERIFY(tt.x64 > (cfuint64)1);
+        TVERIFY(tt.x64 > (uint64)1);
 
         sql.prepare("SELECT id FROM cflib_db_test ORDER BY id");
         TVERIFY(sql.exec());
@@ -861,13 +861,13 @@ private:
 
         TVERIFY(sql.next());
         sql >> tt.id;
-        TCOMPARE(tt.id, (cfuint32)2);
+        TCOMPARE(tt.id, (uint32)2);
 
         sql2 << tt.id;
         TVERIFY(sql2.exec());
         TVERIFY(sql2.next());
         sql2 >> tt.x32;
-        TCOMPARE(tt.x32, (cfuint32)345);
+        TCOMPARE(tt.x32, (uint32)345);
         TVERIFY(!sql2.next());
 
         // cascading queries do not work
@@ -881,7 +881,7 @@ private:
         TVERIFY(sql.exec("SELECT COUNT(*) FROM cflib_db_test"));
         TVERIFY(sql.next());
         sql >> tt.x64;
-        TVERIFY(tt.x64 > (cfuint64)2);
+        TVERIFY(tt.x64 > (uint64)2);
 
         sql.prepare("SELECT id FROM cflib_db_test ORDER BY id");
         TVERIFY(sql.exec());
@@ -891,24 +891,24 @@ private:
 
         TVERIFY(sql.next());
         sql >> tt.id;
-        TCOMPARE(tt.id, (cfuint32)2);
+        TCOMPARE(tt.id, (uint32)2);
 
         sql2 << tt.id;
         TVERIFY(sql2.exec());
         TVERIFY(sql2.next());
         sql2 >> tt.x32;
-        TCOMPARE(tt.x32, (cfuint32)345);
+        TCOMPARE(tt.x32, (uint32)345);
         TVERIFY(!sql2.next());
 
         TVERIFY(sql.next());
         sql >> tt.id;
-        TCOMPARE(tt.id, (cfuint32)5);
+        TCOMPARE(tt.id, (uint32)5);
 
         sql2 << tt.id;
         TVERIFY(sql2.exec());
         TVERIFY(sql2.next());
         sql2 >> tt.x32;
-        TCOMPARE(tt.x32, (cfuint32)123);
+        TCOMPARE(tt.x32, (uint32)123);
         TVERIFY(!sql2.next());
 
         TVERIFY(sql.next());

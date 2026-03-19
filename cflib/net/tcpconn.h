@@ -65,7 +65,7 @@ public:
 
     CloseType isClosed() const;
     ByteArray peerIP() const;
-    cfuint16 peerPort() const;
+    uint16 peerPort() const;
 
     TCPConnData * detach();
 
@@ -78,7 +78,7 @@ protected:
     virtual void newBytesAvailable() {}
     virtual void closed(CloseType type) { CF_UNUSED(type); }
     virtual void writeFinished() {}
-    virtual void someBytesWritten(cfuint64 count) { CF_UNUSED(count); }
+    virtual void someBytesWritten(uint64 count) { CF_UNUSED(count); }
 
 private:
     TCPConnData * data_;

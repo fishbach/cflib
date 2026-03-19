@@ -22,7 +22,7 @@ class Version
 {
     SERIALIZE_CLASS
 public:
-    Version(cfuint major = 0, cfuint minor = 0, cfuint revision = 0, const String & patchLevel = String()) :
+    Version(uint major = 0, uint minor = 0, uint revision = 0, const String & patchLevel = String()) :
         major(major), minor(minor), revision(revision), patchLevel(patchLevel) {}
 
     bool isNull() const { return major == 0 && minor == 0 && revision == 0 && patchLevel.isNull(); }
@@ -48,12 +48,12 @@ public:
 
     static Version current() { return current_; }
     static void setCurrent(const Version & version);
-    static void setCurrent(cfuint major = 0, cfuint minor = 0, cfuint revision = 0, const String & patchLevel = String());
+    static void setCurrent(uint major = 0, uint minor = 0, uint revision = 0, const String & patchLevel = String());
 
 public serialized:
-    cfuint major;
-    cfuint minor;
-    cfuint revision;
+    uint major;
+    uint minor;
+    uint revision;
     String patchLevel;
 
 private:

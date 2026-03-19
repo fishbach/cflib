@@ -21,7 +21,7 @@ namespace cflib::base {
 class String
 {
 public:
-    static constexpr cfsize_t npos = std::string::npos;
+    static constexpr size_t npos = std::string::npos;
 
     String() noexcept = default;
     String(const char * utf8) : data_(utf8 ? utf8 : ""), isNull_(!utf8) {}
@@ -45,20 +45,20 @@ public:
 
     const std::string & str()    const noexcept { return data_; }
     const char *        c_str()  const noexcept { return data_.c_str(); }
-    cfsize_t            byteSize() const noexcept { return (cfsize_t)data_.size(); }
-    cfsize_t            size()   const noexcept { return (cfsize_t)data_.size(); }
-    cfsize_t            length() const noexcept { return (cfsize_t)data_.size(); }
+    size_t            byteSize() const noexcept { return (size_t)data_.size(); }
+    size_t            size()   const noexcept { return (size_t)data_.size(); }
+    size_t            length() const noexcept { return (size_t)data_.size(); }
     bool                isEmpty() const noexcept { return data_.empty(); }
     bool                isNull()  const noexcept { return isNull_; }
 
-    ByteArray toUtf8()  const { return ByteArray(data_.data(), (cfsize_t)data_.size()); }
+    ByteArray toUtf8()  const { return ByteArray(data_.data(), (size_t)data_.size()); }
     ByteArray toLatin1() const { return toUtf8(); }
 
     // Codepoint count
-    cfsize_t charCount() const {
-        cfsize_t count = 0;
-        for (cfsize_t i = 0; i < (cfsize_t)data_.size(); ) {
-            cfuint8 c = (cfuint8)data_[i];
+    size_t charCount() const {
+        size_t count = 0;
+        for (size_t i = 0; i < (size_t)data_.size(); ) {
+            uint8 c = (uint8)data_[i];
             if      (c < 0x80) i += 1;
             else if (c < 0xE0) i += 2;
             else if (c < 0xF0) i += 3;
@@ -68,21 +68,21 @@ public:
         return count;
     }
 
-    cfsize_t indexOf(const char * s, cfsize_t from = 0) const {
-        cfsize_t pos = data_.find(s, from);
-        return pos == std::string::npos ? -1 : (cfsize_t)pos;
+    size_t indexOf(const char * s, size_t from = 0) const {
+        size_t pos = data_.find(s, from);
+        return pos == std::string::npos ? -1 : (size_t)pos;
     }
-    cfsize_t indexOf(const String & s, cfsize_t from = 0) const {
-        cfsize_t pos = data_.find(s.data_, from);
-        return pos == std::string::npos ? -1 : (cfsize_t)pos;
+    size_t indexOf(const String & s, size_t from = 0) const {
+        size_t pos = data_.find(s.data_, from);
+        return pos == std::string::npos ? -1 : (size_t)pos;
     }
-    cfsize_t indexOf(char c, cfsize_t from = 0) const {
-        cfsize_t pos = data_.find(c, from);
-        return pos == std::string::npos ? -1 : (cfsize_t)pos;
+    size_t indexOf(char c, size_t from = 0) const {
+        size_t pos = data_.find(c, from);
+        return pos == std::string::npos ? -1 : (size_t)pos;
     }
-    cfsize_t lastIndexOf(const char * s) const {
-        cfsize_t pos = data_.rfind(s);
-        return pos == std::string::npos ? -1 : (cfsize_t)pos;
+    size_t lastIndexOf(const char * s) const {
+        size_t pos = data_.rfind(s);
+        return pos == std::string::npos ? -1 : (size_t)pos;
     }
 
     bool contains(const char * s) const { return data_.find(s) != std::string::npos; }
@@ -90,8 +90,8 @@ public:
     bool startsWith(const char * s) const { return data_.rfind(s, 0) == 0; }
     bool startsWith(const String & s) const { return data_.rfind(s.data_, 0) == 0; }
     bool endsWith(const char * s) const {
-        cfsize_t slen = strlen(s);
-        if (slen > (cfsize_t)data_.size()) return false;
+        size_t slen = strlen(s);
+        if (slen > (size_t)data_.size()) return false;
         return data_.compare(data_.size() - slen, slen, s) == 0;
     }
     bool endsWith(const String & s) const {
@@ -99,20 +99,20 @@ public:
         return data_.compare(data_.size() - s.data_.size(), s.data_.size(), s.data_) == 0;
     }
 
-    String mid(cfsize_t bytePos, cfsize_t len = npos) const {
-        if (bytePos >= (cfsize_t)data_.size()) return String();
+    String mid(size_t bytePos, size_t len = npos) const {
+        if (bytePos >= (size_t)data_.size()) return String();
         return String(data_.substr(bytePos, len));
     }
-    String left(cfsize_t n) const { return mid(0, n); }
-    String right(cfsize_t n) const {
-        if (n >= (cfsize_t)data_.size()) return *this;
+    String left(size_t n) const { return mid(0, n); }
+    String right(size_t n) const {
+        if (n >= (size_t)data_.size()) return *this;
         return mid(data_.size() - n);
     }
 
     String trimmed() const {
-        cfsize_t s = data_.find_first_not_of(" \t\r\n");
+        size_t s = data_.find_first_not_of(" \t\r\n");
         if (s == std::string::npos) return String();
-        cfsize_t e = data_.find_last_not_of(" \t\r\n");
+        size_t e = data_.find_last_not_of(" \t\r\n");
         return String(data_.substr(s, e - s + 1));
     }
 
@@ -129,7 +129,7 @@ public:
 
     std::vector<String> split(char delim) const {
         std::vector<String> result;
-        cfsize_t start = 0, pos;
+        size_t start = 0, pos;
         while ((pos = data_.find(delim, start)) != std::string::npos) {
             result.push_back(String(data_.substr(start, pos - start)));
             start = pos + 1;
@@ -139,8 +139,8 @@ public:
     }
     std::vector<String> split(const char * delim) const {
         std::vector<String> result;
-        cfsize_t dlen = strlen(delim);
-        cfsize_t start = 0, pos;
+        size_t dlen = strlen(delim);
+        size_t start = 0, pos;
         while ((pos = data_.find(delim, start)) != std::string::npos) {
             result.push_back(String(data_.substr(start, pos - start)));
             start = pos + dlen;
@@ -150,57 +150,57 @@ public:
     }
 
     String & replace(const char * before, const char * after) {
-        const cfsize_t blen = strlen(before);
-        const cfsize_t alen = strlen(after);
-        cfsize_t pos = 0;
+        const size_t blen = strlen(before);
+        const size_t alen = strlen(after);
+        size_t pos = 0;
         while ((pos = data_.find(before, pos)) != std::string::npos) {
             data_.replace(pos, blen, after, alen);
             pos += alen;
         }
         return *this;
     }
-    String & replace(cfsize_t pos, cfsize_t len, const char * s) {
+    String & replace(size_t pos, size_t len, const char * s) {
         data_.replace(pos, len, s);
         return *this;
     }
 
     String join(const std::vector<String> & list) const {
         std::string r;
-        for (cfsize_t i = 0; i < (cfsize_t)list.size(); ++i) {
+        for (size_t i = 0; i < (size_t)list.size(); ++i) {
             if (i > 0) r += data_;
             r += list[i].data_;
         }
         return String(std::move(r));
     }
 
-    static String number(cfint64 v) {
+    static String number(int64 v) {
         return String(std::format("{}", (long long)v).c_str());
     }
-    static String number(cfuint64 v) {
+    static String number(uint64 v) {
         return String(std::format("{}", (unsigned long long)v).c_str());
     }
     static String number(double v) {
         return String(std::format("{:g}", v).c_str());
     }
-    static String number(cfint32  v) { return number((cfint64)v); }
-    static String number(cfuint32 v) { return number((cfuint64)v); }
+    static String number(int32  v) { return number((int64)v); }
+    static String number(uint32 v) { return number((uint64)v); }
 
-    cfint64  toLong(bool * ok = nullptr) const noexcept {
+    int64  toLong(bool * ok = nullptr) const noexcept {
         if (data_.empty()) { if (ok) *ok = false; return 0; }
         char * end = nullptr;
-        cfint64 v = strtoll(data_.c_str(), &end, 10);
+        int64 v = strtoll(data_.c_str(), &end, 10);
         if (ok) *ok = (end != data_.c_str() && *end == '\0');
         return v;
     }
-    cfuint64 toULong(bool * ok = nullptr) const noexcept {
+    uint64 toULong(bool * ok = nullptr) const noexcept {
         if (data_.empty()) { if (ok) *ok = false; return 0; }
         char * end = nullptr;
-        cfuint64 v = strtoull(data_.c_str(), &end, 10);
+        uint64 v = strtoull(data_.c_str(), &end, 10);
         if (ok) *ok = (end != data_.c_str() && *end == '\0');
         return v;
     }
 
-    static String fromUtf8(const char * s, cfsize_t len = npos) {
+    static String fromUtf8(const char * s, size_t len = npos) {
         if (!s) return String();
         return String(len == npos ? std::string(s) : std::string(s, len));
     }
@@ -229,25 +229,25 @@ public:
     String & operator<<(char c)             { return *this += c; }
 
     void clear() { data_.clear(); isNull_ = true; }
-    void remove(cfsize_t pos, cfsize_t len) { data_.erase(pos, len); }
+    void remove(size_t pos, size_t len) { data_.erase(pos, len); }
 
-    char operator[](cfsize_t i) const { return data_[i]; }
-    char & operator[](cfsize_t i) { return data_[i]; }
+    char operator[](size_t i) const { return data_[i]; }
+    char & operator[](size_t i) { return data_[i]; }
 
-    cfuint32 toUInt(bool * ok = nullptr) const {
+    uint32 toUInt(bool * ok = nullptr) const {
         if (data_.empty()) { if (ok) *ok = false; return 0; }
         char * end = nullptr;
         unsigned long v = strtoul(data_.c_str(), &end, 10);
         if (ok) *ok = (end != data_.c_str() && *end == '\0');
-        return (cfuint32)v;
+        return (uint32)v;
     }
 
-    cfint32 toInt(bool * ok = nullptr) const {
+    int32 toInt(bool * ok = nullptr) const {
         if (data_.empty()) { if (ok) *ok = false; return 0; }
         char * end = nullptr;
         long v = strtol(data_.c_str(), &end, 10);
         if (ok) *ok = (end != data_.c_str() && *end == '\0');
-        return (cfint32)v;
+        return (int32)v;
     }
 
     String simplified() const {

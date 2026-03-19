@@ -113,58 +113,58 @@ public:
     {
         TVERIFY(checkSerDeser<bool      >( false, ""          ));
         TVERIFY(checkSerDeser<bool      >(  true, "c10101"    ));
-        TVERIFY(checkSerDeser<cfuint8   >(     0, ""          ));
-        TVERIFY(checkSerDeser<cfuint8   >(     1, "c10101"    ));
-        TVERIFY(checkSerDeser<cfuint8   >(   127, "c1017f"    ));
-        TVERIFY(checkSerDeser<cfuint8   >(   255, "c10200ff"  ));
-        TVERIFY(checkSerDeser<cfint8    >(     0, ""          ));
-        TVERIFY(checkSerDeser<cfint8    >(     1, "c10101"    ));
-        TVERIFY(checkSerDeser<cfint8    >(   127, "c1017f"    ));
-        TVERIFY(checkSerDeser<cfint8    >(    -1, "c101ff"    ));
-        TVERIFY(checkSerDeser<cfint8    >(    -2, "c101fe"    ));
-        TVERIFY(checkSerDeser<cfint8    >(  -128, "c10180"    ));
-        TVERIFY(checkSerDeser<cfuint16  >(     0, ""          ));
-        TVERIFY(checkSerDeser<cfuint16  >(     1, "c10101"    ));
-        TVERIFY(checkSerDeser<cfuint16  >( 32767, "c1027fff"  ));
-        TVERIFY(checkSerDeser<cfuint16  >( 65535, "c10300ffff"));
-        TVERIFY(checkSerDeser<cfint16   >(     0, ""          ));
-        TVERIFY(checkSerDeser<cfint16   >(     1, "c10101"    ));
-        TVERIFY(checkSerDeser<cfint16   >(   127, "c1017f"    ));
-        TVERIFY(checkSerDeser<cfint16   >(   128, "c1020080"  ));
-        TVERIFY(checkSerDeser<cfint16   >( 32767, "c1027fff"  ));
-        TVERIFY(checkSerDeser<cfint16   >(    -1, "c101ff"    ));
-        TVERIFY(checkSerDeser<cfint16   >(    -2, "c101fe"    ));
-        TVERIFY(checkSerDeser<cfint16   >(  -128, "c10180"    ));
-        TVERIFY(checkSerDeser<cfint16   >(  -129, "c102ff7f"  ));
-        TVERIFY(checkSerDeser<cfint16   >(-32767, "c1028001"  ));
-        TVERIFY(checkSerDeser<cfint16   >(-32768, "c1028000"  ));
-        TVERIFY(checkSerDeser<cfuint64  >(     0, ""          ));
-        TVERIFY(checkSerDeser<cfuint64  >(     1, "c10101"    ));
-        TVERIFY(checkSerDeser<cfuint64  >(   128, "c1020080"  ));
-        TVERIFY(checkSerDeser<cfint64   >(    -1, "c101ff"    ));
-        TVERIFY(checkSerDeser<cfint64   >(    -2, "c101fe"    ));
-        TVERIFY(checkSerDeser<cfint64   >(  -128, "c10180"    ));
-        TVERIFY(checkSerDeser<cfint64   >(  -129, "c102ff7f"  ));
+        TVERIFY(checkSerDeser<uint8   >(     0, ""          ));
+        TVERIFY(checkSerDeser<uint8   >(     1, "c10101"    ));
+        TVERIFY(checkSerDeser<uint8   >(   127, "c1017f"    ));
+        TVERIFY(checkSerDeser<uint8   >(   255, "c10200ff"  ));
+        TVERIFY(checkSerDeser<int8    >(     0, ""          ));
+        TVERIFY(checkSerDeser<int8    >(     1, "c10101"    ));
+        TVERIFY(checkSerDeser<int8    >(   127, "c1017f"    ));
+        TVERIFY(checkSerDeser<int8    >(    -1, "c101ff"    ));
+        TVERIFY(checkSerDeser<int8    >(    -2, "c101fe"    ));
+        TVERIFY(checkSerDeser<int8    >(  -128, "c10180"    ));
+        TVERIFY(checkSerDeser<uint16  >(     0, ""          ));
+        TVERIFY(checkSerDeser<uint16  >(     1, "c10101"    ));
+        TVERIFY(checkSerDeser<uint16  >( 32767, "c1027fff"  ));
+        TVERIFY(checkSerDeser<uint16  >( 65535, "c10300ffff"));
+        TVERIFY(checkSerDeser<int16   >(     0, ""          ));
+        TVERIFY(checkSerDeser<int16   >(     1, "c10101"    ));
+        TVERIFY(checkSerDeser<int16   >(   127, "c1017f"    ));
+        TVERIFY(checkSerDeser<int16   >(   128, "c1020080"  ));
+        TVERIFY(checkSerDeser<int16   >( 32767, "c1027fff"  ));
+        TVERIFY(checkSerDeser<int16   >(    -1, "c101ff"    ));
+        TVERIFY(checkSerDeser<int16   >(    -2, "c101fe"    ));
+        TVERIFY(checkSerDeser<int16   >(  -128, "c10180"    ));
+        TVERIFY(checkSerDeser<int16   >(  -129, "c102ff7f"  ));
+        TVERIFY(checkSerDeser<int16   >(-32767, "c1028001"  ));
+        TVERIFY(checkSerDeser<int16   >(-32768, "c1028000"  ));
+        TVERIFY(checkSerDeser<uint64  >(     0, ""          ));
+        TVERIFY(checkSerDeser<uint64  >(     1, "c10101"    ));
+        TVERIFY(checkSerDeser<uint64  >(   128, "c1020080"  ));
+        TVERIFY(checkSerDeser<int64   >(    -1, "c101ff"    ));
+        TVERIFY(checkSerDeser<int64   >(    -2, "c101fe"    ));
+        TVERIFY(checkSerDeser<int64   >(  -128, "c10180"    ));
+        TVERIFY(checkSerDeser<int64   >(  -129, "c102ff7f"  ));
 
-        TVERIFY(checkSerDeser<cfuint64>((cfuint64)UINT64_C(0x7fffffffffffffff), "c1087fffffffffffffff"));
-        TVERIFY(checkSerDeser<cfuint64>((cfuint64)UINT64_C(0x8000000000000000), "c109008000000000000000"));
-        TVERIFY(checkSerDeser<cfuint64>((cfuint64)UINT64_C(0xfffffffffffffffe), "c10900fffffffffffffffe"));
-        TVERIFY(checkSerDeser<cfuint64>((cfuint64)UINT64_C(0xffffffffffffffff), "c10900ffffffffffffffff"));
+        TVERIFY(checkSerDeser<uint64>((uint64)UINT64_C(0x7fffffffffffffff), "c1087fffffffffffffff"));
+        TVERIFY(checkSerDeser<uint64>((uint64)UINT64_C(0x8000000000000000), "c109008000000000000000"));
+        TVERIFY(checkSerDeser<uint64>((uint64)UINT64_C(0xfffffffffffffffe), "c10900fffffffffffffffe"));
+        TVERIFY(checkSerDeser<uint64>((uint64)UINT64_C(0xffffffffffffffff), "c10900ffffffffffffffff"));
 
-        TVERIFY(checkSerDeser<cfint64>((cfint64)INT64_C(   36028797018963967),   "c1077fffffffffffff"));
-        TVERIFY(checkSerDeser<cfint64>((cfint64)INT64_C(   36028797018963968),   "c1080080000000000000"));
-        TVERIFY(checkSerDeser<cfint64>((cfint64)INT64_C( 9223372036854775807),   "c1087fffffffffffffff"));
-        TVERIFY(checkSerDeser<cfint64>((cfint64)INT64_C(-9223372036854775807),   "c1088000000000000001"));
-        TVERIFY(checkSerDeser<cfint64>((cfint64)INT64_C(-9223372036854775807)-1, "c1088000000000000000"));
+        TVERIFY(checkSerDeser<int64>((int64)INT64_C(   36028797018963967),   "c1077fffffffffffff"));
+        TVERIFY(checkSerDeser<int64>((int64)INT64_C(   36028797018963968),   "c1080080000000000000"));
+        TVERIFY(checkSerDeser<int64>((int64)INT64_C( 9223372036854775807),   "c1087fffffffffffffff"));
+        TVERIFY(checkSerDeser<int64>((int64)INT64_C(-9223372036854775807),   "c1088000000000000001"));
+        TVERIFY(checkSerDeser<int64>((int64)INT64_C(-9223372036854775807)-1, "c1088000000000000000"));
     }
 
     void nullInList()
     {
         TVERIFY(checkSerDeser<List<bool      >>(List<bool      >{false}, "e103c08100"));
-        TVERIFY(checkSerDeser<List<cfuint8   >>(List<cfuint8   >{0},     "e103c08100"));
-        TVERIFY(checkSerDeser<List<cfint8    >>(List<cfint8    >{0},     "e103c08100"));
-        TVERIFY(checkSerDeser<List<cfuint16  >>(List<cfuint16  >{0},     "e103c08100"));
-        TVERIFY(checkSerDeser<List<cfuint64  >>(List<cfuint64  >{0},     "e103c08100"));
+        TVERIFY(checkSerDeser<List<uint8   >>(List<uint8   >{0},     "e103c08100"));
+        TVERIFY(checkSerDeser<List<int8    >>(List<int8    >{0},     "e103c08100"));
+        TVERIFY(checkSerDeser<List<uint16  >>(List<uint16  >{0},     "e103c08100"));
+        TVERIFY(checkSerDeser<List<uint64  >>(List<uint64  >{0},     "e103c08100"));
 
         TVERIFY(checkSer<List<const char *>>(List<const char *>{nullptr},          "e103c08100"));
         TVERIFY(checkSerDeser<List<ByteArray>>(List<ByteArray>{ByteArray()}, "e103c08100"));
@@ -255,9 +255,9 @@ public:
 
     void lists()
     {
-        TVERIFY(checkSerDeser<List<cfuint8>>(List<cfuint8>(), ""));
-        TVERIFY(checkSerDeser<List<cfuint8>>(List<cfuint8>{0x42}, "e103c00142"));
-        TVERIFY(checkSerDeser<List<cfuint8>>(List<cfuint8>{0x42, 0x43}, "e106c00142c00143"));
+        TVERIFY(checkSerDeser<List<uint8>>(List<uint8>(), ""));
+        TVERIFY(checkSerDeser<List<uint8>>(List<uint8>{0x42}, "e103c00142"));
+        TVERIFY(checkSerDeser<List<uint8>>(List<uint8>{0x42, 0x43}, "e106c00142c00143"));
         TVERIFY(checkSerDeser<StringList>(StringList{"XY", String(), "", "A"},
             "e10c c0025859 c08100 c000 c00141"));
 

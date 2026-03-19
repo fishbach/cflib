@@ -58,7 +58,7 @@ HttpClient::~HttpClient()
     delete conn_;
 }
 
-void HttpClient::get(const ByteArray & ip, cfuint16 port, const ByteArray & url)
+void HttpClient::get(const ByteArray & ip, uint16 port, const ByteArray & url)
 {
     if (!conn_) {
         TCPConnData * data = mgr_.openConnection(ip, port);

@@ -66,7 +66,7 @@ ByteArray TCPConn::peerIP() const
     return data_->peerIP;
 }
 
-cfuint16 TCPConn::peerPort() const
+uint16 TCPConn::peerPort() const
 {
     return data_->peerPort;
 }

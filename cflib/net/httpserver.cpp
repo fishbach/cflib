@@ -58,12 +58,12 @@ HttpServer::~HttpServer()
     delete impl_;
 }
 
-bool HttpServer::start(const ByteArray & address, cfuint16 port)
+bool HttpServer::start(const ByteArray & address, uint16 port)
 {
     return impl_->start(address, port);
 }
 
-bool HttpServer::start(const ByteArray & address, cfuint16 port, crypt::TLSCredentials & credentials)
+bool HttpServer::start(const ByteArray & address, uint16 port, crypt::TLSCredentials & credentials)
 {
     return impl_->start(address, port, credentials);
 }

@@ -18,7 +18,7 @@ public:
     static DateTime currentDateTime();    // returns UTC
 
 private:
-    static cfint64 diff_;
+    static int64 diff_;
 };
 
 } // namespace

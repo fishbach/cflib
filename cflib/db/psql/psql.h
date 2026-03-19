@@ -24,9 +24,9 @@ namespace cflib::db {
  *
  * PostgreSQL type mapping:
  *   16 : boolean                   <->  bool
- *   21 : smallint                  <->  cfint8, cfuint8, cfint16, cfuint16
- *   23 : integer (serial)          <->  cfint32, cfuint32
- *   20 : bigint  (bigserial)       <->  cfint64, cfuint64
+ *   21 : smallint                  <->  int8, uint8, int16, uint16
+ *   23 : integer (serial)          <->  int32, uint32
+ *   20 : bigint  (bigserial)       <->  int64, uint64
  *  700 : real                      <->  float
  *  701 : double precision          <->  double
  *   25 : text                      <->  String
@@ -71,19 +71,19 @@ public:
     bool execMultiple(const String & query);
 
     void prepare(const ByteArray & query);
-    bool exec(cfuint keepFields = 0);
+    bool exec(uint keepFields = 0);
 
     bool next();
 
     inline PSql & operator<<(bool     val) { setBool (         val); return *this; }
-    inline PSql & operator<<(cfint8   val) { setInt16(         val); return *this; }
-    inline PSql & operator<<(cfuint8  val) { setInt16((cfint8 )val); return *this; }
-    inline PSql & operator<<(cfint16  val) { setInt16(         val); return *this; }
-    inline PSql & operator<<(cfuint16 val) { setInt16((cfint16)val); return *this; }
-    inline PSql & operator<<(cfint32  val) { setInt32(         val); return *this; }
-    inline PSql & operator<<(cfuint32 val) { setInt32((cfint32)val); return *this; }
-    inline PSql & operator<<(cfint64  val) { setInt64(         val); return *this; }
-    inline PSql & operator<<(cfuint64 val) { setInt64((cfint64)val); return *this; }
+    inline PSql & operator<<(int8   val) { setInt16(         val); return *this; }
+    inline PSql & operator<<(uint8  val) { setInt16((int8 )val); return *this; }
+    inline PSql & operator<<(int16  val) { setInt16(         val); return *this; }
+    inline PSql & operator<<(uint16 val) { setInt16((int16)val); return *this; }
+    inline PSql & operator<<(int32  val) { setInt32(         val); return *this; }
+    inline PSql & operator<<(uint32 val) { setInt32((int32)val); return *this; }
+    inline PSql & operator<<(int64  val) { setInt64(         val); return *this; }
+    inline PSql & operator<<(uint64 val) { setInt64((int64)val); return *this; }
 
     PSql & operator<<(float  val);
     PSql & operator<<(double val);
@@ -95,14 +95,14 @@ public:
     PSql & operator<<(Null);
 
     inline PSql & operator>>(bool     & val) { getBool (           val); return *this; }
-    inline PSql & operator>>(cfint8   & val) { cfint16 val16; getInt16(val16); val = val16; return *this; }
-    inline PSql & operator>>(cfuint8  & val) { cfint16 val16; getInt16(val16); val = val16; return *this; }
-    inline PSql & operator>>(cfint16  & val) { getInt16(           val); return *this; }
-    inline PSql & operator>>(cfuint16 & val) { getInt16((cfint16 &)val); return *this; }
-    inline PSql & operator>>(cfint32  & val) { getInt32(           val); return *this; }
-    inline PSql & operator>>(cfuint32 & val) { getInt32((cfint32 &)val); return *this; }
-    inline PSql & operator>>(cfint64  & val) { getInt64(           val); return *this; }
-    inline PSql & operator>>(cfuint64 & val) { getInt64((cfint64 &)val); return *this; }
+    inline PSql & operator>>(int8   & val) { int16 val16; getInt16(val16); val = val16; return *this; }
+    inline PSql & operator>>(uint8  & val) { int16 val16; getInt16(val16); val = val16; return *this; }
+    inline PSql & operator>>(int16  & val) { getInt16(           val); return *this; }
+    inline PSql & operator>>(uint16 & val) { getInt16((int16 &)val); return *this; }
+    inline PSql & operator>>(int32  & val) { getInt32(           val); return *this; }
+    inline PSql & operator>>(uint32 & val) { getInt32((int32 &)val); return *this; }
+    inline PSql & operator>>(int64  & val) { getInt64(           val); return *this; }
+    inline PSql & operator>>(uint64 & val) { getInt64((int64 &)val); return *this; }
 
     PSql & operator>>(float      & val);
     PSql & operator>>(double     & val);
@@ -113,7 +113,7 @@ public:
     PSql & operator>>(Null);
 
     template<typename T>
-    inline T get(cfuint field) {
+    inline T get(uint field) {
         currentFieldId_ = field;
         T val; operator>>(val);
         return val;
@@ -121,22 +121,22 @@ public:
 
     inline bool lastFieldIsNull() const { return lastFieldIsNull_; }
     inline bool isNull() { return isNull(currentFieldId_); }
-    bool isNull(cfuint fieldId);
+    bool isNull(uint fieldId);
 
 private:
     PSql(ThreadData & td, const cflib::util::LogFileInfo & lfi, int line);
     void setBool (bool val);
-    void setInt16(cfint16 val);
-    void setInt32(cfint32 val);
-    void setInt64(cfint64 val);
+    void setInt16(int16 val);
+    void setInt32(int32 val);
+    void setInt64(int64 val);
     void getBool (bool & val);
-    void getInt16(cfint16 & val);
-    void getInt32(cfint32 & val);
-    void getInt64(cfint64 & val);
+    void getInt16(int16 & val);
+    void getInt32(int32 & val);
+    void getInt64(int64 & val);
     bool initResult();
     void clearResult();
     bool checkField(int fieldType, int fieldSize);
-    cfuint8 * setParamType(int fieldType, int fieldSize, bool isNull);
+    uint8 * setParamType(int fieldType, int fieldSize, bool isNull);
     void removePreparedStatement();
 
 private:
@@ -154,7 +154,7 @@ private:
     void * res_;
     bool haveResultInfo_;
     int resultFieldCount_;
-    cfuint resultFieldTypes_[MAX_FIELD_COUNT];
+    uint resultFieldTypes_[MAX_FIELD_COUNT];
     int currentFieldId_;
     ByteArray lastQuery_;
     bool lastFieldIsNull_;
@@ -162,7 +162,7 @@ private:
     bool prepareUsed_;
     bool isPrepared_;
     int prepareParamCount_;
-    cfuint prepareParamTypes_[MAX_FIELD_COUNT];
+    uint prepareParamTypes_[MAX_FIELD_COUNT];
     int prepareParamLengths_[MAX_FIELD_COUNT];
     Vector<bool> prepareParamIsNull_;
 

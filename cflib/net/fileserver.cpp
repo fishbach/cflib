@@ -118,14 +118,14 @@ inline String canonicalPath(const String & path) {
 
 // Get directory part of path
 inline String dirName(const String & path) {
-    cfsize_t pos = path.lastIndexOf("/");
+    size_t pos = path.lastIndexOf("/");
     if (pos < 0) return ".";
     return path.left(pos);
 }
 
 // Get filename from path
 inline String fileName(const String & path) {
-    cfsize_t pos = path.lastIndexOf("/");
+    size_t pos = path.lastIndexOf("/");
     if (pos < 0) return path;
     return path.mid(pos + 1);
 }

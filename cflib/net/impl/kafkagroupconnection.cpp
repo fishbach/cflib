@@ -21,12 +21,12 @@ KafkaConnector::GroupConnection::GroupConnection(TCPConnData * data, KafkaConnec
 {
 }
 
-void KafkaConnector::GroupConnection::reply(cfint32 correlationId, impl::KafkaRawReader & reader)
+void KafkaConnector::GroupConnection::reply(int32 correlationId, impl::KafkaRawReader & reader)
 {
     if (correlationId == Impl::JoinGroup) {
 
-        cfint16 errorCode;
-        cfint32 generationId;
+        int16 errorCode;
+        int32 generationId;
         impl::KafkaString groupProtocol;
         impl::KafkaString leaderId;
         impl::KafkaString ownMemberId;
@@ -34,17 +34,17 @@ void KafkaConnector::GroupConnection::reply(cfint32 correlationId, impl::KafkaRa
 
         Map<ByteArray, Set<ByteArray>> memberTopics;
 
-        cfint32 memberCount;
+        int32 memberCount;
         reader >> memberCount;
-        for (cfint32 i = 0 ; i < memberCount ; ++i) {
+        for (int32 i = 0 ; i < memberCount ; ++i) {
             impl::KafkaString memberId;
-            cfint32 metaDataSize;
-            cfint16 version;
+            int32 metaDataSize;
+            int16 version;
             reader >> memberId >> metaDataSize >> version;
 
-            cfint32 topicCount;
+            int32 topicCount;
             reader >> topicCount;
-            for (cfint32 i = 0 ; i < topicCount ; ++i) {
+            for (int32 i = 0 ; i < topicCount ; ++i) {
                 impl::KafkaString topic;
                 reader >> topic;
 
@@ -68,7 +68,7 @@ void KafkaConnector::GroupConnection::reply(cfint32 correlationId, impl::KafkaRa
 
     } else if (correlationId == Impl::Heartbeat) {
 
-        cfint16 errorCode;
+        int16 errorCode;
         reader >> errorCode;
         if (errorCode != KafkaConnector::NoError) {
             logInfo("got heartbeat error: %1", errorCode);
@@ -79,22 +79,22 @@ void KafkaConnector::GroupConnection::reply(cfint32 correlationId, impl::KafkaRa
 
         for (auto & [key, val] : impl_.groupTopicPartitions_) val.clear();
 
-        cfint16 errorCode;
-        cfint32 memberAssignmentSize;
-        cfint16 version;
+        int16 errorCode;
+        int32 memberAssignmentSize;
+        int16 version;
         reader >> errorCode >> memberAssignmentSize >> version;
 
-        cfint32 topicCount;
+        int32 topicCount;
         reader >> topicCount;
-        for (cfint32 i = 0 ; i < topicCount ; ++i) {
+        for (int32 i = 0 ; i < topicCount ; ++i) {
             impl::KafkaString topic;
             reader >> topic;
 
-            List<cfint32> & partitions = impl_.groupTopicPartitions_[topic];
-            cfint32 partitionCount;
+            List<int32> & partitions = impl_.groupTopicPartitions_[topic];
+            int32 partitionCount;
             reader >> partitionCount;
-            for (cfint32 i = 0 ; i < partitionCount ; ++i) {
-                cfint32 partition;
+            for (int32 i = 0 ; i < partitionCount ; ++i) {
+                int32 partition;
                 reader >> partition;
                 if (errorCode == KafkaConnector::NoError) partitions << partition;
             }
@@ -109,7 +109,7 @@ void KafkaConnector::GroupConnection::reply(cfint32 correlationId, impl::KafkaRa
 
     } else if (correlationId == Impl::LeaveGroup) {
 
-        cfint16 errorCode;
+        int16 errorCode;
         reader >> errorCode;
         if (errorCode != KafkaConnector::NoError) {
             logWarn("group leave error: %1", errorCode);

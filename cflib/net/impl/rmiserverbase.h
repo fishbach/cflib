@@ -33,7 +33,7 @@ public:
     ByteArray getRemoteIP(uint connId);
 
     template<typename C>
-    void handleCall(const ByteArray & ba, const cfuint8 * data, int len, const C & connData, uint connDataId, uint connId)
+    void handleCall(const ByteArray & ba, const uint8 * data, int len, const C & connData, uint connDataId, uint connId)
     {
         if (!verifyThreadCall(&RMIServerBase::handleCall<C>, ba, data, len, connData, connDataId, connId)) return;
 

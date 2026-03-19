@@ -27,7 +27,7 @@ KafkaConnection::KafkaConnection(TCPConnData * data) :
     startReadWatcher();
 }
 
-KafkaRequestWriter KafkaConnection::request(cfint16 apiKey, cfint16 apiVersion, cfint32 correlationId, cfuint32 expectedSize)
+KafkaRequestWriter KafkaConnection::request(int16 apiKey, int16 apiVersion, int32 correlationId, uint32 expectedSize)
 {
     KafkaRequestWriter rv(*this, kafkaClientName.size() + 10 + expectedSize);
     rv
@@ -47,7 +47,7 @@ void KafkaConnection::newBytesAvailable()
         cflib::net::impl::KafkaRawReader reader(buffer_);
 
         // read size
-        cfint32 size;
+        int32 size;
         reader >> size;
         if (size <= 0) {
             logWarn("funny size of reply: %1", size);
@@ -59,7 +59,7 @@ void KafkaConnection::newBytesAvailable()
         // enough bytes?
         if (buffer_.size() < size + 4) break;
 
-        cfint32 correlationId;
+        int32 correlationId;
         reader >> correlationId;
 
         reply(correlationId, reader);
@@ -76,7 +76,7 @@ void KafkaConnection::closed(TCPConn::CloseType)
     util::deleteNext(this);
 }
 
-KafkaRequestWriter::KafkaRequestWriter(KafkaConnection & connection, cfuint32 expectedSize) :
+KafkaRequestWriter::KafkaRequestWriter(KafkaConnection & connection, uint32 expectedSize) :
     KafkaRawWriter(expectedSize),
     connection_(connection)
 {

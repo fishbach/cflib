@@ -17,17 +17,17 @@ namespace cflib::serialize::impl {
 
 namespace {
 
-typedef Hash<cfuint32, const RegisterClassBase *> Registry;
+typedef Hash<uint32, const RegisterClassBase *> Registry;
 CF_GLOBAL_STATIC(Registry, getRegistry)
 
 }
 
-Hash<cfuint32, const RegisterClassBase *> & RegisterClassBase::registry()
+Hash<uint32, const RegisterClassBase *> & RegisterClassBase::registry()
 {
     return getRegistry();
 }
 
-void RegisterClassBase::duplicateId(cfuint32 classId)
+void RegisterClassBase::duplicateId(uint32 classId)
 {
     std::cerr << std::format("duplicate type id: {}\n", classId);
     ::abort();

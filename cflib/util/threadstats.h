@@ -19,11 +19,11 @@ public:
     struct ThreadInfo
     {
         String name;
-        cfint64 current;
-        cfint64 total;
-        cfint64 peaks;
-        cfint64 overflows;
-        cfint64 avg;
+        int64 current;
+        int64 total;
+        int64 peaks;
+        int64 overflows;
+        int64 avg;
 
         ThreadInfo() : current(0), total(0), peaks(0), overflows(0), avg(0) {}
     };
@@ -42,7 +42,7 @@ public:
         stopVerifyThread();
     }
 
-    inline void externNewCallTime(int threadId, cfint64 nsecs)
+    inline void externNewCallTime(int threadId, int64 nsecs)
     {
         if (!verifyThreadCall(&ThreadStats::externNewCallTime, threadId, nsecs)) return;
         infos_[threadId].current += nsecs;
@@ -83,7 +83,7 @@ private:
 
     void timeout()
     {
-        cfint64 dt = elapsed_.nsecsElapsed();
+        int64 dt = elapsed_.nsecsElapsed();
         for (ThreadInfo & info : infos_) {
             if (info.current > dt) {
                 ++info.peaks;

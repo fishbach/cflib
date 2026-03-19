@@ -160,7 +160,7 @@ void RequestParser::parseRequest()
         }
 
         // body ok?
-        const cfint64 size = method_ == Request::POST ? contentLength_ : 0;
+        const int64 size = method_ == Request::POST ? contentLength_ : 0;
 
         if (body_.size() < size) {
             // small requests we hold in memory

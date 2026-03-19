@@ -12,24 +12,24 @@
 namespace cflib::util {
 
 // 0 .. 15 -> '0' .. '9', 'A' .. 'F'
-inline char toHex(cfuint8 b)
+inline char toHex(uint8 b)
 {
     if (b >= 10) return b + 55;
     else return b + 48;
 }
 
-inline cfuint8 fromHex(char c)
+inline uint8 fromHex(char c)
 {
     if      (c >= 'a') c -= 'a' - 10;
     else if (c >= 'A') c -= 'A' - 10;
     else               c -= '0';
-    return (cfuint8)c;
+    return (uint8)c;
 }
 
-inline ByteArray uint64ToHex(cfuint64 n)
+inline ByteArray uint64ToHex(uint64 n)
 {
-    ByteArray rv((cfsize_t)16, '0');
-    cfuint p = 16;
+    ByteArray rv((size_t)16, '0');
+    uint p = 16;
     while (n > 0) {
         rv[--p] = toHex(n & 0xF);
         n >>= 4;

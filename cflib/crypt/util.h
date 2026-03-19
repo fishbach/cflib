@@ -13,8 +13,8 @@ namespace cflib::crypt {
 
 ByteArray random(uint size);
 inline ByteArray randomId() { return random(20).toHex(); }
-cfuint32 randomUInt32();
-cfuint64 randomUInt64();
+uint32 randomUInt32();
+uint64 randomUInt64();
 ByteArray memorableRandom(const int length = 6);
 
 ByteArray hashPassword(const String & password);

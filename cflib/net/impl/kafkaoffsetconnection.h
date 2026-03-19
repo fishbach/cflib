@@ -16,7 +16,7 @@ public:
     OffsetConnection(TCPConnData * data, KafkaConnector::Impl & impl);
 
 protected:
-    void reply(cfint32 correlationId, impl::KafkaRawReader & reader) override;
+    void reply(int32 correlationId, impl::KafkaRawReader & reader) override;
     void closed() override;
 
 private:

@@ -36,7 +36,7 @@ String InfoService::test(const String & msg)
     return msg;
 }
 
-void InfoService::async(cfint64 i)
+void InfoService::async(int64 i)
 {
     logInfo("async: %1", i);
 }

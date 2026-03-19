@@ -20,5 +20,6 @@
 #include <cflib/base/thread.h>
 #include <cflib/base/types.h>
 #include <cflib/base/url.h>
+#include <cflib/base/util.h>
 
 using namespace cflib::base;

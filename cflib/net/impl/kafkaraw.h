@@ -17,10 +17,10 @@ namespace
 
 // Byte-swap helpers (replacing cfToBigEndian/cfFromBigEndian)
 template<typename T>
-inline void cfToBigEndian(T val, cfuint8 * dest) {
+inline void cfToBigEndian(T val, uint8 * dest) {
     // Convert to big-endian and write to dest
     if constexpr (std::endian::native == std::endian::little) {
-        cfuint8 * src = reinterpret_cast<cfuint8 *>(&val);
+        uint8 * src = reinterpret_cast<uint8 *>(&val);
         for (int i = 0; i < (int)sizeof(T); ++i)
             dest[i] = src[sizeof(T) - 1 - i];
     } else {
@@ -29,10 +29,10 @@ inline void cfToBigEndian(T val, cfuint8 * dest) {
 }
 
 template<typename T>
-inline T cfFromBigEndian(const cfuint8 * src) {
+inline T cfFromBigEndian(const uint8 * src) {
     T val;
     if constexpr (std::endian::native == std::endian::little) {
-        cfuint8 * dest = reinterpret_cast<cfuint8 *>(&val);
+        uint8 * dest = reinterpret_cast<uint8 *>(&val);
         for (int i = 0; i < (int)sizeof(T); ++i)
             dest[i] = src[sizeof(T) - 1 - i];
     } else {
@@ -57,7 +57,7 @@ public:
 class KafkaRawWriter
 {
 public:
-    KafkaRawWriter(cfuint32 expectedSize = 0)
+    KafkaRawWriter(uint32 expectedSize = 0)
     {
         data_.reserve(4 + expectedSize);
         data_.resize(4);
@@ -70,18 +70,18 @@ public:
 
     inline ByteArray getData()
     {
-        cfToBigEndian<cfint32>(data_.size() - 4, (cfuint8 *)data_.constData());
+        cfToBigEndian<int32>(data_.size() - 4, (uint8 *)data_.constData());
         return data_;
     }
 
-    inline void expectMoreBytes(cfuint32 count)
+    inline void expectMoreBytes(uint32 count)
     {
         data_.reserve(data_.size() + count);
     }
 
-    inline cfuint8 * getCurrentRawData()
+    inline uint8 * getCurrentRawData()
     {
-        return (cfuint8 *)data_.data();
+        return (uint8 *)data_.data();
     }
 
     inline int getCurrentSize()
@@ -97,10 +97,10 @@ public:
 private:
     ByteArray data_;
 
-    friend KafkaRawWriter & operator<<(KafkaRawWriter & out, cfint8               val);
-    friend KafkaRawWriter & operator<<(KafkaRawWriter & out, cfint16              val);
-    friend KafkaRawWriter & operator<<(KafkaRawWriter & out, cfint32              val);
-    friend KafkaRawWriter & operator<<(KafkaRawWriter & out, cfint64              val);
+    friend KafkaRawWriter & operator<<(KafkaRawWriter & out, int8               val);
+    friend KafkaRawWriter & operator<<(KafkaRawWriter & out, int16              val);
+    friend KafkaRawWriter & operator<<(KafkaRawWriter & out, int32              val);
+    friend KafkaRawWriter & operator<<(KafkaRawWriter & out, int64              val);
     friend KafkaRawWriter & operator<<(KafkaRawWriter & out, const ByteArray  & val);
     friend KafkaRawWriter & operator<<(KafkaRawWriter & out, const KafkaString & val);
 };
@@ -110,21 +110,21 @@ private:
     { \
         const int oldSize = out.data_.size(); \
         out.data_.resize(oldSize + sizeof(type)); \
-        cfToBigEndian<type>(val, (cfuint8 *)(out.data_.constData() + oldSize)); \
+        cfToBigEndian<type>(val, (uint8 *)(out.data_.constData() + oldSize)); \
         return out; \
     } \
 
-DEFINE_KAFKA_WRITE_INT_OPERATOR(cfint8)
-DEFINE_KAFKA_WRITE_INT_OPERATOR(cfint16)
-DEFINE_KAFKA_WRITE_INT_OPERATOR(cfint32)
-DEFINE_KAFKA_WRITE_INT_OPERATOR(cfint64)
+DEFINE_KAFKA_WRITE_INT_OPERATOR(int8)
+DEFINE_KAFKA_WRITE_INT_OPERATOR(int16)
+DEFINE_KAFKA_WRITE_INT_OPERATOR(int32)
+DEFINE_KAFKA_WRITE_INT_OPERATOR(int64)
 
 inline KafkaRawWriter & operator<<(KafkaRawWriter & out, const ByteArray & val)
 {
     if (val.isNull()) {
-        out << (cfint32)-1;
+        out << (int32)-1;
     } else {
-        out << (cfint32)val.size();
+        out << (int32)val.size();
         out.data_.append(val);
     }
     return out;
@@ -133,9 +133,9 @@ inline KafkaRawWriter & operator<<(KafkaRawWriter & out, const ByteArray & val)
 inline KafkaRawWriter & operator<<(KafkaRawWriter & out, const KafkaString & val)
 {
     if (val.isNull()) {
-        out << (cfint16)-1;
+        out << (int16)-1;
     } else {
-        out << (cfint16)val.size();
+        out << (int16)val.size();
         out.data_.append(val);
     }
     return out;
@@ -151,16 +151,16 @@ public:
     {
     }
 
-    inline cfuint32 bytesLeft() { return bytesLeft_; }
+    inline uint32 bytesLeft() { return bytesLeft_; }
 
 private:
     const char * readPtr_;
-    cfuint32 bytesLeft_;
+    uint32 bytesLeft_;
 
-    friend KafkaRawReader & operator>>(KafkaRawReader & in, cfint8       & val);
-    friend KafkaRawReader & operator>>(KafkaRawReader & in, cfint16      & val);
-    friend KafkaRawReader & operator>>(KafkaRawReader & in, cfint32      & val);
-    friend KafkaRawReader & operator>>(KafkaRawReader & in, cfint64      & val);
+    friend KafkaRawReader & operator>>(KafkaRawReader & in, int8       & val);
+    friend KafkaRawReader & operator>>(KafkaRawReader & in, int16      & val);
+    friend KafkaRawReader & operator>>(KafkaRawReader & in, int32      & val);
+    friend KafkaRawReader & operator>>(KafkaRawReader & in, int64      & val);
     friend KafkaRawReader & operator>>(KafkaRawReader & in, ByteArray  & val);
     friend KafkaRawReader & operator>>(KafkaRawReader & in, KafkaString & val);
 };
@@ -172,26 +172,26 @@ private:
             val = 0; \
             in.bytesLeft_ = 0; \
         } else { \
-            val = cfFromBigEndian<type>((const cfuint8 *)in.readPtr_); \
+            val = cfFromBigEndian<type>((const uint8 *)in.readPtr_); \
             in.readPtr_   += sizeof(type); \
             in.bytesLeft_ -= sizeof(type); \
         } \
         return in; \
     } \
 
-DEFINE_KAFKA_READ_INT_OPERATOR(cfint8)
-DEFINE_KAFKA_READ_INT_OPERATOR(cfint16)
-DEFINE_KAFKA_READ_INT_OPERATOR(cfint32)
-DEFINE_KAFKA_READ_INT_OPERATOR(cfint64)
+DEFINE_KAFKA_READ_INT_OPERATOR(int8)
+DEFINE_KAFKA_READ_INT_OPERATOR(int16)
+DEFINE_KAFKA_READ_INT_OPERATOR(int32)
+DEFINE_KAFKA_READ_INT_OPERATOR(int64)
 
 inline KafkaRawReader & operator>>(KafkaRawReader & in, ByteArray & val)
 {
-    cfint32 size;
+    int32 size;
     in >> size;
     if (size < 0) {
         val = ByteArray();
     } else {
-        if ((cfuint32)size > in.bytesLeft_) size = in.bytesLeft_;
+        if ((uint32)size > in.bytesLeft_) size = in.bytesLeft_;
         val = ByteArray(in.readPtr_, size);
         in.readPtr_   += size;
         in.bytesLeft_ -= size;
@@ -201,12 +201,12 @@ inline KafkaRawReader & operator>>(KafkaRawReader & in, ByteArray & val)
 
 inline KafkaRawReader & operator>>(KafkaRawReader & in, KafkaString & val)
 {
-    cfint16 size;
+    int16 size;
     in >> size;
     if (size < 0) {
         val = KafkaString();
     } else {
-        if ((cfuint32)size > in.bytesLeft_) size = in.bytesLeft_;
+        if ((uint32)size > in.bytesLeft_) size = in.bytesLeft_;
         val = KafkaString(in.readPtr_, size);
         in.readPtr_   += size;
         in.bytesLeft_ -= size;

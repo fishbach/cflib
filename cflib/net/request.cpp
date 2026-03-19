@@ -109,7 +109,7 @@ public:
 
         if (method != Request::HEAD) {
             header
-                << "Content-Length: " << ByteArray::number((cfint64)body.size()) << "\r\n"
+                << "Content-Length: " << ByteArray::number((int64)body.size()) << "\r\n"
                 << "\r\n"
                 << body;
         } else {

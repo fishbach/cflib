@@ -19,32 +19,32 @@ KafkaConnector::FetchConnection::FetchConnection(TCPConnData * data, KafkaConnec
 {
 }
 
-void KafkaConnector::FetchConnection::reply(cfint32 correlationId, impl::KafkaRawReader & reader)
+void KafkaConnector::FetchConnection::reply(int32 correlationId, impl::KafkaRawReader & reader)
 {
-    cfint32 topicCount;
+    int32 topicCount;
     reader >> topicCount;
-    for (cfint32 i = 0 ; i < topicCount ; ++i) {
+    for (int32 i = 0 ; i < topicCount ; ++i) {
 
         impl::KafkaString topicName;
         reader >> topicName;
 
-        cfint32 partitionCount;
+        int32 partitionCount;
         reader >> partitionCount;
-        for (cfint32 i = 0 ; i < partitionCount ; ++i) {
-            cfint32 partitionId;
-            cfint16 errorCode;
-            cfint64 highwaterMarkOffset;
-            cfint32 messageSetSize;
+        for (int32 i = 0 ; i < partitionCount ; ++i) {
+            int32 partitionId;
+            int16 errorCode;
+            int64 highwaterMarkOffset;
+            int32 messageSetSize;
             reader >> partitionId >> errorCode >> highwaterMarkOffset >> messageSetSize;
 
             KafkaConnector::Messages messages;
-            cfint64 firstOffset = -1;
+            int64 firstOffset = -1;
             bool isFirst = true;
             while (messageSetSize >= 12) {
-                const cfuint32 startPos = reader.bytesLeft();
+                const uint32 startPos = reader.bytesLeft();
 
-                cfint64 offset;
-                cfint32 messageSize;
+                int64 offset;
+                int32 messageSize;
                 reader >> offset >> messageSize;
                 if (messageSize + 12 > messageSetSize) break;
 
@@ -53,9 +53,9 @@ void KafkaConnector::FetchConnection::reply(cfint32 correlationId, impl::KafkaRa
                     firstOffset = offset;
                 }
 
-                cfint32 crc;
-                cfint8 magicByte;
-                cfint8 attributes;
+                int32 crc;
+                int8 magicByte;
+                int8 attributes;
                 KafkaConnector::Message msg;
                 reader >> crc >> magicByte >> attributes >> msg.first >> msg.second;
                 messages << msg;

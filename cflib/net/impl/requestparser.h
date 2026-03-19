@@ -50,7 +50,7 @@ private:
 
     ByteArray header_;
 
-    cfint64 contentLength_;
+    int64 contentLength_;
     Map<ByteArray, ByteArray> headerFields_;
     int method_;
     ByteArray uri_;

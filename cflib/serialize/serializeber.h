@@ -14,11 +14,11 @@ namespace cflib::serialize {
 class BERSerializer
 {
 public:
-    BERSerializer(cfuint64 tagNo = 0) : lenPos_(0), data_(), base_(data_) {
+    BERSerializer(uint64 tagNo = 0) : lenPos_(0), data_(), base_(data_) {
         if (tagNo > 0) {
-            const cfuint8 tagLen = impl::calcTagLen(tagNo);
+            const uint8 tagLen = impl::calcTagLen(tagNo);
             data_.resize(tagLen + 1);
-            cfuint8 * pos = (cfuint8 *)data_.data();
+            uint8 * pos = (uint8 *)data_.data();
             impl::writeTagBytes(pos, tagNo, true, tagLen);
             pos[tagLen] = '\0';
             lenPos_ = tagLen + 1;
@@ -48,8 +48,8 @@ class BERDeserializer
 {
 public:
     BERDeserializer(const ByteArray & data) :
-        data_(data), base_((const cfuint8 *)data_.constData(), data_.size()) {}
-    BERDeserializer(const ByteArray & ba, const cfuint8 * data, int len) :
+        data_(data), base_((const uint8 *)data_.constData(), data_.size()) {}
+    BERDeserializer(const ByteArray & ba, const uint8 * data, int len) :
         data_(ba), base_(data, len) {}
 
     template<typename T>

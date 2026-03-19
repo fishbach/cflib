@@ -17,9 +17,9 @@ namespace cflib::util {
 ByteArray weekDay(int dayOfWeek);
 ByteArray dateTimeForHTTP(const DateTime & dateTime);
 
-cfuint32 calcCRC32Raw(cfuint32 crc, const char * data, cfuint64 size);
-inline cfuint32 calcCRC32(const char * data, cfuint64 size) { return calcCRC32Raw(0xffffffffL, data, size) ^ 0xffffffffL; }
-inline cfuint32 calcCRC32(const ByteArray & data) { return calcCRC32(data.constData(), data.size()); }
+uint32 calcCRC32Raw(uint32 crc, const char * data, uint64 size);
+inline uint32 calcCRC32(const char * data, uint64 size) { return calcCRC32Raw(0xffffffffL, data, size) ^ 0xffffffffL; }
+inline uint32 calcCRC32(const ByteArray & data) { return calcCRC32(data.constData(), data.size()); }
 
 // 0 -> no compression, 1 -> fast, 9 -> small
 void gzip(ByteArray & data, int compressionLevel = -1);
@@ -42,7 +42,7 @@ bool isValidEmail(const String & str);
 
 bool daemonize();
 bool setProcessOwner(int uid, int gid);
-bool processRestarter(cfuint msDelay = 1000);
+bool processRestarter(uint msDelay = 1000);
 
 template<typename C> void deleteNext(const C * obj) { Timer::singleShot(0, new Deleter<C>(obj)); }
 

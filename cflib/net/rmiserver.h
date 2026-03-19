@@ -42,11 +42,11 @@ public:
         }
     }
 
-    virtual void handleMsg(cfuint64,
-        const ByteArray & data, int tagLen, int lengthSize, cfint32 valueLen,
+    virtual void handleMsg(uint64,
+        const ByteArray & data, int tagLen, int lengthSize, int32 valueLen,
         const C & connData, uint connDataId, uint connId)
     {
-        handleCall(data, (const cfuint8 *)data.constData() + tagLen + lengthSize, valueLen, connData, connDataId, connId);
+        handleCall(data, (const uint8 *)data.constData() + tagLen + lengthSize, valueLen, connData, connDataId, connId);
     }
 
     virtual void connDataChange(const C &, const C & newConnData, uint connDataId, const Set<uint> & connIds)

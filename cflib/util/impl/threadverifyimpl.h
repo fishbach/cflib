@@ -35,8 +35,8 @@ public:
     virtual bool doCall(const Functor * func) = 0;
     virtual void stopLoop() = 0;
     virtual bool isOwnThread() const { return cf_current_thread == this || disabled_; }
-    virtual cfuint threadCount() const { return 1; }
-    virtual cfuint threadNo() const    { return 0; }
+    virtual uint threadCount() const { return 1; }
+    virtual uint threadNo() const    { return 0; }
     virtual void execLater(const Functor * func) const = 0;
 
     void startThread();
@@ -82,13 +82,13 @@ private:
 class ThreadHolderWorkerPool : public ThreadHolderLibEV
 {
 public:
-    ThreadHolderWorkerPool(const String & threadName, int threadId, ThreadStats * stats, bool isWorkerOnly, cfuint threadCount);
+    ThreadHolderWorkerPool(const String & threadName, int threadId, ThreadStats * stats, bool isWorkerOnly, uint threadCount);
     ~ThreadHolderWorkerPool();
 
     bool doCall(const Functor * func) override;
     void stopLoop() override;
     bool isOwnThread() const override;
-    cfuint threadCount() const override;
+    uint threadCount() const override;
 
 protected:
     void run() override;
@@ -99,17 +99,17 @@ private:
     {
     public:
         Worker(const String & threadName,
-            int threadId, ThreadStats * stats, cfuint threadNo, ThreadFifo<const Functor *> & externalCalls);
+            int threadId, ThreadStats * stats, uint threadNo, ThreadFifo<const Functor *> & externalCalls);
 
         bool doCall(const Functor *) override { return false; }
         void stopLoop() override;
-        cfuint threadNo() const override { return threadNo_; }
+        uint threadNo() const override { return threadNo_; }
 
     protected:
         void wokeUp() override;
 
     private:
-        const cfuint threadNo_;
+        const uint threadNo_;
         ThreadFifo<const Functor *> & externalCalls_;
         bool stopLoop_;
     };

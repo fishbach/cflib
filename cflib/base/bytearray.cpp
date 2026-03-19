@@ -9,20 +9,20 @@
 
 namespace cflib::base {
 
-cfuint32 ByteArray::toUInt(bool * ok) const {
+uint32 ByteArray::toUInt(bool * ok) const {
     if (data_.empty()) { if (ok) *ok = false; return 0; }
     char * end = nullptr;
     unsigned long v = strtoul(data_.c_str(), &end, 10);
     if (ok) *ok = (end != data_.c_str() && *end == '\0');
-    return (cfuint32)v;
+    return (uint32)v;
 }
 
-cfint32 ByteArray::toInt(bool * ok) const {
+int32 ByteArray::toInt(bool * ok) const {
     if (data_.empty()) { if (ok) *ok = false; return 0; }
     char * end = nullptr;
     long v = strtol(data_.c_str(), &end, 10);
     if (ok) *ok = (end != data_.c_str() && *end == '\0');
-    return (cfint32)v;
+    return (int32)v;
 }
 
 } // namespace

@@ -77,7 +77,7 @@ public:
             deflate = true;
             deflateBuf = data;
             util::deflateRaw(deflateBuf, 1);
-            logDebug("deflated %1 -> %2 (connId: %3)", (cfuint64)data.size(), (cfuint64)deflateBuf.size(), connId_);
+            logDebug("deflated %1 -> %2 (connId: %3)", (uint64)data.size(), (uint64)deflateBuf.size(), connId_);
         }
 
         const uint len = deflate ? deflateBuf.size() : data.size();
@@ -112,8 +112,8 @@ public:
 
     void checkTimeout(const DateTime & now)
     {
-        cfint64 readSecs = lastRead_.secsTo(now);
-        cfint64 writeSecs = lastWrite_.secsTo(now);
+        int64 readSecs = lastRead_.secsTo(now);
+        int64 writeSecs = lastWrite_.secsTo(now);
         uint last = (uint)max(readSecs, writeSecs);
         if (last < connectionSendInterval_) return;
         if (last > connectionDataTimeout_) {
@@ -145,7 +145,7 @@ protected:
         service_.closed(connId_, type);
     }
 
-    virtual void someBytesWritten(cfuint64 count)
+    virtual void someBytesWritten(uint64 count)
     {
         if (!verifyThreadCall(&WSConnHandler::someBytesWritten, count)) return;
         lastWrite_ = DateTime::currentDateTimeUtc();
@@ -155,11 +155,11 @@ private:
     // 0 -> stop, 1 -> continue, 2 -> need more data
     uint handleData()
     {
-        cfuint8 * data = (cfuint8 *)buf_.constData();
+        uint8 * data = (uint8 *)buf_.constData();
         uint dLen = buf_.size();
         const bool fin = data[0] & 0x80;
         const bool deflate = deflateEnabled_ && (data[0] & 0x40);
-        const cfuint8 opcode = data[0] & 0xF;
+        const uint8 opcode = data[0] & 0xF;
         const bool mask = data[1] & 0x80;
 
         // clients must send masked data
@@ -170,20 +170,20 @@ private:
         }
 
         // read len
-        cfuint64 len = data[1] & 0x7F;
+        uint64 len = data[1] & 0x7F;
         if (len < 126) {
             data += 2;
             dLen -= 2;
         } else if (len == 126) {
             if (dLen < 4) return 2;
-            len = (cfuint64)data[2] << 8 | (cfuint64)data[3];
+            len = (uint64)data[2] << 8 | (uint64)data[3];
             data += 4;
             dLen -= 4;
         } else {
             if (dLen < 10) return 2;
             len =
-                (cfuint64)data[2] << 56 | (cfuint64)data[3] << 48 | (cfuint64)data[4] << 40 | (cfuint64)data[5] << 32 |
-                (cfuint64)data[6] << 24 | (cfuint64)data[7] << 16 | (cfuint64)data[8] <<  8 | (cfuint64)data[9];
+                (uint64)data[2] << 56 | (uint64)data[3] << 48 | (uint64)data[4] << 40 | (uint64)data[5] << 32 |
+                (uint64)data[6] << 24 | (uint64)data[7] << 16 | (uint64)data[8] <<  8 | (uint64)data[9];
             data += 10;
             dLen -= 10;
         }
@@ -192,7 +192,7 @@ private:
         if (dLen < len + 4) return 2;
 
         // apply mask
-        const cfuint8 * maskKey = data;
+        const uint8 * maskKey = data;
         data += 4;
         dLen -= 4;
         for (uint i = 0 ; i < len ; ++i) data[i] ^= maskKey[i % 4];
@@ -231,7 +231,7 @@ private:
             stopRead = true;
         } else if (opcode == 0x9) {    // ping
             // send pong
-            cfuint8 * orig = (cfuint8 *)buf_.constData();
+            uint8 * orig = (uint8 *)buf_.constData();
             orig[0] = (orig[0] & 0xF0) | 0xA;
             orig[1] &= 0x7F;
             ByteArray pong((const char *)orig, buf_.size() - dLen - 4);

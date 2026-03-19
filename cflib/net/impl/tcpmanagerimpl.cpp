@@ -72,7 +72,7 @@ inline bool setNonBlocking(int fd)
     return true;
 }
 
-inline bool callWithSockaddr(const ByteArray & ip, cfuint16 port, std::function<bool (const struct sockaddr *, socklen_t)> func)
+inline bool callWithSockaddr(const ByteArray & ip, uint16 port, std::function<bool (const struct sockaddr *, socklen_t)> func)
 {
     if (ip.indexOf('.') == -1) {
         struct sockaddr_in6 addr;
@@ -188,8 +188,8 @@ void TCPManagerImpl::stop()
 }
 
 TCPConnData * TCPManagerImpl::openConnection(
-    const ByteArray & destAddress, cfuint16 destPort,
-    const ByteArray & sourceIP, cfuint16 sourcePort,
+    const ByteArray & destAddress, uint16 destPort,
+    const ByteArray & sourceIP, uint16 sourcePort,
     TLSCredentials * credentials, bool preferIPv6)
 {
     // no thread verify needed here
@@ -385,7 +385,7 @@ void TCPManagerImpl::setNoDelay(int socket, bool noDelay)
     setsockopt(socket, IPPROTO_TCP, TCP_NODELAY, (char *)&on, sizeof(on));
 }
 
-int TCPManagerImpl::openListenSocket(const ByteArray & ip, cfuint16 port)
+int TCPManagerImpl::openListenSocket(const ByteArray & ip, uint16 port)
 {
     // create non blocking socket
     int rv = socket(ip.indexOf('.') == -1 ? AF_INET6 : AF_INET, SOCK_STREAM, 0);
@@ -460,7 +460,7 @@ void TCPManagerImpl::writeable(ev_loop * loop, ev_io * w, int)
 #else
     const ssize_t count = ::send(fd, buf.constData(), buf.size(), 0);
 #endif
-    logTrace("wrote %1 / %2 bytes on %3", (cfint64)count, buf.size(), fd);
+    logTrace("wrote %1 / %2 bytes on %3", (int64)count, buf.size(), fd);
     if (count < buf.size()) {
         if (count < 0 && errno != EAGAIN && errno != EWOULDBLOCK && errno != ENOTCONN) {
             logDebug("write on fd %1 failed (%2 - %3)", fd, errno, strerror(errno));
@@ -475,7 +475,7 @@ void TCPManagerImpl::writeable(ev_loop * loop, ev_io * w, int)
         if (count > 0) {
             buf.remove(0, count);
             if (conn->notifySomeBytesWritten) {
-                impl.execLater(new Functor1<TCPConn, cfuint64>(conn->conn, &TCPConn::someBytesWritten, (cfuint64)count));
+                impl.execLater(new Functor1<TCPConn, uint64>(conn->conn, &TCPConn::someBytesWritten, (uint64)count));
             }
         }
         if (!ev_is_active(w)) ev_io_start(loop, w);
@@ -490,7 +490,7 @@ void TCPManagerImpl::writeable(ev_loop * loop, ev_io * w, int)
         } else {
             if (ev_is_active(w)) ev_io_stop(loop, w);
             if (conn->notifySomeBytesWritten) {
-                impl.execLater(new Functor1<TCPConn, cfuint64>(conn->conn, &TCPConn::someBytesWritten, (cfuint64)count));
+                impl.execLater(new Functor1<TCPConn, uint64>(conn->conn, &TCPConn::someBytesWritten, (uint64)count));
             }
             if (conn->notifyWrite) {
                 conn->notifyWrite = false;
@@ -510,7 +510,7 @@ void TCPManagerImpl::listenSocketReadable(ev_loop *, ev_io * w, int)
         // get socket and source address
         int newSock;
         char ip[40];
-        cfuint16 port;
+        uint16 port;
         if (impl->isIPv6Sock_) {
             struct sockaddr_in6 cliAddr;
             socklen_t len = sizeof(cliAddr);
@@ -548,7 +548,7 @@ void TCPManagerImpl::callClosed(TCPConnData * conn)
     else                 execLater(new Functor0<TCPConnData>(conn, &TCPConnData::callClosed));
 }
 
-TCPConnData * TCPManagerImpl::addConnection(int sock, const ByteArray & destIP, cfuint16 destPort,
+TCPConnData * TCPManagerImpl::addConnection(int sock, const ByteArray & destIP, uint16 destPort,
     TLSCredentials * credentials, const ByteArray & destAddress)
 {
     SyncedThreadCall<TCPConnData *> stc(this);

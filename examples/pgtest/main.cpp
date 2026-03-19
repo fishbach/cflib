@@ -19,14 +19,14 @@ USE_LOG(LogCat::Db)
 
 namespace {
 
-cfuint32 random(cfuint32 min, cfuint32 max)
+uint32 random(uint32 min, uint32 max)
 {
-    const cfuint32 count = max - min + 1;
-    const cfuint32 div   = RAND_MAX / count;
-    const cfuint32 rest  = div * count;
+    const uint32 count = max - min + 1;
+    const uint32 div   = RAND_MAX / count;
+    const uint32 rest  = div * count;
 
-    cfuint32 r;
-    while ((r = (cfuint32)rand()) >= rest);
+    uint32 r;
+    while ((r = (uint32)rand()) >= rest);
 
     return r / div + min;
 }
@@ -37,7 +37,7 @@ void insert(int start, int end)
     sql.prepare("INSERT INTO test VALUES ($14, $15, $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)");
     sql << 2.0 << 3.0 << 4.0 << 5.0 << 6.0 << 7.0 << 8.0 << 9.0 << 10.0 << 11.0 << 12.0 << 13.0 << 14.0;
     for (int i = start ; i <= end ; ++i) {
-        sql << (cfuint32)i << DateTime::currentDateTimeUtc();
+        sql << (uint32)i << DateTime::currentDateTimeUtc();
         sql.exec(13);
     }
 }
@@ -49,7 +49,7 @@ void select()
     sql.exec();
 
     uint count = 0;
-    cfuint32 i;
+    uint32 i;
     DateTime t;
     double d;
     while (sql.next()) {
@@ -74,20 +74,20 @@ void update(int start, int end)
     );
     sql << 2.0 << 3.0 << 4.0 << 5.0 << 6.0 << 7.0 << 8.0 << 9.0 << 10.0 << 11.0 << 12.0 << 13.0 << 14.0;
 
-    static cfint64 last      = DateTime::currentDateTimeUtc().toMSecsSinceEpoch();
-    static cfint64 lastMicro = 0;
-    static cfint64 count     = 0;
-    static cfint64 minLat    = 0x7fffffff;
-    static cfint64 maxLat    = 0;
-    static cfint64 sum       = 0;
+    static int64 last      = DateTime::currentDateTimeUtc().toMSecsSinceEpoch();
+    static int64 lastMicro = 0;
+    static int64 count     = 0;
+    static int64 minLat    = 0x7fffffff;
+    static int64 maxLat    = 0;
+    static int64 sum       = 0;
 
     while (true) {
         sql << random(start, end) << DateTime::currentDateTimeUtc();
         sql.exec(13);
 
-        cfint64 nowMicro = std::chrono::duration_cast<std::chrono::microseconds>(
+        int64 nowMicro = std::chrono::duration_cast<std::chrono::microseconds>(
             std::chrono::high_resolution_clock::now().time_since_epoch()).count();
-        cfint64 latency = nowMicro - lastMicro;
+        int64 latency = nowMicro - lastMicro;
         lastMicro = nowMicro;
 
         if (latency == nowMicro) continue;
@@ -97,7 +97,7 @@ void update(int start, int end)
         sum += latency;
         ++count;
 
-        cfint64 now = DateTime::currentDateTimeUtc().toMSecsSinceEpoch();
+        int64 now = DateTime::currentDateTimeUtc().toMSecsSinceEpoch();
         if (now - last > 1000) {
             std::cout << std::format("{} msg/s - latency: {} / {} / {} microsec\n",
                 (long long)(count * 1000 / (now - last)),
@@ -167,13 +167,13 @@ int main(int argc, char *argv[])
 
     if (insertOpt.isSet()) {
         ByteArray val = insertOpt.value();
-        cfsize_t sep = val.indexOf('-');
+        size_t sep = val.indexOf('-');
         insert(val.mid(0, sep).toInt(), val.mid(sep + 1).toInt());
     }
     if (selectOpt.isSet()) select();
     if (updateOpt.isSet()) {
         ByteArray val = updateOpt.value();
-        cfsize_t sep = val.indexOf('-');
+        size_t sep = val.indexOf('-');
         update(val.mid(0, sep).toInt(), val.mid(sep + 1).toInt());
     }
 

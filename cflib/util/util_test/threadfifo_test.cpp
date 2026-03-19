@@ -19,7 +19,7 @@ namespace {
 class Worker
 {
 public:
-    Worker(ThreadFifo<int> & fifo, cfuint seed) : fifo_(fifo), rnd_(seed), ok_(true) {
+    Worker(ThreadFifo<int> & fifo, uint seed) : fifo_(fifo), rnd_(seed), ok_(true) {
         thread_ = std::thread([this]() { run(); });
     }
 

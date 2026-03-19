@@ -60,20 +60,20 @@ inline void writeInt(ByteArray & dest, T val)
 
 // integer
 inline void logFormat(ByteArray & dest, bool    val) { dest.append(val ? "true" : "false"); }
-inline void logFormat(ByteArray & dest, cfint8   val) { writeInt (dest, val); }
-inline void logFormat(ByteArray & dest, cfuint8  val) { writeUInt(dest, val); }
-inline void logFormat(ByteArray & dest, cfint16  val) { writeInt (dest, val); }
-inline void logFormat(ByteArray & dest, cfuint16 val) { writeUInt(dest, val); }
-inline void logFormat(ByteArray & dest, cfint32  val) { writeInt (dest, val); }
-inline void logFormat(ByteArray & dest, cfuint32 val) { writeUInt(dest, val); }
-inline void logFormat(ByteArray & dest, cfint64  val) { writeInt (dest, val); }
-inline void logFormat(ByteArray & dest, cfuint64 val) { writeUInt(dest, val); }
+inline void logFormat(ByteArray & dest, int8   val) { writeInt (dest, val); }
+inline void logFormat(ByteArray & dest, uint8  val) { writeUInt(dest, val); }
+inline void logFormat(ByteArray & dest, int16  val) { writeInt (dest, val); }
+inline void logFormat(ByteArray & dest, uint16 val) { writeUInt(dest, val); }
+inline void logFormat(ByteArray & dest, int32  val) { writeInt (dest, val); }
+inline void logFormat(ByteArray & dest, uint32 val) { writeUInt(dest, val); }
+inline void logFormat(ByteArray & dest, int64  val) { writeInt (dest, val); }
+inline void logFormat(ByteArray & dest, uint64 val) { writeUInt(dest, val); }
 #if defined(__APPLE__) || (defined(__linux__) && defined(__LP64__))
 // On macOS and LP64 Linux, size_t is 'unsigned long' which is a distinct type from uint64_t (unsigned long long)
-inline void logFormat(ByteArray & dest, unsigned long val) { writeUInt(dest, (cfuint64)val); }
-inline void logFormat(ByteArray & dest, long val) { writeInt(dest, (cfint64)val); }
+inline void logFormat(ByteArray & dest, unsigned long val) { writeUInt(dest, (uint64)val); }
+inline void logFormat(ByteArray & dest, long val) { writeInt(dest, (int64)val); }
 #endif
-inline void logFormat(ByteArray & dest, void *  ptr) { writeUInt(dest, (cfuintptr)ptr); }
+inline void logFormat(ByteArray & dest, void *  ptr) { writeUInt(dest, (uintptr)ptr); }
 
 // floating point
 inline void logFormat(ByteArray & dest, float  val) { dest += ByteArray::number(val); }

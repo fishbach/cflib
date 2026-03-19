@@ -36,13 +36,13 @@ public:
 
 private:
     ByteArray & data_;
-    cfuint64 tag_;
+    uint64 tag_;
 };
 
 class BERDeserializerBase
 {
 public:
-    BERDeserializerBase(const cfuint8 * data, int len, bool disableTagNumbering = false) :
+    BERDeserializerBase(const uint8 * data, int len, bool disableTagNumbering = false) :
         readPos_(data), bytesAvailable_(len), tag_(disableTagNumbering ? 0 : 1) {}
 
     template<typename T>
@@ -50,7 +50,7 @@ public:
     {
         while (true) {
             // read tlv
-            cfuint64 tag;
+            uint64 tag;
             int tagLen;
             int lengthSize;
             const int valueLen = decodeTLV(readPos_, bytesAvailable_, tag, tagLen, lengthSize);
@@ -94,9 +94,9 @@ public:
     inline bool isAnyAvailable() const { return bytesAvailable_ > 0; }
 
 private:
-    const cfuint8 * readPos_;
+    const uint8 * readPos_;
     int bytesAvailable_;
-    cfuint64 tag_;
+    uint64 tag_;
 };
 
 } // namespace

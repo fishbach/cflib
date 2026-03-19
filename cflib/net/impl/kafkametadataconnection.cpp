@@ -22,7 +22,7 @@ KafkaConnector::MetadataConnection::MetadataConnection(bool isMetaDataRequest, T
 {
 }
 
-void KafkaConnector::MetadataConnection::reply(cfint32, impl::KafkaRawReader & reader)
+void KafkaConnector::MetadataConnection::reply(int32, impl::KafkaRawReader & reader)
 {
     if (isMetaDataRequest_) readMetaData        (reader);
     else                    readGroupCoordinator(reader);
@@ -68,47 +68,47 @@ void KafkaConnector::MetadataConnection::readMetaData(impl::KafkaRawReader & rea
     impl_.allBrokers_.clear();
     impl_.responsibilities_.clear();
 
-    cfint32 brokerCount;
+    int32 brokerCount;
     reader >> brokerCount;
-    for (cfint32 i = 0 ; i < brokerCount ; ++i) {
-        cfint32 nodeId;
+    for (int32 i = 0 ; i < brokerCount ; ++i) {
+        int32 nodeId;
         impl::KafkaString host;
-        cfint32 port;
+        int32 port;
         reader >> nodeId >> host >> port;
-        impl_.allBrokers_[nodeId] = KafkaConnector::Address(ByteArray(host), (cfuint16)port);
+        impl_.allBrokers_[nodeId] = KafkaConnector::Address(ByteArray(host), (uint16)port);
     }
 
-    cfint32 topicCount;
+    int32 topicCount;
     reader >> topicCount;
-    for (cfint32 i = 0 ; i < topicCount ; ++i) {
+    for (int32 i = 0 ; i < topicCount ; ++i) {
 
-        cfint16 topicErrorCode;
+        int16 topicErrorCode;
         impl::KafkaString topic;
         reader >> topicErrorCode >> topic;
 
-        cfint32 partitionCount;
+        int32 partitionCount;
         reader >> partitionCount;
-        for (cfint32 i = 0 ; i < partitionCount ; ++i) {
+        for (int32 i = 0 ; i < partitionCount ; ++i) {
 
-            cfint16 partitionErrorCode;
-            cfint32 partitionId;
-            cfint32 leader;
+            int16 partitionErrorCode;
+            int32 partitionId;
+            int32 leader;
             reader >> partitionErrorCode >> partitionId >> leader;
             if (topicErrorCode == KafkaConnector::NoError && partitionErrorCode == KafkaConnector::NoError && !topic.startsWith("__")) {
                 impl_.responsibilities_[topic][partitionId].id = leader;
             }
 
-            cfint32 replicaCount;
+            int32 replicaCount;
             reader >> replicaCount;
-            for (cfint32 i = 0 ; i < replicaCount ; ++i) {
-                cfint32 replica;
+            for (int32 i = 0 ; i < replicaCount ; ++i) {
+                int32 replica;
                 reader >> replica;
             }
 
-            cfint32 isrCount;
+            int32 isrCount;
             reader >> isrCount;
-            for (cfint32 i = 0 ; i < isrCount ; ++i) {
-                cfint32 isr;
+            for (int32 i = 0 ; i < isrCount ; ++i) {
+                int32 isr;
                 reader >> isr;
             }
         }
@@ -119,10 +119,10 @@ void KafkaConnector::MetadataConnection::readMetaData(impl::KafkaRawReader & rea
 
 void KafkaConnector::MetadataConnection::readGroupCoordinator(impl::KafkaRawReader & reader)
 {
-    cfint16 errorCode;
-    cfint32 coordinatorId;
+    int16 errorCode;
+    int32 coordinatorId;
     impl::KafkaString coordinatorHost;
-    cfint32 coordinatorPort;
+    int32 coordinatorPort;
     reader >> errorCode >> coordinatorId >> coordinatorHost >> coordinatorPort;
 
     if (errorCode != KafkaConnector::NoError) {

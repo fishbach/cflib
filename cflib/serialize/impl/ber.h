@@ -14,7 +14,7 @@
 
 namespace cflib::serialize::impl {
 
-inline cfuint8 minSizeOfUInt(cfuint64 v)
+inline uint8 minSizeOfUInt(uint64 v)
 {
     if (v < 256) return 1;
     // logarithmic search
@@ -28,13 +28,13 @@ inline cfuint8 minSizeOfUInt(cfuint64 v)
     return h / 8;
 }
 
-inline cfuint8 minSizeOfInt(cfint64 v)
+inline uint8 minSizeOfInt(int64 v)
 {
     if (v >= -128 && v <= 127) return 1;
 
     if (v > 0) {
-        const cfuint64 uv = (cfuint64)v;
-        const cfuint8 rv = minSizeOfUInt(uv);
+        const uint64 uv = (uint64)v;
+        const uint8 rv = minSizeOfUInt(uv);
         if (uv >> (rv * 8 - 1) == 0) return rv;
         return rv + 1;
     }
@@ -46,20 +46,20 @@ inline cfuint8 minSizeOfInt(cfint64 v)
         if (v >> t != -1) l = t;
         else              h = t;
     }
-    const cfuint8 rv = h / 8;
+    const uint8 rv = h / 8;
     if (v >> (rv * 8 - 1) == -1) return rv;
     return rv + 1;
 }
 
 // returns -1 if not enough data available
-inline cfint64 decodeBERTag(const cfuint8 * data, int len, int & tagLen)
+inline int64 decodeBERTag(const uint8 * data, int len, int & tagLen)
 {
     if (len < 1) return -1;
-    cfuint64 tagNo = *data & 0x1F;    // remove Class and P/C
+    uint64 tagNo = *data & 0x1F;    // remove Class and P/C
     tagLen = 1;
     if (tagNo == 0x1F) {
         if (len < ++tagLen) return -1;
-        cfuint8 b = *(++data);
+        uint8 b = *(++data);
         tagNo = b & 0x7F;
         while (b & 0x80) {
             if (len < ++tagLen) return -1;
@@ -67,19 +67,19 @@ inline cfint64 decodeBERTag(const cfuint8 * data, int len, int & tagLen)
             tagNo = (tagNo << 7) | (b & 0x7F);
         }
     }
-    return (cfint64)tagNo;
+    return (int64)tagNo;
 }
 
 // returns -1 if not enough data available
 // returns -2 if length is undefined (one byte: 0x80)
 // returns -3 if too big length was found
-inline cfint64 decodeBERLength(const cfuint8 * data, int len, int & lengthSize)
+inline int64 decodeBERLength(const uint8 * data, int len, int & lengthSize)
 {
     // Is some data available?
     if (len < 1) return -1;
 
     // If 8th bit is not set, length is in this byte.
-    cfuint8 b = *data;
+    uint8 b = *data;
     if ((b & 0x80) == 0) {
         lengthSize = 1;
         return b;
@@ -96,13 +96,13 @@ inline cfint64 decodeBERLength(const cfuint8 * data, int len, int & lengthSize)
         return -2;
     }
 
-    // check for too big length (signed cfint64 overflow)
+    // check for too big length (signed int64 overflow)
     b = *(++data);
     if (ls == 8 && ((b & 0x80) != 0)) return -3;
 
     // calculate length
     lengthSize = ls + 1;
-    cfint64 retval = b;
+    int64 retval = b;
     while (--ls > 0) retval = (retval << 8) | *(++data);
     return retval;
 }
@@ -110,43 +110,43 @@ inline cfint64 decodeBERLength(const cfuint8 * data, int len, int & lengthSize)
 // returns -1 if not enough data available
 // returns -2 if length is undefined (one byte: 0x80)
 // returns -3 if too big length was found
-inline cfint64 decodeTLV(const cfuint8 * data, int len, cfuint64 & tagNo, int & tagLen, int & lengthSize)
+inline int64 decodeTLV(const uint8 * data, int len, uint64 & tagNo, int & tagLen, int & lengthSize)
 {
-    cfint64 & sTag = (cfint64 &)tagNo;
+    int64 & sTag = (int64 &)tagNo;
     sTag = decodeBERTag(data, len, tagLen);
     if (sTag < 0) return -1;
     return decodeBERLength(data + tagLen, len - tagLen, lengthSize);
 }
 
-inline cfuint8 calcBERlengthSize(cfint64 length)
+inline uint8 calcBERlengthSize(int64 length)
 {
     if (length < 0x80) return 1;
-    return minSizeOfUInt((cfuint64)length) + 1;
+    return minSizeOfUInt((uint64)length) + 1;
 }
 
 // If length < 0 the undefined length is written.
-inline void writeLenBytes(cfuint8 * pos, cfint64 length, cfuint8 lengthSize)
+inline void writeLenBytes(uint8 * pos, int64 length, uint8 lengthSize)
 {
     if (length < 0)      { *pos = 0x80; return; }
-    if (lengthSize == 1) { *pos = (cfuint8)length; return; }
+    if (lengthSize == 1) { *pos = (uint8)length; return; }
     *(pos++) = (lengthSize - 1) | 0x80;
-    cfuint64 len = (cfuint64)length;
-    while (--lengthSize) *(pos++) = (cfuint8)(len >> ((lengthSize - 1) * 8));
+    uint64 len = (uint64)length;
+    while (--lengthSize) *(pos++) = (uint8)(len >> ((lengthSize - 1) * 8));
 }
 
 inline void insertBERLength(ByteArray & data, int oldSize)
 {
-    const cfint64 length = data.size() - oldSize;
-    const cfuint8 lengthSize = calcBERlengthSize(length);
+    const int64 length = data.size() - oldSize;
+    const uint8 lengthSize = calcBERlengthSize(length);
     if (lengthSize > 1) data.insert(oldSize, ByteArray(lengthSize - 1, '\0'));
-    writeLenBytes((cfuint8 *)data.data() + oldSize - 1, length, lengthSize);
+    writeLenBytes((uint8 *)data.data() + oldSize - 1, length, lengthSize);
 }
 
-inline cfuint8 calcTagLen(cfuint64 tagNo)
+inline uint8 calcTagLen(uint64 tagNo)
 {
     if (tagNo < 0x1F) return 1;
-    cfuint8 tagLen = 2;
-    cfuint64 tn = tagNo >> 7;
+    uint8 tagLen = 2;
+    uint64 tn = tagNo >> 7;
     while (tn > 0) {
         ++tagLen;
         tn >>= 7;
@@ -154,7 +154,7 @@ inline cfuint8 calcTagLen(cfuint64 tagNo)
     return tagLen;
 }
 
-inline void writeTagBytes(cfuint8 * pos, cfuint64 tagNo, bool constructed, cfuint8 tagLen)
+inline void writeTagBytes(uint8 * pos, uint64 tagNo, bool constructed, uint8 tagLen)
 {
     if (tagLen == 1) {
         *pos = (constructed ? 0xE0 : 0xC0) | tagNo;
@@ -165,24 +165,24 @@ inline void writeTagBytes(cfuint8 * pos, cfuint64 tagNo, bool constructed, cfuin
     }
 }
 
-inline void writeNull(ByteArray & data, cfuint64 tagNo)
+inline void writeNull(ByteArray & data, uint64 tagNo)
 {
     if (tagNo > 0) return;
-    const cfuint8 tagLen = calcTagLen(tagNo);
+    const uint8 tagLen = calcTagLen(tagNo);
     const int oldSize = data.size();
     data.resize(oldSize + tagLen + 2);
-    cfuint8 * pos = (cfuint8 *)data.data() + oldSize;
+    uint8 * pos = (uint8 *)data.data() + oldSize;
     writeTagBytes(pos, tagNo, false, tagLen);
     pos[tagLen] = 0x81;
     pos[tagLen + 1] = 0;
 }
 
-inline void writeZero(ByteArray & data, cfuint64 tagNo)
+inline void writeZero(ByteArray & data, uint64 tagNo)
 {
-    const cfuint8 tagLen = calcTagLen(tagNo);
+    const uint8 tagLen = calcTagLen(tagNo);
     const int oldSize = data.size();
     data.resize(oldSize + tagLen + 1);
-    cfuint8 * pos = (cfuint8 *)data.data() + oldSize;
+    uint8 * pos = (uint8 *)data.data() + oldSize;
     writeTagBytes(pos, tagNo, false, tagLen);
     pos[tagLen] = 0;
 }
@@ -190,13 +190,13 @@ inline void writeZero(ByteArray & data, cfuint64 tagNo)
 class TLWriter
 {
 public:
-    TLWriter(ByteArray & data, cfuint64 tagNo) :
+    TLWriter(ByteArray & data, uint64 tagNo) :
         data_(data), tagNo_(tagNo), tagLen_(calcTagLen(tagNo))
     {
         const int oldSize = data.size();
         oldSize_ = oldSize + tagLen_ + 1;
         data.resize(oldSize_);
-        cfuint8 * pos = (cfuint8 *)data.data() + oldSize;
+        uint8 * pos = (uint8 *)data.data() + oldSize;
         writeTagBytes(pos, tagNo, true, tagLen_);
         pos[tagLen_] = '\0';
     }
@@ -217,8 +217,8 @@ public:
 
 private:
     ByteArray & data_;
-    const cfuint64 tagNo_;
-    const cfuint8 tagLen_;
+    const uint64 tagNo_;
+    const uint8 tagLen_;
     int oldSize_;
 };
 

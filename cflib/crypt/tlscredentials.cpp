@@ -21,7 +21,7 @@ namespace {
 ByteArray fromStdVector(const std::vector<std::string> & vec)
 {
     if (vec.size() == 0) return ByteArray();
-    return ByteArray(vec[0].c_str(), (cfsize_t)vec[0].size());
+    return ByteArray(vec[0].c_str(), (size_t)vec[0].size());
 }
 
 }
@@ -33,9 +33,9 @@ String TLSCertInfo::toString() const
     rv += "\", issuer: \"";
     rv += String(issuerName.constData());
     rv += "\", isCA: ";
-    rv += String::number((cfint32)isCA);
+    rv += String::number((int32)isCA);
     rv += ", isTrusted: ";
-    rv += String::number((cfint32)isTrusted);
+    rv += String::number((int32)isTrusted);
     return rv;
 }
 
@@ -138,8 +138,8 @@ bool TLSCredentials::addPrivateKey(const ByteArray & privateKey, const ByteArray
         std::unique_ptr<Private_Key> pk(PKCS8::load_key(ds, std::string(password.constData(), password.size())));
 
         // destroy data in parameters
-        for (cfsize_t i = 0 ; i < privateKey.size() ; ++i) ((char *)privateKey.constData())[i] = 0;
-        for (cfsize_t i = 0 ; i < password.size()   ; ++i) ((char *)password  .constData())[i] = 0;
+        for (size_t i = 0 ; i < privateKey.size() ; ++i) ((char *)privateKey.constData())[i] = 0;
+        for (size_t i = 0 ; i < password.size()   ; ++i) ((char *)password  .constData())[i] = 0;
 
         if (!pk) return false;
 
@@ -243,7 +243,7 @@ bool TLSCredentials::activateLoaded(bool isTrustedCA)
     impl_->loadedCrls.clear();
 
     const List<TLSCertInfo> infos = getAllCertInfos();
-    logInfo("loaded %1 certifices:", (cfuint64)infos.size());
+    logInfo("loaded %1 certifices:", (uint64)infos.size());
     for (const TLSCertInfo & info : infos) {
         logInfo("  cert: %1", info);
     }
@@ -299,7 +299,7 @@ ByteArray TLSCredentials::getAllCertsPEM() const
             DER_Encoder enc;
             cert.encode_into(enc);
             const std::string pem = PEM_Code::encode(enc.get_contents(), "CERTIFICATE");
-            rv += ByteArray(pem.c_str(), (cfsize_t)pem.size());
+            rv += ByteArray(pem.c_str(), (size_t)pem.size());
             rv += '\n';
         }
         return rv;

@@ -53,7 +53,7 @@ namespace LogCat { enum {
 
 namespace cflib::util {
 
-typedef cfuint16 LogCategory;
+typedef uint16 LogCategory;
 typedef void (*LogLevelCallback)(const ByteArray & msg);
 
 struct LogFileInfo

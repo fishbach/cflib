@@ -123,8 +123,8 @@ namespace {
 ByteArray encodeAddress(const String & address, String & plain)
 {
     // Simple parse: look for "name <addr>" pattern
-    cfsize_t lt = address.indexOf('<');
-    cfsize_t gt = address.indexOf('>');
+    size_t lt = address.indexOf('<');
+    size_t gt = address.indexOf('>');
     if (lt >= 0 && gt > lt) {
         String name = address.left(lt).trimmed();
         plain = address.mid(lt + 1, gt - lt - 1).trimmed();
@@ -183,7 +183,7 @@ void Mailer::startProcess()
     close(pipefd[0]); // close read end
     // Write mail data to pipe
     const char * data = raw.constData();
-    cfsize_t remaining = raw.size();
+    size_t remaining = raw.size();
     while (remaining > 0) {
         ssize_t written = write(pipefd[1], data, remaining);
         if (written <= 0) break;

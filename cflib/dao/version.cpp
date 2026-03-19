@@ -13,12 +13,12 @@ Version Version::current_;
 
 String Version::toString() const
 {
-    String result = String::number((cfuint32)major) + "." + String::number((cfuint32)minor) + "." + String::number((cfuint32)revision);
+    String result = String::number((uint32)major) + "." + String::number((uint32)minor) + "." + String::number((uint32)revision);
     if (!patchLevel.isEmpty()) result += "-" + patchLevel;
     return result;
 }
 
-void Version::setCurrent(cfuint major, cfuint minor, cfuint revision, const String & patchLevel)
+void Version::setCurrent(uint major, uint minor, uint revision, const String & patchLevel)
 {
     current_ = Version(major, minor, revision, patchLevel);
 }

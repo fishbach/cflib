@@ -34,9 +34,9 @@ public:
     void push_back(T && val);
     void clear();
     bool empty() const;
-    cfsize_t size() const;
-    T & operator[](cfsize_t i);
-    const T & operator[](cfsize_t i) const;
+    size_t size() const;
+    T & operator[](size_t i);
+    const T & operator[](size_t i) const;
 
     // Iterator support
     using iterator = T *;
@@ -69,7 +69,7 @@ public:
     };
 
     Type type;
-    cfuint32 classId;
+    uint32 classId;
     String ns;
     String typeName;
     List<SerializeTypeInfo> bases;
@@ -133,9 +133,9 @@ template<typename T> void TypeInfoList<T>::push_back(const T & val) { impl_->dat
 template<typename T> void TypeInfoList<T>::push_back(T && val) { impl_->data.push_back(std::move(val)); }
 template<typename T> void TypeInfoList<T>::clear() { impl_->data.clear(); }
 template<typename T> bool TypeInfoList<T>::empty() const { return impl_->data.empty(); }
-template<typename T> cfsize_t TypeInfoList<T>::size() const { return impl_->data.size(); }
-template<typename T> T & TypeInfoList<T>::operator[](cfsize_t i) { return impl_->data[i]; }
-template<typename T> const T & TypeInfoList<T>::operator[](cfsize_t i) const { return impl_->data[i]; }
+template<typename T> size_t TypeInfoList<T>::size() const { return impl_->data.size(); }
+template<typename T> T & TypeInfoList<T>::operator[](size_t i) { return impl_->data[i]; }
+template<typename T> const T & TypeInfoList<T>::operator[](size_t i) const { return impl_->data[i]; }
 
 template<typename T> typename TypeInfoList<T>::iterator TypeInfoList<T>::begin() { return impl_->data.data(); }
 template<typename T> typename TypeInfoList<T>::iterator TypeInfoList<T>::end() { return impl_->data.data() + impl_->data.size(); }

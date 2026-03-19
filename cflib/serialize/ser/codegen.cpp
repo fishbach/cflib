@@ -34,7 +34,7 @@ std::vector<std::string> splitStr(const std::string & s, const std::string & del
 std::string calcClassHash(const HeaderParser::Class & cl)
 {
     std::string fullName = cl.ns + "::" + cl.name;
-    ByteArray ba((const char *)fullName.c_str(), (cfsize_t)fullName.size());
+    ByteArray ba((const char *)fullName.c_str(), (size_t)fullName.size());
     return std::to_string(cflib::util::calcCRC32(ba));
 }
 
@@ -58,7 +58,7 @@ void writeMethods(std::ostream & out, const HeaderParser::Class & cl)
             "    ser << ",
             cl.name.c_str());
         if (cl.doBaseSerialize) {
-            out << std::format("(cfuint32){} << (const {} &)*this",
+            out << std::format("(uint32){} << (const {} &)*this",
                 calcClassHash(cl).c_str(), cl.base.c_str());
         } else {
             out << "cflib::serialize::Placeholder()";

@@ -72,13 +72,13 @@ public:
 
     bool isOpen() const { return fp_ != nullptr; }
 
-    cfint64 write(const ByteArray & data) {
+    int64 write(const ByteArray & data) {
         if (!fp_) return -1;
-        return (cfint64)fwrite(data.constData(), 1, data.size(), fp_);
+        return (int64)fwrite(data.constData(), 1, data.size(), fp_);
     }
-    cfint64 write(const char * data, cfsize_t len) {
+    int64 write(const char * data, size_t len) {
         if (!fp_) return -1;
-        return (cfint64)fwrite(data, 1, len, fp_);
+        return (int64)fwrite(data, 1, len, fp_);
     }
 
     void flush() { if (fp_) fflush(fp_); }
@@ -87,7 +87,7 @@ public:
         if (!fp_) return ByteArray();
         ByteArray result;
         char buf[4096];
-        cfsize_t n;
+        size_t n;
         while ((n = fread(buf, 1, sizeof(buf), fp_)) > 0)
             result.append(buf, n);
         return result;

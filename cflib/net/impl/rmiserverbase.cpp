@@ -659,7 +659,7 @@ String RMIServerBase::generateJS(const SerializeTypeInfo & ti) const
 
     String pathPrefix = "../";
     if (!isService) {
-        for (int i = [&]() { int c = 0; cfsize_t p = 0; while ((p = ti.ns.str().find("::", p)) != std::string::npos) { ++c; p += 2; } return c; }() ; i > 0 ; --i) {
+        for (int i = [&]() { int c = 0; size_t p = 0; while ((p = ti.ns.str().find("::", p)) != std::string::npos) { ++c; p += 2; } return c; }() ; i > 0 ; --i) {
             pathPrefix << "../";
         }
     }

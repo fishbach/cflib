@@ -17,7 +17,7 @@ public:
     bool isSet() const { return count_ > 0; }
     ByteArray value(const ByteArray & defaultValue = ByteArray()) const { return values_.empty() ? defaultValue : values_.front(); }
     List<ByteArray> values() const { return values_; }
-    cfuint count() const { return count_; }
+    uint count() const { return count_; }
 
 protected:
     ArgBase(char optionChar, const ByteArray & optionName, bool hasValue, bool isOptional, bool isRepeatable) :
@@ -29,7 +29,7 @@ protected:
     bool hasValue_;
     bool isOptional_;
     bool isRepeatable_;
-    cfuint count_;
+    uint count_;
     List<ByteArray> values_;
 
     friend class CmdLine;

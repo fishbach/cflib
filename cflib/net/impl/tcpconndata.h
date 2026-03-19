@@ -22,7 +22,7 @@ class TCPConnData
     CF_DISABLE_COPY(TCPConnData)
 public:
     TCPConnData(impl::TCPManagerImpl & impl,
-        int socket, const char * peerIP, cfuint16 peerPort,
+        int socket, const char * peerIP, uint16 peerPort,
         crypt::TLSStream * tlsStream, uint tlsThreadId);
     ~TCPConnData();
 
@@ -35,7 +35,7 @@ public:
     // connection
     const int socket;
     const ByteArray peerIP;
-    const cfuint16 peerPort;
+    const uint16 peerPort;
 
     // TLS handling
     crypt::TLSStream * const tlsStream;

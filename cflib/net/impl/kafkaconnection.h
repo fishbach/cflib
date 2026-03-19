@@ -19,12 +19,12 @@ class KafkaConnection : protected TCPConn
 public:
     KafkaConnection(TCPConnData * data);
 
-    KafkaRequestWriter request(cfint16 apiKey, cfint16 apiVersion = 0, cfint32 correlationId = 1, cfuint32 expectedSize = 0);
+    KafkaRequestWriter request(int16 apiKey, int16 apiVersion = 0, int32 correlationId = 1, uint32 expectedSize = 0);
     void close() { TCPConn::close(ReadWriteClosed, true); }
     void abort() { TCPConn::close(HardClosed, true); }
 
 protected:
-    virtual void reply(cfint32 correlationId, KafkaRawReader & reader) { CF_UNUSED(correlationId); CF_UNUSED(reader); }
+    virtual void reply(int32 correlationId, KafkaRawReader & reader) { CF_UNUSED(correlationId); CF_UNUSED(reader); }
     virtual void closed() {}
 
 protected:
@@ -40,7 +40,7 @@ private:
 class KafkaRequestWriter : public KafkaRawWriter
 {
 public:
-    KafkaRequestWriter(KafkaConnection & connection, cfuint32 expectedSize = 0);
+    KafkaRequestWriter(KafkaConnection & connection, uint32 expectedSize = 0);
 
     void send();
 

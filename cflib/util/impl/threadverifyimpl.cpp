@@ -49,7 +49,7 @@ void ThreadHolder::join()
 
 ThreadHolderLibEV::ThreadHolderLibEV(const String & threadName, int threadId, ThreadStats * stats, bool isWorkerOnly, bool disable) :
     ThreadHolder(threadName, threadId, stats, disable),
-    loop_(ev_loop_new((cfuint)EVFLAG_NOSIGMASK | (isWorkerOnly ? EVBACKEND_SELECT : EVBACKEND_ALL))),
+    loop_(ev_loop_new((uint)EVFLAG_NOSIGMASK | (isWorkerOnly ? EVBACKEND_SELECT : EVBACKEND_ALL))),
     wakeupWatcher_(new ev_async)
 {
     ev_async_init(wakeupWatcher_, &ThreadHolderLibEV::asyncCallback);
@@ -89,7 +89,7 @@ void ThreadHolderLibEV::wakeUp()
 
 void ThreadHolderLibEV::run()
 {
-    logDebug("thread %1 started with libev backend %2", threadName, (cfuint32)ev_backend(loop_));
+    logDebug("thread %1 started with libev backend %2", threadName, (uint32)ev_backend(loop_));
     ev_run(loop_, 0);
     isActive_ = false;
     logDebug("thread %1 stopped", threadName);
@@ -101,7 +101,7 @@ void ThreadHolderLibEV::asyncCallback(ev_loop *, ev_async * w, int)
 }
 
 ThreadHolderWorkerPool::ThreadHolderWorkerPool(const String & threadName,
-    int threadId, ThreadStats * stats, bool isWorkerOnly, cfuint threadCount)
+    int threadId, ThreadStats * stats, bool isWorkerOnly, uint threadCount)
 :
     ThreadHolderLibEV(threadCount > 1 ?
         String(threadName.str() + " 1/" + std::to_string(threadCount)) : threadName,
@@ -110,7 +110,7 @@ ThreadHolderWorkerPool::ThreadHolderWorkerPool(const String & threadName,
     stopLoop_(false)
 {
     if (!disabled_) startThread();
-    for (cfuint i = 2 ; i <= threadCount ; ++i) {
+    for (uint i = 2 ; i <= threadCount ; ++i) {
         String workerName(threadName.str() + " " + std::to_string(i) + "/" + std::to_string(threadCount));
         Worker * thread = new Worker(workerName, threadId, stats, i - 1, externalCalls_);
         workers_.push_back(thread);
@@ -153,9 +153,9 @@ bool ThreadHolderWorkerPool::isOwnThread() const
     return false;
 }
 
-cfuint ThreadHolderWorkerPool::threadCount() const
+uint ThreadHolderWorkerPool::threadCount() const
 {
-    return 1 + (cfuint)workers_.size();
+    return 1 + (uint)workers_.size();
 }
 
 void ThreadHolderWorkerPool::wokeUp()
@@ -181,7 +181,7 @@ void ThreadHolderWorkerPool::run()
 }
 
 ThreadHolderWorkerPool::Worker::Worker(const String & threadName,
-    int threadId, ThreadStats * stats, cfuint threadNo, ThreadFifo<const Functor *> & externalCalls)
+    int threadId, ThreadStats * stats, uint threadNo, ThreadFifo<const Functor *> & externalCalls)
 :
     ThreadHolderLibEV(threadName, threadId, stats, true, false),
     threadNo_(threadNo),

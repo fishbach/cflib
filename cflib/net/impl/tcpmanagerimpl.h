@@ -33,8 +33,8 @@ public:
     bool start(int listenSocket, crypt::TLSCredentials * credentials);
     void stop();
 
-    TCPConnData * openConnection(const ByteArray & destAddress, cfuint16 destPort,
-        const ByteArray & sourceIP, cfuint16 sourcePort,
+    TCPConnData * openConnection(const ByteArray & destAddress, uint16 destPort,
+        const ByteArray & sourceIP, uint16 sourcePort,
         crypt::TLSCredentials * credentials, bool preferIPv6);
 
     void startReadWatcher(TCPConnData * conn);
@@ -48,7 +48,7 @@ public:
     void tlsDeleteOnFinish(TCPConnData * conn) const;
 
     static void setNoDelay(int socket, bool noDelay);
-    static int openListenSocket(const ByteArray & ip, cfuint16 port);
+    static int openListenSocket(const ByteArray & ip, uint16 port);
 
     static void readable(ev_loop * loop, ev_io * w, int revents);
     static void writeable(ev_loop * loop, ev_io * w, int revents);
@@ -63,7 +63,7 @@ protected:
 private:
     static void listenSocketReadable(ev_loop * loop, ev_io * w, int revents);
     void callClosed(TCPConnData * conn);
-    TCPConnData * addConnection(int sock, const ByteArray & destIP, cfuint16 destPort,
+    TCPConnData * addConnection(int sock, const ByteArray & destIP, uint16 destPort,
         crypt::TLSCredentials * credentials, const ByteArray & destAddress);
 
 private:

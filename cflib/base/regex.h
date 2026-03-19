@@ -117,7 +117,7 @@ private:
 };
 
 // String::replace overload that takes Regex (defined here since String is declared before Regex)
-inline String & cfStringReplace(String & s, const Regex & re, const char * replacement) {
+inline String & stringReplace(String & s, const Regex & re, const char * replacement) {
     s = re.replaceAll(s, String(replacement));
     return s;
 }

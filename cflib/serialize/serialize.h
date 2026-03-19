@@ -13,7 +13,7 @@
 
 #define SERIALIZE_CLASS_USE_NULL(Class) \
     namespace cflib::serialize::impl { \
-    template<> inline void serializeBER(const Class & cl, cfuint64 tagNo, ByteArray & data, \
+    template<> inline void serializeBER(const Class & cl, uint64 tagNo, ByteArray & data, \
         BERSerializerBase &) \
     { \
         if (cl.isNull()) { writeNull(data, tagNo); return; } \
@@ -33,7 +33,7 @@
     public: \
         virtual ~Class() = default; \
         virtual cflib::serialize::SerializeTypeInfo getSerializeTypeInfo() const { return serializeTypeInfo(); } \
-        static inline SharedPtr<Class> createByClassId(cfuint32 classId) { \
+        static inline SharedPtr<Class> createByClassId(uint32 classId) { \
             return cflib::serialize::impl::RegisterClassBase::create<Class>(classId); } \
 
 #define SERIALIZE_BASE(Class) \

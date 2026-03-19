@@ -48,18 +48,18 @@ LogCategory logLevelTrigger = 15;
 LogLevelCallback logLevelCallback = 0;
 
 struct ThreadInfo {
-    cfuint indent;
-    cfuint threadId;
+    uint indent;
+    uint threadId;
     ThreadInfo() : indent(0), threadId(0) {}
 };
-Hash<cfuint, ThreadInfo> threadInfos;
+Hash<uint, ThreadInfo> threadInfos;
 
-inline cfuint threadId()
+inline uint threadId()
 {
-    return (cfuint)gettid();
+    return (uint)gettid();
 }
 
-inline void writeInt(char * dest, cfuint number, int width)
+inline void writeInt(char * dest, uint number, int width)
 {
     // bug in gcc
     #pragma GCC diagnostic push
@@ -82,7 +82,7 @@ inline void writeInt(char * dest, cfuint number, int width)
     #pragma GCC diagnostic pop
 }
 
-inline void writeIntPadded(char * dest, cfuint number, int width)
+inline void writeIntPadded(char * dest, uint number, int width)
 {
     dest += width;
     for (int i = 0 ; i < width ; ++i) {
@@ -102,7 +102,7 @@ inline void writeCategory(char * dest, LogCategory cat)
     *(dest++) = toHex(cat >> 12);
     *(dest++) = toHex(cat >>  8 & 0xF);
     *(dest++) = toHex(cat >>  4 & 0xF);
-    const cfuint lc = cat & 0xF;
+    const uint lc = cat & 0xF;
     *(dest++) = LevelChar[lc > 6 ? 0 : lc];
 }
 
@@ -111,8 +111,8 @@ inline void writeMsg(ByteArray & out, const ByteArray & msg)
 {
     const char * start = msg.constData();
     const char * p = start;
-    for (cfsize_t i = 0 ; i < msg.length() ; ++i) {
-        const cfuint8 c = (cfuint8)*p;
+    for (size_t i = 0 ; i < msg.length() ; ++i) {
+        const uint8 c = (uint8)*p;
         if (c < 0x20 || c > 0x7E) {
             if (p > start) out.append(start, p - start);
             ++p; start = p;
@@ -213,7 +213,7 @@ void Log::writeLog(const char * filename, int lineNo, LogCategory category, cons
     {
         MutexLocker lock(mutex);
         ThreadInfo & info = threadInfos[threadId()];
-        if (info.threadId == 0) info.threadId = (cfuint)threadInfos.size();
+        if (info.threadId == 0) info.threadId = (uint)threadInfos.size();
 
         // thread id
         writeInt(pos, info.threadId, 2); pos += 2;
@@ -224,10 +224,10 @@ void Log::writeLog(const char * filename, int lineNo, LogCategory category, cons
         // indent for log function trace
         if (indent < 0) {
             info.indent += indent;
-            if (info.indent > 0) line += ByteArray((cfsize_t)info.indent, ' ');
+            if (info.indent > 0) line += ByteArray((size_t)info.indent, ' ');
             line += "}\n";
         } else {
-            if (info.indent > 0) line += ByteArray((cfsize_t)info.indent, ' ');
+            if (info.indent > 0) line += ByteArray((size_t)info.indent, ' ');
             if (indent > 0) {
                 line += msg;
                 line += " {\n";

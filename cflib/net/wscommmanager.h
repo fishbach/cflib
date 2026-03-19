@@ -60,8 +60,8 @@ template<typename C>
 class WSCommMsgHandler : public virtual WSCommConnMgrAccess<C>
 {
 public:
-    virtual void handleMsg(cfuint64 tag,
-        const ByteArray & data, int tagLen, int lengthSize, cfint32 valueLen,
+    virtual void handleMsg(uint64 tag,
+        const ByteArray & data, int tagLen, int lengthSize, int32 valueLen,
         const C & connData, uint connDataId, uint connId) = 0;
 };
 
@@ -109,7 +109,7 @@ public:
     void setConnDataChecker(ConnDataChecker & checker)     { connDataChecker_ = &checker; checker.mgr_ = this; }
     void registerStateListener (StateListener & listener)  { stateListener_ << &listener; listener.mgr_ = this; }
     void registerTextMsgHandler(TextMsgHandler & hdl)      { textMsgHandler_ << &hdl; hdl.mgr_ = this; }
-    void registerMsgHandler(cfuint64 tag, MsgHandler & hdl) { msgHandler_[tag] = &hdl; hdl.mgr_ = this; }
+    void registerMsgHandler(uint64 tag, MsgHandler & hdl) { msgHandler_[tag] = &hdl; hdl.mgr_ = this; }
     void updateConnData(uint connDataId, const C & connData);
     void connDataOk(uint connDataId);
     void getConnData(const ByteArray & clientId, C & connData, uint & connDataId);
@@ -139,7 +139,7 @@ private:
     ConnDataChecker * connDataChecker_;
     List<StateListener *> stateListener_;
     List<TextMsgHandler *> textMsgHandler_;
-    Hash<cfuint64, MsgHandler *> msgHandler_;
+    Hash<uint64, MsgHandler *> msgHandler_;
 
     Hash<uint, uint> connId2dataId_;
     Hash<uint, ConnInfo> connInfos_;
@@ -264,10 +264,10 @@ void WSCommManager<C>::newMsg(uint connId, const ByteArray & data, bool isBinary
     }
 
     // read outer BER
-    cfuint64 tag = 0;
+    uint64 tag = 0;
     int tagLen = 0;
     int lengthSize = 0;
-    const cfint32 valueLen = serialize::getTLVLength(data, tag, tagLen, lengthSize);
+    const int32 valueLen = serialize::getTLVLength(data, tag, tagLen, lengthSize);
     if (valueLen < 0) {
         close(connId, TCPConn::HardClosed);
         logInfo("broken BER msg %1 (%2)", connId, valueLen);
@@ -396,7 +396,7 @@ void WSCommManager<C>::checkTimeout()
         const DateTime now = DateTime::currentDateTimeUtc();
         for (auto it = connInfos_.begin(); it != connInfos_.end(); ) {
             ConnInfo & info = it->second;
-            if (info.connIds.empty() && info.lastClosed.secsTo(now) > (cfint64)sessionTimeoutSec_) {
+            if (info.connIds.empty() && info.lastClosed.secsTo(now) > (int64)sessionTimeoutSec_) {
                 removedIds.insert(it->first);
                 it = connInfos_.erase(it);
             } else ++it;

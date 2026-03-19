@@ -24,16 +24,16 @@ public:
         started_ = true;
     }
 
-    cfint64 elapsed() const {
+    int64 elapsed() const {
         if (!started_) return 0;
         auto d = std::chrono::steady_clock::now() - tp_;
-        return (cfint64)std::chrono::duration_cast<std::chrono::milliseconds>(d).count();
+        return (int64)std::chrono::duration_cast<std::chrono::milliseconds>(d).count();
     }
 
-    cfint64 nsecsElapsed() const {
+    int64 nsecsElapsed() const {
         if (!started_) return 0;
         auto d = std::chrono::steady_clock::now() - tp_;
-        return (cfint64)std::chrono::duration_cast<std::chrono::nanoseconds>(d).count();
+        return (int64)std::chrono::duration_cast<std::chrono::nanoseconds>(d).count();
     }
 
     bool isValid() const { return started_; }
@@ -57,7 +57,7 @@ public:
         return dt;
     }
 
-    static DateTime fromSecsSinceEpoch(cfint64 secs) {
+    static DateTime fromSecsSinceEpoch(int64 secs) {
         DateTime dt;
         dt.tp_ = std::chrono::system_clock::time_point(std::chrono::seconds(secs));
         dt.valid_ = true;
@@ -65,7 +65,7 @@ public:
         return dt;
     }
 
-    static DateTime fromMSecsSinceEpoch(cfint64 msecs) {
+    static DateTime fromMSecsSinceEpoch(int64 msecs) {
         DateTime dt;
         dt.tp_ = std::chrono::system_clock::time_point(std::chrono::milliseconds(msecs));
         dt.valid_ = true;
@@ -89,23 +89,23 @@ public:
         return (int)ms.count();
     }
 
-    cfint64 toSecsSinceEpoch() const {
-        return (cfint64)std::chrono::duration_cast<std::chrono::seconds>(tp_.time_since_epoch()).count();
+    int64 toSecsSinceEpoch() const {
+        return (int64)std::chrono::duration_cast<std::chrono::seconds>(tp_.time_since_epoch()).count();
     }
 
-    cfint64 toMSecsSinceEpoch() const {
-        return (cfint64)std::chrono::duration_cast<std::chrono::milliseconds>(tp_.time_since_epoch()).count();
+    int64 toMSecsSinceEpoch() const {
+        return (int64)std::chrono::duration_cast<std::chrono::milliseconds>(tp_.time_since_epoch()).count();
     }
 
-    cfint64 msecsTo(const DateTime & other) const {
+    int64 msecsTo(const DateTime & other) const {
         return other.toMSecsSinceEpoch() - toMSecsSinceEpoch();
     }
 
-    cfint64 secsTo(const DateTime & other) const {
+    int64 secsTo(const DateTime & other) const {
         return other.toSecsSinceEpoch() - toSecsSinceEpoch();
     }
 
-    DateTime addMSecs(cfint64 ms) const {
+    DateTime addMSecs(int64 ms) const {
         return fromMSecsSinceEpoch(toMSecsSinceEpoch() + ms);
     }
 

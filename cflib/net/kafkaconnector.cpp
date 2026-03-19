@@ -21,7 +21,7 @@ KafkaConnector::~KafkaConnector()
     delete impl_;
 }
 
-void KafkaConnector::connect(const ByteArray & destAddress, cfuint16 destPort)
+void KafkaConnector::connect(const ByteArray & destAddress, uint16 destPort)
 {
     List<KafkaConnector::Address> cluster;
     cluster.push_back(Address(destAddress, destPort));
@@ -33,24 +33,24 @@ void KafkaConnector::connect(const List<KafkaConnector::Address> & cluster)
     impl_->connect(cluster);
 }
 
-void KafkaConnector::produce(const ByteArray & topic, cfint32 partitionId, const Messages & messages,
-    cfuint16 requiredAcks, cfuint32 ackTimeoutMs, cfuint32 correlationId)
+void KafkaConnector::produce(const ByteArray & topic, int32 partitionId, const Messages & messages,
+    uint16 requiredAcks, uint32 ackTimeoutMs, uint32 correlationId)
 {
     impl_->produce(topic, partitionId, messages, requiredAcks, ackTimeoutMs, correlationId);
 }
 
-void KafkaConnector::getFirstOffset(const ByteArray & topic, cfint32 partitionId, cfuint32 correlationId)
+void KafkaConnector::getFirstOffset(const ByteArray & topic, int32 partitionId, uint32 correlationId)
 {
     impl_->getOffsets(topic, partitionId, correlationId, true);
 }
 
-void KafkaConnector::getHighwaterMarkOffset(const ByteArray & topic, cfint32 partitionId, cfuint32 correlationId)
+void KafkaConnector::getHighwaterMarkOffset(const ByteArray & topic, int32 partitionId, uint32 correlationId)
 {
     impl_->getOffsets(topic, partitionId, correlationId, false);
 }
 
-void KafkaConnector::fetch(const ByteArray & topic, cfint32 partitionId, cfint64 offset,
-    cfuint32 maxWaitTime, cfuint32 minBytes, cfuint32 maxBytes, cfuint32 correlationId)
+void KafkaConnector::fetch(const ByteArray & topic, int32 partitionId, int64 offset,
+    uint32 maxWaitTime, uint32 minBytes, uint32 maxBytes, uint32 correlationId)
 {
     impl_->fetch(topic, partitionId, offset, maxWaitTime, minBytes, maxBytes, correlationId);
 }
@@ -60,7 +60,7 @@ void KafkaConnector::joinGroup(const ByteArray & groupId, const Topics & topics,
     impl_->joinGroup(groupId, topics, preferredStrategy);
 }
 
-void KafkaConnector::fetch(cfuint32 maxWaitTime, cfuint32 minBytes, cfuint32 maxBytes)
+void KafkaConnector::fetch(uint32 maxWaitTime, uint32 minBytes, uint32 maxBytes)
 {
     impl_->fetch(maxWaitTime, minBytes, maxBytes);
 }

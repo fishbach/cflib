@@ -22,8 +22,8 @@ rmi:
     String test();
     void test(int &, int &) {}
     String test(const String & msg);
-    void async(cfint64 i);
-    cfint64 iTest(cfint64 i) { return i; }
+    void async(int64 i);
+    int64 iTest(int64 i) { return i; }
     Dao update(const Dao & dao);
     void update(Dao2 & dao);
     void update(Dao3 & dao);

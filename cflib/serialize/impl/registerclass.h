@@ -23,9 +23,9 @@ public:
     }
 
     template<typename T>
-    static inline void deserialize(SharedPtr<T> & cl, const cfuint8 * data, int len)
+    static inline void deserialize(SharedPtr<T> & cl, const uint8 * data, int len)
     {
-        cfuint32 classId;
+        uint32 classId;
         {
             BERDeserializerBase ser(data, len);
             if (!ser.isAnyAvailable()) {
@@ -45,7 +45,7 @@ public:
     }
 
     template<typename T>
-    static inline SharedPtr<T> create(cfuint32 classId)
+    static inline SharedPtr<T> create(uint32 classId)
     {
         SharedPtr<T> rv;
         auto it = registry().find(classId);
@@ -64,8 +64,8 @@ public:
     }
 
 protected:
-    static Hash<cfuint32, const RegisterClassBase *> & registry();
-    void duplicateId(cfuint32 classId);
+    static Hash<uint32, const RegisterClassBase *> & registry();
+    void duplicateId(uint32 classId);
     virtual void serialize(const void * cl, BERSerializerBase & ser) const = 0;
     virtual void * deserialize(BERDeserializerBase & ser) const = 0;
     virtual SerializeTypeInfo serializeTypeInfo() const = 0;
