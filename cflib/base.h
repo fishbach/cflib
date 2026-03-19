@@ -10,15 +10,15 @@
 #include <cflib/base/bytearray.h>
 #include <cflib/base/concurrent.h>
 #include <cflib/base/containers.h>
-#include <cflib/base/cfdatetime.h>
-#include <cflib/base/cffile.h>
-#include <cflib/base/cfflags.h>
-#include <cflib/base/cfregex.h>
-#include <cflib/base/cfsharedptr.h>
-#include <cflib/base/string.h>
-#include <cflib/base/cfthread.h>
-#include <cflib/base/cfurl.h>
+#include <cflib/base/datetime.h>
+#include <cflib/base/file.h>
+#include <cflib/base/flags.h>
 #include <cflib/base/macros.h>
+#include <cflib/base/regex.h>
+#include <cflib/base/sharedptr.h>
+#include <cflib/base/string.h>
+#include <cflib/base/thread.h>
 #include <cflib/base/types.h>
+#include <cflib/base/url.h>
 
 using namespace cflib::base;
