@@ -26,7 +26,7 @@ HttpThread::~HttpThread()
     stopVerifyThread();
 }
 
-void HttpThread::newRequest(TCPConnData * data, const CFList<RequestHandler *> & handlers)
+void HttpThread::newRequest(TCPConnData * data, const List<RequestHandler *> & handlers)
 {
     ++activeRequests_;
     new impl::RequestParser(data, handlers, this);

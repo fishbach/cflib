@@ -160,15 +160,15 @@ public:
 
     void nullInList()
     {
-        TVERIFY(checkSerDeser<CFList<bool      >>(CFList<bool      >{false}, "e103c08100"));
-        TVERIFY(checkSerDeser<CFList<cfuint8   >>(CFList<cfuint8   >{0},     "e103c08100"));
-        TVERIFY(checkSerDeser<CFList<cfint8    >>(CFList<cfint8    >{0},     "e103c08100"));
-        TVERIFY(checkSerDeser<CFList<cfuint16  >>(CFList<cfuint16  >{0},     "e103c08100"));
-        TVERIFY(checkSerDeser<CFList<cfuint64  >>(CFList<cfuint64  >{0},     "e103c08100"));
+        TVERIFY(checkSerDeser<List<bool      >>(List<bool      >{false}, "e103c08100"));
+        TVERIFY(checkSerDeser<List<cfuint8   >>(List<cfuint8   >{0},     "e103c08100"));
+        TVERIFY(checkSerDeser<List<cfint8    >>(List<cfint8    >{0},     "e103c08100"));
+        TVERIFY(checkSerDeser<List<cfuint16  >>(List<cfuint16  >{0},     "e103c08100"));
+        TVERIFY(checkSerDeser<List<cfuint64  >>(List<cfuint64  >{0},     "e103c08100"));
 
-        TVERIFY(checkSer<CFList<const char *>>(CFList<const char *>{nullptr},          "e103c08100"));
-        TVERIFY(checkSerDeser<CFList<ByteArray>>(CFList<ByteArray>{ByteArray()}, "e103c08100"));
-        TVERIFY(checkSerDeser<CFList<String   >>(CFList<String   >{String()},    "e103c08100"));
+        TVERIFY(checkSer<List<const char *>>(List<const char *>{nullptr},          "e103c08100"));
+        TVERIFY(checkSerDeser<List<ByteArray>>(List<ByteArray>{ByteArray()}, "e103c08100"));
+        TVERIFY(checkSerDeser<List<String   >>(List<String   >{String()},    "e103c08100"));
     }
 
     void string()
@@ -255,9 +255,9 @@ public:
 
     void lists()
     {
-        TVERIFY(checkSerDeser<CFList<cfuint8>>(CFList<cfuint8>(), ""));
-        TVERIFY(checkSerDeser<CFList<cfuint8>>(CFList<cfuint8>{0x42}, "e103c00142"));
-        TVERIFY(checkSerDeser<CFList<cfuint8>>(CFList<cfuint8>{0x42, 0x43}, "e106c00142c00143"));
+        TVERIFY(checkSerDeser<List<cfuint8>>(List<cfuint8>(), ""));
+        TVERIFY(checkSerDeser<List<cfuint8>>(List<cfuint8>{0x42}, "e103c00142"));
+        TVERIFY(checkSerDeser<List<cfuint8>>(List<cfuint8>{0x42, 0x43}, "e106c00142c00143"));
         TVERIFY(checkSerDeser<StringList>(StringList{"XY", String(), "", "A"},
             "e10c c0025859 c08100 c000 c00141"));
 
@@ -270,7 +270,7 @@ public:
 
     void maps()
     {
-        typedef CFMap<String, int> Map;
+        typedef Map<String, int> Map;
         Map map;
         TVERIFY(checkSerDeser<Map>(map, ""));
         map["xy"] = 4;

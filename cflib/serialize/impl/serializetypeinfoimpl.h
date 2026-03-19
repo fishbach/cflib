@@ -63,7 +63,7 @@ inline void serializeTypeInfo(SerializeTypeInfoImpl & si, CFFlags<T> *)
 // ============================================================================
 
 template<typename T1, typename T2>
-inline void serializeTypeInfo(SerializeTypeInfoImpl & si, CFPair<T1, T2> *)
+inline void serializeTypeInfo(SerializeTypeInfoImpl & si, Pair<T1, T2> *)
 {
     SerializeTypeInfoImpl si1;
     serializeTypeInfo(si1, (T1 *)0);
@@ -76,7 +76,7 @@ inline void serializeTypeInfo(SerializeTypeInfoImpl & si, CFPair<T1, T2> *)
 }
 
 template<typename T>
-inline void serializeTypeInfo(SerializeTypeInfoImpl & si, CFList<T> *)
+inline void serializeTypeInfo(SerializeTypeInfoImpl & si, List<T> *)
 {
     SerializeTypeInfoImpl si1;
     serializeTypeInfo(si1, (T *)0);
@@ -86,13 +86,13 @@ inline void serializeTypeInfo(SerializeTypeInfoImpl & si, CFList<T> *)
 }
 
 template<typename T>
-inline void serializeTypeInfo(SerializeTypeInfoImpl & si, CFSet<T> *)
+inline void serializeTypeInfo(SerializeTypeInfoImpl & si, Set<T> *)
 {
-    serializeTypeInfo(si, (CFList<T> *)0);
+    serializeTypeInfo(si, (List<T> *)0);
 }
 
 template<typename Key, typename T>
-inline void serializeTypeInfo(SerializeTypeInfoImpl & si, CFMap<Key, T> *)
+inline void serializeTypeInfo(SerializeTypeInfoImpl & si, Map<Key, T> *)
 {
     SerializeTypeInfoImpl si1;
     serializeTypeInfo(si1, (Key *)0);
@@ -105,9 +105,9 @@ inline void serializeTypeInfo(SerializeTypeInfoImpl & si, CFMap<Key, T> *)
 }
 
 template<typename Key, typename T>
-inline void serializeTypeInfo(SerializeTypeInfoImpl & si, CFHash<Key, T> *)
+inline void serializeTypeInfo(SerializeTypeInfoImpl & si, Hash<Key, T> *)
 {
-    serializeTypeInfo(si, (CFMap<Key, T> *)0);
+    serializeTypeInfo(si, (Map<Key, T> *)0);
 }
 
 

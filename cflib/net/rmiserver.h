@@ -49,7 +49,7 @@ public:
         handleCall(data, (const cfuint8 *)data.constData() + tagLen + lengthSize, valueLen, connData, connDataId, connId);
     }
 
-    virtual void connDataChange(const C &, const C & newConnData, uint connDataId, const CFSet<uint> & connIds)
+    virtual void connDataChange(const C &, const C & newConnData, uint connDataId, const Set<uint> & connIds)
     {
         RMIServerBase::connDataChange(newConnData, connDataId, connIds);
     }

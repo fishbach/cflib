@@ -69,18 +69,18 @@ public:
         RoundRobinAssignment = 2
     };
 
-    typedef CFPair<ByteArray /* ip */, cfuint16 /* port */> Address;
+    typedef Pair<ByteArray /* ip */, cfuint16 /* port */> Address;
 
-    typedef CFPair<ByteArray /* key */, ByteArray /* value */> Message;
-    typedef CFVector<Message> Messages;
-    typedef CFList<ByteArray> Topics;
+    typedef Pair<ByteArray /* key */, ByteArray /* value */> Message;
+    typedef Vector<Message> Messages;
+    typedef List<ByteArray> Topics;
 
 public:
     KafkaConnector(util::ThreadVerify * other = 0);
     virtual ~KafkaConnector();
 
     void connect(const ByteArray & destAddress, cfuint16 destPort);
-    void connect(const CFList<Address> & cluster);
+    void connect(const List<Address> & cluster);
 
     // requiredAcks: 0 -> no response will be send / 1 -> wait for local write / -1 -> wait for all replicas
     // ackTimeoutMs: 0 -> wait for local write only / >0 -> max wait time for acks of replicas
@@ -102,7 +102,7 @@ public:
 
 protected:
     virtual void stateChanged(State state) { CF_UNUSED(state); }
-    virtual void groupStateChanged(const CFMap<ByteArray, CFList<cfint32>> & responsibility) { CF_UNUSED(responsibility); }
+    virtual void groupStateChanged(const Map<ByteArray, List<cfint32>> & responsibility) { CF_UNUSED(responsibility); }
 
     // offset -> is offset of first message appended to the kafka log
     virtual void produceResponse(cfuint32 correlationId, ErrorCode errorCode, cfint64 offset) {
@@ -116,7 +116,7 @@ protected:
         cfint64 firstOffset, cfint64 highwaterMarkOffset, ErrorCode errorCode) {
         CF_UNUSED(correlationId); CF_UNUSED(messages); CF_UNUSED(firstOffset); CF_UNUSED(highwaterMarkOffset); CF_UNUSED(errorCode); }
 
-    virtual void fetchResponse(const CFMap<ByteArray, Messages> & messagesPerTopic, ErrorCode errorCode) {
+    virtual void fetchResponse(const Map<ByteArray, Messages> & messagesPerTopic, ErrorCode errorCode) {
         CF_UNUSED(messagesPerTopic); CF_UNUSED(errorCode); }
 
 private:

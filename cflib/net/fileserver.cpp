@@ -172,7 +172,7 @@ void FileServer::exportTo(const String & dest) const
 
 void FileServer::add404File(const CFRegex & re, const String & dest)
 {
-    redirects404_ << CFPair<CFRegex, String>(re, dest);
+    redirects404_ << Pair<CFRegex, String>(re, dest);
 }
 
 void FileServer::handleRequest(const Request & request)

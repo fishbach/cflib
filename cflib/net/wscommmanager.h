@@ -43,7 +43,7 @@ class WSCommStateListener : public virtual WSCommConnMgrAccess<C>
 {
 public:
     virtual void newConnection(const C & connData, uint connDataId, uint connId);
-    virtual void connDataChange(const C & oldConnData, const C & newConnData, uint connDataId, const CFSet<uint> & connIds);
+    virtual void connDataChange(const C & oldConnData, const C & newConnData, uint connDataId, const Set<uint> & connIds);
     virtual void connectionClosed(const C & connData, uint connDataId, uint connId, bool isLast);
 };
 
@@ -99,7 +99,7 @@ public:
     typedef WSCommStateListener  <C> StateListener;
     typedef WSCommTextMsgHandler <C> TextMsgHandler;
     typedef WSCommMsgHandler     <C> MsgHandler;
-    typedef CFSet<uint> ConnIds;
+    typedef Set<uint> ConnIds;
 
 public:
     WSCommManager(const String & path, const CFRegex & allowedOrigin = CFRegex(),
@@ -137,13 +137,13 @@ private:
 
 private:
     ConnDataChecker * connDataChecker_;
-    CFList<StateListener *> stateListener_;
-    CFList<TextMsgHandler *> textMsgHandler_;
-    CFHash<cfuint64, MsgHandler *> msgHandler_;
+    List<StateListener *> stateListener_;
+    List<TextMsgHandler *> textMsgHandler_;
+    Hash<cfuint64, MsgHandler *> msgHandler_;
 
-    CFHash<uint, uint> connId2dataId_;
-    CFHash<uint, ConnInfo> connInfos_;
-    CFMap<ByteArray, uint> clientIds_;
+    Hash<uint, uint> connId2dataId_;
+    Hash<uint, ConnInfo> connInfos_;
+    Map<ByteArray, uint> clientIds_;
 
     util::EVTimer timer_;
     uint sessionTimeoutSec_;
@@ -159,7 +159,7 @@ void WSCommStateListener<C>::newConnection(const C & connData, uint connDataId, 
 
 template<typename C>
 void WSCommStateListener<C>::connDataChange(const C & oldConnData, const C & newConnData,
-    uint connDataId, const CFSet<uint> & connIds)
+    uint connDataId, const Set<uint> & connIds)
 {
     CF_UNUSED(oldConnData); CF_UNUSED(newConnData); CF_UNUSED(connDataId); CF_UNUSED(connIds);
 }
@@ -391,7 +391,7 @@ void WSCommManager<C>::checkTimeout()
 {
     logFunctionTrace
 
-    CFSet<uint> removedIds;
+    Set<uint> removedIds;
     {
         const CFDateTime now = CFDateTime::currentDateTimeUtc();
         for (auto it = connInfos_.begin(); it != connInfos_.end(); ) {

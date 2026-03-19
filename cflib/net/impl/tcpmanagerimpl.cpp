@@ -202,7 +202,7 @@ TCPConnData * TCPManagerImpl::openConnection(
     // resolve dns
     ByteArray destIP;
     {
-        const CFList<ByteArray> ips = getIPFromDNS(destAddress, preferIPv6);
+        const List<ByteArray> ips = getIPFromDNS(destAddress, preferIPv6);
         if (ips.empty()) {
             logWarn("cannot resolve host: %1", destAddress);
             return 0;

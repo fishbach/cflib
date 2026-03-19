@@ -54,9 +54,9 @@ public:
         return rv;
     }
 
-    static CFList<SerializeTypeInfo> getAllSerializeTypeInfos()
+    static List<SerializeTypeInfo> getAllSerializeTypeInfos()
     {
-        CFList<SerializeTypeInfo> rv;
+        List<SerializeTypeInfo> rv;
         for (auto & [id, cl] : registry()) {
             rv.push_back(cl->serializeTypeInfo());
         }
@@ -64,7 +64,7 @@ public:
     }
 
 protected:
-    static CFHash<cfuint32, const RegisterClassBase *> & registry();
+    static Hash<cfuint32, const RegisterClassBase *> & registry();
     void duplicateId(cfuint32 classId);
     virtual void serialize(const void * cl, BERSerializerBase & ser) const = 0;
     virtual void * deserialize(BERDeserializerBase & ser) const = 0;

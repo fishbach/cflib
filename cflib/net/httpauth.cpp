@@ -52,9 +52,9 @@ void HttpAuth::handleRequest(const Request & request)
                 checkedUsers_.clear();
 
                 ByteArray content = util::readFile(htpasswd_);
-                CFList<ByteArray> lines = content.split('\n');
+                List<ByteArray> lines = content.split('\n');
                 for (const auto & line : lines) {
-                    CFList<ByteArray> parts = line.split(':');
+                    List<ByteArray> parts = line.split(':');
                     if (parts.size() == 2) {
                         users_[String(parts[0].trimmed().toStdString())] = parts[1].trimmed();
                     }

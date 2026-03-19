@@ -290,13 +290,13 @@ protected:
 
     // Storage wrapper to avoid std::vector<bool> specialization issues
     template<typename C>
-    struct PerThreadStorage { using type = CFVector<C>; };
+    struct PerThreadStorage { using type = Vector<C>; };
 
     template<typename C>
     class PerThread
     {
         // Use std::deque for bool to avoid std::vector<bool> proxy issues
-        using Storage = std::conditional_t<std::is_same_v<C, bool>, std::deque<C>, CFVector<C>>;
+        using Storage = std::conditional_t<std::is_same_v<C, bool>, std::deque<C>, Vector<C>>;
     public:
         inline PerThread(const ThreadVerify * tv) :
             objs_(tv->verifyThread_->threadCount()) {}

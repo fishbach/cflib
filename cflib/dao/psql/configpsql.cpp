@@ -22,7 +22,7 @@ ConfigPSql::ConfigPSql() :
 
 void ConfigPSql::loadFromDB()
 {
-    const CFMap<String, String> vals = cflib::db::getConfigPSql();
+    const Map<String, String> vals = cflib::db::getConfigPSql();
 
     auto it = vals.find(String("isProduction"));
     isProduction = (it != vals.end() && it->second == "true");

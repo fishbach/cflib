@@ -32,7 +32,7 @@ void KafkaConnector::GroupConnection::reply(cfint32 correlationId, impl::KafkaRa
         impl::KafkaString ownMemberId;
         reader >> errorCode >> generationId >> groupProtocol >> leaderId >> ownMemberId;
 
-        CFMap<ByteArray, CFSet<ByteArray>> memberTopics;
+        Map<ByteArray, Set<ByteArray>> memberTopics;
 
         cfint32 memberCount;
         reader >> memberCount;
@@ -90,7 +90,7 @@ void KafkaConnector::GroupConnection::reply(cfint32 correlationId, impl::KafkaRa
             impl::KafkaString topic;
             reader >> topic;
 
-            CFList<cfint32> & partitions = impl_.groupTopicPartitions_[topic];
+            List<cfint32> & partitions = impl_.groupTopicPartitions_[topic];
             cfint32 partitionCount;
             reader >> partitionCount;
             for (cfint32 i = 0 ; i < partitionCount ; ++i) {

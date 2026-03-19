@@ -13,9 +13,9 @@ USE_LOG(LogCat::Db)
 
 namespace cflib::db {
 
-CFMap<String, String> getConfigPSql()
+Map<String, String> getConfigPSql()
 {
-    CFMap<String, String> retval;
+    Map<String, String> retval;
 
     PSqlConn;
     sql.begin();

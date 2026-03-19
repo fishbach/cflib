@@ -79,7 +79,7 @@ class Server : public TCPManager
 public:
     Server(uint tlsThreadCount = 0) : TCPManager(tlsThreadCount) {}
 
-    CFList<TCPConn *> conns;
+    List<TCPConn *> conns;
 
 protected:
     virtual void newConnection(TCPConnData * data)

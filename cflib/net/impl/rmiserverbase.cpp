@@ -87,9 +87,9 @@ inline String formatMembernameForJS(const SerializeVariableTypeInfo & vti)
     return vti.name;
 }
 
-CFSet<String> getCustomTypes(const SerializeTypeInfo & ti)
+Set<String> getCustomTypes(const SerializeTypeInfo & ti)
 {
-    CFSet<String> types;
+    Set<String> types;
     if (ti.type == SerializeTypeInfo::Class) {
         types << ti.getName();
     } else if (ti.type == SerializeTypeInfo::Container) {
@@ -102,7 +102,7 @@ CFSet<String> getCustomTypes(const SerializeTypeInfo & ti)
 
 StringList getMemberTypes(const SerializeTypeInfo & ti)
 {
-    CFSet<String> types;
+    Set<String> types;
     for (const auto & base : ti.bases) {
         types += getCustomTypes(base);
     }
@@ -207,7 +207,7 @@ String getTSTypename(const SerializeTypeInfo & ti)
     return ts;
 }
 
-String getJSParameters(const CFList<SerializeVariableTypeInfo> & parameters, bool withType)
+String getJSParameters(const List<SerializeVariableTypeInfo> & parameters, bool withType)
 {
     String js;
     bool isFirst = true;
@@ -324,7 +324,7 @@ String getDeserializeCode(const SerializeTypeInfo & ti, bool useFactory)
     return js;
 }
 
-String getSerializeJSParameters(const CFList<SerializeVariableTypeInfo> & parameters)
+String getSerializeJSParameters(const List<SerializeVariableTypeInfo> & parameters)
 {
     String js;
     int id = 0;
@@ -376,7 +376,7 @@ void RMIServerBase::registerService(RMIServiceBase & service)
     sfs.service = &service;
     uint i = 0;
     for (const auto & ti : servInfo.functions) {
-        sfs.signatures[ti.signature()] = CFPair<uint, uint>(++i, ti.hasReturnValues() ? 1u : 0u);
+        sfs.signatures[ti.signature()] = Pair<uint, uint>(++i, ti.hasReturnValues() ? 1u : 0u);
     }
 
     // register rsigs
@@ -384,7 +384,7 @@ void RMIServerBase::registerService(RMIServiceBase & service)
     for (const auto & ti : servInfo.cfSignals) {
         RSigBase & sig = *service.getCfSignal(++i);
         sig.server_ = this;
-        sfs.signatures[ti.name] = CFPair(i, 2);
+        sfs.signatures[ti.name] = Pair(i, 2);
     }
 
     // add type infos
@@ -408,7 +408,7 @@ void RMIServerBase::exportTo(const String & dest) const
 {
     // write services
     cflib::util::mkPath(dest + "/js/services");
-    CFSet<String> files;
+    Set<String> files;
     for (const String & name : cfKeys(services_)) {
         for (const String & suffix : StringList{".mjs"/*, ".ts"*/}) {
             String file = name + suffix;
@@ -501,7 +501,7 @@ RMIServiceBase * RMIServerBase::checkServiceCall(serialize::BERDeserializer & de
         return 0;
     }
 
-    CFPair<uint, uint> method = cfMapValue(sf.signatures, signature, CFPair<uint, uint>(0u, 0u));
+    Pair<uint, uint> method = cfMapValue(sf.signatures, signature, Pair<uint, uint>(0u, 0u));
     if (method.first == 0) {
         logWarn("signature %1 of service %2 not found from connection %3", signature, serviceName, connId);
         wsService_.close(connId, TCPConn::HardClosed);
@@ -1123,9 +1123,9 @@ String RMIServerBase::generateTSForService(const SerializeTypeInfo & ti) const
     return ts;
 }
 
-CFSet<String> RMIServerBase::exportClass(const ClassInfoEl & cl, const String & path, const String & dest) const
+Set<String> RMIServerBase::exportClass(const ClassInfoEl & cl, const String & path, const String & dest) const
 {
-    CFSet<String> rv;
+    Set<String> rv;
     if (cl.infos.empty()) {
         if (path.isEmpty()) return rv;
         for (const String & suffix : StringList{".mjs"/*, "dao.ts"*/}) {

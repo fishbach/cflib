@@ -15,9 +15,9 @@ class Dao
 public serialized:
     String name;
     cfuint32 number;
-    typedef CFList<cfuint32> List;
-    typedef CFPair<List, CFDateTime> Pair;
-    CFPair<cfuint8, Pair> pair;
+    typedef List<cfuint32> IList;
+    typedef Pair<IList, CFDateTime> LDPair;
+    Pair<cfuint8, LDPair> pair;
 };
 
 class Dao2
@@ -26,7 +26,7 @@ class Dao2
     SERIALIZE_IS_BASE(Dao2)
 public serialized:
     Dao dao;
-    CFList<int> numbers;
+    List<int> numbers;
     double f;
 };
 

@@ -50,9 +50,9 @@ private:
     const String path_;
     const CFRegex allowedOrigin_;
     const uint connectionTimeoutSec_;
-    CFSet<ByteArray> saveHeaderFields_;
+    Set<ByteArray> saveHeaderFields_;
     class WSConnHandler;
-    CFHash<uint, WSConnHandler *> connections_;
+    Hash<uint, WSConnHandler *> connections_;
     uint lastConnId_;
     util::EVTimer * timer_;
 };

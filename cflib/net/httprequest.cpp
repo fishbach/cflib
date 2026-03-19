@@ -29,7 +29,7 @@ class HttpRequest::Conn : public TCPConn, public util::ThreadVerify
 {
 public:
     Conn(HttpRequest * parent, TCPConnData * data,
-        const CFUrl & url, const CFList<ByteArray> & headers,
+        const CFUrl & url, const List<ByteArray> & headers,
         const ByteArray & postData, const ByteArray & contentType,
         uint timeoutMs)
     :
@@ -176,7 +176,7 @@ HttpRequest::~HttpRequest()
     destroy();
 }
 
-void HttpRequest::start(const CFUrl & url, const CFList<ByteArray> & headers,
+void HttpRequest::start(const CFUrl & url, const List<ByteArray> & headers,
     const ByteArray & postData, const ByteArray & contentType,
     uint timeoutMs)
 {

@@ -22,7 +22,7 @@ public:
     HttpThread(uint no, uint count);
     ~HttpThread();
 
-    void newRequest(TCPConnData * data, const CFList<RequestHandler *> & handlers);
+    void newRequest(TCPConnData * data, const List<RequestHandler *> & handlers);
     void requestFinished();
 
 private:

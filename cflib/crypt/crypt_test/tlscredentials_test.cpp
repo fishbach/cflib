@@ -39,7 +39,7 @@ public:
         TVERIFY(!creds.addPrivateKey(detach(cert1PrivateKey), "wrong"));
         TVERIFY(creds.addPrivateKey(detach(cert1PrivateKey), "SuperSecure123"));
 
-        const CFList<TLSCertInfo> infos = creds.getCertChainInfos();
+        const List<TLSCertInfo> infos = creds.getCertChainInfos();
         TCOMPARE((int)infos.size(), 3);
         TCOMPARE(infos[0].subjectName, ByteArray("127.0.0.1"));
         TCOMPARE(infos[0].issuerName,  ByteArray("ca"));
@@ -65,7 +65,7 @@ public:
         TCOMPARE((int)creds.addCerts(cert3, true), 1);
         TVERIFY(creds.addPrivateKey(detach(cert1PrivateKey), "SuperSecure123"));
 
-        const CFList<TLSCertInfo> infos = creds.getCertChainInfos();
+        const List<TLSCertInfo> infos = creds.getCertChainInfos();
         TCOMPARE((int)infos.size(), 3);
         TCOMPARE(infos[0].subjectName, ByteArray("127.0.0.1"));
         TVERIFY(!infos[0].isTrusted);

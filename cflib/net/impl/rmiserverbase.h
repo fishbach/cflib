@@ -48,7 +48,7 @@ public:
     }
 
     template<typename C>
-    void connDataChange(const C & connData, uint connDataId, const CFSet<uint> & connIds)
+    void connDataChange(const C & connData, uint connDataId, const Set<uint> & connIds)
     {
         if (!verifyThreadCall(&RMIServerBase::connDataChange<C>, connData, connDataId, connIds)) return;
 
@@ -73,7 +73,7 @@ public:
 
 private:
     struct ClassInfoEl;
-    class ClassInfos : public CFMap<String, ClassInfoEl *> {
+    class ClassInfos : public Map<String, ClassInfoEl *> {
         CF_DISABLE_COPY(ClassInfos)
     public:
         ClassInfos() {}
@@ -86,7 +86,7 @@ private:
     struct ServiceFunctions {
         ServiceFunctions() : service(0) {}
         RMIServiceBase * service;
-        CFMap<String, CFPair<uint, uint> > signatures;
+        Map<String, Pair<uint, uint> > signatures;
     };
 
 private:
@@ -103,15 +103,15 @@ private:
     String generateJSForService(const cflib::serialize::SerializeTypeInfo & ti) const;
     String generateTSForClass(const cflib::serialize::SerializeTypeInfo & ti) const;
     String generateTSForService(const cflib::serialize::SerializeTypeInfo & ti) const;
-    CFSet<String> exportClass(const ClassInfoEl & cl, const String & path, const String & dest) const;
+    Set<String> exportClass(const ClassInfoEl & cl, const String & path, const String & dest) const;
     void addClassInfo(const cflib::serialize::SerializeTypeInfo & ti);
 
 private:
     WSCommManagerBase & wsService_;
     const CFRegex containerRE_;
-    CFMap<String, ServiceFunctions> services_;
+    Map<String, ServiceFunctions> services_;
     ClassInfoEl classInfos_;
-    CFSet<uint> activeRequests_;
+    Set<uint> activeRequests_;
 };
 
 }} // namespace

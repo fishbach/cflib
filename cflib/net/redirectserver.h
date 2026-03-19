@@ -17,7 +17,7 @@ namespace cflib::net {
 class RedirectServer : public RequestHandler
 {
 public:
-    typedef CFPair<ByteArray /*ip*/, cfuint16 /*port*/> DestHost;
+    typedef Pair<ByteArray /*ip*/, cfuint16 /*port*/> DestHost;
     typedef std::function<ByteArray (const Request &                                 )> DestUrlFunc;
     typedef std::function<ByteArray (const Request &, const CFRegex::MatchResult &)> DestUrlReFunc;
     typedef std::function<DestHost   (const Request &                                 )> DestHostFunc;
@@ -80,7 +80,7 @@ private:
         Entry(DestHostFunc destHostFunc) :
             isValid(false), isRedirect(false), isDefault(true), invert(false), destHostFunc(destHostFunc) {}
     };
-    CFList<Entry> entries_;
+    List<Entry> entries_;
 };
 
 } // namespace

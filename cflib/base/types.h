@@ -25,4 +25,8 @@ using cfssize  = std::ptrdiff_t;
 using cfsize_t = std::size_t;
 using cfuint   = unsigned int;
 
+// Helper: qMax replacement
+template<typename T>
+inline T cfMax(const T & a, const T & b) { return a > b ? a : b; }
+
 } // namespace

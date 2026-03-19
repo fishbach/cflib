@@ -23,7 +23,7 @@ AtomicInt connCount;
 }
 
 RequestParser::RequestParser(TCPConnData * data,
-    const CFList<RequestHandler *> & handlers, HttpThread * thread)
+    const List<RequestHandler *> & handlers, HttpThread * thread)
 :
     util::ThreadVerify(thread),
     TCPConn(data),
@@ -242,7 +242,7 @@ bool RequestParser::parseHeader()
 
 bool RequestParser::handleRequestLine(const ByteArray & line)
 {
-    CFList<ByteArray> parts = line.split(' ');
+    List<ByteArray> parts = line.split(' ');
     if (parts.size() != 3) {
         logWarn("unknown request on connection %1: %2", id_, line);
         return false;

@@ -52,7 +52,7 @@ struct ThreadInfo {
     cfuint threadId;
     ThreadInfo() : indent(0), threadId(0) {}
 };
-CFHash<cfuint, ThreadInfo> threadInfos;
+Hash<cfuint, ThreadInfo> threadInfos;
 
 inline cfuint threadId()
 {

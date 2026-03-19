@@ -49,7 +49,7 @@ public serialized:
     int y;
     CFSharedPtr<DynamicBase> d;
     typedef CFSharedPtr<DynamicBase> DBase;
-    CFList<DBase> e;
+    List<DBase> e;
     int z;
 
 public:

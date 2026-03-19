@@ -27,7 +27,7 @@ public serialized:
     String baseURL;
 
 protected:
-    virtual void init(const CFMap<String, String> &) {}
+    virtual void init(const Map<String, String> &) {}
 
 private:
     static ConfigPSql * instance_;

@@ -205,7 +205,7 @@ bool update(const ByteArray & schema, Migrator migrator)
     PSqlConn;
 
     // get existing revisions
-    CFSet<String> existingRevisions;
+    Set<String> existingRevisions;
     if (!sql.exec("SELECT rev FROM __scheme_revisions__ WHERE success = 1")) {
         logInfo("creating table __scheme_revisions__");
         if (!sql.exec(

@@ -128,7 +128,7 @@ public:
     PGconn * conn;
     bool transactionActive;
     bool doRollback;
-    CFList<ByteArray> preparedStatements;
+    List<ByteArray> preparedStatements;
     cfuint instanceCount;
 
 public:
@@ -254,7 +254,7 @@ bool PSql::setParameter(const String & connectionParameterRef, const String & ov
     if (!conninfo) {
         logWarn("cannot get connection info");
     } else {
-        CFMap<ByteArray, ByteArray> vals;
+        Map<ByteArray, ByteArray> vals;
         for (PQconninfoOption * it = conninfo ; it->keyword != NULL ; ++it) {
             if (it->val != NULL) vals[ByteArray(it->keyword)] = ByteArray(it->val);
         }

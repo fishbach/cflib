@@ -55,8 +55,8 @@ private:
     const bool removeSlash_;
     const bool useHostAsDir_;
     const ByteArray eTag_;
-    typedef CFPair<CFRegex, String> Redirect;
-    CFList<Redirect> redirects404_;
+    typedef Pair<CFRegex, String> Redirect;
+    List<Redirect> redirects404_;
     const CFRegex pathRE_;
     const CFRegex endingRE_;
     const CFRegex elementRE_;

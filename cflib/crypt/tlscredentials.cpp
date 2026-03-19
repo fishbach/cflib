@@ -79,12 +79,12 @@ public:
 
         CertsPrivKey() : privateKey(0) {}
     };
-    CFList<CertsPrivKey> chains;
-    CFList<X509_Certificate> allCerts;
+    List<CertsPrivKey> chains;
+    List<X509_Certificate> allCerts;
     Certificate_Store_In_Memory trustedCAs;
-    CFList<ByteArray> loadedCerts;
-    CFList<ByteArray> loadedKeys;
-    CFList<ByteArray> loadedCrls;
+    List<ByteArray> loadedCerts;
+    List<ByteArray> loadedKeys;
+    List<ByteArray> loadedCrls;
 };
 
 TLSCredentials::TLSCredentials() :
@@ -242,7 +242,7 @@ bool TLSCredentials::activateLoaded(bool isTrustedCA)
     }
     impl_->loadedCrls.clear();
 
-    const CFList<TLSCertInfo> infos = getAllCertInfos();
+    const List<TLSCertInfo> infos = getAllCertInfos();
     logInfo("loaded %1 certifices:", (cfuint64)infos.size());
     for (const TLSCertInfo & info : infos) {
         logInfo("  cert: %1", info);
@@ -269,9 +269,9 @@ TLSCertInfo TLSCredentials::getInfo(const X509_Certificate & crt) const
     return TLSCertInfo();
 }
 
-CFList<TLSCertInfo> TLSCredentials::getCertChainInfos() const
+List<TLSCertInfo> TLSCredentials::getCertChainInfos() const
 {
-    CFList<TLSCertInfo> rv;
+    List<TLSCertInfo> rv;
     for (const Impl::CertsPrivKey & ck : impl_->chains) {
         for (const X509_Certificate & crt : ck.certs) {
             TLSCertInfo info = getInfo(crt);
@@ -281,9 +281,9 @@ CFList<TLSCertInfo> TLSCredentials::getCertChainInfos() const
     return rv;
 }
 
-CFList<TLSCertInfo> TLSCredentials::getAllCertInfos() const
+List<TLSCertInfo> TLSCredentials::getAllCertInfos() const
 {
-    CFList<TLSCertInfo> rv;
+    List<TLSCertInfo> rv;
     for (const X509_Certificate & crt : impl_->allCerts) {
         TLSCertInfo info = getInfo(crt);
         if (!info.isNull()) rv.push_back(info);

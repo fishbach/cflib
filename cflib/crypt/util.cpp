@@ -153,7 +153,7 @@ ByteArray rsaSign(const ByteArray & privateKey, const ByteArray & msg)
     return ByteArray();
 }
 
-ByteArray x509CreateCertReq(const ByteArray & privateKey, const CFList<ByteArray> subjectAltNames)
+ByteArray x509CreateCertReq(const ByteArray & privateKey, const List<ByteArray> subjectAltNames)
 {
     TRY {
         DataSource_Memory ds((const byte *)privateKey.constData(), privateKey.size());

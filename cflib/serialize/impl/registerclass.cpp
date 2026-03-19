@@ -17,12 +17,12 @@ namespace cflib::serialize::impl {
 
 namespace {
 
-typedef CFHash<cfuint32, const RegisterClassBase *> Registry;
+typedef Hash<cfuint32, const RegisterClassBase *> Registry;
 CF_GLOBAL_STATIC(Registry, getRegistry)
 
 }
 
-CFHash<cfuint32, const RegisterClassBase *> & RegisterClassBase::registry()
+Hash<cfuint32, const RegisterClassBase *> & RegisterClassBase::registry()
 {
     return getRegistry();
 }

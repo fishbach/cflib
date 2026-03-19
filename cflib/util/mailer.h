@@ -55,7 +55,7 @@ private:
     static Mailer * instance_;
 
     String sendmailPath_;
-    CFList<Mail> queue_;
+    List<Mail> queue_;
     pid_t childPid_;
 };
 

@@ -25,11 +25,11 @@ const CFRegex ipRe("^(?:\\d+\\.\\d+\\.\\d+\\.\\d+|[:0-9A-Fa-f]+)$");
 
 }
 
-CFList<ByteArray> getIPFromDNS(const ByteArray & name, bool preferIPv6)
+List<ByteArray> getIPFromDNS(const ByteArray & name, bool preferIPv6)
 {
     if (ipRe.match(name)) {
         logTrace("getIPFromDNS(\"%1\", %2) -> %1", name, preferIPv6);
-        CFList<ByteArray> rv;
+        List<ByteArray> rv;
         rv.push_back(name);
         return rv;
     }
@@ -38,11 +38,11 @@ CFList<ByteArray> getIPFromDNS(const ByteArray & name, bool preferIPv6)
     int err = getaddrinfo(name.constData(), 0, 0, &res);
     if (err != 0) {
         logWarn("getaddrinfo failed with error: %1", err);
-        return CFList<ByteArray>();
+        return List<ByteArray>();
     }
 
-    CFSet<ByteArray> ipv4;
-    CFSet<ByteArray> ipv6;
+    Set<ByteArray> ipv4;
+    Set<ByteArray> ipv6;
     for ( ; res ; res = res->ai_next) {
         char ip[40];
         if (res->ai_family == AF_INET) {
@@ -56,7 +56,7 @@ CFList<ByteArray> getIPFromDNS(const ByteArray & name, bool preferIPv6)
 
     freeaddrinfo(res);
 
-    CFList<ByteArray> rv = ipv4.empty() || (preferIPv6 && !ipv6.empty()) ? cfSetValues(ipv6) : cfSetValues(ipv4);
+    List<ByteArray> rv = ipv4.empty() || (preferIPv6 && !ipv6.empty()) ? cfSetValues(ipv6) : cfSetValues(ipv4);
     std::sort(rv.begin(), rv.end());
     logTrace("getIPFromDNS(\"%1\", %2) -> %3", name, preferIPv6, cfJoin(rv, ' '));
     return rv;

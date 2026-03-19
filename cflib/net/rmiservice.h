@@ -94,7 +94,7 @@ private:
         connDataId_ = 0;
     }
 
-    void connDataChange(const C & connData, uint connDataId, const CFSet<uint> & connIds)
+    void connDataChange(const C & connData, uint connDataId, const Set<uint> & connIds)
     {
         if (!verifyThreadCall(&RMIService::connDataChange, connData, connDataId, connIds)) return;
 

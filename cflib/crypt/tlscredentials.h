@@ -35,8 +35,8 @@ public:
 
     // certificates can be added in arbitrary order
     uint addCerts(const ByteArray & certs, bool isTrustedCA = false);
-    CFList<TLSCertInfo> getCertChainInfos() const;
-    CFList<TLSCertInfo> getAllCertInfos() const;
+    List<TLSCertInfo> getCertChainInfos() const;
+    List<TLSCertInfo> getAllCertInfos() const;
 
     uint addRevocationLists(const ByteArray & crls);
 

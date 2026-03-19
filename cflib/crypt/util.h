@@ -31,7 +31,7 @@ void rsaPublicModulusExponent(const ByteArray & privateKey, ByteArray & modulus,
 ByteArray rsaSign(const ByteArray & privateKey, const ByteArray & msg);
 
 // DER encoded
-ByteArray x509CreateCertReq(const ByteArray & privateKey, const CFList<ByteArray> subjectAltNames);
+ByteArray x509CreateCertReq(const ByteArray & privateKey, const List<ByteArray> subjectAltNames);
 
 ByteArray der2pem(const ByteArray & der, const ByteArray & label);
 

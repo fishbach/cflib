@@ -20,8 +20,8 @@ namespace impl { class RequestParser; }
 class Request
 {
 public:
-    typedef CFPair<int, int> Id;
-    typedef CFMap<ByteArray, ByteArray> KeyVal;
+    typedef Pair<int, int> Id;
+    typedef Map<ByteArray, ByteArray> KeyVal;
     enum Method {
         NONE = 0,
         GET,
@@ -35,7 +35,7 @@ public:
     Request(int connId, int requestId,
         const ByteArray & header,
         const KeyVal & headerFields, Method method, const ByteArray & uri,
-        const ByteArray & body, const CFList<RequestHandler *> & handlers, bool passThrough,
+        const ByteArray & body, const List<RequestHandler *> & handlers, bool passThrough,
         impl::RequestParser * parser);
 
     // implicit sharing

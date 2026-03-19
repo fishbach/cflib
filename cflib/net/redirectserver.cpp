@@ -201,7 +201,7 @@ void RedirectServer::addDefaultRedirect(DestUrlFunc destUrlFunc)
 
 void RedirectServer::addForwardIf(const CFRegex & test, const ByteArray & ip, cfuint16 port)
 {
-    entries_ << Entry(false, test, CFPair(ip, port));
+    entries_ << Entry(false, test, Pair(ip, port));
 }
 
 void RedirectServer::addForwardIf(const CFRegex & test, DestHostReFunc destHostReFunc)
@@ -211,12 +211,12 @@ void RedirectServer::addForwardIf(const CFRegex & test, DestHostReFunc destHostR
 
 void RedirectServer::addForwardIfNot(const CFRegex & test, const ByteArray & ip, cfuint16 port)
 {
-    entries_ << Entry(true, test, CFPair(ip, port));
+    entries_ << Entry(true, test, Pair(ip, port));
 }
 
 void RedirectServer::addDefaultForward(const ByteArray & ip, cfuint16 port)
 {
-    entries_ << Entry(CFPair(ip, port));
+    entries_ << Entry(Pair(ip, port));
 }
 
 void RedirectServer::addDefaultForward(DestHostFunc destHostFunc)

@@ -20,30 +20,30 @@
 namespace cflib::base {
 
 template<typename T>
-using CFList = std::vector<T>;
+using List = std::vector<T>;
 
 template<typename T>
-using CFVector = std::vector<T>;
+using Vector = std::vector<T>;
 
 template<typename K, typename V>
-using CFHash = std::unordered_map<K, V>;
+using Hash = std::unordered_map<K, V>;
 
 template<typename K, typename V>
-using CFMap = std::map<K, V>;
+using Map = std::map<K, V>;
 
 template<typename T>
-using CFSet = std::unordered_set<T>;
+using Set = std::unordered_set<T>;
 
 template<typename K, typename V>
-using CFMultiMap = std::multimap<K, V>;
+using MultiMap = std::multimap<K, V>;
 
 template<typename K, typename V>
-using CFMultiHash = std::unordered_multimap<K, V>;
+using MultiHash = std::unordered_multimap<K, V>;
 
 template<typename A, typename B>
-using CFPair = std::pair<A, B>;
+using Pair = std::pair<A, B>;
 
-using StringList = CFList<String>;
+using StringList = List<String>;
 
 template<typename T>
 inline std::vector<T> & operator<<(std::vector<T> & vec, const T & val) {
@@ -195,9 +195,5 @@ inline bool cfContains(const std::vector<T> & v, const U & val) {
     for (const auto & item : v) if (item == val) return true;
     return false;
 }
-
-// Helper: qMax replacement
-template<typename T>
-inline T cfMax(const T & a, const T & b) { return a > b ? a : b; }
 
 } // namespace

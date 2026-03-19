@@ -47,7 +47,7 @@ public:
     ~Impl();
 
     void setState(KafkaConnector::State newState);
-    void connect(const CFList<KafkaConnector::Address> & cluster);
+    void connect(const List<KafkaConnector::Address> & cluster);
     void fetchMetaData();
 
     void produce(const ByteArray & topic, cfint32 partitionId, const KafkaConnector::Messages & messages,
@@ -65,28 +65,28 @@ public:
     void rejoinGroup();
     void doJoin();
     void sendGroupHeartBeat();
-    void doSync(const ByteArray & protocol, CFMap<ByteArray, CFSet<ByteArray>> memberTopics);
-    CFMap<ByteArray, CFMap<ByteArray, CFList<cfint32>>> computeGroupAssignment(
-        const ByteArray & protocol, CFMap<ByteArray, CFSet<ByteArray>> memberTopics);
+    void doSync(const ByteArray & protocol, Map<ByteArray, Set<ByteArray>> memberTopics);
+    Map<ByteArray, Map<ByteArray, List<cfint32>>> computeGroupAssignment(
+        const ByteArray & protocol, Map<ByteArray, Set<ByteArray>> memberTopics);
 
 public:
     KafkaConnector & main_;
     TCPManager net_;
 
-    CFList<KafkaConnector::Address> cluster_;
+    List<KafkaConnector::Address> cluster_;
     int clusterId_;
 
-    CFHash<cfint32 /* nodeId */, KafkaConnector::Address> allBrokers_;
+    Hash<cfint32 /* nodeId */, KafkaConnector::Address> allBrokers_;
     struct NodeId { cfint32 id; NodeId() : id(-1) {} };
-    CFMap<ByteArray /* topic */, CFMap<cfint32 /* partitionId */, NodeId>> responsibilities_;
+    Map<ByteArray /* topic */, Map<cfint32 /* partitionId */, NodeId>> responsibilities_;
 
     KafkaConnector::State currentState_;
 
-    CFHash<cfint32 /* nodeId */, KafkaConnector::ProduceConnection *> produceConnections_;
-    CFHash<cfint32 /* nodeId */, KafkaConnector::FetchConnection   *> fetchConnections_;
+    Hash<cfint32 /* nodeId */, KafkaConnector::ProduceConnection *> produceConnections_;
+    Hash<cfint32 /* nodeId */, KafkaConnector::FetchConnection   *> fetchConnections_;
 
     ByteArray groupId_;
-    CFMap<ByteArray, CFList<cfint32>> groupTopicPartitions_;
+    Map<ByteArray, List<cfint32>> groupTopicPartitions_;
     KafkaConnector::GroupAssignmentStrategy preferredStrategy_;
 
     KafkaConnector::MetadataConnection * groupCoordinatorRequest_;

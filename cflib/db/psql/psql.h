@@ -164,7 +164,7 @@ private:
     int prepareParamCount_;
     cfuint prepareParamTypes_[MAX_FIELD_COUNT];
     int prepareParamLengths_[MAX_FIELD_COUNT];
-    CFVector<bool> prepareParamIsNull_;
+    Vector<bool> prepareParamIsNull_;
 
     ByteArray prepareData_;
 };

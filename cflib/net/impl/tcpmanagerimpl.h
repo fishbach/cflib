@@ -71,9 +71,9 @@ private:
     bool isIPv6Sock_;
     ev_io * readWatcher_;
     crypt::TLSCredentials * credentials_;
-    CFVector<TLSThread *> tlsThreads_;
+    Vector<TLSThread *> tlsThreads_;
     AtomicInteger<uint> tlsConnId_;
-    CFSet<TCPConnData *> connections_;
+    Set<TCPConnData *> connections_;
 };
 
 }} // namespace

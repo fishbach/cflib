@@ -7,8 +7,8 @@
 
 #pragma once
 
+#include <cflib/base/containers.h>
 #include <cflib/base/string.h>
-#include <cflib/base/cfcontainers.h>
 
 #include <regex>
 
@@ -63,9 +63,9 @@ public:
         }
     private:
         bool matched_ = false;
-        CFList<String> groups_;
-        CFList<int> positions_;
-        CFList<int> lengths_;
+        List<String> groups_;
+        List<int> positions_;
+        List<int> lengths_;
         friend class CFRegex;
     };
 

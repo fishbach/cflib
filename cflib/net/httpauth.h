@@ -28,8 +28,8 @@ private:
     const ByteArray name_;
     const String htpasswd_;
     CFDateTime htpasswdLastMod_;
-    CFMap<String, ByteArray> users_;
-    CFSet<ByteArray> checkedUsers_;
+    Map<String, ByteArray> users_;
+    Set<ByteArray> checkedUsers_;
 };
 
 } // namespace

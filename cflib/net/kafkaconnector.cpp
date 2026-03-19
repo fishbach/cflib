@@ -23,12 +23,12 @@ KafkaConnector::~KafkaConnector()
 
 void KafkaConnector::connect(const ByteArray & destAddress, cfuint16 destPort)
 {
-    CFList<KafkaConnector::Address> cluster;
+    List<KafkaConnector::Address> cluster;
     cluster.push_back(Address(destAddress, destPort));
     connect(cluster);
 }
 
-void KafkaConnector::connect(const CFList<KafkaConnector::Address> & cluster)
+void KafkaConnector::connect(const List<KafkaConnector::Address> & cluster)
 {
     impl_->connect(cluster);
 }

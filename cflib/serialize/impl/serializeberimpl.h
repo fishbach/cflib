@@ -283,11 +283,11 @@ inline void deserializeBER(CFFlags<T> & fl, const cfuint8 * data, int len, BERDe
 // ============================================================================
 
 // ----------------------------------------------------------------------------
-// CFPair
+// Pair
 // ----------------------------------------------------------------------------
 
 template<typename T1, typename T2>
-inline void serializeBER(const CFPair<T1, T2> & cl, cfuint64 tagNo, ByteArray & data, BERSerializerBase &)
+inline void serializeBER(const Pair<T1, T2> & cl, cfuint64 tagNo, ByteArray & data, BERSerializerBase &)
 {
     TLWriter tlw(data, tagNo);
     BERSerializerBase ser(data);
@@ -295,18 +295,18 @@ inline void serializeBER(const CFPair<T1, T2> & cl, cfuint64 tagNo, ByteArray & 
 }
 
 template<typename T1, typename T2>
-inline void deserializeBER(CFPair<T1, T2> & cl, const cfuint8 * data, int len, BERDeserializerBase &)
+inline void deserializeBER(Pair<T1, T2> & cl, const cfuint8 * data, int len, BERDeserializerBase &)
 {
     BERDeserializerBase ser(data, len);
     ser >> cl.first >> cl.second;
 }
 
 // ----------------------------------------------------------------------------
-// CFList
+// List
 // ----------------------------------------------------------------------------
 
 template<typename T>
-inline void serializeBER(const CFList<T> & cl, cfuint64 tagNo, ByteArray & data, BERSerializerBase &)
+inline void serializeBER(const List<T> & cl, cfuint64 tagNo, ByteArray & data, BERSerializerBase &)
 {
     TLWriter tlw(data, tagNo);
     BERSerializerBase ser(data, true);
@@ -314,7 +314,7 @@ inline void serializeBER(const CFList<T> & cl, cfuint64 tagNo, ByteArray & data,
 }
 
 template<typename T>
-inline void deserializeBER(CFList<T> & cl, const cfuint8 * data, int len, BERDeserializerBase &)
+inline void deserializeBER(List<T> & cl, const cfuint8 * data, int len, BERDeserializerBase &)
 {
     BERDeserializerBase ser(data, len, true);
     cl.clear();
@@ -325,20 +325,20 @@ inline void deserializeBER(CFList<T> & cl, const cfuint8 * data, int len, BERDes
 }
 
 // ----------------------------------------------------------------------------
-// StringList is CFList<String> — handled by the CFList template above.
+// StringList is List<String> — handled by the List template above.
 
 // ----------------------------------------------------------------------------
-// CFVector (same as CFList)
+// Vector (same as List)
 // ----------------------------------------------------------------------------
 
-// CFVector is the same type as CFList (both std::vector), no separate overload needed.
+// Vector is the same type as List (both std::vector), no separate overload needed.
 
 // ----------------------------------------------------------------------------
-// CFSet
+// Set
 // ----------------------------------------------------------------------------
 
 template<typename T>
-inline void serializeBER(const CFSet<T> & cl, cfuint64 tagNo, ByteArray & data, BERSerializerBase &)
+inline void serializeBER(const Set<T> & cl, cfuint64 tagNo, ByteArray & data, BERSerializerBase &)
 {
     TLWriter tlw(data, tagNo);
     BERSerializerBase ser(data, true);
@@ -347,7 +347,7 @@ inline void serializeBER(const CFSet<T> & cl, cfuint64 tagNo, ByteArray & data, 
 }
 
 template<typename T>
-inline void deserializeBER(CFSet<T> & cl, const cfuint8 * data, int len, BERDeserializerBase &)
+inline void deserializeBER(Set<T> & cl, const cfuint8 * data, int len, BERDeserializerBase &)
 {
     BERDeserializerBase ser(data, len, true);
     cl.clear();
@@ -358,11 +358,11 @@ inline void deserializeBER(CFSet<T> & cl, const cfuint8 * data, int len, BERDese
 }
 
 // ----------------------------------------------------------------------------
-// CFHash
+// Hash
 // ----------------------------------------------------------------------------
 
 template<typename Key, typename T>
-inline void serializeBER(const CFHash<Key, T> & cl, cfuint64 tagNo, ByteArray & data, BERSerializerBase &)
+inline void serializeBER(const Hash<Key, T> & cl, cfuint64 tagNo, ByteArray & data, BERSerializerBase &)
 {
     TLWriter tlw(data, tagNo);
     BERSerializerBase ser(data, true);
@@ -372,7 +372,7 @@ inline void serializeBER(const CFHash<Key, T> & cl, cfuint64 tagNo, ByteArray & 
 }
 
 template<typename Key, typename T>
-inline void deserializeBER(CFHash<Key, T> & cl, const cfuint8 * data, int len, BERDeserializerBase &)
+inline void deserializeBER(Hash<Key, T> & cl, const cfuint8 * data, int len, BERDeserializerBase &)
 {
     BERDeserializerBase ser(data, len, true);
     cl.clear();
@@ -385,11 +385,11 @@ inline void deserializeBER(CFHash<Key, T> & cl, const cfuint8 * data, int len, B
 }
 
 // ----------------------------------------------------------------------------
-// CFMultiHash
+// MultiHash
 // ----------------------------------------------------------------------------
 
 template<typename Key, typename T>
-inline void serializeBER(const CFMultiHash<Key, T> & cl, cfuint64 tagNo, ByteArray & data, BERSerializerBase &)
+inline void serializeBER(const MultiHash<Key, T> & cl, cfuint64 tagNo, ByteArray & data, BERSerializerBase &)
 {
     TLWriter tlw(data, tagNo);
     BERSerializerBase ser(data, true);
@@ -399,7 +399,7 @@ inline void serializeBER(const CFMultiHash<Key, T> & cl, cfuint64 tagNo, ByteArr
 }
 
 template<typename Key, typename T>
-inline void deserializeBER(CFMultiHash<Key, T> & cl, const cfuint8 * data, int len, BERDeserializerBase &)
+inline void deserializeBER(MultiHash<Key, T> & cl, const cfuint8 * data, int len, BERDeserializerBase &)
 {
     BERDeserializerBase ser(data, len, true);
     cl.clear();
@@ -412,11 +412,11 @@ inline void deserializeBER(CFMultiHash<Key, T> & cl, const cfuint8 * data, int l
 }
 
 // ----------------------------------------------------------------------------
-// CFMap
+// Map
 // ----------------------------------------------------------------------------
 
 template<typename Key, typename T>
-inline void serializeBER(const CFMap<Key, T> & cl, cfuint64 tagNo, ByteArray & data, BERSerializerBase &)
+inline void serializeBER(const Map<Key, T> & cl, cfuint64 tagNo, ByteArray & data, BERSerializerBase &)
 {
     TLWriter tlw(data, tagNo);
     BERSerializerBase ser(data, true);
@@ -426,7 +426,7 @@ inline void serializeBER(const CFMap<Key, T> & cl, cfuint64 tagNo, ByteArray & d
 }
 
 template<typename Key, typename T>
-inline void deserializeBER(CFMap<Key, T> & cl, const cfuint8 * data, int len, BERDeserializerBase &)
+inline void deserializeBER(Map<Key, T> & cl, const cfuint8 * data, int len, BERDeserializerBase &)
 {
     BERDeserializerBase ser(data, len, true);
     cl.clear();
@@ -439,11 +439,11 @@ inline void deserializeBER(CFMap<Key, T> & cl, const cfuint8 * data, int len, BE
 }
 
 // ----------------------------------------------------------------------------
-// CFMultiMap
+// MultiMap
 // ----------------------------------------------------------------------------
 
 template<typename Key, typename T>
-inline void serializeBER(const CFMultiMap<Key, T> & cl, cfuint64 tagNo, ByteArray & data, BERSerializerBase &)
+inline void serializeBER(const MultiMap<Key, T> & cl, cfuint64 tagNo, ByteArray & data, BERSerializerBase &)
 {
     TLWriter tlw(data, tagNo);
     BERSerializerBase ser(data, true);
@@ -453,7 +453,7 @@ inline void serializeBER(const CFMultiMap<Key, T> & cl, cfuint64 tagNo, ByteArra
 }
 
 template<typename Key, typename T>
-inline void deserializeBER(CFMultiMap<Key, T> & cl, const cfuint8 * data, int len, BERDeserializerBase &)
+inline void deserializeBER(MultiMap<Key, T> & cl, const cfuint8 * data, int len, BERDeserializerBase &)
 {
     BERDeserializerBase ser(data, len, true);
     cl.clear();

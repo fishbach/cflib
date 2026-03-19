@@ -43,9 +43,9 @@ protected:
     }
 
 private:
-    CFVector<impl::HttpThread *> threads_;
+    Vector<impl::HttpThread *> threads_;
     uint threadCounter_;
-    CFList<RequestHandler *> handlers_;
+    List<RequestHandler *> handlers_;
 };
 
 HttpServer::HttpServer(uint threadCount, uint tlsThreadCount) :

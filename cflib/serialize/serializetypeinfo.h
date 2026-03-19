@@ -72,7 +72,7 @@ public:
     cfuint32 classId;
     String ns;
     String typeName;
-    CFList<SerializeTypeInfo> bases;
+    List<SerializeTypeInfo> bases;
     TypeInfoList<SerializeVariableTypeInfo> members;
     TypeInfoList<SerializeFunctionTypeInfo> functions;
     TypeInfoList<SerializeFunctionTypeInfo> cfSignals;
@@ -103,8 +103,8 @@ class SerializeFunctionTypeInfo
 public:
     String name;
     SerializeTypeInfo returnType;
-    CFList<SerializeVariableTypeInfo> parameters;
-    CFList<SerializeVariableTypeInfo> registerParameters;
+    List<SerializeVariableTypeInfo> parameters;
+    List<SerializeVariableTypeInfo> registerParameters;
 
 public:
     String toString() const;

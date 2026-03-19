@@ -20,8 +20,8 @@ namespace impl { class RMIServerBase; }
 class RSigBase
 {
 public:
-    typedef CFPair<uint, uint> ConnIdRegId;
-    typedef CFVector<ConnIdRegId> Listeners;
+    typedef Pair<uint, uint> ConnIdRegId;
+    typedef Vector<ConnIdRegId> Listeners;
 
 public:
     RSigBase() : server_(0) {}
@@ -63,7 +63,7 @@ public:
     {
         uint regId; deser >> regId;
         if (!registerFunc_) {
-            defaultListeners << CFPair(connId, regId);
+            defaultListeners << Pair(connId, regId);
             return;
         }
         serialize::readAndCall<R...>(deser, [this, connId, regId](R... r) {
@@ -75,7 +75,7 @@ public:
     {
         uint regId; deser >> regId;
         if (!unregisterFunc_) {
-            defaultListeners.erase(std::remove(defaultListeners.begin(), defaultListeners.end(), CFPair<uint, uint>(connId, regId)), defaultListeners.end());
+            defaultListeners.erase(std::remove(defaultListeners.begin(), defaultListeners.end(), Pair<uint, uint>(connId, regId)), defaultListeners.end());
             return;
         }
         unregisterFunc_(connId, regId);

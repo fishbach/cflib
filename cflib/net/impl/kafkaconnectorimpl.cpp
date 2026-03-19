@@ -65,7 +65,7 @@ void KafkaConnector::Impl::setState(KafkaConnector::State newState)
     main_.stateChanged(newState);
 }
 
-void KafkaConnector::Impl::connect(const CFList<KafkaConnector::Address> &cluster)
+void KafkaConnector::Impl::connect(const List<KafkaConnector::Address> &cluster)
 {
     if (!verifyThreadCall(&Impl::connect, cluster)) return;
 
@@ -256,7 +256,7 @@ void KafkaConnector::Impl::joinGroup(const ByteArray & groupId, const Topics & t
     if (groupId_ != groupId) leaveGroup();
     groupId_ = groupId;
     groupTopicPartitions_.clear();
-    for (const ByteArray & topic : topics) groupTopicPartitions_[topic] = CFList<cfint32>();
+    for (const ByteArray & topic : topics) groupTopicPartitions_[topic] = List<cfint32>();
     preferredStrategy_ = preferredStrategy;
     rejoinGroup();
 }
@@ -383,14 +383,14 @@ void KafkaConnector::Impl::sendGroupHeartBeat()
     req.send();
 }
 
-void KafkaConnector::Impl::doSync(const ByteArray & protocol, CFMap<ByteArray, CFSet<ByteArray>> memberTopics)
+void KafkaConnector::Impl::doSync(const ByteArray & protocol, Map<ByteArray, Set<ByteArray>> memberTopics)
 {
     logFunctionTrace
 
-    CFMap<ByteArray, CFMap<ByteArray, CFList<cfint32>>> groupAssignment = computeGroupAssignment(protocol, memberTopics);
-    CFMap<ByteArray, ByteArray> rawAssignment;
+    Map<ByteArray, Map<ByteArray, List<cfint32>>> groupAssignment = computeGroupAssignment(protocol, memberTopics);
+    Map<ByteArray, ByteArray> rawAssignment;
     for (const ByteArray & member : cfKeys(groupAssignment)) {
-        const CFMap<ByteArray, CFList<cfint32>> & topics = groupAssignment[member];
+        const Map<ByteArray, List<cfint32>> & topics = groupAssignment[member];
 
         impl::KafkaRawWriter writer;
         writer
@@ -425,17 +425,17 @@ void KafkaConnector::Impl::doSync(const ByteArray & protocol, CFMap<ByteArray, C
     req.send();
 }
 
-CFMap<ByteArray, CFMap<ByteArray, CFList<cfint32>>> KafkaConnector::Impl::computeGroupAssignment(
-    const ByteArray & protocol, CFMap<ByteArray, CFSet<ByteArray>> memberTopics)
+Map<ByteArray, Map<ByteArray, List<cfint32>>> KafkaConnector::Impl::computeGroupAssignment(
+    const ByteArray & protocol, Map<ByteArray, Set<ByteArray>> memberTopics)
 {
-    CFMap<ByteArray, CFMap<ByteArray, CFList<cfint32>>> rv;
+    Map<ByteArray, Map<ByteArray, List<cfint32>>> rv;
     if (memberTopics.empty()) return rv;
 
     logFunctionTraceParam("computeGroupAssignment with %1", protocol);
 
     if (protocol == "range") {
 
-        CFMap<ByteArray, CFList<ByteArray>> topicMembers;
+        Map<ByteArray, List<ByteArray>> topicMembers;
         for (const ByteArray & member : cfKeys(memberTopics)) {
             for (const ByteArray & topic : memberTopics[member]) {
                 if (!cfMapValue(responsibilities_, topic).empty()) topicMembers[topic] << member;
@@ -443,7 +443,7 @@ CFMap<ByteArray, CFMap<ByteArray, CFList<cfint32>>> KafkaConnector::Impl::comput
         }
 
         for (const ByteArray & topic : cfKeys(topicMembers)) {
-            CFList<ByteArray> & members = topicMembers[topic];
+            List<ByteArray> & members = topicMembers[topic];
             std::sort(members.begin(), members.end());
 
             int partitionCount = responsibilities_[topic].size();
@@ -463,18 +463,18 @@ CFMap<ByteArray, CFMap<ByteArray, CFList<cfint32>>> KafkaConnector::Impl::comput
 
     } else if (protocol == "roundrobin") {
 
-        CFSet<ByteArray> allTopics;
+        Set<ByteArray> allTopics;
         for (const auto & [member, topics] : memberTopics) allTopics += topics;
 
-        CFVector<CFPair<ByteArray, cfint32>> allTopicPartitions;
+        Vector<Pair<ByteArray, cfint32>> allTopicPartitions;
         for (const ByteArray & topic : allTopics) {
             for (cfint32 i = 0 ; i < (cfint32)cfMapValue(responsibilities_, topic).size() ; ++i) {
-                allTopicPartitions << CFPair(topic, i);
+                allTopicPartitions << Pair(topic, i);
             }
         }
         std::sort(allTopicPartitions.begin(), allTopicPartitions.end());
 
-        CFList<ByteArray> members = cfKeys(memberTopics);
+        List<ByteArray> members = cfKeys(memberTopics);
         int memberId = 0;
         while (!allTopicPartitions.empty()) {
             bool assigned = false;

@@ -24,7 +24,7 @@ public:
     Shared(int connId, int requestId,
         const ByteArray & header,
         const Request::KeyVal & headerFields, Request::Method method, const ByteArray & uri,
-        const ByteArray & body, const CFList<RequestHandler *> & handlers, bool passThrough,
+        const ByteArray & body, const List<RequestHandler *> & handlers, bool passThrough,
         impl::RequestParser * parser)
     :
         ref(1),
@@ -72,12 +72,12 @@ public:
     Request::Method method;
     ByteArray uri;
     ByteArray body;
-    CFList<RequestHandler *> handlers;
+    List<RequestHandler *> handlers;
     impl::RequestParser * parser;
     CFElapsedTimer watch;
     bool replySent;
     ByteArray remoteIP;
-    CFList<ByteArray> sendHeaderLines;
+    List<ByteArray> sendHeaderLines;
     bool passThrough;
     bool detached;
 
@@ -146,14 +146,14 @@ public:
 };
 
 Request::Request() :
-    d(new Shared(0, 0, ByteArray(), KeyVal(), NONE, ByteArray(), ByteArray(), CFList<RequestHandler *>(), false, 0))
+    d(new Shared(0, 0, ByteArray(), KeyVal(), NONE, ByteArray(), ByteArray(), List<RequestHandler *>(), false, 0))
 {
 }
 
 Request::Request(int connId, int requestId,
     const ByteArray & header,
     const KeyVal & headerFields, Method method, const ByteArray & uri,
-    const ByteArray & body, const CFList<RequestHandler *> & handlers, bool passThrough,
+    const ByteArray & body, const List<RequestHandler *> & handlers, bool passThrough,
     impl::RequestParser * parser)
 :
     d(new Shared(connId, requestId, header, headerFields, method, uri, body, handlers, passThrough, parser))
@@ -191,7 +191,7 @@ Request & Request::operator=(const Request & other)
 
 Request::Id Request::getId() const
 {
-    return CFPair(d->connId, d->requestId);
+    return Pair(d->connId, d->requestId);
 }
 
 bool Request::replySent() const
@@ -348,7 +348,7 @@ Request::LoginPass Request::getBasicAuth(const ByteArray & authorization)
 
     const CFRegex::MatchResult match = authRe.matchResult(authorization);
     if (!match.hasMatch()) return LoginPass();
-    const CFList<ByteArray> userPass = ByteArray::fromBase64(ByteArray(match.captured(1).c_str())).split(':');
+    const List<ByteArray> userPass = ByteArray::fromBase64(ByteArray(match.captured(1).c_str())).split(':');
     if (userPass.size() != 2) return LoginPass();
     return { userPass[0], userPass[1] };
 }

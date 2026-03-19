@@ -16,7 +16,7 @@ class ArgBase
 public:
     bool isSet() const { return count_ > 0; }
     ByteArray value(const ByteArray & defaultValue = ByteArray()) const { return values_.empty() ? defaultValue : values_.front(); }
-    CFList<ByteArray> values() const { return values_; }
+    List<ByteArray> values() const { return values_; }
     cfuint count() const { return count_; }
 
 protected:
@@ -30,7 +30,7 @@ protected:
     bool isOptional_;
     bool isRepeatable_;
     cfuint count_;
-    CFList<ByteArray> values_;
+    List<ByteArray> values_;
 
     friend class CmdLine;
 };
@@ -64,11 +64,11 @@ public:
     ByteArray executable() const { return executable_; }
 
 private:
-    CFList<ByteArray> rawArgs_;
-    CFList<Arg *> args_;
-    CFHash<char, Option *> shortOptions_;
-    CFHash<ByteArray, Option *> options_;
-    CFList<ArgBase *> nonOptionals_;
+    List<ByteArray> rawArgs_;
+    List<Arg *> args_;
+    Hash<char, Option *> shortOptions_;
+    Hash<ByteArray, Option *> options_;
+    List<ArgBase *> nonOptionals_;
     ByteArray executable_;
 };
 

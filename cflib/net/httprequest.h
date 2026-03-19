@@ -22,7 +22,7 @@ public:
     HttpRequest(TCPManager & mgr);
     ~HttpRequest();
 
-    void start(const CFUrl & url, const CFList<ByteArray> & headers,
+    void start(const CFUrl & url, const List<ByteArray> & headers,
         const ByteArray & postData = ByteArray(), const ByteArray & contentType = "application/octet-stream",
         uint timeoutMs = 10000);
 
@@ -30,7 +30,7 @@ public:
         const ByteArray & postData = ByteArray(), const ByteArray & contentType = "application/octet-stream",
         uint timeoutMs = 10000)
     {
-        start(url, CFList<ByteArray>(), postData, contentType, timeoutMs);
+        start(url, List<ByteArray>(), postData, contentType, timeoutMs);
     }
 
 cfsignals:
