@@ -262,14 +262,14 @@ void inflateRaw(CFByteArray & data)
     data = out;
 }
 
-CFByteArray readFile(const CFString & path)
+CFByteArray readFile(const String & path)
 {
     CFFile file(path);
     file.open(CFFile::ReadOnly);
     return file.readAll();
 }
 
-bool writeFile(const CFString & path, const CFByteArray & data, int perm)
+bool writeFile(const String & path, const CFByteArray & data, int perm)
 {
     CFFile file(path);
     if (!file.open(CFFile::WriteOnly | CFFile::Truncate)) return false;
@@ -277,11 +277,11 @@ bool writeFile(const CFString & path, const CFByteArray & data, int perm)
     return file.write(data) == (cfint64)data.size();
 }
 
-CFString readTextfile(const CFString & path)
+String readTextfile(const String & path)
 {
     CFFile file(path);
     file.open(CFFile::ReadOnly);
-    return CFString::fromUtf8(file.readAll());
+    return String::fromUtf8(file.readAll());
 }
 
 namespace {
@@ -290,7 +290,7 @@ const char * const Hex = "0123456789ABCDEF";
 
 }
 
-CFByteArray encodeQuotedPrintable(const CFString & text)
+CFByteArray encodeQuotedPrintable(const String & text)
 {
     CFByteArray utf8 = text.toUtf8();
     const unsigned char * pos = (const unsigned char *)utf8.constData();
@@ -330,7 +330,7 @@ CFByteArray encodeQuotedPrintable(const CFString & text)
     return retval;
 }
 
-CFByteArray encodeWord(const CFString & str, bool strict)
+CFByteArray encodeWord(const String & str, bool strict)
 {
     CFByteArray utf8 = str.toUtf8();
     const unsigned char * pos = (const unsigned char *)utf8.constData();
@@ -364,7 +364,7 @@ CFByteArray encodeWord(const CFString & str, bool strict)
 
 }
 
-CFString flatten(const CFString & str)
+String flatten(const String & str)
 {
     // Hand-written replacement for QRegularExpression-based flatten
     // Step 1: remove non-allowed chars (keep a-zA-Z0-9 - . _ and whitespace)
@@ -413,10 +413,10 @@ CFString flatten(const CFString & str)
             lastUnderscore = false;
         }
     }
-    return CFString(std::move(final));
+    return String(std::move(final));
 }
 
-bool validWebInputChars(const CFString & str)
+bool validWebInputChars(const String & str)
 {
     const char * const NotAllowed = "{}[]<>;\"\\";
     const char * pos = NotAllowed;
@@ -425,7 +425,7 @@ bool validWebInputChars(const CFString & str)
     return true;
 }
 
-bool isValidEmail(const CFString & str)
+bool isValidEmail(const String & str)
 {
     // Hand-written email validation replacing QRegularExpression
     // Pattern: ^[\w.\-_]+@\w[\w.\-]+\.\w+$
@@ -541,7 +541,7 @@ void threadSafeExit(int returnCode)
     _exit(returnCode);
 }
 
-bool mkPath(const CFString & path)
+bool mkPath(const String & path)
 {
     if (path.isEmpty()) return false;
     struct stat st;
@@ -555,12 +555,12 @@ bool mkPath(const CFString & path)
     return mkdir(path.c_str(), 0755) == 0 || errno == EEXIST;
 }
 
-bool removeFile(const CFString & path)
+bool removeFile(const String & path)
 {
     return unlink(path.c_str()) == 0;
 }
 
-bool copyFile(const CFString & src, const CFString & dest)
+bool copyFile(const String & src, const String & dest)
 {
     CFByteArray data = readFile(src);
     return writeFile(dest, data);

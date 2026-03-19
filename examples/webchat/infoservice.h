@@ -11,7 +11,7 @@
 
 #include <cflib/net/rmiservice.h>
 
-class InfoService : public cflib::net::RMIService<CFString>
+class InfoService : public cflib::net::RMIService<String>
 {
     SERIALIZE_CLASS
 public:
@@ -19,9 +19,9 @@ public:
     ~InfoService();
 
 rmi:
-    CFString test();
+    String test();
     void test(int &, int &) {}
-    CFString test(const CFString & msg);
+    String test(const String & msg);
     void async(cfint64 i);
     cfint64 iTest(cfint64 i) { return i; }
     Dao update(const Dao & dao);
@@ -29,10 +29,10 @@ rmi:
     void update(Dao3 & dao);
     void doSignal(int t) { mySig(t); }
 
-    void talk(const CFString & msg);
+    void talk(const String & msg);
 
 cfsignals:
     rsig<void (int t), void()> mySig;
-    rsig<void (int t, const CFString & s), void()> mySig2;
-    rsig<void (int t, const CFString & s), void()> newMessage;
+    rsig<void (int t, const String & s), void()> mySig2;
+    rsig<void (int t, const String & s), void()> newMessage;
 };

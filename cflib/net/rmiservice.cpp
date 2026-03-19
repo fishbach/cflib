@@ -13,7 +13,7 @@
 
 namespace cflib { namespace net {
 
-RMIServiceBase::RMIServiceBase(const CFString & threadName, uint threadCount, LoopType loopType) :
+RMIServiceBase::RMIServiceBase(const String & threadName, uint threadCount, LoopType loopType) :
     util::ThreadVerify(threadName, loopType, threadCount),
     server_(0), connId_(this, 0), delayedReply_(this, false)
 {

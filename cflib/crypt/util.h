@@ -17,8 +17,8 @@ cfuint32 randomUInt32();
 cfuint64 randomUInt64();
 CFByteArray memorableRandom(const int length = 6);
 
-CFByteArray hashPassword(const CFString & password);
-bool checkPassword(const CFString & password, const CFByteArray & hash);
+CFByteArray hashPassword(const String & password);
+bool checkPassword(const String & password, const CFByteArray & hash);
 
 CFByteArray sha1(const CFByteArray & data);
 CFByteArray sha256(const CFByteArray & data);

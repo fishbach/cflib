@@ -9,23 +9,23 @@
 
 namespace cflib { namespace serialize {
 
-CFString SerializeTypeInfo::toString() const
+String SerializeTypeInfo::toString() const
 {
     if (type == Basic) return typeName;
 
     if (type == Container) {
-        CFString retval = typeName.left(typeName.indexOf('<') + 1);
+        String retval = typeName.left(typeName.indexOf('<') + 1);
         retval += bases[0].toString();
-        if (bases.size() > 1) retval += CFString(",") + bases[1].toString();
+        if (bases.size() > 1) retval += String(",") + bases[1].toString();
         retval += '>';
         return retval;
     }
 
     if (type == Class) {
-        CFString retval;
+        String retval;
         if (!ns.isEmpty()) retval += ns + "::";
         retval += typeName;
-        if (!bases.empty()) retval += CFString("[") + bases[0].toString() + "]";
+        if (!bases.empty()) retval += String("[") + bases[0].toString() + "]";
         retval += '{';
         bool isFirst = true;
         for (const SerializeVariableTypeInfo & inf : members) {
@@ -49,18 +49,18 @@ CFString SerializeTypeInfo::toString() const
     return "void";
 }
 
-CFString SerializeTypeInfo::getName() const
+String SerializeTypeInfo::getName() const
 {
     if (ns.isEmpty()) return typeName;
-    CFString retval = ns;
+    String retval = ns;
     retval += "::";
     retval += typeName;
     return retval;
 }
 
-CFString SerializeFunctionTypeInfo::toString() const
+String SerializeFunctionTypeInfo::toString() const
 {
-    CFString retval = returnType.toString() + " " + name + "(";
+    String retval = returnType.toString() + " " + name + "(";
     bool isFirst2 = true;
     for (const SerializeVariableTypeInfo & inf : parameters) {
         if (isFirst2) isFirst2 = false;
@@ -72,9 +72,9 @@ CFString SerializeFunctionTypeInfo::toString() const
     return retval;
 }
 
-CFString SerializeFunctionTypeInfo::signature(bool withParamNames) const
+String SerializeFunctionTypeInfo::signature(bool withParamNames) const
 {
-    CFString retval = returnType.typeName;
+    String retval = returnType.typeName;
     if (retval.isEmpty()) retval += "void";
     retval += ' ';
     retval += name;

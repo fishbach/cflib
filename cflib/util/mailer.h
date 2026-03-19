@@ -17,19 +17,19 @@ namespace cflib { namespace util {
 class Mail
 {
 public:
-    CFString from;
-    CFString to;
-    CFString subject;
-    CFString text;
+    String from;
+    String to;
+    String subject;
+    String text;
 
 public:
     Mail() = default;
-    Mail(const CFString & to, const CFString & subject, const CFString & text, const CFString & from) :
+    Mail(const String & to, const String & subject, const String & text, const String & from) :
         from(from), to(to), subject(subject), text(text) {}
 
     bool isValid() const;
 
-    CFByteArray raw(CFString & fromAddr, CFString & toAddr) const;
+    CFByteArray raw(String & fromAddr, String & toAddr) const;
 };
 
 class Mailer : public ThreadVerify
@@ -54,7 +54,7 @@ private:
 private:
     static Mailer * instance_;
 
-    CFString sendmailPath_;
+    String sendmailPath_;
     CFList<Mail> queue_;
     pid_t childPid_;
 };

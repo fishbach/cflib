@@ -18,7 +18,7 @@ class ThreadStats : private ThreadVerify
 public:
     struct ThreadInfo
     {
-        CFString name;
+        String name;
         cfint64 current;
         cfint64 total;
         cfint64 peaks;
@@ -54,7 +54,7 @@ public:
         ++infos_[threadId].overflows;
     }
 
-    int externNewId(const CFString & threadName)
+    int externNewId(const String & threadName)
     {
         SyncedThreadCall<int> stc(this);
         if (!stc.verify(&ThreadStats::externNewId, threadName)) return stc.retval();

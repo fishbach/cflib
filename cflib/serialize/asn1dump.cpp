@@ -17,7 +17,7 @@ namespace cflib { namespace serialize {
 
 namespace {
 
-CFString writeStr(const CFByteArray & msg)
+String writeStr(const CFByteArray & msg)
 {
     uint specialCount = 0;
     CFByteArray rv;
@@ -37,16 +37,16 @@ CFString writeStr(const CFByteArray & msg)
         } else ++p;
     }
     if (p > start) rv.append(start, p - start);
-    return 100 * specialCount / msg.size() > 10 ? CFString() : CFString(rv.constData());
+    return 100 * specialCount / msg.size() > 10 ? String() : String(rv.constData());
 }
 
-CFString showValue(const cfuint8 * data, int len)
+String showValue(const cfuint8 * data, int len)
 {
     if (len == 0) return "null";
 
-    CFString rv;
+    String rv;
 
-    CFString str = writeStr(CFByteArray::fromRawData((const char *)data, len));
+    String str = writeStr(CFByteArray::fromRawData((const char *)data, len));
     if (!str.isNull()) {
         rv += '"';
         rv += str;
@@ -57,19 +57,19 @@ CFString showValue(const cfuint8 * data, int len)
         cfuint64 val;
         impl::deserializeBERInt(val, data, len);
         rv += '(';
-        rv += CFString::number(val);
+        rv += String::number(val);
         rv += ") ";
     } else if (len < 9) {
         cfint64 val;
         impl::deserializeBERInt(val, data, len);
         rv += '(';
-        rv += CFString::number(val);
+        rv += String::number(val);
         if (len == 4) {
             rv += " / ";
-            rv += CFString::number((double)*((const float *)data));
+            rv += String::number((double)*((const float *)data));
         } else if (len == 8) {
             rv += " / ";
-            rv += CFString::number(*((const double *)data));
+            rv += String::number(*((const double *)data));
         } else if (val >= 946681200000 && val < 4102441200000) {
             rv += " / ";
             CFDateTime dt = CFDateTime::fromMSecsSinceEpoch(val);
@@ -81,14 +81,14 @@ CFString showValue(const cfuint8 * data, int len)
     }
 
     rv += "0x";
-    rv += CFString(CFByteArray::fromRawData((const char *)data, len).toHex().constData()).toUpper();
+    rv += String(CFByteArray::fromRawData((const char *)data, len).toHex().constData()).toUpper();
 
     return rv;
 }
 
-CFString printAsn1(const cfuint8 * data, int len, int indent)
+String printAsn1(const cfuint8 * data, int len, int indent)
 {
-    CFString rv;
+    String rv;
 
     while (true) {
         cfuint64 tagNo = 0;
@@ -133,7 +133,7 @@ CFString printAsn1(const cfuint8 * data, int len, int indent)
 
 }
 
-CFString printAsn1(const CFByteArray & data)
+String printAsn1(const CFByteArray & data)
 {
     return printAsn1((const cfuint8 *)data.constData(), data.size(), 0);
 }

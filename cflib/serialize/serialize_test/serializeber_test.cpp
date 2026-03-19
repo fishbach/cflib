@@ -168,7 +168,7 @@ public:
 
         TVERIFY(checkSer<CFList<const char *>>(CFList<const char *>{nullptr},          "e103c08100"));
         TVERIFY(checkSerDeser<CFList<CFByteArray>>(CFList<CFByteArray>{CFByteArray()}, "e103c08100"));
-        TVERIFY(checkSerDeser<CFList<CFString   >>(CFList<CFString   >{CFString()},    "e103c08100"));
+        TVERIFY(checkSerDeser<CFList<String   >>(CFList<String   >{String()},    "e103c08100"));
         TVERIFY(checkSerDeser<CFList<CFChar     >>(CFList<CFChar     >{CFChar()},      "e103c08100"));
     }
 
@@ -187,11 +187,11 @@ public:
         TVERIFY(checkSerDeserNull<CFByteArray>(CFByteArray::fromHex("310032"), "c103 310032"));
         TVERIFY(checkSerDeserNull<CFByteArray>(CFByteArray::fromHex("313200"), "c103 313200"));
 
-        TVERIFY(checkSerDeserNull<CFString>(CFString(),     ""));
-        TVERIFY(checkSerDeserNull<CFString>(CFString(""),   "c100"));
-        TVERIFY(checkSerDeserNull<CFString>(CFString("X"),  "c10158"));
-        TVERIFY(checkSerDeserNull<CFString>(CFString("XY"), "c1025859"));
-        TVERIFY(checkSerDeserNull<CFString>(CFString("XäÄöÖüÜßY"), "c1 10 58 c3a4 c384 c3b6 c396 c3bc c39c c39f 59"));
+        TVERIFY(checkSerDeserNull<String>(String(),     ""));
+        TVERIFY(checkSerDeserNull<String>(String(""),   "c100"));
+        TVERIFY(checkSerDeserNull<String>(String("X"),  "c10158"));
+        TVERIFY(checkSerDeserNull<String>(String("XY"), "c1025859"));
+        TVERIFY(checkSerDeserNull<String>(String("XäÄöÖüÜßY"), "c1 10 58 c3a4 c384 c3b6 c396 c3bc c39c c39f 59"));
 
         TVERIFY(checkSerDeserNull<CFChar>(CFChar(),            ""));
         TVERIFY(checkSerDeserNull<CFChar>(CFChar{char32_t('A')}, "c10141"));
@@ -264,11 +264,11 @@ public:
         TVERIFY(checkSerDeser<CFList<cfuint8>>(CFList<cfuint8>(), ""));
         TVERIFY(checkSerDeser<CFList<cfuint8>>(CFList<cfuint8>{0x42}, "e103c00142"));
         TVERIFY(checkSerDeser<CFList<cfuint8>>(CFList<cfuint8>{0x42, 0x43}, "e106c00142c00143"));
-        TVERIFY(checkSerDeser<CFStringList>(CFStringList{"XY", CFString(), "", "A"},
+        TVERIFY(checkSerDeser<StringList>(StringList{"XY", String(), "", "A"},
             "e10c c0025859 c08100 c000 c00141"));
 
         BERDeserializer ser(CFByteArray::fromHex("e105 c08100 c000"));
-        CFStringList list; ser >> list;
+        StringList list; ser >> list;
         TVERIFY(list[0].isNull());
         TVERIFY(!list[1].isNull());
         TVERIFY(list[1].isEmpty());
@@ -276,7 +276,7 @@ public:
 
     void maps()
     {
-        typedef CFMap<CFString, int> Map;
+        typedef CFMap<String, int> Map;
         Map map;
         TVERIFY(checkSerDeser<Map>(map, ""));
         map["xy"] = 4;

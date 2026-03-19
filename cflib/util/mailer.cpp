@@ -39,14 +39,14 @@ Mailer::Mailer(bool isEnabled) :
 
     // Search for sendmail
     const char * pathEnv = getenv("PATH");
-    CFString pathStr(pathEnv ? pathEnv : "");
+    String pathStr(pathEnv ? pathEnv : "");
     auto paths = pathStr.split(':');
     // Add extra search paths
-    paths.push_back(CFString("/usr/lib"));
-    paths.push_back(CFString("/usr/sbin"));
+    paths.push_back(String("/usr/lib"));
+    paths.push_back(String("/usr/sbin"));
 
-    for (const CFString & path : paths) {
-        CFString candidate = path;
+    for (const String & path : paths) {
+        String candidate = path;
         if (!candidate.endsWith("/")) candidate += "/";
         candidate += "sendmail";
         struct stat st;
@@ -57,7 +57,7 @@ Mailer::Mailer(bool isEnabled) :
     }
 
     if (sendmailPath_.isNull()) {
-        CFString searchedPaths = CFString(", ").join(paths);
+        String searchedPaths = String(", ").join(paths);
         logWarn("cannot find sendmail executable (searched: %1)", searchedPaths);
     } else {
         logDebug("found sendmail at: %1", sendmailPath_);
@@ -101,8 +101,8 @@ void Mailer::doSend(const Mail & mail)
     logFunctionTraceParam("new mail to: %1", mail.to);
     if (!verifyThreadCall(&Mailer::doSend, mail)) return;
 
-    CFString fromAddr;
-    CFString toAddr;
+    String fromAddr;
+    String toAddr;
     if (!mail.isValid()) {
         logWarn("invalid mail: %1", mail.raw(fromAddr, toAddr));
         return;
@@ -120,13 +120,13 @@ void Mailer::doSend(const Mail & mail)
 
 namespace {
 
-CFByteArray encodeAddress(const CFString & address, CFString & plain)
+CFByteArray encodeAddress(const String & address, String & plain)
 {
     // Simple parse: look for "name <addr>" pattern
     cfsize_t lt = address.indexOf('<');
     cfsize_t gt = address.indexOf('>');
     if (lt >= 0 && gt > lt) {
-        CFString name = address.left(lt).trimmed();
+        String name = address.left(lt).trimmed();
         plain = address.mid(lt + 1, gt - lt - 1).trimmed();
         return cflib::util::encodeWord(name, true) + " <" + plain.toUtf8() + ">";
     } else {
@@ -140,8 +140,8 @@ CFByteArray encodeAddress(const CFString & address, CFString & plain)
 void Mailer::startProcess()
 {
     const Mail & mail = queue_.front();
-    CFString from;
-    CFString to;
+    String from;
+    String to;
     const CFByteArray raw = mail.raw(from, to);
     logDebug("exec: %1 -f %2 %3", sendmailPath_, from, to);
 
@@ -233,7 +233,7 @@ bool Mail::isValid() const
     return !from.isEmpty() && !to.isEmpty();
 }
 
-CFByteArray Mail::raw(CFString & fromAddr, CFString & toAddr) const
+CFByteArray Mail::raw(String & fromAddr, String & toAddr) const
 {
     CFByteArray rv;
     rv  << "Content-type: text/plain; charset=utf-8\r\n"

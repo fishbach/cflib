@@ -91,9 +91,9 @@ inline void addTest(const char * name, TestBase * test) {
     testRegistry().push_back({name, test});
 }
 
-inline CFStringList allTests() {
-    CFStringList rv;
-    for (auto & e : testRegistry()) rv.push_back(CFString(e.className));
+inline StringList allTests() {
+    StringList rv;
+    for (auto & e : testRegistry()) rv.push_back(String(e.className));
     return rv;
 }
 

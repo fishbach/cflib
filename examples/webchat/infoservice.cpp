@@ -24,12 +24,12 @@ InfoService::~InfoService()
     stopVerifyThread();
 }
 
-CFString InfoService::test()
+String InfoService::test()
 {
-    return CFString("hello w\xc3\xb6rld");
+    return String("hello w\xc3\xb6rld");
 }
 
-CFString InfoService::test(const CFString & msg)
+String InfoService::test(const String & msg)
 {
     logInfo("msg %1: %2", msg.charCount(), msg.c_str());
     std::cout << std::format("{}\n", msg.c_str());
@@ -61,7 +61,7 @@ void InfoService::update(Dao3 & dao)
     dao.timestamp = CFDateTime::currentDateTimeUtc();
 }
 
-void InfoService::talk(const CFString & msg)
+void InfoService::talk(const String & msg)
 {
     std::cout << std::format("connId:{}    wrote: {}\n", connId(), msg.c_str());
     newMessage(connId(), msg);

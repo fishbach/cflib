@@ -51,7 +51,7 @@ const char * PostgresTypeNames[] = {
 };
 
 Oid typeOids[PSql_lastEntry];
-CFString connInfo;
+String connInfo;
 
 // PostgreSQL epoch is 2000-01-01 00:00:00 UTC
 // Unix epoch is 1970-01-01 00:00:00 UTC
@@ -132,7 +132,7 @@ public:
     cfuint instanceCount;
 
 public:
-    ThreadData(const CFString & connectionParameter = CFString(), bool isDedicated = false) :
+    ThreadData(const String & connectionParameter = String(), bool isDedicated = false) :
         isDedicated(isDedicated),
         conn(nullptr),
         transactionActive(false),
@@ -195,7 +195,7 @@ public:
     }
 
 private:
-    const CFString connectionParameter_;
+    const String connectionParameter_;
     const int connId_;
     util::EVTimer * evTimer_;
 };
@@ -204,17 +204,17 @@ thread_local PSql::ThreadData * PSql::threadData_ = nullptr;
 
 const int PSql::MAX_FIELD_COUNT;
 
-bool PSql::setParameter(const CFString & connectionParameterRef, const CFString & overrideEnvVar)
+bool PSql::setParameter(const String & connectionParameterRef, const String & overrideEnvVar)
 {
     if (!connInfo.isNull()) {
         logWarn("Changing the global DB connection parameters does not reconnect existing connections!");
     }
-    connInfo = CFString();
+    connInfo = String();
 
-    CFString connectionParameter = connectionParameterRef;
+    String connectionParameter = connectionParameterRef;
     if (!overrideEnvVar.isEmpty()) {
         const char * envVal = getenv(overrideEnvVar.c_str());
-        if (envVal) connectionParameter = CFString(envVal);
+        if (envVal) connectionParameter = String(envVal);
     }
 
     // try connect
@@ -269,20 +269,20 @@ bool PSql::setParameter(const CFString & connectionParameterRef, const CFString 
     return true;
 }
 
-CFString PSql::setDBName(const CFString & connectionParameter, const CFString & dbName)
+String PSql::setDBName(const String & connectionParameter, const String & dbName)
 {
     char * errMsg = 0;
     PQconninfoOption * options = PQconninfoParse(connInfo.c_str(), &errMsg);
     if (!options) {
         logWarn("cannot parse connection parameter %1 (error: %2)", connectionParameter, errMsg);
         PQfreemem(errMsg);
-        return CFString();
+        return String();
     }
 
-    CFString newParams = CFString("dbname=") + dbName;
+    String newParams = String("dbname=") + dbName;
     for (PQconninfoOption * it = options ; it->keyword != NULL ; ++it) {
-        if (it->val != NULL && CFString(it->keyword) != "dbname") {
-            newParams += CFString(" ") + it->keyword + "=" + it->val;
+        if (it->val != NULL && String(it->keyword) != "dbname") {
+            newParams += String(" ") + it->keyword + "=" + it->val;
         }
     }
 
@@ -303,7 +303,7 @@ PSql::PSql(const util::LogFileInfo * lfi, int line) :
 {
 }
 
-PSql::PSql(const CFString & connectionParameter) :
+PSql::PSql(const String & connectionParameter) :
     PSql(*(new ThreadData(connectionParameter, true)), ::cflib_util_logFileInfo, 0)
 {
 }
@@ -444,7 +444,7 @@ void PSql::rollback()
     td_.transactionActive = false;
 }
 
-bool PSql::exec(const CFString & query)
+bool PSql::exec(const String & query)
 {
     if (td_.doRollback) return false;
 
@@ -460,7 +460,7 @@ bool PSql::exec(const CFString & query)
     return initResult();
 }
 
-bool PSql::execMultiple(const CFString & query)
+bool PSql::execMultiple(const String & query)
 {
     const CFByteArray utf8 = query.toUtf8();
     PGresult * res = PQexec(td_.conn, utf8.constData());
@@ -606,7 +606,7 @@ PSql & PSql::operator<<(const CFByteArray & val)
     return *this;
 }
 
-PSql & PSql::operator<<(const CFString & val)
+PSql & PSql::operator<<(const String & val)
 {
     if (val.isNull()) {
         setParamType(PSql_string, 0, true);
@@ -685,12 +685,12 @@ PSql & PSql::operator>>(CFByteArray & val)
     return *this;
 }
 
-PSql & PSql::operator>>(CFString & val)
+PSql & PSql::operator>>(String & val)
 {
-    val = CFString();
+    val = String();
     if (!checkField(PSql_string, 0)) return *this;
     if (!lastFieldIsNull_) {
-        val = CFString::fromUtf8(PQgetvalue((PGresult *)res_, 0, currentFieldId_), PQgetlength((PGresult *)res_, 0, currentFieldId_));
+        val = String::fromUtf8(PQgetvalue((PGresult *)res_, 0, currentFieldId_), PQgetlength((PGresult *)res_, 0, currentFieldId_));
     }
     ++currentFieldId_;
     return *this;

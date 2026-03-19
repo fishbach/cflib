@@ -55,10 +55,10 @@ public:
         ser >> gt1 >> gt3;
         TCOMPARE(gt1.a, 3);
         TCOMPARE(gt1.c, 4);
-        TCOMPARE(gt1.d, CFString("xy"));
+        TCOMPARE(gt1.d, String("xy"));
         TCOMPARE(gt3.a, 5);
         TCOMPARE(gt3.c, 6);
-        TCOMPARE(gt3.d, CFString("ab"));
+        TCOMPARE(gt3.d, String("ab"));
         TCOMPARE(gt3.e, 7);
         TCOMPARE(gt3.f, 8);
     }
@@ -66,8 +66,8 @@ public:
     void template_ser()
     {
         gentest::gentest2::GenTest4 gt4;
-        gt4.push_back(CFString("AB"));
-        gt4.push_back(CFString(""));
+        gt4.push_back(String("AB"));
+        gt4.push_back(String(""));
         gt4.a = 7;
         gt4.b << 13 << 17;
         BERSerializer ser;
@@ -93,7 +93,7 @@ public:
         gentest::gentest2::GenTest4 gt4;
         ser >> gt4;
         TCOMPARE((int)gt4.size(), 2);
-        TCOMPARE(gt4[0], CFString("AB"));
+        TCOMPARE(gt4[0], String("AB"));
         TVERIFY(!gt4[1].isNull());
         TVERIFY(gt4[1].isEmpty());
         TCOMPARE(gt4.a, 7);

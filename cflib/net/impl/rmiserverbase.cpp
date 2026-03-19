@@ -27,7 +27,7 @@ namespace cflib { namespace net { namespace impl {
 
 namespace {
 
-const CFString HTMLDocHeader =
+const String HTMLDocHeader =
     "<html><head>\n"
     "<title>CFLib API</title>\n"
     "<style type=\"text/css\">\n"
@@ -37,7 +37,7 @@ const CFString HTMLDocHeader =
     "</head><body>\n"
     "<h2>CFLib API</h2>\n";
 
-const CFString footer =
+const String footer =
     "</body></html>\n";
 
 template<typename List>
@@ -74,22 +74,22 @@ std::set<SerializeTypeInfo> getFunctionClassInfos(const List & functions)
     return retval;
 }
 
-inline CFString formatClassnameForJS(const SerializeTypeInfo & ti)
+inline String formatClassnameForJS(const SerializeTypeInfo & ti)
 {
-    CFString retval = ti.getName();
+    String retval = ti.getName();
     retval.replace("::", "__");
     return retval;
 }
 
-inline CFString formatMembernameForJS(const SerializeVariableTypeInfo & vti)
+inline String formatMembernameForJS(const SerializeVariableTypeInfo & vti)
 {
     if (vti.name.endsWith("_")) return vti.name.left(vti.name.length() - 1);
     return vti.name;
 }
 
-CFSet<CFString> getCustomTypes(const SerializeTypeInfo & ti)
+CFSet<String> getCustomTypes(const SerializeTypeInfo & ti)
 {
-    CFSet<CFString> types;
+    CFSet<String> types;
     if (ti.type == SerializeTypeInfo::Class) {
         types << ti.getName();
     } else if (ti.type == SerializeTypeInfo::Container) {
@@ -100,9 +100,9 @@ CFSet<CFString> getCustomTypes(const SerializeTypeInfo & ti)
     return types;
 }
 
-CFStringList getMemberTypes(const SerializeTypeInfo & ti)
+StringList getMemberTypes(const SerializeTypeInfo & ti)
 {
-    CFSet<CFString> types;
+    CFSet<String> types;
     for (const auto & base : ti.bases) {
         types += getCustomTypes(base);
     }
@@ -122,14 +122,14 @@ CFStringList getMemberTypes(const SerializeTypeInfo & ti)
         }
     }
 
-    CFStringList retval = cfSetValues(types);
+    StringList retval = cfSetValues(types);
     cfSort(retval);
     return retval;
 }
 
-CFString formatJSTypeConstruction(const SerializeTypeInfo & ti, const CFString & raw, bool useFactory)
+String formatJSTypeConstruction(const SerializeTypeInfo & ti, const String & raw, bool useFactory)
 {
-    CFString js;
+    String js;
     if (ti.type == SerializeTypeInfo::Class) {
         if (useFactory) js << formatClassnameForJS(ti) << ".new(" << (raw == "null" ? "" : raw) << ")";
         else            js << "new " << formatClassnameForJS(ti) << "(" << (raw == "null" ? "" : raw) << ")";
@@ -178,9 +178,9 @@ CFString formatJSTypeConstruction(const SerializeTypeInfo & ti, const CFString &
     return js;
 }
 
-CFString getTSTypename(const SerializeTypeInfo & ti)
+String getTSTypename(const SerializeTypeInfo & ti)
 {
-    CFString ts;
+    String ts;
     if (ti.type == SerializeTypeInfo::Class) {
         ts << formatClassnameForJS(ti);
     } else if (ti.type == SerializeTypeInfo::Container) {
@@ -207,29 +207,29 @@ CFString getTSTypename(const SerializeTypeInfo & ti)
     return ts;
 }
 
-CFString getJSParameters(const CFList<SerializeVariableTypeInfo> & parameters, bool withType)
+String getJSParameters(const CFList<SerializeVariableTypeInfo> & parameters, bool withType)
 {
-    CFString js;
+    String js;
     bool isFirst = true;
     int id = 0;
     for (const auto & p : parameters) {
         if (isFirst) isFirst = false;
         else js << ", ";
-        if (p.name.isEmpty()) js << "__param_" << CFString::number(++id);
+        if (p.name.isEmpty()) js << "__param_" << String::number(++id);
         else js << p.name;
         if (withType) js << ": " << getTSTypename(p.type);
     }
     return js;
 }
 
-CFString getJSParameters(const SerializeFunctionTypeInfo & func, bool withType)
+String getJSParameters(const SerializeFunctionTypeInfo & func, bool withType)
 {
     return getJSParameters(func.parameters, withType);
 }
 
-CFString getSerializeCode(const SerializeTypeInfo & ti, const CFString & name)
+String getSerializeCode(const SerializeTypeInfo & ti, const String & name)
 {
-    CFString js;
+    String js;
     if (ti.type == SerializeTypeInfo::Class) {
         js << ".o(" << name << ")";
     } else if (ti.type == SerializeTypeInfo::Container) {
@@ -275,11 +275,11 @@ CFString getSerializeCode(const SerializeTypeInfo & ti, const CFString & name)
     return js;
 }
 
-CFString getDeserializeCode(const SerializeTypeInfo & ti, bool useFactory)
+String getDeserializeCode(const SerializeTypeInfo & ti, bool useFactory)
 {
-    CFString js;
+    String js;
     if (ti.type == SerializeTypeInfo::Class) {
-        CFString cl = ti.getName();
+        String cl = ti.getName();
         cl.replace("::", "__");
         if (useFactory) js << cl << ".new(__D.a())";
         else            js << "new " << cl << "(__D.a())";
@@ -324,19 +324,19 @@ CFString getDeserializeCode(const SerializeTypeInfo & ti, bool useFactory)
     return js;
 }
 
-CFString getSerializeJSParameters(const CFList<SerializeVariableTypeInfo> & parameters)
+String getSerializeJSParameters(const CFList<SerializeVariableTypeInfo> & parameters)
 {
-    CFString js;
+    String js;
     int id = 0;
     for (const auto & p : parameters) {
-        CFString name = p.name;
-        if (name.isEmpty()) name << "__param_" << CFString::number(++id);
+        String name = p.name;
+        if (name.isEmpty()) name << "__param_" << String::number(++id);
         js << getSerializeCode(p.type, name);
     }
     return js;
 }
 
-CFString getSerializeJSParameters(const SerializeFunctionTypeInfo & func)
+String getSerializeJSParameters(const SerializeFunctionTypeInfo & func)
 {
     return getSerializeJSParameters(func.parameters);
 }
@@ -404,17 +404,17 @@ void RMIServerBase::registerService(RMIServiceBase & service)
     }
 }
 
-void RMIServerBase::exportTo(const CFString & dest) const
+void RMIServerBase::exportTo(const String & dest) const
 {
     // write services
     cflib::util::mkPath(dest + "/js/services");
-    CFSet<CFString> files;
-    for (const CFString & name : cfKeys(services_)) {
-        for (const CFString & suffix : CFStringList{".mjs"/*, ".ts"*/}) {
-            CFString file = name + suffix;
+    CFSet<String> files;
+    for (const String & name : cfKeys(services_)) {
+        for (const String & suffix : StringList{".mjs"/*, ".ts"*/}) {
+            String file = name + suffix;
             files << file;
-            CFString service = "services/" + file;
-            CFString js = generateJSOrTS(service);
+            String service = "services/" + file;
+            String js = generateJSOrTS(service);
             cflib::util::writeFile(dest + "/js/" + service, js.toUtf8());
         }
     }
@@ -425,7 +425,7 @@ void RMIServerBase::exportTo(const CFString & dest) const
         if (d) {
             struct dirent * ent;
             while ((ent = readdir(d)) != nullptr) {
-                CFString name(ent->d_name);
+                String name(ent->d_name);
                 if (name == "." || name == "..") continue;
                 if (!cfContains(files, name)) cflib::util::removeFile(dest + "/js/services/" + name);
             }
@@ -455,12 +455,12 @@ void RMIServerBase::handleRequest(const Request & request)
         if      (path.startsWith("services")) showServices(request, path.mid(8));
         else if (path.startsWith("classes" )) showClasses (request, path.mid(7));
         else if (path.startsWith("js/"     )) {
-            CFString js = generateJSOrTS(path.mid(3));
+            String js = generateJSOrTS(path.mid(3));
             if (!js.isNull()) request.sendText(js, "application/javascript");
         } else request.sendNotFound();
     } else if (path == "/api") {
         request.addHeaderLine("Cache-Control: max-age=31536000");
-        CFString info = HTMLDocHeader;
+        String info = HTMLDocHeader;
         info <<
             "<ul>\n"
             "<li><a href=\"api/services\">services</a> - API Services Description</li>\n"
@@ -485,8 +485,8 @@ CFByteArray RMIServerBase::getRemoteIP(uint connId)
 RMIServiceBase * RMIServerBase::checkServiceCall(serialize::BERDeserializer & deser, uint connId,
     uint & callNo, uint & type)
 {
-    CFString serviceName;
-    CFString signature;
+    String serviceName;
+    String signature;
     deser >> serviceName >> signature;
     if (signature.isEmpty()) {
         logWarn("broken BER request from connection %1", connId);
@@ -521,9 +521,9 @@ RMIServiceBase * RMIServerBase::checkServiceCall(serialize::BERDeserializer & de
     return sf.service;
 }
 
-void RMIServerBase::showServices(const Request & request, CFString path) const
+void RMIServerBase::showServices(const Request & request, String path) const
 {
-    CFString info = HTMLDocHeader;
+    String info = HTMLDocHeader;
 
     if (path.isEmpty()) {
         info <<
@@ -570,9 +570,9 @@ void RMIServerBase::showServices(const Request & request, CFString path) const
     request.sendText(info << footer);
 }
 
-void RMIServerBase::showClasses(const Request & request, CFString path) const
+void RMIServerBase::showClasses(const Request & request, String path) const
 {
-    CFString info = HTMLDocHeader;
+    String info = HTMLDocHeader;
 
     if (path.isEmpty()) {
         info <<
@@ -614,12 +614,12 @@ void RMIServerBase::showClasses(const Request & request, CFString path) const
     request.sendText(info << footer);
 }
 
-void RMIServerBase::classesToHTML(CFString & info, const ClassInfoEl & infoEl) const
+void RMIServerBase::classesToHTML(String & info, const ClassInfoEl & infoEl) const
 {
     for (const auto & ns : cfKeys(infoEl.infos)) {
         const ClassInfoEl & el = *cfMapValue(infoEl.infos, ns, (ClassInfoEl *)nullptr);
         if (!el.ti.getName().isEmpty()) {
-            CFString path = el.ti.getName();
+            String path = el.ti.getName();
             path.replace("::", "/");
             info << "<li><a href=\"classes/" << path.toLower() << "\">" << el.ti.typeName.split("::").back() << "</a></li>\n";
         }
@@ -633,14 +633,14 @@ void RMIServerBase::classesToHTML(CFString & info, const ClassInfoEl & infoEl) c
     }
 }
 
-CFString RMIServerBase::generateJSOrTS(const CFString & path) const
+String RMIServerBase::generateJSOrTS(const String & path) const
 {
     const bool isTS = path.endsWith(".ts");
-    if (!path.endsWith(".mjs") && !isTS) return CFString();
+    if (!path.endsWith(".mjs") && !isTS) return String();
     const SerializeTypeInfo ti = getTypeInfo(path.left(path.length() - (isTS && path.endsWith("dao.ts") ? 6 : 4)));
-    if (ti.getName().isEmpty()) return CFString();
+    if (ti.getName().isEmpty()) return String();
 
-    CFString rv;
+    String rv;
     rv <<
         "// ============================================================================\n"
         "// Generated by CFLib\n"
@@ -653,24 +653,24 @@ CFString RMIServerBase::generateJSOrTS(const CFString & path) const
     return rv;
 }
 
-CFString RMIServerBase::generateJS(const SerializeTypeInfo & ti) const
+String RMIServerBase::generateJS(const SerializeTypeInfo & ti) const
 {
     const bool isService = !ti.functions.empty() || !ti.cfSignals.empty();
 
-    CFString pathPrefix = "../";
+    String pathPrefix = "../";
     if (!isService) {
         for (int i = [&]() { int c = 0; cfsize_t p = 0; while ((p = ti.ns.str().find("::", p)) != std::string::npos) { ++c; p += 2; } return c; }() ; i > 0 ; --i) {
             pathPrefix << "../";
         }
     }
 
-    CFString js;
+    String js;
     js << "import __ber from '" << pathPrefix << "cflib/net/ber.mjs';\n";
     if (isService) js << "import __rmi from '" << pathPrefix << "cflib/net/rmi.mjs';\n";
     else           js << "import __inherit from '" << pathPrefix << "cflib/util/inherit.mjs';\n";
     if (!ti.cfSignals.empty()) js << "import __RSig from '" << pathPrefix << "cflib/net/rsig.mjs';\n";
-    for (CFString type : getMemberTypes(ti)) {
-        CFString name = type;
+    for (String type : getMemberTypes(ti)) {
+        String name = type;
         name.replace("::", "__");
         js << "import " << name;
         type.replace("::", "/");
@@ -684,12 +684,12 @@ CFString RMIServerBase::generateJS(const SerializeTypeInfo & ti) const
     return js;
 }
 
-CFString RMIServerBase::generateTS(const SerializeTypeInfo & ti) const
+String RMIServerBase::generateTS(const SerializeTypeInfo & ti) const
 {
     const bool isService = !ti.functions.empty() || !ti.cfSignals.empty();
-    const CFString cflibPath = ti.ns.startsWith("cflib::") && !isService ? "../../cflib/" : "../cflib/";
+    const String cflibPath = ti.ns.startsWith("cflib::") && !isService ? "../../cflib/" : "../cflib/";
 
-    CFString ts;
+    String ts;
     ts <<
         "/* tslint:disable */\n"
         "\n";
@@ -701,9 +701,9 @@ CFString RMIServerBase::generateTS(const SerializeTypeInfo & ti) const
     if (isService)               ts << "import {rmi as __rmi} from '" << cflibPath << "net/rmi';\n";
     else if (ti.bases.empty()) ts << "import {ModelBase as __modelBase} from '" << (ti.ns.startsWith("cflib::") ? "../" : "") << "../models/modelbase';\n";
     if (!ti.cfSignals.empty()) ts << "import {RemoteSignal as __RSig} from '" << cflibPath << "net/rsig';\n";
-    for (CFString type : getMemberTypes(ti)) {
-        CFString typePath = type.toLower();
-        CFString typeName = type;
+    for (String type : getMemberTypes(ti)) {
+        String typePath = type.toLower();
+        String typeName = type;
         typePath.replace("::", "/");
         typePath = CFRegex("^dao/").replaceAll(typePath, "models/");
         typePath = CFRegex("^cflib/dao/").replaceAll(typePath, "models/cflib/");
@@ -719,7 +719,7 @@ CFString RMIServerBase::generateTS(const SerializeTypeInfo & ti) const
     return ts;
 }
 
-SerializeTypeInfo RMIServerBase::getTypeInfo(const CFString & path) const
+SerializeTypeInfo RMIServerBase::getTypeInfo(const String & path) const
 {
     auto srvIt = services_.find(path.mid(9));
     if (srvIt != services_.end()) {
@@ -736,19 +736,19 @@ SerializeTypeInfo RMIServerBase::getTypeInfo(const CFString & path) const
     return ciEl->ti;
 }
 
-CFString RMIServerBase::generateJSForClass(const SerializeTypeInfo & ti) const
+String RMIServerBase::generateJSForClass(const SerializeTypeInfo & ti) const
 {
-    CFString base;
+    String base;
     if (!ti.bases.empty()) {
         base = ti.bases[0].getName();
         base.replace("::", "__");
     }
 
-    CFString js;
+    String js;
 
     // JS namespace for debugging
-    CFString nsPrefix;
-    CFString typeName = ti.typeName;
+    String nsPrefix;
+    String typeName = ti.typeName;
     if (!ti.ns.isEmpty() || typeName.indexOf("::") != -1) {
         js << "var ";
         int i = 0;
@@ -761,7 +761,7 @@ CFString RMIServerBase::generateJSForClass(const SerializeTypeInfo & ti) const
             nsPrefix << ns << '.';
             ++i;
         }
-        CFStringList classNs = typeName.split("::");
+        StringList classNs = typeName.split("::");
         typeName = cfTakeLast(classNs);
         for (const auto & ns : classNs) {
             if (isFirst) {
@@ -784,7 +784,7 @@ CFString RMIServerBase::generateJSForClass(const SerializeTypeInfo & ti) const
     if (base.isEmpty()) js << "__inherit.Base";
     else js << base;
     js << ");\n";
-    if (ti.classId != 0) js << nsPrefix << typeName << ".__classId = " << CFString::number(ti.classId) << ";\n";
+    if (ti.classId != 0) js << nsPrefix << typeName << ".__classId = " << String::number(ti.classId) << ";\n";
     js << nsPrefix << typeName << ".prototype.__init = function(param) {\n";
     if (base.isEmpty()) js << "    " << nsPrefix << typeName << ".__super.apply(this, arguments);\n";
     js <<
@@ -801,7 +801,7 @@ CFString RMIServerBase::generateJSForClass(const SerializeTypeInfo & ti) const
     js <<
         "        if (!param || typeof param != 'object') param = {};\n";
     for (const auto & vti : ti.members) {
-        const CFString name = formatMembernameForJS(vti);
+        const String name = formatMembernameForJS(vti);
         js << "        this." << name << " = " << formatJSTypeConstruction(vti.type, "param." + name, false) << ";\n";
     }
     js <<
@@ -821,11 +821,11 @@ CFString RMIServerBase::generateJSForClass(const SerializeTypeInfo & ti) const
     return js;
 }
 
-CFString RMIServerBase::generateJSForService(const SerializeTypeInfo & ti) const
+String RMIServerBase::generateJSForService(const SerializeTypeInfo & ti) const
 {
-    CFString objName = ti.typeName;
+    String objName = ti.typeName;
     { char c = ti.typeName[0]; if (c >= 'A' && c <= 'Z') c += 32; objName[0] = c; }
-    CFString js;
+    String js;
     js <<
         "var " << ti.typeName << " = function() {};\n"
         "var " << objName << " = new " << ti.typeName << "();\n"
@@ -900,22 +900,22 @@ CFString RMIServerBase::generateJSForService(const SerializeTypeInfo & ti) const
     return js;
 }
 
-CFString RMIServerBase::generateTSForClass(const SerializeTypeInfo & ti) const
+String RMIServerBase::generateTSForClass(const SerializeTypeInfo & ti) const
 {
-    CFString base;
+    String base;
     if (!ti.bases.empty()) {
         base = ti.bases[0].getName();
         base.replace("::", "__");
     }
 
-    CFString typeName = ti.typeName;
+    String typeName = ti.typeName;
     if (typeName.contains("::")) typeName = typeName.mid(typeName.lastIndexOf("::") + 2);
 
-    CFString ts;
+    String ts;
     ts << "export abstract class " << typeName << "Dao extends " << (!base.isEmpty() ? base : "__modelBase") << " {\n"
         "\n";
 
-    if (ti.classId != 0) ts << "    static __classId: number = " << CFString::number(ti.classId) << ";\n";
+    if (ti.classId != 0) ts << "    static __classId: number = " << String::number(ti.classId) << ";\n";
     if (!ti.members.empty()) {
         for (const auto & vti : ti.members) {
             ts << "    " << formatMembernameForJS(vti) << ": " << getTSTypename(vti.type) << ";\n";
@@ -942,7 +942,7 @@ CFString RMIServerBase::generateTSForClass(const SerializeTypeInfo & ti) const
         "            if (!param || typeof param != 'object') param = {};\n";
 
     for (const auto & vti : ti.members) {
-        const CFString name = formatMembernameForJS(vti);
+        const String name = formatMembernameForJS(vti);
         ts << "            this." << name << " = " << formatJSTypeConstruction(vti.type, "param." + name, true) << ";\n";
     }
     ts <<
@@ -973,14 +973,14 @@ CFString RMIServerBase::generateTSForClass(const SerializeTypeInfo & ti) const
     return ts;
 }
 
-CFString RMIServerBase::generateTSForService(const SerializeTypeInfo & ti) const
+String RMIServerBase::generateTSForService(const SerializeTypeInfo & ti) const
 {
-    CFString objName = ti.typeName;
+    String objName = ti.typeName;
     { char c = ti.typeName[0]; if (c >= 'A' && c <= 'Z') c += 32; objName[0] = c; }
-    CFString ts;
+    String ts;
 
     for (const auto & func : ti.cfSignals) {
-        CFString funcTypename = func.name;
+        String funcTypename = func.name;
         { char c = func.name[0]; if (c >= 'a' && c <= 'z') c -= 32; funcTypename[0] = c; }
         ts << "interface __" << funcTypename << " {\n"
             "    register(" << getJSParameters(func.registerParameters, true) << "): Observable<";
@@ -1007,7 +1007,7 @@ CFString RMIServerBase::generateTSForService(const SerializeTypeInfo & ti) const
         for (const auto & func : ti.cfSignals) {
             if (isFirst) isFirst = false;
             else         ts << ",\n";
-            CFString funcTypename = func.name;
+            String funcTypename = func.name;
             { char c = func.name[0]; if (c >= 'a' && c <= 'z') c -= 32; funcTypename[0] = c; }
             ts << "        " << func.name << ": __" << funcTypename;
         }
@@ -1123,20 +1123,20 @@ CFString RMIServerBase::generateTSForService(const SerializeTypeInfo & ti) const
     return ts;
 }
 
-CFSet<CFString> RMIServerBase::exportClass(const ClassInfoEl & cl, const CFString & path, const CFString & dest) const
+CFSet<String> RMIServerBase::exportClass(const ClassInfoEl & cl, const String & path, const String & dest) const
 {
-    CFSet<CFString> rv;
+    CFSet<String> rv;
     if (cl.infos.empty()) {
         if (path.isEmpty()) return rv;
-        for (const CFString & suffix : CFStringList{".mjs"/*, "dao.ts"*/}) {
-            CFString cl = path + suffix;
+        for (const String & suffix : StringList{".mjs"/*, "dao.ts"*/}) {
+            String cl = path + suffix;
             rv << cl;
-            CFString js = generateJSOrTS(cl);
+            String js = generateJSOrTS(cl);
             cflib::util::writeFile(dest + "/js/" + cl, js.toUtf8());
         }
     } else {
         cflib::util::mkPath(dest + "/js/" + path);
-        CFString p = path;
+        String p = path;
         if (!path.isEmpty()) p += '/';
         for (const auto & [ns, elPtr] : cl.infos) {
             rv += exportClass(*elPtr, p + ns, dest);

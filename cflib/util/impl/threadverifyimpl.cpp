@@ -20,7 +20,7 @@ thread_local cflib::util::impl::ThreadHolder * cf_current_thread = nullptr;
 
 namespace cflib { namespace util { namespace impl {
 
-ThreadHolder::ThreadHolder(const CFString & threadName, int threadId, ThreadStats * stats, bool disable) :
+ThreadHolder::ThreadHolder(const String & threadName, int threadId, ThreadStats * stats, bool disable) :
     threadName(threadName),
     threadId_(threadId), stats_(stats),
     disabled_(disable), isActive_(true), isRunning_(false)
@@ -47,7 +47,7 @@ void ThreadHolder::join()
     if (thread_.joinable()) thread_.join();
 }
 
-ThreadHolderLibEV::ThreadHolderLibEV(const CFString & threadName, int threadId, ThreadStats * stats, bool isWorkerOnly, bool disable) :
+ThreadHolderLibEV::ThreadHolderLibEV(const String & threadName, int threadId, ThreadStats * stats, bool isWorkerOnly, bool disable) :
     ThreadHolder(threadName, threadId, stats, disable),
     loop_(ev_loop_new((cfuint)EVFLAG_NOSIGMASK | (isWorkerOnly ? EVBACKEND_SELECT : EVBACKEND_ALL))),
     wakeupWatcher_(new ev_async)
@@ -100,18 +100,18 @@ void ThreadHolderLibEV::asyncCallback(ev_loop *, ev_async * w, int)
     ((ThreadHolderLibEV *)w->data)->wokeUp();
 }
 
-ThreadHolderWorkerPool::ThreadHolderWorkerPool(const CFString & threadName,
+ThreadHolderWorkerPool::ThreadHolderWorkerPool(const String & threadName,
     int threadId, ThreadStats * stats, bool isWorkerOnly, cfuint threadCount)
 :
     ThreadHolderLibEV(threadCount > 1 ?
-        CFString(threadName.str() + " 1/" + std::to_string(threadCount)) : threadName,
+        String(threadName.str() + " 1/" + std::to_string(threadCount)) : threadName,
         threadId, stats, isWorkerOnly, threadCount == 0),
     externalCalls_(1024),
     stopLoop_(false)
 {
     if (!disabled_) startThread();
     for (cfuint i = 2 ; i <= threadCount ; ++i) {
-        CFString workerName(threadName.str() + " " + std::to_string(i) + "/" + std::to_string(threadCount));
+        String workerName(threadName.str() + " " + std::to_string(i) + "/" + std::to_string(threadCount));
         Worker * thread = new Worker(workerName, threadId, stats, i - 1, externalCalls_);
         workers_.push_back(thread);
     }
@@ -127,7 +127,7 @@ bool ThreadHolderWorkerPool::doCall(const Functor * func)
     if (!externalCalls_.put(func)) {
         if (stats_) stats_->externOverflow(threadId_);
         const impl::ThreadHolder * thread = cf_current_thread;
-        logWarn("queue of thread %1 full (called by %2)", threadName, thread ? thread->threadName : CFString("?"));
+        logWarn("queue of thread %1 full (called by %2)", threadName, thread ? thread->threadName : String("?"));
         return false;
     }
     wakeUp();
@@ -180,7 +180,7 @@ void ThreadHolderWorkerPool::run()
     for (Worker * w : workers_) w->join();
 }
 
-ThreadHolderWorkerPool::Worker::Worker(const CFString & threadName,
+ThreadHolderWorkerPool::Worker::Worker(const String & threadName,
     int threadId, ThreadStats * stats, cfuint threadNo, ThreadFifo<const Functor *> & externalCalls)
 :
     ThreadHolderLibEV(threadName, threadId, stats, true, false),

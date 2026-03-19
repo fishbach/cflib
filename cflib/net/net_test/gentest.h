@@ -19,7 +19,7 @@ public:
     int f2() { return 4; }
 
 rmi:
-    void f3(int, CFString) {}
+    void f3(int, String) {}
     CFList<int> f4() { return CFList<int>(); }
     int f5(int x, int y);
     void f6();
@@ -43,7 +43,7 @@ public serialized:
     int a;
     SERIALIZE_SKIP(int b)
     int c;
-    CFString d;
+    String d;
 
 public:
     int y;
@@ -96,7 +96,7 @@ public:
 
 namespace gentest2 {
 
-class GenTest4 : public CFList<CFString>
+class GenTest4 : public CFList<String>
 {
     SERIALIZE_CLASS
     SERIALIZE_STDBASE(GenTest4)

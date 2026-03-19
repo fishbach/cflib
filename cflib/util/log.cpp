@@ -130,7 +130,7 @@ inline void writeMsg(CFByteArray & out, const CFByteArray & msg)
 
 LogCategory Log::logLevelCategory_ = 0;
 
-void Log::start(const CFString & fileName)
+void Log::start(const String & fileName)
 {
     if (active) {
         std::cerr << std::format("logging already started with log file: {}\n", file.fileName().c_str());

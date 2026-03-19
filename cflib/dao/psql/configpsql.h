@@ -24,10 +24,10 @@ public:
 public serialized:
     bool isProduction;
     bool emailsEnabled;
-    CFString baseURL;
+    String baseURL;
 
 protected:
-    virtual void init(const CFMap<CFString, CFString> &) {}
+    virtual void init(const CFMap<String, String> &) {}
 
 private:
     static ConfigPSql * instance_;

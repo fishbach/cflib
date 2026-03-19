@@ -21,7 +21,7 @@ public:
         auto self = const_cast<Util_Test *>(this);
         return {
             {"test_flatten", [self]() { self->test_flatten(); }},
-            {"test_CFString", [self]() { self->test_CFString(); }},
+            {"test_String", [self]() { self->test_String(); }},
             {"test_CFByteArray", [self]() { self->test_CFByteArray(); }},
             {"test_deflate", [self]() { self->test_deflate(); }},
             {"test_tupleCompare", [self]() { self->test_tupleCompare(); }},
@@ -31,17 +31,17 @@ public:
 
     void test_flatten()
     {
-        TCOMPARE(flatten(CFString()), CFString());
-        TCOMPARE(flatten(""), CFString(""));
-        TCOMPARE(flatten("      \r\n"), CFString(""));
-        TCOMPARE(flatten("     ab_c & 1.2-3\r\n"), CFString("ab_c_1.2-3"));
-        TCOMPARE(flatten("     _ \r\n_"), CFString("_"));
+        TCOMPARE(flatten(String()), String());
+        TCOMPARE(flatten(""), String(""));
+        TCOMPARE(flatten("      \r\n"), String(""));
+        TCOMPARE(flatten("     ab_c & 1.2-3\r\n"), String("ab_c_1.2-3"));
+        TCOMPARE(flatten("     _ \r\n_"), String("_"));
     }
 
-    void test_CFString()
+    void test_String()
     {
-        TVERIFY(CFString().isNull());
-        TVERIFY(!CFString("").isNull());
+        TVERIFY(String().isNull());
+        TVERIFY(!String("").isNull());
     }
 
     void test_CFByteArray()

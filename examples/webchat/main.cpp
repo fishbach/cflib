@@ -61,13 +61,13 @@ int main(int argc, char *argv[])
 
     FileServer fs(htdocsPathOpt.value("htdocs"));
 
-    WSCommManager<CFString> commMgr("/ws");
-    RMIServer<CFString> rmiServer(commMgr);
+    WSCommManager<String> commMgr("/ws");
+    RMIServer<String> rmiServer(commMgr);
     InfoService infoService; rmiServer.registerService(infoService);
     LogService  logService;  rmiServer.registerService(logService);
 
     if (exportOpt.isSet()) {
-        CFString dest(exportOpt.value());
+        String dest(exportOpt.value());
         logInfo("exporting to: %1", dest.c_str());
         rmiServer.exportTo(dest);
         fs.exportTo(dest);

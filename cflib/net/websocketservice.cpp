@@ -267,7 +267,7 @@ private:
 
 // ============================================================================
 
-WebSocketService::WebSocketService(const CFString & path, const CFRegex & allowedOrigin,
+WebSocketService::WebSocketService(const String & path, const CFRegex & allowedOrigin,
     uint connectionTimeoutSec)
 :
     ThreadVerify("WebSocketService", LoopType::Worker),

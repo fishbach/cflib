@@ -26,19 +26,19 @@ void gzip(CFByteArray & data, int compressionLevel = -1);
 void deflateRaw(CFByteArray & data, int compressionLevel = -1);
 void inflateRaw(CFByteArray & data);
 
-CFByteArray readFile(const CFString & path);
-bool writeFile(const CFString & path, const CFByteArray & data, int perm =
+CFByteArray readFile(const String & path);
+bool writeFile(const String & path, const CFByteArray & data, int perm =
     CFFile::ReadOwner  | CFFile::ReadUser | CFFile::ReadGroup | CFFile::ReadOther |
     CFFile::WriteOwner | CFFile::WriteUser);
-CFString readTextfile(const CFString & path);
+String readTextfile(const String & path);
 
-CFByteArray encodeQuotedPrintable(const CFString & text);
-CFByteArray encodeWord(const CFString & str, bool strict);
+CFByteArray encodeQuotedPrintable(const String & text);
+CFByteArray encodeWord(const String & str, bool strict);
 
-CFString flatten(const CFString & str);
+String flatten(const String & str);
 
-bool validWebInputChars(const CFString & str);
-bool isValidEmail(const CFString & str);
+bool validWebInputChars(const String & str);
+bool isValidEmail(const String & str);
 
 bool daemonize();
 bool setProcessOwner(int uid, int gid);
@@ -52,8 +52,8 @@ void preventApplicationSuspend();
 
 void threadSafeExit(int returnCode);
 
-bool mkPath(const CFString & path);
-bool removeFile(const CFString & path);
-bool copyFile(const CFString & src, const CFString & dest);
+bool mkPath(const String & path);
+bool removeFile(const String & path);
+bool copyFile(const String & src, const String & dest);
 
 }}    // namespace

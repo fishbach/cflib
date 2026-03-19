@@ -66,7 +66,7 @@ struct LogFileInfo
 class Log
 {
 public:
-    static void start(const CFString & fileName);
+    static void start(const String & fileName);
     static void setLevelCallback(LogCategory level, LogLevelCallback callback);
     static void setLogLevel(LogCategory category) { logLevelCategory_ = category; }
 

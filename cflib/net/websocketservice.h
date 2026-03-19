@@ -20,7 +20,7 @@ namespace cflib { namespace net {
 class WebSocketService : public RequestHandler, public util::ThreadVerify
 {
 public:
-    WebSocketService(const CFString & path, const CFRegex & allowedOrigin = CFRegex(),
+    WebSocketService(const String & path, const CFRegex & allowedOrigin = CFRegex(),
         uint connectionTimeoutSec = 0);
     ~WebSocketService();
 
@@ -47,7 +47,7 @@ private:
     void checkTimeout();
 
 private:
-    const CFString path_;
+    const String path_;
     const CFRegex allowedOrigin_;
     const uint connectionTimeoutSec_;
     CFSet<CFByteArray> saveHeaderFields_;

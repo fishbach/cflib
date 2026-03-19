@@ -24,7 +24,7 @@ ThreadStats * threadStats = 0;
 
 }
 
-ThreadVerify::ThreadVerify(const CFString & threadName, LoopType loopType, cfuint threadCount) :
+ThreadVerify::ThreadVerify(const String & threadName, LoopType loopType, cfuint threadCount) :
     ownerOfVerifyThread_(true)
 {
     const int threadId  = threadStats ? threadStats->externNewId(threadName) : -1;

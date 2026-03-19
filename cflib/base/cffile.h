@@ -8,7 +8,7 @@
 #pragma once
 
 #include <cflib/base/cfbytearray.h>
-#include <cflib/base/cfstring.h>
+#include <cflib/base/string.h>
 #include <cflib/base/macros.h>
 
 #include <cerrno>
@@ -16,6 +16,8 @@
 #include <cstring>
 #include <string>
 #include <sys/stat.h>
+
+namespace cflib::base {
 
 class CFFile
 {
@@ -41,12 +43,12 @@ public:
     };
 
     CFFile() : fp_(nullptr) {}
-    explicit CFFile(const CFString & path) : path_(path.str()), fp_(nullptr) {}
+    explicit CFFile(const String & path) : path_(path.str()), fp_(nullptr) {}
     ~CFFile() { close(); }
 
     CFFile(CFFile && other) noexcept : path_(std::move(other.path_)), fp_(other.fp_) { other.fp_ = nullptr; }
 
-    void setFileName(const CFString & path) { path_ = path.str(); }
+    void setFileName(const String & path) { path_ = path.str(); }
 
     bool open(int fd, int mode) {
         const char * m = (mode & Append) ? "a" : ((mode & WriteOnly) ? "w" : "r");
@@ -105,10 +107,10 @@ public:
         return chmod(path_.c_str(), m) == 0;
     }
 
-    CFString fileName() const { return CFString(path_.c_str()); }
-    CFString errorString() const { return CFString(strerror(errno)); }
+    String fileName() const { return String(path_.c_str()); }
+    String errorString() const { return String(strerror(errno)); }
 
-    static bool exists(const CFString & path) {
+    static bool exists(const String & path) {
         struct stat st;
         return stat(path.c_str(), &st) == 0;
     }
@@ -117,3 +119,5 @@ private:
     std::string path_;
     FILE * fp_;
 };
+
+} // namespace

@@ -226,7 +226,7 @@ void RedirectServer::addDefaultForward(DestHostFunc destHostFunc)
 
 void RedirectServer::handleRequest(const cflib::net::Request & request)
 {
-    CFString url = request.getHostname();
+    String url = request.getHostname();
     url += request.getUri();
 
     for (const Entry & entry : entries_) {

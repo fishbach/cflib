@@ -21,7 +21,7 @@ LogService::~LogService()
     stopVerifyThread();
 }
 
-void LogService::log(const CFString & file, int line, cflib::util::LogCategory category, const CFString & str)
+void LogService::log(const String & file, int line, cflib::util::LogCategory category, const String & str)
 {
     // remove evil chars
     CFByteArray fileBa = file.toUtf8();

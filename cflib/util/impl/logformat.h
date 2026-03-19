@@ -83,7 +83,7 @@ inline void logFormat(CFByteArray & dest, double val) { dest += CFByteArray::num
 inline void logFormat(CFByteArray & dest, char * str)            { dest += str; }
 inline void logFormat(CFByteArray & dest, const char * str)      { dest += str; }
 inline void logFormat(CFByteArray & dest, const CFByteArray & ba) { dest += ba; }
-inline void logFormat(CFByteArray & dest, const CFString & str)   { dest.append(str.c_str()); }
+inline void logFormat(CFByteArray & dest, const String & str)   { dest.append(str.c_str()); }
 
 // CFDateTime
 inline void logFormat(CFByteArray & dest, const CFDateTime & dt) {
@@ -115,7 +115,7 @@ struct HasToStringToUtf8<T, std::void_t<decltype(std::declval<const T&>().toStri
 
 template<typename T>
 inline auto logFormat(CFByteArray & dest, const T & val)
-    -> std::enable_if_t<!std::is_same_v<T, CFString> && !std::is_same_v<T, CFByteArray> && HasToUtf8<T>::value>
+    -> std::enable_if_t<!std::is_same_v<T, String> && !std::is_same_v<T, CFByteArray> && HasToUtf8<T>::value>
 {
     auto utf8 = val.toUtf8();
     dest.append(utf8.constData(), utf8.size());
@@ -123,16 +123,16 @@ inline auto logFormat(CFByteArray & dest, const T & val)
 
 template<typename T>
 inline auto logFormat(CFByteArray & dest, const T & val)
-    -> std::enable_if_t<!std::is_same_v<T, CFByteArray> && !std::is_same_v<T, CFString>
+    -> std::enable_if_t<!std::is_same_v<T, CFByteArray> && !std::is_same_v<T, String>
         && !HasToUtf8<T>::value && HasCharConstData<T>::value>
 {
     dest.append(val.constData(), val.size());
 }
 
-// Fallback for types with toString() returning CFString-like (has c_str())
+// Fallback for types with toString() returning String-like (has c_str())
 template<typename T>
 inline auto logFormat(CFByteArray & dest, const T & val)
-    -> std::enable_if_t<!std::is_same_v<T, CFByteArray> && !std::is_same_v<T, CFString>
+    -> std::enable_if_t<!std::is_same_v<T, CFByteArray> && !std::is_same_v<T, String>
         && !HasToUtf8<T>::value && !HasCharConstData<T>::value && HasToStringCStr<T>::value>
 {
     dest.append(val.toString().c_str());
@@ -141,7 +141,7 @@ inline auto logFormat(CFByteArray & dest, const T & val)
 // Fallback for types with toString() returning QString-like (has toUtf8(), no c_str())
 template<typename T>
 inline auto logFormat(CFByteArray & dest, const T & val)
-    -> std::enable_if_t<!std::is_same_v<T, CFByteArray> && !std::is_same_v<T, CFString>
+    -> std::enable_if_t<!std::is_same_v<T, CFByteArray> && !std::is_same_v<T, String>
         && !HasToUtf8<T>::value && !HasCharConstData<T>::value && !HasToStringCStr<T>::value && HasToStringToUtf8<T>::value>
 {
     auto utf8 = val.toString().toUtf8();

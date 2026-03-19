@@ -62,10 +62,10 @@ public:
     }
 };
 
-CFString connParam(const CFString & dbName)
+String connParam(const String & dbName)
 {
     const char * envVal = getenv("DB_TEST_DB");
-    CFString baseConn = envVal ? CFString(envVal) : CFString("host=127.0.0.1");
+    String baseConn = envVal ? String(envVal) : String("host=127.0.0.1");
     return PSql::setDBName(baseConn, dbName);
 }
 
@@ -104,25 +104,25 @@ public:
 
     void basic_test()
     {
-        TVERIFY((schema::update<Migrator>(CFString(SCHEMA_SQL_PATH))));
+        TVERIFY((schema::update<Migrator>(String(SCHEMA_SQL_PATH))));
 
         PSqlConn;
         TVERIFY(sql.exec("SELECT key, value, value2, value3, value4 FROM config ORDER BY key"));
-        CFString key, value;
+        String key, value;
         cfint32 value2, value3, value4;
 
         TVERIFY(sql.next());
         sql >> key >> value >> value2 >> value3 >> value4;
-        TCOMPARE(key, CFString("test1"));
-        TCOMPARE(value, CFString("val1"));
+        TCOMPARE(key, String("test1"));
+        TCOMPARE(value, String("val1"));
         TCOMPARE(value2, 0);
         TCOMPARE(value3, 0);
         TCOMPARE(value4, 0);
 
         TVERIFY(sql.next());
         sql >> key >> value >> value2 >> value3 >> value4;
-        TCOMPARE(key, CFString("test2"));
-        TCOMPARE(value, CFString("val2"));
+        TCOMPARE(key, String("test2"));
+        TCOMPARE(value, String("val2"));
         TCOMPARE(value2, 2);
         TCOMPARE(value3, 0);
         TCOMPARE(value4, 0);
@@ -135,7 +135,7 @@ public:
 
     void update_test()
     {
-        CFByteArray schema = readFile(CFString(SCHEMA_SQL_PATH));
+        CFByteArray schema = readFile(String(SCHEMA_SQL_PATH));
         TVERIFY(schema::update(schema));
 
         schema +=

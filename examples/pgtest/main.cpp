@@ -161,7 +161,7 @@ int main(int argc, char *argv[])
     Log::start("pgtest.log");
     Log::setLogLevel(LogCat::Info);
 
-    PSql::setParameter(CFString(sqlParam.value()));
+    PSql::setParameter(String(sqlParam.value()));
 
     CFElapsedTimer timer;
 

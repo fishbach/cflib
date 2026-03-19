@@ -7,7 +7,7 @@
 
 #pragma once
 
-#include <cflib/base/cfstring.h>
+#include <cflib/base/string.h>
 
 #include <map>
 #include <set>
@@ -16,6 +16,8 @@
 #include <utility>
 #include <algorithm>
 #include <vector>
+
+namespace cflib::base {
 
 template<typename T>
 using CFList = std::vector<T>;
@@ -41,7 +43,7 @@ using CFMultiHash = std::unordered_multimap<K, V>;
 template<typename A, typename B>
 using CFPair = std::pair<A, B>;
 
-using CFStringList = CFList<CFString>;
+using StringList = CFList<String>;
 
 template<typename T>
 inline std::vector<T> & operator<<(std::vector<T> & vec, const T & val) {
@@ -99,7 +101,7 @@ inline std::vector<T> cfSetValues(const std::unordered_set<T> & set) {
     return std::vector<T>(set.begin(), set.end());
 }
 
-// Helper: join vector of CFByteArray/CFString with separator
+// Helper: join vector of CFByteArray/String with separator
 inline CFByteArray cfJoin(const std::vector<CFByteArray> & list, char sep) {
     CFByteArray r;
     for (cfsize_t i = 0; i < (cfsize_t)list.size(); ++i) {
@@ -109,8 +111,8 @@ inline CFByteArray cfJoin(const std::vector<CFByteArray> & list, char sep) {
     return r;
 }
 
-inline CFString cfJoin(const std::vector<CFString> & list, char sep) {
-    CFString r;
+inline String cfJoin(const std::vector<String> & list, char sep) {
+    String r;
     for (cfsize_t i = 0; i < (cfsize_t)list.size(); ++i) {
         if (i > 0) r += sep;
         r += list[i];
@@ -197,3 +199,5 @@ inline bool cfContains(const std::vector<T> & v, const U & val) {
 // Helper: qMax replacement
 template<typename T>
 inline T cfMax(const T & a, const T & b) { return a > b ? a : b; }
+
+} // namespace

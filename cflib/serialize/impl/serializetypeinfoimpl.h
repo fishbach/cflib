@@ -48,7 +48,7 @@ DO_SERIALIZE_TYPE_INFO(double,      float64)
 DO_SERIALIZE_TYPE_INFO(long double, float128)
 
 DO_SERIALIZE_TYPE_INFO(CFByteArray, ByteArray)
-DO_SERIALIZE_TYPE_INFO(CFString,    String)
+DO_SERIALIZE_TYPE_INFO(String,    String)
 DO_SERIALIZE_TYPE_INFO(CFChar,      Char)
 DO_SERIALIZE_TYPE_INFO(CFDateTime,  DateTime)
 
@@ -71,7 +71,7 @@ inline void serializeTypeInfo(SerializeTypeInfoImpl & si, CFPair<T1, T2> *)
     SerializeTypeInfoImpl si2;
     serializeTypeInfo(si2, (T2 *)0);
     si.type = SerializeTypeInfo::Container;
-    si.typeName = CFString("Pair<") + si1.typeName + "," + si2.typeName + ">";
+    si.typeName = String("Pair<") + si1.typeName + "," + si2.typeName + ">";
     si.bases.push_back(si1);
     si.bases.push_back(si2);
 }
@@ -82,7 +82,7 @@ inline void serializeTypeInfo(SerializeTypeInfoImpl & si, CFList<T> *)
     SerializeTypeInfoImpl si1;
     serializeTypeInfo(si1, (T *)0);
     si.type = SerializeTypeInfo::Container;
-    si.typeName = CFString("List<") + si1.typeName + ">";
+    si.typeName = String("List<") + si1.typeName + ">";
     si.bases.push_back(si1);
 }
 
@@ -100,7 +100,7 @@ inline void serializeTypeInfo(SerializeTypeInfoImpl & si, CFMap<Key, T> *)
     SerializeTypeInfoImpl si2;
     serializeTypeInfo(si2, (T *)0);
     si.type = SerializeTypeInfo::Container;
-    si.typeName = CFString("Map<") + si1.typeName + "," + si2.typeName + ">";
+    si.typeName = String("Map<") + si1.typeName + "," + si2.typeName + ">";
     si.bases.push_back(si1);
     si.bases.push_back(si2);
 }

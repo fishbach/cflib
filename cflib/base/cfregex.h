@@ -7,10 +7,12 @@
 
 #pragma once
 
-#include <cflib/base/cfstring.h>
+#include <cflib/base/string.h>
 #include <cflib/base/cfcontainers.h>
 
 #include <regex>
+
+namespace cflib::base {
 
 class CFRegex
 {
@@ -20,7 +22,7 @@ public:
     explicit CFRegex(const char * pattern)
         : re_(pattern), valid_(true) {}
 
-    explicit CFRegex(const CFString & pattern)
+    explicit CFRegex(const String & pattern)
         : re_(pattern.str()), valid_(true) {}
 
     // Case-insensitive constructor
@@ -28,13 +30,13 @@ public:
         : re_(pattern, caseInsensitive ? std::regex::ECMAScript | std::regex::icase : std::regex::ECMAScript)
         , valid_(true) {}
 
-    CFRegex(const CFString & pattern, bool caseInsensitive)
+    CFRegex(const String & pattern, bool caseInsensitive)
         : re_(pattern.str(), caseInsensitive ? std::regex::ECMAScript | std::regex::icase : std::regex::ECMAScript)
         , valid_(true) {}
 
     bool isValid() const { return valid_; }
 
-    bool match(const CFString & subject) const {
+    bool match(const String & subject) const {
         if (!valid_) return false;
         return std::regex_search(subject.str(), re_);
     }
@@ -47,8 +49,8 @@ public:
     // Match returning captured groups (0 = whole match, 1+ = groups)
     struct MatchResult {
         bool hasMatch() const { return matched_; }
-        CFString captured(int n = 0) const {
-            if (!matched_ || n < 0 || n >= (int)groups_.size()) return CFString();
+        String captured(int n = 0) const {
+            if (!matched_ || n < 0 || n >= (int)groups_.size()) return String();
             return groups_[n];
         }
         int capturedStart(int n = 0) const {
@@ -61,20 +63,20 @@ public:
         }
     private:
         bool matched_ = false;
-        CFList<CFString> groups_;
+        CFList<String> groups_;
         CFList<int> positions_;
         CFList<int> lengths_;
         friend class CFRegex;
     };
 
-    MatchResult matchResult(const CFString & subject) const {
+    MatchResult matchResult(const String & subject) const {
         MatchResult result;
         if (!valid_) return result;
         std::smatch m;
         if (!std::regex_search(subject.str(), m, re_)) return result;
         result.matched_ = true;
         for (auto & s : m) {
-            result.groups_.push_back(CFString(s.str()));
+            result.groups_.push_back(String(s.str()));
             result.positions_.push_back((int)(s.first - subject.str().begin()));
             result.lengths_.push_back((int)s.length());
         }
@@ -89,7 +91,7 @@ public:
         if (!std::regex_search(s, m, re_)) return result;
         result.matched_ = true;
         for (auto & sub : m) {
-            result.groups_.push_back(CFString(sub.str()));
+            result.groups_.push_back(String(sub.str()));
             result.positions_.push_back((int)(sub.first - s.begin()));
             result.lengths_.push_back((int)sub.length());
         }
@@ -97,16 +99,16 @@ public:
     }
 
     // Replace first match
-    CFString replace(const CFString & subject, const CFString & replacement) const {
+    String replace(const String & subject, const String & replacement) const {
         if (!valid_) return subject;
-        return CFString(std::regex_replace(subject.str(), re_, replacement.str(),
+        return String(std::regex_replace(subject.str(), re_, replacement.str(),
             std::regex_constants::format_first_only));
     }
 
     // Replace all matches
-    CFString replaceAll(const CFString & subject, const CFString & replacement) const {
+    String replaceAll(const String & subject, const String & replacement) const {
         if (!valid_) return subject;
-        return CFString(std::regex_replace(subject.str(), re_, replacement.str()));
+        return String(std::regex_replace(subject.str(), re_, replacement.str()));
     }
 
 private:
@@ -114,24 +116,26 @@ private:
     bool valid_;
 };
 
-// CFString::replace overload that takes CFRegex (defined here since CFString is declared before CFRegex)
-inline CFString & cfStringReplace(CFString & s, const CFRegex & re, const char * replacement) {
-    s = re.replaceAll(s, CFString(replacement));
+// String::replace overload that takes CFRegex (defined here since String is declared before CFRegex)
+inline String & cfStringReplace(String & s, const CFRegex & re, const char * replacement) {
+    s = re.replaceAll(s, String(replacement));
     return s;
 }
 
 // Allow chaining: content.replace(CFRegex(...), "...")
-// We do this by making CFString implicitly work with a helper
+// We do this by making String implicitly work with a helper
 // Actually, for the fileserver pattern content.replace(re, str).replace(re2, str2)
 // we provide a chainable wrapper:
-class CFStringRegexReplacer {
+class StringRegexReplacer {
 public:
-    CFStringRegexReplacer(CFString & s) : s_(s) {}
-    CFStringRegexReplacer & replace(const CFRegex & re, const char * replacement) {
-        s_ = re.replaceAll(s_, CFString(replacement));
+    StringRegexReplacer(String & s) : s_(s) {}
+    StringRegexReplacer & replace(const CFRegex & re, const char * replacement) {
+        s_ = re.replaceAll(s_, String(replacement));
         return *this;
     }
-    operator CFString &() { return s_; }
+    operator String &() { return s_; }
 private:
-    CFString & s_;
+    String & s_;
 };
+
+} // namespace

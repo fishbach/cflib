@@ -73,7 +73,7 @@ int main(int argc, char *argv[])
     TCPManager mgr(1);
 
     if (certsOpt.isSet()) {
-        mgr.clientCredentials().loadFromDir(CFString(certsOpt.value()));
+        mgr.clientCredentials().loadFromDir(String(certsOpt.value()));
         mgr.clientCredentials().activateLoaded(true);
     }
 
@@ -84,7 +84,7 @@ int main(int argc, char *argv[])
         std::cout << "\n";
         threadSafeExit(status == 200 ? 0 : 1);
     });
-    request->start(CFUrl(CFString(url.value())), postData);
+    request->start(CFUrl(String(url.value())), postData);
 
     // Block main thread; threadSafeExit() will call _exit() from the reply callback
     for (;;) pause();

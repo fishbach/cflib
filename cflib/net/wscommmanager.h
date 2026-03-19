@@ -79,7 +79,7 @@ public:
     CFByteArray getHeader(uint connId, const CFByteArray & header) const;
 
 protected:
-    WSCommManagerBase(const CFString & path, const CFRegex & allowedOrigin, uint connectionTimeoutSec);
+    WSCommManagerBase(const String & path, const CFRegex & allowedOrigin, uint connectionTimeoutSec);
 };
 
 /*
@@ -102,7 +102,7 @@ public:
     typedef CFSet<uint> ConnIds;
 
 public:
-    WSCommManager(const CFString & path, const CFRegex & allowedOrigin = CFRegex(),
+    WSCommManager(const String & path, const CFRegex & allowedOrigin = CFRegex(),
         uint connectionTimeoutSec = 10, uint sessionTimeoutSec = 86400);
     ~WSCommManager();
 
@@ -173,7 +173,7 @@ void WSCommStateListener<C>::connectionClosed(const C & connData, uint connDataI
 // ----------------------------------------------------------------------------
 
 template<typename C>
-WSCommManager<C>::WSCommManager(const CFString & path, const CFRegex & allowedOrigin,
+WSCommManager<C>::WSCommManager(const String & path, const CFRegex & allowedOrigin,
     uint connectionTimeoutSec, uint sessionTimeoutSec)
 :
     WSCommManagerBase(path, allowedOrigin, connectionTimeoutSec),

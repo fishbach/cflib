@@ -22,16 +22,16 @@ ConfigPSql::ConfigPSql() :
 
 void ConfigPSql::loadFromDB()
 {
-    const CFMap<CFString, CFString> vals = cflib::db::getConfigPSql();
+    const CFMap<String, String> vals = cflib::db::getConfigPSql();
 
-    auto it = vals.find(CFString("isProduction"));
+    auto it = vals.find(String("isProduction"));
     isProduction = (it != vals.end() && it->second == "true");
 
-    it = vals.find(CFString("emailsEnabled"));
+    it = vals.find(String("emailsEnabled"));
     emailsEnabled = (it != vals.end() && it->second == "true");
 
-    it = vals.find(CFString("baseURL"));
-    baseURL = (it != vals.end()) ? it->second : CFString();
+    it = vals.find(String("baseURL"));
+    baseURL = (it != vals.end()) ? it->second : String();
 
     init(vals);
 }

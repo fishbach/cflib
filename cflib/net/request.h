@@ -28,7 +28,7 @@ public:
         POST,
         HEAD
     };
-    struct LoginPass { CFString login; CFString password; };
+    struct LoginPass { String login; String password; };
 
 public:
     Request();
@@ -63,7 +63,7 @@ public:
     void sendNotFound() const;
     void sendRedirect(const CFByteArray & url) const;
     void sendReply(const CFByteArray & reply, const CFByteArray & contentType, bool compression = true) const;
-    void sendText(const CFString & reply, const CFByteArray & contentType = "text/html", bool compression = true) const;
+    void sendText(const String & reply, const CFByteArray & contentType = "text/html", bool compression = true) const;
     void sendRaw(const CFByteArray & header, const CFByteArray & body, bool compression) const;
     void addHeaderLine(const CFByteArray & line) const;
     CFByteArray defaultHeaders() const;

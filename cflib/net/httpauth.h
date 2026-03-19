@@ -16,9 +16,9 @@ namespace cflib { namespace net {
 class HttpAuth : public RequestHandler
 {
 public:
-    HttpAuth(const CFByteArray & name, const CFString & htpasswd = CFString());
+    HttpAuth(const CFByteArray & name, const String & htpasswd = String());
 
-    void addUser(const CFString & name, const CFByteArray & passwordHash);
+    void addUser(const String & name, const CFByteArray & passwordHash);
     void reset();
 
 protected:
@@ -26,9 +26,9 @@ protected:
 
 private:
     const CFByteArray name_;
-    const CFString htpasswd_;
+    const String htpasswd_;
     CFDateTime htpasswdLastMod_;
-    CFMap<CFString, CFByteArray> users_;
+    CFMap<String, CFByteArray> users_;
     CFSet<CFByteArray> checkedUsers_;
 };
 

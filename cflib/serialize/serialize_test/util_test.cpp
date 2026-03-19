@@ -82,12 +82,12 @@ public:
         TCOMPARE(fromByteArray<int>(CFByteArray::fromHex("C08100")), 0);
         TCOMPARE(fromByteArray<int>(CFByteArray::fromHex("C10101")), 1);
         TCOMPARE(fromByteArray<int>(CFByteArray::fromHex("C101FF")), -1);
-        TCOMPARE(fromByteArray<CFString>(CFByteArray::fromHex("")), CFString());
-        TCOMPARE(fromByteArray<CFString>(CFByteArray::fromHex("C000")), CFString());
-        TVERIFY(!fromByteArray<CFString>(CFByteArray::fromHex("C000")).isNull());
-        TCOMPARE(fromByteArray<CFString>(CFByteArray::fromHex("C08100")), CFString());
-        TVERIFY(fromByteArray<CFString>(CFByteArray::fromHex("C08100")).isNull());
-        TCOMPARE(fromByteArray<CFString>(CFByteArray::fromHex("C103626C61")), CFString("bla"));
+        TCOMPARE(fromByteArray<String>(CFByteArray::fromHex("")), String());
+        TCOMPARE(fromByteArray<String>(CFByteArray::fromHex("C000")), String());
+        TVERIFY(!fromByteArray<String>(CFByteArray::fromHex("C000")).isNull());
+        TCOMPARE(fromByteArray<String>(CFByteArray::fromHex("C08100")), String());
+        TVERIFY(fromByteArray<String>(CFByteArray::fromHex("C08100")).isNull());
+        TCOMPARE(fromByteArray<String>(CFByteArray::fromHex("C103626C61")), String("bla"));
     }
 
     void test_sizes()
@@ -103,10 +103,10 @@ public:
         ser << 34 << "bla";
         BERDeserializer deser(ser.data());
         int i = 0;
-        CFString s;
-        readAndCall<int, const CFString &>(deser, [&](int pi, const CFString & ps) { i = pi; s = ps; });
+        String s;
+        readAndCall<int, const String &>(deser, [&](int pi, const String & ps) { i = pi; s = ps; });
         TCOMPARE(i, 34);
-        TCOMPARE(s, CFString("bla"));
+        TCOMPARE(s, String("bla"));
     }
 };
 

@@ -16,46 +16,46 @@ namespace cflib { namespace net {
 class FileServer : public RequestHandler, public util::ThreadVerify
 {
 public:
-    FileServer(const CFString & path,
+    FileServer(const String & path,
         bool parseHtml = false, uint threadCount = 1,
         bool enableIndex = false, bool noCache = false,
         bool removeSlash = true, bool useHostAsDir = false);
 
-    FileServer(const CFString & path, const char * prefix,
+    FileServer(const String & path, const char * prefix,
         bool parseHtml = false, uint threadCount = 1,
         bool enableIndex = false, bool noCache = false,
         bool removeSlash = true, bool useHostAsDir = false);
 
-    FileServer(const CFString & path, const CFString & prefix,
+    FileServer(const String & path, const String & prefix,
         bool parseHtml = false, uint threadCount = 1,
         bool enableIndex = false, bool noCache = false,
         bool removeSlash = true, bool useHostAsDir = false);
 
     ~FileServer();
 
-    void exportTo(const CFString & dest) const;
-    void add404File(const CFRegex & re, const CFString & dest);
+    void exportTo(const String & dest) const;
+    void add404File(const CFRegex & re, const String & dest);
     void setAccessControlAllowOrigin(const CFByteArray & origin) { accessControlAllowOrigin_ = origin; }
 
 protected:
     virtual void handleRequest(const Request & request);
 
 private:
-    CFString parseHtml(const CFString & fullPath, bool isPart, const CFString & path,
-        const CFStringList & params = CFStringList()) const;
-    void exportDir(const CFString & fullPath, const CFString & path, const CFString & dest) const;
-    CFString createIndex(const CFString & fullPath, const CFString & path);
+    String parseHtml(const String & fullPath, bool isPart, const String & path,
+        const StringList & params = StringList()) const;
+    void exportDir(const String & fullPath, const String & path, const String & dest) const;
+    String createIndex(const String & fullPath, const String & path);
 
 private:
-    const CFString path_;
-    const CFString prefix_;
+    const String path_;
+    const String prefix_;
     const bool parseHtml_;
     const bool enableIndex_;
     const bool noCache_;
     const bool removeSlash_;
     const bool useHostAsDir_;
     const CFByteArray eTag_;
-    typedef CFPair<CFRegex, CFString> Redirect;
+    typedef CFPair<CFRegex, String> Redirect;
     CFList<Redirect> redirects404_;
     const CFRegex pathRE_;
     const CFRegex endingRE_;

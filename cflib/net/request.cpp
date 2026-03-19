@@ -282,7 +282,7 @@ void Request::sendReply(const CFByteArray & reply, const CFByteArray & contentTy
     d->sendReply(hdr, reply, compression);
 }
 
-void Request::sendText(const CFString & reply, const CFByteArray & contentType, bool compression) const
+void Request::sendText(const String & reply, const CFByteArray & contentType, bool compression) const
 {
     sendReply(reply.toUtf8(), contentType + "; charset=utf-8", compression);
 }

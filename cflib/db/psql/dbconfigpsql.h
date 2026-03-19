@@ -11,7 +11,7 @@
 
 namespace cflib { namespace db {
 
-CFMap<CFString, CFString> getConfigPSql();
-cflib::util::Mail getMailTemplatePSql(const CFString & name, const CFString & lang);
+CFMap<String, String> getConfigPSql();
+cflib::util::Mail getMailTemplatePSql(const String & name, const String & lang);
 
 }}    // namespace

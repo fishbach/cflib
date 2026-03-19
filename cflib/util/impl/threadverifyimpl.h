@@ -26,10 +26,10 @@ namespace impl {
 class ThreadHolder
 {
 public:
-    ThreadHolder(const CFString & threadName, int threadId, ThreadStats * stats, bool disable);
+    ThreadHolder(const String & threadName, int threadId, ThreadStats * stats, bool disable);
     virtual ~ThreadHolder();
 
-    const CFString threadName;
+    const String threadName;
     bool isActive() const { return isActive_; }
     bool isRunning() const { return isRunning_; }
     virtual bool doCall(const Functor * func) = 0;
@@ -66,7 +66,7 @@ public:
     void wakeUp();
 
 protected:
-    ThreadHolderLibEV(const CFString & threadName, int threadId, ThreadStats * stats, bool isWorkerOnly, bool disable);
+    ThreadHolderLibEV(const String & threadName, int threadId, ThreadStats * stats, bool isWorkerOnly, bool disable);
     void run() override;
     virtual void wokeUp() = 0;
 
@@ -82,7 +82,7 @@ private:
 class ThreadHolderWorkerPool : public ThreadHolderLibEV
 {
 public:
-    ThreadHolderWorkerPool(const CFString & threadName, int threadId, ThreadStats * stats, bool isWorkerOnly, cfuint threadCount);
+    ThreadHolderWorkerPool(const String & threadName, int threadId, ThreadStats * stats, bool isWorkerOnly, cfuint threadCount);
     ~ThreadHolderWorkerPool();
 
     bool doCall(const Functor * func) override;
@@ -98,7 +98,7 @@ private:
     class Worker : public ThreadHolderLibEV
     {
     public:
-        Worker(const CFString & threadName,
+        Worker(const String & threadName,
             int threadId, ThreadStats * stats, cfuint threadNo, ThreadFifo<const Functor *> & externalCalls);
 
         bool doCall(const Functor *) override { return false; }

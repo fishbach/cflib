@@ -15,11 +15,11 @@ namespace cflib { namespace db { namespace schema {
 
 typedef std::function<bool (const CFByteArray & name)> Migrator;
 
-bool update(Migrator migrator, const CFString & filename);
+bool update(Migrator migrator, const String & filename);
 bool update(const CFByteArray & schema, Migrator migrator = Migrator());
 
 template<typename M>
-bool update(const CFString & filename = ":/schema.sql")
+bool update(const String & filename = ":/schema.sql")
 {
     M migrator;
     return update(

@@ -58,7 +58,7 @@ CFByteArray memorableRandom(const int length)
     return rv;
 }
 
-CFByteArray hashPassword(const CFString & password)
+CFByteArray hashPassword(const String & password)
 {
     TRY {
         AutoSeeded_RNG rng;
@@ -68,7 +68,7 @@ CFByteArray hashPassword(const CFString & password)
     return CFByteArray();
 }
 
-bool checkPassword(const CFString & password, const CFByteArray & hash)
+bool checkPassword(const String & password, const CFByteArray & hash)
 {
     TRY {
         return check_bcrypt(password.str(), std::string(hash.constData(), hash.length()));

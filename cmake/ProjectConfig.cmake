@@ -30,6 +30,7 @@ option(ENABLE_PSQL   "enable PostgreSQL"                OFF)
 # C++20
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
 
 # ccache
 if(ENABLE_CCACHE)

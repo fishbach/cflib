@@ -29,7 +29,7 @@ namespace cflib { namespace db {
  *   20 : bigint  (bigserial)       <->  cfint64, cfuint64
  *  700 : real                      <->  float
  *  701 : double precision          <->  double
- *   25 : text                      <->  CFString
+ *   25 : text                      <->  String
  *   17 : bytea                     <->  CFByteArray
  * 1184 : timestamp with time zone  <->  CFDateTime (UTC)
  *
@@ -47,8 +47,8 @@ public:
     static const int MAX_FIELD_COUNT = 64;
     struct Null {} null;
 
-    static bool setParameter(const CFString & connectionParameter, const CFString & overrideEnvVar = CFString());
-    static CFString setDBName(const CFString & connectionParameter, const CFString & dbName);
+    static bool setParameter(const String & connectionParameter, const String & overrideEnvVar = String());
+    static String setDBName(const String & connectionParameter, const String & dbName);
     static void closeThreadConnection();
 
 public:
@@ -57,7 +57,7 @@ public:
 
     // This constructor opens an own DB-connection.
     // If connectionParameter is empty, the default parameters will be used.
-    PSql(const CFString & connectionParameter = CFString());
+    PSql(const String & connectionParameter = String());
 
     ~PSql();
 
@@ -65,10 +65,10 @@ public:
     bool commit();
     void rollback();
 
-    bool exec(const CFString & query);
+    bool exec(const String & query);
 
     // This can be used to execute many statements in one string.
-    bool execMultiple(const CFString & query);
+    bool execMultiple(const String & query);
 
     void prepare(const CFByteArray & query);
     bool exec(cfuint keepFields = 0);
@@ -89,7 +89,7 @@ public:
     PSql & operator<<(double val);
     PSql & operator<<(const CFDateTime  & val);
     PSql & operator<<(const CFByteArray & val);
-    PSql & operator<<(const CFString    & val);
+    PSql & operator<<(const String    & val);
     PSql & operator<<(const char * val);
 
     PSql & operator<<(Null);
@@ -108,7 +108,7 @@ public:
     PSql & operator>>(double     & val);
     PSql & operator>>(CFDateTime  & val);
     PSql & operator>>(CFByteArray & val);
-    PSql & operator>>(CFString    & val);
+    PSql & operator>>(String    & val);
 
     PSql & operator>>(Null);
 

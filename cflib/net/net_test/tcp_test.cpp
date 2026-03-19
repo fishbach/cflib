@@ -20,10 +20,10 @@ using namespace cflib::net;
 namespace {
 
 CFSemaphore msgSem;
-CFStringList msgs;
+StringList msgs;
 CFMutex mutex;
 
-void msg(const CFString & m)
+void msg(const String & m)
 {
     CFMutexLocker ml(mutex);
     msgs << m;
@@ -36,7 +36,7 @@ public:
     ServerConn(TCPConnData * data) :
         TCPConn(data)
     {
-        msg("srv new: " + CFString(peerIP()));
+        msg("srv new: " + String(peerIP()));
         startReadWatcher();
     }
 
@@ -65,7 +65,7 @@ protected:
 
     virtual void closed(CloseType type)
     {
-        msg("srv closed: " + CFString::number((int)type));
+        msg("srv closed: " + String::number((int)type));
     }
 
     virtual void writeFinished()
@@ -94,7 +94,7 @@ public:
     ClientConn(TCPConnData * data) :
         TCPConn(data)
     {
-        msg("cli new: " + CFString(peerIP()) + ":" + CFString::number(peerPort()));
+        msg("cli new: " + String(peerIP()) + ":" + String::number(peerPort()));
         startReadWatcher();
     }
 
@@ -112,7 +112,7 @@ protected:
 
     virtual void closed(CloseType type)
     {
-        msg("cli closed: " + CFString::number((int)type));
+        msg("cli closed: " + String::number((int)type));
     }
 
     virtual void writeFinished()

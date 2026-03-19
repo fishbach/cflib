@@ -26,16 +26,16 @@ CFByteArray fromStdVector(const std::vector<std::string> & vec)
 
 }
 
-CFString TLSCertInfo::toString() const
+String TLSCertInfo::toString() const
 {
-    CFString rv("subject: \"");
-    rv += CFString(subjectName.constData());
+    String rv("subject: \"");
+    rv += String(subjectName.constData());
     rv += "\", issuer: \"";
-    rv += CFString(issuerName.constData());
+    rv += String(issuerName.constData());
     rv += "\", isCA: ";
-    rv += CFString::number((cfint32)isCA);
+    rv += String::number((cfint32)isCA);
     rv += ", isTrusted: ";
-    rv += CFString::number((cfint32)isTrusted);
+    rv += String::number((cfint32)isTrusted);
     return rv;
 }
 
@@ -182,14 +182,14 @@ bool TLSCredentials::addPrivateKey(const CFByteArray & privateKey, const CFByteA
     return false;
 }
 
-bool TLSCredentials::loadFromDir(const CFString & path)
+bool TLSCredentials::loadFromDir(const String & path)
 {
     DIR * dir = opendir(path.c_str());
     if (!dir) return false;
     struct dirent * entry;
     while ((entry = readdir(dir)) != nullptr) {
-        CFString name(entry->d_name);
-        CFString file = CFString(path.str() + "/" + name.str());
+        String name(entry->d_name);
+        String file = String(path.str() + "/" + name.str());
         if (name.endsWith("_crt.pem")) {
             CFByteArray data = util::readFile(file);
             if (data.isEmpty()) {

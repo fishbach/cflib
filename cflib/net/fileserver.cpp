@@ -24,15 +24,15 @@ namespace cflib { namespace net {
 
 namespace {
 
-CFStringList splitParams(const CFString & param)
+StringList splitParams(const String & param)
 {
-    CFStringList retval;
+    StringList retval;
 
-    CFString str;
+    String str;
     bool isStr = false;
     bool isEsc = false;
     int i = 0;
-    const CFString p = param.simplified();
+    const String p = param.simplified();
     while (i < (int)p.length()) {
         const char c = p[i++];
         if (isEsc) {
@@ -64,9 +64,9 @@ CFStringList splitParams(const CFString & param)
     return retval;
 }
 
-inline CFString handleVars(const CFString & expr, const CFString & path, const CFStringList & params)
+inline String handleVars(const String & expr, const String & path, const StringList & params)
 {
-    CFString retval = expr.trimmed();
+    String retval = expr.trimmed();
     if (retval == "$path") retval = path;
     else if (retval[0] == '$') {
         bool ok;
@@ -77,14 +77,14 @@ inline CFString handleVars(const CFString & expr, const CFString & path, const C
     return retval;
 }
 
-inline void handleVars(CFStringList & vars, const CFString & path, const CFStringList & params)
+inline void handleVars(StringList & vars, const String & path, const StringList & params)
 {
     for (auto & var : vars) {
         var = handleVars(var, path, params);
     }
 }
 
-void writeHTMLFile(const CFString & file, CFString content)
+void writeHTMLFile(const String & file, String content)
 {
     static const CFRegex commentRe("<!--.*?-->");
     static const CFRegex trimRe("^\\s+|\\s+$");
@@ -97,34 +97,34 @@ void writeHTMLFile(const CFString & file, CFString content)
 }
 
 // Check if path is a directory
-inline bool isDirectory(const CFString & path) {
+inline bool isDirectory(const String & path) {
     struct stat st;
     return stat(path.c_str(), &st) == 0 && S_ISDIR(st.st_mode);
 }
 
 // Check if a file is readable
-inline bool isReadable(const CFString & path) {
+inline bool isReadable(const String & path) {
     return access(path.c_str(), R_OK) == 0;
 }
 
 // Get canonical path
-inline CFString canonicalPath(const CFString & path) {
+inline String canonicalPath(const String & path) {
     char * real = realpath(path.c_str(), nullptr);
     if (!real) return path;
-    CFString result(real);
+    String result(real);
     free(real);
     return result;
 }
 
 // Get directory part of path
-inline CFString dirName(const CFString & path) {
+inline String dirName(const String & path) {
     cfsize_t pos = path.lastIndexOf("/");
     if (pos < 0) return ".";
     return path.left(pos);
 }
 
 // Get filename from path
-inline CFString fileName(const CFString & path) {
+inline String fileName(const String & path) {
     cfsize_t pos = path.lastIndexOf("/");
     if (pos < 0) return path;
     return path.mid(pos + 1);
@@ -134,17 +134,17 @@ inline CFString fileName(const CFString & path) {
 
 // ============================================================================
 
-FileServer::FileServer(const CFString & path, bool parseHtml, uint threadCount, bool enableIndex, bool noCache, bool removeSlash, bool useHostAsDir) :
-    FileServer(path, CFString(), parseHtml, threadCount, enableIndex, noCache, removeSlash, useHostAsDir)
+FileServer::FileServer(const String & path, bool parseHtml, uint threadCount, bool enableIndex, bool noCache, bool removeSlash, bool useHostAsDir) :
+    FileServer(path, String(), parseHtml, threadCount, enableIndex, noCache, removeSlash, useHostAsDir)
 {
 }
 
-FileServer::FileServer(const CFString & path, const char * prefix, bool parseHtml, uint threadCount, bool enableIndex, bool noCache, bool removeSlash, bool useHostAsDir) :
-    FileServer(path, CFString(prefix), parseHtml, threadCount, enableIndex, noCache, removeSlash, useHostAsDir)
+FileServer::FileServer(const String & path, const char * prefix, bool parseHtml, uint threadCount, bool enableIndex, bool noCache, bool removeSlash, bool useHostAsDir) :
+    FileServer(path, String(prefix), parseHtml, threadCount, enableIndex, noCache, removeSlash, useHostAsDir)
 {
 }
 
-FileServer::FileServer(const CFString & path, const CFString & prefix, bool parseHtml, uint threadCount, bool enableIndex, bool noCache, bool removeSlash, bool useHostAsDir) :
+FileServer::FileServer(const String & path, const String & prefix, bool parseHtml, uint threadCount, bool enableIndex, bool noCache, bool removeSlash, bool useHostAsDir) :
     ThreadVerify("FileServer", Worker, threadCount),
     path_(path),
     prefix_(prefix),
@@ -165,21 +165,21 @@ FileServer::~FileServer()
     stopVerifyThread();
 }
 
-void FileServer::exportTo(const CFString & dest) const
+void FileServer::exportTo(const String & dest) const
 {
     exportDir(path_, "/", dest);
 }
 
-void FileServer::add404File(const CFRegex & re, const CFString & dest)
+void FileServer::add404File(const CFRegex & re, const String & dest)
 {
-    redirects404_ << CFPair<CFRegex, CFString>(re, dest);
+    redirects404_ << CFPair<CFRegex, String>(re, dest);
 }
 
 void FileServer::handleRequest(const Request & request)
 {
     if (!verifyThreadCall(&FileServer::handleRequest, request)) return;
 
-    CFString path = request.getUri();
+    String path = request.getUri();
 
     // Is it for us?
     if (!prefix_.isEmpty()) {
@@ -238,7 +238,7 @@ void FileServer::handleRequest(const Request & request)
         if (path.isEmpty()) path = "/";
     }
 
-    CFString fullPath = path_;
+    String fullPath = path_;
     if (useHostAsDir_) {
         fullPath += '/';
         fullPath += request.getHeader("host");
@@ -261,7 +261,7 @@ void FileServer::handleRequest(const Request & request)
     // check for redirects
     if (!fileReadable) {
         bool wasRedirect = false;
-        const CFString origPath = request.getUri();
+        const String origPath = request.getUri();
         for (const auto & rd : redirects404_) {
             if (rd.first.match(origPath)) {
                 isPart = false;
@@ -285,7 +285,7 @@ void FileServer::handleRequest(const Request & request)
         if (!noCache_) { CFByteArray el = "ETag: "; el << eTag_; request.addHeaderLine(el); }
         if (request.isHEAD()) request.sendText("");
         else if (parseHtml_)  request.sendText(parseHtml(fullPath, isPart, path));
-        else                  request.sendText(CFString(util::readFile(fullPath)));
+        else                  request.sendText(String(util::readFile(fullPath)));
         return;
     }
 
@@ -308,7 +308,7 @@ void FileServer::handleRequest(const Request & request)
     CFByteArray contentType = "application/octet-stream";
     const CFRegex::MatchResult match = endingRE_.matchResult(path);
     if (match.hasMatch()) {
-        const CFString ending = match.captured(1);
+        const String ending = match.captured(1);
              if (ending == "htm" ) { cache = false; compression = true;  contentType = "text/html; charset=utf-8"; }
         else if (ending == "txt" ) { cache = false; compression = true;  contentType = "text/plain"; }
         else if (ending == "ico" ) { cache = true;  compression = false; contentType = "image/x-icon"; }
@@ -336,13 +336,13 @@ void FileServer::handleRequest(const Request & request)
     else                  request.sendReply(replyData, contentType, compression);
 }
 
-CFString FileServer::parseHtml(const CFString & fullPath, bool isPart, const CFString & path,
-    const CFStringList & params) const
+String FileServer::parseHtml(const String & fullPath, bool isPart, const String & path,
+    const StringList & params) const
 {
     logFunctionTraceParam("FileServer::parseHtml(%1, %2, %3, (%4))", fullPath, isPart, path, cfJoin(params, ','));
 
-    CFString retval;
-    CFString html = util::readTextfile(fullPath);
+    String retval;
+    String html = util::readTextfile(fullPath);
     std::stack<bool> ifStack;
     CFRegex::MatchResult m;
     while ((m = elementRE_.matchResult(html)).hasMatch()) {
@@ -352,15 +352,15 @@ CFString FileServer::parseHtml(const CFString & fullPath, bool isPart, const CFS
         pos += m.capturedLength();
         html.remove(0, pos);
 
-        const CFString cmd   = m.captured(1);
-        const CFString param = m.captured(2);
+        const String cmd   = m.captured(1);
+        const String param = m.captured(2);
 
         if (cmd == "inc ") {
             if (skip) continue;
-            CFStringList incParams = splitParams(param);
+            StringList incParams = splitParams(param);
             handleVars(incParams, path, params);
             if (incParams.empty()) continue;
-            CFString inc = cfTakeFirst(incParams);
+            String inc = cfTakeFirst(incParams);
             if (inc == "nopart") {
                 if (isPart) continue;
                 if (incParams.empty()) continue;
@@ -371,7 +371,7 @@ CFString FileServer::parseHtml(const CFString & fullPath, bool isPart, const CFS
             retval += parseHtml(inc, isPart, path, incParams);
         } else if (cmd == "$") {
             if (skip) continue;
-            retval += handleVars(CFString("$") + param.trimmed(), path, params);
+            retval += handleVars(String("$") + param.trimmed(), path, params);
         } else if (cmd == "etag") {
             if (skip) continue;
             retval += eTag_;
@@ -379,24 +379,24 @@ CFString FileServer::parseHtml(const CFString & fullPath, bool isPart, const CFS
             if (skip) continue;
             retval += "<script type=\"importmap\">{\"imports\":{";
             // Walk directory tree for .mjs files
-            std::function<void(const CFString &)> walkMjs;
+            std::function<void(const String &)> walkMjs;
             const int len = path_.length() + 1;
-            const CFString suffix = CFString("?") + eTag_ + "\"";
+            const String suffix = String("?") + eTag_ + "\"";
             bool isFirst = true;
-            walkMjs = [&](const CFString & dir) {
+            walkMjs = [&](const String & dir) {
                 DIR * d = opendir(dir.c_str());
                 if (!d) return;
                 struct dirent * ent;
                 while ((ent = readdir(d)) != nullptr) {
-                    CFString name(ent->d_name);
+                    String name(ent->d_name);
                     if (name == "." || name == "..") continue;
-                    CFString full = dir + "/" + name;
+                    String full = dir + "/" + name;
                     struct stat st;
                     if (stat(full.c_str(), &st) != 0) continue;
                     if (S_ISDIR(st.st_mode)) {
                         walkMjs(full);
                     } else if (name.endsWith(".mjs")) {
-                        CFString file = full.mid(len);
+                        String file = full.mid(len);
                         if (isFirst) isFirst = false;
                         else retval += ',';
                         retval += "\"/";
@@ -411,16 +411,16 @@ CFString FileServer::parseHtml(const CFString & fullPath, bool isPart, const CFS
             walkMjs(path_);
             retval += "}}</script>";
         } else if (cmd == "if ") {
-            CFStringList cond = splitParams(param);
+            StringList cond = splitParams(param);
             if ((int)cond.size() != 3) {
                 ifStack.push(false);
                 continue;
             }
             handleVars(cond, path, params);
 
-            const CFString & lhs = cond[0];
-            const CFString & cmp = cond[1];
-            const CFString & rhs = cond[2];
+            const String & lhs = cond[0];
+            const String & cmp = cond[1];
+            const String & rhs = cond[2];
 
             bool eval = false;
             if (cmp == "==") {
@@ -453,7 +453,7 @@ CFString FileServer::parseHtml(const CFString & fullPath, bool isPart, const CFS
     return retval;
 }
 
-void FileServer::exportDir(const CFString & fullPath, const CFString & path, const CFString & dest) const
+void FileServer::exportDir(const String & fullPath, const String & path, const String & dest) const
 {
     if (path == "/include") return;
 
@@ -465,9 +465,9 @@ void FileServer::exportDir(const CFString & fullPath, const CFString & path, con
 
     struct dirent * ent;
     while ((ent = readdir(d)) != nullptr) {
-        CFString name(ent->d_name);
+        String name(ent->d_name);
         if (name == "." || name == "..") continue;
-        CFString filePath = canonicalPath(fullPath + "/" + name);
+        String filePath = canonicalPath(fullPath + "/" + name);
         struct stat st;
         if (stat(filePath.c_str(), &st) != 0) continue;
 
@@ -477,9 +477,9 @@ void FileServer::exportDir(const CFString & fullPath, const CFString & path, con
                 writeHTMLFile(dest + "/index_part.html", parseHtml(filePath, true,  path));
             } else if (name == "404.html") {
                 writeHTMLFile(dest + "/404.html",        parseHtml(filePath, false, path));
-            } else if (CFString(name).endsWith(".css")) {
-                CFString out = parseHtml(filePath, false, path);
-                { CFRegex importRe(CFString("(@import url\\(\".*?)\\?") + CFString(eTag_)); out = importRe.replace(out, "$1"); }
+            } else if (String(name).endsWith(".css")) {
+                String out = parseHtml(filePath, false, path);
+                { CFRegex importRe(String("(@import url\\(\".*?)\\?") + String(eTag_)); out = importRe.replace(out, "$1"); }
                 cflib::util::writeFile(dest + "/" + name, out.toUtf8());
             } else {
                 cflib::util::copyFile(filePath, dest + "/" + name);
@@ -491,12 +491,12 @@ void FileServer::exportDir(const CFString & fullPath, const CFString & path, con
     // Process subdirectories
     d = opendir(fullPath.c_str());
     if (!d) return;
-    CFString p = path;
+    String p = path;
     if (path.length() > 1) p += '/';
     while ((ent = readdir(d)) != nullptr) {
-        CFString name(ent->d_name);
+        String name(ent->d_name);
         if (name == "." || name == "..") continue;
-        CFString subPath = fullPath + "/" + name;
+        String subPath = fullPath + "/" + name;
         struct stat st;
         if (stat(subPath.c_str(), &st) != 0) continue;
         if (S_ISDIR(st.st_mode)) {
@@ -506,13 +506,13 @@ void FileServer::exportDir(const CFString & fullPath, const CFString & path, con
     closedir(d);
 }
 
-CFString FileServer::createIndex(const CFString & fullPath, const CFString & path)
+String FileServer::createIndex(const String & fullPath, const String & path)
 {
-    CFString html;
+    String html;
     html << "<!DOCTYPE html>\r\n<html><head></head>\r\n<body>\r\n";
 
-    CFString backJumpPath;
-    CFString pathStart;
+    String backJumpPath;
+    String pathStart;
     if (!removeSlash_) {
         if (path != "/") {
             int pos = path.lastIndexOf("/");
@@ -522,8 +522,8 @@ CFString FileServer::createIndex(const CFString & fullPath, const CFString & pat
 
     } else {
         // remove slash mode - create relative paths
-        const CFString lastPartOfPrefix = cfLast(prefix_.split("/"));
-        const CFStringList pathSplitted = path.split("/");
+        const String lastPartOfPrefix = cfLast(prefix_.split("/"));
+        const StringList pathSplitted = path.split("/");
         if (path != "/") { // subdir
             if ((int)pathSplitted.size() >= 3) { // subdir level 2 or greater
                 backJumpPath = "../" + pathSplitted[pathSplitted.size() - 2];
@@ -544,13 +544,13 @@ CFString FileServer::createIndex(const CFString & fullPath, const CFString & pat
     DIR * d = opendir(fullPath.c_str());
     if (d) {
         // Collect entries, then sort
-        CFStringList dirs, files;
+        StringList dirs, files;
         struct dirent * ent;
         while ((ent = readdir(d)) != nullptr) {
-            CFString name(ent->d_name);
+            String name(ent->d_name);
             if (name == "." || name == "..") continue;
             struct stat st;
-            CFString full = fullPath + "/" + name;
+            String full = fullPath + "/" + name;
             if (stat(full.c_str(), &st) != 0) continue;
             if (S_ISDIR(st.st_mode)) dirs.push_back(name);
             else files.push_back(name);

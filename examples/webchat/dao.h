@@ -13,7 +13,7 @@ class Dao
 {
     SERIALIZE_CLASS
 public serialized:
-    CFString name;
+    String name;
     cfuint32 number;
     typedef CFList<cfuint32> List;
     typedef CFPair<List, CFDateTime> Pair;

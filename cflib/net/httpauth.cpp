@@ -18,12 +18,12 @@ USE_LOG(LogCat::Http)
 
 namespace cflib { namespace net {
 
-HttpAuth::HttpAuth(const CFByteArray & name, const CFString & htpasswd) :
+HttpAuth::HttpAuth(const CFByteArray & name, const String & htpasswd) :
     name_(name), htpasswd_(htpasswd)
 {
 }
 
-void HttpAuth::addUser(const CFString & name, const CFByteArray & passwordHash)
+void HttpAuth::addUser(const String & name, const CFByteArray & passwordHash)
 {
     users_[name] = passwordHash;
 }
@@ -56,7 +56,7 @@ void HttpAuth::handleRequest(const Request & request)
                 for (const auto & line : lines) {
                     CFList<CFByteArray> parts = line.split(':');
                     if (parts.size() == 2) {
-                        users_[CFString(parts[0].trimmed().toStdString())] = parts[1].trimmed();
+                        users_[String(parts[0].trimmed().toStdString())] = parts[1].trimmed();
                     }
                 }
                 logInfo("loaded HTTP Basic Auth file %1 with %2 entries", htpasswd_, users_.size());

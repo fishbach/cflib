@@ -16,8 +16,10 @@
 #include <cflib/base/cfflags.h>
 #include <cflib/base/cfregex.h>
 #include <cflib/base/cfsharedptr.h>
-#include <cflib/base/cfstring.h>
+#include <cflib/base/string.h>
 #include <cflib/base/cfthread.h>
 #include <cflib/base/cfurl.h>
 #include <cflib/base/macros.h>
 #include <cflib/base/types.h>
+
+using namespace cflib::base;

@@ -70,8 +70,8 @@ public:
 
     Type type;
     cfuint32 classId;
-    CFString ns;
-    CFString typeName;
+    String ns;
+    String typeName;
     CFList<SerializeTypeInfo> bases;
     TypeInfoList<SerializeVariableTypeInfo> members;
     TypeInfoList<SerializeFunctionTypeInfo> functions;
@@ -81,34 +81,34 @@ public:
     SerializeTypeInfo() : type(Null), classId(0) {}
     bool operator==(const SerializeTypeInfo & rhs) const { return getName() == rhs.getName(); }
     bool operator<(const SerializeTypeInfo & rhs) const { return getName() < rhs.getName(); }
-    CFString toString() const;
-    CFString getName() const;
+    String toString() const;
+    String getName() const;
 };
 
 class SerializeVariableTypeInfo
 {
 public:
-    CFString name;
+    String name;
     SerializeTypeInfo type;
     bool isRef;
 
 public:
     SerializeVariableTypeInfo() : isRef(false) {}
-    SerializeVariableTypeInfo(const CFString & name, const SerializeTypeInfo & type, bool isRef = false) :
+    SerializeVariableTypeInfo(const String & name, const SerializeTypeInfo & type, bool isRef = false) :
         name(name), type(type), isRef(isRef) {}
 };
 
 class SerializeFunctionTypeInfo
 {
 public:
-    CFString name;
+    String name;
     SerializeTypeInfo returnType;
     CFList<SerializeVariableTypeInfo> parameters;
     CFList<SerializeVariableTypeInfo> registerParameters;
 
 public:
-    CFString toString() const;
-    CFString signature(bool withParamNames = false) const;
+    String toString() const;
+    String signature(bool withParamNames = false) const;
     bool hasReturnValues() const { return returnValueCount() > 0; }
     uint returnValueCount() const;
 };

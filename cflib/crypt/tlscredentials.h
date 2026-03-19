@@ -21,7 +21,7 @@ struct TLSCertInfo
     bool isCA;
     bool isTrusted;
 
-    CFString toString() const;
+    String toString() const;
     bool isNull() const { return subjectName.isEmpty() && issuerName.isEmpty(); }
     TLSCertInfo() : isCA(false), isTrusted(false) {}
 };
@@ -53,7 +53,7 @@ public:
     // After load activate has to be called.
     // This is necessary when you do a procsess owner change in between.
     // Otherwise the secure memory of botan will not make the move to the new owner.
-    bool loadFromDir(const CFString & path);
+    bool loadFromDir(const String & path);
     bool activateLoaded(bool isTrustedCA = false);
 
     // write all certificates to a single .pem file

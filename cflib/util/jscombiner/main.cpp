@@ -121,7 +121,7 @@ std::vector<std::string> parseDepends(const std::string & depends)
 
 void getDependencies(const std::string & name)
 {
-    std::string file(readTextfile(CFString(name.c_str())).str());
+    std::string file(readTextfile(String(name.c_str())).str());
 
     int pos = 0;
     while (true) {
@@ -156,7 +156,7 @@ void getDependencies(const std::string & name)
 
 void convertFile(const std::string & name)
 {
-    std::string file(readTextfile(CFString(name.c_str())).str());
+    std::string file(readTextfile(String(name.c_str())).str());
 
     int pos = 0;
     while (true) {

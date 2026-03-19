@@ -41,7 +41,7 @@ public:
     virtual cflib::serialize::SerializeTypeInfo getServiceInfo() const = 0;
 
 protected:
-    RMIServiceBase(const CFString & threadName, uint threadCount = 1, LoopType loopType = Worker);
+    RMIServiceBase(const String & threadName, uint threadCount = 1, LoopType loopType = Worker);
     RMIServiceBase(ThreadVerify * other);
 
     inline uint connId() const { return connId_; }
@@ -72,7 +72,7 @@ template<typename C>
 class RMIService : public RMIServiceBase
 {
 protected:
-    RMIService(const CFString & threadName, uint threadCount = 1, LoopType loopType = Worker) :
+    RMIService(const String & threadName, uint threadCount = 1, LoopType loopType = Worker) :
         RMIServiceBase(threadName, threadCount, loopType), connData_(this), connDataId_(this, 0) {}
     RMIService(ThreadVerify * other) : RMIServiceBase(other), connData_(this), connDataId_(this, 0) {}
 

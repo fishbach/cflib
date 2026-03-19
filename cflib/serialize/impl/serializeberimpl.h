@@ -200,10 +200,10 @@ inline void deserializeBER(CFByteArray & ba, const cfuint8 * data, int len, BERD
 }
 
 // ----------------------------------------------------------------------------
-// CFString
+// String
 // ----------------------------------------------------------------------------
 
-inline void serializeBER(const CFString & str, cfuint64 tagNo, CFByteArray & data, BERSerializerBase & ser)
+inline void serializeBER(const String & str, cfuint64 tagNo, CFByteArray & data, BERSerializerBase & ser)
 {
     if (str.isNull())  { writeNull(data, tagNo); return; }
     if (str.isEmpty()) { writeZero(data, tagNo); return; }
@@ -211,9 +211,9 @@ inline void serializeBER(const CFString & str, cfuint64 tagNo, CFByteArray & dat
     serializeBER(utf8, tagNo, data, ser);
 }
 
-inline void deserializeBER(CFString & str, const cfuint8 * data, int len, BERDeserializerBase &)
+inline void deserializeBER(String & str, const cfuint8 * data, int len, BERDeserializerBase &)
 {
-    str = CFString::fromUtf8((const char *)data, (cfsize_t)len);
+    str = String::fromUtf8((const char *)data, (cfsize_t)len);
 }
 
 // ----------------------------------------------------------------------------
@@ -342,7 +342,7 @@ inline void deserializeBER(CFList<T> & cl, const cfuint8 * data, int len, BERDes
 }
 
 // ----------------------------------------------------------------------------
-// CFStringList is CFList<CFString> — handled by the CFList template above.
+// StringList is CFList<String> — handled by the CFList template above.
 
 // ----------------------------------------------------------------------------
 // CFVector (same as CFList)

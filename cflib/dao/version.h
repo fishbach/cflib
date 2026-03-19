@@ -22,7 +22,7 @@ class Version
 {
     SERIALIZE_CLASS
 public:
-    Version(cfuint major = 0, cfuint minor = 0, cfuint revision = 0, const CFString & patchLevel = CFString()) :
+    Version(cfuint major = 0, cfuint minor = 0, cfuint revision = 0, const String & patchLevel = String()) :
         major(major), minor(minor), revision(revision), patchLevel(patchLevel) {}
 
     bool isNull() const { return major == 0 && minor == 0 && revision == 0 && patchLevel.isNull(); }
@@ -44,17 +44,17 @@ public:
     bool operator>(const Version & rhs) const { return !rhs.operator>=(*this); }
     bool operator<=(const Version & rhs) const { return rhs.operator>=(*this); }
 
-    CFString toString() const;
+    String toString() const;
 
     static Version current() { return current_; }
     static void setCurrent(const Version & version);
-    static void setCurrent(cfuint major = 0, cfuint minor = 0, cfuint revision = 0, const CFString & patchLevel = CFString());
+    static void setCurrent(cfuint major = 0, cfuint minor = 0, cfuint revision = 0, const String & patchLevel = String());
 
 public serialized:
     cfuint major;
     cfuint minor;
     cfuint revision;
-    CFString patchLevel;
+    String patchLevel;
 
 private:
     static Version current_;

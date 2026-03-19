@@ -20,10 +20,10 @@ using namespace cflib::net;
 namespace {
 
 CFSemaphore msgSem;
-CFStringList msgs;
+StringList msgs;
 CFMutex mutex;
 
-void msg(const CFString & m)
+void msg(const String & m)
 {
     CFMutexLocker ml(mutex);
     msgs << m;
@@ -51,7 +51,7 @@ protected:
         if (request.getUri() == "/abort") {
             request.abort();
         } else {
-            request.sendText("reply " + CFString::number(++count_));
+            request.sendText("reply " + String::number(++count_));
         }
     }
 private:

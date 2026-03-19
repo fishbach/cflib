@@ -11,14 +11,14 @@ namespace cflib { namespace dao {
 
 Version Version::current_;
 
-CFString Version::toString() const
+String Version::toString() const
 {
-    CFString result = CFString::number((cfuint32)major) + "." + CFString::number((cfuint32)minor) + "." + CFString::number((cfuint32)revision);
+    String result = String::number((cfuint32)major) + "." + String::number((cfuint32)minor) + "." + String::number((cfuint32)revision);
     if (!patchLevel.isEmpty()) result += "-" + patchLevel;
     return result;
 }
 
-void Version::setCurrent(cfuint major, cfuint minor, cfuint revision, const CFString & patchLevel)
+void Version::setCurrent(cfuint major, cfuint minor, cfuint revision, const String & patchLevel)
 {
     current_ = Version(major, minor, revision, patchLevel);
 }

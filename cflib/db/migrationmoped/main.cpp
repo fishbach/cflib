@@ -54,19 +54,19 @@ int main(int argc, char *argv[])
         Log::setLogLevel(logOpt.value().toUInt());
     }
 
-    CFString dbParam = dbOpt.isSet() ? CFString::fromUtf8(dbOpt.value()) : CFString();
+    String dbParam = dbOpt.isSet() ? String::fromUtf8(dbOpt.value()) : String();
     PSql::setParameter(dbParam);
 
     schema::Migrator migrator;
     if (migratorOpt.isSet()) {
-        CFString migratorExe = CFString::fromUtf8(migratorOpt.value());
+        String migratorExe = String::fromUtf8(migratorOpt.value());
         migrator = [&migratorExe](const CFByteArray & name) {
-            CFString cmd = migratorExe + " " + CFString::fromUtf8(name);
+            String cmd = migratorExe + " " + String::fromUtf8(name);
             return system(cmd.c_str()) == 0;
         };
     }
 
-    CFString schemaFile = CFString::fromUtf8(schemaArg.value());
+    String schemaFile = String::fromUtf8(schemaArg.value());
     if (!schema::update(migrator, schemaFile))
     {
         logCritical("could not update db schema");

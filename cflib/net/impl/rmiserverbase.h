@@ -27,7 +27,7 @@ public:
     ~RMIServerBase();
 
     void registerService(RMIServiceBase & service);
-    void exportTo(const CFString & dest) const;
+    void exportTo(const String & dest) const;
     void handleRequest(const Request & request);
     void send(uint connId, const CFByteArray & data);
     CFByteArray getRemoteIP(uint connId);
@@ -73,7 +73,7 @@ public:
 
 private:
     struct ClassInfoEl;
-    class ClassInfos : public CFMap<CFString, ClassInfoEl *> {
+    class ClassInfos : public CFMap<String, ClassInfoEl *> {
         CF_DISABLE_COPY(ClassInfos)
     public:
         ClassInfos() {}
@@ -86,30 +86,30 @@ private:
     struct ServiceFunctions {
         ServiceFunctions() : service(0) {}
         RMIServiceBase * service;
-        CFMap<CFString, CFPair<uint, uint> > signatures;
+        CFMap<String, CFPair<uint, uint> > signatures;
     };
 
 private:
     RMIServiceBase * checkServiceCall(serialize::BERDeserializer & deser, uint connId,
         uint & callNo, uint & type);
-    void showServices(const Request & request, CFString path) const;
-    void showClasses(const Request & request, CFString path) const;
-    void classesToHTML(CFString & info, const ClassInfoEl & infoEl) const;
-    CFString generateJSOrTS(const CFString & path) const;
-    CFString generateJS(const serialize::SerializeTypeInfo & ti) const;
-    CFString generateTS(const serialize::SerializeTypeInfo & ti) const;
-    cflib::serialize::SerializeTypeInfo getTypeInfo(const CFString & path) const;
-    CFString generateJSForClass(const cflib::serialize::SerializeTypeInfo & ti) const;
-    CFString generateJSForService(const cflib::serialize::SerializeTypeInfo & ti) const;
-    CFString generateTSForClass(const cflib::serialize::SerializeTypeInfo & ti) const;
-    CFString generateTSForService(const cflib::serialize::SerializeTypeInfo & ti) const;
-    CFSet<CFString> exportClass(const ClassInfoEl & cl, const CFString & path, const CFString & dest) const;
+    void showServices(const Request & request, String path) const;
+    void showClasses(const Request & request, String path) const;
+    void classesToHTML(String & info, const ClassInfoEl & infoEl) const;
+    String generateJSOrTS(const String & path) const;
+    String generateJS(const serialize::SerializeTypeInfo & ti) const;
+    String generateTS(const serialize::SerializeTypeInfo & ti) const;
+    cflib::serialize::SerializeTypeInfo getTypeInfo(const String & path) const;
+    String generateJSForClass(const cflib::serialize::SerializeTypeInfo & ti) const;
+    String generateJSForService(const cflib::serialize::SerializeTypeInfo & ti) const;
+    String generateTSForClass(const cflib::serialize::SerializeTypeInfo & ti) const;
+    String generateTSForService(const cflib::serialize::SerializeTypeInfo & ti) const;
+    CFSet<String> exportClass(const ClassInfoEl & cl, const String & path, const String & dest) const;
     void addClassInfo(const cflib::serialize::SerializeTypeInfo & ti);
 
 private:
     WSCommManagerBase & wsService_;
     const CFRegex containerRE_;
-    CFMap<CFString, ServiceFunctions> services_;
+    CFMap<String, ServiceFunctions> services_;
     ClassInfoEl classInfos_;
     CFSet<uint> activeRequests_;
 };
