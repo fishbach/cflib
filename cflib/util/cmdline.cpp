@@ -22,8 +22,8 @@ bool CmdLine::parse()
 
     // Extract executable basename
     const ByteArray & fullPath = rawArgs_[0];
-    size_t lastSlash = fullPath.indexOf('/');
-    size_t pos = lastSlash;
+    ssize_t lastSlash = fullPath.indexOf('/');
+    ssize_t pos = lastSlash;
     while (pos >= 0) {
         lastSlash = pos;
         pos = fullPath.indexOf('/', lastSlash + 1);

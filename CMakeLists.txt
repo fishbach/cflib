@@ -12,7 +12,12 @@ project(
     LANGUAGES CXX
 )
 
-include(cmake/ProjectConfig.cmake)
+if("${CMAKE_CURRENT_LIST_DIR}" STREQUAL "${CMAKE_SOURCE_DIR}")
+    include(cmake/ProjectConfig.cmake)
+endif()
+include(Build)
+include(DependencyConfig)
+include(Util)
 
 cf_add_other(cflib_files
     .gitignore

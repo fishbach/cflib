@@ -52,14 +52,10 @@ include_directories(${PROJECT_SOURCE_DIR})
 # enable tests
 enable_testing()
 
-# -----------------------------------------------------------------------------
+# cmake modules
+list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_LIST_DIR})
 
-# handle include from outer project
-if("${CMAKE_CURRENT_LIST_DIR}" STREQUAL "${PROJECT_SOURCE_DIR}/cmake")
-    list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_LIST_DIR})
-    include(Build)
-    include(DependencyConfig)
-    include(Util)
-else()
+# cflib as a sub project
+if(NOT "${CMAKE_CURRENT_LIST_DIR}" STREQUAL "${CMAKE_SOURCE_DIR}/cmake")
     add_subdirectory(${CMAKE_CURRENT_LIST_DIR}/..)
 endif()
