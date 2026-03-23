@@ -344,7 +344,7 @@ void KafkaConnector::Impl::doJoin()
     logFunctionTrace
 
     int32 metaDataSize = 2 + 4 + 4;
-    for (const ByteArray & topic : keys(groupTopicPartitions_)) metaDataSize += 2 + topic.size();
+    for (const ByteArray & topic : groupTopicPartitions_.keys()) metaDataSize += 2 + topic.size();
 
     impl::KafkaRequestWriter req = groupConnection_->request(JoinGroup, 1, JoinGroup);
     req
@@ -358,14 +358,14 @@ void KafkaConnector::Impl::doJoin()
         << metaDataSize
         << (int16)0                                // Version
         << (int32)groupTopicPartitions_.size();    // Topics
-    for (const ByteArray & topic : keys(groupTopicPartitions_)) req << (impl::KafkaString)topic;
+    for (const ByteArray & topic : groupTopicPartitions_.keys()) req << (impl::KafkaString)topic;
     req
         << ByteArray()                                // UserData
         << (impl::KafkaString)(preferredStrategy_ != RangeAssignment ? "range" : "roundrobin")
         << metaDataSize
         << (int16)0                                // Version
         << (int32)groupTopicPartitions_.size();    // Topics
-    for (const ByteArray & topic : keys(groupTopicPartitions_)) req << (impl::KafkaString)topic;
+    for (const ByteArray & topic : groupTopicPartitions_.keys()) req << (impl::KafkaString)topic;
     req
         << ByteArray();                            // UserData
     req.send();
@@ -389,7 +389,7 @@ void KafkaConnector::Impl::doSync(const ByteArray & protocol, Map<ByteArray, Set
 
     Map<ByteArray, Map<ByteArray, List<int32>>> groupAssignment = computeGroupAssignment(protocol, memberTopics);
     Map<ByteArray, ByteArray> rawAssignment;
-    for (const ByteArray & member : keys(groupAssignment)) {
+    for (const ByteArray & member : groupAssignment.keys()) {
         const Map<ByteArray, List<int32>> & topics = groupAssignment[member];
 
         impl::KafkaRawWriter writer;
@@ -416,7 +416,7 @@ void KafkaConnector::Impl::doSync(const ByteArray & protocol, Map<ByteArray, Set
         << generationId_
         << (impl::KafkaString)groupMemberId_
         << (int32)rawAssignment.size();
-    for (const ByteArray & member : keys(rawAssignment)) {
+    for (const ByteArray & member : rawAssignment.keys()) {
         const ByteArray & assignment = rawAssignment[member];
         req
             << (impl::KafkaString)member
@@ -436,13 +436,13 @@ Map<ByteArray, Map<ByteArray, List<int32>>> KafkaConnector::Impl::computeGroupAs
     if (protocol == "range") {
 
         Map<ByteArray, List<ByteArray>> topicMembers;
-        for (const ByteArray & member : keys(memberTopics)) {
+        for (const ByteArray & member : memberTopics.keys()) {
             for (const ByteArray & topic : memberTopics[member]) {
-                if (!mapValue(responsibilities_, topic).empty()) topicMembers[topic] << member;
+                if (!responsibilities_.value(topic).empty()) topicMembers[topic] << member;
             }
         }
 
-        for (const ByteArray & topic : keys(topicMembers)) {
+        for (const ByteArray & topic : topicMembers.keys()) {
             List<ByteArray> & members = topicMembers[topic];
             std::sort(members.begin(), members.end());
 
@@ -468,19 +468,19 @@ Map<ByteArray, Map<ByteArray, List<int32>>> KafkaConnector::Impl::computeGroupAs
 
         Vector<Pair<ByteArray, int32>> allTopicPartitions;
         for (const ByteArray & topic : allTopics) {
-            for (int32 i = 0 ; i < (int32)mapValue(responsibilities_, topic).size() ; ++i) {
+            for (int32 i = 0 ; i < (int32)responsibilities_.value(topic).size() ; ++i) {
                 allTopicPartitions << Pair(topic, i);
             }
         }
         std::sort(allTopicPartitions.begin(), allTopicPartitions.end());
 
-        List<ByteArray> members = keys(memberTopics);
+        List<ByteArray> members = memberTopics.keys();
         int memberId = 0;
         while (!allTopicPartitions.empty()) {
             bool assigned = false;
             for (auto it = allTopicPartitions.begin(); it != allTopicPartitions.end(); ++it) {
                 const ByteArray & member = members[memberId];
-                if (contains(memberTopics[member], it->first)) {
+                if (memberTopics[member].contains(it->first)) {
                     rv[member][it->first] << it->second;
                     logInfo("assigning %1/%2 to %3", it->first, it->second, member);
                     allTopicPartitions.erase(it);

@@ -65,7 +65,7 @@ void HttpAuth::handleRequest(const Request & request)
     }
 
     const ByteArray auth = request.getHeader("authorization");
-    if (contains(checkedUsers_, auth)) return;
+    if (checkedUsers_.contains(auth)) return;
 
     const Request::LoginPass loginPass = Request::getBasicAuth(auth);
     if (!loginPass.login.isEmpty()) {

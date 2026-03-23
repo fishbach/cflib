@@ -293,33 +293,33 @@ void WebSocketService::saveHeaderField(const ByteArray & field)
 
 void WebSocketService::send(uint connId, const ByteArray & data, bool isBinary)
 {
-    WSConnHandler * wsHdl = hashValue(connections_, connId, (WSConnHandler *)nullptr);
+    WSConnHandler * wsHdl = connections_.value(connId, (WSConnHandler *)nullptr);
     if (wsHdl) wsHdl->send(data, isBinary);
 }
 
 void WebSocketService::close(uint connId, TCPConn::CloseType type)
 {
-    WSConnHandler * wsHdl = hashValue(connections_, connId, (WSConnHandler *)nullptr);
+    WSConnHandler * wsHdl = connections_.value(connId, (WSConnHandler *)nullptr);
     if (wsHdl) wsHdl->close(type, true);
 }
 
 ByteArray WebSocketService::getRemoteIP(uint connId) const
 {
-    WSConnHandler * wsHdl = hashValue(connections_, connId, (WSConnHandler *)nullptr);
+    WSConnHandler * wsHdl = connections_.value(connId, (WSConnHandler *)nullptr);
     if (wsHdl) return wsHdl->peerIP();
     return ByteArray();
 }
 
 ByteArray WebSocketService::getHeader(uint connId, const ByteArray & header) const
 {
-    WSConnHandler * wsHdl = hashValue(connections_, connId, (WSConnHandler *)nullptr);
-    if (wsHdl) return mapValue(wsHdl->savedHeaders, header);
+    WSConnHandler * wsHdl = connections_.value(connId, (WSConnHandler *)nullptr);
+    if (wsHdl) return wsHdl->savedHeaders.value(header);
     return ByteArray();
 }
 
 void WebSocketService::continueRead(uint connId)
 {
-    WSConnHandler * wsHdl = hashValue(connections_, connId, (WSConnHandler *)nullptr);
+    WSConnHandler * wsHdl = connections_.value(connId, (WSConnHandler *)nullptr);
     if (wsHdl) wsHdl->continueRead();
 }
 
@@ -337,16 +337,16 @@ void WebSocketService::handleRequest(const Request & request)
 
     // check WS headers
     const Request::KeyVal headers = request.getHeaderFields();
-    const ByteArray wsKey = mapValue(headers, ByteArray("sec-websocket-key"));
-    if (mapValue(headers, ByteArray("upgrade")).toLower() != "websocket" || wsKey.isEmpty()) {
+    const ByteArray wsKey = headers.value(ByteArray("sec-websocket-key"));
+    if (headers.value(ByteArray("upgrade")).toLower() != "websocket" || wsKey.isEmpty()) {
         request.sendNotFound();
         return;
     }
-    const bool deflate = mapValue(headers, ByteArray("sec-websocket-extensions")).toLower().indexOf("permessage-deflate") != -1;
+    const bool deflate = headers.value(ByteArray("sec-websocket-extensions")).toLower().indexOf("permessage-deflate") != -1;
 
     // check origin
-    if (allowedOrigin_.isValid() && !allowedOrigin_.match(mapValue(headers, ByteArray("origin")).toLower())) {
-        logWarn("wrong Origin: %1", mapValue(headers, ByteArray("origin")));
+    if (allowedOrigin_.isValid() && !allowedOrigin_.match(headers.value(ByteArray("origin")).toLower())) {
+        logWarn("wrong Origin: %1", headers.value(ByteArray("origin")));
         request.sendNotFound();
         return;
     }

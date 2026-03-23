@@ -122,8 +122,8 @@ StringList getMemberTypes(const SerializeTypeInfo & ti)
         }
     }
 
-    StringList retval = setValues(types);
-    sort(retval);
+    StringList retval = types.values();
+    retval.sort();
     return retval;
 }
 
@@ -409,7 +409,7 @@ void RMIServerBase::exportTo(const String & dest) const
     // write services
     cflib::util::mkPath(dest + "/js/services");
     Set<String> files;
-    for (const String & name : keys(services_)) {
+    for (const String & name : services_.keys()) {
         for (const String & suffix : StringList{".mjs"/*, ".ts"*/}) {
             String file = name + suffix;
             files << file;
@@ -427,7 +427,7 @@ void RMIServerBase::exportTo(const String & dest) const
             while ((ent = readdir(d)) != nullptr) {
                 String name(ent->d_name);
                 if (name == "." || name == "..") continue;
-                if (!contains(files, name)) cflib::util::removeFile(dest + "/js/services/" + name);
+                if (!files.contains(name)) cflib::util::removeFile(dest + "/js/services/" + name);
             }
             closedir(d);
         }
@@ -494,14 +494,14 @@ RMIServiceBase * RMIServerBase::checkServiceCall(serialize::BERDeserializer & de
         return 0;
     }
 
-    ServiceFunctions sf = mapValue(services_, serviceName);
+    ServiceFunctions sf = services_.value(serviceName);
     if (!sf.service) {
         logWarn("service %1 not found from connection %2", serviceName, connId);
         wsService_.close(connId, TCPConn::HardClosed);
         return 0;
     }
 
-    Pair<uint, uint> method = mapValue(sf.signatures, signature, Pair<uint, uint>(0u, 0u));
+    Pair<uint, uint> method = sf.signatures.value(signature, Pair<uint, uint>(0u, 0u));
     if (method.first == 0) {
         logWarn("signature %1 of service %2 not found from connection %3", signature, serviceName, connId);
         wsService_.close(connId, TCPConn::HardClosed);
@@ -529,10 +529,10 @@ void RMIServerBase::showServices(const Request & request, String path) const
         info <<
             "<h3>Services:</h3>\n"
             "<ul>\n";
-        for (const auto & name : keys(services_)) {
+        for (const auto & name : services_.keys()) {
             info
                 << "<li><a href=\"services/" << name << "\">"
-                << mapValue(services_, name).service->getServiceInfo().typeName << "</a></li>\n";
+                << services_.value(name).service->getServiceInfo().typeName << "</a></li>\n";
         }
         info <<
             "</ul>\n";
@@ -542,7 +542,7 @@ void RMIServerBase::showServices(const Request & request, String path) const
     }
     path.remove(0, 1);
 
-    RMIServiceBase * srv = mapValue(services_, path).service;
+    RMIServiceBase * srv = services_.value(path).service;
     if (!srv) return;
     SerializeTypeInfo ti = srv->getServiceInfo();
 
@@ -616,8 +616,8 @@ void RMIServerBase::showClasses(const Request & request, String path) const
 
 void RMIServerBase::classesToHTML(String & info, const ClassInfoEl & infoEl) const
 {
-    for (const auto & ns : keys(infoEl.infos)) {
-        const ClassInfoEl & el = *mapValue(infoEl.infos, ns, (ClassInfoEl *)nullptr);
+    for (const auto & ns : infoEl.infos.keys()) {
+        const ClassInfoEl & el = *infoEl.infos.value(ns, (ClassInfoEl *)nullptr);
         if (!el.ti.getName().isEmpty()) {
             String path = el.ti.getName();
             path.replace("::", "/");
@@ -762,7 +762,7 @@ String RMIServerBase::generateJSForClass(const SerializeTypeInfo & ti) const
             ++i;
         }
         StringList classNs = typeName.split("::");
-        typeName = takeLast(classNs);
+        typeName = classNs.takeLast();
         for (const auto & ns : classNs) {
             if (isFirst) {
                 isFirst = false;

@@ -56,9 +56,9 @@ List<ByteArray> getIPFromDNS(const ByteArray & name, bool preferIPv6)
 
     freeaddrinfo(res);
 
-    List<ByteArray> rv = ipv4.empty() || (preferIPv6 && !ipv6.empty()) ? setValues(ipv6) : setValues(ipv4);
+    List<ByteArray> rv = ipv4.empty() || (preferIPv6 && !ipv6.empty()) ? ipv6.values() : ipv4.values();
     std::sort(rv.begin(), rv.end());
-    logTrace("getIPFromDNS(\"%1\", %2) -> %3", name, preferIPv6, join(rv, ' '));
+    logTrace("getIPFromDNS(\"%1\", %2) -> %3", name, preferIPv6, rv.join(' '));
     return rv;
 }
 
