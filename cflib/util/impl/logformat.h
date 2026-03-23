@@ -68,7 +68,7 @@ inline void logFormat(ByteArray & dest, int32  val) { writeInt (dest, val); }
 inline void logFormat(ByteArray & dest, uint32 val) { writeUInt(dest, val); }
 inline void logFormat(ByteArray & dest, int64  val) { writeInt (dest, val); }
 inline void logFormat(ByteArray & dest, uint64 val) { writeUInt(dest, val); }
-#if defined(__APPLE__) || (defined(__linux__) && defined(__LP64__))
+#if defined(__APPLE__)
 // On macOS and LP64 Linux, size_t is 'unsigned long' which is a distinct type from uint64_t (unsigned long long)
 inline void logFormat(ByteArray & dest, unsigned long val) { writeUInt(dest, (uint64)val); }
 inline void logFormat(ByteArray & dest, long val) { writeInt(dest, (int64)val); }
