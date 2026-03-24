@@ -61,8 +61,7 @@ class AtomicInteger
 public:
     AtomicInteger(T v = 0) : val_(v) {}
 
-    T loadRelaxed() const { return val_.load(std::memory_order_relaxed); }
-    void storeRelaxed(T v) { val_.store(v, std::memory_order_relaxed); }
+    T loadAcquire() const { return val_.load(std::memory_order_acquire); }
     void storeRelease(T v) { val_.store(v, std::memory_order_release); }
 
     bool testAndSetAcquire(T expected, T newVal) {
@@ -74,6 +73,7 @@ public:
     T operator++() { return val_.fetch_add(1, std::memory_order_acq_rel) + 1; }
     T operator++(int) { return val_.fetch_add(1, std::memory_order_acq_rel); }
 
+    // both return true, when resulting value != 0
     bool ref()   { return val_.fetch_add(1, std::memory_order_acq_rel) + 1 != 0; }
     bool deref() { return val_.fetch_sub(1, std::memory_order_acq_rel) - 1 != 0; }
 

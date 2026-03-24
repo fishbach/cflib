@@ -10,18 +10,18 @@
 namespace cflib::base {
 
 uint32 ByteArray::toUInt(bool * ok) const {
-    if (data_.empty()) { if (ok) *ok = false; return 0; }
+    if (d->data.empty()) { if (ok) *ok = false; return 0; }
     char * end = nullptr;
-    unsigned long v = strtoul(data_.c_str(), &end, 10);
-    if (ok) *ok = (end != data_.c_str() && *end == '\0');
+    unsigned long v = strtoul(d->data.c_str(), &end, 10);
+    if (ok) *ok = (end != d->data.c_str() && *end == '\0');
     return (uint32)v;
 }
 
 int32 ByteArray::toInt(bool * ok) const {
-    if (data_.empty()) { if (ok) *ok = false; return 0; }
+    if (d->data.empty()) { if (ok) *ok = false; return 0; }
     char * end = nullptr;
-    long v = strtol(data_.c_str(), &end, 10);
-    if (ok) *ok = (end != data_.c_str() && *end == '\0');
+    long v = strtol(d->data.c_str(), &end, 10);
+    if (ok) *ok = (end != d->data.c_str() && *end == '\0');
     return (int32)v;
 }
 

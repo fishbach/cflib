@@ -125,7 +125,7 @@ const ByteArray cert3(
 inline ByteArray detach(const ByteArray & ba)
 {
     ByteArray rv(ba);
-
+    rv.detach();
     return rv;
 }
 
