@@ -23,7 +23,7 @@ public:
     ~ThreadFifo() { delete[] buffer_; }
 
     inline bool put(T data) {
-        while (!sl_.testAndSetAcquire(0, 1));
+        while (!sl_.testAndSetAcquire(0, 1)) sl_.yieldCPU();
         if (count_ == max_) { sl_.storeRelease(0); return false; }
         ++count_;
         buffer_[writer_] = data;
@@ -33,7 +33,7 @@ public:
     }
 
     inline T take() {
-        while (!sl_.testAndSetAcquire(0, 1));
+        while (!sl_.testAndSetAcquire(0, 1)) sl_.yieldCPU();
         if (count_ == 0) { sl_.storeRelease(0); return T(); }
         --count_;
         T rv = buffer_[reader_];
