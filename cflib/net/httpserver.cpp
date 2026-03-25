@@ -43,7 +43,7 @@ protected:
     }
 
 private:
-    Vector<impl::HttpThread *> threads_;
+    List<impl::HttpThread *> threads_;
     uint threadCounter_;
     List<RequestHandler *> handlers_;
 };

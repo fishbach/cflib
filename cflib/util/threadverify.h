@@ -10,8 +10,6 @@
 #include <cflib/base.h>
 #include <cflib/util/impl/threadverifyimpl.h>
 
-#include <deque>
-
 namespace cflib::util {
 
 class ThreadStats;
@@ -290,13 +288,11 @@ protected:
 
     // Storage wrapper to avoid std::vector<bool> specialization issues
     template<typename C>
-    struct PerThreadStorage { using type = Vector<C>; };
+    struct PerThreadStorage { using type = List<C>; };
 
     template<typename C>
     class PerThread
     {
-        // Use std::deque for bool to avoid std::vector<bool> proxy issues
-        using Storage = std::conditional_t<std::is_same_v<C, bool>, std::deque<C>, Vector<C>>;
     public:
         inline PerThread(const ThreadVerify * tv) :
             objs_(tv->verifyThread_->threadCount()) {}
@@ -313,7 +309,7 @@ protected:
             const impl::ThreadHolder * thread = cf_current_thread;
             return thread ? objs_[thread->threadNo()] : objs_[0];
         }
-        mutable Storage objs_;
+        mutable List<C> objs_;
     };
 
 private:

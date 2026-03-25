@@ -72,7 +72,7 @@ public:
     typedef Pair<ByteArray /* ip */, uint16 /* port */> Address;
 
     typedef Pair<ByteArray /* key */, ByteArray /* value */> Message;
-    typedef Vector<Message> Messages;
+    typedef List<Message> Messages;
     typedef List<ByteArray> Topics;
 
 public:

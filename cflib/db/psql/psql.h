@@ -164,7 +164,7 @@ private:
     int prepareParamCount_;
     uint prepareParamTypes_[MAX_FIELD_COUNT];
     int prepareParamLengths_[MAX_FIELD_COUNT];
-    Vector<bool> prepareParamIsNull_;
+    List<bool> prepareParamIsNull_;
 
     ByteArray prepareData_;
 };

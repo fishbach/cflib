@@ -7,9 +7,10 @@
 
 #pragma once
 
-#include <cflib/base/string.h>
+#include <cflib/base/types.h>
 
 #include <algorithm>
+#include <deque>
 #include <map>
 #include <set>
 #include <unordered_map>
@@ -24,11 +25,11 @@ namespace cflib::base {
 // ============================================================
 
 template<typename T>
-class List {
-    std::vector<T> d;
+class List
+{
 public:
-    using iterator       = typename std::vector<T>::iterator;
-    using const_iterator = typename std::vector<T>::const_iterator;
+    using iterator       = std::conditional_t<std::is_same_v<T, bool>, typename std::vector<uint8>::iterator,       typename std::vector<T>::iterator>;
+    using const_iterator = std::conditional_t<std::is_same_v<T, bool>, typename std::vector<uint8>::const_iterator, typename std::vector<T>::const_iterator>;
 
     List() = default;
     explicit List(size_t n) : d(n) {}
@@ -44,7 +45,7 @@ public:
     void push_back(const T& v)  { d.push_back(v); }
     void push_back(T&& v)       { d.push_back(std::move(v)); }
     template<typename... Args>
-    T& emplace_back(Args&&... args) { return d.emplace_back(std::forward<Args>(args)...); }
+    T& emplace_back(Args&&... args) { return (T&)d.emplace_back(std::forward<Args>(args)...); }
     void pop_back() { d.pop_back(); }
 
     iterator insert(iterator pos, const T& v)       { return d.insert(pos, v); }
@@ -62,14 +63,14 @@ public:
     size_t size()  const noexcept { return d.size(); }
     bool   empty() const noexcept { return d.empty(); }
 
-    T&       front()         { return d.front(); }
-    const T& front() const   { return d.front(); }
-    T&       back()          { return d.back(); }
-    const T& back()  const   { return d.back(); }
-    T&            at(size_t i)        { return d.at(i); }
-    const T&      at(size_t i) const  { return d.at(i); }
-    decltype(auto) operator[](size_t i)       { return d[i]; }
-    decltype(auto) operator[](size_t i) const { return d[i]; }
+    T&       front()         { return (T&)d.front(); }
+    const T& front() const   { return (const T&)d.front(); }
+    T&       back()          { return (T&)d.back(); }
+    const T& back()  const   { return (const T&)d.back(); }
+    T&       at(size_t i)        { return (T&)d.at(i); }
+    const T& at(size_t i) const  { return (const T&)d.at(i); }
+    T&       operator[](size_t i)       { return (T&)d[i]; }
+    const T& operator[](size_t i) const { return (const T&)d[i]; }
 
     iterator       begin()  noexcept { return d.begin(); }
     iterator       end()    noexcept { return d.end(); }
@@ -91,8 +92,8 @@ public:
         d.pop_back();
         return val;
     }
-    T&       last()       { return d.back(); }
-    const T& last() const { return d.back(); }
+    T&       last()       { return (T&)d.back(); }
+    const T& last() const { return (const T&)d.back(); }
 
     void sort() { std::sort(d.begin(), d.end()); }
 
@@ -112,6 +113,10 @@ public:
         }
         return r;
     }
+
+private:
+    // Use std::deque for bool to avoid std::vector<bool> proxy issues
+    std::conditional_t<std::is_same_v<T, bool>, std::vector<uint8>, std::vector<T>> d;
 };
 
 // ============================================================
@@ -366,14 +371,5 @@ inline std::set<T> operator+(const std::set<T>& lhs, const std::set<T>& rhs) {
     for (const auto& v : rhs) result.insert(v);
     return result;
 }
-
-// ============================================================
-// Aliases
-// ============================================================
-
-template<typename T>
-using Vector = List<T>;
-
-using StringList = List<String>;
 
 } // namespace

@@ -27,7 +27,7 @@ public:
 
         ThreadInfo() : current(0), total(0), peaks(0), overflows(0), avg(0) {}
     };
-    typedef Vector<ThreadInfo> ThreadInfos;
+    typedef List<ThreadInfo> ThreadInfos;
 
 public:
     ThreadStats() : ThreadVerify(), timer_(this, &ThreadStats::timeout)

@@ -279,7 +279,7 @@ inline void deserializeBER(Flags<T> & fl, const uint8 * data, int len, BERDeseri
 
 
 // ============================================================================
-// CF container types
+// container types
 // ============================================================================
 
 // ----------------------------------------------------------------------------
@@ -323,15 +323,6 @@ inline void deserializeBER(List<T> & cl, const uint8 * data, int len, BERDeseria
         cl.push_back(el);
     }
 }
-
-// ----------------------------------------------------------------------------
-// StringList is List<String> — handled by the List template above.
-
-// ----------------------------------------------------------------------------
-// Vector (same as List)
-// ----------------------------------------------------------------------------
-
-// Vector is the same type as List (both std::vector), no separate overload needed.
 
 // ----------------------------------------------------------------------------
 // Set

@@ -21,7 +21,7 @@ class RSigBase
 {
 public:
     typedef Pair<uint, uint> ConnIdRegId;
-    typedef Vector<ConnIdRegId> Listeners;
+    typedef List<ConnIdRegId> Listeners;
 
 public:
     RSigBase() : server_(0) {}

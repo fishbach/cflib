@@ -160,7 +160,7 @@ public:
 
     void nullInList()
     {
-        TVERIFY(checkSerDeser<List<bool      >>(List<bool      >{false}, "e103c08100"));
+        TVERIFY(checkSerDeser<List<bool    >>(List<bool>() << false, "e103c08100"));
         TVERIFY(checkSerDeser<List<uint8   >>(List<uint8   >{0},     "e103c08100"));
         TVERIFY(checkSerDeser<List<int8    >>(List<int8    >{0},     "e103c08100"));
         TVERIFY(checkSerDeser<List<uint16  >>(List<uint16  >{0},     "e103c08100"));

@@ -71,7 +71,7 @@ private:
     bool isIPv6Sock_;
     ev_io * readWatcher_;
     crypt::TLSCredentials * credentials_;
-    Vector<TLSThread *> tlsThreads_;
+    List<TLSThread *> tlsThreads_;
     AtomicInteger<uint> tlsConnId_;
     Set<TCPConnData *> connections_;
 };

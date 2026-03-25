@@ -466,7 +466,7 @@ Map<ByteArray, Map<ByteArray, List<int32>>> KafkaConnector::Impl::computeGroupAs
         Set<ByteArray> allTopics;
         for (const auto & [member, topics] : memberTopics) allTopics += topics;
 
-        Vector<Pair<ByteArray, int32>> allTopicPartitions;
+        List<Pair<ByteArray, int32>> allTopicPartitions;
         for (const ByteArray & topic : allTopics) {
             for (int32 i = 0 ; i < (int32)responsibilities_.value(topic).size() ; ++i) {
                 allTopicPartitions << Pair(topic, i);
