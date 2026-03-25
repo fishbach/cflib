@@ -60,8 +60,8 @@ public:
     void resize(size_t n, const T& val) { d.resize(n, val); }
     void reserve(size_t n)              { d.reserve(n); }
 
-    size_t size()  const noexcept { return d.size(); }
-    bool   empty() const noexcept { return d.empty(); }
+    size_t size()  const { return d.size(); }
+    bool   empty() const { return d.empty(); }
 
     T&       front()         { return (T&)d.front(); }
     const T& front() const   { return (const T&)d.front(); }
@@ -72,12 +72,12 @@ public:
     T&       operator[](size_t i)       { return (T&)d[i]; }
     const T& operator[](size_t i) const { return (const T&)d[i]; }
 
-    iterator       begin()  noexcept { return d.begin(); }
-    iterator       end()    noexcept { return d.end(); }
-    const_iterator begin()  const noexcept { return d.begin(); }
-    const_iterator end()    const noexcept { return d.end(); }
-    const_iterator cbegin() const noexcept { return d.cbegin(); }
-    const_iterator cend()   const noexcept { return d.cend(); }
+    iterator       begin()  { return d.begin(); }
+    iterator       end()    { return d.end(); }
+    const_iterator begin()  const { return d.begin(); }
+    const_iterator end()    const { return d.end(); }
+    const_iterator cbegin() const { return d.cbegin(); }
+    const_iterator cend()   const { return d.cend(); }
 
     List& operator<<(const T& v) { d.push_back(v); return *this; }
     List& operator<<(T&& v)      { d.push_back(std::move(v)); return *this; }
@@ -146,13 +146,13 @@ public:
     iterator       find(const K& k)       { return d.find(k); }
     const_iterator find(const K& k) const { return d.find(k); }
     size_t count(const K& k) const        { return d.count(k); }
-    size_t size()  const noexcept         { return d.size(); }
-    bool   empty() const noexcept         { return d.empty(); }
+    size_t size()  const         { return d.size(); }
+    bool   empty() const         { return d.empty(); }
 
-    iterator       begin() noexcept       { return d.begin(); }
-    iterator       end()   noexcept       { return d.end(); }
-    const_iterator begin() const noexcept { return d.begin(); }
-    const_iterator end()   const noexcept { return d.end(); }
+    iterator       begin()       { return d.begin(); }
+    iterator       end()         { return d.end(); }
+    const_iterator begin() const { return d.begin(); }
+    const_iterator end()   const { return d.end(); }
 
     bool contains(const K& k) const { return d.find(k) != d.end(); }
 
@@ -192,13 +192,13 @@ public:
     iterator       find(const K& k)       { return d.find(k); }
     const_iterator find(const K& k) const { return d.find(k); }
     size_t count(const K& k) const        { return d.count(k); }
-    size_t size()  const noexcept         { return d.size(); }
-    bool   empty() const noexcept         { return d.empty(); }
+    size_t size()  const         { return d.size(); }
+    bool   empty() const         { return d.empty(); }
 
-    iterator       begin() noexcept       { return d.begin(); }
-    iterator       end()   noexcept       { return d.end(); }
-    const_iterator begin() const noexcept { return d.begin(); }
-    const_iterator end()   const noexcept { return d.end(); }
+    iterator       begin()       { return d.begin(); }
+    iterator       end()         { return d.end(); }
+    const_iterator begin() const { return d.begin(); }
+    const_iterator end()   const { return d.end(); }
 
     iterator       lower_bound(const K& k)       { return d.lower_bound(k); }
     const_iterator lower_bound(const K& k) const { return d.lower_bound(k); }
@@ -241,13 +241,13 @@ public:
     iterator       find(const T& v)       { return d.find(v); }
     const_iterator find(const T& v) const { return d.find(v); }
     size_t count(const T& v) const        { return d.count(v); }
-    size_t size()  const noexcept         { return d.size(); }
-    bool   empty() const noexcept         { return d.empty(); }
+    size_t size()  const         { return d.size(); }
+    bool   empty() const         { return d.empty(); }
 
-    iterator       begin() noexcept       { return d.begin(); }
-    iterator       end()   noexcept       { return d.end(); }
-    const_iterator begin() const noexcept { return d.begin(); }
-    const_iterator end()   const noexcept { return d.end(); }
+    iterator       begin()       { return d.begin(); }
+    iterator       end()         { return d.end(); }
+    const_iterator begin() const { return d.begin(); }
+    const_iterator end()   const { return d.end(); }
 
     Set& operator<<(const T& v) { d.insert(v);            return *this; }
     Set& operator<<(T&& v)      { d.insert(std::move(v)); return *this; }
@@ -283,13 +283,13 @@ public:
 
     iterator       find(const K& k)       { return d.find(k); }
     const_iterator find(const K& k) const { return d.find(k); }
-    size_t size()  const noexcept         { return d.size(); }
-    bool   empty() const noexcept         { return d.empty(); }
+    size_t size()  const         { return d.size(); }
+    bool   empty() const         { return d.empty(); }
 
-    iterator       begin() noexcept       { return d.begin(); }
-    iterator       end()   noexcept       { return d.end(); }
-    const_iterator begin() const noexcept { return d.begin(); }
-    const_iterator end()   const noexcept { return d.end(); }
+    iterator       begin()       { return d.begin(); }
+    iterator       end()         { return d.end(); }
+    const_iterator begin() const { return d.begin(); }
+    const_iterator end()   const { return d.end(); }
 };
 
 // ============================================================
@@ -313,13 +313,13 @@ public:
 
     iterator       find(const K& k)       { return d.find(k); }
     const_iterator find(const K& k) const { return d.find(k); }
-    size_t size()  const noexcept         { return d.size(); }
-    bool   empty() const noexcept         { return d.empty(); }
+    size_t size()  const         { return d.size(); }
+    bool   empty() const         { return d.empty(); }
 
-    iterator       begin() noexcept       { return d.begin(); }
-    iterator       end()   noexcept       { return d.end(); }
-    const_iterator begin() const noexcept { return d.begin(); }
-    const_iterator end()   const noexcept { return d.end(); }
+    iterator       begin()       { return d.begin(); }
+    iterator       end()         { return d.end(); }
+    const_iterator begin() const { return d.begin(); }
+    const_iterator end()   const { return d.end(); }
 };
 
 // ============================================================

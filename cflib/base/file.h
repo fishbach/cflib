@@ -46,7 +46,7 @@ public:
     explicit File(const String & path) : path_(path.str()), fp_(nullptr) {}
     ~File() { close(); }
 
-    File(File && other) noexcept : path_(std::move(other.path_)), fp_(other.fp_) { other.fp_ = nullptr; }
+    File(File && other) : path_(std::move(other.path_)), fp_(other.fp_) { other.fp_ = nullptr; }
 
     void setFileName(const String & path) { path_ = path.str(); }
 

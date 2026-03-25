@@ -15,26 +15,26 @@ template<typename E>
 class Flags
 {
 public:
-    Flags() noexcept : val_(0) {}
-    Flags(E flag) noexcept : val_((uint32)flag) {}
-    explicit Flags(uint32 v) noexcept : val_(v) {}
+    Flags() : val_(0) {}
+    Flags(E flag) : val_((uint32)flag) {}
+    explicit Flags(uint32 v) : val_(v) {}
 
-    uint32 toInt() const noexcept { return val_; }
-    bool isNull() const noexcept { return val_ == 0; }
+    uint32 toInt() const { return val_; }
+    bool isNull() const { return val_ == 0; }
 
-    Flags operator|(Flags o) const noexcept { return Flags(val_ | o.val_); }
-    Flags operator&(Flags o) const noexcept { return Flags(val_ & o.val_); }
-    Flags operator^(Flags o) const noexcept { return Flags(val_ ^ o.val_); }
-    Flags operator~()          const noexcept { return Flags(~val_); }
-    Flags & operator|=(Flags o) noexcept { val_ |= o.val_; return *this; }
-    Flags & operator&=(Flags o) noexcept { val_ &= o.val_; return *this; }
+    Flags operator|(Flags o) const { return Flags(val_ | o.val_); }
+    Flags operator&(Flags o) const { return Flags(val_ & o.val_); }
+    Flags operator^(Flags o) const { return Flags(val_ ^ o.val_); }
+    Flags operator~()          const { return Flags(~val_); }
+    Flags & operator|=(Flags o) { val_ |= o.val_; return *this; }
+    Flags & operator&=(Flags o) { val_ &= o.val_; return *this; }
 
-    bool operator==(Flags o) const noexcept { return val_ == o.val_; }
-    bool operator!=(Flags o) const noexcept { return val_ != o.val_; }
+    bool operator==(Flags o) const { return val_ == o.val_; }
+    bool operator!=(Flags o) const { return val_ != o.val_; }
 
-    explicit operator bool() const noexcept { return val_ != 0; }
-    explicit operator uint32() const noexcept { return val_; }
-    explicit operator int() const noexcept { return (int)val_; }
+    explicit operator bool() const { return val_ != 0; }
+    explicit operator uint32() const { return val_; }
+    explicit operator int() const { return (int)val_; }
 
 private:
     uint32 val_;

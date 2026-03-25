@@ -6,22 +6,22 @@
 
 # library
 function(cf_lib lib)
-    cmake_parse_arguments(ARG "ENABLE_SER" "PCH" "PUBLIC;PRIVATE;DIRS;OTHER_FILES" ${ARGN})
+    cmake_parse_arguments(ARG "ENABLE_EXCEPTIONS;ENABLE_SER" "PCH" "PUBLIC;PRIVATE;DIRS;OTHER_FILES" ${ARGN})
 
     cf_find_sources(sources . ${ARG_DIRS} OTHER_FILES ${ARG_OTHER_FILES})
     add_library(${lib} ${sources})
-    cf_configure_target(${lib} ${ARG_ENABLE_SER} "${ARG_PCH}")
+    cf_configure_target(${lib} ${ARG_ENABLE_EXCEPTIONS} "${ARG_PCH}" ${ARG_ENABLE_SER})
     target_include_directories(${lib} INTERFACE "${PROJECT_SOURCE_DIR}")
     target_link_libraries(${lib} PUBLIC ${ARG_PUBLIC} PRIVATE ${ARG_PRIVATE})
 endfunction()
 
 # application
 function(cf_app app)
-    cmake_parse_arguments(ARG "ENABLE_SER;ENABLE_GIT_VERSION;CF_INTERN" "PCH" "DIRS;OTHER_FILES" ${ARGN})
+    cmake_parse_arguments(ARG "ENABLE_EXCEPTIONS;ENABLE_SER;ENABLE_GIT_VERSION;CF_INTERN" "PCH" "DIRS;OTHER_FILES" ${ARGN})
 
     cf_find_sources(sources . ${ARG_DIRS} OTHER_FILES ${ARG_OTHER_FILES})
     add_executable(${app} ${sources})
-    cf_configure_target(${app} ${ARG_ENABLE_SER} "${ARG_PCH}")
+    cf_configure_target(${app} ${ARG_ENABLE_EXCEPTIONS} "${ARG_PCH}" ${ARG_ENABLE_SER})
     target_include_directories(${app} PRIVATE .)
     if(NOT ARG_CF_INTERN)
         set_target_properties(${app} PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${PROJECT_SOURCE_DIR}/bin")
@@ -56,17 +56,26 @@ endfunction()
 
 # test
 function(cf_test test lib)
-    cmake_parse_arguments(ARG "ENABLE_SER" "PCH" "DIRS" ${ARGN})
+    cmake_parse_arguments(ARG "ENABLE_EXCEPTIONS;ENABLE_SER" "PCH" "DIRS" ${ARGN})
 
     cf_find_sources(sources . ${ARG_DIRS})
     add_executable(${test} ${sources})
-    cf_configure_target(${test} ${ARG_ENABLE_SER} "${ARG_PCH}")
+    cf_configure_target(${test} ${ARG_ENABLE_EXCEPTIONS} "${ARG_PCH}" ${ARG_ENABLE_SER})
     target_link_libraries(${test} PRIVATE ${lib})
     add_test(NAME ${test} COMMAND ${test})
 endfunction()
 
 # configure target
-function(cf_configure_target target enable_ser pch)
+function(cf_configure_target target enable_exceptions pch enable_ser)
+    # exceptions
+    if(NOT enable_exceptions)
+        if(MSVC)
+            target_compile_options(${target} PRIVATE /EHs- /D_HAS_EXCEPTIONS=0)
+        else()
+            target_compile_options(${target} PRIVATE -fno-exceptions)
+        endif()
+    endif()
+
     # PCH
     if(ENABLE_PCH)
         if(pch)
@@ -120,6 +129,11 @@ endfunction()
 # PCH
 if(ENABLE_PCH)
     add_library(pch_base pch/dummy.cpp)
+    if(MSVC)
+        target_compile_options(pch_base PRIVATE /EHs- /D_HAS_EXCEPTIONS=0)
+    else()
+        target_compile_options(pch_base PRIVATE -fno-exceptions)
+    endif()
     target_precompile_headers(pch_base PRIVATE pch/base.h)
     target_link_libraries(pch_base PRIVATE cflib_base)
 endif()

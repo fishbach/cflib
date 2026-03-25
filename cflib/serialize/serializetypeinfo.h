@@ -26,9 +26,9 @@ public:
     TypeInfoList();
     ~TypeInfoList();
     TypeInfoList(const TypeInfoList &);
-    TypeInfoList(TypeInfoList &&) noexcept;
+    TypeInfoList(TypeInfoList &&);
     TypeInfoList & operator=(const TypeInfoList &);
-    TypeInfoList & operator=(TypeInfoList &&) noexcept;
+    TypeInfoList & operator=(TypeInfoList &&);
 
     void push_back(const T & val);
     void push_back(T && val);
@@ -122,12 +122,12 @@ struct TypeInfoList<T>::Impl {
 template<typename T> TypeInfoList<T>::TypeInfoList() : impl_(new Impl) {}
 template<typename T> TypeInfoList<T>::~TypeInfoList() = default;
 template<typename T> TypeInfoList<T>::TypeInfoList(const TypeInfoList & o) : impl_(new Impl(*o.impl_)) {}
-template<typename T> TypeInfoList<T>::TypeInfoList(TypeInfoList && o) noexcept = default;
+template<typename T> TypeInfoList<T>::TypeInfoList(TypeInfoList && o) = default;
 template<typename T> TypeInfoList<T> & TypeInfoList<T>::operator=(const TypeInfoList & o) {
     if (this != &o) impl_ = std::make_unique<Impl>(*o.impl_);
     return *this;
 }
-template<typename T> TypeInfoList<T> & TypeInfoList<T>::operator=(TypeInfoList && o) noexcept = default;
+template<typename T> TypeInfoList<T> & TypeInfoList<T>::operator=(TypeInfoList && o) = default;
 
 template<typename T> void TypeInfoList<T>::push_back(const T & val) { impl_->data.push_back(val); }
 template<typename T> void TypeInfoList<T>::push_back(T && val) { impl_->data.push_back(std::move(val)); }

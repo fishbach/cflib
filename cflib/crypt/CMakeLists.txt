@@ -8,6 +8,8 @@ cf_lib(cflib_crypt
     PUBLIC cflib_util
     PRIVATE cflib_botan
     DIRS impl
+    PCH pch.h
+    ENABLE_EXCEPTIONS
 )
 
 add_subdirectory(crypt_test)

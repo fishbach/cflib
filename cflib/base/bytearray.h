@@ -33,7 +33,7 @@ public:
 
     // implicit sharing
     ByteArray(const ByteArray & other) : d(other.d) { d->ref.ref(); }
-    ByteArray(ByteArray && other) noexcept : d(other.d) { other.d = new Shared; }
+    ByteArray(ByteArray && other) : d(other.d) { other.d = new Shared; }
     ~ByteArray() { if (!d->ref.deref()) delete d; }
     ByteArray & operator=(const ByteArray & other) {
         if (this == &other) return *this;
@@ -42,7 +42,7 @@ public:
         d->ref.ref();
         return *this;
     }
-    ByteArray& operator=(ByteArray && other) noexcept {
+    ByteArray& operator=(ByteArray && other) {
         std::swap(d, other.d);
         return *this;
     }
@@ -355,7 +355,7 @@ inline ByteArray & operator<<(ByteArray & lhs, char rhs)              { return l
 
 namespace std {
 template<> struct hash<cflib::base::ByteArray> {
-    size_t operator()(const cflib::base::ByteArray & ba) const noexcept {
+    size_t operator()(const cflib::base::ByteArray & ba) const {
         return hash<string>()(ba.toStdString());
     }
 };

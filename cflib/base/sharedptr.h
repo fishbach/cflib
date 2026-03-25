@@ -25,26 +25,26 @@ class SharedPtr {
 
 public:
     SharedPtr() = default;
-    SharedPtr(std::nullptr_t) noexcept : d(nullptr) {}
+    SharedPtr(std::nullptr_t) : d(nullptr) {}
     template<typename U>
     explicit SharedPtr(U* p) : d(p) {}
     SharedPtr(const SharedPtr&) = default;
     SharedPtr(SharedPtr&&) = default;
     SharedPtr& operator=(const SharedPtr&) = default;
     SharedPtr& operator=(SharedPtr&&) = default;
-    SharedPtr& operator=(std::nullptr_t) noexcept { d = nullptr; return *this; }
+    SharedPtr& operator=(std::nullptr_t) { d = nullptr; return *this; }
 
-    T& operator*() const noexcept { return *d; }
-    T* operator->() const noexcept { return d.get(); }
-    T* get() const noexcept { return d.get(); }
-    void reset() noexcept { d.reset(); }
+    T& operator*() const { return *d; }
+    T* operator->() const { return d.get(); }
+    T* get() const { return d.get(); }
+    void reset() { d.reset(); }
     template<typename U>
     void reset(U* p) { d.reset(p); }
-    explicit operator bool() const noexcept { return (bool)d; }
-    bool operator==(const SharedPtr& o) const noexcept { return d == o.d; }
-    bool operator!=(const SharedPtr& o) const noexcept { return d != o.d; }
-    bool operator==(std::nullptr_t) const noexcept { return d == nullptr; }
-    bool operator!=(std::nullptr_t) const noexcept { return d != nullptr; }
+    explicit operator bool() const { return (bool)d; }
+    bool operator==(const SharedPtr& o) const { return d == o.d; }
+    bool operator!=(const SharedPtr& o) const { return d != o.d; }
+    bool operator==(std::nullptr_t) const { return d == nullptr; }
+    bool operator!=(std::nullptr_t) const { return d != nullptr; }
 };
 
 template<typename U, typename V>
@@ -64,7 +64,7 @@ class UniquePtr {
 
 public:
     UniquePtr() = default;
-    UniquePtr(std::nullptr_t) noexcept : d(nullptr) {}
+    UniquePtr(std::nullptr_t) : d(nullptr) {}
     explicit UniquePtr(T* p) : d(p) {}
     UniquePtr(const UniquePtr&) = delete;
     UniquePtr(UniquePtr&&) = default;
@@ -72,13 +72,13 @@ public:
     UniquePtr& operator=(UniquePtr&&) = default;
 
     T& operator*() const { return *d; }
-    T* operator->() const noexcept { return d.get(); }
-    T* get() const noexcept { return d.get(); }
-    void reset() noexcept { d.reset(); }
+    T* operator->() const { return d.get(); }
+    T* get() const { return d.get(); }
+    void reset() { d.reset(); }
     template<typename U>
     void reset(U* p) { d.reset(p); }
-    T* release() noexcept { return d.release(); }
-    explicit operator bool() const noexcept { return (bool)d; }
+    T* release() { return d.release(); }
+    explicit operator bool() const { return (bool)d; }
 };
 
 template<typename T, typename... Args>
