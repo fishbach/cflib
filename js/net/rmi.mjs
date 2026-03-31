@@ -98,8 +98,8 @@ function newMessage(e)
             var func = rsigHandlers[deser.i()];
             if (func) {
                 deser = ber.D(deser.a());
-                if (waitingRequests.length > 0) waitingRSig.push([func, deser]);
-                else                            func(deser);
+                if (requestActive) waitingRSig.push([func, deser]);
+                else               func(deser);
             }
             return;
         default:
