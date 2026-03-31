@@ -9,32 +9,15 @@
 
 #include <cflib/util/libev.h>
 #include <cflib/util/log.h>
-#include <cflib/util/threadstats.h>
-
-#include <chrono>
-#include <thread>
 
 USE_LOG(LogCat::Etc)
 
 namespace cflib::util {
 
-namespace {
-
-ThreadStats * threadStats = 0;
-
-}
-
 ThreadVerify::ThreadVerify(const String & threadName, LoopType loopType, uint threadCount) :
     ownerOfVerifyThread_(true)
 {
-    const int threadId  = threadStats ? threadStats->externNewId(threadName) : -1;
-
-    if (loopType == Net) {
-        if (threadCount > 1) logCritical("thread count must be less or equal 1 for network thread %1", threadName);
-        verifyThread_ = new impl::ThreadHolderWorkerPool(threadName, threadId, threadStats, false, threadCount);
-    } else {
-        verifyThread_ = new impl::ThreadHolderWorkerPool(threadName, threadId, threadStats, true, threadCount);
-    }
+    verifyThread_ = new impl::ThreadHolder(threadName, loopType == Worker, threadCount);
 }
 
 ThreadVerify::ThreadVerify(ThreadVerify * other) :
@@ -49,49 +32,37 @@ ThreadVerify::ThreadVerify() :
 {
 }
 
-void ThreadVerify::setStats(ThreadStats * stats)
-{
-    threadStats = stats;
-}
-
 ThreadVerify::~ThreadVerify()
 {
     if (ownerOfVerifyThread_) {
-        if (verifyThread_->isActive()) {
-            logCritical("thread %1 has not been stopped before destruction", verifyThread_->threadName);
-        }
         delete verifyThread_;
     }
 }
 
 void ThreadVerify::stopVerifyThread()
 {
-    if (ownerOfVerifyThread_ && verifyThread_->isRunning()) {
+    if (ownerOfVerifyThread_ && verifyThread_->isActive()) {
         shutdownThread();
-        verifyThread_->join();
+        verifyThread_->stopLoop();
     }
-}
-
-ev_loop * ThreadVerify::libEVLoop() const
-{
-    const impl::ThreadHolderLibEV * th = dynamic_cast<const impl::ThreadHolderLibEV *>(verifyThread_);
-    if (!th) return 0;
-    return th->loop();
 }
 
 void ThreadVerify::execCall(const Functor * func) const
 {
     if (!verifyThread_->isActive()) {
-        logWarn("execCall for already terminated thread %1", verifyThread_->threadName);
+        logCritical("execCall for already terminated thread %1", verifyThread_->name());
         delete func;
         return;
     }
-    while (!verifyThread_->doCall(func)) std::this_thread::sleep_for(std::chrono::seconds(1));
+    while (!verifyThread_->doCall(func)) Thread::sleep(1);
 }
 
 void ThreadVerify::execLater(const Functor * func) const
 {
-    cf_current_thread->execLater(func);
+    // We cannot use verifyThread_ here, as we could have a thread pool, where verifyThread_->execLater() could
+    // start immediately.
+    const impl::LibEVThreadLoop * thread = dynamic_cast<const impl::LibEVThreadLoop *>(Thread::current());
+    if (thread) thread->execLater(func);
 }
 
 void ThreadVerify::execLater(const std::function<void ()> & func) const
@@ -105,7 +76,6 @@ void ThreadVerify::shutdownThread()
 
     logFunctionTrace
     deleteThreadData();
-    verifyThread_->stopLoop();
 }
 
 } // namespace

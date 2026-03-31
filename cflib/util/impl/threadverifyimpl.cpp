@@ -9,205 +9,135 @@
 
 #include <cflib/util/libev.h>
 #include <cflib/util/log.h>
-#include <cflib/util/threadstats.h>
-
-#include <cstdio>
 
 USE_LOG(LogCat::Etc)
 
-// Definition of the thread-local pointer declared in cfthread.h
-thread_local cflib::util::impl::ThreadHolder * cf_current_thread = nullptr;
-
 namespace cflib::util::impl {
 
-ThreadHolder::ThreadHolder(const String & threadName, int threadId, ThreadStats * stats, bool disable) :
-    threadName(threadName),
-    threadId_(threadId), stats_(stats),
-    disabled_(disable), isActive_(true), isRunning_(false)
-{
-}
-
-ThreadHolder::~ThreadHolder()
-{
-    logTrace("~ThreadHolder()");
-}
-
-void ThreadHolder::startThread()
-{
-    isRunning_ = true;
-    thread_ = std::thread([this]() {
-        cf_current_thread = this;
-        run();
-        isRunning_ = false;
-    });
-}
-
-void ThreadHolder::join()
-{
-    if (thread_.joinable()) thread_.join();
-}
-
-ThreadHolderLibEV::ThreadHolderLibEV(const String & threadName, int threadId, ThreadStats * stats, bool isWorkerOnly, bool disable) :
-    ThreadHolder(threadName, threadId, stats, disable),
+LibEVThreadLoop::LibEVThreadLoop(const String & threadName,
+    ThreadFifo<const Functor *> & externalCalls, bool isWorkerOnly)
+:
+    Thread(threadName),
+    externalCalls_(externalCalls),
     loop_(ev_loop_new((uint)EVFLAG_NOSIGMASK | (isWorkerOnly ? EVBACKEND_SELECT : EVBACKEND_ALL))),
     wakeupWatcher_(new ev_async)
 {
-    ev_async_init(wakeupWatcher_, &ThreadHolderLibEV::asyncCallback);
+    ev_async_init(wakeupWatcher_, &LibEVThreadLoop::asyncCallback);
     wakeupWatcher_->data = this;
     ev_async_start(loop_, wakeupWatcher_);
 }
 
-ThreadHolderLibEV::~ThreadHolderLibEV()
+LibEVThreadLoop::~LibEVThreadLoop()
 {
+    logTrace("~LibEVThreadLoop()");
     ev_async_stop(loop_, wakeupWatcher_);
     wakeupWatcher_->data = 0;
     delete wakeupWatcher_;
     ev_loop_destroy(loop_);
 }
 
-void ThreadHolderLibEV::stopLoop()
+void LibEVThreadLoop::wakeUp()
 {
-    ev_break(loop_, EVBREAK_ALL);
+    ev_async_send(loop_, wakeupWatcher_);
 }
 
-void ThreadHolderLibEV::execLater(const Functor * func) const
+void LibEVThreadLoop::stopLoop()
 {
-    ev_once(loop_, -1, 0, 0.0, &ThreadHolderLibEV::execLaterCall, (void *)func);
+    stopLoop_.storeRelease(true);
+    wakeUp();
 }
 
-void ThreadHolderLibEV::execLaterCall(int, void * arg)
+void LibEVThreadLoop::execLater(const Functor * func) const
+{
+    ev_once(loop_, -1, 0, 0.0, &LibEVThreadLoop::execLaterCall, (void *)func);
+}
+
+void LibEVThreadLoop::run()
+{
+    logDebug("thread %1 started with libev backend %2", name(), (uint32)ev_backend(loop_));
+    ev_run(loop_, 0);
+    logDebug("thread %1 stopped", name());
+}
+
+void LibEVThreadLoop::wokeUp()
+{
+    if (stopLoop_.loadAcquire()) {
+        ev_break(loop_, EVBREAK_ALL);
+        return;
+    }
+
+    while (const Functor * func = externalCalls_.take()) {
+        (*func)();
+        delete func;
+    }
+}
+
+
+void LibEVThreadLoop::asyncCallback(ev_loop *, ev_async * w, int)
+{
+    ((LibEVThreadLoop *)w->data)->wokeUp();
+}
+
+void LibEVThreadLoop::execLaterCall(int, void * arg)
 {
     const Functor * func = (const Functor *)arg;
     (*func)();
     delete func;
 }
 
-void ThreadHolderLibEV::wakeUp()
+ThreadHolder::ThreadHolder(const String & threadName, bool isWorkerOnly, uint threadCount) :
+    threadName_(threadName),
+    externalCalls_(1024)
 {
-    ev_async_send(loop_, wakeupWatcher_);
-}
-
-void ThreadHolderLibEV::run()
-{
-    logDebug("thread %1 started with libev backend %2", threadName, (uint32)ev_backend(loop_));
-    ev_run(loop_, 0);
-    isActive_ = false;
-    logDebug("thread %1 stopped", threadName);
-}
-
-void ThreadHolderLibEV::asyncCallback(ev_loop *, ev_async * w, int)
-{
-    ((ThreadHolderLibEV *)w->data)->wokeUp();
-}
-
-ThreadHolderWorkerPool::ThreadHolderWorkerPool(const String & threadName,
-    int threadId, ThreadStats * stats, bool isWorkerOnly, uint threadCount)
-:
-    ThreadHolderLibEV(threadCount > 1 ?
-        String(threadName.str() + " 1/" + std::to_string(threadCount)) : threadName,
-        threadId, stats, isWorkerOnly, threadCount == 0),
-    externalCalls_(1024),
-    stopLoop_(false)
-{
-    if (!disabled_) startThread();
-    for (uint i = 2 ; i <= threadCount ; ++i) {
-        String workerName(threadName.str() + " " + std::to_string(i) + "/" + std::to_string(threadCount));
-        Worker * thread = new Worker(workerName, threadId, stats, i - 1, externalCalls_);
-        workers_.push_back(thread);
+    if (!isWorkerOnly && threadCount > 1) {
+        logCritical("thread count must be less or equal 1 for network thread %1", threadName);
+        threadCount = 1;
+    }
+    for (uint i = 1 ; i <= threadCount ; ++i) {
+        const String workerName = threadCount == 1 ?
+            threadName :
+            threadName + " " + String::number(i) + "/" + String::number(threadCount);
+        workers_ << new LibEVThreadLoop(workerName, externalCalls_, isWorkerOnly);
     }
 }
 
-ThreadHolderWorkerPool::~ThreadHolderWorkerPool()
+ThreadHolder::~ThreadHolder()
 {
-    for (Worker * w : workers_) delete w;
+    if (!finished_.loadAcquire()) {
+        logCritical("thread %1 has not been stopped before destruction", threadName_);
+    }
+    for (LibEVThreadLoop * w : workers_) delete w;
 }
 
-bool ThreadHolderWorkerPool::doCall(const Functor * func)
+bool ThreadHolder::doCall(const Functor * func)
 {
     if (!externalCalls_.put(func)) {
-        if (stats_) stats_->externOverflow(threadId_);
-        const impl::ThreadHolder * thread = cf_current_thread;
-        logWarn("queue of thread %1 full (called by %2)", threadName, thread ? thread->threadName : String("?"));
+        const Thread * thread = Thread::current();
+        logWarn("queue of thread %1 full (called by %2 (%3))",
+            name(),
+            thread ? thread->name() : "?",
+            thread ? thread->id() : 0);
         return false;
     }
-    wakeUp();
-    for (Worker * w : workers_) w->wakeUp();
+    for (LibEVThreadLoop * w : workers_) w->wakeUp();
     return true;
+
 }
 
-void ThreadHolderWorkerPool::stopLoop()
+void ThreadHolder::stopLoop()
 {
-    if (!disabled_) {
-        stopLoop_ = true;
-        wakeUp();
-        for (Worker * w : workers_) w->stopLoop();
-    } else {
-        isActive_ = false;
-    }
+    isActive_.storeRelease(false);
+    for (LibEVThreadLoop * w : workers_) w->stopLoop();
+    for (LibEVThreadLoop * w : workers_) w->join();
+    finished_.storeRelease(true);
 }
 
-bool ThreadHolderWorkerPool::isOwnThread() const
+bool ThreadHolder::isOwnThread() const
 {
-    if (cf_current_thread == this || disabled_) return true;
-    for (const Worker * w : workers_) if (cf_current_thread == w) return true;
+    if (workers_.empty()) return true;
+    const Thread * own = Thread::current();
+    for (const LibEVThreadLoop * w : workers_) if (own == w) return true;
     return false;
-}
-
-uint ThreadHolderWorkerPool::threadCount() const
-{
-    return 1 + (uint)workers_.size();
-}
-
-void ThreadHolderWorkerPool::wokeUp()
-{
-    if (stopLoop_) {
-        ThreadHolderLibEV::stopLoop();
-        return;
-    }
-
-    ElapsedTimer elapsed;
-    if (stats_) elapsed.start();
-    while (const Functor * func = externalCalls_.take()) {
-        (*func)();
-        delete func;
-    }
-    if (stats_) stats_->externNewCallTime(threadId_, elapsed.nsecsElapsed());
-}
-
-void ThreadHolderWorkerPool::run()
-{
-    ThreadHolderLibEV::run();
-    for (Worker * w : workers_) w->join();
-}
-
-ThreadHolderWorkerPool::Worker::Worker(const String & threadName,
-    int threadId, ThreadStats * stats, uint threadNo, ThreadFifo<const Functor *> & externalCalls)
-:
-    ThreadHolderLibEV(threadName, threadId, stats, true, false),
-    threadNo_(threadNo),
-    externalCalls_(externalCalls),
-    stopLoop_(false)
-{
-    startThread();
-}
-
-void ThreadHolderWorkerPool::Worker::stopLoop()
-{
-    stopLoop_ = true;
-    wakeUp();
-}
-
-void ThreadHolderWorkerPool::Worker::wokeUp()
-{
-    if (stopLoop_) {
-        ThreadHolderLibEV::stopLoop();
-        return;
-    }
-
-    while (const Functor * func = externalCalls_.take()) {
-        (*func)();
-        delete func;
-    }
 }
 
 } // namespace

@@ -96,6 +96,8 @@ private:
     std::atomic<T> val_;
 };
 
-using AtomicInt = AtomicInteger<ssize_t>;
+using AtomicBool = AtomicInteger<bool>;
+using AtomicInt  = AtomicInteger<ssize_t>;
+using AtomicUInt = AtomicInteger<size_t>;
 
 } // namespace

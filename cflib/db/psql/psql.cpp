@@ -157,7 +157,7 @@ public:
             return;
         }
 
-        if (util::libEVLoopOfThread()) {
+        if (util::libEVLoop()) {
             evTimer_ = new util::EVTimer(this, &ThreadData::checkConnection);
             evTimer_->start(15);
         }
@@ -199,8 +199,6 @@ private:
     const int connId_;
     util::EVTimer * evTimer_;
 };
-
-thread_local PSql::ThreadData * PSql::threadData_ = nullptr;
 
 const int PSql::MAX_FIELD_COUNT;
 

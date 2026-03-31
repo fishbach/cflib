@@ -62,8 +62,8 @@ private:
 
 private:
     impl::RMIServerBase * server_;
-    PerThread<uint> connId_;
-    PerThread<bool> delayedReply_;
+    static inline thread_local uint connId_ = 0;
+    static inline thread_local bool delayedReply_ = false;
     friend class impl::RMIServerBase;
     template<typename C> friend class RMIService;
 };
@@ -73,8 +73,8 @@ class RMIService : public RMIServiceBase
 {
 protected:
     RMIService(const String & threadName, uint threadCount = 1, LoopType loopType = Worker) :
-        RMIServiceBase(threadName, threadCount, loopType), connData_(this), connDataId_(this, 0) {}
-    RMIService(ThreadVerify * other) : RMIServiceBase(other), connData_(this), connDataId_(this, 0) {}
+        RMIServiceBase(threadName, threadCount, loopType) {}
+    RMIService(ThreadVerify * other) : RMIServiceBase(other) {}
 
     inline const C & connData() const { return connData_; }
     inline uint connDataId() const { return connDataId_; }
@@ -123,8 +123,8 @@ private:
     using RMIServiceBase::connectionClosed;    // prevent hidden virtual warning
 
 private:
-    PerThread<C> connData_;
-    PerThread<uint> connDataId_;
+    static inline thread_local C    connData_;
+    static inline thread_local uint connDataId_ = 0;
     friend class impl::RMIServerBase;
 };
 

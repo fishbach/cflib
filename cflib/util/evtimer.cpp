@@ -30,7 +30,7 @@ EVTimer::~EVTimer()
 
 void EVTimer::start(double after, double repeat)
 {
-    ev_loop * loop = libEVLoopOfThread();
+    ev_loop * loop = libEVLoop();
     if (!loop) {
         logWarn("no eventloop for EVTimer::start");
         return;
@@ -43,7 +43,7 @@ void EVTimer::start(double after, double repeat)
 
 void EVTimer::stop()
 {
-    ev_timer_stop(libEVLoopOfThread(), timer_);
+    ev_timer_stop(libEVLoop(), timer_);
 }
 
 void EVTimer::timeout(ev_loop *, ev_timer * w, int)

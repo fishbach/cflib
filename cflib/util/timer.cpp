@@ -14,7 +14,7 @@ namespace cflib::util {
 
 void Timer::singleShot(double afterSecs, const Functor * func)
 {
-    ev_loop * loop = libEVLoopOfThread();
+    ev_loop * loop = libEVLoop();
     if (loop) ev_once(loop, -1, 0, afterSecs, &Timer::timeout, (void *)func);
     else {
         // No libev loop on this thread - just execute immediately

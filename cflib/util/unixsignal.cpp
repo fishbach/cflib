@@ -54,7 +54,7 @@ UnixSignal::UnixSignal()
         abort();
     }
 
-    ev_loop * loop = libEVLoopOfThread();
+    ev_loop * loop = libEVLoop();
     if (loop) {
         watcher_ = new ev_io;
         ev_io_init(watcher_, &UnixSignal::ioCallback, sockets[1], EV_READ);
@@ -76,7 +76,7 @@ UnixSignal::~UnixSignal()
     ::signal(15, oldSigH15);
 
     if (watcher_) {
-        ev_loop * loop = libEVLoopOfThread();
+        ev_loop * loop = libEVLoop();
         if (loop) ev_io_stop(loop, watcher_);
         delete watcher_;
     }

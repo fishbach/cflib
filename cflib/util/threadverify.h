@@ -7,20 +7,17 @@
 
 #pragma once
 
-#include <cflib/base.h>
 #include <cflib/util/impl/threadverifyimpl.h>
 
 namespace cflib::util {
-
-class ThreadStats;
 
 class ThreadVerify
 {
     CF_DISABLE_COPY(ThreadVerify)
 public:
     enum LoopType {
-        Net    = 2,
-        Worker = 3
+        Net    = 1,
+        Worker = 2
     };
 
 public:
@@ -29,7 +26,6 @@ public:
     virtual ~ThreadVerify();
 
     void stopVerifyThread();
-    ev_loop * libEVLoop() const;
 
 protected:
     void execLater(const std::function<void()> & func) const;
@@ -284,50 +280,19 @@ protected:
         R retval_;
     };
 
-    // ------------------------------------------------------------------------
-
-    // Storage wrapper to avoid std::vector<bool> specialization issues
-    template<typename C>
-    struct PerThreadStorage { using type = List<C>; };
-
-    template<typename C>
-    class PerThread
-    {
-    public:
-        inline PerThread(const ThreadVerify * tv) :
-            objs_(tv->verifyThread_->threadCount()) {}
-        inline PerThread(const ThreadVerify * tv, const C & obj) :
-            objs_(tv->verifyThread_->threadCount(), obj) {}
-
-        inline C & operator=(const C & obj) { return threadObj() = obj; }
-        inline operator const C & () const  { return threadObj(); }
-        inline operator C & ()              { return threadObj(); }
-
-    private:
-        inline C & threadObj() const {
-            if (objs_.size() == 1) return objs_[0];
-            const impl::ThreadHolder * thread = cf_current_thread;
-            return thread ? objs_[thread->threadNo()] : objs_[0];
-        }
-        mutable List<C> objs_;
-    };
-
 private:
     ThreadVerify();
-    void setStats(ThreadStats * stats);
     void shutdownThread();
     void execCall(const Functor * func) const;
 
 private:
     impl::ThreadHolder * verifyThread_;
     const bool ownerOfVerifyThread_;
-
-    friend class ThreadStats;
 };
 
-inline ev_loop * libEVLoopOfThread()
+inline ev_loop * libEVLoop()
 {
-    const impl::ThreadHolderLibEV * thread = dynamic_cast<const impl::ThreadHolderLibEV *>(cf_current_thread);
+    const impl::LibEVThreadLoop * thread = dynamic_cast<const impl::LibEVThreadLoop *>(Thread::current());
     return thread ? thread->loop() : 0;
 }
 

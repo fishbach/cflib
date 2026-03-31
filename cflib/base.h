@@ -17,7 +17,6 @@
 #include <cflib/base/regex.h>
 #include <cflib/base/sharedptr.h>
 #include <cflib/base/string.h>
-#include <cflib/base/thread.h>
 #include <cflib/base/types.h>
 #include <cflib/base/url.h>
 #include <cflib/base/util.h>

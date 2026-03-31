@@ -140,7 +140,7 @@ private:
     void removePreparedStatement();
 
 private:
-    static thread_local ThreadData * threadData_;
+    static inline thread_local ThreadData * threadData_ = nullptr;
     ThreadData & td_;
 
     const cflib::util::LogFileInfo & lfi_;

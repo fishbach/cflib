@@ -15,13 +15,13 @@ namespace cflib::net {
 
 RMIServiceBase::RMIServiceBase(const String & threadName, uint threadCount, LoopType loopType) :
     util::ThreadVerify(threadName, loopType, threadCount),
-    server_(0), connId_(this, 0), delayedReply_(this, false)
+    server_(0)
 {
 }
 
 RMIServiceBase::RMIServiceBase(util::ThreadVerify * other) :
     util::ThreadVerify(other),
-    server_(0), connId_(this, 0), delayedReply_(this, false)
+    server_(0)
 {
 }
 

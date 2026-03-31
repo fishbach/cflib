@@ -9,114 +9,63 @@
 
 #include <cflib/base.h>
 #include <cflib/util/functor.h>
+#include <cflib/util/thread.h>
 #include <cflib/util/threadfifo.h>
-
-#include <thread>
-#include <vector>
 
 struct ev_async;
 struct ev_loop;
 
 namespace cflib::util {
 
-class ThreadStats;
-
 namespace impl {
 
-class ThreadHolder
+class LibEVThreadLoop : public Thread
 {
 public:
-    ThreadHolder(const String & threadName, int threadId, ThreadStats * stats, bool disable);
-    virtual ~ThreadHolder();
+    LibEVThreadLoop(const String & threadName, ThreadFifo<const Functor *> & externalCalls, bool isWorkerOnly);
+    ~LibEVThreadLoop();
 
-    const String threadName;
-    bool isActive() const { return isActive_; }
-    bool isRunning() const { return isRunning_; }
-    virtual bool doCall(const Functor * func) = 0;
-    virtual void stopLoop() = 0;
-    virtual bool isOwnThread() const { return cf_current_thread == this || disabled_; }
-    virtual uint threadCount() const { return 1; }
-    virtual uint threadNo() const    { return 0; }
-    virtual void execLater(const Functor * func) const = 0;
-
-    void startThread();
-    void join();
-
-protected:
-    virtual void run() = 0;
-
-    const int threadId_;
-    ThreadStats * const stats_;
-    const bool disabled_;
-    bool isActive_;
-    bool isRunning_;
-
-private:
-    std::thread thread_;
-};
-
-class ThreadHolderLibEV : public ThreadHolder
-{
-public:
-    ~ThreadHolderLibEV();
-
-    void stopLoop() override;
-    void execLater(const Functor * func) const override;
-    ev_loop * loop() const { return loop_; }
     void wakeUp();
+    void stopLoop();
+    void execLater(const Functor * func) const;
+
+    ev_loop * loop() const { return loop_; }
 
 protected:
-    ThreadHolderLibEV(const String & threadName, int threadId, ThreadStats * stats, bool isWorkerOnly, bool disable);
     void run() override;
-    virtual void wokeUp() = 0;
+    void wokeUp();
 
 private:
     static void asyncCallback(ev_loop * loop, ev_async * w, int revents);
     static void execLaterCall(int revents, void * arg);
 
 private:
+    ThreadFifo<const Functor *> & externalCalls_;
     ev_loop * loop_;
     ev_async * wakeupWatcher_;
+    AtomicBool stopLoop_ = false;
+    AtomicBool loopFinished_ = false;
 };
 
-class ThreadHolderWorkerPool : public ThreadHolderLibEV
+class ThreadHolder
 {
+    CF_DISABLE_COPY(ThreadHolder)
 public:
-    ThreadHolderWorkerPool(const String & threadName, int threadId, ThreadStats * stats, bool isWorkerOnly, uint threadCount);
-    ~ThreadHolderWorkerPool();
+    ThreadHolder(const String & threadName, bool isWorkerOnly, uint threadCount);
+    ~ThreadHolder();
 
-    bool doCall(const Functor * func) override;
-    void stopLoop() override;
-    bool isOwnThread() const override;
-    uint threadCount() const override;
-
-protected:
-    void run() override;
-    void wokeUp() override;
+    String name() const { return threadName_; }
+    bool isActive() const { return isActive_.loadAcquire(); }
+    bool doCall(const Functor * func);
+    void stopLoop();
+    bool isOwnThread() const;
 
 private:
-    class Worker : public ThreadHolderLibEV
-    {
-    public:
-        Worker(const String & threadName,
-            int threadId, ThreadStats * stats, uint threadNo, ThreadFifo<const Functor *> & externalCalls);
-
-        bool doCall(const Functor *) override { return false; }
-        void stopLoop() override;
-        uint threadNo() const override { return threadNo_; }
-
-    protected:
-        void wokeUp() override;
-
-    private:
-        const uint threadNo_;
-        ThreadFifo<const Functor *> & externalCalls_;
-        bool stopLoop_;
-    };
-
+    const String threadName_;
     ThreadFifo<const Functor *> externalCalls_;
-    std::vector<Worker *> workers_;
-    bool stopLoop_;
+    List<LibEVThreadLoop *> workers_;
+    AtomicBool isActive_ = true;
+    AtomicBool finished_ = false;
 };
 
 }} // namespace
