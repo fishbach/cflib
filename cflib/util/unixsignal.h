@@ -18,15 +18,18 @@ namespace cflib::util {
 class UnixSignal
 {
 public:
-    UnixSignal();
+    UnixSignal(bool exitMainLoop = false);
     ~UnixSignal();
 
-    cfsignals:
-        sig<void (int)> catchedSignal;
+cfsignals:
+    sig<void (int)> catchedSignal;
 
 private:
     static void ioCallback(ev_loop * loop, ev_io * w, int revents);
+    void gotSignal(int sig);
 
+private:
+    const bool exitMainLoop_;
     ev_io * watcher_;
 };
 

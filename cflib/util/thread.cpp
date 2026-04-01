@@ -20,7 +20,7 @@ Thread::~Thread()
     if (started_.loadAcquire() && !finished_.loadAcquire()) {
         logInfo("thread %1 (%2) still running. Waiting for termination", threadName_, threadId_);
     }
-    thread_.join();
+    if (thread_.joinable()) thread_.join();
     logDebug("thread %1 (%2) destroyed", threadName_, threadId_);
 }
 

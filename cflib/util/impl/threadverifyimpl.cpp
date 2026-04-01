@@ -54,9 +54,9 @@ void LibEVThreadLoop::execLater(const Functor * func) const
 
 void LibEVThreadLoop::run()
 {
-    logDebug("thread %1 started with libev backend %2", name(), (uint32)ev_backend(loop_));
+    logDebug("loop %1 started with libev backend %2", name(), (uint32)ev_backend(loop_));
     ev_run(loop_, 0);
-    logDebug("thread %1 stopped", name());
+    logDebug("loop %1 stopped", name());
 }
 
 void LibEVThreadLoop::wokeUp()

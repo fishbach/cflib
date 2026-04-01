@@ -7,6 +7,10 @@
 
 #pragma once
 
+#if defined(__unix__) || defined(__unix) || (defined(__APPLE__) && defined(__MACH__))
+    #define CF_OS_UNIX
+#endif
+
 #define CF_DISABLE_COPY(Class) \
     Class(const Class &) = delete; \
     Class & operator=(const Class &) = delete;

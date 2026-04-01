@@ -19,7 +19,7 @@ public:
 
     int exec();
 
-    static void quit(int exitCode = 0);
+    static void exit(int exitCode = 0);
 
 private:
     static inline MainLoop * instance_ = nullptr;

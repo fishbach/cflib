@@ -29,13 +29,15 @@ MainLoop::~MainLoop()
 int MainLoop::exec()
 {
     loop_.run();
-    return exitCode_.loadAcquire();
+    int rv = exitCode_.loadAcquire();
+    logInfo("exiting with exit code: %1", rv);
+    return rv;
 }
 
-void MainLoop::quit(int exitCode)
+void MainLoop::exit(int exitCode)
 {
     if (!instance_) {
-        logWarn("no MainLoop instance to call quit()");
+        logWarn("no MainLoop instance to call exit()");
         return;
     }
     instance_->exitCode_.storeRelease(exitCode);

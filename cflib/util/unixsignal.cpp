@@ -9,12 +9,14 @@
 
 #include <cflib/util/libev.h>
 #include <cflib/util/log.h>
+#include <cflib/util/mainloop.h>
 #include <cflib/util/threadverify.h>
 
-#include <csignal>
-#include <cstdlib>
+#ifdef CF_OS_UNIX
+#include <signal.h>
 #include <sys/socket.h>
 #include <unistd.h>
+#endif
 
 USE_LOG(LogCat::Etc)
 
@@ -23,79 +25,91 @@ namespace cflib::util {
 namespace {
 
 bool active = false;
+
+#ifdef CF_OS_UNIX
+
 int sockets[2];
 sig_t oldSigH1 = 0;
 sig_t oldSigH2 = 0;
 sig_t oldSigH15 = 0;
-UnixSignal * currentInstance = nullptr;
 
 void signalHandler(int sig)
 {
     char s = (char)sig;
-    int c __attribute__((unused)) = ::write(sockets[0], &s, 1);
+    ::write(sockets[0], &s, 1);
 }
+
+#endif
 
 }
 
-UnixSignal::UnixSignal()
-    : watcher_(nullptr)
+UnixSignal::UnixSignal(bool exitMainLoop) :
+    exitMainLoop_(exitMainLoop),
+    watcher_(nullptr)
 {
-    logFunctionTrace
-
     if (active) {
         logCritical("only one UnixSignal instance can exist");
         abort();
     }
     active = true;
-    currentInstance = this;
 
-    if (::socketpair(AF_UNIX, SOCK_STREAM, 0, sockets)) {
-        logCritical("Couldn't create socketpair");
+    ev_loop * loop = libEVLoop();
+    if (!loop) {
+        logCritical("there must be an existing MainLoop instance");
         abort();
     }
 
-    ev_loop * loop = libEVLoop();
-    if (loop) {
+    #ifdef CF_OS_UNIX
+        if (::socketpair(AF_UNIX, SOCK_STREAM, 0, sockets)) {
+            logCritical("Couldn't create socketpair");
+            abort();
+        }
+
         watcher_ = new ev_io;
         ev_io_init(watcher_, &UnixSignal::ioCallback, sockets[1], EV_READ);
         watcher_->data = this;
         ev_io_start(loop, watcher_);
-    }
 
-    oldSigH1  = ::signal(1,  signalHandler);
-    oldSigH2  = ::signal(2,  signalHandler);
-    oldSigH15 = ::signal(15, signalHandler);
+        oldSigH1  = ::signal(1,  signalHandler);
+        oldSigH2  = ::signal(2,  signalHandler);
+        oldSigH15 = ::signal(15, signalHandler);
+
+        logInfo("installed handler for signals 1, 2, 15");
+    #else
+        CF_UNUSED(quitMainLoop)
+    #endif
 }
 
 UnixSignal::~UnixSignal()
 {
-    logFunctionTrace
+    #ifdef CF_OS_UNIX
+        ::signal(1,  oldSigH1);
+        ::signal(2,  oldSigH2);
+        ::signal(15, oldSigH15);
 
-    ::signal(1,  oldSigH1);
-    ::signal(2,  oldSigH2);
-    ::signal(15, oldSigH15);
-
-    if (watcher_) {
-        ev_loop * loop = libEVLoop();
-        if (loop) ev_io_stop(loop, watcher_);
+        ev_io_stop(libEVLoop(), watcher_);
         delete watcher_;
-    }
 
-    ::close(sockets[0]);
-    ::close(sockets[1]);
+        ::close(sockets[0]);
+        ::close(sockets[1]);
+    #endif
 
-    currentInstance = nullptr;
     active = false;
+}
+
+void UnixSignal::gotSignal(int sig)
+{
+    logInfo("catched signal %1", sig);
+    catchedSignal(sig);
+    if (exitMainLoop_) MainLoop::exit();
 }
 
 void UnixSignal::ioCallback(ev_loop *, ev_io * w, int)
 {
     UnixSignal * self = (UnixSignal *)w->data;
     char s;
-    int c __attribute__((unused)) = ::read(sockets[1], &s, 1);
-    int sig = s;
-    logInfo("catched signal %1", sig);
-    self->catchedSignal(sig);
+    ::read(sockets[1], &s, 1);
+    self->gotSignal(s);
 }
 
 } // namespace
