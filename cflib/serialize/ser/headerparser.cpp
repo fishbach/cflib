@@ -46,18 +46,6 @@ int findClosingBrace(const std::string & in, int startPos, char brOpen, char brC
     return -1;
 }
 
-// Split string by delimiter
-std::vector<std::string> splitString(const std::string & s, char delim)
-{
-    std::vector<std::string> result;
-    std::istringstream iss(s);
-    std::string item;
-    while (std::getline(iss, item, delim)) {
-        result.push_back(item);
-    }
-    return result;
-}
-
 // Simple string replace all
 void replaceAll(std::string & str, const std::string & from, const std::string & to)
 {

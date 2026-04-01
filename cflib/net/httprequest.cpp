@@ -98,7 +98,7 @@ protected:
         buf_ += read();
         logTrace("received: %1", buf_);
 
-        const int headerEndPos = buf_.indexOf("\r\n\r\n");
+        const ssize_t headerEndPos = buf_.indexOf("\r\n\r\n");
         if (headerEndPos == -1) {
             startReadWatcher();
             return;
@@ -110,7 +110,7 @@ protected:
             return;
         }
 
-        const int length = ByteArray(match.captured(1).c_str()).toInt();
+        const size_t length = ByteArray(match.captured(1).c_str()).toInt();
         if (buf_.size() < headerEndPos + 4 + length) {
             startReadWatcher();
             return;

@@ -301,7 +301,7 @@ TCPConnData * KafkaConnector::Impl::connectToCluster()
     logFunctionTrace
 
     if (cluster_.empty()) return 0;
-    if (clusterId_ >= cluster_.size()) clusterId_ = 0;
+    if (clusterId_ >= (ssize_t)cluster_.size()) clusterId_ = 0;
 
     const int startId = clusterId_;
     do {
@@ -309,7 +309,7 @@ TCPConnData * KafkaConnector::Impl::connectToCluster()
         TCPConnData * data = net_.openConnection(addr.first, addr.second);
         if (data) return data;
 
-        if (++clusterId_ >= cluster_.size()) clusterId_ = 0;
+        if (++clusterId_ >= (ssize_t)cluster_.size()) clusterId_ = 0;
     } while (clusterId_ != startId);
 
     return 0;

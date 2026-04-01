@@ -57,17 +57,17 @@ void Thread::doRun()
 
 void Thread::sleep(size_t secs)
 {
-    std::this_thread::sleep_for(std::chrono::seconds(1));
+    std::this_thread::sleep_for(std::chrono::seconds(secs));
 }
 
 void Thread::msleep(size_t milliSecs)
 {
-    std::this_thread::sleep_for(std::chrono::milliseconds(1));
+    std::this_thread::sleep_for(std::chrono::milliseconds(milliSecs));
 }
 
 void Thread::usleep(size_t microSecs)
 {
-    std::this_thread::sleep_for(std::chrono::microseconds(1));
+    std::this_thread::sleep_for(std::chrono::microseconds(microSecs));
 }
 
 void Thread::assignToCurrentThread()

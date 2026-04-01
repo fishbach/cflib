@@ -123,8 +123,8 @@ namespace {
 ByteArray encodeAddress(const String & address, String & plain)
 {
     // Simple parse: look for "name <addr>" pattern
-    size_t lt = address.indexOf('<');
-    size_t gt = address.indexOf('>');
+    ssize_t lt = address.indexOf('<');
+    ssize_t gt = address.indexOf('>');
     if (lt >= 0 && gt > lt) {
         String name = address.left(lt).trimmed();
         plain = address.mid(lt + 1, gt - lt - 1).trimmed();

@@ -461,7 +461,7 @@ void TCPManagerImpl::writeable(ev_loop * loop, ev_io * w, int)
     const ssize_t count = ::send(fd, buf.constData(), buf.size(), 0);
 #endif
     logTrace("wrote %1 / %2 bytes on %3", (int64)count, buf.size(), fd);
-    if (count < buf.size()) {
+    if (count < (ssize_t)buf.size()) {
         if (count < 0 && errno != EAGAIN && errno != EWOULDBLOCK && errno != ENOTCONN) {
             logDebug("write on fd %1 failed (%2 - %3)", fd, errno, strerror(errno));
             buf.clear();

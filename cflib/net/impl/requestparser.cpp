@@ -86,11 +86,11 @@ ByteArray RequestParser::readPassThrough(bool & isLast)
         return ByteArray();
     }
     ByteArray retval = read();
-    isLast = retval.size() >= contentLength_;
+    isLast = (ssize_t)retval.size() >= contentLength_;
     if (isLast) {
         passThrough_ = false;
         passThroughHandler_ = 0;
-        if (retval.size() > contentLength_) {
+        if ((ssize_t)retval.size() > contentLength_) {
             header_ = retval.mid(contentLength_);
             retval.resize(contentLength_);
             contentLength_ = -1;
@@ -160,7 +160,7 @@ void RequestParser::parseRequest()
         }
 
         // body ok?
-        const int64 size = method_ == Request::POST ? contentLength_ : 0;
+        const size_t size = method_ == Request::POST ? (size_t)contentLength_ : 0;
 
         if (body_.size() < size) {
             // small requests we hold in memory

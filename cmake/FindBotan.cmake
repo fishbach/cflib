@@ -53,4 +53,5 @@ add_custom_command(
 
 # add target cflib_botan
 add_library(cflib_botan ${botan_src_SOURCE_DIR}/botan_all.cpp)
+target_compile_options(cflib_botan PRIVATE -Wno-overloaded-virtual -Wno-double-promotion)
 target_include_directories(cflib_botan INTERFACE ${botan_src_SOURCE_DIR}/build/include/public)

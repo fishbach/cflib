@@ -284,10 +284,10 @@ private:
 
         TVERIFY(sql.next());
         sql >> tt.id >> tt.s16 >> tt.s32 >> tt.s64 >> tt.t >> tt.a >> tt.s >> tt.f >> tt.d >> tt.b;
-        TCOMPARE(tt.id,  (int32)1);
-        TCOMPARE(tt.s16, (int16)-32768);
-        TCOMPARE(tt.s32, (int32)-2147483648l);
-        TCOMPARE(tt.s64, (int64)(-9223372036854775807LL));
+        TCOMPARE(tt.id,  1u);
+        TCOMPARE(tt.s16, -32768);
+        TCOMPARE(tt.s32, -2147483648l);
+        TCOMPARE(tt.s64, -9223372036854775807LL);
         TCOMPARE(tt.t.toMSecsSinceEpoch(), makeUTCDateTime(1970, 1, 1, 0, 0, 0, 0).toMSecsSinceEpoch());
         TCOMPARE(tt.a, ByteArray("A0"));
         TCOMPARE(tt.s, String::fromUtf8("ABC\xC3\xB6\xC3\x9F"));

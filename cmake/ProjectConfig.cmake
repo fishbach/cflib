@@ -46,6 +46,25 @@ if(ENABLE_PCH)
     message(STATUS "Using PCH")
 endif()
 
+# Warnings
+if(MSVC)
+    add_compile_options(/W4 /WX)
+else()
+    add_compile_options(
+        -Wall -Wextra -Wpedantic
+        -Wcast-align
+        # -Wconversion
+        -Wdouble-promotion
+        -Wformat=2
+        # -Wnon-virtual-dtor
+        -Wnull-dereference
+        # -Woverloaded-virtual
+        # -Wshadow
+        # -Wsign-conversion
+        -Wunused
+    )
+endif()
+
 # add root include dir
 include_directories(${PROJECT_SOURCE_DIR})
 

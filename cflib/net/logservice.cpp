@@ -25,7 +25,7 @@ void LogService::log(const String & file, int line, cflib::util::LogCategory cat
 {
     // remove evil chars
     ByteArray fileBa = file.toUtf8();
-    for (int i = 0 ; i < fileBa.length() ; ++i) {
+    for (size_t i = 0 ; i < fileBa.length() ; ++i) {
         uint8 c = (uint8)fileBa[i];
         if (c < 0x20 || c > 0x7E) fileBa[i] = '_';
     }

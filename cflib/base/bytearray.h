@@ -119,15 +119,15 @@ public:
     bool contains(const char * s) const { return d->data.find(s) != std::string::npos; }
     bool contains(char c) const { return d->data.find(c) != std::string::npos; }
 
-    size_t indexOf(char c, size_t from = 0) const {
+    ssize_t indexOf(char c, size_t from = 0) const {
         size_t pos = d->data.find(c, from);
         return pos == std::string::npos ? -1 : (size_t)pos;
     }
-    size_t indexOf(const char * s, size_t from = 0) const {
+    ssize_t indexOf(const char * s, size_t from = 0) const {
         size_t pos = d->data.find(s, from);
         return pos == std::string::npos ? -1 : (size_t)pos;
     }
-    size_t indexOf(const ByteArray & other, size_t from = 0) const {
+    ssize_t indexOf(const ByteArray & other, size_t from = 0) const {
         size_t pos = d->data.find(other.d->data, from);
         return pos == std::string::npos ? -1 : (size_t)pos;
     }

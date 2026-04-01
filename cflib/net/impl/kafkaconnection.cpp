@@ -57,7 +57,7 @@ void KafkaConnection::newBytesAvailable()
         }
 
         // enough bytes?
-        if (buffer_.size() < size + 4) break;
+        if (buffer_.size() < (size_t)size + 4) break;
 
         int32 correlationId;
         reader >> correlationId;
