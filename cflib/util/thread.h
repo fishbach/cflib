@@ -34,6 +34,7 @@ public:
     static void usleep(size_t microSecs);
 
 protected:
+    void assignToCurrentThread();
     virtual void run() = 0;
 
 private:

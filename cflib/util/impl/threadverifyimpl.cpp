@@ -97,7 +97,9 @@ ThreadHolder::ThreadHolder(const String & threadName, bool isWorkerOnly, uint th
         const String workerName = threadCount == 1 ?
             threadName :
             threadName + " " + String::number(i) + "/" + String::number(threadCount);
-        workers_ << new LibEVThreadLoop(workerName, externalCalls_, isWorkerOnly);
+        LibEVThreadLoop * worker = new LibEVThreadLoop(workerName, externalCalls_, isWorkerOnly);
+        worker->start();
+        workers_ << worker;
     }
 }
 

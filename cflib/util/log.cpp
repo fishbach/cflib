@@ -9,6 +9,7 @@
 
 #include <cflib/base.h>
 #include <cflib/util/hex.h>
+#include <cflib/util/thread.h>
 
 #include <format>
 #include <iostream>
@@ -48,15 +49,15 @@ LogCategory logLevelTrigger = 15;
 LogLevelCallback logLevelCallback = 0;
 
 struct ThreadInfo {
-    uint indent;
-    uint threadId;
-    ThreadInfo() : indent(0), threadId(0) {}
+    uint indent = 0;
 };
 Hash<uint, ThreadInfo> threadInfos;
 
-inline uint threadId()
+inline size_t getThreadId()
 {
-    return (uint)gettid();
+    size_t id = Thread::currentId();
+    if (id > 0) return id;
+    return (size_t)gettid();
 }
 
 inline void writeInt(char * dest, uint number, int width)
@@ -212,11 +213,11 @@ void Log::writeLog(const char * filename, int lineNo, LogCategory category, cons
     // get thread info
     {
         MutexLocker lock(mutex);
-        ThreadInfo & info = threadInfos[threadId()];
-        if (info.threadId == 0) info.threadId = (uint)threadInfos.size();
+        size_t threadId = getThreadId();
+        ThreadInfo & info = threadInfos[threadId];
 
         // thread id
-        writeInt(pos, info.threadId, 2); pos += 2;
+        writeInt(pos, threadId, 2); pos += 2;
         *(pos++) = ' ';
 
         #pragma GCC diagnostic pop

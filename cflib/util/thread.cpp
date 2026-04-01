@@ -70,4 +70,10 @@ void Thread::usleep(size_t microSecs)
     std::this_thread::sleep_for(std::chrono::microseconds(1));
 }
 
+void Thread::assignToCurrentThread()
+{
+    threadPtr_ = this;
+    logInfo("thread %1 (%2) assigned to existing thread", threadName_, threadId_);
+}
+
 } // namespace

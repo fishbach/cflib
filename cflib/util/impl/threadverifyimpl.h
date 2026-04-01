@@ -17,6 +17,8 @@ struct ev_loop;
 
 namespace cflib::util {
 
+class MainLoop;
+
 namespace impl {
 
 class LibEVThreadLoop : public Thread
@@ -45,6 +47,8 @@ private:
     ev_async * wakeupWatcher_;
     AtomicBool stopLoop_ = false;
     AtomicBool loopFinished_ = false;
+
+    friend class cflib::util::MainLoop;
 };
 
 class ThreadHolder
