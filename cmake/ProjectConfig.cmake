@@ -46,6 +46,11 @@ if(ENABLE_PCH)
     message(STATUS "Using PCH")
 endif()
 
+# PCH
+if(ENABLE_PSQL)
+    message(STATUS "Building PostgreSQL parts")
+endif()
+
 # Warnings
 if(MSVC)
     add_compile_options(/W4 /WX)

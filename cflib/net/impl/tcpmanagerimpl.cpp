@@ -164,7 +164,7 @@ bool TCPManagerImpl::start(int listenSocket, crypt::TLSCredentials * credentials
     readWatcher_->data = this;
     ev_io_start(libEVLoop(), readWatcher_);
 
-    logInfo("server started");
+    logInfo("server started with listen socket: %1", listenSock_);
     return true;
 }
 
@@ -175,6 +175,7 @@ void TCPManagerImpl::stop()
     logFunctionTrace
 
     if (isRunning()) {
+        logInfo("closing listen socket: %1", listenSock_);
         ev_io_stop(libEVLoop(), readWatcher_);
         close(listenSock_);
         listenSock_ = -1;

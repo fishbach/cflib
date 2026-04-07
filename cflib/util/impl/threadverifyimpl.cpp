@@ -61,15 +61,12 @@ void LibEVThreadLoop::run()
 
 void LibEVThreadLoop::wokeUp()
 {
-    if (stopLoop_.loadAcquire()) {
-        ev_break(loop_, EVBREAK_ALL);
-        return;
-    }
-
     while (const Functor * func = externalCalls_.take()) {
         (*func)();
         delete func;
     }
+
+    if (stopLoop_.loadAcquire()) ev_break(loop_, EVBREAK_ALL);
 }
 
 

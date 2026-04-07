@@ -123,13 +123,6 @@ inline String dirName(const String & path) {
     return path.left(pos);
 }
 
-// Get filename from path
-inline String fileName(const String & path) {
-    ssize_t pos = path.lastIndexOf("/");
-    if (pos < 0) return path;
-    return path.mid(pos + 1);
-}
-
 }
 
 // ============================================================================
