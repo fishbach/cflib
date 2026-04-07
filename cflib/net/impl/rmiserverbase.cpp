@@ -127,32 +127,31 @@ StringList getMemberTypes(const SerializeTypeInfo & ti)
     return retval;
 }
 
-String formatJSTypeConstruction(const SerializeTypeInfo & ti, const String & raw, bool useFactory)
+String formatJSTypeConstruction(const SerializeTypeInfo & ti, const String & raw)
 {
     String js;
     if (ti.type == SerializeTypeInfo::Class) {
-        if (useFactory) js << formatClassnameForJS(ti) << ".new(" << (raw == "null" ? "" : raw) << ")";
-        else            js << "new " << formatClassnameForJS(ti) << "(" << (raw == "null" ? "" : raw) << ")";
+        js << "new " << formatClassnameForJS(ti) << "(" << (raw == "null" ? "" : raw) << ")";
     } else if (ti.type == SerializeTypeInfo::Container) {
         if (ti.typeName.startsWith("Pair<")) {
             if (raw == "null") js << "["
-                << formatJSTypeConstruction(ti.bases[0], "null", useFactory) << ", "
-                << formatJSTypeConstruction(ti.bases[1], "null", useFactory) << "]";
+                << formatJSTypeConstruction(ti.bases[0], "null") << ", "
+                << formatJSTypeConstruction(ti.bases[1], "null") << "]";
             else js << "(!" << raw << " ? ["
-                << formatJSTypeConstruction(ti.bases[0], "null", useFactory) << ", "
-                << formatJSTypeConstruction(ti.bases[1], "null", useFactory) << "] : ["
-                << formatJSTypeConstruction(ti.bases[0], raw + "[0]", useFactory) << ", "
-                << formatJSTypeConstruction(ti.bases[1], raw + "[1]", useFactory) << "])";
+                << formatJSTypeConstruction(ti.bases[0], "null") << ", "
+                << formatJSTypeConstruction(ti.bases[1], "null") << "] : ["
+                << formatJSTypeConstruction(ti.bases[0], raw + "[0]") << ", "
+                << formatJSTypeConstruction(ti.bases[1], raw + "[1]") << "])";
         } else if (ti.typeName.startsWith("List<")) {
             if (raw == "null") js << "[]";
             else js << "(" << raw << " || []).map(function(__e) { return "
-                << formatJSTypeConstruction(ti.bases[0], "__e", useFactory) << "; })";
+                << formatJSTypeConstruction(ti.bases[0], "__e") << "; })";
         } else if (ti.typeName.startsWith("Map<")) {
             if (raw == "null") js << "[]";
             else js << "(" << raw << " || []).map(function(__e) { return ["
-                << formatJSTypeConstruction(ti.bases[0], "__e[0]", useFactory)
+                << formatJSTypeConstruction(ti.bases[0], "__e[0]")
                 << ", "
-                << formatJSTypeConstruction(ti.bases[1], "__e[1]", useFactory) << "]; })";
+                << formatJSTypeConstruction(ti.bases[1], "__e[1]") << "]; })";
         }
     } else if (ti.type == SerializeTypeInfo::Basic) {
         if (ti.typeName == "DateTime") {
@@ -178,53 +177,18 @@ String formatJSTypeConstruction(const SerializeTypeInfo & ti, const String & raw
     return js;
 }
 
-String getTSTypename(const SerializeTypeInfo & ti)
-{
-    String ts;
-    if (ti.type == SerializeTypeInfo::Class) {
-        ts << formatClassnameForJS(ti);
-    } else if (ti.type == SerializeTypeInfo::Container) {
-        if (ti.typeName.startsWith("Pair<")) {
-            ts << "[" << getTSTypename(ti.bases[0]) << ", " << getTSTypename(ti.bases[1]) << "]";
-        } else if (ti.typeName.startsWith("List<")) {
-            ts << "Array<" << getTSTypename(ti.bases[0]) << ">";
-        } else if (ti.typeName.startsWith("Map<")) {
-            ts << "Array<[" << getTSTypename(ti.bases[0]) << ", " << getTSTypename(ti.bases[1]) << "]>";
-        }
-    } else if (ti.type == SerializeTypeInfo::Basic) {
-        if (ti.typeName == "DateTime") {
-            ts << "Date";
-        } else if (ti.typeName == "String") {
-            ts << "string";
-        } else if (ti.typeName == "ByteArray") {
-            ts << "Uint8Array";
-        } else if (ti.typeName.indexOf("int") != -1 || ti.typeName.indexOf("float") != -1) {
-            ts << "number";
-        } else if (ti.typeName == "bool" || ti.typeName == "tribool") {
-            ts << "boolean";
-        }
-    }
-    return ts;
-}
-
-String getJSParameters(const List<SerializeVariableTypeInfo> & parameters, bool withType)
+String getJSParameters(const SerializeFunctionTypeInfo & func)
 {
     String js;
     bool isFirst = true;
     int id = 0;
-    for (const auto & p : parameters) {
+    for (const auto & p : func.parameters) {
         if (isFirst) isFirst = false;
         else js << ", ";
         if (p.name.isEmpty()) js << "__param_" << String::number(++id);
         else js << p.name;
-        if (withType) js << ": " << getTSTypename(p.type);
     }
     return js;
-}
-
-String getJSParameters(const SerializeFunctionTypeInfo & func, bool withType)
-{
-    return getJSParameters(func.parameters, withType);
 }
 
 String getSerializeCode(const SerializeTypeInfo & ti, const String & name)
@@ -275,26 +239,25 @@ String getSerializeCode(const SerializeTypeInfo & ti, const String & name)
     return js;
 }
 
-String getDeserializeCode(const SerializeTypeInfo & ti, bool useFactory)
+String getDeserializeCode(const SerializeTypeInfo & ti)
 {
     String js;
     if (ti.type == SerializeTypeInfo::Class) {
         String cl = ti.getName();
         cl.replace("::", "__");
-        if (useFactory) js << cl << ".new(__D.a())";
-        else            js << "new " << cl << "(__D.a())";
+        js << "new " << cl << "(__D.a())";
     } else if (ti.type == SerializeTypeInfo::Container) {
         if (ti.typeName.startsWith("Pair<")) {
             js    << "(function(__data) { var __D = __ber.D(__data); return ["
-                << getDeserializeCode(ti.bases[0], useFactory) << ", "
-                << getDeserializeCode(ti.bases[1], useFactory) << "]; })(__D.a())";
+                << getDeserializeCode(ti.bases[0]) << ", "
+                << getDeserializeCode(ti.bases[1]) << "]; })(__D.a())";
         } else if (ti.typeName.startsWith("List<")) {
             js    << "__D.map(function(__D) { return "
-                << getDeserializeCode(ti.bases[0], useFactory) << "; })";
+                << getDeserializeCode(ti.bases[0]) << "; })";
         } else if (ti.typeName.startsWith("Map<")) {
             js    << "__D.map(function(__D) { return ["
-                << getDeserializeCode(ti.bases[0], useFactory) << ", "
-                << getDeserializeCode(ti.bases[1], useFactory) << "]; })";
+                << getDeserializeCode(ti.bases[0]) << ", "
+                << getDeserializeCode(ti.bases[1]) << "]; })";
         } else {
             logWarn("no code for Container type '%1'", ti.typeName);
         }
@@ -324,21 +287,16 @@ String getDeserializeCode(const SerializeTypeInfo & ti, bool useFactory)
     return js;
 }
 
-String getSerializeJSParameters(const List<SerializeVariableTypeInfo> & parameters)
+String getSerializeJSParameters(const SerializeFunctionTypeInfo & func)
 {
     String js;
     int id = 0;
-    for (const auto & p : parameters) {
+    for (const auto & p : func.parameters) {
         String name = p.name;
         if (name.isEmpty()) name << "__param_" << String::number(++id);
         js << getSerializeCode(p.type, name);
     }
     return js;
-}
-
-String getSerializeJSParameters(const SerializeFunctionTypeInfo & func)
-{
-    return getSerializeJSParameters(func.parameters);
 }
 
 bool isDerivedFrom(const SerializeTypeInfo & derived, const SerializeTypeInfo & base)
@@ -410,13 +368,11 @@ void RMIServerBase::exportTo(const String & dest) const
     cflib::util::mkPath(dest + "/js/services");
     Set<String> files;
     for (const String & name : services_.keys()) {
-        for (const String & suffix : StringList{".mjs"/*, ".ts"*/}) {
-            String file = name + suffix;
-            files << file;
-            String service = "services/" + file;
-            String js = generateJSOrTS(service);
-            cflib::util::writeFile(dest + "/js/" + service, js.toUtf8());
-        }
+        String file = name + ".mjs";
+        files << file;
+        String service = "services/" + file;
+        String js = generateJS(service);
+        cflib::util::writeFile(dest + "/js/" + service, js.toUtf8());
     }
 
     // remove old
@@ -455,7 +411,7 @@ void RMIServerBase::handleRequest(const Request & request)
         if      (path.startsWith("services")) showServices(request, path.mid(8));
         else if (path.startsWith("classes" )) showClasses (request, path.mid(7));
         else if (path.startsWith("js/"     )) {
-            String js = generateJSOrTS(path.mid(3));
+            String js = generateJS(path.mid(3));
             if (!js.isNull()) request.sendText(js, "application/javascript");
         } else request.sendNotFound();
     } else if (path == "/api") {
@@ -549,7 +505,6 @@ void RMIServerBase::showServices(const Request & request, String path) const
     info <<
         "<h3>Service: <b>" << ti.typeName << "</b></h3>\n"
         "JavaScript File: <a href=\"/api/js/services/" << path << ".mjs\">/api/js/services/" << path << ".mjs</a><br>\n"
-        "TypeScript File: <a href=\"/api/js/services/" << path << ".ts\">/api/js/services/" << path << ".ts</a>\n"
         "<h4>Methods:</h4>\n"
         "<ul>\n";
     for (const auto & func : ti.functions) {
@@ -592,7 +547,6 @@ void RMIServerBase::showClasses(const Request & request, String path) const
     info <<
         "<h3>Class: <b>" << ti.getName() << "</b></h3>\n"
         "JavaScript File: <a href=\"/api/js/" << path << ".mjs\">/api/js/" << path << ".mjs</a><br>\n"
-        "TypeScript File: <a href=\"/api/js/" << path << "dao.ts\">/api/js/" << path << "dao.ts</a><br>\n"
         "<br>\n"
         "Base: ";
     if (ti.bases.empty()) {
@@ -633,11 +587,9 @@ void RMIServerBase::classesToHTML(String & info, const ClassInfoEl & infoEl) con
     }
 }
 
-String RMIServerBase::generateJSOrTS(const String & path) const
+String RMIServerBase::generateJS(const String & path) const
 {
-    const bool isTS = path.endsWith(".ts");
-    if (!path.endsWith(".mjs") && !isTS) return String();
-    const SerializeTypeInfo ti = getTypeInfo(path.left(path.length() - (isTS && path.endsWith("dao.ts") ? 6 : 4)));
+    const SerializeTypeInfo ti = getTypeInfo(path.left(path.length() - 4));
     if (ti.getName().isEmpty()) return String();
 
     String rv;
@@ -646,9 +598,7 @@ String RMIServerBase::generateJSOrTS(const String & path) const
         "// Generated by CFLib\n"
         "// ============================================================================\n"
         "\n";
-
-    if (isTS) rv << generateTS(ti);
-    else      rv << generateJS(ti);
+    rv << generateJS(ti);
 
     return rv;
 }
@@ -682,41 +632,6 @@ String RMIServerBase::generateJS(const SerializeTypeInfo & ti) const
     else           js << generateJSForClass(ti);
 
     return js;
-}
-
-String RMIServerBase::generateTS(const SerializeTypeInfo & ti) const
-{
-    const bool isService = !ti.functions.empty() || !ti.cfSignals.empty();
-    const String cflibPath = ti.ns.startsWith("cflib::") && !isService ? "../../cflib/" : "../cflib/";
-
-    String ts;
-    ts <<
-        "/* tslint:disable */\n"
-        "\n";
-
-    if (!ti.cfSignals.empty()) ts << "import {Observable} from 'rxjs/Observable';\n";
-
-    ts <<
-        "import {ber as __ber} from '" << cflibPath << "net/ber';\n";
-    if (isService)               ts << "import {rmi as __rmi} from '" << cflibPath << "net/rmi';\n";
-    else if (ti.bases.empty()) ts << "import {ModelBase as __modelBase} from '" << (ti.ns.startsWith("cflib::") ? "../" : "") << "../models/modelbase';\n";
-    if (!ti.cfSignals.empty()) ts << "import {RemoteSignal as __RSig} from '" << cflibPath << "net/rsig';\n";
-    for (String type : getMemberTypes(ti)) {
-        String typePath = type.toLower();
-        String typeName = type;
-        typePath.replace("::", "/");
-        typePath = Regex("^dao/").replaceAll(typePath, "models/");
-        typePath = Regex("^cflib/dao/").replaceAll(typePath, "models/cflib/");
-        typeName.replace("::", "__");
-        if (type.contains("::")) type = type.mid(type.lastIndexOf("::") + 2);
-        ts << "import {" << type << " as " << typeName << "} from '../" << typePath << "';\n";
-    }
-    ts << "\n";
-
-    if (isService) ts << generateTSForService(ti);
-    else           ts << generateTSForClass(ti);
-
-    return ts;
 }
 
 SerializeTypeInfo RMIServerBase::getTypeInfo(const String & path) const
@@ -793,7 +708,7 @@ String RMIServerBase::generateJSForClass(const SerializeTypeInfo & ti) const
         "        __D.n();\n";
     if (!base.isEmpty()) js << "        " << nsPrefix << typeName << ".__super.call(this, __D.a());\n";
     for (const auto & vti : ti.members) {
-        js << "        this." << formatMembernameForJS(vti) << " = " << getDeserializeCode(vti.type, false) << ";\n";
+        js << "        this." << formatMembernameForJS(vti) << " = " << getDeserializeCode(vti.type) << ";\n";
     }
     js <<
         "    } else {\n";
@@ -802,7 +717,7 @@ String RMIServerBase::generateJSForClass(const SerializeTypeInfo & ti) const
         "        if (!param || typeof param != 'object') param = {};\n";
     for (const auto & vti : ti.members) {
         const String name = formatMembernameForJS(vti);
-        js << "        this." << name << " = " << formatJSTypeConstruction(vti.type, "param." + name, false) << ";\n";
+        js << "        this." << name << " = " << formatJSTypeConstruction(vti.type, "param." + name) << ";\n";
     }
     js <<
         "    }\n"
@@ -847,7 +762,7 @@ String RMIServerBase::generateJSForService(const SerializeTypeInfo & ti) const
                 for (const SerializeVariableTypeInfo & p : func.parameters) {
                     if (isFirst2) isFirst2 = false;
                     else          js << ", ";
-                    js << getDeserializeCode(p.type, false);
+                    js << getDeserializeCode(p.type);
                 }
                 js << "); })";
             }
@@ -858,40 +773,32 @@ String RMIServerBase::generateJSForService(const SerializeTypeInfo & ti) const
     }
 
     for (const auto & func : ti.functions) {
-        const bool hasRV = func.hasReturnValues();
-        if (func.parameters.empty()) {
-            js << objName << '.' << func.name << " = function(" << (hasRV ? "callback, context" : "") << ") {\n"
-                "    __rmi.send" << (hasRV ? "Request" : "Async") << "(__ber.S().s('"
-                << ti.typeName.toLower() << "').s('" << func.signature() << "').box(2)";
-        } else {
-            js << objName << '.' << func.name << " = function("
-                << getJSParameters(func, false) << (hasRV ? ", callback, context" : "") << ") {\n"
-                "    __rmi.send" << (hasRV ? "Request" : "Async") << "(__ber.S().s('"
-                << ti.typeName.toLower() << "').s('" << func.signature() << "')" << getSerializeJSParameters(func) << ".box(2)";
-        }
-
-        if (!hasRV) {
-            js << ");\n"
+        if (!func.hasReturnValues()) {
+            js << objName << '.' << func.name << " = function(" << getJSParameters(func) << ") {\n"
+                "    __rmi.sendAsync(__ber.S().s('"
+                << ti.typeName.toLower() << "').s('" << func.signature() << "')" << getSerializeJSParameters(func) << ".box(2));\n"
                 "};\n"
                 "\n";
             continue;
         }
 
-        js <<
-            ",\n"
-            "        callback ? function(__data) {\n"
-            "            var __D = __ber.D(__data);\n"
-            "            callback.call(context";
-        if (func.returnType.type != SerializeTypeInfo::Null) {
-            js << ", " << getDeserializeCode(func.returnType, false);
-        }
+        js << objName << '.' << func.name << " = function(" << getJSParameters(func)
+            << (func.parameters.empty() ? "" : ", ") << "callback, context) {\n"
+            "    let __call = __replyFunc => __rmi.sendRequest(__ber.S().s('"
+            << ti.typeName.toLower() << "').s('" << func.signature() << "')" << getSerializeJSParameters(func) << ".box(2), __data => {\n"
+            "        let __D = __ber.D(__data);\n"
+            "        __replyFunc(";
+        if (func.returnValueCount() > 1) js << '[';
+        if (func.returnType.type != SerializeTypeInfo::Null) js << getDeserializeCode(func.returnType);
         for (const auto & p : func.parameters) {
             if (!p.isRef) continue;
-            js << ", " << getDeserializeCode(p.type, false);
+            js << ", " << getDeserializeCode(p.type);
         }
-        js <<
-            ");\n"
-            "        } : null);\n"
+        if (func.returnValueCount() > 1) js << ']';
+        js << ");\n"
+            "    });\n"
+            "    if (callback) __call(__rv => { callback." << (func.returnValueCount() > 1 ? "apply" : "call") << "(context, __rv); });\n"
+            "    else return new Promise(__call);\n"
             "};\n"
             "\n";
     }
@@ -900,240 +807,15 @@ String RMIServerBase::generateJSForService(const SerializeTypeInfo & ti) const
     return js;
 }
 
-String RMIServerBase::generateTSForClass(const SerializeTypeInfo & ti) const
-{
-    String base;
-    if (!ti.bases.empty()) {
-        base = ti.bases[0].getName();
-        base.replace("::", "__");
-    }
-
-    String typeName = ti.typeName;
-    if (typeName.contains("::")) typeName = typeName.mid(typeName.lastIndexOf("::") + 2);
-
-    String ts;
-    ts << "export abstract class " << typeName << "Dao extends " << (!base.isEmpty() ? base : "__modelBase") << " {\n"
-        "\n";
-
-    if (ti.classId != 0) ts << "    static __classId: number = " << String::number(ti.classId) << ";\n";
-    if (!ti.members.empty()) {
-        for (const auto & vti : ti.members) {
-            ts << "    " << formatMembernameForJS(vti) << ": " << getTSTypename(vti.type) << ";\n";
-        }
-    }
-    if (ti.classId != 0 || !ti.members.empty()) ts << "\n";
-
-    ts <<
-        "    constructor(param?) {\n";
-    if (base.isEmpty()) ts << "        super(param);\n";
-    ts <<
-        "        if (param instanceof Uint8Array) {\n"
-        "            var __D = __ber.D(param);\n"
-        "            __D.n();\n";
-    if (!base.isEmpty()) ts << "            super(__D.a());\n";
-    for (const auto & vti : ti.members) {
-        ts << "            this." << formatMembernameForJS(vti) << " = " << getDeserializeCode(vti.type, true) << ";\n";
-    }
-
-    ts <<
-        "        } else {\n";
-    if (!base.isEmpty()) ts << "            super(param);\n";
-    ts <<
-        "            if (!param || typeof param != 'object') param = {};\n";
-
-    for (const auto & vti : ti.members) {
-        const String name = formatMembernameForJS(vti);
-        ts << "            this." << name << " = " << formatJSTypeConstruction(vti.type, "param." + name, true) << ";\n";
-    }
-    ts <<
-        "        }\n"
-        "    }\n"
-        "\n"
-        "    protected __serialize(__S): void {\n"
-        "        __S.";
-    if (ti.classId != 0) ts << "i(" << typeName << "Dao.__classId)";
-    else                 ts << "n()";
-    if (!base.isEmpty()) ts << ".o(this, super.__serialize)";
-    for (const auto & vti : ti.members) {
-        ts << getSerializeCode(vti.type, "this." + formatMembernameForJS(vti));
-    }
-    ts << ".data();\n"
-        "    }\n"
-        "\n";
-
-    ts <<
-        "    static new(model): any {\n";
-    if (ti.classId != 0) ts << "        __ber.ClassRegistry.set(" << typeName << "Dao.__classId, model);\n";
-    ts <<
-        "        return __ber.dynamicCreate(model);\n"
-        "    }\n"
-        "\n"
-        "}\n";
-
-    return ts;
-}
-
-String RMIServerBase::generateTSForService(const SerializeTypeInfo & ti) const
-{
-    String objName = ti.typeName;
-    { char c = ti.typeName[0]; if (c >= 'A' && c <= 'Z') c += 32; objName[0] = c; }
-    String ts;
-
-    for (const auto & func : ti.cfSignals) {
-        String funcTypename = func.name;
-        { char c = func.name[0]; if (c >= 'a' && c <= 'z') c -= 32; funcTypename[0] = c; }
-        ts << "interface __" << funcTypename << " {\n"
-            "    register(" << getJSParameters(func.registerParameters, true) << "): Observable<";
-        if (func.parameters.size() > 1) ts << "[";
-        bool isFirst = true;
-        for (const auto & p : func.parameters) {
-            if (isFirst) isFirst = false;
-            else         ts << ", ";
-            ts << getTSTypename(p.type);
-        }
-        if (func.parameters.size() > 1) ts << "]";
-        ts << ">;\n"
-            "}\n"
-            "\n";
-    }
-
-    ts <<
-        "export class " << ti.typeName << " {\n"
-        "\n";
-
-    if (!ti.cfSignals.empty()) {
-        ts << "    rsig: {\n";
-        bool isFirst = true;
-        for (const auto & func : ti.cfSignals) {
-            if (isFirst) isFirst = false;
-            else         ts << ",\n";
-            String funcTypename = func.name;
-            { char c = func.name[0]; if (c >= 'a' && c <= 'z') c -= 32; funcTypename[0] = c; }
-            ts << "        " << func.name << ": __" << funcTypename;
-        }
-        ts << "\n"
-            "    };\n"
-            "\n"
-            "    constructor() {\n"
-            "        this.rsig = {\n";
-
-        isFirst = true;
-        for (const auto & func : ti.cfSignals) {
-            if (isFirst) isFirst = false;
-            else         ts << ",\n";
-
-            ts << "            " << func.name << ": new __RSig(\n"
-                "                '" << ti.typeName.toLower() << "', '" << func.name << "',\n"
-                "                function(";
-            if (func.registerParameters.empty()) {
-                ts << ") {},\n";
-            } else {
-                ts << "__S, " << getJSParameters(func.registerParameters, false) << ") {\n"
-                    "                    __S" << getSerializeJSParameters(func.registerParameters) << ";\n"
-                    "                },\n";
-            }
-
-            ts << "                function(__data) {\n"
-                "                    var __D = __ber.D(__data);\n"
-                "                    return ";
-            if (func.parameters.size() > 1) ts << "[";
-
-            bool isFirst = true;
-            for (const auto & p : func.parameters) {
-                if (isFirst) isFirst = false;
-                else          ts << ", ";
-                ts << getDeserializeCode(p.type, true);
-            }
-
-            if (func.parameters.size() > 1) ts << "]";
-            ts << ";\n"
-                "                }\n"
-                "            )";
-        }
-
-        ts << "\n"
-            "        };\n"
-            "    }\n"
-            "\n";
-    }
-
-    for (const auto & func : ti.functions) {
-        const uint rvCount = func.returnValueCount();
-
-        ts << "    " << func.name << "(" << getJSParameters(func, true) << "): ";
-        if (rvCount == 0) {
-            ts << "void";
-        } else {
-            ts << "Promise<";
-            if (rvCount > 1) ts << "[";
-            bool isFirst = true;
-            if (func.returnType.type != SerializeTypeInfo::Null) {
-                ts << getTSTypename(func.returnType);
-                isFirst = false;
-            }
-            for (const auto & p : func.parameters) {
-                if (!p.isRef) continue;
-                if (isFirst) isFirst = false;
-                else         ts << ", ";
-                ts << getTSTypename(p.type);
-            }
-            if (rvCount > 1) ts << "]";
-            ts << ">";
-        }
-        ts << " {\n"
-            "        " << (rvCount > 0 ? "return " : "") << "__rmi.send" << (rvCount > 0 ? "Request" : "Async") << "(__ber.S().s('"
-            << ti.typeName.toLower() << "').s('" << func.signature() << "')" << getSerializeJSParameters(func) << ".box(2)";
-
-        if (rvCount == 0) {
-            ts << ");\n"
-                "    }\n"
-                "\n";
-            continue;
-        }
-
-        ts <<
-            ",\n"
-            "            function(__data) {\n"
-            "                var __D = __ber.D(__data);\n"
-            "                return ";
-        if (rvCount > 1) ts << "[";
-        bool isFirst = true;
-        if (func.returnType.type != SerializeTypeInfo::Null) {
-            ts << getDeserializeCode(func.returnType, true);
-            isFirst = false;
-        }
-        for (const auto & p : func.parameters) {
-            if (!p.isRef) continue;
-            if (isFirst) isFirst = false;
-            else         ts << ", ";
-            ts << getDeserializeCode(p.type, true);
-        }
-        if (rvCount > 1) ts << "]";
-        ts << ";\n"
-            "            });\n"
-            "    }\n"
-            "\n";
-    }
-
-    ts <<
-        "}\n"
-        "\n"
-        "export const " << objName << ": " << ti.typeName << " = new " << ti.typeName << "();";
-
-    return ts;
-}
-
 Set<String> RMIServerBase::exportClass(const ClassInfoEl & cl, const String & path, const String & dest) const
 {
     Set<String> rv;
     if (cl.infos.empty()) {
         if (path.isEmpty()) return rv;
-        for (const String & suffix : StringList{".mjs"/*, "dao.ts"*/}) {
-            String cl = path + suffix;
-            rv << cl;
-            String js = generateJSOrTS(cl);
-            cflib::util::writeFile(dest + "/js/" + cl, js.toUtf8());
-        }
+        String cl = path + ".mjs";
+        rv << cl;
+        String js = generateJS(cl);
+        cflib::util::writeFile(dest + "/js/" + cl, js.toUtf8());
     } else {
         cflib::util::mkPath(dest + "/js/" + path);
         String p = path;

@@ -95,14 +95,11 @@ private:
     void showServices(const Request & request, String path) const;
     void showClasses(const Request & request, String path) const;
     void classesToHTML(String & info, const ClassInfoEl & infoEl) const;
-    String generateJSOrTS(const String & path) const;
+    String generateJS(const String & path) const;
     String generateJS(const serialize::SerializeTypeInfo & ti) const;
-    String generateTS(const serialize::SerializeTypeInfo & ti) const;
     cflib::serialize::SerializeTypeInfo getTypeInfo(const String & path) const;
     String generateJSForClass(const cflib::serialize::SerializeTypeInfo & ti) const;
     String generateJSForService(const cflib::serialize::SerializeTypeInfo & ti) const;
-    String generateTSForClass(const cflib::serialize::SerializeTypeInfo & ti) const;
-    String generateTSForService(const cflib::serialize::SerializeTypeInfo & ti) const;
     Set<String> exportClass(const ClassInfoEl & cl, const String & path, const String & dest) const;
     void addClassInfo(const cflib::serialize::SerializeTypeInfo & ti);
 
