@@ -9,7 +9,7 @@ cmake_minimum_required(VERSION 3.28)
 project(
     cflib
     VERSION 1.0.0
-    LANGUAGES CXX
+    LANGUAGES C CXX
 )
 
 if("${CMAKE_CURRENT_LIST_DIR}" STREQUAL "${CMAKE_SOURCE_DIR}")

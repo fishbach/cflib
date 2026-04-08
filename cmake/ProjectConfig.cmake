@@ -26,6 +26,7 @@ endif()
 option(ENABLE_CCACHE "enable ccache"                    ON)
 option(ENABLE_PCH    "enable precompiled headers (PCH)" ON)
 option(ENABLE_PSQL   "enable PostgreSQL"                OFF)
+option(ENABLE_SQLITE "enable SQLite"                    OFF)
 
 # C++20
 set(CMAKE_CXX_STANDARD 20)
@@ -46,9 +47,14 @@ if(ENABLE_PCH)
     message(STATUS "Using PCH")
 endif()
 
-# PCH
+# PostgreSQL
 if(ENABLE_PSQL)
     message(STATUS "Building PostgreSQL parts")
+endif()
+
+# SQLite
+if(ENABLE_SQLITE)
+    message(STATUS "Building SQLite parts")
 endif()
 
 # Warnings
@@ -59,7 +65,7 @@ else()
         -Wall -Wextra -Wpedantic
         # -Wcast-align
         # -Wconversion
-        -Wdouble-promotion
+        # -Wdouble-promotion
         -Wformat=2
         # -Wnon-virtual-dtor
         -Wnull-dereference
