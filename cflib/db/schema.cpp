@@ -155,6 +155,9 @@ size_t findRevisionDirective(const String & query, size_t startPos, size_t & mat
             continue;
         }
 
+        // skip spaces
+        while (pos < len && (data[pos] == ' ' || data[pos] == '\t')) ++pos;
+
         // Check for "-- REVISION "
         if (pos + 12 <= len &&
             data[pos] == '-' && data[pos+1] == '-' && data[pos+2] == ' ' &&
