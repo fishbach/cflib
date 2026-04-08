@@ -7,9 +7,17 @@
 
 #include "schema.h"
 
-#include <cflib/db/psql/psql.h>
 #include <cflib/util/log.h>
 #include <cflib/util/util.h>
+
+#ifdef ENABLE_PSQL
+    #include <cflib/db/psql/psql.h>
+#endif
+#ifdef ENABLE_SQLITE
+    #include <cflib/db/sqlite/sqlite.h>
+#endif
+
+#define SqlConn S sql(&::cflib_util_logFileInfo, __LINE__)
 
 USE_LOG(LogCat::Db)
 
@@ -17,9 +25,10 @@ namespace cflib::db::schema {
 
 namespace {
 
+template<typename S>
 bool insertRevision(const String & rev)
 {
-    PSqlConn;
+    SqlConn;
     sql.prepare(
         "INSERT INTO "
             "__scheme_revisions__ "
@@ -33,9 +42,10 @@ bool insertRevision(const String & rev)
     return sql.exec();
 }
 
+template<typename S>
 bool confirmRevision(const String & rev)
 {
-    PSqlConn;
+    SqlConn;
     sql.prepare(
         "UPDATE "
             "__scheme_revisions__ "
@@ -79,12 +89,13 @@ String removeComments(const String & query)
     return result;
 }
 
+template<typename S>
 bool execSql(const String & query)
 {
     String cleanQuery = removeComments(query).trimmed();
     if (cleanQuery.isEmpty()) return true;
 
-    PSqlConn;
+    SqlConn;
     logDebug("executing: %1", cleanQuery);
     return sql.execMultiple(cleanQuery);
 }
@@ -165,6 +176,7 @@ size_t findRevisionDirective(const String & query, size_t startPos, size_t & mat
     return (size_t)-1;
 }
 
+template<typename S>
 bool execRevision(const String & query, Migrator & migrator)
 {
     size_t start = 0;
@@ -173,7 +185,7 @@ bool execRevision(const String & query, Migrator & migrator)
     size_t matchStart = findExecDirective(query, start, matchEnd, method);
 
     while (matchStart != (size_t)-1) {
-        if (!execSql(query.mid(start, matchStart - start))) return false;
+        if (!execSql<S>(query.mid(start, matchStart - start))) return false;
 
         if (!migrator) {
             logWarn("found EXEC in SQL, but no migrator given");
@@ -190,19 +202,21 @@ bool execRevision(const String & query, Migrator & migrator)
         start = matchEnd;
         matchStart = findExecDirective(query, start, matchEnd, method);
     }
-    return execSql(query.mid(start));
+    return execSql<S>(query.mid(start));
 }
 
 }
 
+template<typename S>
 bool update(Migrator migrator, const String & filename)
 {
-    return update(util::readFile(filename), migrator);
+    return update<S>(util::readFile(filename), migrator);
 }
 
+template<typename S>
 bool update(const ByteArray & schema, Migrator migrator)
 {
-    PSqlConn;
+    SqlConn;
 
     // get existing revisions
     Set<String> existingRevisions;
@@ -218,7 +232,7 @@ bool update(const ByteArray & schema, Migrator migrator)
         )) return false;
     } else {
         while (sql.next()) {
-            existingRevisions.insert(sql.get<String>(0));
+            existingRevisions.insert(sql.template get<String>(0));
         }
     }
 
@@ -233,11 +247,11 @@ bool update(const ByteArray & schema, Migrator migrator)
     while (matchStart != (size_t)-1) {
         if (existingRevisions.find(lastRev) == existingRevisions.end()) {
             logInfo("applying revision %1", lastRev);
-            if (!insertRevision(lastRev)) return false;
-            PSqlConn;
+            if (!insertRevision<S>(lastRev)) return false;
+            SqlConn;
             sql.begin();
-            if (!execRevision(utf8Schema.mid(start, matchStart - start), migrator)) return false;
-            if (!confirmRevision(lastRev)) return false;
+            if (!execRevision<S>(utf8Schema.mid(start, matchStart - start), migrator)) return false;
+            if (!confirmRevision<S>(lastRev)) return false;
             if (!sql.commit()) return false;
         }
 
@@ -248,15 +262,24 @@ bool update(const ByteArray & schema, Migrator migrator)
 
     if (existingRevisions.find(lastRev) == existingRevisions.end()) {
         logInfo("applying revision %1", lastRev);
-        if (!insertRevision(lastRev)) return false;
-        PSqlConn;
+        if (!insertRevision<S>(lastRev)) return false;
+        SqlConn;
         sql.begin();
-        if (!execRevision(utf8Schema.mid(start), migrator)) return false;
-        if (!confirmRevision(lastRev)) return false;
+        if (!execRevision<S>(utf8Schema.mid(start), migrator)) return false;
+        if (!confirmRevision<S>(lastRev)) return false;
         if (!sql.commit()) return false;
     }
 
     return true;
 }
+
+#ifdef ENABLE_PSQL
+    template bool update<PSql>(Migrator migrator, const String & filename);
+    template bool update<PSql>(const ByteArray & schema, Migrator migrator);
+#endif
+#ifdef ENABLE_SQLITE
+    template bool update<SQLite>(Migrator migrator, const String & filename);
+    template bool update<SQLite>(const ByteArray & schema, Migrator migrator);
+#endif
 
 } // namespace

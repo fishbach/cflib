@@ -15,14 +15,16 @@ namespace cflib::db::schema {
 
 typedef std::function<bool (const ByteArray & name)> Migrator;
 
+template<typename S>
 bool update(Migrator migrator, const String & filename);
+template<typename S>
 bool update(const ByteArray & schema, Migrator migrator = Migrator());
 
-template<typename M>
+template<typename S, typename M>
 bool update(const String & filename = ":/schema.sql")
 {
     M migrator;
-    return update(
+    return update<S>(
         [&migrator](const ByteArray & name) { return migrator.migrate(name); },
         filename);
 }

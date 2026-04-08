@@ -6,7 +6,7 @@
  */
 
 #include <cflib/db/psql/psql.h>
-#include <cflib/db/psql/schema.h>
+#include <cflib/db/schema.h>
 #include <cflib/util/cmdline.h>
 #include <cflib/util/log.h>
 #include <cflib/util/util.h>
@@ -67,7 +67,7 @@ int main(int argc, char *argv[])
     }
 
     String schemaFile = String::fromUtf8(schemaArg.value());
-    if (!schema::update(migrator, schemaFile))
+    if (!schema::update<PSql>(migrator, schemaFile))
     {
         logCritical("could not update db schema");
         std::cerr << "could not update db schema\n";

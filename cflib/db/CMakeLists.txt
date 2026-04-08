@@ -12,6 +12,7 @@ endif()
 if(ENABLE_PSQL)
     cf_find_sources(PSQL_SOURCES psql)
     target_sources(cflib_db PRIVATE ${PSQL_SOURCES})
+    target_compile_definitions(cflib_db PRIVATE ENABLE_PSQL)
     target_link_libraries(cflib_db PRIVATE PostgreSQL::PostgreSQL)
 
     add_subdirectory(migrationmoped)
@@ -25,6 +26,7 @@ if(ENABLE_SQLITE)
         URL https://sqlite.org/2026/sqlite-amalgamation-3510300.zip
     )
     FetchContent_MakeAvailable(sqlite3_src)
+
     target_sources(cflib_db PRIVATE ${sqlite3_src_SOURCE_DIR}/sqlite3.c)
     set_source_files_properties(${sqlite3_src_SOURCE_DIR}/sqlite3.c PROPERTIES SKIP_PRECOMPILE_HEADERS ON)
     target_include_directories(cflib_db PRIVATE ${sqlite3_src_SOURCE_DIR})
@@ -32,4 +34,5 @@ if(ENABLE_SQLITE)
 
     cf_find_sources(SQLITE_SOURCES sqlite)
     target_sources(cflib_db PRIVATE ${SQLITE_SOURCES})
+    target_compile_definitions(cflib_db PRIVATE ENABLE_SQLITE)
 endif()

@@ -6,7 +6,7 @@
  */
 
 #include <cflib/db/psql/psql.h>
-#include <cflib/db/psql/schema.h>
+#include <cflib/db/schema.h>
 #include <cflib/util/log.h>
 #include <cflib/util/test.h>
 #include <cflib/util/util.h>
@@ -104,7 +104,7 @@ public:
 
     void basic_test()
     {
-        TVERIFY((schema::update<Migrator>(String(SCHEMA_SQL_PATH))));
+        TVERIFY((schema::update<PSql, Migrator>(String(SCHEMA_SQL_PATH))));
 
         PSqlConn;
         TVERIFY(sql.exec("SELECT key, value, value2, value3, value4 FROM config ORDER BY key"));
@@ -136,14 +136,14 @@ public:
     void update_test()
     {
         ByteArray schema = readFile(String(SCHEMA_SQL_PATH));
-        TVERIFY(schema::update(schema));
+        TVERIFY(schema::update<PSql>(schema));
 
         schema +=
             "-- REVISION neu\n"
             "\n"
             "INSERT INTO config (key) VALUES ('neu')\n"
         ;
-        TVERIFY(schema::update(schema));
+        TVERIFY(schema::update<PSql>(schema));
         PSqlConn;
         TVERIFY(sql.exec("SELECT COUNT(*) FROM config WHERE key = 'neu'"));
         TVERIFY(sql.next());
@@ -161,7 +161,7 @@ public:
 
     void empty_head_test()
     {
-        TVERIFY(schema::update(ByteArray(
+        TVERIFY(schema::update<PSql>(ByteArray(
             "-- REVISION first\n"
             "CREATE TABLE config (\n"
             "  key   text NOT NULL, \n"
