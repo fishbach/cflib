@@ -107,6 +107,12 @@ public:
     SQLite & operator>>(Null);
 
     template<typename T>
+    inline T get() {
+        T val; operator>>(val);
+        return val;
+    }
+
+    template<typename T>
     inline T get(uint field) {
         currentFieldId_ = field;
         T val; operator>>(val);
