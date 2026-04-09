@@ -11,7 +11,7 @@ function(cf_lib lib)
     cf_find_sources(sources . ${ARG_DIRS} OTHER_FILES ${ARG_OTHER_FILES})
     add_library(${lib} ${sources})
     cf_configure_target(${lib} ${ARG_ENABLE_EXCEPTIONS} "${ARG_PCH}" ${ARG_ENABLE_SER})
-    target_include_directories(${lib} INTERFACE "${PROJECT_SOURCE_DIR}")
+    target_include_directories(${lib} PUBLIC "${PROJECT_SOURCE_DIR}")
     target_link_libraries(${lib} PUBLIC ${ARG_PUBLIC} PRIVATE ${ARG_PRIVATE})
 endfunction()
 

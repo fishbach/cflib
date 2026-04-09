@@ -76,9 +76,6 @@ else()
     )
 endif()
 
-# add root include dir
-include_directories(${PROJECT_SOURCE_DIR})
-
 # enable tests
 enable_testing()
 

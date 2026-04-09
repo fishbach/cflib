@@ -16,7 +16,7 @@ namespace cflib::db::schema {
 typedef std::function<bool (const ByteArray & name)> Migrator;
 
 template<typename S>
-bool update(Migrator migrator, const String & filename);
+bool update(Migrator migrator = Migrator(), const String & filename = ":/schema.sql");
 template<typename S>
 bool update(const ByteArray & schema, Migrator migrator = Migrator());
 
