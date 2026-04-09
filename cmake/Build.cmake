@@ -17,11 +17,11 @@ endfunction()
 
 # application
 function(cf_app app)
-    cmake_parse_arguments(ARG "ENABLE_EXCEPTIONS;ENABLE_SER;ENABLE_GIT_VERSION;CF_INTERN" "PCH" "DIRS;OTHER_FILES" ${ARGN})
+    cmake_parse_arguments(ARG "ENABLE_EXCEPTIONS;ENABLE_SER;ENABLE_GIT_VERSION;CF_INTERN" "PCH" "DIRS;RESOURCES;OTHER_FILES" ${ARGN})
 
     cf_find_sources(sources . ${ARG_DIRS} OTHER_FILES ${ARG_OTHER_FILES})
     add_executable(${app} ${sources})
-    cf_configure_target(${app} ${ARG_ENABLE_EXCEPTIONS} "${ARG_PCH}" ${ARG_ENABLE_SER})
+    cf_configure_target(${app} ${ARG_ENABLE_EXCEPTIONS} "${ARG_PCH}" ${ARG_ENABLE_SER} ${ARG_RESOURCES})
     target_include_directories(${app} PRIVATE .)
     if(NOT ARG_CF_INTERN)
         set_target_properties(${app} PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${PROJECT_SOURCE_DIR}/bin")
@@ -56,11 +56,11 @@ endfunction()
 
 # test
 function(cf_test test lib)
-    cmake_parse_arguments(ARG "ENABLE_EXCEPTIONS;ENABLE_SER" "PCH" "DIRS" ${ARGN})
+    cmake_parse_arguments(ARG "ENABLE_EXCEPTIONS;ENABLE_SER" "PCH" "DIRS;RESOURCES" ${ARGN})
 
     cf_find_sources(sources . ${ARG_DIRS})
     add_executable(${test} ${sources})
-    cf_configure_target(${test} ${ARG_ENABLE_EXCEPTIONS} "${ARG_PCH}" ${ARG_ENABLE_SER})
+    cf_configure_target(${test} ${ARG_ENABLE_EXCEPTIONS} "${ARG_PCH}" ${ARG_ENABLE_SER} ${ARG_RESOURCES})
     target_link_libraries(${test} PRIVATE ${lib})
     add_test(NAME ${test} COMMAND ${test})
 endfunction()
@@ -119,11 +119,34 @@ function(cf_configure_target target enable_exceptions pch enable_ser)
                 OUTPUT "${source}"
                 COMMAND ${CMAKE_COMMAND} -E make_directory "${rel_dir}"
                 COMMAND ser serialize "${CMAKE_CURRENT_SOURCE_DIR}/${header}" "${source}"
-                DEPENDS "${header}"
+                DEPENDS ser "${header}"
+                VERBATIM
             )
             target_sources(${target} PRIVATE "${source}")
         endforeach()
     endif()
+
+    # resources
+    foreach(resource ${ARGN})
+        # get output filename (dir/resource.bin -> target_autogen/dir/resource.bin_rc.cpp)
+        set(rel_dir "${CMAKE_CURRENT_BINARY_DIR}/${target}_autogen")
+        get_filename_component(dir "${resource}" DIRECTORY)
+        if(dir)
+            set(rel_dir "${rel_dir}/${dir}")
+        endif()
+        set(source "${rel_dir}/${resource}_rc.cpp")
+
+        # add generation step
+        add_custom_command(
+            OUTPUT "${source}"
+            WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
+            COMMAND ${CMAKE_COMMAND} -E make_directory "${rel_dir}"
+            COMMAND bin2src "${resource}" "${source}"
+            DEPENDS bin2src "${resource}"
+            VERBATIM
+        )
+        target_sources(${target} PRIVATE "${source}")
+    endforeach()
 endfunction()
 
 # PCH

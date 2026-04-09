@@ -12,6 +12,7 @@ cf_lib(cflib_util
         impl/generate_templates.pl
 )
 
+add_subdirectory(bin2src)
 add_subdirectory(gitversion)
 add_subdirectory(jscombiner)
 add_subdirectory(util_test)

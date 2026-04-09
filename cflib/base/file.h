@@ -43,28 +43,21 @@ public:
     };
 
     File() : fp_(nullptr) {}
-    explicit File(const String & path) : path_(path.str()), fp_(nullptr) {}
+    explicit File(const String & path) : path_(path), fp_(nullptr) {}
     ~File() { close(); }
 
     File(File && other) : path_(std::move(other.path_)), fp_(other.fp_) { other.fp_ = nullptr; }
 
-    void setFileName(const String & path) { path_ = path.str(); }
+    void setFileName(const String & path) { path_ = path; }
 
     bool open(int fd, int mode) {
+        if (fp_) return false;
         const char * m = (mode & Append) ? "a" : ((mode & WriteOnly) ? "w" : "r");
         fp_ = fdopen(fd, m);
         return fp_ != nullptr;
     }
 
-    bool open(int mode) {
-        const char * m;
-        if ((mode & Append))                              m = "ab";
-        else if ((mode & Truncate) && (mode & WriteOnly)) m = "wb";
-        else if (mode & WriteOnly)                        m = "wb";
-        else                                              m = "rb";
-        fp_ = fopen(path_.c_str(), m);
-        return fp_ != nullptr;
-    }
+    bool open(int mode);
 
     void close() {
         if (fp_) { fclose(fp_); fp_ = nullptr; }
@@ -83,18 +76,10 @@ public:
 
     void flush() { if (fp_) fflush(fp_); }
 
-    ByteArray readAll() {
-        if (!fp_) return ByteArray();
-        ByteArray result;
-        char buf[4096];
-        size_t n;
-        while ((n = fread(buf, 1, sizeof(buf), fp_)) > 0)
-            result.append(buf, n);
-        return result;
-    }
+    ByteArray readAll();
 
     bool setPermissions(int perms) {
-        if (path_.empty()) return false;
+        if (path_.isEmpty()) return false;
         mode_t m = 0;
         if (perms & ReadOwner)  m |= S_IRUSR;
         if (perms & WriteOwner) m |= S_IWUSR;
@@ -107,7 +92,7 @@ public:
         return chmod(path_.c_str(), m) == 0;
     }
 
-    String fileName() const { return String(path_.c_str()); }
+    String fileName() const { return path_; }
     String errorString() const { return String(strerror(errno)); }
 
     static bool exists(const String & path) {
@@ -115,8 +100,10 @@ public:
         return stat(path.c_str(), &st) == 0;
     }
 
+    static void registerData(const String & file, const uint8 * data, size_t size);
+
 private:
-    std::string path_;
+    String path_;
     FILE * fp_;
 };
 

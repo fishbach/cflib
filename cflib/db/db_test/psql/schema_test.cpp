@@ -104,7 +104,7 @@ public:
 
     void basic_test()
     {
-        TVERIFY((schema::update<PSql, Migrator>(String(SCHEMA_SQL_PATH))));
+        TVERIFY((schema::update<PSql, Migrator>()));
 
         PSqlConn;
         TVERIFY(sql.exec("SELECT key, value, value2, value3, value4 FROM config ORDER BY key"));
@@ -135,7 +135,7 @@ public:
 
     void update_test()
     {
-        ByteArray schema = readFile(String(SCHEMA_SQL_PATH));
+        ByteArray schema = readFile(":/schema.sql");
         TVERIFY(schema::update<PSql>(schema));
 
         schema +=

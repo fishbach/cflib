@@ -17,6 +17,18 @@
             "MIMode": "lldb"
         },
         {
+            "name": "lldb db_test",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/build/cflib/db/db_test/db_test",
+            "args": [],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}/build/cflib/db/db_test",
+            "environment": [],
+            "externalConsole": false,
+            "MIMode": "lldb"
+        },
+        {
             "name": "lldb net_test",
             "type": "cppdbg",
             "request": "launch",

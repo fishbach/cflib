@@ -27,6 +27,7 @@ public:
     ByteArray() : d(new Shared) {}
     ByteArray(const char * data) : d(new Shared{data == nullptr, data ? data : ""}) {}
     ByteArray(const char * data, size_t len) : d(new Shared{false, std::string(data, len)}) {}
+    ByteArray(const uint8 * data, size_t len) : d(new Shared{false, std::string((const char *)data, len)}) {}
     ByteArray(size_t n, char c) : d(new Shared{false, std::string(n, c)}) {}
     ByteArray(std::string_view sv) : d(new Shared{false, std::string(sv)}) {}
     explicit ByteArray(std::string s) : d(new Shared{false, std::move(s)}) {}

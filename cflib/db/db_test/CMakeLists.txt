@@ -4,8 +4,9 @@
 #
 # Licensed under the MIT License.
 
-cf_test(db_test cflib_db)
-target_compile_definitions(db_test PRIVATE SCHEMA_SQL_PATH="${CMAKE_CURRENT_SOURCE_DIR}/schema.sql")
+cf_test(db_test cflib_db
+    RESOURCES schema.sql
+)
 
 if(ENABLE_PSQL)
     cf_find_sources(PSQL_SOURCES psql)

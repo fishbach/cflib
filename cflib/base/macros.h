@@ -27,4 +27,7 @@
 #define CF_CONSTRUCTOR_FUNCTION(func) \
     namespace { struct _cf_ctor_##func { _cf_ctor_##func() { func(); } } _cf_ctor_inst_##func; }
 
+#define CF_STATIC_EXEC(func) \
+    namespace { struct _cf_ctor_static_exec { _cf_ctor_static_exec() { [&]()func(); } } _cf_ctor_static_exec; }
+
 #define forever for (;;)
