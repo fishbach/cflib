@@ -5,4 +5,6 @@
 # Licensed under the MIT License.
 
 cf_lib(cflib_base)
-target_precompile_headers(cflib_base PUBLIC ../base.h)
+if(ENABLE_PCH)
+    target_precompile_headers(cflib_base PUBLIC ../base.h)
+endif()
