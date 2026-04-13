@@ -4,4 +4,4 @@
 #
 # Licensed under the MIT License.
 
-cf_app(gitversion CF_INTERN)
+cf_app(gitversion cflib_base CF_INTERN)
