@@ -20,16 +20,12 @@ var RSig = function(source, name, service, rsig, deser) {
 inherit.setBase(RSig, EV);
 
 RSig.prototype.register = function() {
-    this.id = rmi.registerRSig(this.deser);
-    var s = ber.S().s(this.service).s(this.name).i(true).i(this.id);
-    rmi.sendAsync(s.box(2));
+    rmi.registerRSig(this);
     return this;
 };
 
 RSig.prototype.unregister = function() {
-    var s = ber.S().s(this.service).s(this.name).i(false).i(this.id);
-    rmi.sendAsync(s.box(2));
-    return this;
+    rmi.unregisterRSig(this.id);
 };
 
 export default RSig;

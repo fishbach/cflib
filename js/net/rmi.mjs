@@ -55,6 +55,7 @@ function wsOpen(e)
     if (id) ws.send(ber.makeTLV(1, false, id));
     else    ws.send(ber.makeTLV(1));
     rmi.ev.connectionOpened.fire();
+    Object.values(rsigHandlers).forEach(rsig => sendRsigRegistration(rsig));
     $.each(waitingAsync, function(data) { ws.send(data); });
     waitingAsync = [];
     checkWaitingRequests();
@@ -94,9 +95,10 @@ function newMessage(e)
             checkWaitingRequests();
             return;
         case 3:
-            var deser = ber.D(value);
-            var func = rsigHandlers[deser.i()];
-            if (func) {
+            let deser = ber.D(value);
+            let rsig = rsigHandlers[deser.i()];
+            if (rsig) {
+                let func = rsig.deser;
                 deser = ber.D(deser.a());
                 if (requestActive) waitingRSig.push([func, deser]);
                 else               func(deser);
@@ -106,6 +108,11 @@ function newMessage(e)
             if (tagNo in msgHandlers) msgHandlers[tagNo](value);
             else                      rmi.ev.newMessage.fire(data);
     }
+}
+
+function sendRsigRegistration(rsig)
+{
+    rmi.sendAsync(ber.S().s(rsig.service).s(rsig.name).i(true).i(rsig.id).box(2), true);
 }
 
 // ========================================================================
@@ -165,8 +172,19 @@ rmi.sendRequest = function(data, callback) {
     }
 };
 
-rmi.register     = function(tagNo, func) { msgHandlers[tagNo] = func; };
-rmi.registerRSig = function(func) { rsigHandlers[++rsigId] = func; return rsigId; };
+rmi.registerRSig = function(rsig) {
+    rsig.id = ++rsigId;
+    rsigHandlers[rsig.id] = rsig;
+    sendRsigRegistration(rsig);
+};
+
+rmi.unregisterRSig = function(id) {
+    let rsig = rsigHandlers[id];
+    delete rsigHandlers[id];
+    if (rsig) rmi.sendAsync(ber.S().s(rsig.service).s(rsig.name).i(false).i(rsig.id).box(2), true);
+};
+
+rmi.register = function(tagNo, func) { msgHandlers[tagNo] = func; };
 
 // ========================================================================
 
