@@ -15,6 +15,7 @@ class RequestHandler
 {
 public:
     virtual ~RequestHandler() {}
+    virtual void shutdown() {};
 
 protected:
     virtual void handleRequest(const Request & request) = 0;

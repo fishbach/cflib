@@ -38,7 +38,7 @@ public:
     void setAccessControlAllowOrigin(const ByteArray & origin) { accessControlAllowOrigin_ = origin; }
 
 protected:
-    virtual void handleRequest(const Request & request);
+    void handleRequest(const Request & request) override;
 
 private:
     String parseHtml(const String & fullPath, bool isPart, const String & path,

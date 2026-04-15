@@ -13,17 +13,20 @@
 namespace cflib::net::impl {
 
 HttpThread::HttpThread(uint no, uint count) :
-    ThreadVerify(String("HTTP-Server ") + String::number(no) + "/" + String::number(count), util::ThreadVerify::Worker),
-    activeRequests_(0),
-    shutdown_(false)
+    ThreadVerify(String("HTTP-Server ") + String::number(no) + "/" + String::number(count), util::ThreadVerify::Worker)
 {
 }
 
 HttpThread::~HttpThread()
 {
-    waitForRequestsToFinish();
-    sem_.acquire();
     stopVerifyThread();
+}
+
+void HttpThread::waitForRequestsToFinish()
+{
+    doShutdown();
+    sem_.acquire();
+    shutdown_ = false;
 }
 
 void HttpThread::newRequest(TCPConnData * data, const List<RequestHandler *> & handlers)
@@ -38,9 +41,9 @@ void HttpThread::requestFinished()
     if (shutdown_ && activeRequests_ == 0) sem_.release();
 }
 
-void HttpThread::waitForRequestsToFinish()
+void HttpThread::doShutdown()
 {
-    if (!verifyThreadCall(&HttpThread::waitForRequestsToFinish)) return;
+    if (!verifyThreadCall(&HttpThread::doShutdown)) return;
 
     if (activeRequests_ == 0) sem_.release();
     else shutdown_ = true;

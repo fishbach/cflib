@@ -283,7 +283,13 @@ WebSocketService::WebSocketService(const String & path, const Regex & allowedOri
 
 WebSocketService::~WebSocketService()
 {
+    stopVerifyThread();
     delete timer_;
+}
+
+void WebSocketService::shutdown()
+{
+    stopVerifyThread();
 }
 
 void WebSocketService::saveHeaderField(const ByteArray & field)

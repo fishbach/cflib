@@ -8,6 +8,7 @@
 #include "httpserver.h"
 
 #include <cflib/net/impl/httpthread.h>
+#include <cflib/net/requesthandler.h>
 #include <cflib/net/tcpmanager.h>
 #include <cflib/util/log.h>
 
@@ -22,13 +23,20 @@ public:
         TCPManager(tlsThreadCount),
         threadCounter_(0)
     {
-        for (uint i = 1 ; i <= threadCount ; ++i) threads_.push_back(new impl::HttpThread(i, threadCount));
+        for (uint i = 1 ; i <= threadCount ; ++i) threads_ << new impl::HttpThread(i, threadCount);
     }
 
     ~Impl()
     {
+        stopAndWaitForRequestsToFinish();
+        for (RequestHandler * rh : handlers_) rh->shutdown();
+        for (impl::HttpThread * th : threads_) delete th;
+    }
+
+    void stopAndWaitForRequestsToFinish()
+    {
         stop();
-        for (auto * th : threads_) delete th;
+        for (impl::HttpThread * th : threads_) th->waitForRequestsToFinish();
     }
 
     void registerHandler(RequestHandler & handler)
@@ -80,7 +88,7 @@ bool HttpServer::start(int listenSocket, crypt::TLSCredentials & credentials)
 
 void HttpServer::stop()
 {
-    impl_->stop();
+    impl_->stopAndWaitForRequestsToFinish();
 }
 
 bool HttpServer::isRunning() const

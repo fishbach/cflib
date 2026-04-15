@@ -22,15 +22,17 @@ public:
     HttpThread(uint no, uint count);
     ~HttpThread();
 
+    void waitForRequestsToFinish();
+
     void newRequest(TCPConnData * data, const List<RequestHandler *> & handlers);
     void requestFinished();
 
 private:
-    void waitForRequestsToFinish();
+    void doShutdown();
 
 private:
-    uint activeRequests_;
-    bool shutdown_;
+    uint activeRequests_ = 0;
+    bool shutdown_ = false;
     Semaphore sem_;
 };
 

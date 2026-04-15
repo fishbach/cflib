@@ -42,25 +42,25 @@ public:
         }
     }
 
-    virtual void handleMsg(uint64,
+    void handleMsg(uint64,
         const ByteArray & data, int tagLen, int lengthSize, int32 valueLen,
-        const C & connData, uint connDataId, uint connId)
+        const C & connData, uint connDataId, uint connId) override
     {
         handleCall(data, (const uint8 *)data.constData() + tagLen + lengthSize, valueLen, connData, connDataId, connId);
     }
 
-    virtual void connDataChange(const C &, const C & newConnData, uint connDataId, const Set<uint> & connIds)
+    void connDataChange(const C &, const C & newConnData, uint connDataId, const Set<uint> & connIds) override
     {
         RMIServerBase::connDataChange(newConnData, connDataId, connIds);
     }
 
-    virtual void connectionClosed(const C & connData, uint connDataId, uint connId, bool isLast)
+    void connectionClosed(const C & connData, uint connDataId, uint connId, bool isLast) override
     {
         RMIServerBase::connectionClosed(connData, connDataId, connId, isLast);
     }
 
 protected:
-    virtual void handleRequest(const Request & request) { RMIServerBase::handleRequest(request); }
+    void handleRequest(const Request & request) override { RMIServerBase::handleRequest(request); }
 };
 
 } // namespace

@@ -24,6 +24,8 @@ public:
         uint connectionTimeoutSec = 0);
     ~WebSocketService();
 
+    void shutdown() override;
+
 protected:
     void saveHeaderField(const ByteArray & field);
 
@@ -38,7 +40,7 @@ protected:
     virtual void newMsg(uint connId, const ByteArray & data, bool isBinary, bool & stopRead) = 0;
     virtual void closed(uint connId, TCPConn::CloseType type);
 
-    virtual void handleRequest(const Request & request);
+    void handleRequest(const Request & request) override;
 
 private:
     void addConnection(TCPConnData * connData, const ByteArray & wsKey, bool deflate,

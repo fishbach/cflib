@@ -313,15 +313,10 @@ bool isDerivedFrom(const SerializeTypeInfo & derived, const SerializeTypeInfo & 
 // ============================================================================
 
 RMIServerBase::RMIServerBase(WSCommManagerBase & wsService) :
-    ThreadVerify("RMIServerBase", Worker),
+    ThreadVerify(&wsService),
     wsService_(wsService),
     containerRE_("^(.+)<(.+)>$")
 {
-}
-
-RMIServerBase::~RMIServerBase()
-{
-    stopVerifyThread();
 }
 
 void RMIServerBase::registerService(RMIServiceBase & service)

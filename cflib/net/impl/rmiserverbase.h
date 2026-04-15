@@ -24,7 +24,6 @@ class RMIServerBase : public util::ThreadVerify
 {
 public:
     RMIServerBase(WSCommManagerBase & wsService);
-    ~RMIServerBase();
 
     void registerService(RMIServiceBase & service);
     void exportTo(const String & dest) const;
