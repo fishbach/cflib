@@ -14,7 +14,6 @@
 #pragma GCC diagnostic ignored "-Wunused-parameter"
 #pragma GCC diagnostic ignored "-Wunused-value"
 
-#undef signals
 #include "../libev/ev.c"
 
 #pragma GCC diagnostic pop
