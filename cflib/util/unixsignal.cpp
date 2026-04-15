@@ -35,8 +35,8 @@ sig_t oldSigH15 = 0;
 
 void signalHandler(int sig)
 {
-    char s = (char)sig;
-    ::write(sockets[0], &s, 1);
+    uint8 s = (uint8)sig;
+    [[maybe_unused]] auto c = ::write(sockets[0], &s, 1);
 }
 
 #endif
@@ -107,8 +107,8 @@ void UnixSignal::gotSignal(int sig)
 void UnixSignal::ioCallback(ev_loop *, ev_io * w, int)
 {
     UnixSignal * self = (UnixSignal *)w->data;
-    char s;
-    ::read(sockets[1], &s, 1);
+    uint8 s = 0;
+    [[maybe_unused]] auto c = ::read(sockets[1], &s, 1);
     self->gotSignal(s);
 }
 

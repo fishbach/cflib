@@ -63,9 +63,9 @@ if(MSVC)
 else()
     add_compile_options(
         -Wall -Wextra -Wpedantic
-        # -Wcast-align
+        -Wcast-align
         # -Wconversion
-        # -Wdouble-promotion
+        -Wdouble-promotion
         -Wformat=2
         # -Wnon-virtual-dtor
         -Wnull-dereference

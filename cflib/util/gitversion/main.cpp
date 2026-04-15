@@ -25,7 +25,7 @@ static std::string runGit(const std::string & repoPath)
     FILE * p = popen(cmd.c_str(), "r");
     if (!p) return {};
     char buf[256] = {};
-    fgets(buf, sizeof(buf), p);
+    [[maybe_unused]] auto c = fgets(buf, sizeof(buf), p);
     pclose(p);
     std::string hash(buf);
     while (!hash.empty() && (hash.back() == '\n' || hash.back() == '\r' || hash.back() == ' '))
@@ -45,7 +45,12 @@ static int createHeader(const std::string & repoPath, const std::string & filena
     {
         std::ifstream in(filename);
         if (in) {
-            std::string content((std::istreambuf_iterator<char>(in)), {});
+            in.seekg(0, std::ios::end);
+            size_t size = in.tellg();
+            in.seekg(0, std::ios::beg);
+            std::string content(size, '\0');
+            in.read(content.data(), size);
+
             const std::string marker = "GIT_VERSION \"";
             auto pos = content.find(marker);
             if (pos != std::string::npos && content.substr(pos + marker.size(), 40) == hash)

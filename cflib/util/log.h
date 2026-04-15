@@ -304,7 +304,7 @@ public:
     }
 
 private:
-    virtual void writeLog(const ByteArray & msg) const {
+    void writeLog(const ByteArray & msg) const override {
         Log::writeLog(fi_.file, line_, fi_.category | category_, msg, 2);
     }
 };

@@ -56,10 +56,14 @@ public:
         deser >> out;
 
         TCOMPARE(out.y, in.y);
-        TVERIFY(!!in.d);
-        TCOMPARE(cflib::base::dynamic_pointer_cast<DynamicA>(in.d)->a, 45);
+        TVERIFY(in.d);
+        auto da = cflib::base::dynamic_pointer_cast<DynamicA>(in.d);
+        TVERIFY(da);
+        TCOMPARE(da->a, 45);
         TCOMPARE((int)in.e.size(), 1);
-        TCOMPARE(cflib::base::dynamic_pointer_cast<DynamicB>(in.e[0])->b, 123.45);
+        auto db = cflib::base::dynamic_pointer_cast<DynamicB>(in.e[0]);
+        TVERIFY(db);
+        TCOMPARE(db->b, 123.45);
         TCOMPARE(out.z, in.z);
     }
 };
