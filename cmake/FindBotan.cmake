@@ -58,5 +58,6 @@ target_compile_options(cflib_botan PRIVATE
     -Wno-null-dereference
     -Wno-overloaded-virtual
     -Wno-stringop-overread
+    -Wno-unknown-warning-option
 )
 target_include_directories(cflib_botan INTERFACE ${botan_src_SOURCE_DIR}/build/include/public)

@@ -30,7 +30,7 @@ if(ENABLE_SQLITE)
     target_sources(cflib_db PRIVATE ${sqlite3_src_SOURCE_DIR}/sqlite3.c)
     set_source_files_properties(${sqlite3_src_SOURCE_DIR}/sqlite3.c PROPERTIES
         SKIP_PRECOMPILE_HEADERS ON
-        COMPILE_OPTIONS         "-Wno-double-promotion;-Wno-null-dereference"
+        COMPILE_OPTIONS         "-Wno-cast-align;-Wno-double-promotion;-Wno-null-dereference"
     )
     target_include_directories(cflib_db PRIVATE ${sqlite3_src_SOURCE_DIR})
     target_link_libraries(cflib_db PRIVATE Threads::Threads ${CMAKE_DL_LIBS})

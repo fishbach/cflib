@@ -66,10 +66,14 @@ String showValue(const uint8 * data, int len)
         rv += String::number(val);
         if (len == 4) {
             rv += " / ";
-            rv += String::number((double)*((const float *)data));
+            float f;
+            memcpy(&f, data, sizeof(float));
+            rv += String::number((double)f);
         } else if (len == 8) {
             rv += " / ";
-            rv += String::number(*((const double *)data));
+            double d;
+            memcpy(&d, data, sizeof(double));
+            rv += String::number(d);
         } else if (val >= 946681200000 && val < 4102441200000) {
             rv += " / ";
             DateTime dt = DateTime::fromMSecsSinceEpoch(val);

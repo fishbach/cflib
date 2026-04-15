@@ -46,10 +46,10 @@ List<ByteArray> getIPFromDNS(const ByteArray & name, bool preferIPv6)
     for ( ; res ; res = res->ai_next) {
         char ip[40];
         if (res->ai_family == AF_INET) {
-            inet_ntop(AF_INET, &((struct sockaddr_in *)res->ai_addr)->sin_addr, ip, sizeof(ip));
+            inet_ntop(AF_INET, &((struct sockaddr_in *)(void *)res->ai_addr)->sin_addr, ip, sizeof(ip));
             ipv4.insert(ByteArray(ip));
         } else if (res->ai_family == AF_INET6) {
-            inet_ntop(AF_INET6, &((struct sockaddr_in6 *)res->ai_addr)->sin6_addr, ip, sizeof(ip));
+            inet_ntop(AF_INET6, &((struct sockaddr_in6 *)(void *)res->ai_addr)->sin6_addr, ip, sizeof(ip));
             ipv6.insert(ByteArray(ip));
         }
     }

@@ -131,7 +131,8 @@ inline void serializeBER(float d, uint64 tagNo, ByteArray & data, BERSerializerB
 
 inline void deserializeBER(float & d, const uint8 * data, int len, BERDeserializerBase &)
 {
-    d = len != 4 ? 0 : *((const float *)data);
+    if (len != 4) d = 0;
+    else memcpy(&d, data, sizeof(float));
 }
 
 inline void serializeBER(double d, uint64 tagNo, ByteArray & data, BERSerializerBase &)
@@ -149,7 +150,8 @@ inline void serializeBER(double d, uint64 tagNo, ByteArray & data, BERSerializer
 
 inline void deserializeBER(double & d, const uint8 * data, int len, BERDeserializerBase &)
 {
-    d = len != 8 ? 0 : *((const double *)data);
+    if (len != 8) d = 0;
+    else memcpy(&d, data, sizeof(double));
 }
 
 inline void serializeBER(long double d, uint64 tagNo, ByteArray & data, BERSerializerBase &)
@@ -167,7 +169,8 @@ inline void serializeBER(long double d, uint64 tagNo, ByteArray & data, BERSeria
 
 inline void deserializeBER(long double & d, const uint8 * data, int len, BERDeserializerBase &)
 {
-    d = len != 16 ? 0 : *((const long double *)data);
+    if (len != 16) d = 0;
+    else memcpy(&d, data, sizeof(long double));
 }
 
 
