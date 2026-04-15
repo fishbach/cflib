@@ -14,6 +14,7 @@
 #pragma GCC diagnostic ignored "-Wunused-parameter"
 #pragma GCC diagnostic ignored "-Wunused-value"
 
+#define EV_USE_IOURING 0
 #include "../libev/ev.c"
 
 #pragma GCC diagnostic pop
