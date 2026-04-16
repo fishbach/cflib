@@ -10,7 +10,7 @@
 #include <cflib/base.h>
 #include <cflib/net/rmiservice.h>
 #include <cflib/serialize/serializeber.h>
-#include <cflib/serialize/serializetypeinfo.h>
+#include <cflib/serialize/structuredtypeinfos.h>
 #include <cflib/util/threadverify.h>
 
 namespace cflib::net {
@@ -26,7 +26,8 @@ public:
     RMIServerBase(WSCommManagerBase & wsService);
 
     void registerService(RMIServiceBase & service);
-    void exportTo(const String & dest) const;
+    const cflib::serialize::StructuredTypeInfos & getServiceTypeInfos() const { return serviceTypeInfos_; }
+
     void handleRequest(const Request & request);
     void send(uint connId, const ByteArray & data);
     ByteArray getRemoteIP(uint connId);
@@ -94,12 +95,7 @@ private:
     void showServices(const Request & request, String path) const;
     void showClasses(const Request & request, String path) const;
     void classesToHTML(String & info, const ClassInfoEl & infoEl) const;
-    String generateJS(const String & path) const;
-    String generateJS(const serialize::SerializeTypeInfo & ti) const;
     cflib::serialize::SerializeTypeInfo getTypeInfo(const String & path) const;
-    String generateJSForClass(const cflib::serialize::SerializeTypeInfo & ti) const;
-    String generateJSForService(const cflib::serialize::SerializeTypeInfo & ti) const;
-    Set<String> exportClass(const ClassInfoEl & cl, const String & path, const String & dest) const;
     void addClassInfo(const cflib::serialize::SerializeTypeInfo & ti);
 
 private:
@@ -108,6 +104,7 @@ private:
     Map<String, ServiceFunctions> services_;
     ClassInfoEl classInfos_;
     Set<uint> activeRequests_;
+    cflib::serialize::StructuredTypeInfos serviceTypeInfos_;
 };
 
 }} // namespace

@@ -34,7 +34,7 @@ public:
 
         TVERIFY(in.y == out.y);
         TVERIFY(!in.d);
-        TVERIFY(in.e.empty());
+        TVERIFY(in.e.isEmpty());
         TVERIFY(in.z == out.z);
     }
 

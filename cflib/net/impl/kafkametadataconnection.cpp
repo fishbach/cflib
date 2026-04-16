@@ -47,7 +47,7 @@ void KafkaConnector::MetadataConnection::closed()
             logInfo("found topic \"%1\" (partitions: %2)", topic, partitionStr);
         }
 
-        if (impl_.allBrokers_.empty()) {
+        if (impl_.allBrokers_.isEmpty()) {
             logWarn("could not retrieve kafka cluster meta data");
             ++impl_.clusterId_;
             util::Timer::singleShot(1.0, &impl_, &Impl::fetchMetaData);

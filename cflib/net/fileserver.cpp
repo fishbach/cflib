@@ -352,11 +352,11 @@ String FileServer::parseHtml(const String & fullPath, bool isPart, const String 
             if (skip) continue;
             StringList incParams = splitParams(param);
             handleVars(incParams, path, params);
-            if (incParams.empty()) continue;
+            if (incParams.isEmpty()) continue;
             String inc = incParams.takeFirst();
             if (inc == "nopart") {
                 if (isPart) continue;
-                if (incParams.empty()) continue;
+                if (incParams.isEmpty()) continue;
                 inc = incParams.takeFirst();
             }
             if (inc.indexOf('/') == 0) inc = path_ + inc;

@@ -18,7 +18,7 @@ CmdLine::CmdLine(int argc, char *argv[])
 
 bool CmdLine::parse()
 {
-    if (rawArgs_.empty()) return false;
+    if (rawArgs_.isEmpty()) return false;
 
     // Extract executable basename
     const ByteArray & fullPath = rawArgs_[0];

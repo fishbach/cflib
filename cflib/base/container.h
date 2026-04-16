@@ -61,7 +61,7 @@ public:
     void reserve(size_t n)              { d.reserve(n); }
 
     size_t size()  const { return d.size(); }
-    bool   empty() const { return d.empty(); }
+    bool   isEmpty() const { return d.empty(); }
 
     T&       front()         { return (T&)d.front(); }
     const T& front() const   { return (const T&)d.front(); }
@@ -79,8 +79,19 @@ public:
     const_iterator cbegin() const { return d.cbegin(); }
     const_iterator cend()   const { return d.cend(); }
 
-    List& operator<<(const T& v) { d.push_back(v); return *this; }
-    List& operator<<(T&& v)      { d.push_back(std::move(v)); return *this; }
+    List & operator<<(const T & v) { d.push_back(v); return *this; }
+    List & operator<<(T && v)      { d.push_back(std::move(v)); return *this; }
+
+    List & operator+=(const List & other) {
+        d.reserve(d.size() + other.size());
+        d.insert(d.end(), other.begin(), other.end());
+        return *this;
+    }
+    List & operator+=(List && other) {
+        d.reserve(d.size() + other.size());
+        d.insert(d.end(), std::make_move_iterator(other.begin()), std::make_move_iterator(other.end()));
+        return *this;
+    }
 
     T takeFirst() {
         T val = std::move(d.front());
@@ -119,6 +130,18 @@ private:
     std::conditional_t<std::is_same_v<T, bool>, std::vector<uint8>, std::vector<T>> d;
 };
 
+template<typename T>
+inline List<T> operator+(List<T> lhs, const List<T> & rhs) {
+    lhs += rhs;
+    return lhs;
+}
+
+template<typename T>
+inline List<T> operator+(List<T> lhs, List<T> && rhs) {
+    lhs += std::move(rhs);
+    return lhs;
+}
+
 // ============================================================
 // Hash<K,V>
 // ============================================================
@@ -147,7 +170,7 @@ public:
     const_iterator find(const K& k) const { return d.find(k); }
     size_t count(const K& k) const        { return d.count(k); }
     size_t size()  const         { return d.size(); }
-    bool   empty() const         { return d.empty(); }
+    bool   isEmpty() const         { return d.empty(); }
 
     iterator       begin()       { return d.begin(); }
     iterator       end()         { return d.end(); }
@@ -193,7 +216,7 @@ public:
     const_iterator find(const K& k) const { return d.find(k); }
     size_t count(const K& k) const        { return d.count(k); }
     size_t size()  const         { return d.size(); }
-    bool   empty() const         { return d.empty(); }
+    bool   isEmpty() const         { return d.empty(); }
 
     iterator       begin()       { return d.begin(); }
     iterator       end()         { return d.end(); }
@@ -216,6 +239,13 @@ public:
         List<K> r;
         r.reserve(d.size());
         for (const auto& p : d) r.push_back(p.first);
+        return r;
+    }
+
+    List<V> values() const {
+        List<V> r;
+        r.reserve(d.size());
+        for (const auto & p : d) r.push_back(p.second);
         return r;
     }
 };
@@ -242,7 +272,7 @@ public:
     const_iterator find(const T& v) const { return d.find(v); }
     size_t count(const T& v) const        { return d.count(v); }
     size_t size()  const         { return d.size(); }
-    bool   empty() const         { return d.empty(); }
+    bool   isEmpty() const         { return d.empty(); }
 
     iterator       begin()       { return d.begin(); }
     iterator       end()         { return d.end(); }
@@ -259,7 +289,7 @@ public:
     bool contains(const T& v) const { return d.find(v) != d.end(); }
     void remove(const T& v)         { d.erase(v); }
 
-    List<T> values() const { return List<T>(d.begin(), d.end()); }
+    List<T> toList() const { return List<T>(d.begin(), d.end()); }
 };
 
 // ============================================================
@@ -284,7 +314,7 @@ public:
     iterator       find(const K& k)       { return d.find(k); }
     const_iterator find(const K& k) const { return d.find(k); }
     size_t size()  const         { return d.size(); }
-    bool   empty() const         { return d.empty(); }
+    bool   isEmpty() const         { return d.empty(); }
 
     iterator       begin()       { return d.begin(); }
     iterator       end()         { return d.end(); }
@@ -314,7 +344,7 @@ public:
     iterator       find(const K& k)       { return d.find(k); }
     const_iterator find(const K& k) const { return d.find(k); }
     size_t size()  const         { return d.size(); }
-    bool   empty() const         { return d.empty(); }
+    bool   isEmpty() const         { return d.empty(); }
 
     iterator       begin()       { return d.begin(); }
     iterator       end()         { return d.end(); }

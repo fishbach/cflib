@@ -225,7 +225,7 @@ void Mailer::childExited(int status)
     }
 
     queue_.erase(queue_.begin());
-    if (!queue_.empty()) execLater([this]() { startProcess(); });
+    if (!queue_.isEmpty()) execLater([this]() { startProcess(); });
 }
 
 bool Mail::isValid() const

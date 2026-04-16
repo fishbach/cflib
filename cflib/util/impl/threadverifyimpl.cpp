@@ -133,7 +133,7 @@ void ThreadHolder::stopLoop()
 
 bool ThreadHolder::isOwnThread() const
 {
-    if (workers_.empty()) return true;
+    if (workers_.isEmpty()) return true;
     const Thread * own = Thread::current();
     for (const LibEVThreadLoop * w : workers_) if (own == w) return true;
     return false;

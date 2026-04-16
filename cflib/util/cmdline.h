@@ -15,7 +15,7 @@ class ArgBase
 {
 public:
     bool isSet() const { return count_ > 0; }
-    ByteArray value(const ByteArray & defaultValue = ByteArray()) const { return values_.empty() ? defaultValue : values_.front(); }
+    ByteArray value(const ByteArray & defaultValue = ByteArray()) const { return values_.isEmpty() ? defaultValue : values_.front(); }
     List<ByteArray> values() const { return values_; }
     uint count() const { return count_; }
 

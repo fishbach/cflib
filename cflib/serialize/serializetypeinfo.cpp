@@ -25,7 +25,7 @@ String SerializeTypeInfo::toString() const
         String retval;
         if (!ns.isEmpty()) retval += ns + "::";
         retval += typeName;
-        if (!bases.empty()) retval += String("[") + bases[0].toString() + "]";
+        if (!bases.isEmpty()) retval += String("[") + bases[0].toString() + "]";
         retval += '{';
         bool isFirst = true;
         for (const SerializeVariableTypeInfo & inf : members) {
@@ -56,6 +56,15 @@ String SerializeTypeInfo::getName() const
     retval += "::";
     retval += typeName;
     return retval;
+}
+
+bool SerializeTypeInfo::isDerivedFrom(const SerializeTypeInfo & base) const
+{
+    for (const SerializeTypeInfo & ti : bases) {
+        if (ti.getName() == base.getName()) return true;
+        if (ti.isDerivedFrom(base)) return true;
+    }
+    return false;
 }
 
 String SerializeFunctionTypeInfo::toString() const

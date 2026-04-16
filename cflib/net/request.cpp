@@ -163,7 +163,7 @@ Request::Request(int connId, int requestId,
 Request::~Request()
 {
     while (!d->ref.deref()) {
-        if (d->replySent || d->handlers.empty()) {
+        if (d->replySent || d->handlers.isEmpty()) {
             logTrace("request deleted");
             delete d;
             return;

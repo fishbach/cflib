@@ -342,7 +342,7 @@ void WSCommManager<C>::closed(uint connId, TCPConn::CloseType)
     connId2dataId_.erase(connId);
     ConnInfo & info = connInfos_[dataId];
     info.connIds.erase(connId);
-    const bool isLast = info.connIds.empty();
+    const bool isLast = info.connIds.isEmpty();
     if (isLast) {
         info.connDataVerified = false;
         info.lastClosed = DateTime::currentDateTimeUtc();
@@ -396,14 +396,14 @@ void WSCommManager<C>::checkTimeout()
         const DateTime now = DateTime::currentDateTimeUtc();
         for (auto it = connInfos_.begin(); it != connInfos_.end(); ) {
             ConnInfo & info = it->second;
-            if (info.connIds.empty() && info.lastClosed.secsTo(now) > (int64)sessionTimeoutSec_) {
+            if (info.connIds.isEmpty() && info.lastClosed.secsTo(now) > (int64)sessionTimeoutSec_) {
                 removedIds.insert(it->first);
                 it = connInfos_.erase(it);
             } else ++it;
         }
     }
 
-    if (!removedIds.empty()) {
+    if (!removedIds.isEmpty()) {
         for (auto it = clientIds_.begin(); it != clientIds_.end(); ) {
             if (removedIds.contains(it->second)) it = clientIds_.erase(it);
             else ++it;

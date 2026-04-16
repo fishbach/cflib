@@ -27,7 +27,7 @@ public:
         commMgr.registerStateListener(*this);
     }
 
-    using RMIServerBase::exportTo;
+    using RMIServerBase::getServiceTypeInfos;
 
     void registerService(RMIServiceBase & serviceBase)
     {

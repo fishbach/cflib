@@ -143,7 +143,7 @@ bool TCPManagerImpl::start(int listenSocket, crypt::TLSCredentials * credentials
         return false;
     }
 
-    if (credentials && tlsThreads_.empty()) {
+    if (credentials && tlsThreads_.isEmpty()) {
         logWarn("no TLS threads");
         return false;
     }
@@ -195,7 +195,7 @@ TCPConnData * TCPManagerImpl::openConnection(
 {
     // no thread verify needed here
 
-    if (credentials && tlsThreads_.empty()) {
+    if (credentials && tlsThreads_.isEmpty()) {
         logWarn("no TLS threads");
         return 0;
     }
@@ -204,7 +204,7 @@ TCPConnData * TCPManagerImpl::openConnection(
     ByteArray destIP;
     {
         const List<ByteArray> ips = getIPFromDNS(destAddress, preferIPv6);
-        if (ips.empty()) {
+        if (ips.isEmpty()) {
             logWarn("cannot resolve host: %1", destAddress);
             return 0;
         }

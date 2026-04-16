@@ -109,6 +109,17 @@ public:
         return d->data.compare(d->data.size() - s.d->data.size(), s.d->data.size(), s.d->data) == 0;
     }
 
+    size_t count(const String & subStr) const {
+        const std::string & sub = subStr.d->data;
+        size_t rv = 0;
+        size_t pos = 0;
+        while ((pos = d->data.find(sub, pos)) != std::string::npos) {
+            ++rv;
+            pos += sub.size();
+        }
+        return rv;
+    }
+
     String mid(size_t bytePos, size_t len = npos) const {
         if (bytePos >= (size_t)d->data.size()) return String();
         return String(d->data.substr(bytePos, len));

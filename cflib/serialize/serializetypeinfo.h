@@ -9,54 +9,10 @@
 
 #include <cflib/base.h>
 
-#include <memory>
-
 namespace cflib::serialize {
 
-// Forward declarations
 class SerializeVariableTypeInfo;
 class SerializeFunctionTypeInfo;
-
-// We use a thin wrapper around std::vector to handle forward-declared types.
-// This works because the wrapper itself does not instantiate vector operations in the header.
-template<typename T>
-class TypeInfoList
-{
-public:
-    TypeInfoList();
-    ~TypeInfoList();
-    TypeInfoList(const TypeInfoList &);
-    TypeInfoList(TypeInfoList &&);
-    TypeInfoList & operator=(const TypeInfoList &);
-    TypeInfoList & operator=(TypeInfoList &&);
-
-    void push_back(const T & val);
-    void push_back(T && val);
-    void clear();
-    bool empty() const;
-    size_t size() const;
-    T & operator[](size_t i);
-    const T & operator[](size_t i) const;
-
-    // Iterator support
-    using iterator = T *;
-    using const_iterator = const T *;
-    iterator begin();
-    iterator end();
-    const_iterator begin() const;
-    const_iterator end() const;
-
-private:
-    struct Impl;
-    std::unique_ptr<Impl> impl_;
-};
-
-// operator<< for TypeInfoList
-template<typename T>
-inline TypeInfoList<T> & operator<<(TypeInfoList<T> & list, const T & val) {
-    list.push_back(val);
-    return list;
-}
 
 class SerializeTypeInfo
 {
@@ -68,21 +24,21 @@ public:
         Container
     };
 
-    Type type;
-    uint32 classId;
+    Type type = Null;
+    uint32 classId = 0;
     String ns;
     String typeName;
     List<SerializeTypeInfo> bases;
-    TypeInfoList<SerializeVariableTypeInfo> members;
-    TypeInfoList<SerializeFunctionTypeInfo> functions;
-    TypeInfoList<SerializeFunctionTypeInfo> cfSignals;
+    List<SerializeVariableTypeInfo> members;
+    List<SerializeFunctionTypeInfo> functions;
+    List<SerializeFunctionTypeInfo> cfSignals;
 
 public:
-    SerializeTypeInfo() : type(Null), classId(0) {}
     bool operator==(const SerializeTypeInfo & rhs) const { return getName() == rhs.getName(); }
     bool operator<(const SerializeTypeInfo & rhs) const { return getName() < rhs.getName(); }
     String toString() const;
     String getName() const;
+    bool isDerivedFrom(const SerializeTypeInfo & base) const;
 };
 
 class SerializeVariableTypeInfo
@@ -90,10 +46,10 @@ class SerializeVariableTypeInfo
 public:
     String name;
     SerializeTypeInfo type;
-    bool isRef;
+    bool isRef = false;
 
 public:
-    SerializeVariableTypeInfo() : isRef(false) {}
+    SerializeVariableTypeInfo() = default;
     SerializeVariableTypeInfo(const String & name, const SerializeTypeInfo & type, bool isRef = false) :
         name(name), type(type), isRef(isRef) {}
 };
@@ -113,33 +69,12 @@ public:
     uint returnValueCount() const;
 };
 
-// Template implementation of TypeInfoList - must be after full type definitions
-template<typename T>
-struct TypeInfoList<T>::Impl {
-    std::vector<T> data;
-};
-
-template<typename T> TypeInfoList<T>::TypeInfoList() : impl_(new Impl) {}
-template<typename T> TypeInfoList<T>::~TypeInfoList() = default;
-template<typename T> TypeInfoList<T>::TypeInfoList(const TypeInfoList & o) : impl_(new Impl(*o.impl_)) {}
-template<typename T> TypeInfoList<T>::TypeInfoList(TypeInfoList && o) = default;
-template<typename T> TypeInfoList<T> & TypeInfoList<T>::operator=(const TypeInfoList & o) {
-    if (this != &o) impl_ = std::make_unique<Impl>(*o.impl_);
-    return *this;
-}
-template<typename T> TypeInfoList<T> & TypeInfoList<T>::operator=(TypeInfoList && o) = default;
-
-template<typename T> void TypeInfoList<T>::push_back(const T & val) { impl_->data.push_back(val); }
-template<typename T> void TypeInfoList<T>::push_back(T && val) { impl_->data.push_back(std::move(val)); }
-template<typename T> void TypeInfoList<T>::clear() { impl_->data.clear(); }
-template<typename T> bool TypeInfoList<T>::empty() const { return impl_->data.empty(); }
-template<typename T> size_t TypeInfoList<T>::size() const { return impl_->data.size(); }
-template<typename T> T & TypeInfoList<T>::operator[](size_t i) { return impl_->data[i]; }
-template<typename T> const T & TypeInfoList<T>::operator[](size_t i) const { return impl_->data[i]; }
-
-template<typename T> typename TypeInfoList<T>::iterator TypeInfoList<T>::begin() { return impl_->data.data(); }
-template<typename T> typename TypeInfoList<T>::iterator TypeInfoList<T>::end() { return impl_->data.data() + impl_->data.size(); }
-template<typename T> typename TypeInfoList<T>::const_iterator TypeInfoList<T>::begin() const { return impl_->data.data(); }
-template<typename T> typename TypeInfoList<T>::const_iterator TypeInfoList<T>::end() const { return impl_->data.data() + impl_->data.size(); }
-
 } // namespace
+
+namespace std {
+template<> struct hash<cflib::serialize::SerializeTypeInfo> {
+    size_t operator()(const cflib::serialize::SerializeTypeInfo & s) const {
+        return hash<cflib::base::String>()(s.getName());
+    }
+};
+}

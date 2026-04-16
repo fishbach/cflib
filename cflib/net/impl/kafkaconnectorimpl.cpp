@@ -69,7 +69,7 @@ void KafkaConnector::Impl::connect(const List<KafkaConnector::Address> &cluster)
 {
     if (!verifyThreadCall(&Impl::connect, cluster)) return;
 
-    if (!cluster_.empty()) {
+    if (!cluster_.isEmpty()) {
         /// TODO abort all
     }
 
@@ -85,7 +85,7 @@ void KafkaConnector::Impl::fetchMetaData()
 
     TCPConnData * data = connectToCluster();
     if (!data) {
-        if (cluster_.empty()) {
+        if (cluster_.isEmpty()) {
             setState(Idle);
         } else {
             logWarn("could not connect to kafka cluster");
@@ -300,7 +300,7 @@ TCPConnData * KafkaConnector::Impl::connectToCluster()
 {
     logFunctionTrace
 
-    if (cluster_.empty()) return 0;
+    if (cluster_.isEmpty()) return 0;
     if (clusterId_ >= (ssize_t)cluster_.size()) clusterId_ = 0;
 
     const int startId = clusterId_;
@@ -429,7 +429,7 @@ Map<ByteArray, Map<ByteArray, List<int32>>> KafkaConnector::Impl::computeGroupAs
     const ByteArray & protocol, Map<ByteArray, Set<ByteArray>> memberTopics)
 {
     Map<ByteArray, Map<ByteArray, List<int32>>> rv;
-    if (memberTopics.empty()) return rv;
+    if (memberTopics.isEmpty()) return rv;
 
     logFunctionTraceParam("computeGroupAssignment with %1", protocol);
 
@@ -438,7 +438,7 @@ Map<ByteArray, Map<ByteArray, List<int32>>> KafkaConnector::Impl::computeGroupAs
         Map<ByteArray, List<ByteArray>> topicMembers;
         for (const ByteArray & member : memberTopics.keys()) {
             for (const ByteArray & topic : memberTopics[member]) {
-                if (!responsibilities_.value(topic).empty()) topicMembers[topic] << member;
+                if (!responsibilities_.value(topic).isEmpty()) topicMembers[topic] << member;
             }
         }
 
@@ -476,7 +476,7 @@ Map<ByteArray, Map<ByteArray, List<int32>>> KafkaConnector::Impl::computeGroupAs
 
         List<ByteArray> members = memberTopics.keys();
         int memberId = 0;
-        while (!allTopicPartitions.empty()) {
+        while (!allTopicPartitions.isEmpty()) {
             bool assigned = false;
             for (auto it = allTopicPartitions.begin(); it != allTopicPartitions.end(); ++it) {
                 const ByteArray & member = members[memberId];
