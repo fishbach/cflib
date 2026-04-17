@@ -11,8 +11,10 @@
 #include <cflib/util/util.h>
 
 #include <dirent.h>
+#include <filesystem>
 
 using namespace cflib::util;
+using namespace std::filesystem;
 
 USE_LOG(LogCat::JS)
 
@@ -440,25 +442,28 @@ String generate(const SerializeTypeInfo & ti)
 
 void generateJavaScript(const StructuredTypeInfos & typeInfos, const String & dest)
 {
+    const String destJs = dest + "/js/";
+
     // write services
-    mkPath(dest + "/js/services");
+    const String destServices = destJs + "services/";
+    mkPath(destServices);
     Set<String> files;
     for (const SerializeTypeInfo & ti : typeInfos.services()) {
         String file = ti.typeName.toLower() + ".mjs";
         files << file;
         String js = generate(ti);
-        writeFile(dest + "/js/services/" + file, js.toUtf8());
+        writeFile(destServices + file, js.toUtf8());
     }
 
     // remove old
     {
-        DIR * d = opendir((dest + "/js/services").c_str());
+        DIR * d = opendir(destServices.c_str());
         if (d) {
             struct dirent * ent;
             while ((ent = readdir(d)) != nullptr) {
                 String name(ent->d_name);
                 if (name == "." || name == "..") continue;
-                if (!files.contains(name)) removeFile(dest + "/js/services/" + name);
+                if (!files.contains(name)) removeFile(destServices + name);
             }
             closedir(d);
         }
@@ -467,18 +472,30 @@ void generateJavaScript(const StructuredTypeInfos & typeInfos, const String & de
     // write classes
     files.clear();
     for (const SerializeTypeInfo & ti : typeInfos.types()) {
-        String path = ti.ns.toLower();
-        path.replace("::", "/");
-        path = dest + "/js/" + path;
-        mkPath(path);
-        String file = path + "/" + ti.typeName.toLower() + ".mjs";
-        files << file;
+        String path = String(ti.ns).replace("::", "/").toLower();
+        mkPath(destJs + path);
+        path += "/" + ti.typeName.toLower() + ".mjs";
+        files << path;
+        logInfo("added to files: %1", path);
         String js = generate(ti);
-        writeFile(file, js.toUtf8());
+        writeFile(destJs + path, js.toUtf8());
     }
 
-    // remove old - simplified: skip recursive cleanup for now
-    CF_UNUSED(files);
+    // remove old
+    auto opt = directory_options::follow_directory_symlink;
+    for (const directory_entry & entry : recursive_directory_iterator(destJs.str(), opt)) {
+        if (!entry.is_regular_file()) continue;
+        String rel = entry.path().lexically_relative(destJs.str()).generic_string();
+        if (rel.contains("/dao/") && !files.contains(rel)) remove(entry.path());
+    }
+    std::function<void (const path &)> removeEmptyDirs = [&](const path & p) {
+        for (const directory_entry & entry : directory_iterator(p, opt)) {
+            if (!entry.is_directory()) continue;
+            removeEmptyDirs(entry.path());
+            if (is_empty(entry.path())) remove(entry);
+        }
+    };
+    removeEmptyDirs(destJs.str());
 }
 
 } // namespace
