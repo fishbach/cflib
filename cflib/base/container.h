@@ -67,6 +67,10 @@ public:
     const T& front() const   { return (const T&)d.front(); }
     T&       back()          { return (T&)d.back(); }
     const T& back()  const   { return (const T&)d.back(); }
+    T&       first()         { return (T&)d.front(); }
+    const T& first() const   { return (const T&)d.front(); }
+    T&       last()          { return (T&)d.back(); }
+    const T& last()  const   { return (const T&)d.back(); }
     T&       at(size_t i)        { return (T&)d.at(i); }
     const T& at(size_t i) const  { return (const T&)d.at(i); }
     T&       operator[](size_t i)       { return (T&)d[i]; }
@@ -103,8 +107,6 @@ public:
         d.pop_back();
         return val;
     }
-    T&       last()       { return (T&)d.back(); }
-    const T& last() const { return (const T&)d.back(); }
 
     void sort() { std::sort(d.begin(), d.end()); }
 

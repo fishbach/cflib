@@ -28,7 +28,6 @@ public:
     void registerService(RMIServiceBase & service);
     const cflib::serialize::StructuredTypeInfos & getServiceTypeInfos() const { return serviceTypeInfos_; }
 
-    void handleRequest(const Request & request);
     void send(uint connId, const ByteArray & data);
     ByteArray getRemoteIP(uint connId);
 
@@ -92,15 +91,9 @@ private:
 private:
     RMIServiceBase * checkServiceCall(serialize::BERDeserializer & deser, uint connId,
         uint & callNo, uint & type);
-    void showServices(const Request & request, String path) const;
-    void showClasses(const Request & request, String path) const;
-    void classesToHTML(String & info, const ClassInfoEl & infoEl) const;
-    cflib::serialize::SerializeTypeInfo getTypeInfo(const String & path) const;
-    void addClassInfo(const cflib::serialize::SerializeTypeInfo & ti);
 
 private:
     WSCommManagerBase & wsService_;
-    const Regex containerRE_;
     Map<String, ServiceFunctions> services_;
     ClassInfoEl classInfos_;
     Set<uint> activeRequests_;

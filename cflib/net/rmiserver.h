@@ -16,7 +16,6 @@ namespace cflib::net {
 
 template<typename C>
 class RMIServer :
-    public RequestHandler,
     public WSCommMsgHandler<C>,
     public WSCommStateListener<C>,
     private impl::RMIServerBase
@@ -58,9 +57,6 @@ public:
     {
         RMIServerBase::connectionClosed(connData, connDataId, connId, isLast);
     }
-
-protected:
-    void handleRequest(const Request & request) override { RMIServerBase::handleRequest(request); }
 };
 
 } // namespace
