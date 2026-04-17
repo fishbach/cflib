@@ -13,6 +13,8 @@
 #include <cflib/net/requestlog.h>
 #include <cflib/net/rmiserver.h>
 #include <cflib/net/wscommmanager.h>
+#include <cflib/serialize/generate/apidoc.h>
+#include <cflib/serialize/generate/javascript.h>
 #include <cflib/util/cmdline.h>
 #include <cflib/util/log.h>
 
@@ -22,6 +24,7 @@
 #include <unistd.h>
 
 using namespace cflib::net;
+using namespace cflib::serialize::generate;
 using namespace cflib::util;
 
 USE_LOG(LogCat::Etc)
@@ -69,7 +72,8 @@ int main(int argc, char *argv[])
     if (exportOpt.isSet()) {
         String dest(exportOpt.value());
         logInfo("exporting to: %1", dest.c_str());
-        rmiServer.exportTo(dest);
+        generateJavaScript(rmiServer.getServiceTypeInfos(), dest);
+        generateAPIDoc    (rmiServer.getServiceTypeInfos(), dest, "apidoc", "webchat");
         fs.exportTo(dest);
         return 0;
     }
@@ -77,7 +81,6 @@ int main(int argc, char *argv[])
     HttpServer serv;
     serv.registerHandler(requestLog);
     serv.registerHandler(commMgr);
-    serv.registerHandler(rmiServer);
     serv.registerHandler(fs);
     serv.start("127.0.0.1", 8080);
 

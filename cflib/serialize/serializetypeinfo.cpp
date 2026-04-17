@@ -9,6 +9,14 @@
 
 namespace cflib::serialize {
 
+// needed here because of forward declaration of SerializeFunctionTypeInfo
+SerializeTypeInfo::SerializeTypeInfo() = default;
+SerializeTypeInfo::SerializeTypeInfo(const SerializeTypeInfo & other) = default;
+SerializeTypeInfo::SerializeTypeInfo(SerializeTypeInfo && other) = default;
+SerializeTypeInfo & SerializeTypeInfo::operator=(const SerializeTypeInfo & other) = default;
+SerializeTypeInfo & SerializeTypeInfo::operator=(SerializeTypeInfo && other) = default;
+SerializeTypeInfo::~SerializeTypeInfo() = default;
+
 String SerializeTypeInfo::toString() const
 {
     if (type == Basic) return typeName;

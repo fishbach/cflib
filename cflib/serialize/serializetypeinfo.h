@@ -17,6 +17,13 @@ class SerializeFunctionTypeInfo;
 class SerializeTypeInfo
 {
 public:
+    SerializeTypeInfo();
+    SerializeTypeInfo(const SerializeTypeInfo & other);
+    SerializeTypeInfo(SerializeTypeInfo && other);
+    SerializeTypeInfo & operator=(const SerializeTypeInfo & other);
+    SerializeTypeInfo & operator=(SerializeTypeInfo && other);
+    ~SerializeTypeInfo();
+
     enum Type {
         Null = 0,
         Basic,
