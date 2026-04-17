@@ -11,8 +11,10 @@
 #include <cflib/util/util.h>
 
 #include <dirent.h>
+#include <filesystem>
 
 using namespace cflib::util;
+using namespace std::filesystem;
 
 USE_LOG(LogCat::JS)
 
@@ -45,6 +47,7 @@ public:
 
     void generate()
     {
+        remove_all(rootPath_.str());
         mkPath(rootPath_);
         writeFile(rootPath_ + "/index.html", mainIndex().toUtf8());
         mkPath(servicesPath_);
