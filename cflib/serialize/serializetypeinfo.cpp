@@ -91,7 +91,7 @@ String SerializeFunctionTypeInfo::toString() const
 
 String SerializeFunctionTypeInfo::signature(bool withParamNames) const
 {
-    String retval = returnType.typeName;
+    String retval = returnType.getName();
     if (retval.isEmpty()) retval += "void";
     retval += ' ';
     retval += name;
@@ -100,7 +100,7 @@ String SerializeFunctionTypeInfo::signature(bool withParamNames) const
     for (const SerializeVariableTypeInfo & inf : parameters) {
         if (isFirst) isFirst = false;
         else retval += withParamNames ? ", " : ",";
-        retval += inf.type.typeName;
+        retval += inf.type.getName();
         if (inf.isRef) retval += '&';
         if (withParamNames && !inf.name.isEmpty()) retval += " " + inf.name;
     }

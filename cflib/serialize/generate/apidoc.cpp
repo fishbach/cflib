@@ -76,7 +76,7 @@ private:
         "h2, h3, h4 { font-weight: normal; }\n"
         "</style>\n"
         "</head><body>\n"
-        "<h2>" + name_ + "</h2>\n";
+        "<h2><a href=\"/" + prefix_ + "\">" + name_ + "</a></h2>\n";
     }
 
     const String Footer =
@@ -112,12 +112,11 @@ private:
         String html = header();
         html <<
             "<h3>Service: <b>" << ti.typeName << "</b></h3>\n"
-            "JavaScript File: <a href=\"/js/services/" << ti.typeName.toLower() << ".mjs\">/js/services/" << ti.typeName.toLower() << ".mjs</a><br>\n"
             "<h4>Methods:</h4>\n"
             "<ul>\n";
 
         for (const SerializeFunctionTypeInfo & func : ti.functions) {
-            html << "<li>" << func.signature(true).replace("<", "&lt;").replace(">", "&gt;") << "</li>\n";
+            html << "<li>" << signatureHTML(func) << "</li>\n";
         }
         html << "</ul>\n";
 
@@ -126,7 +125,7 @@ private:
             "<h4>Signals:</h4>\n"
             "<ul>\n";
             for (const auto & func : ti.cfSignals) {
-                html << "<li>" << func.signature(true).replace("<", "&lt;").replace(">", "&gt;") << "</li>\n";
+                html << "<li>" << signatureHTML(func) << "</li>\n";
             }
             html << "</ul>\n";
         }
@@ -159,7 +158,7 @@ private:
                         "<ul>\n";
                 }
             }
-            html << "<li><a href=\"classes/" << getPath(ti) << "\">" << ti.typeName.split("::").back() << "</a></li>\n";
+            html << "<li><a href=\"/" + prefix_ + "/classes/" << getPath(ti) << "\">" << ti.typeName << "</a></li>\n";
         }
         for (int i = nsToList(lastNs).size() ; i > 0 ; --i) html << "</ul>\n";
 
@@ -173,14 +172,12 @@ private:
         String html = header();
         html <<
             "<h3>Class: <b>" << ti.getName() << "</b></h3>\n"
-            "JavaScript File: <a href=\"/js/" << getPath(ti) << ".mjs\">/js/" << getPath(ti) << ".mjs</a><br>\n"
-            "<br>\n"
             "Base: ";
 
         if (ti.bases.isEmpty()) {
             html << "API.Base";
         } else {
-            html << ti.bases[0].getName().replace("<", "&lt;").replace(">", "&gt;");
+            html << typeHTML(ti.bases[0]);
         }
 
         html <<
@@ -190,13 +187,53 @@ private:
 
         for (const auto & member : ti.members) {
             html
-                << "<li>" << member.type.getName().replace("<", "&lt;").replace(">", "&gt;")
+                << "<li>" << typeHTML(member.type)
                 << ' ' << member.name << "</li>\n";
         }
 
         html << "</ul>\n";
         html << Footer;
         return html;
+    }
+
+    String signatureHTML(const SerializeFunctionTypeInfo & fti)
+    {
+        String retval = typeHTML(fti.returnType);
+        if (retval.isEmpty()) retval += "void";
+        retval += ' ';
+        retval += fti.name;
+        retval += '(';
+        bool isFirst = true;
+        for (const SerializeVariableTypeInfo & inf : fti.parameters) {
+            if (isFirst) isFirst = false;
+            else retval += ", ";
+            retval += typeHTML(inf.type);
+            if (inf.isRef) retval += " &amp;";
+            if (!inf.name.isEmpty()) retval += " " + inf.name;
+        }
+        retval += ')';
+        return retval;
+    }
+
+    String typeHTML(const SerializeTypeInfo & ti)
+    {
+        String retval;
+        if (ti.type == SerializeTypeInfo::Class) {
+            retval = "<a href=\"/" + prefix_ + "/classes/" << getPath(ti) << "\">" << ti.getName() << "</a>";
+        } else if (ti.type == SerializeTypeInfo::Container) {
+            retval = ti.typeName.left(ti.typeName.indexOf('<'));
+            retval += "&lt;";
+            bool first = true;
+            for (const SerializeTypeInfo & bti : ti.bases) {
+                if (first) first = false;
+                else retval += ", ";
+                retval += typeHTML(bti);
+            }
+            retval += "&gt;";
+        } else {
+            retval = ti.getName();
+        }
+        return retval;
     }
 
 private:

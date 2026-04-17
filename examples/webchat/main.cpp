@@ -73,7 +73,7 @@ int main(int argc, char *argv[])
         String dest(exportOpt.value());
         logInfo("exporting to: %1", dest.c_str());
         generateJavaScript(rmiServer.getServiceTypeInfos(), dest);
-        generateAPIDoc    (rmiServer.getServiceTypeInfos(), dest, "apidoc", "webchat");
+        generateAPIDoc    (rmiServer.getServiceTypeInfos(), dest, "apidoc", "webchat API");
         fs.exportTo(dest);
         return 0;
     }
