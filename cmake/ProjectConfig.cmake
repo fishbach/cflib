@@ -45,6 +45,9 @@ endif()
 # PCH
 if(ENABLE_PCH)
     message(STATUS "Using PCH")
+    if(CMAKE_POSITION_INDEPENDENT_CODE AND NOT MSVC)
+        add_compile_options(-fPIE)
+    endif()
 endif()
 
 # PostgreSQL
