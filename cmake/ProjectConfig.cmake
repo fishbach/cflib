@@ -81,8 +81,10 @@ enable_testing()
 
 # cmake modules
 list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_LIST_DIR})
+include(Build)
+include(Util)
 
-# cflib as a sub project
-if(NOT "${CMAKE_CURRENT_LIST_DIR}" STREQUAL "${CMAKE_SOURCE_DIR}/cmake")
+# If only this file is included, add cflib as a whole.
+if(NOT TARGET cflib_base AND NOT "${CMAKE_CURRENT_LIST_DIR}" STREQUAL "${PROJECT_SOURCE_DIR}/cmake")
     add_subdirectory(${CMAKE_CURRENT_LIST_DIR}/..)
 endif()

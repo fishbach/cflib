@@ -12,12 +12,10 @@ project(
     LANGUAGES C CXX
 )
 
-if("${CMAKE_CURRENT_LIST_DIR}" STREQUAL "${CMAKE_SOURCE_DIR}")
+if(NOT COMMAND cf_lib)
     include(cmake/ProjectConfig.cmake)
 endif()
-include(Build)
 include(DependencyConfig)
-include(Util)
 
 cf_add_other(cflib_files
     .gitignore
