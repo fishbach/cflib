@@ -42,3 +42,13 @@ function(cf_add_other target)
     file(GLOB_RECURSE files RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} ${ARGN})
     add_custom_target(${target} SOURCES ${files})
 endfunction()
+
+function(cf_set_version_defines file)
+    set(VERSION_DEFINES
+        PROJECT_VERSION_MAJOR=${PROJECT_VERSION_MAJOR}
+        PROJECT_VERSION_MINOR=${PROJECT_VERSION_MINOR}
+        PROJECT_VERSION_PATCH=${PROJECT_VERSION_PATCH}
+        PROJECT_VERSION_SUFFIX=\"${PROJECT_VERSION_SUFFIX}\"
+    )
+    set_source_files_properties(${file} PROPERTIES COMPILE_DEFINITIONS "${VERSION_DEFINES}")
+endfunction()
