@@ -16,7 +16,7 @@
     #include <unistd.h>
 #endif
 
-int main(int, char *[])
+int main(int argc, char * argv[])
 {
     #ifdef _WIN32
         char pwd[256];
@@ -25,7 +25,11 @@ int main(int, char *[])
     #else
         char * pwd = getpass("Password: ");
     #endif
-    ByteArray hash = cflib::crypt::hashPassword(pwd);
+
+    uint16 workFactor = 12;
+    if (argc == 2) workFactor = String(argv[1]).toUInt();
+
+    ByteArray hash = cflib::crypt::hashPassword(pwd, workFactor);
     std::cout << std::format("{}\n", hash.constData());
 
     return 0;

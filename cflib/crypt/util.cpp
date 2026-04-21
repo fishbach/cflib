@@ -58,11 +58,11 @@ ByteArray memorableRandom(const int length)
     return rv;
 }
 
-ByteArray hashPassword(const String & password)
+ByteArray hashPassword(const String & password, uint16 workFactor)
 {
     TRY {
         AutoSeeded_RNG rng;
-        std::string hash = generate_bcrypt(password.str(), rng);
+        std::string hash = generate_bcrypt(password.str(), rng, workFactor);
         return ByteArray(hash.c_str(), (size_t)hash.length());
     } CATCH
     return ByteArray();

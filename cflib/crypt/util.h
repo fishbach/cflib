@@ -17,7 +17,7 @@ uint32 randomUInt32();
 uint64 randomUInt64();
 ByteArray memorableRandom(const int length = 6);
 
-ByteArray hashPassword(const String & password);
+ByteArray hashPassword(const String & password, uint16 workFactor = 12);
 bool checkPassword(const String & password, const ByteArray & hash);
 
 ByteArray sha1(const ByteArray & data);
