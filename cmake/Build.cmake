@@ -6,13 +6,45 @@
 
 # library
 function(cf_lib lib)
-    cmake_parse_arguments(ARG "ENABLE_EXCEPTIONS;ENABLE_SER" "PCH" "PUBLIC;PRIVATE;DIRS;OTHER_FILES" ${ARGN})
+    cmake_parse_arguments(ARG "ENABLE_EXCEPTIONS;ENABLE_SER" "PCH;REMOTE" "PUBLIC;PRIVATE;DIRS;OTHER_FILES" ${ARGN})
 
     cf_find_sources(sources . ${ARG_DIRS} OTHER_FILES ${ARG_OTHER_FILES})
     add_library(${lib} ${sources})
     cf_configure_target(${lib} ${ARG_ENABLE_EXCEPTIONS} "${ARG_PCH}" ${ARG_ENABLE_SER})
     target_include_directories(${lib} PUBLIC "${PROJECT_SOURCE_DIR}")
     target_link_libraries(${lib} PUBLIC ${ARG_PUBLIC} PRIVATE ${ARG_PRIVATE})
+
+    # generating remote API files
+    if (ARG_REMOTE)
+        set(output)
+        set(depends)
+        get_target_property(RMI_SERVICE_HEADERS ${ARG_REMOTE} RMI_SERVICE_HEADERS)
+        get_target_property(SOURCE_DIR          ${ARG_REMOTE} SOURCE_DIR         )
+        foreach(header ${RMI_SERVICE_HEADERS})
+            # remove .h
+            get_filename_component(dir  "${header}" DIRECTORY)
+            get_filename_component(file "${header}" NAME_WLE )
+            set(file "${dir}/${file}")
+
+            list(APPEND output
+                "${CMAKE_CURRENT_SOURCE_DIR}/${file}.h"
+                "${CMAKE_CURRENT_SOURCE_DIR}/${file}.cpp"
+            )
+            list(APPEND depends "${SOURCE_DIR}/${file}.h")
+
+            target_sources(${lib}
+                PUBLIC  "${file}.h"
+                PRIVATE "${file}.cpp"
+            )
+        endforeach()
+
+        add_custom_command(
+            OUTPUT ${output}
+            COMMAND ${ARG_REMOTE} --export "${CMAKE_CURRENT_SOURCE_DIR}"
+            DEPENDS ${depends}
+            VERBATIM
+        )
+    endif()
 endfunction()
 
 # application
@@ -92,12 +124,22 @@ function(cf_configure_target target enable_exceptions pch enable_ser)
         list(FILTER headers INCLUDE REGEX "\.h$")
 
         # filter by containing of SERIALIZE_CLASS
+        set(services)
         foreach(header ${headers})
             file(STRINGS "${header}" lines REGEX "SERIALIZE_CLASS")
             if(NOT lines)
                 list(REMOVE_ITEM headers "${header}")
             endif()
+            file(STRINGS "${header}" lines REGEX "RMIService")
+            if(lines)
+                list(APPEND services "${header}")
+            endif()
         endforeach()
+        if(services)
+            set_target_properties(${target} PROPERTIES
+                RMI_SERVICE_HEADERS "${services}"
+            )
+        endif()
 
         # Something to do?
         if(NOT headers)

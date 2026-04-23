@@ -129,6 +129,12 @@ String generate(const SerializeTypeInfo & ti, bool isHeader)
     return cpp;
 }
 
+void writeWhenChanged(const String & path, const String & data)
+{
+    const ByteArray newContent = data.toUtf8();
+    if (newContent != readFile(path)) writeFile(path, newContent);
+}
+
 }
 
 void generateCppRemoteServices(const StructuredTypeInfos & typeInfos, const String & dest)
@@ -142,8 +148,8 @@ void generateCppRemoteServices(const StructuredTypeInfos & typeInfos, const Stri
         String impl = header + ".cpp";
         header += ".h";
         files << header << impl;
-        writeFile(destPath + header, generate(ti, true ).toUtf8());
-        writeFile(destPath + impl,   generate(ti, false).toUtf8());
+        writeWhenChanged(destPath + header, generate(ti, true ));
+        writeWhenChanged(destPath + impl,   generate(ti, false));
     }
 
     // remove old
