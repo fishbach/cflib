@@ -41,11 +41,13 @@ public:
     List<SerializeFunctionTypeInfo> cfSignals;
 
 public:
+    bool isNull() const { return type == Null; }
     bool operator==(const SerializeTypeInfo & rhs) const { return getName() == rhs.getName(); }
     bool operator<(const SerializeTypeInfo & rhs) const { return getName() < rhs.getName(); }
     String toString() const;
     String getName() const;
     bool isDerivedFrom(const SerializeTypeInfo & base) const;
+    List<SerializeTypeInfo> allUsedClasses() const;
 };
 
 class SerializeVariableTypeInfo

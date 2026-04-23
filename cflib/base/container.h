@@ -109,6 +109,7 @@ public:
     }
 
     void sort() { std::sort(d.begin(), d.end()); }
+    List sorted() const { List rv = *this; rv.sort(); return rv; }
 
     template<typename U>
     bool contains(const U& val) const {

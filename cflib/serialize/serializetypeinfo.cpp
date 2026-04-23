@@ -75,6 +75,31 @@ bool SerializeTypeInfo::isDerivedFrom(const SerializeTypeInfo & base) const
     return false;
 }
 
+List<SerializeTypeInfo> SerializeTypeInfo::allUsedClasses() const
+{
+    Set<SerializeTypeInfo> allClasses;
+    for (const SerializeTypeInfo         & ti  : bases  ) allClasses << ti;
+    for (const SerializeVariableTypeInfo & vti : members) allClasses << vti.type;
+    for (const SerializeFunctionTypeInfo & fti : functions) {
+        allClasses << fti.returnType;
+        for (const SerializeVariableTypeInfo & vti : fti.parameters) allClasses << vti.type;
+    }
+    for (const SerializeFunctionTypeInfo & fti : cfSignals) {
+        allClasses << fti.returnType;
+        for (const SerializeVariableTypeInfo & vti : fti.parameters) allClasses << vti.type;
+    }
+
+    Set<SerializeTypeInfo> rv;
+    for (const SerializeTypeInfo & ti : allClasses) {
+        if (ti.type == Class) {
+            rv << ti;
+        } else if (ti.type == Container) {
+            for (const SerializeTypeInfo & ti : ti.bases) rv << ti;
+        }
+    }
+    return rv.toList().sorted();
+}
+
 String SerializeFunctionTypeInfo::toString() const
 {
     String retval = returnType.toString() + " " + name + "(";
