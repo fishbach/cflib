@@ -23,7 +23,7 @@ namespace {
 String signature(const SerializeFunctionTypeInfo & fti, bool isRSig, const String & className = {})
 {
     String rv;
-    if (isRSig) rv += "sig<";
+    if (isRSig) rv += "rsig<";
     if (fti.returnType.isNull()) rv += "void ";
     else rv << fti.returnType.getName() << ' ';
     if (isRSig) rv += "(";
@@ -40,6 +40,16 @@ String signature(const SerializeFunctionTypeInfo & fti, bool isRSig, const Strin
         rv << vti.type.getName() << " &";
         if (!vti.name.isEmpty()) rv << ' ' << vti.name;
         else if (!className.isEmpty()) rv << " __param_" << String::number(++id);
+    }
+    if (isRSig) {
+        rv += "), void (";
+        for (const SerializeVariableTypeInfo & vti : fti.registerParameters) {
+            if (isFirst) isFirst = false;
+            else rv += ", ";
+            if (!vti.isRef) rv += "const ";
+            rv << vti.type.getName() << " &";
+            if (!vti.name.isEmpty()) rv << ' ' << vti.name;
+        }
     }
     rv += ')';
     if (isRSig) rv << "> " << fti.name;
@@ -73,6 +83,7 @@ String generate(const SerializeTypeInfo & ti, bool isHeader)
         "// ============================================================================\n"
         "\n";
 
+    // includes
     if (!isHeader) {
         cpp <<
             "#include \"" << ti.typeName.toLower() << ".h\"\n"
@@ -83,28 +94,46 @@ String generate(const SerializeTypeInfo & ti, bool isHeader)
         }
         cpp <<
             "\n"
-            "#include <cflib/base.h>\n";
+            "#include <cflib/net/rmiremoteservice.h>\n";
         if (!ti.cfSignals.isEmpty()) {
-            cpp << "#include <cflib/util/sig.h>\n";
+            cpp << "#include <cflib/net/rsigclient.h>\n";
         }
         cpp << "\n";
     }
 
+    // namespace
     if (!ti.ns.isEmpty()) cpp <<
         "namespace " << ti.ns << " {\n"
         "\n";
-    if (isHeader) cpp <<
-        "class " << ti.typeName << "\n"
-        "{\n"
-        "public:\n";
 
-    bool isFirst = true;
+    // class head and constructor
+    if (isHeader) cpp <<
+        "class " << ti.typeName << " : public cflib::net::RMIRemoteService\n"
+        "{\n"
+        "public:\n"
+        "    " << ti.typeName << "();\n"
+        "\n";
+    else {
+        cpp <<
+            ti.typeName << "::" << ti.typeName << "() :\n"
+            "    RMIRemoteService(\"" << ti.typeName.toLower() << "\")";
+        for (const SerializeFunctionTypeInfo & fti : ti.cfSignals) {
+            cpp <<
+                ",\n"
+                "    " << fti.name << "(*this, \"" << fti.name << "\")";
+        }
+        cpp <<
+            "\n"
+            "{\n"
+            "}\n";
+    }
+
+    // methods
     for (const SerializeFunctionTypeInfo & fti : ti.functions) {
         if (isHeader) cpp << "    " << signature(fti, false) << ";\n";
         else {
-            if (isFirst) isFirst = false;
-            else cpp << "\n";
             cpp <<
+                "\n" <<
                 signature(fti, false, ti.typeName) << "\n" <<
                 "{\n" <<
                 generateImpl(ti, fti) <<
@@ -112,20 +141,25 @@ String generate(const SerializeTypeInfo & ti, bool isHeader)
         }
     }
 
+    // cfsignals
     if (isHeader) {
         if (!ti.cfSignals.isEmpty()) cpp <<
             "\n"
-            "cfsignals:\n";
+            "rsigs:\n";
         for (const SerializeFunctionTypeInfo & fti : ti.cfSignals) {
             if (isHeader) cpp << "    " << signature(fti, true) << ";\n";
         }
     }
 
+    // class end
     if (isHeader) cpp <<
         "};\n";
+
+    // namespace end
     if (!ti.ns.isEmpty()) cpp <<
         "\n"
         "}\n";
+
     return cpp;
 }
 
