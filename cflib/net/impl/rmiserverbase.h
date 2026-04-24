@@ -71,17 +71,6 @@ public:
     }
 
 private:
-    struct ClassInfoEl;
-    class ClassInfos : public Map<String, ClassInfoEl *> {
-        CF_DISABLE_COPY(ClassInfos)
-    public:
-        ClassInfos() {}
-        ~ClassInfos() { for (auto & [k, v] : *this) delete v; }
-    };
-    struct ClassInfoEl {
-        ClassInfos infos;
-        cflib::serialize::SerializeTypeInfo ti;
-    };
     struct ServiceFunctions {
         ServiceFunctions() : service(0) {}
         RMIServiceBase * service;
@@ -95,7 +84,6 @@ private:
 private:
     WSCommManagerBase & wsService_;
     Map<String, ServiceFunctions> services_;
-    ClassInfoEl classInfos_;
     Set<uint> activeRequests_;
     cflib::serialize::StructuredTypeInfos serviceTypeInfos_;
 };
