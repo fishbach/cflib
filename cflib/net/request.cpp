@@ -181,11 +181,10 @@ Request::Request(const Request & other) :
 
 Request & Request::operator=(const Request & other)
 {
-    if (d != other.d) {
-        other.d->ref.ref();
-        if (!d->ref.deref()) delete d;
-        d = other.d;
-    }
+    if (d == other.d) return *this;
+    if (!d->ref.deref()) delete d;
+    d = other.d;
+    d->ref.ref();
     return *this;
 }
 

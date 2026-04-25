@@ -17,6 +17,7 @@
 #include <botan/auto_rng.h>
 #include <botan/bcrypt.h>
 #include <botan/certstor.h>
+#include <botan/chacha_rng.h>
 #include <botan/der_enc.h>
 #include <botan/filters.h>
 #include <botan/pem.h>

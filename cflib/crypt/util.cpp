@@ -58,6 +58,28 @@ ByteArray memorableRandom(const int length)
     return rv;
 }
 
+FastRandom::FastRandom()
+{
+    TRY {
+        rng_ = new ChaCha_RNG(AutoSeeded_RNG().random_vec(32));
+    } CATCH
+}
+
+FastRandom::~FastRandom()
+{
+    delete (ChaCha_RNG *)rng_;
+}
+
+uint32 FastRandom::uint32()
+{
+    TRY {
+        base::uint32 retval = 0;
+        if (rng_) ((ChaCha_RNG *)rng_)->randomize((byte *)&retval, 4);
+        return retval;
+    } CATCH
+    return 0;
+}
+
 ByteArray hashPassword(const String & password, uint16 workFactor)
 {
     TRY {

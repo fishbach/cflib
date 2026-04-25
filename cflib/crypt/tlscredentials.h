@@ -28,10 +28,18 @@ struct TLSCertInfo
 
 class TLSCredentials
 {
-    CF_DISABLE_COPY(TLSCredentials)
 public:
     TLSCredentials();
+
+    // implicit sharing (copy on write)
     ~TLSCredentials();
+    TLSCredentials(const TLSCredentials & other);
+    TLSCredentials(TLSCredentials && other);
+    TLSCredentials & operator=(const TLSCredentials & other);
+    TLSCredentials & operator=(TLSCredentials && other);
+    void detach();
+
+    bool isEmpty() const;
 
     // certificates can be added in arbitrary order
     uint addCerts(const ByteArray & certs, bool isTrustedCA = false);
@@ -63,8 +71,8 @@ private:
     TLSCertInfo getInfo(const Botan::X509_Certificate & crt) const;
 
 private:
-    class Impl;
-    Impl * impl_;
+    class Shared;
+    Shared * d;
 
     friend class TLSClient;
     friend class TLSServer;

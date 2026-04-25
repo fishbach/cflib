@@ -42,6 +42,8 @@ public:
     // If this is not desired, call close(HardClosed) before destruction.
     virtual ~TCPConn();
 
+    uint id() const;
+
     // returns all available bytes
     ByteArray read();
 

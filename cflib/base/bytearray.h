@@ -37,7 +37,7 @@ public:
     ByteArray(ByteArray && other) : d(other.d) { other.d = new Shared; }
     ~ByteArray() { if (!d->ref.deref()) delete d; }
     ByteArray & operator=(const ByteArray & other) {
-        if (this == &other) return *this;
+        if (d == other.d) return *this;
         if (!d->ref.deref()) delete d;
         d = other.d;
         d->ref.ref();
@@ -309,6 +309,9 @@ public:
         return ByteArray(std::format("{}", (long long)v).c_str());
     }
     static ByteArray number(uint64 v) {
+        return ByteArray(std::format("{}", (unsigned long long)v).c_str());
+    }
+    static ByteArray number(size_t v) {
         return ByteArray(std::format("{}", (unsigned long long)v).c_str());
     }
     static ByteArray number(double v) {

@@ -23,6 +23,11 @@ TCPManager::~TCPManager()
     delete impl_;
 }
 
+void TCPManager::shutdown()
+{
+    impl_->shutdown();
+}
+
 void TCPManager::stop()
 {
     impl_->stop();

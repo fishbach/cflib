@@ -121,14 +121,17 @@ TCPManagerImpl::TCPManagerImpl(TCPManager & parent, uint tlsThreadCount, util::T
 TCPManagerImpl::~TCPManagerImpl()
 {
     logFunctionTrace
-    stopVerifyThread();
+    shutdown();
     for (auto * th : tlsThreads_) delete th;
     delete readWatcher_;
 }
 
-void TCPManagerImpl::deleteThreadData()
+void TCPManagerImpl::shutdown()
 {
+    logFunctionTrace
     stop();
+    stopVerifyThread();
+    for (TLSThread * th : tlsThreads_) th->stopVerifyThread();
 }
 
 bool TCPManagerImpl::start(int listenSocket, crypt::TLSCredentials * credentials)
@@ -337,10 +340,10 @@ void TCPManagerImpl::closeConn(TCPConnData * conn, TCPConn::CloseType type, bool
             close(conn->socket);
             logDebug("fd %1 closed", conn->socket);
         } else {
-            shutdown(conn->socket, SHUT_RD);
+            ::shutdown(conn->socket, SHUT_RD);
         }
     } else {
-        shutdown(conn->socket, SHUT_WR);
+        ::shutdown(conn->socket, SHUT_WR);
     }
 }
 

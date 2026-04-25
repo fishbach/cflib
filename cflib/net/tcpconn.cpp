@@ -31,6 +31,11 @@ TCPConn::~TCPConn()
     else                  data_->impl.deleteOnFinish(data_);
 }
 
+uint TCPConn::id() const
+{
+    return data_ ? (uint)data_->socket : 0;
+}
+
 ByteArray TCPConn::read()
 {
     const ByteArray retval = data_->readData;

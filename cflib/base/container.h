@@ -300,8 +300,8 @@ public:
 // ============================================================
 
 template<typename K, typename V>
-class MultiMap {
-    std::multimap<K, V> d;
+class MultiMap
+{
 public:
     using iterator       = typename std::multimap<K, V>::iterator;
     using const_iterator = typename std::multimap<K, V>::const_iterator;
@@ -310,7 +310,7 @@ public:
     MultiMap() = default;
 
     template<typename... Args>
-    auto insert(Args&&... args) { return d.insert(std::forward<Args>(args)...); }
+    auto insert(const K & key, const V & value) { return d.insert(std::pair<K, V>(key, value)); }
     iterator erase(iterator it) { return d.erase(it); }
     void     clear() { d.clear(); }
 
@@ -323,6 +323,14 @@ public:
     iterator       end()         { return d.end(); }
     const_iterator begin() const { return d.begin(); }
     const_iterator end()   const { return d.end(); }
+
+    V value(const K& k, const V& def = V()) const {
+        auto it = d.find(k);
+        return it != d.end() ? it->second : def;
+    }
+
+private:
+    std::multimap<K, V> d;
 };
 
 // ============================================================

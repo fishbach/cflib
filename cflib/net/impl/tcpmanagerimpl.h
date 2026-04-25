@@ -29,6 +29,8 @@ public:
     TCPManagerImpl(TCPManager & parent, uint tlsThreadCount, util::ThreadVerify * other);
     ~TCPManagerImpl();
 
+    void shutdown();
+
     bool isRunning() const { return listenSock_ != -1; }
     bool start(int listenSocket, crypt::TLSCredentials * credentials);
     void stop();
@@ -56,9 +58,6 @@ public:
     TCPManager & parent;
 
     crypt::TLSCredentials clientCredentials;
-
-protected:
-    virtual void deleteThreadData();
 
 private:
     static void listenSocketReadable(ev_loop * loop, ev_io * w, int revents);

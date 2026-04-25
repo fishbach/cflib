@@ -36,7 +36,7 @@ public:
     String(String && other) : d(other.d) { other.d = new Shared; }
     ~String() { if (!d->ref.deref()) delete d; }
     String & operator=(const String & other) {
-        if (this == &other) return *this;
+        if (d == other.d) return *this;
         if (!d->ref.deref()) delete d;
         d = other.d;
         d->ref.ref();

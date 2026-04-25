@@ -17,6 +17,21 @@ uint32 randomUInt32();
 uint64 randomUInt64();
 ByteArray memorableRandom(const int length = 6);
 
+// uses ChaCha_RNG
+// see: https://botan.randombit.net/manual/rng.html
+class FastRandom
+{
+    CF_DISABLE_COPY(FastRandom)
+public:
+    FastRandom();
+    ~FastRandom();
+
+    uint32 uint32();
+
+private:
+    void * rng_ = nullptr;
+};
+
 ByteArray hashPassword(const String & password, uint16 workFactor = 12);
 bool checkPassword(const String & password, const ByteArray & hash);
 

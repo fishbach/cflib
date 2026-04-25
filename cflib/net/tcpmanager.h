@@ -25,6 +25,8 @@ public:
     TCPManager(uint tlsThreadCount = 0, util::ThreadVerify * other = 0);
     virtual ~TCPManager();
 
+    void shutdown();
+
     bool start(const ByteArray & ip, uint16 port) { return start(openListenSocket(ip, port)); }
     bool start(const ByteArray & ip, uint16 port, crypt::TLSCredentials & credentials) {
         return start(openListenSocket(ip, port), credentials); }
