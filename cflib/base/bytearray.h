@@ -10,6 +10,7 @@
 #include <cflib/base/concurrent.h>
 #include <cflib/base/types.h>
 
+#include <concepts>
 #include <cstring>
 #include <format>
 #include <string>
@@ -305,18 +306,12 @@ public:
     }
 
     // Number formatting
-    static ByteArray number(int64 v) {
+    static ByteArray number(std::integral auto v) {
         return ByteArray(std::format("{}", v).c_str());
     }
-    static ByteArray number(uint64 v) {
-        return ByteArray(std::format("{}", v).c_str());
-    }
-    static ByteArray number(double v) {
+    static ByteArray number(std::floating_point auto v) {
         return ByteArray(std::format("{:g}", v).c_str());
     }
-    static ByteArray number(float  v) { return number((double)v); }
-    static ByteArray number(int32  v) { return number((int64)v); }
-    static ByteArray number(uint32 v) { return number((uint64)v); }
 
     ByteArray & operator+=(char c)              { detach(); d->data += c; d->isNull = false; return *this; }
     ByteArray & operator+=(const char * s)      { detach(); d->data += s; d->isNull = false; return *this; }
