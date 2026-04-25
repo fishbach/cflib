@@ -26,7 +26,7 @@ public:
     FastRandom();
     ~FastRandom();
 
-    uint32 uint32();
+    base::uint32 uint32();
 
 private:
     void * rng_ = nullptr;

@@ -306,13 +306,10 @@ public:
 
     // Number formatting
     static ByteArray number(int64 v) {
-        return ByteArray(std::format("{}", (long long)v).c_str());
+        return ByteArray(std::format("{}", v).c_str());
     }
     static ByteArray number(uint64 v) {
-        return ByteArray(std::format("{}", (unsigned long long)v).c_str());
-    }
-    static ByteArray number(size_t v) {
-        return ByteArray(std::format("{}", (unsigned long long)v).c_str());
+        return ByteArray(std::format("{}", v).c_str());
     }
     static ByteArray number(double v) {
         return ByteArray(std::format("{:g}", v).c_str());
