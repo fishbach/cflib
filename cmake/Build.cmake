@@ -41,7 +41,7 @@ function(cf_lib lib)
         add_custom_command(
             OUTPUT ${output}
             COMMAND ${ARG_REMOTE} --export "${CMAKE_CURRENT_SOURCE_DIR}"
-            DEPENDS ${depends}
+            DEPENDS ${depends} cflib_serialize
             VERBATIM
         )
     endif()
