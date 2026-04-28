@@ -394,7 +394,7 @@ String FileServer::parseHtml(const String & fullPath, bool isPart, const String 
                         else retval += ',';
                         retval += "\"/";
                         retval += file;
-                        retval += "\":\"./";
+                        retval += "\":\"/";
                         retval += file;
                         retval += suffix;
                     }
