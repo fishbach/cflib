@@ -11,16 +11,18 @@ import EV      from '../util/ev.mjs';
 import storage from '../util/storage.mjs';
 import util    from '../util/util.mjs';
 
-var requestActive   = false;
-var requestCallback = null;
-var waitingRequests = [];
-var ws              = null;
-var msgHandlers     = {};
-var rsigHandlers    = {};
-var rsigId          = 0;
-var waitingRSig     = [];
-var waitingAsync    = [];
-var id              = null;
+let requestActive   = false;
+let requestCallback = null;
+let waitingRequests = [];
+let ws              = null;
+let msgHandlers     = {};
+let rsigHandlers    = {};
+let rsigId          = 0;
+let waitingRSig     = [];
+let waitingAsync    = [];
+let id              = null;
+let lastAlive       = null;
+let aliveTimeout    = false;
 
 function checkWaitingRequests()
 {
@@ -185,6 +187,23 @@ rmi.unregisterRSig = function(id) {
 };
 
 rmi.register = function(tagNo, func) { msgHandlers[tagNo] = func; };
+
+rmi.setAliveTimeoutHandler = function(timoutMs, func) {
+    lastAlive = performance.now();
+    rmi.register(5, () => {
+        lastAlive = performance.now();
+        if (aliveTimeout) {
+            aliveTimeout = false;
+            func(false);
+        }
+    });
+    setInterval(() => {
+        if (performance.now() - lastAlive > timoutMs && !aliveTimeout) {
+            aliveTimeout = true;
+            func(true);
+        }
+    }, timoutMs / 2)
+};
 
 // ========================================================================
 
