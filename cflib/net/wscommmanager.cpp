@@ -41,6 +41,11 @@ ByteArray WSCommManagerBase::getHeader(uint connId, const ByteArray & header) co
     return WebSocketService::getHeader(connId, header);
 }
 
+List<uint> WSCommManagerBase::getAllConnIds() const
+{
+    return connId2dataId_.keys();
+}
+
 WSCommManagerBase::WSCommManagerBase(const String & path, const Regex & allowedOrigin,
     uint connectionTimeoutSec)
 :

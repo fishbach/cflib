@@ -186,6 +186,20 @@ public:
         auto it = d.find(k);
         return it != d.end() ? it->second : def;
     }
+
+    List<K> keys() const {
+        List<K> r;
+        r.reserve(d.size());
+        for (const auto& p : d) r.push_back(p.first);
+        return r;
+    }
+
+    List<V> values() const {
+        List<V> r;
+        r.reserve(d.size());
+        for (const auto & p : d) r.push_back(p.second);
+        return r;
+    }
 };
 
 // ============================================================

@@ -30,6 +30,7 @@ public:
 protected:
     void execLater(const std::function<void()> & func) const;
     void execLater(const Functor * func) const;
+    virtual void initThreadData() {}
     virtual void deleteThreadData() {}
 
     // No-op: thread priority is not supported yet
@@ -281,7 +282,6 @@ protected:
     };
 
 private:
-    ThreadVerify();
     void shutdownThread();
     void execCall(const Functor * func) const;
 

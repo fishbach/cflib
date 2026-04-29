@@ -78,8 +78,13 @@ public:
     ByteArray getRemoteIP(uint connId) const;
     ByteArray getHeader(uint connId, const ByteArray & header) const;
 
+    List<uint> getAllConnIds() const;
+
 protected:
     WSCommManagerBase(const String & path, const Regex & allowedOrigin, uint connectionTimeoutSec);
+
+protected:
+    Hash<uint, uint> connId2dataId_;
 };
 
 /*
@@ -88,6 +93,7 @@ protected:
  * 2 : rmi       (s <-> c)
  * 3 : rsig      (s  -> c)
  * 4 : ping      (s <-> c)
+ * 5 : alive     (s  -> c)
  */
 
 template<typename C>
@@ -141,7 +147,6 @@ private:
     List<TextMsgHandler *> textMsgHandler_;
     Hash<uint64, MsgHandler *> msgHandler_;
 
-    Hash<uint, uint> connId2dataId_;
     Hash<uint, ConnInfo> connInfos_;
     Map<ByteArray, uint> clientIds_;
 

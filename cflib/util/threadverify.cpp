@@ -18,18 +18,14 @@ ThreadVerify::ThreadVerify(const String & threadName, LoopType loopType, uint th
     ownerOfVerifyThread_(true)
 {
     verifyThread_ = new impl::ThreadHolder(threadName, loopType == Worker, threadCount);
+    execCall(new Functor0<ThreadVerify>(this, &ThreadVerify::initThreadData));
 }
 
 ThreadVerify::ThreadVerify(ThreadVerify * other) :
     verifyThread_(other->verifyThread_),
     ownerOfVerifyThread_(false)
 {
-}
-
-ThreadVerify::ThreadVerify() :
-    verifyThread_(0),
-    ownerOfVerifyThread_(true)
-{
+    execCall(new Functor0<ThreadVerify>(this, &ThreadVerify::initThreadData));
 }
 
 ThreadVerify::~ThreadVerify()
