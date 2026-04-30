@@ -43,6 +43,8 @@ ByteArray WSCommManagerBase::getHeader(uint connId, const ByteArray & header) co
 
 List<uint> WSCommManagerBase::getAllConnIds() const
 {
+    SyncedThreadCall<List<uint>> stc(this);
+    if (!stc.verify(&WSCommManagerBase::getAllConnIds)) return stc.retval();
     return connId2dataId_.keys();
 }
 
