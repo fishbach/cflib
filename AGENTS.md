@@ -1,5 +1,9 @@
 # AGENTS.md
 
+## C++ Standard
+
+- Der verwendete C++ Standard ist C++20.
+
 ## Module Dependency Order
 
 Build modules in this order (enforced by `cflib/CMakeLists.txt`):
