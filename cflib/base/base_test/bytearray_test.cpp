@@ -470,6 +470,11 @@ private:
         // Initially share (same data)
         TCOMPARE(ba1, ba2);
 
+        // Verify const pointers point to same address while sharing
+        const char * data1 = ba1.constData();
+        const char * data2 = ba2.constData();
+        TVERIFY(data1 == data2);
+
         // Modify ba2 - should detach
         ba2[0] = 'x';
         TCOMPARE(ba1, ByteArray("hello"));
@@ -478,6 +483,9 @@ private:
         // ba1 should not be affected by ba2's modification
         TVERIFY(ba1 != ba2);
 
+        // Verify const pointers now point to different addresses after detach
+        TVERIFY(ba1.constData() != ba2.constData());
+
         // Test detach on shared data
         ByteArray ba3("test");
         ByteArray ba4 = ba3;
@@ -485,6 +493,9 @@ private:
         ba3[0] = 'x';
         TCOMPARE(ba3, ByteArray("xest"));
         TCOMPARE(ba4, ByteArray("test"));
+
+        // Verify const pointers are different after explicit detach
+        TVERIFY(ba3.constData() != ba4.constData());
     }
 };
 

@@ -419,6 +419,11 @@ private:
         // Initially share (same data)
         TCOMPARE(s1, s2);
 
+        // Verify const pointers point to same address while sharing
+        const char * cstr1 = s1.c_str();
+        const char * cstr2 = s2.c_str();
+        TVERIFY(cstr1 == cstr2);
+
         // Modify s2 - should detach
         s2[0] = 'x';
         TCOMPARE(s1, String("hello"));
@@ -427,6 +432,9 @@ private:
         // s1 should not be affected by s2's modification
         TVERIFY(s1 != s2);
 
+        // Verify const pointers now point to different addresses after detach
+        TVERIFY(s1.c_str() != s2.c_str());
+
         // Test detach on shared data
         String s3("test");
         String s4 = s3;
@@ -434,6 +442,9 @@ private:
         s3[0] = 'x';
         TCOMPARE(s3, String("xest"));
         TCOMPARE(s4, String("test"));
+
+        // Verify const pointers are different after explicit detach
+        TVERIFY(s3.c_str() != s4.c_str());
     }
 
     // UTF-8 charCount tests
