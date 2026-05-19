@@ -22,6 +22,9 @@ Optional flags:
 - `-DENABLE_SQLITE=ON` — enable SQLite support
 - `-DENABLE_PCH=OFF` — disable precompiled headers (builds faster but less optimized)
 
+clangd:
+- For clangd you need the parameter `-DCMAKE_EXPORT_COMPILE_COMMANDS:BOOL=TRUE`
+
 ## Test Framework
 
 - Tests in `cflib/util/test.h`: inherit `cflib::util::TestBase`, implement `testMethods()`
@@ -50,3 +53,7 @@ Optional flags:
 
 - Use English only.
 - Do not use special characters.
+
+## New Source Files
+
+- When new source files need to be created, make sure to call cmake manually, to that new compile units will be created.
