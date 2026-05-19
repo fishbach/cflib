@@ -8,3 +8,5 @@ cf_lib(cflib_base)
 if(ENABLE_PCH)
     target_precompile_headers(cflib_base PUBLIC ../base.h)
 endif()
+
+add_subdirectory(base_test)
