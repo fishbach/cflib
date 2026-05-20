@@ -196,17 +196,13 @@ public:
         return String(std::move(r));
     }
 
-    static String number(int64 v) {
-        return String(std::format("{}", (long long)v).c_str());
+    // Number formatting
+    static String number(std::integral auto v) {
+        return String(std::format("{}", v).c_str());
     }
-    static String number(uint64 v) {
-        return String(std::format("{}", (unsigned long long)v).c_str());
-    }
-    static String number(double v) {
+    static String number(std::floating_point auto v) {
         return String(std::format("{:g}", v).c_str());
     }
-    static String number(int32  v) { return number((int64)v); }
-    static String number(uint32 v) { return number((uint64)v); }
 
     int64  toLong(bool * ok = nullptr) const {
         if (d->data.empty()) { if (ok) *ok = false; return 0; }
