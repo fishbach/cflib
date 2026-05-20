@@ -8,9 +8,9 @@
 #pragma once
 
 #include <cflib/base.h>
+#include <cflib/crypt/tlscredentials.h>
 #include <cflib/util/sig.h>
 
-namespace cflib::crypt { class TLSCredentials; }
 namespace cflib::util { class ThreadVerify;   }
 
 namespace cflib::net {
@@ -21,7 +21,7 @@ class WebSocketClient
 {
     CF_DISABLE_COPY(WebSocketClient)
 public:
-    WebSocketClient(const crypt::TLSCredentials & credentials, util::ThreadVerify * other = nullptr);
+    WebSocketClient(const crypt::TLSCredentials & credentials = {}, util::ThreadVerify * other = nullptr);
     ~WebSocketClient();
 
     void shutdown();

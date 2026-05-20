@@ -7,7 +7,6 @@
 
 #include "websocketclient.h"
 
-#include <cflib/crypt/tlscredentials.h>
 #include <cflib/crypt/util.h>
 #include <cflib/net/impl/util.h>
 #include <cflib/net/tcpconn.h>

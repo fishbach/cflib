@@ -67,6 +67,7 @@ private:
 
 private:
     int listenSock_;
+    bool shutdownComplete_ = false;
     bool isIPv6Sock_;
     ev_io * readWatcher_;
     crypt::TLSCredentials * credentials_;

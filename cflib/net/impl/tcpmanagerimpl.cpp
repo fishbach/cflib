@@ -129,9 +129,11 @@ TCPManagerImpl::~TCPManagerImpl()
 void TCPManagerImpl::shutdown()
 {
     logFunctionTrace
+    if (shutdownComplete_) return;
     stop();
     stopVerifyThread();
     for (TLSThread * th : tlsThreads_) th->stopVerifyThread();
+    shutdownComplete_ = true;
 }
 
 bool TCPManagerImpl::start(int listenSocket, crypt::TLSCredentials * credentials)
