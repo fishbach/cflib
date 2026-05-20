@@ -87,7 +87,7 @@ private:
 
     class Conn;
     Conn * conn_;
-    std::atomic<bool> connected_ = ATOMIC_VAR_INIT(false);
+    std::atomic<bool> connected_ = false;
 };
 
 class WebSocketClient::Impl::Conn : public TCPConn, public util::ThreadVerify
