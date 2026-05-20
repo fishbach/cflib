@@ -2,7 +2,7 @@
 
 ## C++ Standard
 
-- Der verwendete C++ Standard ist C++20.
+- For C++ use the standard C++20.
 
 ## Module Dependency Order
 
@@ -56,7 +56,7 @@ clangd:
 ## Language
 
 - Use English only.
-- Do not use special characters.
+- You must not use Chinese characters.
 
 ## New Source Files
 
