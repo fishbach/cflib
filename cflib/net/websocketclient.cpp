@@ -168,12 +168,12 @@ protected:
         if (!handshakeFinished() && !headerOk()) return;
 
         forever {
-            bool fin;
-            bool rsv1;
-            uint8 opcode;
-            bool mask;         // Wether payload is masked
-            uint64 len;       // Length of payload
-            uint lengthEnd;    // Length of length field
+            bool   fin;
+            bool   rsv1;
+            uint8  opcode;
+            bool   mask;        // Wether payload is masked
+            uint64 len;         // Length of payload
+            uint   lengthEnd;   // Length of length field
             if (!impl::ws::readLength(buf_, fin, rsv1, opcode, mask, len, lengthEnd)) {
                 startReadWatcher();
                 return;
@@ -373,8 +373,6 @@ void WebSocketClient::Impl::doConnect()
         << "Upgrade: websocket"
         << "Connection: Upgrade"
         << "Sec-WebSocket-Key: " << secWebsocketKey
-        << "Origin: " << url_.scheme().toUtf8() << "://" << url_.host().toUtf8()
-        << (url_.port() != -1 ? ":" + ByteArray::number(url_.port()) : "")
         << "Sec-WebSocket-Version: 13"
         << "Sec-WebSocket-Extensions: permessage-deflate";
 
