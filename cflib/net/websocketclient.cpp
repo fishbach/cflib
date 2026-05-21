@@ -371,7 +371,7 @@ void WebSocketClient::Impl::doConnect()
     headers
         << "Upgrade: websocket"
         << "Connection: Upgrade"
-        << "Sec-WebSocket-Key: " << secWebsocketKey
+        << ("Sec-WebSocket-Key: " + secWebsocketKey)
         << "Sec-WebSocket-Version: 13"
         << "Sec-WebSocket-Extensions: permessage-deflate";
 
