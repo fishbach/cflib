@@ -95,25 +95,22 @@ void ChatClient::onReceive(const ByteArray & data, bool isBinary)
         } else {
             logWarn("wrong client ID length: %1", valueLen);
         }
+        // register for newMessage
+        BERSerializer ser(2);
+        ser << "chatservice" << "newMessage" << true << 1;
+        client_.send(ser.data(), true);
     } else if (tag == 2) {
-        // RMI response - just log for now
-        BERDeserializer deser(data);
-        String serviceName, signature;
-        deser >> serviceName >> signature;
-        logTrace("RMI response: %1::%2", serviceName.toUtf8().constData(), signature.toUtf8().constData());
+        logTrace("RMI response: %1", data.toHex());
     } else if (tag == 3) {
         // Signal from server (newMessage)
-        BERDeserializer deser(data);
+        BERDeserializer deser(data, (const uint8 *)data.constData() + tagLen + lengthSize, valueLen);
         uint regId;
         deser >> regId;
-        // Read encoded params
         ByteArray encodedParams;
         deser >> encodedParams;
-
         BERDeserializer paramsDeser(encodedParams);
         String msg;
         paramsDeser >> msg;
-
         newMessage(msg);
     } else {
         logWarn("unknown tag: %1", tag);
