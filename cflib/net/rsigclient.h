@@ -20,16 +20,29 @@
 
 namespace cflib::net {
 
-class RMIRemoteService;
+class RMIClient;
 
 class RSigClientBase
 {
 public:
-    RSigClientBase(RMIRemoteService & service, const String & name) : service_(service), name_(name) {}
+    RSigClientBase(RMIClient & client, const String & service, const String & name);
+
+    void registerRSig();
+    void unregisterRSig();
+
+    RMIClient & rmiClient() { return client_; }
+    const String & service() const { return service_; }
+    const String & name() const { return name_; }
+    uint id() const { return id_; }
+
+protected:
+    ~RSigClientBase();
 
 private:
-    RMIRemoteService & service_;
+    RMIClient & client_;
+    const String service_;
     const String name_;
+    uint id_ = 0;
 };
 
 template<typename F, typename R> class RSigClient;
@@ -41,6 +54,9 @@ public:
     typedef util::Sig<void (P...)> Base;
 
 public:
+    RSigClient(RMIClient & client, const String & service, const String & name);
+    ~RSigClient();
+
     using RSigClientBase::RSigClientBase;
 };
 

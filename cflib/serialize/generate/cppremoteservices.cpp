@@ -92,13 +92,15 @@ String generate(const SerializeTypeInfo & ti, bool isHeader)
         for (const SerializeTypeInfo & cl : ti.allUsedClasses()) {
             cpp << "#include <" << cl.getName().toLower().replace("::", "/") << ".h>\n";
         }
-        cpp <<
-            "\n"
-            "#include <cflib/net/rmiremoteservice.h>\n";
-        if (!ti.cfSignals.isEmpty()) {
-            cpp << "#include <cflib/net/rsigclient.h>\n";
+        if (isHeader) {
+            cpp <<
+                "\n"
+                "#include <cflib/net/rmiremoteservice.h>\n";
+            if (!ti.cfSignals.isEmpty()) {
+                cpp << "#include <cflib/net/rsigclient.h>\n";
+            }
+            cpp << "\n";
         }
-        cpp << "\n";
     }
 
     // namespace
@@ -111,19 +113,29 @@ String generate(const SerializeTypeInfo & ti, bool isHeader)
         "class " << ti.typeName << " : public cflib::net::RMIRemoteService\n"
         "{\n"
         "public:\n"
-        "    " << ti.typeName << "();\n"
+        "    " << ti.typeName << "(cflib::net::RMIClient & client);\n"
+        "    ~" << ti.typeName << "();\n"
         "\n";
     else {
         cpp <<
-            ti.typeName << "::" << ti.typeName << "() :\n"
-            "    RMIRemoteService(\"" << ti.typeName.toLower() << "\")";
+            ti.typeName << "::" << ti.typeName << "(cflib::net::RMIClient & client) :\n"
+            "    RMIRemoteService(client, \"" << ti.typeName.toLower() << "\")";
         for (const SerializeFunctionTypeInfo & fti : ti.cfSignals) {
             cpp <<
                 ",\n"
-                "    " << fti.name << "(*this, \"" << fti.name << "\")";
+                "    " << fti.name << "(client, \"" << ti.typeName.toLower() << "\", \"" << fti.name << "\")";
         }
         cpp <<
             "\n"
+            "{\n"
+            "    // Explicit registration for all signals\n";
+        for (const SerializeFunctionTypeInfo & fti : ti.cfSignals) {
+            cpp << "    " << fti.name << ".registerRSig();\n";
+        }
+        cpp <<
+            "}\n"
+            "\n"
+            << ti.typeName << "::~" << ti.typeName << "()\n"
             "{\n"
             "}\n";
     }

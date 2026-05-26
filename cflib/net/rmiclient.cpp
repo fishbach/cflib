@@ -81,19 +81,19 @@ public:
         CF_UNUSED(doNotBuffer);
     }
 
-    void unregisterRSig(uint rsigId)
-    {
-        if (!verifyThreadCall(&Impl::unregisterRSig, rsigId)) return;
+     void unregisterRSig(uint rsigId)
+     {
+         if (!verifyThreadCall(&Impl::unregisterRSig, rsigId)) return;
 
-        auto it = rsigHandlers_.find(rsigId);
-        if (it != rsigHandlers_.end()) {
-            serialize::BERSerializer ser(2);
-            ser << it->second.service << it->second.name << false << rsigId;
-            ByteArray data = ser.data();
-            ws_.send(data, true);
-            rsigHandlers_.erase(it);
-        }
-    }
+         auto it = rsigHandlers_.find(rsigId);
+         if (it != rsigHandlers_.end()) {
+             serialize::BERSerializer ser(2);
+             ser << it->second.service << it->second.name << false << rsigId;
+             ByteArray data = ser.data();
+             ws_.send(data, true);
+             rsigHandlers_.erase(it);
+         }
+     }
 
     void setAliveTimeoutHandler(uint timeoutMs, const std::function<void (bool timeout)> & func)
     {
@@ -110,6 +110,14 @@ public:
         if (!verifyThreadCall(&Impl::registerHandler, tagNo, func)) return;
 
         msgHandlers_[tagNo] = func;
+    }
+
+    uint registerRSig(const String & service, const String & name)
+    {
+        uint id = ++nextRsigId_;
+        rsigHandlers_[id] = RSigData{service, name};
+        sendRsigRegistration(service, name, true, id);
+        return id;
     }
 
 private:
@@ -197,6 +205,7 @@ private:
                 serialize::BERDeserializer deser(data, valuePtr, valueLen);
                 uint rsigId = deser.get<uint>();
                 ByteArray paramsData = deser.get<ByteArray>();
+                parent_.rsigReceived(rsigId, paramsData);
                 logDebug("RSig %1 received", rsigId);
                 break;
             }
@@ -278,6 +287,7 @@ private:
     List<ByteArray> waitingAsync_;
 
     Map<uint, RSigData> rsigHandlers_;
+    uint nextRsigId_ = 0;
 
     Map<uint64, std::function<void (const ByteArray &)>> msgHandlers_;
 
@@ -326,6 +336,11 @@ void RMIClient::sendAsync(const ByteArray & data, bool doNotBuffer)
 void RMIClient::unregisterRSig(uint rsigId)
 {
     impl_->unregisterRSig(rsigId);
+}
+
+uint RMIClient::registerRSig(const String & service, const String & name)
+{
+    return impl_->registerRSig(service, name);
 }
 
 void RMIClient::setAliveTimeoutHandler(uint timeoutMs, const std::function<void (bool timeout)> & func)

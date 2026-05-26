@@ -29,6 +29,7 @@ public:
     void sendAsync(const ByteArray & data, bool doNotBuffer = false);
 
     void unregisterRSig(uint rsigId);
+    uint registerRSig(const String & service, const String & name);
 
     void registerHandler(uint tagNo, const std::function<void (const ByteArray &)> & func);
 
@@ -39,6 +40,7 @@ cfsignals:
     sig<void ()> disconnected;
     sig<void ()> identityReset;
     sig<void (const ByteArray & data)> messageReceived;
+    sig<void (uint rsigId, const ByteArray & params)> rsigReceived;
 
 private:
     class Impl;
