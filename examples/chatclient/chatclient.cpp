@@ -59,8 +59,14 @@ void ChatClient::sendMessage(const String & message)
 void ChatClient::onConnected()
 {
     logInfo("connected to server");
+
+    ByteArray ba;
+    if (clientId_.isEmpty()) ba = emptyTag(1);
+    else                     ba = toByteArray(clientId_, 1);
+    client_.send(ba, true);
+
     connected_ = true;
-    client_.send(toByteArray(clientId_, 1), true);
+    connected();
 }
 
 void ChatClient::onDisconnected()

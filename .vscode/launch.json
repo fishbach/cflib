@@ -39,6 +39,15 @@
             "environment": [],
             "externalConsole": false,
             "MIMode": "lldb"
+        },
+        {
+            "name": "lldb chatserver",
+            "type": "lldb",
+            "request": "launch",
+            "program": "${workspaceFolder}/bin/chatserver",
+            "args": ["-l", "1"],
+            "cwd": "${workspaceFolder}/bin",
+            "terminal": "integrated"
         }
     ]
 }

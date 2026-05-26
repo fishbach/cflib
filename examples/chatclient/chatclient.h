@@ -20,6 +20,7 @@ public:
     void sendMessage(const String & message);
 
 cfsignals:
+    sig<void ()> connected;
     sig<void (const String & msg)> newMessage;
 
 private:

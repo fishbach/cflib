@@ -39,13 +39,15 @@ int main(int argc, char *argv[])
     logInfo("chatclient started");
 
     ChatClient client;
+    client.connected.bind([]() {
+        out << "connected, type messages to send (Ctrl-D to exit)" << std::endl;
+    });
     client.newMessage.bind([](const String & msg) {
         out << "Message: " << msg.toUtf8().constData() << "\n";
     });
+    out << "connecting ..." << std::endl;
+    logInfo("connecting ...");
     client.connect(String(hostArg.value()), String(portArg.value()).toInt());
-    logInfo("connected");
-
-    out << "connected, type messages to send (Ctrl-D to exit)" << std::endl;
 
     std::string line;
     while (std::getline(std::cin, line)) {
