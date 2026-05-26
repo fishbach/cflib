@@ -4,6 +4,8 @@
 #
 # Licensed under the MIT License.
 
+add_subdirectory(chatclient)
+add_subdirectory(chatserver)
 if(ENABLE_PSQL)
     add_subdirectory(pgtest)
 endif()
