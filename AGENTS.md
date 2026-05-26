@@ -2,62 +2,71 @@
 
 ## C++ Standard
 
-- For C++ use the standard C++20.
-
-## Module Dependency Order
-
-Build modules in this order (enforced by `cflib/CMakeLists.txt`):
-```
-base → crypt → serialize → db → net, dao
-```
-`dao` requires `db` and `serialize`; `net` requires `crypt` and `serialize`. No cycles permitted.
+- C++20 (`CMAKE_CXX_STANDARD 20` in `cmake/ProjectConfig.cmake`)
 
 ## Build/Run Commands
 
 ```bash
-cmake -B build                    # Configure (Botan fetched from source on first run)
+cmake -B build                    # Configure (Botan fetched from source)
 cmake --build build               # Build all
-ctest --test-dir build            # Run all tests
+ctest --test-dir build            # Run tests
 ```
 
-Optional flags:
-- `-DBUILD_EXAMPLES=OFF` — skip examples
-- `-DENABLE_PSQL=ON` — enable PostgreSQL support (builds `examples/pgtest`)
-- `-DENABLE_SQLITE=ON` — enable SQLite support
-- `-DENABLE_PCH=OFF` — disable precompiled headers (builds faster but less optimized)
+**Required flags:**
+- `-DCMAKE_EXPORT_COMPILE_COMMANDS:BOOL=TRUE` for clangd
+- `-DENABLE_PSQL=ON` for PostgreSQL support (includes `examples/pgtest`)
+- `-DENABLE_SQLITE=ON` for SQLite support
+- `-DBUILD_EXAMPLES=OFF` to skip examples
 
-clangd:
-- For clangd you need the parameter `-DCMAKE_EXPORT_COMPILE_COMMANDS:BOOL=TRUE`
+**Module build order** (enforced by CMake dependency graph):
+```
+base → crypt → serialize → db → net, dao
+```
+- `net` requires `crypt` and `serialize`
+- `dao` requires `db` and `serialize`
+
+## Module-Specific Behavior
+
+**cflib_db:** Only builds if `ENABLE_PSQL` or `ENABLE_SQLITE` is set. SQLite uses FetchContent (source: sqlite.org).
+
+**cflib_net & cflib_dao:** Both use `ENABLE_SER` flag to auto-generate serialization code from `SERIALIZE_CLASS`/`RMIService` markers.
+
+**cflib_serialize:** Includes `ser` codegen tool at `cflib/serialize/ser`.
 
 ## Test Framework
 
-- Tests in `cflib/util/test.h`: inherit `cflib::util::TestBase`, implement `testMethods()`
-- Use `TVERIFY(cond)` and `TCOMPARE(actual, expected)` macros
-- Test output goes to `test.log`; exit code 1 on failure
-- Test classes auto-registered via `ADD_TEST(Class)` macro
+Tests use `cflib/util/test.h`:
+- Inherit `cflib::util::TestBase`, implement `testMethods()`
+- Macros: `TVERIFY(cond)`, `TCOMPARE(actual, expected)`, `QSKIP(msg)`
+- Auto-register tests with `ADD_TEST(Class)` macro
+- Test output: stderr; exit code 1 on any failure
 
 ## Code Generation
 
-- `ENABLE_SER` in `cf_lib()`/`cf_app()` scans headers for `SERIALIZE_CLASS`/`RMIService` and auto-generates `*_ser.cpp`
-- `ser` tool at `cflib/serialize/ser` handles serialization codegen
-- `gitversion` tool embeds git info when `ENABLE_GIT_VERSION` is set
+- `ENABLE_SER` in `cf_lib()`/`cf_app()` scans headers and generates `*_ser.cpp`
+- Use `cflib/serialize/ser` tool to inspect/verify generated code
+- No `gitversion` tool found; remove if stale
 
 ## Structure Conventions
 
-- Each module: `cflib/*/` contains headers (public API), `impl/` (private implementation)
+- Modules: `cflib/*/` with headers + `impl/` subdirectory
 - Tests: `cflib/*/*_test/` subdirectories
-- JavaScript mirrors C++ modules: `js/{domext,net,util}/`
+- Examples: `examples/*/`
+- **Note:** JavaScript directory structure not verified; may be outdated
 
 ## PCH Behavior
 
 - `cflib_base` uses `cflib/base.h` as PCH
-- Other modules inherit from `cflib_base` unless they specify custom `PCH`
+- Other modules inherit unless they specify custom `PCH`
+- Disable with `-DENABLE_PCH=OFF` (faster builds, less optimization)
 
 ## Language
 
 - Use English only.
-- You must not use Chinese characters.
+- No Chinese characters permitted.
 
-## New Source Files
+## Common Mistakes
 
-- When new source files need to be created, make sure to call cmake manually, to that new compile units will be created.
+1. Running cmake only once—must re-run after adding new source files
+2. Assuming all modules build by default—`db` requires `ENABLE_PSQL` or `ENABLE_SQLITE`
+3. Misunderstanding `ENABLE_SER`—needs to be explicitly passed to `cf_lib()`/`cf_app()` to enable codegen
