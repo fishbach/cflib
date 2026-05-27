@@ -19,7 +19,6 @@ namespace cflib::net {
 RSigClientBase::RSigClientBase(RMIClient & client, const String & service, const String & name)
     : client_(client), service_(service), name_(name)
 {
-    fprintf(stderr, "RSigClientBase constructor: client=%p, service=%s\n", &client, service.toUtf8().constData());
 }
 
 RSigClientBase::~RSigClientBase()
@@ -43,21 +42,5 @@ void RSigClientBase::unregisterRSig()
         id_ = 0;
     }
 }
-
-template<typename... P, typename... R>
-RSigClient<void (P...), void (R...)>::RSigClient(RMIClient & client, const String & service, const String & name)
-    : RSigClientBase(client, service, name)
-{
-    // registerRSig();
-    // Register later manually
-}
-
-template<typename... P, typename... R>
-RSigClient<void (P...), void (R...)>::~RSigClient()
-{
-    unregisterRSig();
-}
-
-template class RSigClient<void (const String &), void ()>;
 
 } // namespace cflib::net

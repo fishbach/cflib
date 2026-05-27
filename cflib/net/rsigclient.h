@@ -60,4 +60,17 @@ public:
     using RSigClientBase::RSigClientBase;
 };
 
+template<typename... P, typename... R>
+RSigClient<void (P...), void (R...)>::RSigClient(RMIClient & client, const String & service, const String & name)
+    : RSigClientBase(client, service, name)
+{
+    // registerRSig();
+}
+
+template<typename... P, typename... R>
+RSigClient<void (P...), void (R...)>::~RSigClient()
+{
+    unregisterRSig();
+}
+
 } // namespace

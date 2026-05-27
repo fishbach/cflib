@@ -46,8 +46,15 @@
             "request": "launch",
             "program": "${workspaceFolder}/bin/chatserver",
             "args": ["-l", "1"],
-            "cwd": "${workspaceFolder}/bin",
-            "terminal": "integrated"
+            "cwd": "${workspaceFolder}/bin"
+        },
+        {
+            "name": "lldb chatclient",
+            "type": "lldb",
+            "request": "launch",
+            "program": "${workspaceFolder}/bin/chatclient",
+            "args": ["127.0.0.1", "8000"],
+            "cwd": "${workspaceFolder}/bin"
         }
     ]
 }

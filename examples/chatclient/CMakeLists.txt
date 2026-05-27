@@ -5,7 +5,5 @@
 # Licensed under the MIT License.
 
 cf_app(chatclient
-        ChatServer::services
-        cflib_net
-    ENABLE_SER
+    ChatServer::services
 )

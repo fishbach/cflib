@@ -9,11 +9,12 @@
 
 #include <cflib/crypt/tlscredentials.h>
 #include <cflib/util/sig.h>
-#include <cflib/util/threadverify.h>
+
+namespace cflib::util { class ThreadVerify; }
 
 namespace cflib::net {
 
-class RMIClient : public util::ThreadVerify
+class RMIClient
 {
     CF_DISABLE_COPY(RMIClient)
 public:

@@ -5,12 +5,12 @@
 # Licensed under the MIT License.
 
 cf_app(chatserver
-        chatserver_dao
         cflib_net
     DIRS
         chatserver/services
+    DAO
+        chatserver/dao
     ENABLE_SER
 )
 
-add_subdirectory(chatserver/dao)
 add_subdirectory(remote)

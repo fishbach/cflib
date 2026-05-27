@@ -9,14 +9,17 @@
 
 #include <cflib/net/websocketclient.h>
 #include <cflib/serialize/util.h>
-#include <cflib/util/log.h>
 #include <cflib/util/evtimer.h>
+#include <cflib/util/log.h>
+#include <cflib/util/threadverify.h>
+
+using namespace cflib::util;
 
 USE_LOG(LogCat::Network)
 
 namespace cflib::net {
 
-class RMIClient::Impl : public util::ThreadVerify
+class RMIClient::Impl : public ThreadVerify
 {
     CF_DISABLE_COPY(Impl)
 public:
@@ -27,14 +30,29 @@ public:
         reconnectTimer_(this, &Impl::doConnect),
         aliveTimeoutTimer_(this, &Impl::checkAliveTimeout)
     {
-        ws_.connected.bind(this, &Impl::wsConnected);
-        ws_.disconnected.bind(this, &Impl::wsDisconnected);
-        ws_.receive.bind(this, &Impl::wsReceive);
+        init();
+    }
+
+    Impl(RMIClient & parent, const crypt::TLSCredentials & credentials, util::ThreadVerify * other) :
+        ThreadVerify(other),
+        parent_(parent),
+        ws_(credentials, this),
+        reconnectTimer_(this, &Impl::doConnect),
+        aliveTimeoutTimer_(this, &Impl::checkAliveTimeout)
+    {
+        init();
     }
 
     ~Impl()
     {
         shutdown();
+    }
+
+    void init()
+    {
+        ws_.connected.bind(this, &Impl::wsConnected);
+        ws_.disconnected.bind(this, &Impl::wsDisconnected);
+        ws_.receive.bind(this, &Impl::wsReceive);
     }
 
     void shutdown()
@@ -123,8 +141,6 @@ public:
 private:
     void doConnect()
     {
-        ws_.disconnect();
-
         serialize::BERSerializer ser(1);
         if (!clientId_.isNull()) {
             ser << clientId_;
@@ -298,8 +314,7 @@ private:
 };
 
 RMIClient::RMIClient(const crypt::TLSCredentials & credentials, util::ThreadVerify * other) :
-    ThreadVerify(other ? other : this),
-    impl_(new Impl(*this, credentials))
+    impl_(other ? new Impl(*this, credentials, other) : new Impl(*this, credentials))
 {
 }
 

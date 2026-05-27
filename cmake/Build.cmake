@@ -49,7 +49,7 @@ endfunction()
 
 # application
 function(cf_app app)
-    cmake_parse_arguments(ARG "ENABLE_EXCEPTIONS;ENABLE_SER;ENABLE_GIT_VERSION;CF_INTERN" "PCH" "DIRS;RESOURCES;OTHER_FILES" ${ARGN})
+    cmake_parse_arguments(ARG "ENABLE_EXCEPTIONS;ENABLE_SER;ENABLE_GIT_VERSION;CF_INTERN" "PCH;DAO" "DIRS;RESOURCES;OTHER_FILES" ${ARGN})
 
     cf_find_sources(sources . ${ARG_DIRS} OTHER_FILES ${ARG_OTHER_FILES})
     add_executable(${app} ${sources})
@@ -59,6 +59,15 @@ function(cf_app app)
         set_target_properties(${app} PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${PROJECT_SOURCE_DIR}/bin")
     endif()
     target_link_libraries(${app} PRIVATE ${ARG_UNPARSED_ARGUMENTS})
+
+    # dao as lib
+    if (ARG_DAO)
+        cf_find_sources(sources ${ARG_DAO})
+        add_library(${app}_dao ${sources})
+        cf_configure_target(${app}_dao FALSE "" TRUE)
+        target_link_libraries(${app}_dao PUBLIC cflib_serialize)
+        target_link_libraries(${app} PRIVATE ${app}_dao)
+    endif()
 
     # strip release builds and split debug info
     if(NOT APPLE)

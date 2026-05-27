@@ -5,8 +5,9 @@
  * Licensed under the MIT License.
  */
 
- #include <chatclient.h>
+ #include <chatserver/services/chatservice.h>
 
+#include <cflib/net/rmiclient.h>
 #include <cflib/util/cmdline.h>
 #include <cflib/util/log.h>
 
@@ -14,6 +15,7 @@
 
 using namespace cflib::net;
 using namespace cflib::util;
+using namespace chatserver::services;
 
 USE_LOG(LogCat::Network)
 
@@ -38,20 +40,27 @@ int main(int argc, char *argv[])
     Log::setLogLevel(1);
     logInfo("chatclient started");
 
-    ChatClient client;
-    client.connected.bind([]() {
+    RMIClient rmiClient;
+    Url url("ws://" + hostArg.value() + ":" + portArg.value() + "/ws");
+
+    // ChatClient client;
+    rmiClient.connected.bind([]() {
         out << "connected, type messages to send (Ctrl-D to exit)" << std::endl;
     });
-    client.newMessage.bind([](const String & msg) {
-        out << "Message: " << msg.toUtf8().constData() << "\n";
-    });
+    // client.newMessage.bind([](const String & msg) {
+    //     out << "Message: " << msg.toUtf8().constData() << "\n";
+    // });
     out << "connecting ..." << std::endl;
     logInfo("connecting ...");
-    client.connect(String(hostArg.value()), String(portArg.value()).toInt());
+    rmiClient.connect(url);
+    // client.connect(String(hostArg.value()), String(portArg.value()).toInt());
+
+    ChatService chatService(rmiClient);
 
     std::string line;
     while (std::getline(std::cin, line)) {
-        client.sendMessage(String(line.c_str()));
+        out << "X: >" << line << "<" << std::endl;
+//        client.sendMessage(String(line.c_str()));
     }
 
     logInfo("stopping ...");
