@@ -123,16 +123,12 @@ String generate(const SerializeTypeInfo & ti, bool isHeader)
         for (const SerializeFunctionTypeInfo & fti : ti.cfSignals) {
             cpp <<
                 ",\n"
-                "    " << fti.name << "(client, \"" << ti.typeName.toLower() << "\", \"" << fti.name << "\")";
+                "    " << fti.name << "(*this, \"" << fti.name << "\")";
         }
         cpp <<
             "\n"
             "{\n"
-            "    // Explicit registration for all signals\n";
-        for (const SerializeFunctionTypeInfo & fti : ti.cfSignals) {
-            cpp << "    " << fti.name << ".registerRSig();\n";
-        }
-        cpp <<
+            "// huhu 3\n"
             "}\n"
             "\n"
             << ti.typeName << "::~" << ti.typeName << "()\n"

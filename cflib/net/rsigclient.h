@@ -20,29 +20,18 @@
 
 namespace cflib::net {
 
-class RMIClient;
+class RMIRemoteService;
 
 class RSigClientBase
 {
 public:
-    RSigClientBase(RMIClient & client, const String & service, const String & name);
+    RSigClientBase(RMIRemoteService & service, const String & name);
 
-    void registerRSig();
-    void unregisterRSig();
-
-    RMIClient & rmiClient() { return client_; }
-    const String & service() const { return service_; }
     const String & name() const { return name_; }
-    uint id() const { return id_; }
-
-protected:
-    ~RSigClientBase();
 
 private:
-    RMIClient & client_;
-    const String service_;
+    RMIRemoteService & service_;
     const String name_;
-    uint id_ = 0;
 };
 
 template<typename F, typename R> class RSigClient;
@@ -54,23 +43,13 @@ public:
     typedef util::Sig<void (P...)> Base;
 
 public:
-    RSigClient(RMIClient & client, const String & service, const String & name);
-    ~RSigClient();
-
-    using RSigClientBase::RSigClientBase;
+    RSigClient(RMIRemoteService & service, const String & name);
 };
 
 template<typename... P, typename... R>
-RSigClient<void (P...), void (R...)>::RSigClient(RMIClient & client, const String & service, const String & name)
-    : RSigClientBase(client, service, name)
+RSigClient<void (P...), void (R...)>::RSigClient(RMIRemoteService & service, const String & name) :
+    RSigClientBase(service, name)
 {
-    // registerRSig();
-}
-
-template<typename... P, typename... R>
-RSigClient<void (P...), void (R...)>::~RSigClient()
-{
-    unregisterRSig();
 }
 
 } // namespace
