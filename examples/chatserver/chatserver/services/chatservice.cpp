@@ -5,9 +5,9 @@
  * Licensed under the MIT License.
  */
 
-#include "chatserver.h"
+#include "chatservice.h"
 
-namespace services {
+namespace chatserver::services {
 
 ChatService::ChatService() :
     RMIServiceBase(serializeTypeInfo().typeName)
@@ -19,7 +19,7 @@ ChatService::~ChatService()
     stopVerifyThread();
 }
 
-void ChatService::sendMessage(const String & message)
+void ChatService::sendMessage(const dao::Message & message)
 {
     newMessage(message);
 }

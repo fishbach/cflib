@@ -7,9 +7,11 @@
 
 #pragma once
 
+#include <chatserver/dao/message.h>
+
 #include <cflib/net/rmiservice.h>
 
-namespace services {
+namespace chatserver::services {
 
 class ChatService : public cflib::net::RMIServiceBase
 {
@@ -19,10 +21,10 @@ public:
     ~ChatService();
 
 rmi:
-    void sendMessage(const String & message);
+    void sendMessage(const dao::Message & message);
 
 cfsignals:
-    rsig<void (const String & msg), void()> newMessage;
+    rsig<void (const dao::Message & msg), void()> newMessage;
 };
 
 }

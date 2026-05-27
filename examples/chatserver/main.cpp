@@ -5,7 +5,7 @@
  * Licensed under the MIT License.
  */
 
-#include <services/chatserver.h>
+#include <chatserver/services/chatservice.h>
 
 #include <cflib/net/httpserver.h>
 #include <cflib/net/rmiserver.h>
@@ -23,7 +23,7 @@
 using namespace cflib::net;
 using namespace cflib::serialize::generate;
 using namespace cflib::util;
-using namespace services;
+using namespace chatserver::services;
 
 USE_LOG(LogCat::Network)
 
@@ -71,9 +71,9 @@ int main(int argc, char * argv[])
 
     // export
     if (exportOpt.isSet()) {
-        generateCppRemoteServices(rmiServer.getServiceTypeInfos(), exportOpt.value() + "/cpp");
-        generateJavaScript       (rmiServer.getServiceTypeInfos(), exportOpt.value());
-        generateAPIDoc           (rmiServer.getServiceTypeInfos(), exportOpt.value(), "apidoc", "ChatServer API");
+        generateCppRemoteServices(rmiServer.getServiceTypeInfos(), exportOpt.value() + "/chatserver/services");
+        generateJavaScript       (rmiServer.getServiceTypeInfos(), exportOpt.value() + "/chatserver");
+        generateAPIDoc           (rmiServer.getServiceTypeInfos(), exportOpt.value(), "chatserver/apidoc", "ChatServer API");
         logInfo("RMI export finished (dest: %1)", exportOpt.value());
         return 0;
     }

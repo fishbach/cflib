@@ -5,12 +5,12 @@
 # Licensed under the MIT License.
 
 cf_app(chatserver
+        chatserver_dao
         cflib_net
     DIRS
-        services
+        chatserver/services
     ENABLE_SER
 )
 
-add_custom_command(TARGET chatserver POST_BUILD
-    COMMAND chatserver --export "${CMAKE_CURRENT_SOURCE_DIR}/api"
-)
+add_subdirectory(chatserver/dao)
+add_subdirectory(remote)
