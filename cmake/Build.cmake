@@ -6,54 +6,22 @@
 
 # library
 function(cf_lib lib)
-    cmake_parse_arguments(ARG "ENABLE_EXCEPTIONS;ENABLE_SER" "PCH;REMOTE" "PUBLIC;PRIVATE;DIRS;OTHER_FILES" ${ARGN})
+    cmake_parse_arguments(ARG "ENABLE_EXCEPTIONS;ENABLE_SER" "PCH" "PUBLIC;PRIVATE;DIRS;OTHER_FILES" ${ARGN})
 
     cf_find_sources(sources . ${ARG_DIRS} OTHER_FILES ${ARG_OTHER_FILES})
     add_library(${lib} ${sources})
-    cf_configure_target(${lib} ${ARG_ENABLE_EXCEPTIONS} "${ARG_PCH}" ${ARG_ENABLE_SER})
+    cf_configure_target(${lib} ${ARG_ENABLE_EXCEPTIONS} "${ARG_PCH}" ${ARG_ENABLE_SER} "")
     target_include_directories(${lib} PUBLIC "${PROJECT_SOURCE_DIR}")
     target_link_libraries(${lib} PUBLIC ${ARG_PUBLIC} PRIVATE ${ARG_PRIVATE})
-
-    # generating remote API files
-    if (ARG_REMOTE)
-        set(output)
-        set(depends)
-        get_target_property(RMI_SERVICE_HEADERS ${ARG_REMOTE} RMI_SERVICE_HEADERS)
-        get_target_property(SOURCE_DIR          ${ARG_REMOTE} SOURCE_DIR         )
-        foreach(header ${RMI_SERVICE_HEADERS})
-            # remove .h
-            get_filename_component(dir  "${header}" DIRECTORY)
-            get_filename_component(file "${header}" NAME_WLE )
-            set(file "${dir}/${file}")
-
-            list(APPEND output
-                "${CMAKE_CURRENT_SOURCE_DIR}/${file}.h"
-                "${CMAKE_CURRENT_SOURCE_DIR}/${file}.cpp"
-            )
-            list(APPEND depends "${SOURCE_DIR}/${file}.h")
-
-            target_sources(${lib}
-                PUBLIC  "${file}.h"
-                PRIVATE "${file}.cpp"
-            )
-        endforeach()
-
-        add_custom_command(
-            OUTPUT ${output}
-            COMMAND ${ARG_REMOTE} --export "${CMAKE_CURRENT_SOURCE_DIR}"
-            DEPENDS ${depends} cflib_serialize
-            VERBATIM
-        )
-    endif()
 endfunction()
 
 # application
 function(cf_app app)
-    cmake_parse_arguments(ARG "ENABLE_EXCEPTIONS;ENABLE_SER;ENABLE_GIT_VERSION;CF_INTERN" "PCH;DAO" "DIRS;RESOURCES;OTHER_FILES" ${ARGN})
+    cmake_parse_arguments(ARG "ENABLE_EXCEPTIONS;ENABLE_SER;ENABLE_GIT_VERSION;CF_INTERN" "PCH;DAO;REMOTE" "DIRS;RESOURCES;OTHER_FILES" ${ARGN})
 
     cf_find_sources(sources . ${ARG_DIRS} OTHER_FILES ${ARG_OTHER_FILES})
     add_executable(${app} ${sources})
-    cf_configure_target(${app} ${ARG_ENABLE_EXCEPTIONS} "${ARG_PCH}" ${ARG_ENABLE_SER} ${ARG_RESOURCES})
+    cf_configure_target(${app} ${ARG_ENABLE_EXCEPTIONS} "${ARG_PCH}" ${ARG_ENABLE_SER} rmi_service_headers ${ARG_RESOURCES})
     target_include_directories(${app} PRIVATE .)
     if(NOT ARG_CF_INTERN)
         set_target_properties(${app} PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${PROJECT_SOURCE_DIR}/bin")
@@ -61,12 +29,62 @@ function(cf_app app)
     target_link_libraries(${app} PRIVATE ${ARG_UNPARSED_ARGUMENTS})
 
     # dao as lib
-    if (ARG_DAO)
+    if(ARG_DAO)
         cf_find_sources(sources ${ARG_DAO})
         add_library(${app}_dao ${sources})
-        cf_configure_target(${app}_dao FALSE "" TRUE)
+        cf_configure_target(${app}_dao FALSE "" TRUE "")
         target_link_libraries(${app}_dao PUBLIC cflib_serialize)
         target_link_libraries(${app} PRIVATE ${app}_dao)
+    endif()
+
+    # generating remote API files
+    if(ARG_REMOTE)
+        # create symlink for dao
+        if(ARG_DAO)
+            set(dao_link "${CMAKE_CURRENT_SOURCE_DIR}/${ARG_REMOTE}/${ARG_DAO}")
+            get_filename_component(dao_base_dir "${dao_link}" DIRECTORY)
+            if(IS_DIRECTORY "${dao_base_dir}")
+                file(MAKE_DIRECTORY "${dao_base_dir}")
+                file(RELATIVE_PATH dao_rel_path "${dao_base_dir}" "${CMAKE_CURRENT_SOURCE_DIR}/${ARG_DAO}")
+                execute_process(COMMAND ${CMAKE_COMMAND} -E create_symlink
+                    "${dao_rel_path}" "${dao_link}"
+                )
+            endif()
+        endif()
+
+        # add _services lib
+        add_library(${app}_services)
+        add_library(${app}::services ALIAS ${app}_services)
+        target_include_directories(${app}_services PUBLIC ${ARG_REMOTE})
+        target_link_libraries(${app}_services PUBLIC ${app}_dao cflib_net)
+
+        # configure code generation
+        set(output)
+        set(depends)
+        foreach(header ${rmi_service_headers})
+            # remove .h
+            get_filename_component(dir  "${header}" DIRECTORY)
+            get_filename_component(file "${header}" NAME_WLE )
+            set(file "${dir}/${file}")
+
+            list(APPEND output
+                "${CMAKE_CURRENT_SOURCE_DIR}/${ARG_REMOTE}/${file}.h"
+                "${CMAKE_CURRENT_SOURCE_DIR}/${ARG_REMOTE}/${file}.cpp"
+            )
+            list(APPEND depends "${CMAKE_CURRENT_SOURCE_DIR}/${file}.h")
+
+            target_sources(${app}_services
+                PUBLIC  "${ARG_REMOTE}/${file}.h"
+                PRIVATE "${ARG_REMOTE}/${file}.cpp"
+            )
+        endforeach()
+
+        add_custom_command(
+            OUTPUT ${output}
+            COMMAND ${app} --export "${CMAKE_CURRENT_SOURCE_DIR}/${ARG_REMOTE}"
+            DEPENDS ${depends} cflib_serialize
+            VERBATIM
+        )
     endif()
 
     # strip release builds and split debug info
@@ -101,13 +119,13 @@ function(cf_test test lib)
 
     cf_find_sources(sources . ${ARG_DIRS})
     add_executable(${test} ${sources})
-    cf_configure_target(${test} ${ARG_ENABLE_EXCEPTIONS} "${ARG_PCH}" ${ARG_ENABLE_SER} ${ARG_RESOURCES})
+    cf_configure_target(${test} ${ARG_ENABLE_EXCEPTIONS} "${ARG_PCH}" ${ARG_ENABLE_SER} "" ${ARG_RESOURCES})
     target_link_libraries(${test} PRIVATE ${lib})
     add_test(NAME ${test} COMMAND ${test})
 endfunction()
 
 # configure target
-function(cf_configure_target target enable_exceptions pch enable_ser)
+function(cf_configure_target target enable_exceptions pch enable_ser rmi_service_headers)
     # exceptions
     if(NOT enable_exceptions)
         if(MSVC)
@@ -144,10 +162,8 @@ function(cf_configure_target target enable_exceptions pch enable_ser)
                 list(APPEND services "${header}")
             endif()
         endforeach()
-        if(services)
-            set_target_properties(${target} PROPERTIES
-                RMI_SERVICE_HEADERS "${services}"
-            )
+        if(services AND rmi_service_headers)
+            set(${rmi_service_headers} ${services} PARENT_SCOPE)
         endif()
 
         # Something to do?

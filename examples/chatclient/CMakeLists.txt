@@ -5,5 +5,5 @@
 # Licensed under the MIT License.
 
 cf_app(chatclient
-    ChatServer::services
+    chatserver::services
 )

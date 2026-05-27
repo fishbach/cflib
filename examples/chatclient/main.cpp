@@ -5,7 +5,7 @@
  * Licensed under the MIT License.
  */
 
- #include <chatserver/services/chatservice.h>
+#include <chatserver/services/chatservice.h>
 
 #include <cflib/net/rmiclient.h>
 #include <cflib/util/cmdline.h>
