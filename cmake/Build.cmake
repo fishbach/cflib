@@ -43,13 +43,9 @@ function(cf_app app)
         if(ARG_DAO)
             set(dao_link "${CMAKE_CURRENT_SOURCE_DIR}/${ARG_REMOTE}/${ARG_DAO}")
             get_filename_component(dao_base_dir "${dao_link}" DIRECTORY)
-            if(IS_DIRECTORY "${dao_base_dir}")
-                file(MAKE_DIRECTORY "${dao_base_dir}")
-                file(RELATIVE_PATH dao_rel_path "${dao_base_dir}" "${CMAKE_CURRENT_SOURCE_DIR}/${ARG_DAO}")
-                execute_process(COMMAND ${CMAKE_COMMAND} -E create_symlink
-                    "${dao_rel_path}" "${dao_link}"
-                )
-            endif()
+            file(MAKE_DIRECTORY "${dao_base_dir}")
+            file(RELATIVE_PATH dao_rel_path "${dao_base_dir}" "${CMAKE_CURRENT_SOURCE_DIR}/${ARG_DAO}")
+            execute_process(COMMAND ${CMAKE_COMMAND} -E create_symlink "${dao_rel_path}" "${dao_link}")
         endif()
 
         # add _services lib
