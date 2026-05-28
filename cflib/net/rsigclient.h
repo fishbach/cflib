@@ -7,7 +7,8 @@
 
 #pragma once
 
-#include <cflib/base.h>
+#include <cflib/net/rmiremoteservice.h>
+#include <cflib/serialize/util.h>
 #include <cflib/util/sig.h>
 
 #define rsigs \
@@ -27,11 +28,10 @@ class RSigClientBase
 public:
     RSigClientBase(RMIRemoteService & service, const String & name);
 
-    const String & name() const { return name_; }
-
-private:
+protected:
     RMIRemoteService & service_;
     const String name_;
+    uint64 id_ = 0;
 };
 
 template<typename F, typename R> class RSigClient;
@@ -44,12 +44,24 @@ public:
 
 public:
     RSigClient(RMIRemoteService & service, const String & name);
+
+    void reg(R... p);
 };
 
 template<typename... P, typename... R>
 RSigClient<void (P...), void (R...)>::RSigClient(RMIRemoteService & service, const String & name) :
     RSigClientBase(service, name)
 {
+}
+
+template<typename... P, typename... R>
+void RSigClient<void (P...), void (R...)>::reg(R... p)
+{
+    id_ = service_.nextRSigId();
+    serialize::BERSerializer ser = service_.getSer();
+    ser << name_ << true << id_;
+    serialize::toByteArray(ser, std::forward<P>(p)...);
+    service_.sendRSigReg(ser.data());
 }
 
 } // namespace

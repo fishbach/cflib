@@ -138,6 +138,8 @@ public:
         return id;
     }
 
+    size_t nextRSigId() { return ++nextRsigId_; }
+
 private:
     void doConnect()
     {
@@ -303,7 +305,7 @@ private:
     List<ByteArray> waitingAsync_;
 
     Map<uint, RSigData> rsigHandlers_;
-    uint nextRsigId_ = 0;
+    AtomicUInt nextRsigId_;
 
     Map<uint64, std::function<void (const ByteArray &)>> msgHandlers_;
 
@@ -346,6 +348,11 @@ void RMIClient::sendRequest(const ByteArray & data, const std::function<void (co
 void RMIClient::sendAsync(const ByteArray & data, bool doNotBuffer)
 {
     impl_->sendAsync(data, doNotBuffer);
+}
+
+size_t RMIClient::nextRSigId()
+{
+    return impl_->nextRSigId();
 }
 
 void RMIClient::unregisterRSig(uint rsigId)

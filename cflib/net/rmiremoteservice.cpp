@@ -43,4 +43,14 @@ RMIRemoteService::RMIRemoteService(RMIClient & client, const String & serviceNam
 {
 }
 
+size_t RMIRemoteService::nextRSigId()
+{
+    return client_.nextRSigId();
+}
+
+void RMIRemoteService::sendRSigReg(const ByteArray & data)
+{
+    client_.sendAsync(data, true);
+}
+
 } // namespace cflib::net

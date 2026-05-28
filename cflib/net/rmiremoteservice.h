@@ -39,6 +39,10 @@ public:
 
     RMIRemoteCall newCall() { return RMIRemoteCall(client_, ser_); }
 
+    size_t nextRSigId();
+    serialize::BERSerializer getSer() const { return ser_; }
+    void sendRSigReg(const ByteArray & data);
+
 private:
     RMIClient & client_;
     const String serviceName_;

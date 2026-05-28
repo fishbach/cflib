@@ -29,6 +29,7 @@ public:
     void sendRequest(const ByteArray & data, const std::function<void (const ByteArray &)> & callback);
     void sendAsync(const ByteArray & data, bool doNotBuffer = false);
 
+    size_t nextRSigId();
     void unregisterRSig(uint rsigId);
     uint registerRSig(const String & service, const String & name);
 
