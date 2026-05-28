@@ -41,6 +41,7 @@ private:
 
 class BERDeserializerBase
 {
+    CF_DISABLE_COPY(BERDeserializerBase)
 public:
     BERDeserializerBase(const uint8 * data, int len, bool disableTagNumbering = false) :
         readPos_(data), bytesAvailable_(len), tag_(disableTagNumbering ? 0 : 1) {}

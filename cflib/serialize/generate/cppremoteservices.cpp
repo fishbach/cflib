@@ -56,21 +56,39 @@ String signature(const SerializeFunctionTypeInfo & fti, bool isRSig, const Strin
     return rv;
 }
 
-String generateImpl(const SerializeTypeInfo & ti, const SerializeFunctionTypeInfo & fti)
+String generateImpl(const SerializeFunctionTypeInfo & fti)
 {
-    CF_UNUSED(ti);
-
     String rv;
+    rv <<
+        "    cflib::net::RMIRemoteCall __call = newCall();\n"
+        "    __call << \"" << fti.signature() << "\"";
 
     int id = 0;
     for (const SerializeVariableTypeInfo & vti : fti.parameters) {
-        rv << "    CF_UNUSED(";
+        rv << " << ";
         if (!vti.name.isEmpty()) rv << vti.name;
         else rv << "__param_" << String::number(++id);
-        rv << ");\n";
+    }
+    rv << ";\n";
+
+    if (!fti.hasReturnValues()) {
+        rv << "    __call.callAsync();\n";
+    } else {
+        if (!fti.returnType.isNull()) rv << "    " << fti.returnType.getName() << " __retval;\n";
+        rv << "    __call.callSync()";
+        if (!fti.returnType.isNull()) rv << " >> __retval";
+        int id = 0;
+        for (const SerializeVariableTypeInfo & vti : fti.parameters) {
+            if (vti.name.isEmpty()) ++id;
+            if (!vti.isRef) continue;
+            rv << " >> ";
+            if (!vti.name.isEmpty()) rv << vti.name;
+            else rv << "__param_" << String::number(id);
+        }
+        rv << ";\n";
+        if (!fti.returnType.isNull()) rv << "    return __retval;\n";
     }
 
-    if (!fti.returnType.isNull()) rv << "    return {};\n";
     return rv;
 }
 
@@ -138,7 +156,7 @@ String generate(const SerializeTypeInfo & ti, bool isHeader)
                 "\n" <<
                 signature(fti, false, ti.typeName) << "\n" <<
                 "{\n" <<
-                generateImpl(ti, fti) <<
+                generateImpl(fti) <<
                 "}\n";
         }
     }

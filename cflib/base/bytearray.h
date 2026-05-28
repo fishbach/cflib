@@ -44,7 +44,7 @@ public:
         d->ref.ref();
         return *this;
     }
-    ByteArray& operator=(ByteArray && other) {
+    ByteArray & operator=(ByteArray && other) {
         std::swap(d, other.d);
         return *this;
     }
