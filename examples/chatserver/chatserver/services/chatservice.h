@@ -22,6 +22,7 @@ public:
 
 rmi:
     void sendMessage(const dao::Message & message);
+    bool test() { return true; }
 
 cfsignals:
     rsig<void (const dao::Message & msg), void()> newMessage;

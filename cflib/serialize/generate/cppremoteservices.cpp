@@ -114,7 +114,6 @@ String generate(const SerializeTypeInfo & ti, bool isHeader)
         "{\n"
         "public:\n"
         "    " << ti.typeName << "(cflib::net::RMIClient & client);\n"
-        "    ~" << ti.typeName << "();\n"
         "\n";
     else {
         cpp <<
@@ -127,10 +126,6 @@ String generate(const SerializeTypeInfo & ti, bool isHeader)
         }
         cpp <<
             "\n"
-            "{\n"
-            "}\n"
-            "\n"
-            << ti.typeName << "::~" << ti.typeName << "()\n"
             "{\n"
             "}\n";
     }

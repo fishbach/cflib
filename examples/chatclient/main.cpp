@@ -53,8 +53,11 @@ int main(int argc, char *argv[])
 
     ChatService chatService(rmiClient);
     chatService.newMessage.bind([](const Message & msg) {
-        out << "Message: " << msg.text.toUtf8().constData() << "\n";
+        out << "Message: " << msg.text.toUtf8().constData() << std::endl;
     });
+
+    if (chatService.test()) out << "test ok" << std::endl;
+    else                    out << "test failed" << std::endl;
 
     std::string line;
     while (std::getline(std::cin, line)) {
