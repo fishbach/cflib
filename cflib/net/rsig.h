@@ -20,7 +20,7 @@ namespace impl { class RMIServerBase; }
 class RSigBase
 {
 public:
-    typedef Pair<uint, uint> ConnIdRegId;
+    typedef Pair<uint64, uint64> ConnIdRegId;
     typedef List<ConnIdRegId> Listeners;
 
 public:
@@ -61,7 +61,7 @@ public:
 
     virtual void regClient(uint connId, serialize::BERDeserializer & deser)
     {
-        uint regId; deser >> regId;
+        uint64 regId; deser >> regId;
         if (!registerFunc_) {
             defaultListeners << Pair(connId, regId);
             return;
@@ -73,9 +73,9 @@ public:
 
     virtual void unregClient(uint connId, serialize::BERDeserializer & deser)
     {
-        uint regId; deser >> regId;
+        uint64 regId; deser >> regId;
         if (!unregisterFunc_) {
-            defaultListeners.erase(std::remove(defaultListeners.begin(), defaultListeners.end(), Pair<uint, uint>(connId, regId)), defaultListeners.end());
+            defaultListeners.erase(std::remove(defaultListeners.begin(), defaultListeners.end(), Pair<uint64, uint64>(connId, regId)), defaultListeners.end());
             return;
         }
         unregisterFunc_(connId, regId);

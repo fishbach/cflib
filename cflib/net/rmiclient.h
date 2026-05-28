@@ -14,6 +14,8 @@ namespace cflib::util { class ThreadVerify; }
 
 namespace cflib::net {
 
+class RSigClientBase;
+
 class RMIClient
 {
     CF_DISABLE_COPY(RMIClient)
@@ -30,8 +32,8 @@ public:
     void sendAsync(const ByteArray & data, bool doNotBuffer = false);
 
     size_t nextRSigId();
-    void unregisterRSig(uint rsigId);
-    uint registerRSig(const String & service, const String & name);
+    void registerRSig(RSigClientBase * rsig, uint64 id, const ByteArray & regData);
+    void unregisterRSig(uint64 rsigId);
 
     void registerHandler(uint tagNo, const std::function<void (const ByteArray &)> & func);
 
@@ -41,8 +43,6 @@ cfsignals:
     sig<void ()> connected;
     sig<void ()> disconnected;
     sig<void ()> identityReset;
-    sig<void (const ByteArray & data)> messageReceived;
-    sig<void (uint rsigId, const ByteArray & params)> rsigReceived;
 
 private:
     class Impl;

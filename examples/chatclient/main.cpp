@@ -52,7 +52,7 @@ int main(int argc, char *argv[])
     rmiClient.connect(url);
 
     ChatService chatService(rmiClient);
-    chatService.newMessage.bind([](const Message & msg) {
+    chatService.newMessage.reg().bind([](const Message & msg) {
         out << "Message: " << msg.text.toUtf8().constData() << std::endl;
     });
 

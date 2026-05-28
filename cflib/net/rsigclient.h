@@ -25,8 +25,12 @@ class RMIRemoteService;
 
 class RSigClientBase
 {
+    CF_DISABLE_COPY(RSigClientBase)
 public:
     RSigClientBase(RMIRemoteService & service, const String & name);
+
+    ByteArray unregData() const;
+    virtual void call(const ByteArray & paramsData) = 0;
 
 protected:
     RMIRemoteService & service_;
@@ -45,7 +49,9 @@ public:
 public:
     RSigClient(RMIRemoteService & service, const String & name);
 
-    void reg(R... p);
+    RSigClient & reg(R... p);
+
+    void call(const ByteArray & paramsData) override;
 };
 
 template<typename... P, typename... R>
@@ -55,13 +61,20 @@ RSigClient<void (P...), void (R...)>::RSigClient(RMIRemoteService & service, con
 }
 
 template<typename... P, typename... R>
-void RSigClient<void (P...), void (R...)>::reg(R... p)
+RSigClient<void (P...), void (R...)> & RSigClient<void (P...), void (R...)>::reg(R... p)
 {
     id_ = service_.nextRSigId();
     serialize::BERSerializer ser = service_.getSer();
     ser << name_ << true << id_;
-    serialize::toByteArray(ser, std::forward<P>(p)...);
+    serialize::toByteArray(ser, std::forward<R>(p)...);
     service_.sendRSigReg(ser.data());
+    return *this;
+}
+
+template<typename... P, typename... R>
+void RSigClient<void (P...), void (R...)>::call(const ByteArray & paramsData)
+{
+    serialize::readAndCall<P...>(paramsData, (Base &)*this);
 }
 
 } // namespace

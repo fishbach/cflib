@@ -86,4 +86,11 @@ inline void readAndCall(BERDeserializer & deser, F func)
     impl::ReadAndCall<P...>()(deser, func);
 }
 
+template<typename... P, typename F>
+inline void readAndCall(const ByteArray & data, F func)
+{
+    BERDeserializer deser(data);
+    impl::ReadAndCall<P...>()(deser, func);
+}
+
 } // namespace
