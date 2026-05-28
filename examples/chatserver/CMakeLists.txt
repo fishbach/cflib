@@ -10,7 +10,7 @@ cf_app(chatserver
         chatserver/services
     DAO
         chatserver/dao
-    REMOTE
-        remote
     ENABLE_SER
 )
+
+add_subdirectory(remote)

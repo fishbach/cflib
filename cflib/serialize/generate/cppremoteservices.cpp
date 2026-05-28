@@ -128,7 +128,6 @@ String generate(const SerializeTypeInfo & ti, bool isHeader)
         cpp <<
             "\n"
             "{\n"
-            "// huhu 3\n"
             "}\n"
             "\n"
             << ti.typeName << "::~" << ti.typeName << "()\n"
