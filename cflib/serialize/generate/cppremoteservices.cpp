@@ -110,14 +110,14 @@ String generate(const SerializeTypeInfo & ti, bool isHeader)
         for (const SerializeTypeInfo & cl : ti.allUsedClasses()) {
             cpp << "#include <" << cl.getName().toLower().replace("::", "/") << ".h>\n";
         }
+        if (!ti.allUsedClasses().isEmpty()) cpp << '\n';
         if (isHeader) {
             cpp <<
-                "\n"
                 "#include <cflib/net/rmiremoteservice.h>\n";
             if (!ti.cfSignals.isEmpty()) {
                 cpp << "#include <cflib/net/rsigclient.h>\n";
             }
-            cpp << "\n";
+            cpp << '\n';
         }
     }
 
