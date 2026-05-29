@@ -44,26 +44,33 @@ int main(int argc, char *argv[])
     RMIClient rmiClient;
     Url url("ws://" + hostArg.value() + ":" + portArg.value() + "/ws");
 
-    rmiClient.connected.bind([]() {
-        out << "connected, type messages to send (Ctrl-D to exit)" << std::endl;
+    Semaphore sem;
+    rmiClient.connected.bind([&]() {
+        out << "connected!" << std::endl;
+        sem.release();
     });
     out << "connecting ..." << std::endl;
     logInfo("connecting ...");
     rmiClient.connect(url);
+    sem.acquire();
+    out << "go ..." << std::endl;
 
     ChatService chatService(rmiClient);
     chatService.newMessage.reg().bind([](const Message & msg) {
         out << "Message: " << msg.text.toUtf8().constData() << std::endl;
     });
 
+    out << "testing ..." << std::endl;
     if (chatService.test()) out << "test ok" << std::endl;
     else                    out << "test failed" << std::endl;
 
+    out << "Type messages to send (Ctrl-D to exit)" << std::endl;
     std::string line;
     while (std::getline(std::cin, line)) {
         chatService.sendMessage(String(line.c_str()));
     }
 
+    out << "finished" << std::endl;
     logInfo("stopping ...");
     return 0;
 }

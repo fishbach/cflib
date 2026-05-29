@@ -25,8 +25,8 @@ public:
         }
     }
 
-    BERSerializer(const BERSerializer & other) : lenPos_(other.lenPos_), data_(other.data_), base_(data_) {}
-    BERSerializer(BERSerializer && other) : lenPos_(other.lenPos_), data_(std::move(other.data_)), base_(data_) {}
+    BERSerializer(const BERSerializer & other) : lenPos_(other.lenPos_), data_(other.data_), base_(data_, other.base_) {}
+    BERSerializer(BERSerializer && other) : lenPos_(other.lenPos_), data_(std::move(other.data_)), base_(data_, other.base_) {}
     BERSerializer & operator=(const BERSerializer & other) = delete;
     BERSerializer & operator=(BERSerializer && other) = delete;
 
@@ -57,8 +57,8 @@ public:
     BERDeserializer(const ByteArray & ba, const uint8 * data, int len) :
         data_(ba), base_(data, len) {}
 
-    BERDeserializer(const BERDeserializer & other) : data_(other.data_), base_((const uint8 *)data_.constData(), data_.size()) {}
-    BERDeserializer(BERDeserializer && other) : data_(std::move(other.data_)), base_((const uint8 *)data_.constData(), data_.size()) {}
+    BERDeserializer(const BERDeserializer & other) : data_(other.data_), base_(other.base_) {}
+    BERDeserializer(BERDeserializer && other) : data_(std::move(other.data_)), base_(other.base_) {}
     BERDeserializer & operator=(const BERDeserializer & other) = delete;
     BERDeserializer & operator=(BERDeserializer && other) = delete;
 

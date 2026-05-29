@@ -48,9 +48,14 @@ size_t RMIRemoteService::nextRSigId()
     return client_.nextRSigId();
 }
 
-void RMIRemoteService::sendRSigReg(const ByteArray & data)
+void RMIRemoteService::registerRSig(RSigClientBase * rsig, uint64 id, const ByteArray & regData)
 {
-    client_.sendAsync(data, true);
+    client_.registerRSig(rsig, id, regData);
+}
+
+void RMIRemoteService::unregisterRSig(uint64 id, const ByteArray & unregData)
+{
+    client_.unregisterRSig(id, unregData);
 }
 
 } // namespace cflib::net

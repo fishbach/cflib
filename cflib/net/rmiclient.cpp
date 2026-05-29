@@ -59,8 +59,8 @@ public:
 
     void shutdown()
     {
-        stopVerifyThread();
         ws_.shutdown();
+        stopVerifyThread();
     }
 
     void connect(const Url & url, const ByteArrayList & headers)
@@ -111,14 +111,14 @@ public:
         ws_.send(regData, true);
     }
 
-    void unregisterRSig(uint64 rsigId)
+    void unregisterRSig(uint64 rsigId, const ByteArray & unregData)
     {
-        if (!verifyThreadCall(&Impl::unregisterRSig, rsigId)) return;
+        if (!verifySyncedThreadCall(&Impl::unregisterRSig, rsigId, unregData)) return;
 
         RSigClientBase * rsig = rsigHandlers_.value(rsigId);
         if (!rsig) return;
         rsigHandlers_.erase(rsigId);
-        ws_.send(rsig->unregData(), true);
+        ws_.send(unregData, true);
      }
 
     void setAliveTimeoutHandler(uint timeoutMs, const std::function<void (bool timeout)> & func)
@@ -157,8 +157,6 @@ private:
             ser << clientId_;
         }
         ws_.send(ser.data(), true);
-
-        parent_.connected();
 
         // for (auto & [id, data] : rsigHandlers_) {
         //     sendRsigRegistration(data.service, data.name, true, id);
@@ -206,7 +204,7 @@ private:
             case 1: {
                 clientId_ = serialize::fromByteArray<ByteArray>(data, tagLen, lengthSize, valueLen);
                 logDebug("received clientId: %1", clientId_.toHex());
-                parent_.identityReset();
+                parent_.connected();
                 break;
             }
             case 2:
@@ -345,9 +343,9 @@ void RMIClient::registerRSig(RSigClientBase * rsig, uint64 id, const ByteArray &
     impl_->registerRSig(rsig, id, regData);
 }
 
-void RMIClient::unregisterRSig(uint64 rsigId)
+void RMIClient::unregisterRSig(uint64 rsigId, const ByteArray & unregData)
 {
-    impl_->unregisterRSig(rsigId);
+    impl_->unregisterRSig(rsigId, unregData);
 }
 
 void RMIClient::setAliveTimeoutHandler(uint timeoutMs, const std::function<void (bool timeout)> & func)

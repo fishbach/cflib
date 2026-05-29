@@ -28,8 +28,9 @@ class RSigClientBase
     CF_DISABLE_COPY(RSigClientBase)
 public:
     RSigClientBase(RMIRemoteService & service, const String & name);
+    ~RSigClientBase();
 
-    ByteArray unregData() const;
+    void unreg();
     virtual void call(const ByteArray & paramsData) = 0;
 
 protected:
@@ -63,11 +64,12 @@ RSigClient<void (P...), void (R...)>::RSigClient(RMIRemoteService & service, con
 template<typename... P, typename... R>
 RSigClient<void (P...), void (R...)> & RSigClient<void (P...), void (R...)>::reg(R... p)
 {
+    if (id_) return *this;
     id_ = service_.nextRSigId();
     serialize::BERSerializer ser = service_.getSer();
     ser << name_ << true << id_;
     serialize::toByteArray(ser, std::forward<R>(p)...);
-    service_.sendRSigReg(ser.data());
+    service_.registerRSig(this, id_, ser.data());
     return *this;
 }
 

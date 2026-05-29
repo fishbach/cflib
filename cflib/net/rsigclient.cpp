@@ -17,11 +17,17 @@ RSigClientBase::RSigClientBase(RMIRemoteService & service, const String & name) 
 {
 }
 
-ByteArray RSigClientBase::unregData() const
+RSigClientBase::~RSigClientBase()
 {
+    unreg();
+}
+
+void RSigClientBase::unreg()
+{
+    if (id_ == 0) return;
     BERSerializer ser = service_.getSer();
     ser << name_ << false << id_;
-    return ser.data();;
+    service_.unregisterRSig(id_, ser.data());
 }
 
 } // namespace cflib::net

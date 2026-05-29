@@ -33,7 +33,7 @@ public:
 
     size_t nextRSigId();
     void registerRSig(RSigClientBase * rsig, uint64 id, const ByteArray & regData);
-    void unregisterRSig(uint64 rsigId);
+    void unregisterRSig(uint64 rsigId, const ByteArray & unregData);
 
     void registerHandler(uint tagNo, const std::function<void (const ByteArray &)> & func);
 

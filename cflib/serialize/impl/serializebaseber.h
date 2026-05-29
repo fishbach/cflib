@@ -20,6 +20,9 @@ public:
     BERSerializerBase(ByteArray & data, bool disableTagNumbering = false) :
         data_(data), tag_(disableTagNumbering ? 0 : 1) {}
 
+    BERSerializerBase(ByteArray & data, const BERSerializerBase & other) :
+        data_(data), tag_(other.tag_) {}
+
     template<typename T>
     BERSerializerBase & operator<<(const T & cl)
     {
@@ -41,10 +44,12 @@ private:
 
 class BERDeserializerBase
 {
-    CF_DISABLE_COPY(BERDeserializerBase)
 public:
     BERDeserializerBase(const uint8 * data, int len, bool disableTagNumbering = false) :
         readPos_(data), bytesAvailable_(len), tag_(disableTagNumbering ? 0 : 1) {}
+
+    BERDeserializerBase(const BERDeserializerBase & other) :
+        readPos_(other.readPos_), bytesAvailable_(other.bytesAvailable_), tag_(other.tag_) {}
 
     template<typename T>
     BERDeserializerBase & operator>>(T & cl)

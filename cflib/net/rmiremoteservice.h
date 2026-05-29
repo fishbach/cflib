@@ -19,6 +19,7 @@
 namespace cflib::net {
 
 class RMIClient;
+class RSigClientBase;
 
 class RMIRemoteCall : public serialize::BERSerializer
 {
@@ -41,7 +42,8 @@ public:
 
     size_t nextRSigId();
     serialize::BERSerializer getSer() const { return ser_; }
-    void sendRSigReg(const ByteArray & data);
+    void registerRSig(RSigClientBase * rsig, uint64 id, const ByteArray & regData);
+    void unregisterRSig(uint64 id, const ByteArray & unregData);
 
 private:
     RMIClient & client_;
