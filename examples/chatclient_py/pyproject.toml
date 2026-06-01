@@ -1,0 +1,9 @@
+[project]
+name = "chatclient-py"
+version = "0.1.0"
+description = "Python chat client for the cflib chatserver example"
+requires-python = ">=3.11"
+dependencies = ["cflib"]
+
+[tool.uv.sources]
+cflib = { path = "../../py", editable = true }

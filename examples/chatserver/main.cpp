@@ -13,6 +13,7 @@
 #include <cflib/serialize/generate/apidoc.h>
 #include <cflib/serialize/generate/cppremoteservices.h>
 #include <cflib/serialize/generate/javascript.h>
+#include <cflib/serialize/generate/python.h>
 #include <cflib/util/cmdline.h>
 #include <cflib/util/log.h>
 #include <cflib/util/mainloop.h>
@@ -73,6 +74,7 @@ int main(int argc, char * argv[])
     if (exportOpt.isSet()) {
         generateCppRemoteServices(rmiServer.getServiceTypeInfos(), exportOpt.value() + "/chatserver/services");
         generateJavaScript       (rmiServer.getServiceTypeInfos(), exportOpt.value() + "/chatserver");
+        generatePython           (rmiServer.getServiceTypeInfos(), exportOpt.value() + "/chatserver");
         generateAPIDoc           (rmiServer.getServiceTypeInfos(), exportOpt.value(), "chatserver/apidoc", "ChatServer API");
         logInfo("RMI export finished (dest: %1)", exportOpt.value());
         return 0;
