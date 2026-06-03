@@ -37,6 +37,7 @@ endif()
 list(JOIN botan_src_DISABLE_MODULES "," botan_src_DISABLE_MODULES)
 
 # call configure.py
+string(REGEX REPLACE "-.*$" "" ARCH "${CMAKE_SYSTEM_PROCESSOR}")
 add_custom_command(
     OUTPUT ${botan_src_SOURCE_DIR}/botan_all.h ${botan_src_SOURCE_DIR}/botan_all.cpp
     WORKING_DIRECTORY ${botan_src_SOURCE_DIR}
@@ -49,6 +50,7 @@ add_custom_command(
         --amalgamation
         --disable-deprecated-features
         --disable-modules=${botan_src_DISABLE_MODULES}
+        $<$<BOOL:${CMAKE_CROSSCOMPILING}>:--cpu=${ARCH}>
 )
 
 # add target cflib_botan
@@ -59,5 +61,6 @@ target_compile_options(cflib_botan PRIVATE
     -Wno-overloaded-virtual
     -Wno-stringop-overread
     -Wno-unknown-warning-option
+    $<$<BOOL:${CMAKE_CROSSCOMPILING}>:-Wno-psabi>
 )
 target_include_directories(cflib_botan INTERFACE ${botan_src_SOURCE_DIR}/build/include/public)
