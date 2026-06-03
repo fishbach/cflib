@@ -11,4 +11,6 @@ cf_lib(cflib_net
     ENABLE_SER
 )
 
-add_subdirectory(net_test)
+if(BUILD_TESTS)
+    add_subdirectory(net_test)
+endif()

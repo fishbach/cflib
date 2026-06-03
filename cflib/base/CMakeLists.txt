@@ -9,4 +9,6 @@ if(ENABLE_PCH)
     target_precompile_headers(cflib_base PUBLIC ../base.h)
 endif()
 
-add_subdirectory(base_test)
+if(BUILD_TESTS)
+    add_subdirectory(base_test)
+endif()

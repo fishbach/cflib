@@ -26,6 +26,7 @@ cf_add_other(cflib_files
 )
 
 add_subdirectory(cflib)
+option(BUILD_TESTS "activate build for tests" ON)
 option(BUILD_EXAMPLES "activate build for examples" ON)
 if(BUILD_EXAMPLES)
     add_subdirectory(examples)
