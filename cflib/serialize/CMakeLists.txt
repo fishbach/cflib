@@ -12,6 +12,7 @@ cf_lib(cflib_serialize
         impl
 )
 
+add_subdirectory(apiexporter)
 add_subdirectory(asn1dump)
 add_subdirectory(ser)
 if(BUILD_TESTS)
