@@ -10,6 +10,6 @@
 #include <ostream>
 #include <string>
 
-class HeaderParser;
+namespace cflib::serialize { class HeaderParser; }
 
-int genSerialize(const std::string & headerName, const HeaderParser & hp, std::ostream & out);
+int genSerialize(const std::string & headerName, const cflib::serialize::HeaderParser & hp, std::ostream & out);

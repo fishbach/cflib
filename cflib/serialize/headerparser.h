@@ -10,6 +10,8 @@
 #include <string>
 #include <vector>
 
+namespace cflib::serialize {
+
 class HeaderParser
 {
 public:
@@ -69,3 +71,5 @@ private:
     std::string lastError_;
     Classes classes_;
 };
+
+} // namespace

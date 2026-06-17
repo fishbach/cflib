@@ -6,7 +6,7 @@
  */
 
 #include <cflib/serialize/ser/codegen.h>
-#include <cflib/serialize/ser/headerparser.h>
+#include <cflib/serialize/headerparser.h>
 
 #include <cstdio>
 #include <cstring>
@@ -14,6 +14,8 @@
 #include <fstream>
 #include <iostream>
 #include <string>
+
+using namespace cflib::serialize;
 
 int usage(const char * progName)
 {

@@ -5,13 +5,16 @@
  * Licensed under the MIT License.
  */
 
-#include <cflib/serialize/ser/headerparser.h>
+#include <cflib/serialize/headerparser.h>
 #include <cflib/util/util.h>
 
 #include <format>
 #include <ostream>
 #include <string>
 #include <vector>
+
+using namespace cflib::serialize;
+using namespace cflib::util;
 
 namespace {
 
@@ -35,7 +38,7 @@ std::string calcClassHash(const HeaderParser::Class & cl)
 {
     std::string fullName = cl.ns + "::" + cl.name;
     ByteArray ba((const char *)fullName.c_str(), (size_t)fullName.size());
-    return std::to_string(cflib::util::calcCRC32(ba));
+    return std::to_string(calcCRC32(ba));
 }
 
 void writeMethods(std::ostream & out, const HeaderParser::Class & cl)

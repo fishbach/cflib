@@ -10,6 +10,8 @@
 #include <regex>
 #include <sstream>
 
+namespace cflib::serialize {
+
 namespace {
 
 int lineNr(const std::string & in, int pos)
@@ -66,7 +68,7 @@ bool HeaderParser::getVariables(const std::string & in, int start, int end, Clas
     auto searchEnd = in.cbegin() + end;
     std::smatch m;
     while (std::regex_search(searchBegin, searchEnd, m, varRE)) {
-        HeaderParser::Variable var;
+        Variable var;
         var.type = m[1].str();
         var.name = m[2].str();
         cl.members.push_back(var);
@@ -83,7 +85,7 @@ bool HeaderParser::getParameters(const std::string & in, int start, int end, Var
     auto searchEnd = in.cbegin() + end;
     std::smatch m;
     while (std::regex_search(searchBegin, searchEnd, m, varRE)) {
-        HeaderParser::Variable var;
+        Variable var;
         var.type = m[2].str();
         var.name = m[4].str();
         var.isRef = m[1].str().empty() && !m[3].str().empty();
@@ -101,7 +103,7 @@ bool HeaderParser::getFunctions(const std::string & in, int start, int end, Clas
     auto searchEnd = in.cbegin() + end;
     std::smatch m;
     while (std::regex_search(searchBegin, searchEnd, m, funcRE)) {
-        HeaderParser::Function func;
+        Function func;
         func.returnType = m[1].str();
         func.name       = m[2].str();
         int pos = (m.suffix().first - in.cbegin());
@@ -129,7 +131,7 @@ bool HeaderParser::getCfSignals(const std::string & in, int start, int end, Clas
     auto searchEnd = in.cbegin() + end;
     std::smatch m;
     while (std::regex_search(searchBegin, searchEnd, m, sigRE)) {
-        HeaderParser::Function func;
+        Function func;
         func.returnType = m[1].str();
         int pos = (m.suffix().first - in.cbegin());
         int paramEnd = findClosingBrace(in, pos, '(', ')');
@@ -403,8 +405,10 @@ bool HeaderParser::parse(const std::string & headerRef)
 bool HeaderParser::Function::hasReturnValues() const
 {
     if (returnType != "void") return true;
-    for (const HeaderParser::Variable & p : parameters) {
+    for (const Variable & p : parameters) {
         if (p.isRef) return true;
     }
     return false;
 }
+
+} // namespace
