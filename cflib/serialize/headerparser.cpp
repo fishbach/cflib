@@ -62,7 +62,7 @@ void replaceAll(std::string & str, const std::string & from, const std::string &
 
 bool HeaderParser::getVariables(const std::string & in, int start, int end, Class & cl)
 {
-    static const std::regex varRE(R"((?:^|\n)\s*([:\w]+(?:\s*<[^>]+>)?)\s+(\w+)\s*(?:=[^;]+)?;|SERIALIZE_SKIP)");
+    static const std::regex varRE(R"((?:^|\n)\s*([:\w]+(?:\s*<[^>]+>)?)\s+(\w+)\s*(?:=[^;]+)?(?:;|$)|SERIALIZE_SKIP)");
 
     auto searchBegin = in.cbegin() + start;
     auto searchEnd = in.cbegin() + end;

@@ -15,6 +15,9 @@ class DynamicBase
     SERIALIZE_IS_BASE(DynamicBase)
 public serialized:
     int x;
+    int t1 = 0;
+    int t2{0};
+    int t3 {0};
 
 public:
     DynamicBase() : x(0) {}

@@ -43,11 +43,16 @@ public:
         DynamicUse in;
         in.y = 23;
         DynamicA * dynA = new DynamicA();
+        dynA->x = 42;
+        dynA->t1 = 1;
+        dynA->t2 = 2;
+        dynA->t3 = 3;
         dynA->a = 45;
         in.d.reset(dynA);
         DynamicB * dynB = new DynamicB();
         dynB->b = 123.45;
         in.e.push_back(SharedPtr<DynamicBase>(dynB));
+        in.z = 666;
         BERSerializer ser;
         ser << in;
 
@@ -55,16 +60,20 @@ public:
         BERDeserializer deser(ser.data());
         deser >> out;
 
-        TCOMPARE(out.y, in.y);
-        TVERIFY(in.d);
-        auto da = cflib::base::dynamic_pointer_cast<DynamicA>(in.d);
+        TCOMPARE(out.y, 23);
+        TVERIFY(out.d);
+        auto da = cflib::base::dynamic_pointer_cast<DynamicA>(out.d);
         TVERIFY(da);
+        TCOMPARE(da->x, 42);
+        TCOMPARE(da->t1, 1);
+        TCOMPARE(da->t2, 2);
+        TCOMPARE(da->t3, 3);
         TCOMPARE(da->a, 45);
-        TCOMPARE((int)in.e.size(), 1);
-        auto db = cflib::base::dynamic_pointer_cast<DynamicB>(in.e[0]);
+        TCOMPARE((int)out.e.size(), 1);
+        auto db = cflib::base::dynamic_pointer_cast<DynamicB>(out.e[0]);
         TVERIFY(db);
         TCOMPARE(db->b, 123.45);
-        TCOMPARE(out.z, in.z);
+        TCOMPARE(out.z, 666);
     }
 };
 
