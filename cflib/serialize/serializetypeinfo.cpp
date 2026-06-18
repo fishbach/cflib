@@ -17,6 +17,12 @@ SerializeTypeInfo & SerializeTypeInfo::operator=(const SerializeTypeInfo & other
 SerializeTypeInfo & SerializeTypeInfo::operator=(SerializeTypeInfo && other) = default;
 SerializeTypeInfo::~SerializeTypeInfo() = default;
 
+SerializeTypeInfo SerializeTypeInfo::getBase() const
+{
+    if (type != Class || bases.isEmpty()) return {};
+    return bases.first();
+}
+
 String SerializeTypeInfo::toString() const
 {
     if (type == Basic) return typeName;
@@ -75,7 +81,7 @@ bool SerializeTypeInfo::isDerivedFrom(const SerializeTypeInfo & base) const
     return false;
 }
 
-List<SerializeTypeInfo> SerializeTypeInfo::allUsedClasses() const
+SerializeTypeInfos SerializeTypeInfo::allUsedClasses() const
 {
     Set<SerializeTypeInfo> allClasses;
     for (const SerializeTypeInfo         & ti  : bases  ) allClasses << ti;

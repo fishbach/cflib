@@ -8,7 +8,6 @@
 #include "headerparser.h"
 
 #include <regex>
-#include <sstream>
 
 namespace cflib::serialize {
 
@@ -21,17 +20,6 @@ int lineNr(const std::string & in, int pos)
         if (in[i] == '\n') ++count;
     }
     return count;
-}
-
-int countOccurrences(const std::string & in, const std::string & sub)
-{
-    int retval = 0;
-    size_t pos = in.find(sub);
-    while (pos != std::string::npos) {
-        ++retval;
-        pos = in.find(sub, pos + sub.length());
-    }
-    return retval;
 }
 
 int findClosingBrace(const std::string & in, int startPos, char brOpen, char brClose)
@@ -58,9 +46,19 @@ void replaceAll(std::string & str, const std::string & from, const std::string &
     }
 }
 
+SerializeTypeInfo rawTypeInfo(const std::string & typeName)
+{
+    SerializeTypeInfo ti;
+    if (!typeName.empty()) {
+        ti.type     = SerializeTypeInfo::Class;
+        ti.typeName = typeName;
+    }
+    return ti;
 }
 
-bool HeaderParser::getVariables(const std::string & in, int start, int end, Class & cl)
+}
+
+bool HeaderParser::getVariables(const std::string & in, int start, int end, SerializeTypeInfo & cl)
 {
     static const std::regex varRE(R"((?:^|\n)\s*([:\w]+(?:\s*<[^>]+>)?)\s+(\w+)\s*(?:=[^;]+)?(?:;|$)|SERIALIZE_SKIP)");
 
@@ -68,8 +66,8 @@ bool HeaderParser::getVariables(const std::string & in, int start, int end, Clas
     auto searchEnd = in.cbegin() + end;
     std::smatch m;
     while (std::regex_search(searchBegin, searchEnd, m, varRE)) {
-        Variable var;
-        var.type = m[1].str();
+        SerializeVariableTypeInfo var;
+        var.type = rawTypeInfo(m[1].str());
         var.name = m[2].str();
         cl.members.push_back(var);
         searchBegin = m.suffix().first;
@@ -77,7 +75,7 @@ bool HeaderParser::getVariables(const std::string & in, int start, int end, Clas
     return true;
 }
 
-bool HeaderParser::getParameters(const std::string & in, int start, int end, Variables & vars)
+bool HeaderParser::getParameters(const std::string & in, int start, int end, SerializeVariableTypeInfos & vars)
 {
     static const std::regex varRE(R"((?:^|,)\s*(const\s+)?([:\w]+(?:\s*<[^>]+>)?)(\s*&)?(?:\s+(\w+))?)");
 
@@ -85,8 +83,8 @@ bool HeaderParser::getParameters(const std::string & in, int start, int end, Var
     auto searchEnd = in.cbegin() + end;
     std::smatch m;
     while (std::regex_search(searchBegin, searchEnd, m, varRE)) {
-        Variable var;
-        var.type = m[2].str();
+        SerializeVariableTypeInfo var;
+        var.type = rawTypeInfo(m[2].str());
         var.name = m[4].str();
         var.isRef = m[1].str().empty() && !m[3].str().empty();
         vars.push_back(var);
@@ -95,7 +93,7 @@ bool HeaderParser::getParameters(const std::string & in, int start, int end, Var
     return true;
 }
 
-bool HeaderParser::getFunctions(const std::string & in, int start, int end, Class & cl)
+bool HeaderParser::getFunctions(const std::string & in, int start, int end, SerializeTypeInfo & cl)
 {
     static const std::regex funcRE(R"((?:^|;)\s*([:\w]+(?:\s*<[^>]+>)?)\s+(\w+)\s*\()");
 
@@ -103,9 +101,9 @@ bool HeaderParser::getFunctions(const std::string & in, int start, int end, Clas
     auto searchEnd = in.cbegin() + end;
     std::smatch m;
     while (std::regex_search(searchBegin, searchEnd, m, funcRE)) {
-        Function func;
-        func.returnType = m[1].str();
-        func.name       = m[2].str();
+        SerializeFunctionTypeInfo func;
+        if (m[1].str() != "void") func.returnType = rawTypeInfo(m[1].str());
+        func.name = m[2].str();
         int pos = (m.suffix().first - in.cbegin());
         const int paramEnd = findClosingBrace(in, pos, '(', ')');
         if (paramEnd == -1 || paramEnd >= end) {
@@ -121,7 +119,7 @@ bool HeaderParser::getFunctions(const std::string & in, int start, int end, Clas
     return true;
 }
 
-bool HeaderParser::getCfSignals(const std::string & in, int start, int end, Class & cl)
+bool HeaderParser::getCfSignals(const std::string & in, int start, int end, SerializeTypeInfo & cl)
 {
     static const std::regex sigRE(R"((?:^|;)\s*rsig\s*<\s*([:\w]+(?:\s*<[^>]+>)?)\s*\()");
     static const std::regex sigRegisterRE(R"(\)\s*,\s*([:\w]+(?:\s*<[^>]+>)?)\s*\()");
@@ -131,8 +129,8 @@ bool HeaderParser::getCfSignals(const std::string & in, int start, int end, Clas
     auto searchEnd = in.cbegin() + end;
     std::smatch m;
     while (std::regex_search(searchBegin, searchEnd, m, sigRE)) {
-        Function func;
-        func.returnType = m[1].str();
+        SerializeFunctionTypeInfo func;
+        if (m[1].str() != "void") func.returnType = rawTypeInfo(m[1].str());
         int pos = (m.suffix().first - in.cbegin());
         int paramEnd = findClosingBrace(in, pos, '(', ')');
         if (paramEnd == -1 || paramEnd >= end) {
@@ -165,7 +163,7 @@ bool HeaderParser::getCfSignals(const std::string & in, int start, int end, Clas
     return true;
 }
 
-bool HeaderParser::getMembers(const std::string & in, int start, int end, Class & cl, int & state)
+bool HeaderParser::getMembers(const std::string & in, int start, int end, SerializeTypeInfo & cl, int & state)
 {
     static const std::regex sectionRE(R"(\s(rmi|serialized|cfsignals)\s*:)");
     static const std::regex endRE(R"([^:]:\s*\n)");
@@ -241,21 +239,21 @@ bool HeaderParser::getMembers(const std::string & in, int start, int end, Class 
     return true;
 }
 
-bool HeaderParser::getMemberBlocks(const std::string & in, int start, int end, Class & cl, int & state)
+bool HeaderParser::getMemberBlocks(const std::string & in, int start, int end, SerializeTypeInfo & cl, int & state)
 {
     // Do we care about this class?
     if (state == 0) {
         size_t serializeMembersPos = in.find("SERIALIZE_CLASS", start);
         if (serializeMembersPos != std::string::npos && (int)serializeMembersPos < end) state = 1;
         else return true;
-    }
 
-    // serialize base?
-    {
-        static const std::regex serBaseRE(R"(SERIALIZE_(STD)?BASE)");
-        std::string sub = in.substr(start, end - start);
-        std::smatch m;
-        if (std::regex_search(sub, m, serBaseRE)) cl.doBaseSerialize = true;
+        // serialize base?
+        if (cl.hasBase()) {
+            static const std::regex serBaseRE(R"(SERIALIZE_(STD)?BASE)");
+            std::string sub = in.substr(start, end - start);
+            std::smatch m;
+            if (!std::regex_search(sub, m, serBaseRE)) cl.bases.clear();
+        }
     }
 
     // skip blocks
@@ -284,45 +282,51 @@ bool HeaderParser::getMemberBlocks(const std::string & in, int start, int end, C
     return true;
 }
 
-bool HeaderParser::getClasses(const std::string & in, int start, int end, Class cl)
+bool HeaderParser::getClasses(const std::string & in, int start, int end, SerializeTypeInfo cl)
 {
     static const std::regex classOrNamespaceRE(
         R"((class|struct|namespace)\s+(\w+(?:\s*::\s*\w+)*)\s*(?::\s*\w+\s+([\w:]+(?:\s*<[^{]+>)?)\s*)?(?:\s*,[^{]+)?\{)");
 
     int state = 0;
     auto searchBegin = in.cbegin() + start;
-    auto searchEnd = in.cbegin() + end;
+    const auto searchEnd = in.cbegin() + end;
     std::smatch m;
     while (std::regex_search(searchBegin, searchEnd, m, classOrNamespaceRE)) {
-        int pos = (int)(m[0].first - in.cbegin());
-        Class innerCl;
-        std::string type = m[1].str();
-        std::string name = m[2].str();
-        innerCl.base = m[3].str();
+        const int pos = (int)(m[0].first - in.cbegin());
+        const std::string type = m[1].str();
+        const std::string name = m[2].str();
+        const std::string base = m[3].str();
 
-        if (pos > start && !cl.name.empty()) {
+        // handle rest of previous
+        if (pos > start && !cl.typeName.isEmpty()) {
             if (!getMemberBlocks(in, start, pos, cl, state)) return false;
         }
 
-        int afterMatch = (m.suffix().first - in.cbegin());
-        int blockEnd = findClosingBrace(in, afterMatch, '{', '}');
+        // find end of block { }
+        const int afterMatch = (m.suffix().first - in.cbegin());
+        const int blockEnd = findClosingBrace(in, afterMatch, '{', '}');
         if (blockEnd == -1 || blockEnd >= end) {
             lastError_ = "cannot find closing brace at line: " + std::to_string(lineNr(in, afterMatch - 1));
             return false;
         }
 
+        SerializeTypeInfo innerCl;
+        innerCl.type = SerializeTypeInfo::Class;
         if (type != "namespace") {
             innerCl.ns = cl.ns;
-            innerCl.name = cl.name.empty() ? name : cl.name + "::" + name;
+            innerCl.typeName = cl.typeName.isEmpty() ? String(name) : cl.typeName + "::" + name;
+            if (!base.empty()) innerCl.bases << rawTypeInfo(base);
         } else {
-            innerCl.ns = cl.ns.empty() ? name : cl.ns + "::" + name;
+            innerCl.ns = cl.ns.isEmpty() ? String(name) : cl.ns + "::" + name;
         }
         if (!getClasses(in, afterMatch, blockEnd, innerCl)) return false;
 
         start = blockEnd + 1;
         searchBegin = in.cbegin() + start;
     }
-    if (start < end && !cl.name.empty()) {
+
+    // handle rest of previous
+    if (start < end && !cl.typeName.isEmpty()) {
         if (!getMemberBlocks(in, start, end, cl, state)) return false;
     }
 
@@ -332,54 +336,91 @@ bool HeaderParser::getClasses(const std::string & in, int start, int end, Class 
 
 bool HeaderParser::removeCommentsAndStringContents(std::string & header)
 {
-    size_t pos = 0;
-    while (pos < header.size()) {
-        // Find next string or comment
-        size_t dq = header.find('"', pos);
-        size_t sl = header.find("//", pos);
-        size_t bc = header.find("/*", pos);
+    enum class State { None, InSingleQuote, InDoubleQuote, InLineComment, InBlockComment };
 
-        // Find minimum
-        size_t minPos = std::string::npos;
-        int which = -1; // 0=string, 1=line comment, 2=block comment
-        if (dq != std::string::npos && (dq < minPos)) { minPos = dq; which = 0; }
-        if (sl != std::string::npos && (sl < minPos)) { minPos = sl; which = 1; }
-        if (bc != std::string::npos && (bc < minPos)) { minPos = bc; which = 2; }
+    size_t readPos = 0;
+    size_t writePos = 0;
+    size_t currentLine = 1;
+    size_t openLine = 1;
+    State state = State::None;
 
-        if (which == -1) break;
+    while (readPos < header.size()) {
+        const char c     = header[readPos++];
+        const char nextC = readPos < header.size() ? header[readPos] : '\0';
+        if (c == '\n') ++currentLine;
 
-        size_t next = 0;
-        if (which == 0) {
-            // string
-            next = header.find('"', minPos + 1);
-            while (next != std::string::npos && header[next - 1] == '\\') {
-                next = header.find('"', next + 1);
-            }
-            if (next == std::string::npos) {
-                lastError_ = "cannot find closing quotes at line: " + std::to_string(lineNr(header, minPos));
-                return false;
-            }
-            // Remove string contents but keep quotes
-            header = header.substr(0, minPos + 1) + header.substr(next);
-            pos = minPos + 2; // past closing quote
-        } else if (which == 1) {
-            // line comment
-            next = header.find('\n', minPos + 2);
-            if (next == std::string::npos) next = header.size();
-            header = header.substr(0, minPos) + header.substr(next);
-            pos = minPos;
-        } else if (which == 2) {
-            // block comment
-            next = header.find("*/", minPos + 2);
-            if (next == std::string::npos) {
-                lastError_ = "cannot find closing comment at line: " + std::to_string(lineNr(header, minPos));
-                return false;
-            }
-            next += 2;
-            header = header.substr(0, minPos) + header.substr(next);
-            pos = minPos;
+        switch (state) {
+            case State::None:
+                if (c == '/' && nextC == '/') {
+                    state = State::InLineComment;
+                    ++readPos;
+                    continue;
+                }
+                if (c == '/' && nextC == '*') {
+                    state = State::InBlockComment;
+                    openLine = currentLine;
+                    ++readPos;
+                    continue;
+                }
+
+                if (c == '\'') {
+                    state = State::InSingleQuote;
+                    openLine = currentLine;
+                } else if (c == '"') {
+                    state = State::InDoubleQuote;
+                    openLine = currentLine;
+                }
+                header[writePos++] = c;
+                break;
+
+            case State::InSingleQuote:
+                if (c == '\\' && nextC == '\'') {
+                    ++readPos;
+                    continue;
+                }
+                if (c == '\'') {
+                    state = State::None;
+                    header[writePos++] = c;
+                }
+                break;
+
+            case State::InDoubleQuote:
+                if (c == '\\' && nextC == '"') {
+                    ++readPos;
+                    continue;
+                }
+                if (c == '"') {
+                    state = State::None;
+                    header[writePos++] = c;
+                }
+                break;
+
+            case State::InLineComment:
+                if (c == '\n') {
+                    state = State::None;
+                    header[writePos++] = c;
+                }
+                break;
+
+            case State::InBlockComment:
+                if (c == '*' && nextC == '/') {
+                    state = State::None;
+                    ++readPos;
+                }
+                break;
         }
     }
+
+    if (state == State::InSingleQuote || state == State::InDoubleQuote) {
+        lastError_ = "cannot find closing quotes at line: " + std::to_string(openLine);
+        return false;
+    }
+    if (state == State::InBlockComment) {
+        lastError_ = "cannot find closing comment at line: " + std::to_string(openLine);
+        return false;
+    }
+
+    header.resize(writePos);
     return true;
 }
 
@@ -389,26 +430,13 @@ bool HeaderParser::parse(const std::string & headerRef)
 
     std::string header = headerRef;
 
-    // normalize line endings
-    if (countOccurrences(header, "\r\n") > countOccurrences(header, "\n\r")) {
-        replaceAll(header, "\r\n", "\n");
-    } else {
-        replaceAll(header, "\n\r", "\n");
-    }
-    replaceAll(header, "\r", "\n");
+    // line endings
+    replaceAll(header, "\r\n", "\n");   // Windows
+    replaceAll(header, "\r",   "\n");   // old Mac OS
 
     if (!removeCommentsAndStringContents(header)) return false;
 
-    return getClasses(header, 0, header.length(), Class());
-}
-
-bool HeaderParser::Function::hasReturnValues() const
-{
-    if (returnType != "void") return true;
-    for (const Variable & p : parameters) {
-        if (p.isRef) return true;
-    }
-    return false;
+    return getClasses(header, 0, header.length(), SerializeTypeInfo());
 }
 
 } // namespace

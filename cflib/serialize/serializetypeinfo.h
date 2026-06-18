@@ -11,8 +11,13 @@
 
 namespace cflib::serialize {
 
+class SerializeTypeInfo;
 class SerializeVariableTypeInfo;
 class SerializeFunctionTypeInfo;
+
+using SerializeTypeInfos         = List<SerializeTypeInfo>;
+using SerializeVariableTypeInfos = List<SerializeVariableTypeInfo>;
+using SerializeFunctionTypeInfos = List<SerializeFunctionTypeInfo>;
 
 class SerializeTypeInfo
 {
@@ -35,19 +40,25 @@ public:
     uint32 classId = 0;
     String ns;
     String typeName;
-    List<SerializeTypeInfo> bases;
-    List<SerializeVariableTypeInfo> members;
-    List<SerializeFunctionTypeInfo> functions;
-    List<SerializeFunctionTypeInfo> cfSignals;
+    SerializeTypeInfos bases;
+    SerializeVariableTypeInfos members;
+    SerializeFunctionTypeInfos functions;
+    SerializeFunctionTypeInfos cfSignals;
 
 public:
-    bool isNull() const { return type == Null; }
     bool operator==(const SerializeTypeInfo & rhs) const { return getName() == rhs.getName(); }
     bool operator<(const SerializeTypeInfo & rhs) const { return getName() < rhs.getName(); }
-    String toString() const;
+
+    bool isNull() const { return type == Null; }
     String getName() const;
+
+    bool hasBase() const { return !getBase().isNull(); }
+    SerializeTypeInfo getBase() const;
     bool isDerivedFrom(const SerializeTypeInfo & base) const;
-    List<SerializeTypeInfo> allUsedClasses() const;
+
+    SerializeTypeInfos allUsedClasses() const;
+
+    String toString() const;
 };
 
 class SerializeVariableTypeInfo
@@ -68,8 +79,8 @@ class SerializeFunctionTypeInfo
 public:
     String name;
     SerializeTypeInfo returnType;
-    List<SerializeVariableTypeInfo> parameters;
-    List<SerializeVariableTypeInfo> registerParameters;
+    SerializeVariableTypeInfos parameters;
+    SerializeVariableTypeInfos registerParameters;
 
 public:
     String toString() const;

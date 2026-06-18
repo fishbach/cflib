@@ -16,8 +16,8 @@ class StructuredTypeInfos
 public:
     StructuredTypeInfos & operator<<(const SerializeTypeInfo & ti);
 
-    List<SerializeTypeInfo> types()    const { return types_   .values(); }
-    List<SerializeTypeInfo> services() const { return services_.values(); }
+    SerializeTypeInfos types()    const { return types_   .values(); }
+    SerializeTypeInfos services() const { return services_.values(); }
 
 private:
     Map<String, SerializeTypeInfo> types_;

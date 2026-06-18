@@ -34,40 +34,40 @@ std::vector<std::string> splitStr(const std::string & s, const std::string & del
     return result;
 }
 
-std::string calcClassHash(const HeaderParser::Class & cl)
+std::string calcClassHash(const SerializeTypeInfo & cl)
 {
-    std::string fullName = cl.ns + "::" + cl.name;
+    std::string fullName = cl.ns.str() + "::" + cl.typeName.str();
     ByteArray ba((const char *)fullName.c_str(), (size_t)fullName.size());
     return std::to_string(calcCRC32(ba));
 }
 
-void writeMethods(std::ostream & out, const HeaderParser::Class & cl)
+void writeMethods(std::ostream & out, const SerializeTypeInfo & cl)
 {
-    if (cl.doBaseSerialize) {
+    if (cl.hasBase()) {
         out << std::format(
             "const cflib::serialize::impl::RegisterClass<{}> {}::cflib_serialize_impl_registerClass;\n"
             "\n",
-            cl.name.c_str(), cl.name.c_str());
+            cl.typeName.c_str(), cl.typeName.c_str());
     }
 
-    if (cl.members.empty() && !cl.doBaseSerialize) {
+    if (cl.members.isEmpty() && !cl.hasBase()) {
         out << std::format(
             "template<typename T> void {}::serialize(T &) const {{}}\n"
             "template<typename T> void {}::deserialize(T &) {{}}\n",
-            cl.name.c_str(), cl.name.c_str());
+            cl.typeName.c_str(), cl.typeName.c_str());
     } else {
         out << std::format(
             "template<typename T> void {}::serialize(T & ser) const {{\n"
             "    ser << ",
-            cl.name.c_str());
-        if (cl.doBaseSerialize) {
+            cl.typeName.c_str());
+        if (cl.hasBase()) {
             out << std::format("(uint32){} << (const {} &)*this",
-                calcClassHash(cl).c_str(), cl.base.c_str());
+                calcClassHash(cl), cl.getBase().typeName.c_str());
         } else {
             out << "cflib::serialize::Placeholder()";
         }
-        for (const HeaderParser::Variable & m : cl.members) {
-            if (m.name.empty()) out << " << cflib::serialize::Placeholder()";
+        for (const SerializeVariableTypeInfo & m : cl.members) {
+            if (m.name.isEmpty()) out << " << cflib::serialize::Placeholder()";
             else out << std::format(" << {}", m.name.c_str());
         }
         out << std::format(
@@ -75,12 +75,12 @@ void writeMethods(std::ostream & out, const HeaderParser::Class & cl)
             "}}\n"
             "template<typename T> void {}::deserialize(T & ser) {{\n"
             "    ser >> cflib::serialize::Placeholder()",
-            cl.name.c_str());
-        if (cl.doBaseSerialize) {
-            out << std::format(" >> ({} &)*this", cl.base.c_str());
+            cl.typeName.c_str());
+        if (cl.hasBase()) {
+            out << std::format(" >> ({} &)*this", cl.getBase().typeName.c_str());
         }
-        for (const HeaderParser::Variable & m : cl.members) {
-            if (m.name.empty()) out << " >> cflib::serialize::Placeholder()";
+        for (const SerializeVariableTypeInfo & m : cl.members) {
+            if (m.name.isEmpty()) out << " >> cflib::serialize::Placeholder()";
             else out << std::format(" >> {}", m.name.c_str());
         }
         out << ";\n"
@@ -89,56 +89,56 @@ void writeMethods(std::ostream & out, const HeaderParser::Class & cl)
     out << std::format(
         "template void {}::serialize(cflib::serialize::impl::BERSerializerBase &) const;\n"
         "template void {}::deserialize(cflib::serialize::impl::BERDeserializerBase &);\n",
-        cl.name.c_str(), cl.name.c_str());
+        cl.typeName.c_str(), cl.typeName.c_str());
 }
 
-void writeFunctionSwitch(const HeaderParser::Functions & list, bool withReturnValues, std::ostream & out)
+void writeFunctionSwitch(const SerializeFunctionTypeInfos & list, bool withReturnValues, std::ostream & out)
 {
     out << "    switch (__callNo) {\n";
     int i = 0;
-    for (const HeaderParser::Function & f : list) {
+    for (const SerializeFunctionTypeInfo & f : list) {
         ++i;
         if (f.hasReturnValues() != withReturnValues) continue;
 
         out << std::format("        case {}: {{\n", i);
-        if (!f.parameters.empty()) {
+        if (!f.parameters.isEmpty()) {
             int id = 0;
-            for (const HeaderParser::Variable & p : f.parameters) {
-                out << std::format("            {} ", p.type.c_str());
-                if (p.name.empty()) out << std::format("__param_{}", ++id);
+            for (const SerializeVariableTypeInfo & p : f.parameters) {
+                out << std::format("            {} ", p.type.typeName.c_str());
+                if (p.name.isEmpty()) out << std::format("__param_{}", ++id);
                 else out << std::format("__{}", p.name.c_str());
                 out << ";\n";
             }
             out << "            __deser";
             id = 0;
-            for (const HeaderParser::Variable & p : f.parameters) {
+            for (const SerializeVariableTypeInfo & p : f.parameters) {
                 out << " >> ";
-                if (p.name.empty()) out << std::format("__param_{}", ++id);
+                if (p.name.isEmpty()) out << std::format("__param_{}", ++id);
                 else out << std::format("__{}", p.name.c_str());
             }
             out << ";\n";
         }
         out << "            ";
-        if (f.returnType != "void") out << "__ser << ";
+        if (!f.returnType.isNull()) out << "__ser << ";
         out << std::format("{}(", f.name.c_str());
         int id = 0;
         bool isFirst = true;
-        for (const HeaderParser::Variable & p : f.parameters) {
+        for (const SerializeVariableTypeInfo & p : f.parameters) {
             if (isFirst) isFirst = false;
             else out << ", ";
-            if (p.name.empty()) out << std::format("__param_{}", ++id);
+            if (p.name.isEmpty()) out << std::format("__param_{}", ++id);
             else out << std::format("__{}", p.name.c_str());
         }
         out << ")";
         if (f.hasReturnValues()) {
-            if (f.returnType == "void") {
+            if (f.returnType.isNull()) {
                 out << ";\n            __ser";
             }
             id = 0;
-            for (const HeaderParser::Variable & p : f.parameters) {
+            for (const SerializeVariableTypeInfo & p : f.parameters) {
                 if (!p.isRef) continue;
                 out << " << ";
-                if (p.name.empty()) out << std::format("__param_{}", ++id);
+                if (p.name.isEmpty()) out << std::format("__param_{}", ++id);
                 else out << std::format("__{}", p.name.c_str());
             }
         }
@@ -149,32 +149,32 @@ void writeFunctionSwitch(const HeaderParser::Functions & list, bool withReturnVa
     out << "    }\n";
 }
 
-void writeFunction(const HeaderParser::Function & f, std::ostream & out)
+void writeFunction(const SerializeFunctionTypeInfo & f, std::ostream & out)
 {
     out << std::format(
         "    {{\n"
         "        cflib::serialize::SerializeFunctionTypeInfo func;\n"
         "        func.name = \"{}\";\n",
         f.name.c_str());
-    if (f.returnType != "void") {
+    if (!f.returnType.isNull()) {
         out << std::format("        func.returnType = cflib::serialize::impl::fromType<{}>();\n",
-            f.returnType.c_str());
+            f.returnType.typeName.c_str());
     }
-    if (!f.parameters.empty()) {
+    if (!f.parameters.isEmpty()) {
         out << "        func.parameters";
-        for (const HeaderParser::Variable & m : f.parameters) {
+        for (const SerializeVariableTypeInfo & m : f.parameters) {
             out << std::format(
                 "\n            << cflib::serialize::SerializeVariableTypeInfo(\"{}\", cflib::serialize::impl::fromType<{}>(), {})",
-                m.name.c_str(), m.type.c_str(), m.isRef ? "true" : "false");
+                m.name.c_str(), m.type.typeName.c_str(), m.isRef ? "true" : "false");
         }
         out << ";\n";
     }
-    if (!f.registerParameters.empty()) {
+    if (!f.registerParameters.isEmpty()) {
         out << "        func.registerParameters";
-        for (const HeaderParser::Variable & m : f.registerParameters) {
+        for (const SerializeVariableTypeInfo & m : f.registerParameters) {
             out << std::format(
                 "\n            << cflib::serialize::SerializeVariableTypeInfo(\"{}\", cflib::serialize::impl::fromType<{}>(), {})",
-                m.name.c_str(), m.type.c_str(), m.isRef ? "true" : "false");
+                m.name.c_str(), m.type.typeName.c_str(), m.isRef ? "true" : "false");
         }
         out << ";\n";
     }
@@ -196,9 +196,10 @@ int genSerialize(const std::string & headerName, const HeaderParser & hp, std::o
         "#include <cflib/serialize/serializeber.h>\n",
         headerName.c_str());
 
-    for (const HeaderParser::Class & cl : hp.classes()) {
+    for (const SerializeTypeInfo & cl : hp.classes()) {
+
         out << "\n";
-        std::vector<std::string> nsList = splitStr(cl.ns, "::");
+        std::vector<std::string> nsList = splitStr(cl.ns.str(), "::");
         bool isFirst = true;
         for (const std::string & ns : nsList) {
             if (isFirst) isFirst = false;
@@ -213,34 +214,35 @@ int genSerialize(const std::string & headerName, const HeaderParser & hp, std::o
             "cflib::serialize::SerializeTypeInfo {}::serializeTypeInfo() {{\n"
             "    cflib::serialize::SerializeTypeInfo retval;\n"
             "    retval.type = cflib::serialize::SerializeTypeInfo::Class;\n",
-            cl.name.c_str());
-        if (cl.doBaseSerialize) out << std::format("    retval.classId = {};\n", calcClassHash(cl).c_str());
+            cl.typeName.c_str());
+        if (cl.hasBase()) out << std::format("    retval.classId = {};\n", calcClassHash(cl).c_str());
         out << std::format(
             "    retval.ns = \"{}\";\n"
             "    retval.typeName = \"{}\";\n",
-            cl.ns.c_str(), cl.name.c_str());
-        if (cl.doBaseSerialize) {
-            out << std::format("    retval.bases.push_back(cflib::serialize::impl::fromType<{}>());\n", cl.base.c_str());
+            cl.ns.c_str(), cl.typeName.c_str());
+        if (cl.hasBase()) {
+            out << std::format("    retval.bases.push_back(cflib::serialize::impl::fromType<{}>());\n",
+                cl.getBase().typeName.c_str());
         }
-        if (!cl.members.empty()) {
+        if (!cl.members.isEmpty()) {
             out << "    retval.members";
-            for (const HeaderParser::Variable & m : cl.members) {
-                if (m.name.empty()) {
+            for (const SerializeVariableTypeInfo & m : cl.members) {
+                if (m.name.isEmpty()) {
                     out << "\n        << cflib::serialize::SerializeVariableTypeInfo()";
                 } else {
                     out << std::format(
                         "\n        << cflib::serialize::SerializeVariableTypeInfo(\"{}\", cflib::serialize::impl::fromType<{}>())",
-                        m.name.c_str(), m.type.c_str());
+                        m.name.c_str(), m.type.typeName.c_str());
                 }
             }
             out << ";\n";
         }
-        for (const HeaderParser::Function & f : cl.functions) {
+        for (const SerializeFunctionTypeInfo & f : cl.functions) {
             writeFunction(f, out);
             out << "        retval.functions.push_back(func);\n"
                    "    }\n";
         }
-        for (const HeaderParser::Function & f : cl.cfSignals) {
+        for (const SerializeFunctionTypeInfo & f : cl.cfSignals) {
             writeFunction(f, out);
             out << "        retval.cfSignals.push_back(func);\n"
                    "    }\n";
@@ -248,50 +250,50 @@ int genSerialize(const std::string & headerName, const HeaderParser & hp, std::o
         out << "    return retval;\n"
                "}\n";
 
-        if (!cl.functions.empty() || !cl.cfSignals.empty()) {
+        if (!cl.functions.isEmpty() || !cl.cfSignals.isEmpty()) {
             bool existsWithReturnValues                 = false;
             bool existsWithoutReturnValues              = false;
             bool existsWithReturnValuesAndParameters    = false;
             bool existsWithoutReturnValuesAndParameters = false;
-            for (const HeaderParser::Function & f : cl.functions) {
+            for (const SerializeFunctionTypeInfo & f : cl.functions) {
                 if (f.hasReturnValues()) {
                     existsWithReturnValues = true;
-                    if (!f.parameters.empty()) existsWithReturnValuesAndParameters = true;
+                    if (!f.parameters.isEmpty()) existsWithReturnValuesAndParameters = true;
                 } else {
                     existsWithoutReturnValues = true;
-                    if (!f.parameters.empty()) existsWithoutReturnValuesAndParameters = true;
+                    if (!f.parameters.isEmpty()) existsWithoutReturnValuesAndParameters = true;
                 }
                 if (existsWithReturnValues              && existsWithoutReturnValues &&
                     existsWithReturnValuesAndParameters && existsWithoutReturnValuesAndParameters) break;
             }
             if (existsWithoutReturnValues) {
                 out << std::format("void {}::processRMIServiceCallImpl(cflib::serialize::BERDeserializer &{}, uint __callNo) {{\n",
-                    cl.name.c_str(), existsWithoutReturnValuesAndParameters ? " __deser" : "");
+                    cl.typeName.c_str(), existsWithoutReturnValuesAndParameters ? " __deser" : "");
                 writeFunctionSwitch(cl.functions, false, out);
                 out << "}\n";
             } else {
                 out << std::format("void {}::processRMIServiceCallImpl(cflib::serialize::BERDeserializer &, uint) {{}}\n",
-                    cl.name.c_str());
+                    cl.typeName.c_str());
             }
             if (existsWithReturnValues) {
                 out << std::format("void {}::processRMIServiceCallImpl(cflib::serialize::BERDeserializer &{}, uint __callNo, cflib::serialize::BERSerializer & __ser) {{\n",
-                    cl.name.c_str(), existsWithReturnValuesAndParameters ? " __deser" : "");
+                    cl.typeName.c_str(), existsWithReturnValuesAndParameters ? " __deser" : "");
                 writeFunctionSwitch(cl.functions, true, out);
                 out << "}\n";
             } else {
                 out << std::format("void {}::processRMIServiceCallImpl(cflib::serialize::BERDeserializer &, uint, cflib::serialize::BERSerializer &) {{}}\n",
-                    cl.name.c_str());
+                    cl.typeName.c_str());
             }
 
-            if (cl.cfSignals.empty()) {
-                out << std::format("cflib::net::RSigBase * {}::getCfSignal(uint) {{ return 0; }}\n", cl.name.c_str());
+            if (cl.cfSignals.isEmpty()) {
+                out << std::format("cflib::net::RSigBase * {}::getCfSignal(uint) {{ return 0; }}\n", cl.typeName.c_str());
             } else {
                 out << std::format(
                     "cflib::net::RSigBase * {}::getCfSignal(uint __sigNo) {{\n"
                     "    switch (__sigNo) {{\n",
-                    cl.name.c_str());
+                    cl.typeName.c_str());
                 int i = 0;
-                for (const HeaderParser::Function & f : cl.cfSignals) {
+                for (const SerializeFunctionTypeInfo & f : cl.cfSignals) {
                     ++i;
                     out << std::format("        case {}: return &{};\n", i, f.name.c_str());
                 }

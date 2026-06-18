@@ -54,9 +54,9 @@ public:
         return rv;
     }
 
-    static List<SerializeTypeInfo> getAllSerializeTypeInfos()
+    static SerializeTypeInfos getAllSerializeTypeInfos()
     {
-        List<SerializeTypeInfo> rv;
+        SerializeTypeInfos rv;
         for (auto & [id, cl] : registry()) {
             rv.push_back(cl->serializeTypeInfo());
         }
