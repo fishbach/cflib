@@ -8,24 +8,25 @@
 #include <cflib/util/cmdline.h>
 
 #include <cstdio>
+#include <filesystem>
 #include <format>
+#include <fstream>
 #include <iostream>
 
 using namespace cflib::util;
 
 namespace {
 
+auto && err = std::cerr;
+
 int showUsage(const ByteArray & executable)
 {
-    std::cerr << std::format(
-        "Usage: {} [options] <command> [args]\n"
-        "Commands:\n"
-        "  export <header.h> <output.cpp>  => export API definitions\n"
-        "  list   <header.h>               => list API definitions\n"
-        "  version                         => show version\n"
-        "Options:\n"
-        "  -h, --help    => this help\n",
-        executable.constData());
+    err << "Usage: " << executable.toStdString() << " [options] <headers>"  << std::endl
+        << "Options:"                                                       << std::endl
+        << "  -h, --help        => this help"                               << std::endl
+        << "  -t, --type <type> => type of API to be exported (repeatable)" << std::endl
+        << "API Types:"                                                     << std::endl
+        << "  apidoc cpp javascript python"                                 << std::endl;
     return 1;
 }
 
@@ -34,33 +35,22 @@ int showUsage(const ByteArray & executable)
 int main(int argc, char *argv[])
 {
     CmdLine cmdLine(argc, argv);
-    Option help('h', "help"); cmdLine << help;
-    Arg command(false); cmdLine << command;
-    Arg arg1; cmdLine << arg1;
-    Arg arg2; cmdLine << arg2;
-
+    Option help   ('h', "help"                   ); cmdLine << help;
+    Option types  ('t', "type", true, false, true); cmdLine << types;
+    Arg    headers(false, true                   ); cmdLine << headers;
     if (!cmdLine.parse() || help.isSet()) return showUsage(cmdLine.executable());
 
-    if (command.value() == "export") {
-        if (arg1.isSet() && arg2.isSet()) {
-            std::cout << "export API from " << arg1.value().toStdString() << " to " << arg2.value().toStdString() << "\n";
-            return 0;
-        }
-        return showUsage(cmdLine.executable());
+    std::ofstream f{"dudi"};
+    f << "output types:";
+    for (const ByteArray & type : types.values()) {
+        f << " " << type.toStdString();
     }
-
-    if (command.value() == "list") {
-        if (arg1.isSet()) {
-            std::cout << "listing API from " << arg1.value().toStdString() << "\n";
-            return 0;
-        }
-        return showUsage(cmdLine.executable());
+    f << std::endl;
+    f << "sources:";
+    for (const ByteArray & header : headers.values()) {
+        f << " " << header.toStdString();
     }
+    f << std::endl;
 
-    if (command.value() == "version") {
-        std::cout << "apiexporter 1.0.0\n";
-        return 0;
-    }
-
-    return showUsage(cmdLine.executable());
+    return 0;
 }
