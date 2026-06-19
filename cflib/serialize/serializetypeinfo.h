@@ -33,7 +33,8 @@ public:
         Null = 0,
         Basic,
         Class,
-        Container
+        Container,
+        Placeholder
     };
 
     Type type = Null;

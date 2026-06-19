@@ -46,11 +46,12 @@ void replaceAll(std::string & str, const std::string & from, const std::string &
     }
 }
 
-SerializeTypeInfo rawTypeInfo(const std::string & typeName)
+SerializeTypeInfo rawTypeInfo(const String & ns, const std::string & typeName)
 {
     SerializeTypeInfo ti;
     if (!typeName.empty()) {
-        ti.type     = SerializeTypeInfo::Class;
+        ti.type     = SerializeTypeInfo::Placeholder;
+        ti.ns       = ns;
         ti.typeName = typeName;
     }
     return ti;
@@ -67,7 +68,7 @@ bool HeaderParser::getVariables(const std::string & in, int start, int end, Seri
     std::smatch m;
     while (std::regex_search(searchBegin, searchEnd, m, varRE)) {
         SerializeVariableTypeInfo var;
-        var.type = rawTypeInfo(m[1].str());
+        var.type = rawTypeInfo(cl.getName(), m[1].str());
         var.name = m[2].str();
         cl.members.push_back(var);
         searchBegin = m.suffix().first;
@@ -75,7 +76,7 @@ bool HeaderParser::getVariables(const std::string & in, int start, int end, Seri
     return true;
 }
 
-bool HeaderParser::getParameters(const std::string & in, int start, int end, SerializeVariableTypeInfos & vars)
+bool HeaderParser::getParameters(const std::string & in, int start, int end, SerializeVariableTypeInfos & vars, const String & ns)
 {
     static const std::regex varRE(R"((?:^|,)\s*(const\s+)?([:\w]+(?:\s*<[^>]+>)?)(\s*&)?(?:\s+(\w+))?)");
 
@@ -84,7 +85,7 @@ bool HeaderParser::getParameters(const std::string & in, int start, int end, Ser
     std::smatch m;
     while (std::regex_search(searchBegin, searchEnd, m, varRE)) {
         SerializeVariableTypeInfo var;
-        var.type = rawTypeInfo(m[2].str());
+        var.type = rawTypeInfo(ns, m[2].str());
         var.name = m[4].str();
         var.isRef = m[1].str().empty() && !m[3].str().empty();
         vars.push_back(var);
@@ -102,7 +103,7 @@ bool HeaderParser::getFunctions(const std::string & in, int start, int end, Seri
     std::smatch m;
     while (std::regex_search(searchBegin, searchEnd, m, funcRE)) {
         SerializeFunctionTypeInfo func;
-        if (m[1].str() != "void") func.returnType = rawTypeInfo(m[1].str());
+        if (m[1].str() != "void") func.returnType = rawTypeInfo(cl.getName(), m[1].str());
         func.name = m[2].str();
         int pos = (m.suffix().first - in.cbegin());
         const int paramEnd = findClosingBrace(in, pos, '(', ')');
@@ -111,7 +112,7 @@ bool HeaderParser::getFunctions(const std::string & in, int start, int end, Seri
             return false;
         }
 
-        if (!getParameters(in, pos, paramEnd, func.parameters)) return false;
+        if (!getParameters(in, pos, paramEnd, func.parameters, cl.getName())) return false;
 
         cl.functions.push_back(func);
         searchBegin = in.cbegin() + paramEnd + 1;
@@ -130,7 +131,7 @@ bool HeaderParser::getCfSignals(const std::string & in, int start, int end, Seri
     std::smatch m;
     while (std::regex_search(searchBegin, searchEnd, m, sigRE)) {
         SerializeFunctionTypeInfo func;
-        if (m[1].str() != "void") func.returnType = rawTypeInfo(m[1].str());
+        if (m[1].str() != "void") func.returnType = rawTypeInfo(cl.getName(), m[1].str());
         int pos = (m.suffix().first - in.cbegin());
         int paramEnd = findClosingBrace(in, pos, '(', ')');
         if (paramEnd == -1 || paramEnd >= end) {
@@ -138,7 +139,7 @@ bool HeaderParser::getCfSignals(const std::string & in, int start, int end, Seri
             return false;
         }
 
-        if (!getParameters(in, pos, paramEnd, func.parameters)) return false;
+        if (!getParameters(in, pos, paramEnd, func.parameters, cl.getName())) return false;
 
         std::smatch m2;
         std::string remainder = in.substr(paramEnd);
@@ -150,7 +151,7 @@ bool HeaderParser::getCfSignals(const std::string & in, int start, int end, Seri
             return false;
         }
 
-        if (!getParameters(in, pos, paramEnd, func.registerParameters)) return false;
+        if (!getParameters(in, pos, paramEnd, func.registerParameters, cl.getName())) return false;
 
         std::string remainder2 = in.substr(paramEnd);
         std::smatch m3;
@@ -315,7 +316,7 @@ bool HeaderParser::getClasses(const std::string & in, int start, int end, Serial
         if (type != "namespace") {
             innerCl.ns = cl.ns;
             innerCl.typeName = cl.typeName.isEmpty() ? String(name) : cl.typeName + "::" + name;
-            if (!base.empty()) innerCl.bases << rawTypeInfo(base);
+            if (!base.empty()) innerCl.bases << rawTypeInfo(cl.getName(), base);
         } else {
             innerCl.ns = cl.ns.isEmpty() ? String(name) : cl.ns + "::" + name;
         }

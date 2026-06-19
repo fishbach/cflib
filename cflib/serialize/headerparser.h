@@ -24,7 +24,7 @@ public:
 
 private:
     bool getVariables   (const std::string & in, int start, int end, SerializeTypeInfo & cl);
-    bool getParameters  (const std::string & in, int start, int end, SerializeVariableTypeInfos & vars);
+    bool getParameters  (const std::string & in, int start, int end, SerializeVariableTypeInfos & vars, const String & ns);
     bool getFunctions   (const std::string & in, int start, int end, SerializeTypeInfo & cl);
     bool getCfSignals   (const std::string & in, int start, int end, SerializeTypeInfo & cl);
     bool getMembers     (const std::string & in, int start, int end, SerializeTypeInfo & cl, int & state);
