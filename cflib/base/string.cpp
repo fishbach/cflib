@@ -22,4 +22,11 @@ String String::simplified() const
     return String(std::move(r));
 }
 
+void String::resize(size_t newSize)
+{
+    if (d->isNull && newSize == 0) return;
+    d->isNull = false;
+    d->data.resize(newSize);
+}
+
 } // namespace

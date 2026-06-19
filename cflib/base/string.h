@@ -53,15 +53,17 @@ public:
         d = newD;
     }
 
-    const std::string & str()    const { return d->data; }
-    const char *        c_str()  const { return d->data.c_str(); }
-    size_t            byteSize() const { return (size_t)d->data.size(); }
-    size_t            size()   const { return (size_t)d->data.size(); }
-    size_t            length() const { return (size_t)d->data.size(); }
-    bool                isEmpty() const { return d->data.empty(); }
-    bool                isNull()  const { return d->isNull; }
+    const std::string & str()      const { return d->data; }
+    const char *        c_str()    const { return d->data.c_str(); }
+    size_t              byteSize() const { return (size_t)d->data.size(); }
+    size_t              size()     const { return (size_t)d->data.size(); }
+    size_t              length()   const { return (size_t)d->data.size(); }
+    bool                isEmpty()  const { return d->data.empty(); }
+    bool                isNull()   const { return d->isNull; }
 
-    ByteArray toUtf8()  const { return ByteArray(d->data.data(), (size_t)d->data.size()); }
+    void resize(size_t newSize);
+
+    ByteArray toUtf8()   const { return ByteArray(d->data.data(), (size_t)d->data.size()); }
     ByteArray toLatin1() const { return toUtf8(); }
 
     // Codepoint count

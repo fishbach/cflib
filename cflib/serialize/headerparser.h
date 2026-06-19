@@ -9,31 +9,29 @@
 
 #include <cflib/serialize/serializetypeinfo.h>
 
-#include <string>
-
 namespace cflib::serialize {
 
 class HeaderParser
 {
 public:
-    bool parse(const std::string & header);
-    std::string lastError() const { return lastError_; }
+    bool parse(const String & header);
+    String lastError() const { return lastError_; }
 
     bool hasSerializeElements() const { return !classes_.isEmpty(); }
     SerializeTypeInfos classes() const { return classes_; }
 
 private:
-    bool getVariables   (const std::string & in, int start, int end, SerializeTypeInfo & cl);
-    bool getParameters  (const std::string & in, int start, int end, SerializeVariableTypeInfos & vars, const String & ns);
-    bool getFunctions   (const std::string & in, int start, int end, SerializeTypeInfo & cl);
-    bool getCfSignals   (const std::string & in, int start, int end, SerializeTypeInfo & cl);
-    bool getMembers     (const std::string & in, int start, int end, SerializeTypeInfo & cl, int & state);
-    bool getMemberBlocks(const std::string & in, int start, int end, SerializeTypeInfo & cl, int & state);
-    bool getClasses     (const std::string & in, int start, int end, SerializeTypeInfo cl);
-    bool removeCommentsAndStringContents(std::string & header);
+    bool getVariables   (const String & in, int start, int end, SerializeTypeInfo & cl);
+    bool getParameters  (const String & in, int start, int end, SerializeVariableTypeInfos & vars, const String & ns);
+    bool getFunctions   (const String & in, int start, int end, SerializeTypeInfo & cl);
+    bool getCfSignals   (const String & in, int start, int end, SerializeTypeInfo & cl);
+    bool getMembers     (const String & in, int start, int end, SerializeTypeInfo & cl, int & state);
+    bool getMemberBlocks(const String & in, int start, int end, SerializeTypeInfo & cl, int & state);
+    bool getClasses     (const String & in, int start, int end, SerializeTypeInfo cl);
+    bool removeCommentsAndStringContents(String & header);
 
 private:
-    std::string lastError_;
+    String lastError_;
     SerializeTypeInfos classes_;
 };
 
