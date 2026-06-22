@@ -386,7 +386,7 @@ String generate(const SerializeTypeInfo & ti)
 void writeWhenChanged(const String & path, const String & data)
 {
     const ByteArray newContent = data.toUtf8();
-    if (newContent != readFile(path)) writeFile(path, newContent);
+    if (newContent != File::read(path)) File::write(path, newContent);
 }
 
 void ensureInit(const String & dir, Set<String> & writtenInits)
@@ -394,7 +394,7 @@ void ensureInit(const String & dir, Set<String> & writtenInits)
     const String path = dir + "/__init__.py";
     if (writtenInits.contains(path)) return;
     writtenInits << path;
-    if (readFile(path).isNull()) writeFile(path, ByteArray());
+    if (File::read(path).isNull()) File::write(path, ByteArray());
 }
 
 }

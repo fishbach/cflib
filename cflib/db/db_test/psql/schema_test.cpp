@@ -135,7 +135,7 @@ public:
 
     void update_test()
     {
-        ByteArray schema = readFile(":/schema.sql");
+        ByteArray schema = File::read(":/schema.sql");
         TVERIFY(schema::update<PSql>(schema));
 
         schema +=

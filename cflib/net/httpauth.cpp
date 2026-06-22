@@ -51,7 +51,7 @@ void HttpAuth::handleRequest(const Request & request)
                 users_.clear();
                 checkedUsers_.clear();
 
-                ByteArray content = util::readFile(htpasswd_);
+                ByteArray content = File::read(htpasswd_);
                 List<ByteArray> lines = content.split('\n');
                 for (const auto & line : lines) {
                     List<ByteArray> parts = line.split(':');

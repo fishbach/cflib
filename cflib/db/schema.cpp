@@ -213,7 +213,7 @@ bool execRevision(const String & query, Migrator & migrator)
 template<typename S>
 bool update(Migrator migrator, const String & filename)
 {
-    return update<S>(util::readFile(filename), migrator);
+    return update<S>(File::read(filename), migrator);
 }
 
 template<typename S>

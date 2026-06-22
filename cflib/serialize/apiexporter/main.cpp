@@ -5,6 +5,7 @@
  * Licensed under the MIT License.
  */
 
+#include <cflib/serialize/headerparser.h>
 #include <cflib/util/cmdline.h>
 
 #include <cstdio>
@@ -13,6 +14,7 @@
 #include <fstream>
 #include <iostream>
 
+using namespace cflib::serialize;
 using namespace cflib::util;
 
 namespace {
@@ -51,6 +53,11 @@ int main(int argc, char *argv[])
         f << " " << header.toStdString();
     }
     f << std::endl;
+
+    HeaderParser parser;
+    for (const ByteArray & header : headers.values()) {
+
+    }
 
     return 0;
 }

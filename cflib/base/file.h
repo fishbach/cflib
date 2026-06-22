@@ -32,14 +32,15 @@ public:
     };
 
     enum Permission {
-        ReadOwner  = 0x4000,
-        WriteOwner = 0x2000,
-        ReadUser   = 0x0400,
-        WriteUser  = 0x0200,
-        ReadGroup  = 0x0040,
-        WriteGroup = 0x0020,
-        ReadOther  = 0x0004,
-        WriteOther = 0x0002
+        ReadOwner   = 0x4000,
+        WriteOwner  = 0x2000,
+        ReadUser    = 0x0400,
+        WriteUser   = 0x0200,
+        ReadGroup   = 0x0040,
+        WriteGroup  = 0x0020,
+        ReadOther   = 0x0004,
+        WriteOther  = 0x0002,
+        DefaultPerm = 0x0001
     };
 
     File() : fp_(nullptr) {}
@@ -77,6 +78,10 @@ public:
     void flush() { if (fp_) fflush(fp_); }
 
     ByteArray readAll();
+
+    static ByteArray read    (const String & path);
+    static String    readUtf8(const String & path);
+    static bool      write   (const String & path, const ByteArray & data, int perm = DefaultPerm);
 
     bool setPermissions(int perms) {
         if (path_.isEmpty()) return false;

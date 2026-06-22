@@ -186,7 +186,7 @@ String generate(const SerializeTypeInfo & ti, bool isHeader)
 void writeWhenChanged(const String & path, const String & data)
 {
     const ByteArray newContent = data.toUtf8();
-    if (newContent != readFile(path)) writeFile(path, newContent);
+    if (newContent != File::read(path)) File::write(path, newContent);
 }
 
 }

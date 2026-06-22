@@ -452,7 +452,7 @@ void generateJavaScript(const StructuredTypeInfos & typeInfos, const String & de
         String file = ti.typeName.toLower() + ".mjs";
         files << file;
         String js = generate(ti);
-        writeFile(destServices + file, js.toUtf8());
+        File::write(destServices + file, js.toUtf8());
     }
 
     // remove old
@@ -478,7 +478,7 @@ void generateJavaScript(const StructuredTypeInfos & typeInfos, const String & de
         files << path;
         logInfo("added to files: %1", path);
         String js = generate(ti);
-        writeFile(destJs + path, js.toUtf8());
+        File::write(destJs + path, js.toUtf8());
     }
 
     // remove old

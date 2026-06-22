@@ -257,21 +257,21 @@ bool TLSCredentials::loadFromDir(const String & path)
         String name(entry->d_name);
         String file = String(path.str() + "/" + name.str());
         if (name.endsWith("_crt.pem")) {
-            ByteArray data = util::readFile(file);
+            ByteArray data = File::read(file);
             if (data.isEmpty()) {
                 logWarn("could not read certificate: %1", file);
                 continue;
             }
             d->loadedCerts.push_back(data);
         } else if (name.endsWith("_key.pem")) {
-            ByteArray data = util::readFile(file);
+            ByteArray data = File::read(file);
             if (data.isEmpty()) {
                 logWarn("could not read key: %1", file);
                 continue;
             }
             d->loadedKeys.push_back(data);
         } else if (name.endsWith("_crl.pem")) {
-            ByteArray data = util::readFile(file);
+            ByteArray data = File::read(file);
             if (data.isEmpty()) {
                 logWarn("could not read revocation list: %1", file);
                 continue;

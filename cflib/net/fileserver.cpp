@@ -93,7 +93,7 @@ void writeHTMLFile(const String & file, String content)
     content = trimRe.replaceAll(content, " ");
     content = spaceRe.replaceAll(content, " ");
 
-    cflib::util::writeFile(file, content.toUtf8());
+    File::write(file, content.toUtf8());
 }
 
 // Check if path is a directory
@@ -278,7 +278,7 @@ void FileServer::handleRequest(const Request & request)
         if (!noCache_) { ByteArray el = "ETag: "; el << eTag_; request.addHeaderLine(el); }
         if (request.isHEAD()) request.sendText("");
         else if (parseHtml_)  request.sendText(parseHtml(fullPath, isPart, path));
-        else                  request.sendText(String(util::readFile(fullPath)));
+        else                  request.sendText(String(File::read(fullPath)));
         return;
     }
 
@@ -291,7 +291,7 @@ void FileServer::handleRequest(const Request & request)
         {
             replyData = parseHtml(fullPath, false, path).toUtf8();
         } else {
-            replyData = util::readFile(fullPath);
+            replyData = File::read(fullPath);
         }
     }
 
@@ -335,7 +335,7 @@ String FileServer::parseHtml(const String & fullPath, bool isPart, const String 
     logFunctionTraceParam("FileServer::parseHtml(%1, %2, %3, (%4))", fullPath, isPart, path, params.join(','));
 
     String retval;
-    String html = util::readTextfile(fullPath);
+    String html = File::readUtf8(fullPath);
     std::stack<bool> ifStack;
     Regex::MatchResult m;
     while ((m = elementRE_.matchResult(html)).hasMatch()) {
@@ -473,7 +473,7 @@ void FileServer::exportDir(const String & fullPath, const String & path, const S
             } else if (String(name).endsWith(".css")) {
                 String out = parseHtml(filePath, false, path);
                 { Regex importRe(String("(@import url\\(\".*?)\\?") + String(eTag_)); out = importRe.replace(out, "$1"); }
-                cflib::util::writeFile(dest + "/" + name, out.toUtf8());
+                File::write(dest + "/" + name, out.toUtf8());
             } else {
                 cflib::util::copyFile(filePath, dest + "/" + name);
             }

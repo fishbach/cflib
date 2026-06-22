@@ -52,4 +52,24 @@ void File::registerData(const String & file, const uint8 * data, size_t size)
     dataRegistry()[file] = { data, size };
 }
 
+ByteArray File::read(const String & path)
+{
+    File f(path);
+    if (!f.open(ReadOnly)) return {};
+    return f.readAll();
+}
+
+String File::readUtf8(const String & path)
+{
+    return String::fromUtf8(read(path));
+}
+
+bool File::write(const String & path, const ByteArray & data, int perm)
+{
+    File file(path);
+    if (!file.open(File::WriteOnly | File::Truncate)) return false;
+    if (perm != DefaultPerm) file.setPermissions(perm);
+    return file.write(data) == (int64)data.size();
+}
+
 } // namespace

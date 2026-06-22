@@ -49,21 +49,21 @@ public:
     {
         remove_all(rootPath_.str());
         mkPath(rootPath_);
-        writeFile(rootPath_ + "/index.html", mainIndex().toUtf8());
+        File::write(rootPath_ + "/index.html", mainIndex().toUtf8());
         mkPath(servicesPath_);
-        writeFile(servicesPath_ + "/index.html", services().toUtf8());
+        File::write(servicesPath_ + "/index.html", services().toUtf8());
         for (const SerializeTypeInfo & ti : typeInfos_.services()) {
             String path = servicesPath_ + "/" + ti.typeName.toLower();
             mkPath(path);
-            writeFile(path + "/index.html", service(ti).toUtf8());
+            File::write(path + "/index.html", service(ti).toUtf8());
         }
 
         mkPath(classesPath_);
-        writeFile(classesPath_ + "/index.html", classes().toUtf8());
+        File::write(classesPath_ + "/index.html", classes().toUtf8());
         for (const SerializeTypeInfo & ti : typeInfos_.types()) {
             String path = classesPath_ + "/" + getPath(ti);
             mkPath(path);
-            writeFile(path + "/index.html", classDesc(ti).toUtf8());
+            File::write(path + "/index.html", classDesc(ti).toUtf8());
         }
     }
 

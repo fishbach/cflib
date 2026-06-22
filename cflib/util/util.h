@@ -26,12 +26,6 @@ void gzip(ByteArray & data, int compressionLevel = -1);
 void deflateRaw(ByteArray & data, int compressionLevel = -1);
 void inflateRaw(ByteArray & data);
 
-ByteArray readFile(const String & path);
-bool writeFile(const String & path, const ByteArray & data, int perm =
-    File::ReadOwner  | File::ReadUser | File::ReadGroup | File::ReadOther |
-    File::WriteOwner | File::WriteUser);
-String readTextfile(const String & path);
-
 ByteArray encodeQuotedPrintable(const String & text);
 ByteArray encodeWord(const String & str, bool strict);
 

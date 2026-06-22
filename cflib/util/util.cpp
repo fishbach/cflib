@@ -262,28 +262,6 @@ void inflateRaw(ByteArray & data)
     data = out;
 }
 
-ByteArray readFile(const String & path)
-{
-    File file(path);
-    file.open(File::ReadOnly);
-    return file.readAll();
-}
-
-bool writeFile(const String & path, const ByteArray & data, int perm)
-{
-    File file(path);
-    if (!file.open(File::WriteOnly | File::Truncate)) return false;
-    file.setPermissions(perm);
-    return file.write(data) == (int64)data.size();
-}
-
-String readTextfile(const String & path)
-{
-    File file(path);
-    file.open(File::ReadOnly);
-    return String::fromUtf8(file.readAll());
-}
-
 namespace {
 
 const char * const Hex = "0123456789ABCDEF";
@@ -562,8 +540,8 @@ bool removeFile(const String & path)
 
 bool copyFile(const String & src, const String & dest)
 {
-    ByteArray data = readFile(src);
-    return writeFile(dest, data);
+    ByteArray data = File::read(src);
+    return File::write(dest, data);
 }
 
 } // namespace
