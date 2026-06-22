@@ -56,6 +56,7 @@ public:
     bool hasBase() const { return !getBase().isNull(); }
     SerializeTypeInfo getBase() const;
     bool isDerivedFrom(const SerializeTypeInfo & base) const;
+    bool isRMIService() const { return !functions.isEmpty() || !cfSignals.isEmpty(); }
 
     SerializeTypeInfos allUsedClasses() const;
 

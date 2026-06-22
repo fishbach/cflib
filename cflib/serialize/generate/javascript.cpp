@@ -405,10 +405,8 @@ String generateForService(const SerializeTypeInfo & ti)
 
 String generate(const SerializeTypeInfo & ti)
 {
-    const bool isService = !ti.functions.isEmpty() || !ti.cfSignals.isEmpty();
-
     String pathPrefix = "../";
-    if (!isService) {
+    if (!ti.isRMIService()) {
         for (int i = ti.ns.count("::") ; i > 0 ; --i) pathPrefix << "../";
     }
 
@@ -420,8 +418,8 @@ String generate(const SerializeTypeInfo & ti)
         "\n";
 
     js << "import __ber from '" << pathPrefix << "cflib/net/ber.mjs';\n";
-    if (isService) js << "import __rmi from '" << pathPrefix << "cflib/net/rmi.mjs';\n";
-    else           js << "import __inherit from '" << pathPrefix << "cflib/util/inherit.mjs';\n";
+    if (ti.isRMIService()) js << "import __rmi from '" << pathPrefix << "cflib/net/rmi.mjs';\n";
+    else                   js << "import __inherit from '" << pathPrefix << "cflib/util/inherit.mjs';\n";
     if (!ti.cfSignals.isEmpty()) js << "import __RSig from '" << pathPrefix << "cflib/net/rsig.mjs';\n";
     for (String type : getMemberTypes(ti)) {
         String name = type;
@@ -432,8 +430,8 @@ String generate(const SerializeTypeInfo & ti)
     }
     js << "\n";
 
-    if (isService) js << generateForService(ti);
-    else           js << generateForClass(ti);
+    if (ti.isRMIService()) js << generateForService(ti);
+    else                   js << generateForClass(ti);
 
     return js;
 }

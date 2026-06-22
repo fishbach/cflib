@@ -42,6 +42,7 @@ SerializeTypeInfo rawTypeInfo(const String & ns, const String & typeName)
         ti.ns       = ns;
         ti.typeName = typeName;
     }
+    ti.typeName.replace(" ", "").replace("\t", "");
     return ti;
 }
 

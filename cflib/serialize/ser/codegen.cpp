@@ -250,7 +250,7 @@ int genSerialize(const std::string & headerName, const HeaderParser & hp, std::o
         out << "    return retval;\n"
                "}\n";
 
-        if (!cl.functions.isEmpty() || !cl.cfSignals.isEmpty()) {
+        if (cl.isRMIService()) {
             bool existsWithReturnValues                 = false;
             bool existsWithoutReturnValues              = false;
             bool existsWithReturnValuesAndParameters    = false;

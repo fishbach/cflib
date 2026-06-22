@@ -357,9 +357,7 @@ String generateForService(const SerializeTypeInfo & ti)
 
 String generate(const SerializeTypeInfo & ti)
 {
-    const bool isService = !ti.functions.isEmpty() || !ti.cfSignals.isEmpty();
-
-    String body = isService ? generateForService(ti) : generateForClass(ti);
+    String body = ti.isRMIService() ? generateForService(ti) : generateForClass(ti);
 
     // assemble imports based on what the body uses
     String py;

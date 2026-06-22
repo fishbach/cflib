@@ -23,10 +23,12 @@ function(cf_remote app)
     # as a parameter of the function cf_app. It must called be in a different directory.
 
     # vars from application
-    get_target_property(APP_SOURCE_DIR      ${app} SOURCE_DIR         )
-    get_target_property(DAO_LIB_PATH        ${app} DAO_LIB_PATH       )
-    get_target_property(RMI_SERVICE_HEADERS ${app} RMI_SERVICE_HEADERS)
-    get_target_property(RMI_HEADERS         ${app} RMI_HEADERS)
+    get_target_property(APP_SOURCE_DIR      ${app}    SOURCE_DIR         )
+    get_target_property(DAO_LIB_PATH        ${app}    DAO_LIB_PATH       )
+    get_target_property(RMI_SERVICE_HEADERS ${app}    RMI_SERVICE_HEADERS)
+    get_target_property(RMI_HEADERS         ${app}    RMI_HEADERS        )
+    get_target_property(CFLIB_DAO_DIR       cflib_dao SOURCE_DIR         )
+    get_target_property(CFLIB_DAO_HEADERS   cflib_dao RMI_HEADERS        )
 
 
 
@@ -34,6 +36,11 @@ function(cf_remote app)
     if(NOT ARG_REMOTE_APIS)
         message(FATAL_ERROR "no REMOTE_APIS specified")
     endif()
+
+    foreach(cflib_dao_header ${CFLIB_DAO_HEADERS})
+        cmake_path(APPEND CFLIB_DAO_DIR "${cflib_dao_header}" OUTPUT_VARIABLE cflib_dao_header)
+        list(APPEND RMI_HEADERS "${cflib_dao_header}")
+    endforeach()
 
     if(TARGET ${app}_dao)
         get_target_property(DAO_RMI_HEADERS ${app}_dao RMI_HEADERS)
@@ -123,6 +130,7 @@ function(cf_app app)
         cf_find_sources(sources ${ARG_DAO})
         add_library(${app}_dao ${sources})
         cf_configure_target(${app}_dao FALSE "" TRUE)
+        target_link_libraries(${app}_dao PUBLIC cflib_dao)
         target_link_libraries(${app}_dao PUBLIC cflib_serialize)
         target_link_libraries(${app} PRIVATE ${app}_dao)
         set_target_properties(${app} PROPERTIES

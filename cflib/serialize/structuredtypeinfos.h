@@ -14,14 +14,25 @@ namespace cflib::serialize {
 class StructuredTypeInfos
 {
 public:
+    StructuredTypeInfos();
+
     StructuredTypeInfos & operator<<(const SerializeTypeInfo & ti);
 
-    SerializeTypeInfos types()    const { return types_   .values(); }
-    SerializeTypeInfos services() const { return services_.values(); }
+    // returns missing types
+    SerializeTypeInfos fixPlaceholders();
+
+    // Only types needed for API will be returned.
+    SerializeTypeInfos types()        const;
+    SerializeTypeInfos services()     const { return services_.values(); }
 
 private:
-    Map<String, SerializeTypeInfo> types_;
+    void checkNeeds(Map<String, SerializeTypeInfo> & needed, const SerializeTypeInfo & ti) const;
+    void fixPlaceholders(Map<String, SerializeTypeInfo> & missing, SerializeTypeInfo & ti);
+    void fixPlaceholder(Map<String, SerializeTypeInfo> & missing, SerializeTypeInfo & ti);
+
+private:
     Map<String, SerializeTypeInfo> services_;
+    Map<String, SerializeTypeInfo> types_;
 };
 
 } // namespace

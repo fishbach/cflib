@@ -33,7 +33,7 @@ inline SerializeTypeInfo fromType()
         si.typeName = #N; \
     } \
 
-DO_SERIALIZE_TYPE_INFO(bool,    bool)
+DO_SERIALIZE_TYPE_INFO(bool,   bool)
 DO_SERIALIZE_TYPE_INFO(int8,   int8)
 DO_SERIALIZE_TYPE_INFO(uint8,  uint8)
 DO_SERIALIZE_TYPE_INFO(int16,  int16)

@@ -226,6 +226,7 @@ public:
         return String(len == npos ? std::string(s) : std::string(s, len));
     }
     static String fromUtf8(const ByteArray & ba) {
+        if (ba.isNull()) return {};
         return String(std::string(ba.constData(), ba.size()));
     }
     static String fromLatin1(const char * s) { return s ? String(s) : String(); }
