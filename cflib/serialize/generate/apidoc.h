@@ -11,6 +11,6 @@
 
 namespace cflib::serialize::generate {
 
-void generateAPIDoc(const StructuredTypeInfos & typeInfos, const String & dest, const String & prefix, const String & name);
+void generateAPIDoc(const StructuredTypeInfos & typeInfos, const String & dest, const String & name);
 
 } // namespace

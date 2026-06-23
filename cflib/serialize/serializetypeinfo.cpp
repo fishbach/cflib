@@ -72,6 +72,16 @@ String SerializeTypeInfo::getName() const
     return retval;
 }
 
+String SerializeTypeInfo::getFilePath() const
+{
+    return getName().replace("::", "/").toLower();
+}
+
+String SerializeTypeInfo::getNSPath() const
+{
+    return String(ns).replace("::", "/").toLower();
+}
+
 bool SerializeTypeInfo::isDerivedFrom(const SerializeTypeInfo & base) const
 {
     for (const SerializeTypeInfo & ti : bases) {

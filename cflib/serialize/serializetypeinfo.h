@@ -52,6 +52,8 @@ public:
 
     bool isNull() const { return type == Null; }
     String getName() const;
+    String getFilePath() const;
+    String getNSPath() const;
 
     bool hasBase() const { return !getBase().isNull(); }
     SerializeTypeInfo getBase() const;

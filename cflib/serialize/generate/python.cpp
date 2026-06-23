@@ -429,7 +429,7 @@ void generatePython(const StructuredTypeInfos & typeInfos, const String & dest)
     // classes (daos) ------------------------------------------------------
     Set<String> classFiles;
     for (const SerializeTypeInfo & ti : typeInfos.types()) {
-        String relDir = String(ti.ns).replace("::", "/").toLower();
+        String relDir = ti.getNSPath();
         mkPath(destPy + relDir);
 
         // ensure __init__.py up the package chain

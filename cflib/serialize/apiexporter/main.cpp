@@ -33,6 +33,7 @@ int showUsage(const ByteArray & executable)
         << "  -d, --dest <dir>  => destination dir"                         << std::endl
         << "  -g, --git  <hash> => git hash"                                << std::endl
         << "  -t, --type <type> => type of API to be exported (repeatable)" << std::endl
+        << "  -n, --name <name> => name of the service"                     << std::endl
         << "API Types:"                                                     << std::endl
         << "  " << allowedTypes.toList().sorted().join(' ').toStdString()   << std::endl;
     return 1;
@@ -47,6 +48,7 @@ int main(int argc, char *argv[])
     Option typesOpt('t', "type", true, false, true); cmdLine << typesOpt;
     Option destOpt ('d', "dest", true, false      ); cmdLine << destOpt;
     Option gitOpt  ('g', "git",  true, false      ); cmdLine << gitOpt;
+    Option nameOpt ('n', "name", true, false      ); cmdLine << nameOpt;
     Arg    headers (false, true                   ); cmdLine << headers;
     if (!cmdLine.parse() || help.isSet()) return showUsage(cmdLine.executable());
 
@@ -86,8 +88,11 @@ int main(int argc, char *argv[])
         return 4;
     }
 
+    String name = nameOpt.value();
+    if (!name.isEmpty() && name[0] >= 97) name[0] -= 32;
+
     for (const ByteArray & type : typesOpt.values()) {
-        if      (type == "apidoc"    ) generateAPIDoc           (infos, destOpt.value(), "apidoc", "API");
+        if      (type == "apidoc"    ) generateAPIDoc           (infos, destOpt.value() + "/apidoc", name + " API");
         else if (type == "cpp"       ) generateCppRemoteServices(infos, destOpt.value() + "/cpp");
         else if (type == "javascript") generateJavaScript       (infos, destOpt.value());
         else                           generatePython           (infos, destOpt.value());

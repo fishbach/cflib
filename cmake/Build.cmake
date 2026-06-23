@@ -111,7 +111,7 @@ function(cf_app app)
 
         add_custom_command(
             OUTPUT ${output}
-            COMMAND apiexporter --dest "${REMOTE_DIR}" --git ${GIT_HASH} ${output_types} ${RMI_HEADERS}
+            COMMAND apiexporter --dest "${REMOTE_DIR}" --git ${GIT_HASH} --name ${app} ${output_types} ${RMI_HEADERS}
             DEPENDS apiexporter ${RMI_HEADERS}
             VERBATIM
         )

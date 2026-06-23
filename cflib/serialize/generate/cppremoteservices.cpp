@@ -108,7 +108,7 @@ String generate(const SerializeTypeInfo & ti, bool isHeader)
             "\n";
     } else {
         for (const SerializeTypeInfo & cl : ti.allUsedClasses()) {
-            cpp << "#include <" << cl.getName().toLower().replace("::", "/") << ".h>\n";
+            cpp << "#include <" << cl.getFilePath() << ".h>\n";
         }
         if (!ti.allUsedClasses().isEmpty()) cpp << '\n';
         if (isHeader) {
@@ -197,10 +197,8 @@ void generateCppRemoteServices(const StructuredTypeInfos & typeInfos, const Stri
     const String destPath = dest + "/";
     Set<String> files;
     for (const SerializeTypeInfo & ti : typeInfos.services()) {
-        String path = ti.ns;
-        path.replace("::", "/");
-        mkPath(destPath + path);
-        String header = path + "/" + ti.typeName.toLower();
+        mkPath(destPath + ti.getNSPath());
+        String header = ti.getFilePath();
         String impl = header + ".cpp";
         header += ".h";
         files << header << impl;

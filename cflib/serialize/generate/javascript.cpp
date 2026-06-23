@@ -470,9 +470,8 @@ void generateJavaScript(const StructuredTypeInfos & typeInfos, const String & de
     // write classes
     files.clear();
     for (const SerializeTypeInfo & ti : typeInfos.types()) {
-        String path = String(ti.ns).replace("::", "/").toLower();
-        mkPath(destJs + path);
-        path += "/" + ti.typeName.toLower() + ".mjs";
+        mkPath(destJs + ti.getNSPath());
+        String path = ti.getFilePath() + ".mjs";
         files << path;
         logInfo("added to files: %1", path);
         String js = generate(ti);

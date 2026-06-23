@@ -28,20 +28,12 @@ StringList nsToList(const String & ns)
     return ns.split("::");
 };
 
-String getPath(const SerializeTypeInfo & ti)
-{
-    return ti.getName().replace("::", "/").toLower();
-}
-
 class HMTLGen
 {
 public:
-    HMTLGen(const StructuredTypeInfos & typeInfos, const String & dest, const String & prefix, const String & name) :
+    HMTLGen(const StructuredTypeInfos & typeInfos, const String & dest, const String & name) :
         typeInfos_(typeInfos),
-        rootPath_(dest + "/" + prefix),
-        servicesPath_(rootPath_ + "/services"),
-        classesPath_(rootPath_ + "/classes"),
-        prefix_(prefix),
+        rootPath_(dest + "/"),
         name_(name)
     {}
 
@@ -49,100 +41,59 @@ public:
     {
         remove_all(rootPath_.str());
         mkPath(rootPath_);
-        File::write(rootPath_ + "/index.html", mainIndex().toUtf8());
-        mkPath(servicesPath_);
-        File::write(servicesPath_ + "/index.html", services().toUtf8());
-        for (const SerializeTypeInfo & ti : typeInfos_.services()) {
-            String path = servicesPath_ + "/" + ti.typeName.toLower();
-            mkPath(path);
-            File::write(path + "/index.html", service(ti).toUtf8());
-        }
 
-        mkPath(classesPath_);
-        File::write(classesPath_ + "/index.html", classes().toUtf8());
+        File::write(rootPath_ + "/index.html", mainIndex().toUtf8());
+        for (const SerializeTypeInfo & ti : typeInfos_.services()) {
+            mkPath(rootPath_ + ti.getNSPath());
+            File::write(rootPath_ + ti.getFilePath() + ".html", service(ti).toUtf8());
+        }
         for (const SerializeTypeInfo & ti : typeInfos_.types()) {
-            String path = classesPath_ + "/" + getPath(ti);
-            mkPath(path);
-            File::write(path + "/index.html", classDesc(ti).toUtf8());
+            mkPath(rootPath_ + ti.getNSPath());
+            File::write(rootPath_ + ti.getFilePath() + ".html", classDesc(ti).toUtf8());
         }
     }
 
 private:
-    String header() { return
-        "<html><head>\n"
-        "<title>" + name_ + "</title>\n"
-        "<style type=\"text/css\">\n"
-        "body { font-family: \"Verdana\"; }\n"
-        "h2, h3, h4 { font-weight: normal; }\n"
-        "</style>\n"
-        "</head><body>\n"
-        "<h2><a href=\"/" + prefix_ + "\">" + name_ + "</a></h2>\n";
+    uint tiDepth(const SerializeTypeInfo & ti)
+    {
+        if (ti.ns.isEmpty()) return 0;
+        return 1 + ti.ns.count("::");
+    }
+
+    String upPath(uint depth)
+    {
+        String upPath;
+        while (depth--) upPath += "../";
+        return upPath;
+    }
+
+    String header(uint depth)
+    {
+        return
+            "<html><head>\n"
+            "<title>" + name_ + "</title>\n"
+            "<style type=\"text/css\">\n"
+            "body { font-family: \"Verdana\"; }\n"
+            "h2, h3, h4 { font-weight: normal; }\n"
+            "</style>\n"
+            "</head><body>\n"
+            "<h2><a href=\"" + upPath(depth) + "index.html\">" + name_ + "</a></h2>\n";
     }
 
     const String Footer =
         "</body></html>\n";
 
-    String mainIndex() { return
-        header() +
-        "<ul>\n"
-        "<li><a href=\"/" + prefix_ + "/services\">services</a> - API Services Description</li>\n"
-        "<li><a href=\"/" + prefix_ + "/classes\">classes</a> - API Classes Description</li>\n"
-        "</ul>\n" +
-        Footer;
-    }
-
-    String services()
+    String mainIndex()
     {
-        String html = header();
+        String html = header(0);
         html <<
-            "<h3>Services:</h3>\n"
-            "<ul>\n";
-        for (const SerializeTypeInfo & ti : typeInfos_.services()) {
-            html
-                << "<li><a href=\"/" + prefix_ + "/services/" << ti.typeName.toLower() << "\">" << ti.typeName << "</a></li>\n";
-        }
-        html <<
-            "</ul>\n";
-        html << Footer;
-        return html;
-    }
-
-    String service(const SerializeTypeInfo & ti)
-    {
-        String html = header();
-        html <<
-            "<h3>Service: <b>" << ti.typeName << "</b></h3>\n"
-            "<h4>Methods:</h4>\n"
+            "<h3>Index:</h3>\n"
             "<ul>\n";
 
-        for (const SerializeFunctionTypeInfo & func : ti.functions) {
-            html << "<li>" << signatureHTML(func) << "</li>\n";
-        }
-        html << "</ul>\n";
-
-        if (!ti.cfSignals.isEmpty()) {
-            html <<
-            "<h4>Signals:</h4>\n"
-            "<ul>\n";
-            for (const auto & func : ti.cfSignals) {
-                html << "<li>" << signatureHTML(func) << "</li>\n";
-            }
-            html << "</ul>\n";
-        }
-
-        html << Footer;
-        return html;
-    }
-
-    String classes()
-    {
-        String html = header();
-        html <<
-            "<h3>Classes:</h3>\n"
-            "<ul>\n";
-
+        SerializeTypeInfos allInfos = typeInfos_.types() + typeInfos_.services();
+        allInfos.sort();
         String lastNs;
-        for (const SerializeTypeInfo & ti : typeInfos_.types()) {
+        for (const SerializeTypeInfo & ti : allInfos) {
             if (ti.ns != lastNs) {
                 StringList last    = nsToList(lastNs);
                 StringList current = nsToList(ti.ns);
@@ -158,7 +109,7 @@ private:
                         "<ul>\n";
                 }
             }
-            html << "<li><a href=\"/" + prefix_ + "/classes/" << getPath(ti) << "\">" << ti.typeName << "</a></li>\n";
+            html << "<li><a href=\"" << ti.getFilePath() << ".html\">" << ti.typeName << "</a></li>\n";
         }
         for (int i = nsToList(lastNs).size() ; i > 0 ; --i) html << "</ul>\n";
 
@@ -167,9 +118,38 @@ private:
         return html;
     }
 
+    String service(const SerializeTypeInfo & ti)
+    {
+        uint depth = tiDepth(ti);
+        String html = header(depth);
+        html <<
+            "<h3>Service: <b>" << ti.getName() << "</b></h3>\n"
+            "<h4>Methods:</h4>\n"
+            "<ul>\n";
+
+        for (const SerializeFunctionTypeInfo & func : ti.functions) {
+            html << "<li>" << signatureHTML(func, depth) << "</li>\n";
+        }
+        html << "</ul>\n";
+
+        if (!ti.cfSignals.isEmpty()) {
+            html <<
+            "<h4>Signals:</h4>\n"
+            "<ul>\n";
+            for (const auto & func : ti.cfSignals) {
+                html << "<li>" << signatureHTML(func, depth) << "</li>\n";
+            }
+            html << "</ul>\n";
+        }
+
+        html << Footer;
+        return html;
+    }
+
     String classDesc(const SerializeTypeInfo & ti)
     {
-        String html = header();
+        uint depth = tiDepth(ti);
+        String html = header(depth);
         html <<
             "<h3>Class: <b>" << ti.getName() << "</b></h3>\n"
             "Base: ";
@@ -177,7 +157,7 @@ private:
         if (ti.bases.isEmpty()) {
             html << "API.Base";
         } else {
-            html << typeHTML(ti.bases[0]);
+            html << typeHTML(ti.bases[0], depth);
         }
 
         html <<
@@ -187,7 +167,7 @@ private:
 
         for (const auto & member : ti.members) {
             html
-                << "<li>" << typeHTML(member.type)
+                << "<li>" << typeHTML(member.type, depth)
                 << ' ' << member.name << "</li>\n";
         }
 
@@ -196,9 +176,9 @@ private:
         return html;
     }
 
-    String signatureHTML(const SerializeFunctionTypeInfo & fti)
+    String signatureHTML(const SerializeFunctionTypeInfo & fti, uint depth)
     {
-        String retval = typeHTML(fti.returnType);
+        String retval = typeHTML(fti.returnType, depth);
         if (retval.isEmpty()) retval += "void";
         retval += ' ';
         retval += fti.name;
@@ -207,7 +187,7 @@ private:
         for (const SerializeVariableTypeInfo & inf : fti.parameters) {
             if (isFirst) isFirst = false;
             else retval += ", ";
-            retval += typeHTML(inf.type);
+            retval += typeHTML(inf.type, depth);
             if (inf.isRef) retval += " &amp;";
             if (!inf.name.isEmpty()) retval += " " + inf.name;
         }
@@ -215,11 +195,11 @@ private:
         return retval;
     }
 
-    String typeHTML(const SerializeTypeInfo & ti)
+    String typeHTML(const SerializeTypeInfo & ti, uint depth)
     {
         String retval;
         if (ti.type == SerializeTypeInfo::Class) {
-            retval = "<a href=\"/" + prefix_ + "/classes/" << getPath(ti) << "\">" << ti.getName() << "</a>";
+            retval = String("<a href=\"" + upPath(depth) + "") << ti.getFilePath() << ".html\">" << ti.getName() << "</a>";
         } else if (ti.type == SerializeTypeInfo::Container) {
             retval = ti.typeName.left(ti.typeName.indexOf('<'));
             retval += "&lt;";
@@ -227,7 +207,7 @@ private:
             for (const SerializeTypeInfo & bti : ti.bases) {
                 if (first) first = false;
                 else retval += ", ";
-                retval += typeHTML(bti);
+                retval += typeHTML(bti, depth);
             }
             retval += "&gt;";
         } else {
@@ -241,15 +221,14 @@ private:
     const String rootPath_;
     const String servicesPath_;
     const String classesPath_;
-    const String & prefix_;
     const String & name_;
 };
 
 }
 
-void generateAPIDoc(const StructuredTypeInfos & typeInfos, const String & dest, const String & prefix, const String & name)
+void generateAPIDoc(const StructuredTypeInfos & typeInfos, const String & dest, const String & name)
 {
-    HMTLGen(typeInfos, dest, prefix, name).generate();
+    HMTLGen(typeInfos, dest, name).generate();
 }
 
 } // namespace
