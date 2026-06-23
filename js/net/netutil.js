@@ -5,18 +5,18 @@
  * Licensed under the MIT License.
  */
 
-import $          from '../dom.mjs';
-import ajax       from '../net/ajax.mjs';
-import rmi        from '../net/rmi.mjs';
-import util       from '../util/util.mjs';
-import logService from '../../services/logservice.mjs';
+import $          from '../dom.js';
+import ajax       from '../net/ajax.js';
+import rmi        from '../net/rmi.js';
+import util       from '../util/util.js';
+import logService from '../../services/logservice.js';
 
 function logToServer(category, str)
 {
     var file = 'javascript';
     var line = 0;
     try { util.__undefined(); } catch (e) { try {
-        var parts = /.+\/[^\/]+\/[^\/]+.mjs:\d+.*\n.+\/[^\/]+\/[^\/]+.mjs:\d+.*\n.+\/([^\/]+\/[^\/]+.mjs):(\d+)/.exec(e.stack);
+        var parts = /.+\/[^\/]+\/[^\/]+.js:\d+.*\n.+\/[^\/]+\/[^\/]+.js:\d+.*\n.+\/([^\/]+\/[^\/]+.js):(\d+)/.exec(e.stack);
         file = parts[1];
         line = +parts[2];
     } catch (e2) {} }

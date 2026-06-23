@@ -6,7 +6,7 @@
 
 """Hand-written BER (ASN.1) serialization for cflib.
 
-This is a direct port of ``js/net/ber.mjs`` and produces byte-identical output to
+This is a direct port of ``js/net/ber.js`` and produces byte-identical output to
 the JavaScript and C++ implementations.  It deliberately avoids any third party
 encoding library; only Python built-ins (``bytearray``, ``struct``, the UTF-8
 codec) are used.
@@ -366,7 +366,7 @@ class Deserializer:
 
 
 # ---------------------------------------------------------------------------
-# module level convenience (mirrors the `ber` default export in ber.mjs)
+# module level convenience (mirrors the `ber` default export in ber.js)
 # ---------------------------------------------------------------------------
 
 def S(disable_tag_numbering=False):

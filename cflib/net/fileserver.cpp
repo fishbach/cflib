@@ -286,8 +286,7 @@ void FileServer::handleRequest(const Request & request)
     if (!request.isHEAD()) {
         if (parseHtml_ && (
             fullPath.endsWith(".css") ||
-            fullPath.endsWith(".js" ) ||
-            fullPath.endsWith(".mjs")))
+            fullPath.endsWith(".js")))
         {
             replyData = parseHtml(fullPath, false, path).toUtf8();
         } else {
@@ -371,7 +370,7 @@ String FileServer::parseHtml(const String & fullPath, bool isPart, const String 
         } else if (cmd == "importmap") {
             if (skip) continue;
             retval += "<script type=\"importmap\">{\"imports\":{";
-            // Walk directory tree for .mjs files
+            // Walk directory tree for .js files
             std::function<void(const String &)> walkMjs;
             const int len = path_.length() + 1;
             const String suffix = String("?") + eTag_ + "\"";
@@ -388,7 +387,7 @@ String FileServer::parseHtml(const String & fullPath, bool isPart, const String 
                     if (stat(full.c_str(), &st) != 0) continue;
                     if (S_ISDIR(st.st_mode)) {
                         walkMjs(full);
-                    } else if (name.endsWith(".mjs")) {
+                    } else if (name.endsWith(".js")) {
                         String file = full.mid(len);
                         if (isFirst) isFirst = false;
                         else retval += ',';

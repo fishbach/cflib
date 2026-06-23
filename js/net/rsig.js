@@ -5,10 +5,10 @@
  * Licensed under the MIT License.
  */
 
-import ber     from '../net/ber.mjs';
-import rmi     from '../net/rmi.mjs';
-import EV      from '../util/ev.mjs';
-import inherit from '../util/inherit.mjs';
+import ber     from '../net/ber.js';
+import rmi     from '../net/rmi.js';
+import EV      from '../util/ev.js';
+import inherit from '../util/inherit.js';
 
 var RSig = function(source, name, service, rsig, deser) {
     EV.call(this, source, name);

@@ -50,14 +50,14 @@ The two-step build (documented in `AGENTS.md` under "Remote Interface Generation
 1. The app is built with `ENABLE_SER` + `DAO`, generating local serialization/service handlers.
 2. `cf_remote(app)` runs `app --export remote/`, which uses the registered `SerializeTypeInfo` to emit **client stubs** into `remote/`:
    - C++ remote services — `cflib/serialize/generate/cppremoteservices.cpp`
-   - JavaScript ES modules — `cflib/serialize/generate/javascript.cpp` (consumed alongside `js/net/rmi.mjs`, `rsig.mjs`, `ber.mjs`)
+   - JavaScript ES modules — `cflib/serialize/generate/javascript.cpp` (consumed alongside `js/net/rmi.js`, `rsig.js`, `ber.js`)
    - HTML API docs — `cflib/serialize/generate/apidoc.cpp`
 
-   See `examples/chatserver/` for the full shape: `services/`, `dao/`, and a generated `remote/` tree containing C++ stubs, `*.mjs`, and `apidoc/`. The same service definition thus drives a C++ server, C++ clients, browser clients, and documentation from one source of truth.
+   See `examples/chatserver/` for the full shape: `services/`, `dao/`, and a generated `remote/` tree containing C++ stubs, `*.js`, and `apidoc/`. The same service definition thus drives a C++ server, C++ clients, browser clients, and documentation from one source of truth.
 
 ## JavaScript companion (`js/`)
 
-Browser-side runtime mirroring the C++ net layer: `js/net/` implements RMI, RSig, BER, and AJAX so a generated `*.mjs` service stub can call into the C++ server over the same protocol.
+Browser-side runtime mirroring the C++ net layer: `js/net/` implements RMI, RSig, BER, and AJAX so a generated `*.js` service stub can call into the C++ server over the same protocol.
 
 # Conventions
 

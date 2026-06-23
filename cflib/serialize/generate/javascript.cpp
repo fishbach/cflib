@@ -417,16 +417,16 @@ String generate(const SerializeTypeInfo & ti)
         "// ============================================================================\n"
         "\n";
 
-    js << "import __ber from '" << pathPrefix << "cflib/net/ber.mjs';\n";
-    if (ti.isRMIService()) js << "import __rmi from '" << pathPrefix << "cflib/net/rmi.mjs';\n";
-    else                   js << "import __inherit from '" << pathPrefix << "cflib/util/inherit.mjs';\n";
-    if (!ti.cfSignals.isEmpty()) js << "import __RSig from '" << pathPrefix << "cflib/net/rsig.mjs';\n";
+    js << "import __ber from '" << pathPrefix << "cflib/net/ber.js';\n";
+    if (ti.isRMIService()) js << "import __rmi from '" << pathPrefix << "cflib/net/rmi.js';\n";
+    else                   js << "import __inherit from '" << pathPrefix << "cflib/util/inherit.js';\n";
+    if (!ti.cfSignals.isEmpty()) js << "import __RSig from '" << pathPrefix << "cflib/net/rsig.js';\n";
     for (String type : getMemberTypes(ti)) {
         String name = type;
         name.replace("::", "__");
         js << "import " << name;
         type.replace("::", "/");
-        js << " from '" << pathPrefix << type.toLower() << ".mjs';\n";
+        js << " from '" << pathPrefix << type.toLower() << ".js';\n";
     }
     js << "\n";
 
@@ -447,7 +447,7 @@ void generateJavaScript(const StructuredTypeInfos & typeInfos, const String & de
     mkPath(destServices);
     Set<String> files;
     for (const SerializeTypeInfo & ti : typeInfos.services()) {
-        String file = ti.typeName.toLower() + ".mjs";
+        String file = ti.typeName.toLower() + ".js";
         files << file;
         String js = generate(ti);
         File::write(destServices + file, js.toUtf8());
@@ -471,7 +471,7 @@ void generateJavaScript(const StructuredTypeInfos & typeInfos, const String & de
     files.clear();
     for (const SerializeTypeInfo & ti : typeInfos.types()) {
         mkPath(destJs + ti.getNSPath());
-        String path = ti.getFilePath() + ".mjs";
+        String path = ti.getFilePath() + ".js";
         files << path;
         logInfo("added to files: %1", path);
         String js = generate(ti);

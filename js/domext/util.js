@@ -5,7 +5,7 @@
  * Licensed under the MIT License.
  */
 
-import $ from '../dom.mjs';
+import $ from '../dom.js';
 
 var wheelYMin = Infinity;
 var wheelYSeen = [];

@@ -6,7 +6,7 @@
 
 """Asyncio RMI client — WebSocket transport for cflib's BER protocol.
 
-Port of ``js/net/rmi.mjs``.  One WebSocket carries several logical channels,
+Port of ``js/net/rmi.js``.  One WebSocket carries several logical channels,
 distinguished by the BER tag of each binary frame:
 
 * tag 1 — client-id handshake (sent on connect, echoed/assigned by the server)

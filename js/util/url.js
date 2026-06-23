@@ -5,7 +5,7 @@
  * Licensed under the MIT License.
  */
 
-import EV from '../util/ev.mjs';
+import EV from '../util/ev.js';
 
 var loc  = window.location;
 var hist = window.history;

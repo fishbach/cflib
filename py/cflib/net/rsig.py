@@ -6,7 +6,7 @@
 
 """Remote signals (RSig) — server-pushed events a client can subscribe to.
 
-Port of ``js/net/rsig.mjs``.  A generated service exposes one :class:`RSig` per
+Port of ``js/net/rsig.js``.  A generated service exposes one :class:`RSig` per
 ``cfsignals`` member.  Subscribe with :meth:`connect` and activate the server-side
 subscription with ``await rsig.register()``.
 """

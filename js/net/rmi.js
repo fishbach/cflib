@@ -5,11 +5,11 @@
  * Licensed under the MIT License.
  */
 
-import $       from '../dom.mjs';
-import ber     from '../net/ber.mjs';
-import EV      from '../util/ev.mjs';
-import storage from '../util/storage.mjs';
-import util    from '../util/util.mjs';
+import $       from '../dom.js';
+import ber     from '../net/ber.js';
+import EV      from '../util/ev.js';
+import storage from '../util/storage.js';
+import util    from '../util/util.js';
 
 let requestActive   = false;
 let requestCallback = null;

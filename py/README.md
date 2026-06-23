@@ -12,5 +12,5 @@ The only third-party dependency is [`websockets`](https://pypi.org/project/webso
 for the transport. Managed with [uv](https://docs.astral.sh/uv/).
 
 Service and DAO classes are **generated** from the server's service definitions
-(see `cflib/serialize/generate/python.cpp`), the same way the `.mjs` stubs are
+(see `cflib/serialize/generate/python.cpp`), the same way the `.js` stubs are
 generated for the browser. See `examples/chatclient_py/` for a complete client.
