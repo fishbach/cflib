@@ -18,6 +18,9 @@ endfunction()
 # application
 function(cf_app app)
     cmake_parse_arguments(ARG "ENABLE_EXCEPTIONS;ENABLE_SER;ENABLE_GIT_VERSION;CF_INTERN" "PCH;DAO" "DIRS;RESOURCES;OTHER_FILES;REMOTE_APIS" ${ARGN})
+    if(ARG_REMOTE_APIS)
+        set(ARG_ENABLE_SER TRUE)
+    endif()
 
     # sources, libs and general config
     cf_find_sources(sources . ${ARG_DIRS} OTHER_FILES ${ARG_OTHER_FILES})

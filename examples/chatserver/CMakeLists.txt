@@ -10,7 +10,6 @@ cf_app(chatserver
         chatserver/services
     DAO
         chatserver/dao
-    ENABLE_SER
     REMOTE_APIS
         apidoc
         cpp
