@@ -250,38 +250,26 @@ String formatTypeConstruction(const SerializeTypeInfo & ti, const String & raw)
 // JS namespace for debugging
 String getNsTypeName(const SerializeTypeInfo & ti, String & typeName)
 {
-    String js;
-
-    String nsPrefix;
-    typeName = ti.typeName;
-    if (!ti.ns.isEmpty() || typeName.indexOf("::") != -1) {
-        js << "var ";
-        int i = 0;
-        bool isFirst = true;
-        for (const auto & ns : ti.ns.split("::")) {
-            if (isFirst) {
-                isFirst = false;
-                js << ns << " = {";
-            } else js << ns <<  ": {";
-            nsPrefix << ns << '.';
-            ++i;
-        }
-        StringList classNs = typeName.split("::");
-        typeName = classNs.takeLast();
-        for (const auto & ns : classNs) {
-            if (isFirst) {
-                isFirst = false;
-                js << ns << " = {";
-            } else js << ns <<  ": {";
-            nsPrefix << ns << '.';
-            ++i;
-        }
-        while (--i >= 0) js << '}';
-        js << ";\n"
-            "\n";
+    StringList parts = (ti.ns + "::" + ti.typeName).split("::");
+    if (parts.size() < 2) {
+        typeName = ti.typeName;
+        return {};
     }
+    typeName = parts.join('.');
+    parts.takeLast();
 
-    typeName = nsPrefix + typeName;
+    String js = "var ";
+    bool isFirst = true;
+    for (const String & part : parts) {
+        if (isFirst) {
+            isFirst = false;
+            js << part << " = {";
+        } else js << part <<  ": {";
+    }
+    for (size_t i = 0 ; i < parts.size() ; ++i) js << '}';
+    js << ";\n"
+        "\n";
+
     return js;
 }
 
@@ -296,7 +284,7 @@ String generateForClass(const SerializeTypeInfo & ti)
     String typeName;
     String js = getNsTypeName(ti, typeName);
 
-    if (typeName == ti.typeName) js << "var ";
+    if (js.isEmpty()) js << "var ";
     js <<
         typeName << " = function() { " <<
         typeName << ".prototype.__init.apply(this, arguments); };\n"
@@ -349,7 +337,7 @@ String generateForService(const SerializeTypeInfo & ti)
     String typeName;
     String js = getNsTypeName(ti, typeName);
 
-    if (typeName == ti.typeName) js << "var ";
+    if (js.isEmpty()) js << "var ";
     js <<
         typeName << " = function() {};\n"
         "var " << objName << " = new " << typeName << "();\n"
