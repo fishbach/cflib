@@ -34,8 +34,7 @@ RMIServerBase::RMIServerBase(WSCommManagerBase & wsService) :
 void RMIServerBase::registerService(RMIServiceBase & service)
 {
     service.server_ = this;
-    SerializeTypeInfo servInfo = service.getServiceInfo();
-    serviceTypeInfos_ << servInfo;
+    const SerializeTypeInfo servInfo = service.getServiceInfo();
 
     // register functions
     ServiceFunctions & sfs = services_[servInfo.typeName.toLower()];

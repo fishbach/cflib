@@ -10,7 +10,6 @@
 #include <cflib/base.h>
 #include <cflib/net/rmiservice.h>
 #include <cflib/serialize/serializeber.h>
-#include <cflib/serialize/structuredtypeinfos.h>
 #include <cflib/util/threadverify.h>
 
 namespace cflib::net {
@@ -26,7 +25,6 @@ public:
     RMIServerBase(WSCommManagerBase & wsService);
 
     void registerService(RMIServiceBase & service);
-    const cflib::serialize::StructuredTypeInfos & getServiceTypeInfos() const { return serviceTypeInfos_; }
 
     void send(uint connId, const ByteArray & data);
     ByteArray getRemoteIP(uint connId);
@@ -85,7 +83,6 @@ private:
     WSCommManagerBase & wsService_;
     Map<String, ServiceFunctions> services_;
     Set<uint> activeRequests_;
-    cflib::serialize::StructuredTypeInfos serviceTypeInfos_;
 };
 
 }} // namespace
