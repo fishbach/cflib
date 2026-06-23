@@ -55,41 +55,46 @@ function(cf_app app)
             list(APPEND RMI_HEADERS ${DAO_RMI_HEADERS})
         endif()
 
-        # create symlink for dao
-        if(ARG_DAO)
-            set(dao_link "${REMOTE_DIR}/${ARG_DAO}")
-            get_filename_component(dao_base_dir "${dao_link}" DIRECTORY)
-            file(MAKE_DIRECTORY "${dao_base_dir}")
-            file(RELATIVE_PATH dao_rel_path "${dao_base_dir}" "${CMAKE_CURRENT_SOURCE_DIR}/${ARG_DAO}")
-            execute_process(COMMAND ${CMAKE_COMMAND} -E create_symlink "${dao_rel_path}" "${dao_link}")
-        endif()
-
-        # add _services lib
-        add_library(${app}_services)
-        add_library(${app}::services ALIAS ${app}_services)
-        target_include_directories(${app}_services PUBLIC "${REMOTE_DIR}")
-        target_link_libraries(${app}_services PUBLIC ${app}_dao cflib_net)
-
         set(output)
         cmake_path(APPEND REMOTE_DIR README.md OUTPUT_VARIABLE readme_full_path)
         list(APPEND output "${readme_full_path}")
 
-        foreach(header ${RMI_SERVICE_HEADERS})
-            # remove .h
-            get_filename_component(dir  "${header}" DIRECTORY)
-            get_filename_component(file "${header}" NAME_WLE )
-            set(file "${dir}/${file}")
+        if(cpp IN_LIST ARG_REMOTE_APIS)
+            # add _services lib
+            add_library(${app}_services)
+            add_library(${app}::services ALIAS ${app}_services)
+            target_include_directories(${app}_services PUBLIC "${REMOTE_DIR}")
+            target_link_libraries(${app}_services PUBLIC ${app}_dao cflib_net)
 
-            list(APPEND output
-                "${REMOTE_DIR}/${file}.h"
-                "${REMOTE_DIR}/${file}.cpp"
-            )
+            # create symlink for dao
+            if(ARG_DAO)
+                set(dao_link "${REMOTE_DIR}/${ARG_DAO}")
+                get_filename_component(dao_base_dir "${dao_link}" DIRECTORY)
+                file(MAKE_DIRECTORY "${dao_base_dir}")
+                file(RELATIVE_PATH dao_rel_path "${dao_base_dir}" "${CMAKE_CURRENT_SOURCE_DIR}/${ARG_DAO}")
+                execute_process(COMMAND ${CMAKE_COMMAND} -E create_symlink "${dao_rel_path}" "${dao_link}")
+            endif()
 
-            target_sources(${app}_services
-                PUBLIC  "remote/${file}.h"
-                PRIVATE "remote/${file}.cpp"
-            )
-        endforeach()
+            # add cpp output files
+            foreach(header ${RMI_SERVICE_HEADERS})
+                # remove .h
+                get_filename_component(dir  "${header}" DIRECTORY)
+                get_filename_component(file "${header}" NAME_WLE )
+                set(file "${dir}/${file}")
+
+                list(APPEND output
+                    "${REMOTE_DIR}/${file}.h"
+                    "${REMOTE_DIR}/${file}.cpp"
+                )
+
+                target_sources(${app}_services
+                    PUBLIC  "remote/${file}.h"
+                    PRIVATE "remote/${file}.cpp"
+                )
+            endforeach()
+        else()
+            add_custom_target(${app}_api ALL DEPENDS ${output})
+        endif()
 
         if(NOT ARG_REMOTE_APIS)
             message(FATAL_ERROR "no REMOTE_APIS specified")
@@ -107,10 +112,6 @@ function(cf_app app)
             DEPENDS apiexporter ${RMI_HEADERS}
             VERBATIM
         )
-
-        # add_custom_target(${app}_doc ALL
-        #     DEPENDS ${output}
-        # )
     endif()
 
     # strip release builds and split debug info
