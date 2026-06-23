@@ -77,24 +77,15 @@ function(cf_remote app)
         list(APPEND output_types -t ${type})
     endforeach()
 
-    message("XXX: ${RMI_HEADERS}")
     add_custom_command(
         OUTPUT ${output}
         COMMAND apiexporter --dest "${CMAKE_CURRENT_SOURCE_DIR}" ${output_types} ${RMI_HEADERS}
-        DEPENDS apiexporter # ${RMI_HEADERS}
+        DEPENDS apiexporter ${RMI_HEADERS}
         VERBATIM
     )
 
     # add_custom_target(${app}_doc ALL
     #     DEPENDS ${output}
-    # )
-
-
-    # add_custom_command(
-    #     OUTPUT ${output}
-    #     COMMAND ${app} --export "${CMAKE_CURRENT_SOURCE_DIR}"
-    #     DEPENDS ${app}
-    #     VERBATIM
     # )
 endfunction()
 
