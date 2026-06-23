@@ -15,87 +15,9 @@ function(cf_lib lib)
     target_link_libraries(${lib} PUBLIC ${ARG_PUBLIC} PRIVATE ${ARG_PRIVATE})
 endfunction()
 
-# remote lib for application
-function(cf_remote app)
-    cmake_parse_arguments(ARG "" "" "REMOTE_APIS" ${ARGN})
-
-    # Due to a bug in cmake (at least 4.3.2) it is not possible to implement this
-    # as a parameter of the function cf_app. It must called be in a different directory.
-
-    # vars from application
-    get_target_property(APP_SOURCE_DIR      ${app}    SOURCE_DIR         )
-    get_target_property(DAO_LIB_PATH        ${app}    DAO_LIB_PATH       )
-    get_target_property(RMI_SERVICE_HEADERS ${app}    RMI_SERVICE_HEADERS)
-    get_target_property(RMI_HEADERS         ${app}    RMI_HEADERS        )
-    get_target_property(CFLIB_DAO_HEADERS   cflib_dao RMI_HEADERS        )
-
-    list(APPEND RMI_HEADERS ${CFLIB_DAO_HEADERS})
-    if(TARGET ${app}_dao)
-        get_target_property(DAO_RMI_HEADERS ${app}_dao RMI_HEADERS)
-        list(APPEND RMI_HEADERS ${DAO_RMI_HEADERS})
-    endif()
-
-    # create symlink for dao
-    if(DAO_LIB_PATH)
-        set(dao_link "${CMAKE_CURRENT_SOURCE_DIR}/${DAO_LIB_PATH}")
-        get_filename_component(dao_base_dir "${dao_link}" DIRECTORY)
-        file(MAKE_DIRECTORY "${dao_base_dir}")
-        file(RELATIVE_PATH dao_rel_path "${dao_base_dir}" "${APP_SOURCE_DIR}/${DAO_LIB_PATH}")
-        execute_process(COMMAND ${CMAKE_COMMAND} -E create_symlink "${dao_rel_path}" "${dao_link}")
-    endif()
-
-    # add _services lib
-    add_library(${app}_services)
-    add_library(${app}::services ALIAS ${app}_services)
-    target_include_directories(${app}_services PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
-    target_link_libraries(${app}_services PUBLIC ${app}_dao cflib_net)
-
-    set(output)
-    cmake_path(APPEND CMAKE_CURRENT_SOURCE_DIR README.md OUTPUT_VARIABLE readme_full_path)
-    list(APPEND output "${readme_full_path}")
-
-    foreach(header ${RMI_SERVICE_HEADERS})
-        # remove .h
-        get_filename_component(dir  "${header}" DIRECTORY)
-        get_filename_component(file "${header}" NAME_WLE )
-        set(file "${dir}/${file}")
-
-        list(APPEND output
-            "${CMAKE_CURRENT_SOURCE_DIR}/${file}.h"
-            "${CMAKE_CURRENT_SOURCE_DIR}/${file}.cpp"
-        )
-
-        target_sources(${app}_services
-            PUBLIC  "${file}.h"
-            PRIVATE "${file}.cpp"
-        )
-    endforeach()
-
-    if(NOT ARG_REMOTE_APIS)
-        message(FATAL_ERROR "no REMOTE_APIS specified")
-    endif()
-    set(output_types)
-    foreach(type ${ARG_REMOTE_APIS})
-        list(APPEND output_types -t ${type})
-    endforeach()
-
-    cf_git_version(GIT_HASH)
-
-    add_custom_command(
-        OUTPUT ${output}
-        COMMAND apiexporter --dest "${CMAKE_CURRENT_SOURCE_DIR}" --git ${GIT_HASH} ${output_types} ${RMI_HEADERS}
-        DEPENDS apiexporter ${RMI_HEADERS}
-        VERBATIM
-    )
-
-    # add_custom_target(${app}_doc ALL
-    #     DEPENDS ${output}
-    # )
-endfunction()
-
 # application
 function(cf_app app)
-    cmake_parse_arguments(ARG "ENABLE_EXCEPTIONS;ENABLE_SER;ENABLE_GIT_VERSION;CF_INTERN" "PCH;DAO" "DIRS;RESOURCES;OTHER_FILES" ${ARGN})
+    cmake_parse_arguments(ARG "ENABLE_EXCEPTIONS;ENABLE_SER;ENABLE_GIT_VERSION;CF_INTERN" "PCH;DAO" "DIRS;RESOURCES;OTHER_FILES;REMOTE_APIS" ${ARGN})
 
     # sources, libs and general config
     cf_find_sources(sources . ${ARG_DIRS} OTHER_FILES ${ARG_OTHER_FILES})
@@ -118,6 +40,77 @@ function(cf_app app)
         set_target_properties(${app} PROPERTIES
             DAO_LIB_PATH ${ARG_DAO}
         )
+    endif()
+
+    # remote API
+    if(ARG_REMOTE_APIS)
+        get_target_property(RMI_SERVICE_HEADERS ${app}    RMI_SERVICE_HEADERS)
+        get_target_property(RMI_HEADERS         ${app}    RMI_HEADERS        )
+        get_target_property(CFLIB_DAO_HEADERS   cflib_dao RMI_HEADERS        )
+        cmake_path(APPEND CMAKE_CURRENT_SOURCE_DIR remote OUTPUT_VARIABLE REMOTE_DIR)
+
+        list(APPEND RMI_HEADERS ${CFLIB_DAO_HEADERS})
+        if(TARGET ${app}_dao)
+            get_target_property(DAO_RMI_HEADERS ${app}_dao RMI_HEADERS)
+            list(APPEND RMI_HEADERS ${DAO_RMI_HEADERS})
+        endif()
+
+        # create symlink for dao
+        if(ARG_DAO)
+            set(dao_link "${REMOTE_DIR}/${ARG_DAO}")
+            get_filename_component(dao_base_dir "${dao_link}" DIRECTORY)
+            file(MAKE_DIRECTORY "${dao_base_dir}")
+            file(RELATIVE_PATH dao_rel_path "${dao_base_dir}" "${CMAKE_CURRENT_SOURCE_DIR}/${ARG_DAO}")
+            execute_process(COMMAND ${CMAKE_COMMAND} -E create_symlink "${dao_rel_path}" "${dao_link}")
+        endif()
+
+        # add _services lib
+        add_library(${app}_services)
+        add_library(${app}::services ALIAS ${app}_services)
+        target_include_directories(${app}_services PUBLIC "${REMOTE_DIR}")
+        target_link_libraries(${app}_services PUBLIC ${app}_dao cflib_net)
+
+        set(output)
+        cmake_path(APPEND REMOTE_DIR README.md OUTPUT_VARIABLE readme_full_path)
+        list(APPEND output "${readme_full_path}")
+
+        foreach(header ${RMI_SERVICE_HEADERS})
+            # remove .h
+            get_filename_component(dir  "${header}" DIRECTORY)
+            get_filename_component(file "${header}" NAME_WLE )
+            set(file "${dir}/${file}")
+
+            list(APPEND output
+                "${REMOTE_DIR}/${file}.h"
+                "${REMOTE_DIR}/${file}.cpp"
+            )
+
+            target_sources(${app}_services
+                PUBLIC  "remote/${file}.h"
+                PRIVATE "remote/${file}.cpp"
+            )
+        endforeach()
+
+        if(NOT ARG_REMOTE_APIS)
+            message(FATAL_ERROR "no REMOTE_APIS specified")
+        endif()
+        set(output_types)
+        foreach(type ${ARG_REMOTE_APIS})
+            list(APPEND output_types -t ${type})
+        endforeach()
+
+        cf_git_version(GIT_HASH)
+
+        add_custom_command(
+            OUTPUT ${output}
+            COMMAND apiexporter --dest "${REMOTE_DIR}" --git ${GIT_HASH} ${output_types} ${RMI_HEADERS}
+            DEPENDS apiexporter ${RMI_HEADERS}
+            VERBATIM
+        )
+
+        # add_custom_target(${app}_doc ALL
+        #     DEPENDS ${output}
+        # )
     endif()
 
     # strip release builds and split debug info

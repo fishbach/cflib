@@ -11,6 +11,9 @@ cf_app(chatserver
     DAO
         chatserver/dao
     ENABLE_SER
+    REMOTE_APIS
+        apidoc
+        cpp
+        javascript
+        python
 )
-
-add_subdirectory(remote)
