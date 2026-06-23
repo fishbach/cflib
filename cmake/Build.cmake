@@ -50,8 +50,10 @@ function(cf_remote app)
     target_include_directories(${app}_services PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
     target_link_libraries(${app}_services PUBLIC ${app}_dao cflib_net)
 
-    # configure code generation
     set(output)
+    cmake_path(APPEND CMAKE_CURRENT_SOURCE_DIR README.md OUTPUT_VARIABLE readme_full_path)
+    list(APPEND output "${readme_full_path}")
+
     foreach(header ${RMI_SERVICE_HEADERS})
         # remove .h
         get_filename_component(dir  "${header}" DIRECTORY)
@@ -77,9 +79,11 @@ function(cf_remote app)
         list(APPEND output_types -t ${type})
     endforeach()
 
+    cf_git_version(GIT_HASH)
+
     add_custom_command(
         OUTPUT ${output}
-        COMMAND apiexporter --dest "${CMAKE_CURRENT_SOURCE_DIR}" ${output_types} ${RMI_HEADERS}
+        COMMAND apiexporter --dest "${CMAKE_CURRENT_SOURCE_DIR}" --git ${GIT_HASH} ${output_types} ${RMI_HEADERS}
         DEPENDS apiexporter ${RMI_HEADERS}
         VERBATIM
     )

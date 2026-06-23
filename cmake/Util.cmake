@@ -52,3 +52,14 @@ function(cf_set_version_defines file)
     )
     set_source_files_properties(${file} PROPERTIES COMPILE_DEFINITIONS "${VERSION_DEFINES}")
 endfunction()
+
+function(cf_git_version var)
+    execute_process(
+        COMMAND git rev-parse HEAD
+        WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
+        OUTPUT_VARIABLE GIT_HASH
+        OUTPUT_STRIP_TRAILING_WHITESPACE
+        ERROR_QUIET
+    )
+    set(${var} ${GIT_HASH} PARENT_SCOPE)
+endfunction()
