@@ -87,10 +87,10 @@ int main(int argc, char *argv[])
     }
 
     for (const ByteArray & type : typesOpt.values()) {
-        if      (type == "apidoc"    ) generateAPIDoc           (infos, destOpt.value(), "chatserver/apidoc", "ChatServer API");
-        else if (type == "cpp"       ) generateCppRemoteServices(infos, destOpt.value() + "/chatserver/services");
-        else if (type == "javascript") generateJavaScript       (infos, destOpt.value() + "/chatserver");
-        else                           generatePython           (infos, destOpt.value() + "/chatserver");
+        if      (type == "apidoc"    ) generateAPIDoc           (infos, destOpt.value(), "apidoc", "API");
+        else if (type == "cpp"       ) generateCppRemoteServices(infos, destOpt.value() + "/cpp");
+        else if (type == "javascript") generateJavaScript       (infos, destOpt.value());
+        else                           generatePython           (infos, destOpt.value());
     }
 
     return 0;

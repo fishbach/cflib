@@ -66,12 +66,12 @@ function(cf_app app)
             # add _services lib
             add_library(${app}_services)
             add_library(${app}::services ALIAS ${app}_services)
-            target_include_directories(${app}_services PUBLIC "${REMOTE_DIR}")
+            target_include_directories(${app}_services PUBLIC "${REMOTE_DIR}/cpp")
             target_link_libraries(${app}_services PUBLIC ${app}_dao cflib_net)
 
             # create symlink for dao
             if(ARG_DAO)
-                set(dao_link "${REMOTE_DIR}/${ARG_DAO}")
+                set(dao_link "${REMOTE_DIR}/cpp/${ARG_DAO}")
                 get_filename_component(dao_base_dir "${dao_link}" DIRECTORY)
                 file(MAKE_DIRECTORY "${dao_base_dir}")
                 file(RELATIVE_PATH dao_rel_path "${dao_base_dir}" "${CMAKE_CURRENT_SOURCE_DIR}/${ARG_DAO}")
@@ -86,13 +86,13 @@ function(cf_app app)
                 set(file "${dir}/${file}")
 
                 list(APPEND output
-                    "${REMOTE_DIR}/${file}.h"
-                    "${REMOTE_DIR}/${file}.cpp"
+                    "${REMOTE_DIR}/cpp/${file}.h"
+                    "${REMOTE_DIR}/cpp/${file}.cpp"
                 )
 
                 target_sources(${app}_services
-                    PUBLIC  "remote/${file}.h"
-                    PRIVATE "remote/${file}.cpp"
+                    PUBLIC  "remote/cpp/${file}.h"
+                    PRIVATE "remote/cpp/${file}.cpp"
                 )
             endforeach()
         else()

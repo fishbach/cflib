@@ -195,10 +195,12 @@ void generateCppRemoteServices(const StructuredTypeInfos & typeInfos, const Stri
 {
     // write services
     const String destPath = dest + "/";
-    mkPath(destPath);
     Set<String> files;
     for (const SerializeTypeInfo & ti : typeInfos.services()) {
-        String header = ti.typeName.toLower();
+        String path = ti.ns;
+        path.replace("::", "/");
+        mkPath(destPath + path);
+        String header = path + "/" + ti.typeName.toLower();
         String impl = header + ".cpp";
         header += ".h";
         files << header << impl;
