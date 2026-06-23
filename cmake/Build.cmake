@@ -27,19 +27,13 @@ function(cf_remote app)
     get_target_property(DAO_LIB_PATH        ${app}    DAO_LIB_PATH       )
     get_target_property(RMI_SERVICE_HEADERS ${app}    RMI_SERVICE_HEADERS)
     get_target_property(RMI_HEADERS         ${app}    RMI_HEADERS        )
-    get_target_property(CFLIB_DAO_DIR       cflib_dao SOURCE_DIR         )
     get_target_property(CFLIB_DAO_HEADERS   cflib_dao RMI_HEADERS        )
 
-
-    foreach(cflib_dao_header ${CFLIB_DAO_HEADERS})
-        cmake_path(APPEND CFLIB_DAO_DIR "${cflib_dao_header}" OUTPUT_VARIABLE cflib_dao_header)
-        list(APPEND RMI_HEADERS "${cflib_dao_header}")
-    endforeach()
+    list(APPEND RMI_HEADERS ${CFLIB_DAO_HEADERS})
     if(TARGET ${app}_dao)
         get_target_property(DAO_RMI_HEADERS ${app}_dao RMI_HEADERS)
         list(APPEND RMI_HEADERS ${DAO_RMI_HEADERS})
     endif()
-
 
     # create symlink for dao
     if(DAO_LIB_PATH)
@@ -83,10 +77,10 @@ function(cf_remote app)
         list(APPEND output_types -t ${type})
     endforeach()
 
+    message("XXX: ${RMI_HEADERS}")
     add_custom_command(
         OUTPUT ${output}
-        WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
-        COMMAND apiexporter ${output_types} ${RMI_HEADERS}
+        COMMAND apiexporter --dest "${CMAKE_CURRENT_SOURCE_DIR}" ${output_types} ${RMI_HEADERS}
         DEPENDS apiexporter # ${RMI_HEADERS}
         VERBATIM
     )
@@ -195,31 +189,31 @@ function(cf_configure_target target enable_exceptions pch enable_ser)
         list(FILTER headers INCLUDE REGEX "\.h$")
 
         # filter by containing of SERIALIZE_CLASS
-        set(services)
+        set(RMI_HEADERS)
+        set(RMI_SERVICE_HEADERS)
         foreach(header ${headers})
             file(STRINGS "${header}" lines REGEX "SERIALIZE_CLASS")
             if(NOT lines)
                 list(REMOVE_ITEM headers "${header}")
+                continue()
             endif()
+
+            cmake_path(APPEND CMAKE_CURRENT_SOURCE_DIR "${header}" OUTPUT_VARIABLE header_full_path)
+            list(APPEND RMI_HEADERS "${header_full_path}")
+
             file(STRINGS "${header}" lines REGEX "RMIService")
             if(lines)
-                list(APPEND services "${header}")
+                list(APPEND RMI_SERVICE_HEADERS "${header}")
             endif()
         endforeach()
-        if(services)
-            set_target_properties(${target} PROPERTIES
-                RMI_SERVICE_HEADERS "${services}"
-            )
-        endif()
 
         # Something to do?
         if(NOT headers)
             return()
         endif()
 
-        set_target_properties(${target} PROPERTIES
-            RMI_HEADERS "${headers}"
-        )
+        set_target_properties(${target} PROPERTIES RMI_HEADERS         "${RMI_HEADERS}")
+        set_target_properties(${target} PROPERTIES RMI_SERVICE_HEADERS "${RMI_SERVICE_HEADERS}")
 
         foreach(header ${headers})
             # get output filename (dir/header.h -> target_autogen/dir/header_ser.cpp)

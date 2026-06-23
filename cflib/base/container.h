@@ -279,6 +279,7 @@ public:
     using const_iterator = typename std::unordered_set<T>::const_iterator;
 
     Set() = default;
+    Set(std::initializer_list<T> init) : d(init) {}
 
     auto insert(const T& v) { return d.insert(v); }
     auto insert(T&& v)      { return d.insert(std::move(v)); }

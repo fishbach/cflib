@@ -23,14 +23,17 @@ namespace {
 
 auto && err = std::cerr;
 
+const Set<ByteArray> allowedTypes = { "apidoc", "cpp", "javascript", "python" };
+
 int showUsage(const ByteArray & executable)
 {
-    err << "Usage: " << executable.toStdString() << " [options] <headers>"  << std::endl
+    err << "Usage: " << executable.toStdString() << " -d <dir> -t <type> [-t ...] <headers>"  << std::endl
         << "Options:"                                                       << std::endl
         << "  -h, --help        => this help"                               << std::endl
+        << "  -d, --dest <dir>  => destination dir"                         << std::endl
         << "  -t, --type <type> => type of API to be exported (repeatable)" << std::endl
         << "API Types:"                                                     << std::endl
-        << "  apidoc cpp javascript python"                                 << std::endl;
+        << "  " << allowedTypes.toList().sorted().join(' ').toStdString()   << std::endl;
     return 1;
 }
 
@@ -39,23 +42,28 @@ int showUsage(const ByteArray & executable)
 int main(int argc, char *argv[])
 {
     CmdLine cmdLine(argc, argv);
-    Option help   ('h', "help"                   ); cmdLine << help;
-    Option types  ('t', "type", true, false, true); cmdLine << types;
-    Arg    headers(false, true                   ); cmdLine << headers;
+    Option help    ('h', "help"                   ); cmdLine << help;
+    Option typesOpt('t', "type", true, false, true); cmdLine << typesOpt;
+    Option destOpt ('d', "dest", true, false      ); cmdLine << destOpt;
+    Arg    headers (false, true                   ); cmdLine << headers;
     if (!cmdLine.parse() || help.isSet()) return showUsage(cmdLine.executable());
 
+    for (const ByteArray & type : typesOpt.values()) if (!allowedTypes.contains(type)) {
+        err << "unknown API type: " << type.toStdString() << std::endl;
+        return 1;
+    }
+
     StructuredTypeInfos infos;
-    for (ByteArray header : headers.values()) {
-        if (!header.startsWith("/")) header = "../" + header;
+    for (const ByteArray & header : headers.values()) {
         const String content = File::readUtf8(header);
         if (content.isNull()) {
             err << "cannot readfile: " << header.toStdString() << std::endl;
-            return 1;
+            return 2;
         }
         HeaderParser parser;
         if (!parser.parse(content)) {
             err << "cannot parse file: " << header.toStdString() << " -> " << parser.lastError().str() << std::endl;
-            return 2;
+            return 3;
         }
         for (const SerializeTypeInfo & info : parser.classes()) infos << info;
     }
@@ -64,13 +72,15 @@ int main(int argc, char *argv[])
     if (!missing.isEmpty()) {
         err << "Missing types:" << std::endl;
         for (const SerializeTypeInfo & ti : missing) err << "  " << ti.getName().str() << std::endl;
-        return 3;
+        return 4;
     }
 
-    generateCppRemoteServices(infos, "chatserver/services");
-    generateJavaScript       (infos, "chatserver");
-    generatePython           (infos, "chatserver");
-    generateAPIDoc           (infos, ".", "chatserver/apidoc", "ChatServer API");
+    for (const ByteArray & type : typesOpt.values()) {
+        if      (type == "apidoc"    ) generateAPIDoc           (infos, destOpt.value(), "chatserver/apidoc", "ChatServer API");
+        else if (type == "cpp"       ) generateCppRemoteServices(infos, destOpt.value() + "/chatserver/services");
+        else if (type == "javascript") generateJavaScript       (infos, destOpt.value() + "/chatserver");
+        else                           generatePython           (infos, destOpt.value() + "/chatserver");
+    }
 
     return 0;
 }
