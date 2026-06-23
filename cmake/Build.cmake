@@ -31,42 +31,14 @@ function(cf_remote app)
     get_target_property(CFLIB_DAO_HEADERS   cflib_dao RMI_HEADERS        )
 
 
-
-    # generate remote
-    if(NOT ARG_REMOTE_APIS)
-        message(FATAL_ERROR "no REMOTE_APIS specified")
-    endif()
-
     foreach(cflib_dao_header ${CFLIB_DAO_HEADERS})
         cmake_path(APPEND CFLIB_DAO_DIR "${cflib_dao_header}" OUTPUT_VARIABLE cflib_dao_header)
         list(APPEND RMI_HEADERS "${cflib_dao_header}")
     endforeach()
-
     if(TARGET ${app}_dao)
         get_target_property(DAO_RMI_HEADERS ${app}_dao RMI_HEADERS)
         list(APPEND RMI_HEADERS ${DAO_RMI_HEADERS})
     endif()
-
-    set(output "${CMAKE_CURRENT_SOURCE_DIR}/dudi")
-
-    set(output_types)
-    foreach(type ${ARG_REMOTE_APIS})
-        list(APPEND output_types -t ${type})
-    endforeach()
-
-    add_custom_command(
-        OUTPUT ${output}
-        WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
-        COMMAND apiexporter ${output_types} ${RMI_HEADERS}
-        DEPENDS apiexporter ${RMI_HEADERS}
-        VERBATIM
-    )
-
-    add_custom_target(${app}_doc ALL
-        DEPENDS ${output}
-    )
-
-
 
 
     # create symlink for dao
@@ -103,12 +75,33 @@ function(cf_remote app)
         )
     endforeach()
 
+    if(NOT ARG_REMOTE_APIS)
+        message(FATAL_ERROR "no REMOTE_APIS specified")
+    endif()
+    set(output_types)
+    foreach(type ${ARG_REMOTE_APIS})
+        list(APPEND output_types -t ${type})
+    endforeach()
+
     add_custom_command(
         OUTPUT ${output}
-        COMMAND ${app} --export "${CMAKE_CURRENT_SOURCE_DIR}"
-        DEPENDS ${app}
+        WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
+        COMMAND apiexporter ${output_types} ${RMI_HEADERS}
+        DEPENDS apiexporter # ${RMI_HEADERS}
         VERBATIM
     )
+
+    # add_custom_target(${app}_doc ALL
+    #     DEPENDS ${output}
+    # )
+
+
+    # add_custom_command(
+    #     OUTPUT ${output}
+    #     COMMAND ${app} --export "${CMAKE_CURRENT_SOURCE_DIR}"
+    #     DEPENDS ${app}
+    #     VERBATIM
+    # )
 endfunction()
 
 # application

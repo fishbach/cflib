@@ -13,10 +13,6 @@
 #include <cflib/serialize/structuredtypeinfos.h>
 #include <cflib/util/cmdline.h>
 
-#include <cstdio>
-#include <filesystem>
-#include <format>
-#include <fstream>
 #include <iostream>
 
 using namespace cflib::serialize;
@@ -48,13 +44,6 @@ int main(int argc, char *argv[])
     Arg    headers(false, true                   ); cmdLine << headers;
     if (!cmdLine.parse() || help.isSet()) return showUsage(cmdLine.executable());
 
-    std::ofstream f{"dudi"};
-    f << "output types:";
-    for (const ByteArray & type : types.values()) {
-        f << " " << type.toStdString();
-    }
-    f << std::endl;
-
     StructuredTypeInfos infos;
     for (ByteArray header : headers.values()) {
         if (!header.startsWith("/")) header = "../" + header;
@@ -68,22 +57,20 @@ int main(int argc, char *argv[])
             err << "cannot parse file: " << header.toStdString() << " -> " << parser.lastError().str() << std::endl;
             return 2;
         }
-        for (const SerializeTypeInfo & info : parser.classes()) {
-            f << "adding from " << header.toStdString() << " : " << info.toString().str() << std::endl;
-            infos << info;
-        }
+        for (const SerializeTypeInfo & info : parser.classes()) infos << info;
     }
 
-    f << "missing:" << std::endl;
-    for (const SerializeTypeInfo & ti : infos.fixPlaceholders()) f << ti.ns.str() << " :: " << ti.typeName.str() << std::endl;
+    const SerializeTypeInfos missing = infos.fixPlaceholders();
+    if (!missing.isEmpty()) {
+        err << "Missing types:" << std::endl;
+        for (const SerializeTypeInfo & ti : missing) err << "  " << ti.getName().str() << std::endl;
+        return 3;
+    }
 
-    f << "classes:" << std::endl;
-    for (const SerializeTypeInfo & ti : infos.services() + infos.types()) f << ti.toString().str() << std::endl;
-
-    generateCppRemoteServices(infos, "bla/chatserver/services");
-    generateJavaScript       (infos, "bla/chatserver");
-    generatePython           (infos, "bla/chatserver");
-    generateAPIDoc           (infos, "bla", "chatserver/apidoc", "ChatServer API");
+    generateCppRemoteServices(infos, "chatserver/services");
+    generateJavaScript       (infos, "chatserver");
+    generatePython           (infos, "chatserver");
+    generateAPIDoc           (infos, ".", "chatserver/apidoc", "ChatServer API");
 
     return 0;
 }
