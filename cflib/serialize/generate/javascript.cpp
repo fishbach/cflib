@@ -96,11 +96,11 @@ String getSerializeParameters(const SerializeFunctionTypeInfo & func)
     return js;
 }
 
-Set<String> getCustomTypes(const SerializeTypeInfo & ti)
+Set<SerializeTypeInfo> getCustomTypes(const SerializeTypeInfo & ti)
 {
-    Set<String> types;
+    Set<SerializeTypeInfo> types;
     if (ti.type == SerializeTypeInfo::Class) {
-        types << ti.getName();
+        types << ti;
     } else if (ti.type == SerializeTypeInfo::Container) {
         for (const auto & base : ti.bases) {
             types += getCustomTypes(base);
@@ -109,9 +109,9 @@ Set<String> getCustomTypes(const SerializeTypeInfo & ti)
     return types;
 }
 
-StringList getMemberTypes(const SerializeTypeInfo & ti)
+SerializeTypeInfos getMemberTypes(const SerializeTypeInfo & ti)
 {
-    Set<String> types;
+    Set<SerializeTypeInfo> types;
     for (const auto & base : ti.bases) {
         types += getCustomTypes(base);
     }
@@ -131,7 +131,7 @@ StringList getMemberTypes(const SerializeTypeInfo & ti)
         }
     }
 
-    StringList retval = types.toList();
+    SerializeTypeInfos retval = types.toList();
     retval.sort();
     return retval;
 }
@@ -247,19 +247,13 @@ String formatTypeConstruction(const SerializeTypeInfo & ti, const String & raw)
     return js;
 }
 
-String generateForClass(const SerializeTypeInfo & ti)
+// JS namespace for debugging
+String getNsTypeName(const SerializeTypeInfo & ti, String & typeName)
 {
-    String base;
-    if (!ti.bases.isEmpty()) {
-        base = ti.bases[0].getName();
-        base.replace("::", "__");
-    }
-
     String js;
 
-    // JS namespace for debugging
     String nsPrefix;
-    String typeName = ti.typeName;
+    typeName = ti.typeName;
     if (!ti.ns.isEmpty() || typeName.indexOf("::") != -1) {
         js << "var ";
         int i = 0;
@@ -287,28 +281,43 @@ String generateForClass(const SerializeTypeInfo & ti)
             "\n";
     }
 
-    if (nsPrefix.isEmpty()) js << "var ";
+    typeName = nsPrefix + typeName;
+    return js;
+}
+
+String generateForClass(const SerializeTypeInfo & ti)
+{
+    String base;
+    if (!ti.bases.isEmpty()) {
+        base = ti.bases[0].getName();
+        base.replace("::", "__");
+    }
+
+    String typeName;
+    String js = getNsTypeName(ti, typeName);
+
+    if (typeName == ti.typeName) js << "var ";
     js <<
-        nsPrefix << typeName << " = function() { " <<
-        nsPrefix << typeName << ".prototype.__init.apply(this, arguments); };\n"
-        "__inherit.setBase(" << nsPrefix << typeName << ", ";
+        typeName << " = function() { " <<
+        typeName << ".prototype.__init.apply(this, arguments); };\n"
+        "__inherit.setBase(" << typeName << ", ";
     if (base.isEmpty()) js << "__inherit.Base";
     else js << base;
     js << ");\n";
-    if (ti.classId != 0) js << nsPrefix << typeName << ".__classId = " << String::number(ti.classId) << ";\n";
-    js << nsPrefix << typeName << ".prototype.__init = function(param) {\n";
-    if (base.isEmpty()) js << "    " << nsPrefix << typeName << ".__super.apply(this, arguments);\n";
+    if (ti.classId != 0) js << typeName << ".__classId = " << String::number(ti.classId) << ";\n";
+    js << typeName << ".prototype.__init = function(param) {\n";
+    if (base.isEmpty()) js << "    " << typeName << ".__super.apply(this, arguments);\n";
     js <<
         "    if (param instanceof Uint8Array) {\n"
         "        var __D = __ber.D(param);\n"
         "        __D.n();\n";
-    if (!base.isEmpty()) js << "        " << nsPrefix << typeName << ".__super.call(this, __D.a());\n";
+    if (!base.isEmpty()) js << "        " << typeName << ".__super.call(this, __D.a());\n";
     for (const auto & vti : ti.members) {
         js << "        this." << formatMembername(vti) << " = " << getDeserializeCode(vti.type) << ";\n";
     }
     js <<
         "    } else {\n";
-    if (!base.isEmpty()) js <<"        " << nsPrefix << typeName << ".__super.apply(this, arguments);\n";
+    if (!base.isEmpty()) js <<"        " << typeName << ".__super.apply(this, arguments);\n";
     js <<
         "        if (!param || typeof param != 'object') param = {};\n";
     for (const auto & vti : ti.members) {
@@ -318,9 +327,9 @@ String generateForClass(const SerializeTypeInfo & ti)
     js <<
         "    }\n"
         "};\n"
-        << nsPrefix << typeName << ".prototype.__serialize = function(__S) {\n"
+        << typeName << ".prototype.__serialize = function(__S) {\n"
         "    __S";
-    if (ti.classId != 0) js << ".i(" << nsPrefix << typeName << ".__classId)";
+    if (ti.classId != 0) js << ".i(" << typeName << ".__classId)";
     else                 js << ".n()";
     if (!base.isEmpty()) js << ".o(this, " << base << ".prototype.__serialize)";
     for (const auto & vti : ti.members) {
@@ -328,7 +337,7 @@ String generateForClass(const SerializeTypeInfo & ti)
     }
     js << ".data();\n"
         "};\n"
-        "export default " << nsPrefix << typeName << ";\n";
+        "export default " << typeName << ";\n";
     return js;
 }
 
@@ -336,10 +345,14 @@ String generateForService(const SerializeTypeInfo & ti)
 {
     String objName = ti.typeName;
     { char c = ti.typeName[0]; if (c >= 'A' && c <= 'Z') c += 32; objName[0] = c; }
-    String js;
+
+    String typeName;
+    String js = getNsTypeName(ti, typeName);
+
+    if (typeName == ti.typeName) js << "var ";
     js <<
-        "var " << ti.typeName << " = function() {};\n"
-        "var " << objName << " = new " << ti.typeName << "();\n"
+        typeName << " = function() {};\n"
+        "var " << objName << " = new " << typeName << "();\n"
         "\n";
 
     if (!ti.cfSignals.isEmpty()) {
@@ -405,10 +418,28 @@ String generateForService(const SerializeTypeInfo & ti)
 
 String generate(const SerializeTypeInfo & ti)
 {
-    String pathPrefix = "../";
-    if (!ti.isRMIService()) {
-        for (int i = ti.ns.count("::") ; i > 0 ; --i) pathPrefix << "../";
-    }
+    auto pathPrefix = [&](const String & toPath) -> String {
+        StringList from = ti.getNSPath().split('/');
+        StringList to   = toPath.split('/');
+
+        // equal
+        if (from == to) return "./";
+
+        // remove common prefixe
+        while (!from.isEmpty() && !to.isEmpty()) {
+            if (from.first() == to.first()) {
+                from.takeFirst();
+                to.takeFirst();
+            } else break;
+        }
+
+        // build path
+        String rv;
+        for (size_t i = 0 ; i < from.size() ; ++i) rv += "../";
+        rv += to.join('/');
+        rv += "/";
+        return rv;
+    };
 
     String js;
     js <<
@@ -417,16 +448,15 @@ String generate(const SerializeTypeInfo & ti)
         "// ============================================================================\n"
         "\n";
 
-    js << "import __ber from '" << pathPrefix << "cflib/net/ber.js';\n";
-    if (ti.isRMIService()) js << "import __rmi from '" << pathPrefix << "cflib/net/rmi.js';\n";
-    else                   js << "import __inherit from '" << pathPrefix << "cflib/util/inherit.js';\n";
-    if (!ti.cfSignals.isEmpty()) js << "import __RSig from '" << pathPrefix << "cflib/net/rsig.js';\n";
-    for (String type : getMemberTypes(ti)) {
-        String name = type;
+    js << "import __ber from '" << pathPrefix("cflib/net") << "ber.js';\n";
+    if (ti.isRMIService()) js << "import __rmi from '" << pathPrefix("cflib/net") << "rmi.js';\n";
+    else                   js << "import __inherit from '" << pathPrefix("cflib/util") << "inherit.js';\n";
+    if (!ti.cfSignals.isEmpty()) js << "import __RSig from '" << pathPrefix("cflib/net") << "rsig.js';\n";
+    for (const SerializeTypeInfo & mTi : getMemberTypes(ti)) {
+        String name = mTi.getName();
         name.replace("::", "__");
         js << "import " << name;
-        type.replace("::", "/");
-        js << " from '" << pathPrefix << type.toLower() << ".js';\n";
+        js << " from '" << pathPrefix(mTi.getNSPath()) << mTi.typeName.toLower() << ".js';\n";
     }
     js << "\n";
 
@@ -443,32 +473,16 @@ void generateJavaScript(const StructuredTypeInfos & typeInfos, const String & de
     const String destJs = dest + "/js/";
 
     // write services
-    const String destServices = destJs + "services/";
-    mkPath(destServices);
     Set<String> files;
     for (const SerializeTypeInfo & ti : typeInfos.services()) {
-        String file = ti.typeName.toLower() + ".js";
+        String file = ti.getFilePath() + ".js";
         files << file;
         String js = generate(ti);
-        File::write(destServices + file, js.toUtf8());
-    }
-
-    // remove old
-    {
-        DIR * d = opendir(destServices.c_str());
-        if (d) {
-            struct dirent * ent;
-            while ((ent = readdir(d)) != nullptr) {
-                String name(ent->d_name);
-                if (name == "." || name == "..") continue;
-                if (!files.contains(name)) removeFile(destServices + name);
-            }
-            closedir(d);
-        }
+        mkPath(destJs + ti.getNSPath());
+        File::write(destJs + file, js.toUtf8());
     }
 
     // write classes
-    files.clear();
     for (const SerializeTypeInfo & ti : typeInfos.types()) {
         mkPath(destJs + ti.getNSPath());
         String path = ti.getFilePath() + ".js";
@@ -483,8 +497,10 @@ void generateJavaScript(const StructuredTypeInfos & typeInfos, const String & de
     for (const directory_entry & entry : recursive_directory_iterator(destJs.str(), opt)) {
         if (!entry.is_regular_file()) continue;
         String rel = entry.path().lexically_relative(destJs.str()).generic_string();
-        if (rel.contains("/dao/") && !files.contains(rel)) remove(entry.path());
+        if ((rel.contains("/dao/") || rel.contains("/services/")) && !files.contains(rel)) remove(entry.path());
     }
+
+    // remove empty dirs
     std::function<void (const path &)> removeEmptyDirs = [&](const path & p) {
         for (const directory_entry & entry : directory_iterator(p, opt)) {
             if (!entry.is_directory()) continue;

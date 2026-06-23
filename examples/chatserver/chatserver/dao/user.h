@@ -7,21 +7,15 @@
 
 #pragma once
 
-#include <chatserver/dao/user.h>
+#include <cflib/serialize/serialize.h>
 
 namespace chatserver::dao {
 
-class Message
+class User
 {
     SERIALIZE_CLASS
-
-    Message() = default;
-    Message(const String & text);
-
 public serialized:
-    DateTime timestamp;
-    User from;
-    String text;
+    String name;
 };
 
 }

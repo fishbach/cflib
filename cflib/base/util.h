@@ -13,9 +13,6 @@
 
 namespace cflib::base {
 
-using ByteArrayList = List<ByteArray>;
-using StringList    = List<String>;
-
 template<typename T>
 inline T max(const T & a, const T & b) { return a > b ? a : b; }
 

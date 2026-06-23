@@ -8,7 +8,7 @@
 #pragma once
 
 #include <cflib/base/concurrent.h>
-#include <cflib/base/types.h>
+#include <cflib/base/container.h>
 
 #include <concepts>
 #include <cstring>
@@ -346,6 +346,8 @@ inline ByteArray operator+(const char * lhs, const ByteArray & rhs) {
 inline ByteArray & operator<<(ByteArray & lhs, const ByteArray & rhs) { return lhs += rhs; }
 inline ByteArray & operator<<(ByteArray & lhs, const char * rhs)      { return lhs += rhs; }
 inline ByteArray & operator<<(ByteArray & lhs, char rhs)              { return lhs += rhs; }
+
+using ByteArrayList = List<ByteArray>;
 
 } // namespace
 

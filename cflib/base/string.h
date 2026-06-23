@@ -8,7 +8,7 @@
 #pragma once
 
 #include <cflib/base/bytearray.h>
-#include <cflib/base/types.h>
+#include <cflib/base/container.h>
 
 #include <cstring>
 #include <format>
@@ -17,6 +17,9 @@
 #include <vector>
 
 namespace cflib::base {
+
+class String;
+using StringList = List<String>;
 
 class String
 {
@@ -150,25 +153,25 @@ public:
         return String(std::move(r));
     }
 
-    std::vector<String> split(char delim) const {
-        std::vector<String> result;
+    StringList split(char delim) const {
+        StringList result;
         size_t start = 0, pos;
         while ((pos = d->data.find(delim, start)) != std::string::npos) {
-            result.push_back(String(d->data.substr(start, pos - start)));
+            result << String(d->data.substr(start, pos - start));
             start = pos + 1;
         }
-        result.push_back(String(d->data.substr(start)));
+        result << String(d->data.substr(start));
         return result;
     }
-    std::vector<String> split(const char * delim) const {
-        std::vector<String> result;
+    StringList split(const char * delim) const {
+        StringList result;
         size_t dlen = strlen(delim);
         size_t start = 0, pos;
         while ((pos = d->data.find(delim, start)) != std::string::npos) {
-            result.push_back(String(d->data.substr(start, pos - start)));
+            result << String(d->data.substr(start, pos - start));
             start = pos + dlen;
         }
-        result.push_back(String(d->data.substr(start)));
+        result << String(d->data.substr(start));
         return result;
     }
 
@@ -189,7 +192,7 @@ public:
         return *this;
     }
 
-    String join(const std::vector<String> & list) const {
+    String join(const StringList & list) const {
         std::string r;
         for (size_t i = 0; i < (size_t)list.size(); ++i) {
             if (i > 0) r += d->data;
