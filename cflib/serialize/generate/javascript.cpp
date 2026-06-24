@@ -250,7 +250,7 @@ String formatTypeConstruction(const SerializeTypeInfo & ti, const String & raw)
 // JS namespace for debugging
 String getNsTypeName(const SerializeTypeInfo & ti, String & typeName)
 {
-    StringList parts = (ti.ns + "::" + ti.typeName).split("::");
+    StringList parts = (ti.ns.isEmpty() ? ti.typeName : (ti.ns + "::" + ti.typeName)).split("::");
     if (parts.size() < 2) {
         typeName = ti.typeName;
         return {};
@@ -331,8 +331,11 @@ String generateForClass(const SerializeTypeInfo & ti)
 
 String generateForService(const SerializeTypeInfo & ti)
 {
-    String objName = ti.typeName;
-    { char c = ti.typeName[0]; if (c >= 'A' && c <= 'Z') c += 32; objName[0] = c; }
+    String objName = ti.typeName.split("::").last();
+    {
+        char & c = objName[0];
+        if (c >= 'A' && c <= 'Z') c += 32;
+    }
 
     String typeName;
     String js = getNsTypeName(ti, typeName);
