@@ -28,6 +28,7 @@ option(ENABLE_PCH      "enable precompiled headers (PCH)" ON)
 option(ENABLE_PSQL     "enable PostgreSQL"                OFF)
 option(ENABLE_SQLITE   "enable SQLite"                    OFF)
 option(ONLY_GENERATORS "only generators are build"        OFF)
+set(GENERATORS_BIN_DIR "" CACHE PATH "Use generators from given directory. Useful for cross compilation.")
 
 # C++20
 set(CMAKE_CXX_STANDARD 20)

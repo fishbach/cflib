@@ -26,6 +26,13 @@ function(cf_app app)
         set(ARG_ENABLE_SER TRUE)
     endif()
 
+    # use compiled generators (cross compile)
+    if(ARG_CF_GENERATOR AND GENERATORS_BIN_DIR)
+        add_executable(${app} IMPORTED GLOBAL)
+        set_property(TARGET ${app} PROPERTY IMPORTED_LOCATION "${GENERATORS_BIN_DIR}/${app}")
+        return()
+    endif()
+
     # sources, libs and general config
     cf_find_sources(sources . ${ARG_DIRS} OTHER_FILES ${ARG_OTHER_FILES})
     if(ONLY_GENERATORS AND NOT ARG_CF_GENERATOR)
