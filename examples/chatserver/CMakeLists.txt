@@ -11,8 +11,10 @@ cf_app(chatserver
     DAO
         chatserver/dao
     REMOTE_APIS
-        apidoc
-        cpp
-        javascript
-        python
+        DEST htdocs
+            apidoc
+            javascript
+        DEST remote
+            cpp
+            python
 )

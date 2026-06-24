@@ -46,76 +46,40 @@ function(cf_app app)
         )
     endif()
 
-    # remote API
+    # remote APIs
     if(ARG_REMOTE_APIS)
-        get_target_property(RMI_SERVICE_HEADERS ${app}    RMI_SERVICE_HEADERS)
+        # collect all RMI_HEADERS
         get_target_property(RMI_HEADERS         ${app}    RMI_HEADERS        )
         get_target_property(CFLIB_DAO_HEADERS   cflib_dao RMI_HEADERS        )
-        cmake_path(APPEND CMAKE_CURRENT_SOURCE_DIR remote OUTPUT_VARIABLE REMOTE_DIR)
-
         list(APPEND RMI_HEADERS ${CFLIB_DAO_HEADERS})
-        if(TARGET ${app}_dao)
+        if(ARG_DAO)
             get_target_property(DAO_RMI_HEADERS ${app}_dao RMI_HEADERS)
             list(APPEND RMI_HEADERS ${DAO_RMI_HEADERS})
         endif()
 
-        set(output)
-        cmake_path(APPEND REMOTE_DIR README.md OUTPUT_VARIABLE readme_full_path)
-        list(APPEND output "${readme_full_path}")
-
-        if(cpp IN_LIST ARG_REMOTE_APIS)
-            # add _services lib
-            add_library(${app}_services)
-            add_library(${app}::services ALIAS ${app}_services)
-            target_include_directories(${app}_services PUBLIC "${REMOTE_DIR}/cpp")
-            target_link_libraries(${app}_services PUBLIC ${app}_dao cflib_net)
-
-            # create symlink for dao
-            if(ARG_DAO)
-                set(dao_link "${REMOTE_DIR}/cpp/${ARG_DAO}")
-                get_filename_component(dao_base_dir "${dao_link}" DIRECTORY)
-                file(MAKE_DIRECTORY "${dao_base_dir}")
-                file(RELATIVE_PATH dao_rel_path "${dao_base_dir}" "${CMAKE_CURRENT_SOURCE_DIR}/${ARG_DAO}")
-                execute_process(COMMAND ${CMAKE_COMMAND} -E create_symlink "${dao_rel_path}" "${dao_link}")
+        # parse DEST from parameters
+        set(REMOTE_DIR)
+        set(REMOTE_APIS)
+        set(found_DEST FALSE)
+        foreach(api IN LISTS ARG_REMOTE_APIS)
+            if(api STREQUAL "DEST")
+                set(found_DEST TRUE)
+                if(REMOTE_APIS)
+                    cf_generate_api()
+                    set(REMOTE_APIS)
+                endif()
+                continue()
             endif()
-
-            # add cpp output files
-            foreach(header ${RMI_SERVICE_HEADERS})
-                # remove .h
-                get_filename_component(dir  "${header}" DIRECTORY)
-                get_filename_component(file "${header}" NAME_WLE )
-                set(file "${dir}/${file}")
-
-                list(APPEND output
-                    "${REMOTE_DIR}/cpp/${file}.h"
-                    "${REMOTE_DIR}/cpp/${file}.cpp"
-                )
-
-                target_sources(${app}_services
-                    PUBLIC  "remote/cpp/${file}.h"
-                    PRIVATE "remote/cpp/${file}.cpp"
-                )
-            endforeach()
-        else()
-            add_custom_target(${app}_api ALL DEPENDS ${output})
-        endif()
-
-        if(NOT ARG_REMOTE_APIS)
-            message(FATAL_ERROR "no REMOTE_APIS specified")
-        endif()
-        set(output_types)
-        foreach(type ${ARG_REMOTE_APIS})
-            list(APPEND output_types -t ${type})
+            if(found_DEST)
+                set(found_DEST FALSE)
+                set(REMOTE_DIR "${api}")
+                continue()
+            endif()
+            list(APPEND REMOTE_APIS ${api})
         endforeach()
-
-        cf_git_version(GIT_HASH)
-
-        add_custom_command(
-            OUTPUT ${output}
-            COMMAND apiexporter --dest "${REMOTE_DIR}" --git ${GIT_HASH} --name ${app} ${output_types} ${RMI_HEADERS}
-            DEPENDS apiexporter ${RMI_HEADERS}
-            VERBATIM
-        )
+        if(REMOTE_APIS)
+            cf_generate_api()
+        endif()
     endif()
 
     # strip release builds and split debug info
@@ -183,7 +147,6 @@ function(cf_configure_target target enable_exceptions pch enable_ser)
 
         # filter by containing of SERIALIZE_CLASS
         set(RMI_HEADERS)
-        set(RMI_SERVICE_HEADERS)
         foreach(header ${headers})
             file(STRINGS "${header}" lines REGEX "SERIALIZE_CLASS")
             if(NOT lines)
@@ -193,11 +156,6 @@ function(cf_configure_target target enable_exceptions pch enable_ser)
 
             cmake_path(APPEND CMAKE_CURRENT_SOURCE_DIR "${header}" OUTPUT_VARIABLE header_full_path)
             list(APPEND RMI_HEADERS "${header_full_path}")
-
-            file(STRINGS "${header}" lines REGEX "RMIService")
-            if(lines)
-                list(APPEND RMI_SERVICE_HEADERS "${header}")
-            endif()
         endforeach()
 
         # Something to do?
@@ -205,8 +163,8 @@ function(cf_configure_target target enable_exceptions pch enable_ser)
             return()
         endif()
 
-        set_target_properties(${target} PROPERTIES RMI_HEADERS         "${RMI_HEADERS}")
-        set_target_properties(${target} PROPERTIES RMI_SERVICE_HEADERS "${RMI_SERVICE_HEADERS}")
+        # store found headers
+        set_target_properties(${target} PROPERTIES RMI_HEADERS "${RMI_HEADERS}")
 
         foreach(header ${headers})
             # get output filename (dir/header.h -> target_autogen/dir/header_ser.cpp)
@@ -251,4 +209,78 @@ function(cf_configure_target target enable_exceptions pch enable_ser)
         )
         target_sources(${target} PRIVATE "${source}")
     endforeach()
+endfunction()
+
+# API generation
+function(cf_generate_api)
+    if(NOT REMOTE_DIR)
+        message(FATAL_ERROR "No destination for REMOTE_APIS specified.")
+    endif()
+
+    # set REMOTE_ABS_DIR
+    cmake_path(APPEND CMAKE_CURRENT_SOURCE_DIR "${REMOTE_DIR}" OUTPUT_VARIABLE REMOTE_ABS_DIR)
+
+    # version.md will always be generated
+    set(output)
+    cmake_path(APPEND REMOTE_ABS_DIR version.md OUTPUT_VARIABLE version_full_path)
+    list(APPEND output "${version_full_path}")
+
+    if(cpp IN_LIST REMOTE_APIS)
+        # add _services lib
+        add_library(${app}_services)
+        add_library(${app}::services ALIAS ${app}_services)
+        target_include_directories(${app}_services PUBLIC "${REMOTE_ABS_DIR}/cpp")
+        target_link_libraries(${app}_services PUBLIC ${app}_dao cflib_net)
+
+        # create symlink for dao
+        if(ARG_DAO)
+            set(dao_link "${REMOTE_ABS_DIR}/cpp/${ARG_DAO}")
+            get_filename_component(dao_base_dir "${dao_link}" DIRECTORY)
+            file(MAKE_DIRECTORY "${dao_base_dir}")
+            file(RELATIVE_PATH dao_rel_path "${dao_base_dir}" "${CMAKE_CURRENT_SOURCE_DIR}/${ARG_DAO}")
+            execute_process(COMMAND ${CMAKE_COMMAND} -E create_symlink "${dao_rel_path}" "${dao_link}")
+        endif()
+
+        # add cpp output files
+        foreach(header ${RMI_HEADERS})
+            # check for service
+            file(STRINGS "${header}" lines REGEX "RMIService")
+            if(NOT lines)
+                continue()
+            endif()
+
+            # remove .h
+            get_filename_component(dir  "${header}" DIRECTORY)
+            get_filename_component(file "${header}" NAME_WLE )
+            file(RELATIVE_PATH dir "${CMAKE_CURRENT_SOURCE_DIR}" "${dir}")
+            set(file "${dir}/${file}")
+
+            list(APPEND output
+                "${REMOTE_ABS_DIR}/cpp/${file}.h"
+                "${REMOTE_ABS_DIR}/cpp/${file}.cpp"
+            )
+            target_sources(${app}_services
+                PUBLIC  "${REMOTE_DIR}/cpp/${file}.h"
+                PRIVATE "${REMOTE_DIR}/cpp/${file}.cpp"
+            )
+        endforeach()
+    else()
+        string(MAKE_C_IDENTIFIER "${app}_${REMOTE_DIR}_api" target)
+        add_custom_target(${target} ALL DEPENDS ${output})
+    endif()
+
+    # format type parameters
+    set(output_types)
+    foreach(type ${REMOTE_APIS})
+        list(APPEND output_types -t ${type})
+    endforeach()
+
+    # command
+    cf_git_version(GIT_HASH)
+    add_custom_command(
+        OUTPUT ${output}
+        COMMAND apiexporter --dest "${REMOTE_ABS_DIR}" --git ${GIT_HASH} --name ${app} ${output_types} ${RMI_HEADERS}
+        DEPENDS apiexporter ${RMI_HEADERS}
+        VERBATIM
+    )
 endfunction()
