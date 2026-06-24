@@ -22,7 +22,7 @@ base → util → {crypt, serialize, db} → {net, dao}
 ```
 
 - `base` — foundational types (`String`, `ByteArray`, `SharedPtr`, flags, containers). No dependencies. Provides the shared PCH `cflib/base.h`.
-- `util` — runtime substrate: event loop, threading, timers, logging, the test framework, and the build-time tools (`ser`, `bin2src`, `jscombiner`, `gitversion`).
+- `util` — runtime substrate: event loop, threading, timers, logging, the test framework, and the build-time tools (`ser`, `bin2src`, `jscombiner`).
 - `serialize` — BER/ASN.1 (de)serialization and the codegen engine.
 - `crypt` — Botan-backed TLS (client/server/sessions/credentials) and password hashing. Requires exceptions.
 - `db` — schema + Postgres/SQLite backends (only built with `ENABLE_PSQL`/`ENABLE_SQLITE`); `migrationmoped` migration tool.

@@ -19,7 +19,6 @@ ctest [--test-dir build] [--parallel] [-R <regex>]
 | `ENABLE_SQLITE` | OFF | Build SQLite support (FetchContent) |
 | `BUILD_EXAMPLES` | ON | Build example applications |
 | `ENABLE_SER` | - | Enable auto-code generation in `cf_lib()`/`cf_app()`/`cf_test()` |
-| `ENABLE_GIT_VERSION` | - | Generate gitversion.h (use with `cf_app()`) |
 | `ENABLE_EXCEPTIONS` | - | Enable/disable exceptions (default: ON for crypt, OFF for others) |
 | `CF_INTERN` | - | Internal tools (output to build dir, not `bin/`) |
 
@@ -65,7 +64,6 @@ When `ENABLE_SER` is enabled in `cf_lib()`/`cf_app()`/`cf_test()`:
 Tools:
 - `ser serialize <input.h> <output_ser.cpp>` - Manually generate serialization
 - `bin2src <input.bin> <output_rc.cpp>` - Embed binary resources
-- `gitversion create <source_dir> <header.h>` - Generate version header
 
 ## Test Framework
 
@@ -93,7 +91,6 @@ Macros:
 - `ser` - serialization codegen (`cflib/serialize/ser`)
 - `bin2src` - binary resource embedding (`cflib/util/bin2src`)
 - `jscombiner` - JavaScript file combiner (`cflib/util/jscombiner`)
-- `gitversion` - git version header generation (`cflib/util/gitversion`)
 - `migrationmoped` - database migration tool (`cflib/db/migrationmoped`)
 - `asn1dump` - ASN.1 dump utility (`cflib/serialize/asn1dump`)
 

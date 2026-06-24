@@ -4,4 +4,4 @@
 #
 # Licensed under the MIT License.
 
-cf_app(bin2src cflib_util)
+cf_app(bin2src cflib_util CF_GENERATOR)

@@ -17,7 +17,7 @@ endfunction()
 
 # application
 function(cf_app app)
-    cmake_parse_arguments(ARG "ENABLE_EXCEPTIONS;ENABLE_SER;ENABLE_GIT_VERSION;CF_INTERN" "PCH;DAO" "DIRS;RESOURCES;OTHER_FILES;REMOTE_APIS" ${ARGN})
+    cmake_parse_arguments(ARG "ENABLE_EXCEPTIONS;ENABLE_SER;CF_INTERN;CF_GENERATOR" "PCH;DAO" "DIRS;RESOURCES;OTHER_FILES;REMOTE_APIS" ${ARGN})
     if(ARG_REMOTE_APIS)
         set(ARG_ENABLE_SER TRUE)
     endif()
@@ -90,21 +90,6 @@ function(cf_app app)
             COMMAND $<$<CONFIG:RelWithDebInfo>:${CMAKE_STRIP}>    ARGS -g $<TARGET_FILE:${app}>
             COMMAND $<$<CONFIG:RelWithDebInfo>:${CMAKE_OBJCOPY}>  ARGS --add-gnu-debuglink=$<TARGET_FILE:${app}>.debug $<TARGET_FILE:${app}>
         )
-    endif()
-
-    # gitversion.h
-    if(ARG_ENABLE_GIT_VERSION)
-        set(dest "${app}_autogen")
-        set(header "${dest}/gitversion.h")
-        add_custom_target(ALL
-            ${CMAKE_COMMAND} -E make_directory "${dest}"
-            COMMAND gitversion create "${CMAKE_SOURCE_DIR}" "${header}"
-            BYPRODUCTS "${header}"
-            DEPENDS gitversion
-        )
-        target_sources(${app} PRIVATE "${header}")
-        get_property(target_dir TARGET ${app} PROPERTY BINARY_DIR)
-        target_include_directories(${app} PRIVATE "${target_dir}/${dest}")
     endif()
 endfunction()
 
