@@ -15,4 +15,6 @@ cf_lib(cflib_util
 add_subdirectory(bin2src)
 add_subdirectory(gitversion)
 add_subdirectory(jscombiner)
-add_subdirectory(util_test)
+if(BUILD_TESTS)
+    add_subdirectory(util_test)
+endif()

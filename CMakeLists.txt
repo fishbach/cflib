@@ -25,9 +25,10 @@ cf_add_other(cflib_files
     js/*
 )
 
-add_subdirectory(cflib)
-option(BUILD_TESTS "activate build for tests" ON)
+option(BUILD_TESTS    "activate build for tests"    ON)
 option(BUILD_EXAMPLES "activate build for examples" ON)
+
+add_subdirectory(cflib)
 if(BUILD_EXAMPLES)
     add_subdirectory(examples)
 endif()
