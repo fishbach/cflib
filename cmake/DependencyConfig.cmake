@@ -5,10 +5,12 @@
 # Licensed under the MIT License.
 
 # Botan
-find_package(
-    Botan 3.12.0
-    REQUIRED
-)
+if(NOT ONLY_GENERATORS)
+    find_package(
+        Botan 3.12.0
+        REQUIRED
+    )
+endif()
 
 # PostgreSQL
 if(ENABLE_PSQL)

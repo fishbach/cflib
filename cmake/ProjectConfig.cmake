@@ -23,10 +23,11 @@ if(NOT cf_config_file_path)
 endif()
 
 # config options
-option(ENABLE_CCACHE "enable ccache"                    ON)
-option(ENABLE_PCH    "enable precompiled headers (PCH)" ON)
-option(ENABLE_PSQL   "enable PostgreSQL"                OFF)
-option(ENABLE_SQLITE "enable SQLite"                    OFF)
+option(ENABLE_CCACHE   "enable ccache"                    ON)
+option(ENABLE_PCH      "enable precompiled headers (PCH)" ON)
+option(ENABLE_PSQL     "enable PostgreSQL"                OFF)
+option(ENABLE_SQLITE   "enable SQLite"                    OFF)
+option(ONLY_GENERATORS "only generators are build"        OFF)
 
 # C++20
 set(CMAKE_CXX_STANDARD 20)
