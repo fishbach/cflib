@@ -5,12 +5,11 @@
 # Licensed under the MIT License.
 
 if(ENABLE_PSQL)
-    set(PSQL_CONFIG DIRS psql)
+    set(PSQL_CONFIG cflib_db DIRS psql)
 endif()
 
 cf_lib(cflib_dao
     PUBLIC
-        cflib_db
         cflib_serialize
     ${PSQL_CONFIG}
     ENABLE_SER
