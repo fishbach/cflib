@@ -16,7 +16,8 @@ class ArgBase
 public:
     bool isSet() const { return count_ > 0; }
     ByteArray value(const ByteArray & defaultValue = ByteArray()) const { return values_.isEmpty() ? defaultValue : values_.front(); }
-    List<ByteArray> values() const { return values_; }
+    ByteArrayList values() const { return values_; }
+    const ByteArray & operator[](size_t i) const { return values_[i]; }
     uint count() const { return count_; }
 
 protected:
@@ -30,7 +31,7 @@ protected:
     bool isOptional_;
     bool isRepeatable_;
     uint count_;
-    List<ByteArray> values_;
+    ByteArrayList values_;
 
     friend class CmdLine;
 };

@@ -7,13 +7,13 @@
 
 #pragma once
 
-#include <cflib/base.h>
+#include <cflib/net/fileserver/fileserverbase.h>
 #include <cflib/net/requesthandler.h>
 #include <cflib/util/threadverify.h>
 
-namespace cflib::net {
+namespace cflib::net::fileserver {
 
-class FileServer : public RequestHandler, public util::ThreadVerify
+class FileServer : public FileServerBase, public RequestHandler, public util::ThreadVerify
 {
 public:
     FileServer(const String & path,
@@ -33,7 +33,6 @@ public:
 
     ~FileServer();
 
-    void exportTo(const String & dest) const;
     void add404File(const Regex & re, const String & dest);
     void setAccessControlAllowOrigin(const ByteArray & origin) { accessControlAllowOrigin_ = origin; }
 
@@ -41,25 +40,17 @@ protected:
     void handleRequest(const Request & request) override;
 
 private:
-    String parseHtml(const String & fullPath, bool isPart, const String & path,
-        const StringList & params = StringList()) const;
-    void exportDir(const String & fullPath, const String & path, const String & dest) const;
     String createIndex(const String & fullPath, const String & path);
 
 private:
-    const String path_;
-    const String prefix_;
     const bool parseHtml_;
     const bool enableIndex_;
     const bool noCache_;
-    const bool removeSlash_;
     const bool useHostAsDir_;
-    const ByteArray eTag_;
-    typedef Pair<Regex, String> Redirect;
-    List<Redirect> redirects404_;
     const Regex pathRE_;
     const Regex endingRE_;
-    const Regex elementRE_;
+    typedef Pair<Regex, String> Redirect;
+    List<Redirect> redirects404_;
     ByteArray accessControlAllowOrigin_;
 };
 

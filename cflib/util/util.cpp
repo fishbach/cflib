@@ -553,4 +553,13 @@ bool copyFile(const String & src, const String & dest)
     return File::write(dest, data);
 }
 
+String canonicalPath(const String & path)
+{
+    char * real = realpath(path.c_str(), nullptr);
+    if (!real) return path;
+    String result(real);
+    free(real);
+    return result;
+}
+
 } // namespace

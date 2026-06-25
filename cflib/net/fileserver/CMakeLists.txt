@@ -4,4 +4,8 @@
 #
 # Licensed under the MIT License.
 
-cf_app(apiexporter cflib_serialize CF_GENERATOR)
+cf_lib(cflib_fileserver
+    PUBLIC cflib_util
+)
+
+add_subdirectory(htmlexporter)

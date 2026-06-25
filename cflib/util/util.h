@@ -51,5 +51,6 @@ void threadSafeExit(int returnCode);
 bool mkPath(const String & path);
 bool removeFile(const String & path);
 bool copyFile(const String & src, const String & dest);
+String canonicalPath(const String & path);
 
 } // namespace

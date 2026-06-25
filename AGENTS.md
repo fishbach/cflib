@@ -20,7 +20,6 @@ ctest [--test-dir build] [--parallel] [-R <regex>]
 | `BUILD_EXAMPLES` | ON | Build example applications |
 | `ENABLE_SER` | - | Enable auto-code generation in `cf_lib()`/`cf_app()`/`cf_test()` |
 | `ENABLE_EXCEPTIONS` | - | Enable/disable exceptions (default: ON for crypt, OFF for others) |
-| `CF_INTERN` | - | Internal tools (output to build dir, not `bin/`) |
 
 ## C++ Standard
 
@@ -84,7 +83,6 @@ Macros:
 - Modules: `cflib/*/` with headers + `impl/` subdirectory
 - Tests: `cflib/*/*_test/` subdirectories
 - Examples: `examples/*/` (see `MODULES` for dependencies)
-- Binary output: `bin/` (except with `CF_INTERN` flag)
 
 ## Build Tools
 
