@@ -13,7 +13,6 @@
 #include <dirent.h>
 #include <filesystem>
 
-using namespace cflib::util;
 using namespace std::filesystem;
 
 USE_LOG(LogCat::JS)
@@ -40,15 +39,15 @@ public:
     void generate()
     {
         remove_all(rootPath_.str());
-        mkPath(rootPath_);
+        util::mkPath(rootPath_);
 
         File::write(rootPath_ + "/index.html", mainIndex().toUtf8());
         for (const SerializeTypeInfo & ti : typeInfos_.services()) {
-            mkPath(rootPath_ + ti.getNSPath());
+            util::mkPath(rootPath_ + ti.getNSPath());
             File::write(rootPath_ + ti.getFilePath() + ".html", service(ti).toUtf8());
         }
         for (const SerializeTypeInfo & ti : typeInfos_.types()) {
-            mkPath(rootPath_ + ti.getNSPath());
+            util::mkPath(rootPath_ + ti.getNSPath());
             File::write(rootPath_ + ti.getFilePath() + ".html", classDesc(ti).toUtf8());
         }
     }

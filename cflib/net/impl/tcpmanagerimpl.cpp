@@ -45,14 +45,11 @@
 
 USE_LOG(LogCat::Network)
 
-using namespace cflib::crypt;
-using namespace cflib::util;
-
 namespace cflib::net::impl {
 
 namespace {
 
-CF_GLOBAL_STATIC(TLSSessions, tlsSessions)
+CF_GLOBAL_STATIC(crypt::TLSSessions, tlsSessions)
 
 inline bool setNonBlocking(int fd)
 {
@@ -167,7 +164,7 @@ bool TCPManagerImpl::start(int listenSocket, crypt::TLSCredentials * credentials
     // watching for incoming activity
     ev_io_init(readWatcher_, &TCPManagerImpl::listenSocketReadable, listenSock_, EV_READ);
     readWatcher_->data = this;
-    ev_io_start(libEVLoop(), readWatcher_);
+    ev_io_start(util::libEVLoop(), readWatcher_);
 
     logInfo("server started with listen socket: %1", listenSock_);
     return true;
@@ -181,7 +178,7 @@ void TCPManagerImpl::stop()
 
     if (isRunning()) {
         logInfo("closing listen socket: %1", listenSock_);
-        ev_io_stop(libEVLoop(), readWatcher_);
+        ev_io_stop(util::libEVLoop(), readWatcher_);
         close(listenSock_);
         listenSock_ = -1;
         credentials_ = 0;
@@ -196,7 +193,7 @@ void TCPManagerImpl::stop()
 TCPConnData * TCPManagerImpl::openConnection(
     const ByteArray & destAddress, uint16 destPort,
     const ByteArray & sourceIP, uint16 sourcePort,
-    TLSCredentials * credentials, bool preferIPv6)
+    crypt::TLSCredentials * credentials, bool preferIPv6)
 {
     // no thread verify needed here
 
@@ -258,7 +255,7 @@ void TCPManagerImpl::startReadWatcher(TCPConnData * conn)
         callClosed(conn);
         return;
     }
-    ev_io_start(libEVLoop(), conn->readWatcher);
+    ev_io_start(util::libEVLoop(), conn->readWatcher);
 }
 
 void TCPManagerImpl::writeToSocket(TCPConnData * conn, const ByteArray & data, bool notifyFinished)
@@ -268,7 +265,7 @@ void TCPManagerImpl::writeToSocket(TCPConnData * conn, const ByteArray & data, b
     conn->writeBuf += data;
 
     if (conn->writeBuf.isEmpty()) {
-        if (notifyFinished) execLater(new Functor0<TCPConn>(conn->conn, &TCPConn::writeFinished));
+        if (notifyFinished) execLater(new util::Functor0<TCPConn>(conn->conn, &TCPConn::writeFinished));
         return;
     }
 
@@ -279,7 +276,7 @@ void TCPManagerImpl::writeToSocket(TCPConnData * conn, const ByteArray & data, b
     }
 
     if (notifyFinished) conn->notifyWrite = true;
-    if (!ev_is_active(conn->writeWatcher)) writeable(libEVLoop(), conn->writeWatcher, 0);
+    if (!ev_is_active(conn->writeWatcher)) writeable(util::libEVLoop(), conn->writeWatcher, 0);
 }
 
 void TCPManagerImpl::closeConn(TCPConnData * conn, TCPConn::CloseType type, bool notifyClose)
@@ -311,11 +308,11 @@ void TCPManagerImpl::closeConn(TCPConnData * conn, TCPConn::CloseType type, bool
 
     // stop watcher
     if (readClosed && ev_is_active(conn->readWatcher)) {
-        ev_io_stop(libEVLoop(), conn->readWatcher);
+        ev_io_stop(util::libEVLoop(), conn->readWatcher);
         notifyClose = true;
     }
     if (writeClosed) {
-        if (ev_is_active(conn->writeWatcher)) ev_io_stop(libEVLoop(), conn->writeWatcher);
+        if (ev_is_active(conn->writeWatcher)) ev_io_stop(util::libEVLoop(), conn->writeWatcher);
         if (conn->notifyWrite) {
             conn->notifyWrite = false;
             notifyClose = true;
@@ -481,7 +478,7 @@ void TCPManagerImpl::writeable(ev_loop * loop, ev_io * w, int)
         if (count > 0) {
             buf.remove(0, count);
             if (conn->notifySomeBytesWritten) {
-                impl.execLater(new Functor1<TCPConn, uint64>(conn->conn, &TCPConn::someBytesWritten, (uint64)count));
+                impl.execLater(new util::Functor1<TCPConn, uint64>(conn->conn, &TCPConn::someBytesWritten, (uint64)count));
             }
         }
         if (!ev_is_active(w)) ev_io_start(loop, w);
@@ -496,11 +493,11 @@ void TCPManagerImpl::writeable(ev_loop * loop, ev_io * w, int)
         } else {
             if (ev_is_active(w)) ev_io_stop(loop, w);
             if (conn->notifySomeBytesWritten) {
-                impl.execLater(new Functor1<TCPConn, uint64>(conn->conn, &TCPConn::someBytesWritten, (uint64)count));
+                impl.execLater(new util::Functor1<TCPConn, uint64>(conn->conn, &TCPConn::someBytesWritten, (uint64)count));
             }
             if (conn->notifyWrite) {
                 conn->notifyWrite = false;
-                impl.execLater(new Functor0<TCPConn>(conn->conn, &TCPConn::writeFinished));
+                impl.execLater(new util::Functor0<TCPConn>(conn->conn, &TCPConn::writeFinished));
             }
         }
     }
@@ -538,7 +535,7 @@ void TCPManagerImpl::listenSocketReadable(ev_loop *, ev_io * w, int)
 
         TCPConnData * conn = impl->credentials_ ?
             new TCPConnData(*impl, newSock, ip, port,
-                new TLSServer(tlsSessions(), *(impl->credentials_)),
+                new crypt::TLSServer(tlsSessions(), *(impl->credentials_)),
                 ++impl->tlsConnId_ % impl->tlsThreads_.size()) :
             new TCPConnData(*impl, newSock, ip, port, 0, 0);
         impl->connections_ << conn;
@@ -551,18 +548,18 @@ void TCPManagerImpl::callClosed(TCPConnData * conn)
     if (conn->lastInformedCloseType == conn->closeType) return;
     conn->lastInformedCloseType = conn->closeType;
     if (conn->tlsStream) tlsThreads_[conn->tlsThreadId]->callClosed(conn);
-    else                 execLater(new Functor0<TCPConnData>(conn, &TCPConnData::callClosed));
+    else                 execLater(new util::Functor0<TCPConnData>(conn, &TCPConnData::callClosed));
 }
 
 TCPConnData * TCPManagerImpl::addConnection(int sock, const ByteArray & destIP, uint16 destPort,
-    TLSCredentials * credentials, const ByteArray & destAddress)
+    crypt::TLSCredentials * credentials, const ByteArray & destAddress)
 {
     SyncedThreadCall<TCPConnData *> stc(this);
     if (!stc.verify(&TCPManagerImpl::addConnection, sock, destIP, destPort, credentials, destAddress)) return stc.retval();
 
     TCPConnData * conn = credentials ?
         new TCPConnData(*this, sock, destIP.constData(), destPort,
-            new TLSClient(tlsSessions(), *credentials, destAddress), ++tlsConnId_ % tlsThreads_.size()) :
+            new crypt::TLSClient(tlsSessions(), *credentials, destAddress), ++tlsConnId_ % tlsThreads_.size()) :
         new TCPConnData(*this, sock, destIP.constData(), destPort, 0, 0);
     connections_ << conn;
     return conn;

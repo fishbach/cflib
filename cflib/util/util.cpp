@@ -15,6 +15,7 @@
 #include <format>
 #include <csignal>
 #include <cstdlib>
+#include <random>
 #include <sys/stat.h>
 #include <sys/wait.h>
 #include <unistd.h>
@@ -127,6 +128,14 @@ uint32 calcCRC32Raw(uint32 crc, const char * data, uint64 size)
         crc = CRCData[(crc & 0xff) ^ *(bytes++)] ^ (crc >> 8);
     }
     return crc;
+}
+
+ByteArray unsafeRandom(uint size)
+{
+    std::random_device rnd;
+    ByteArray rv(size, '\0');
+    for (size_t i = 0 ; i < rv.size() ; ++i) rv[i] = rnd() % 0xff;
+    return rv;
 }
 
 void gzip(ByteArray & data, int compressionLevel)

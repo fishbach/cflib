@@ -9,8 +9,6 @@
 
 #include <cflib/net/rmiclient.h>
 
-using namespace cflib::serialize;
-
 namespace cflib::net {
 
 RMIRemoteCall::RMIRemoteCall(RMIClient & client, const BERSerializer & ser) :
@@ -24,7 +22,7 @@ void RMIRemoteCall::callAsync()
     client_.sendAsync(data());
 }
 
-BERDeserializer RMIRemoteCall::callSync()
+serialize::BERDeserializer RMIRemoteCall::callSync()
 {
     Semaphore sem;
     ByteArray reply;
@@ -33,13 +31,13 @@ BERDeserializer RMIRemoteCall::callSync()
         sem.release();
     });
     sem.acquire();
-    return BERDeserializer(reply);
+    return serialize::BERDeserializer(reply);
 }
 
 RMIRemoteService::RMIRemoteService(RMIClient & client, const String & serviceName) :
     client_(client),
     serviceName_(serviceName),
-    ser_(BERSerializer(2) << serviceName)
+    ser_(serialize::BERSerializer(2) << serviceName)
 {
 }
 

@@ -14,14 +14,11 @@
 #include <cflib/util/log.h>
 #include <cflib/util/threadverify.h>
 
-using namespace cflib::serialize;
-using namespace cflib::util;
-
 USE_LOG(LogCat::Network)
 
 namespace cflib::net {
 
-class RMIClient::Impl : public ThreadVerify
+class RMIClient::Impl : public util::ThreadVerify
 {
     CF_DISABLE_COPY(Impl)
 public:
@@ -216,7 +213,7 @@ private:
             case 3: {
                 uint64 rsigId;
                 ByteArray paramsData;
-                BERDeserializer(data, valuePtr, valueLen) >> rsigId >> paramsData;
+                serialize::BERDeserializer(data, valuePtr, valueLen) >> rsigId >> paramsData;
                 logDebug("RSig %1 received", rsigId);
                 RSigClientBase * rsig = rsigHandlers_.value(rsigId);
                 if (rsig) rsig->call(paramsData);

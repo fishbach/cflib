@@ -19,8 +19,6 @@
 #include <cflib/util/log.h>
 #include <cflib/util/util.h>
 
-using namespace cflib::serialize;
-
 USE_LOG(LogCat::Http)
 
 namespace cflib::net::impl {
@@ -34,7 +32,7 @@ RMIServerBase::RMIServerBase(WSCommManagerBase & wsService) :
 void RMIServerBase::registerService(RMIServiceBase & service)
 {
     service.server_ = this;
-    const SerializeTypeInfo servInfo = service.getServiceInfo();
+    const serialize::SerializeTypeInfo servInfo = service.getServiceInfo();
 
     // register functions
     ServiceFunctions & sfs = services_[servInfo.typeName.toLower()];

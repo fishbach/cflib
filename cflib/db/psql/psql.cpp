@@ -14,8 +14,6 @@
 #include <cstring>
 #include <libpq-fe.h>
 
-using namespace cflib::util;
-
 USE_LOG(LogCat::Db)
 
 namespace cflib::db {
@@ -296,7 +294,7 @@ PSql::~PSql()
 void PSql::begin()
 {
     if (localTransactionActive_) {
-        Log(lfi_, line_ ? line_ : __LINE__, LogCat::Warn | LogCat::Db)(
+        util::Log(lfi_, line_ ? line_ : __LINE__, LogCat::Warn | LogCat::Db)(
             "begin called with active transaction");
         return;
     }
@@ -304,17 +302,17 @@ void PSql::begin()
 
     nestedTransaction_ = td_.transactionActive;
     if (nestedTransaction_) {
-        Log(lfi_, line_ ? line_ : __LINE__, LogCat::Debug | LogCat::Db)("DB sub-transaction start");
+        util::Log(lfi_, line_ ? line_ : __LINE__, LogCat::Debug | LogCat::Db)("DB sub-transaction start");
         return;
     }
 
-    Log(lfi_, line_ ? line_ : __LINE__, LogCat::Debug | LogCat::Db)("DB transaction start");
+    util::Log(lfi_, line_ ? line_ : __LINE__, LogCat::Debug | LogCat::Db)("DB transaction start");
     td_.transactionActive = true;
     watch_.start();
 
     PGresult * res = PQexec(td_.conn, "BEGIN");
     if (PQresultStatus(res) != PGRES_COMMAND_OK) {
-        Log(lfi_, line_ ? line_ : __LINE__, LogCat::Critical | LogCat::Db)(
+        util::Log(lfi_, line_ ? line_ : __LINE__, LogCat::Critical | LogCat::Db)(
             "starting DB transaction failed: %1", PQerrorMessage(td_.conn));
     }
     PQclear(res);
@@ -328,14 +326,14 @@ bool PSql::commit()
     }
 
     if (!localTransactionActive_) {
-        Log(lfi_, line_ ? line_ : __LINE__, LogCat::Warn | LogCat::Db)(
+        util::Log(lfi_, line_ ? line_ : __LINE__, LogCat::Warn | LogCat::Db)(
             "commit called without active transaction");
         return false;
     }
     localTransactionActive_ = false;
 
     if (nestedTransaction_) {
-        Log(lfi_, line_ ? line_ : __LINE__, LogCat::Debug | LogCat::Db)("DB sub-transaction commit");
+        util::Log(lfi_, line_ ? line_ : __LINE__, LogCat::Debug | LogCat::Db)("DB sub-transaction commit");
         return true;
     }
 
@@ -345,11 +343,11 @@ bool PSql::commit()
     PGresult * res = PQexec(td_.conn, "COMMIT");
     if (PQresultStatus(res) != PGRES_COMMAND_OK) {
         ok = false;
-        Log(lfi_, line_ ? line_ : __LINE__, LogCat::Warn | LogCat::Db)(
+        util::Log(lfi_, line_ ? line_ : __LINE__, LogCat::Warn | LogCat::Db)(
             "DB transaction commit failed: %1", PQerrorMessage(td_.conn));
     } else {
         ok = true;
-        Log(lfi_, line_ ? line_ : __LINE__, LogCat::Debug | LogCat::Db)(
+        util::Log(lfi_, line_ ? line_ : __LINE__, LogCat::Debug | LogCat::Db)(
             "DB transaction commit (%1/%2 msec)", watch.elapsed(), watch_.elapsed());
     }
     PQclear(res);
@@ -367,22 +365,22 @@ bool PSql::commit()
 void PSql::rollback()
 {
     if (!localTransactionActive_) {
-        Log(lfi_, line_ ? line_ : __LINE__, LogCat::Warn | LogCat::Db)(
+        util::Log(lfi_, line_ ? line_ : __LINE__, LogCat::Warn | LogCat::Db)(
             "rollback called without active transaction");
         return;
     }
     localTransactionActive_ = false;
 
     if (nestedTransaction_) {
-        Log(lfi_, line_ ? line_ : __LINE__, LogCat::Info | LogCat::Db)("DB sub-tansaction rollback");
+        util::Log(lfi_, line_ ? line_ : __LINE__, LogCat::Info | LogCat::Db)("DB sub-tansaction rollback");
         td_.doRollback = true;
         return;
     }
 
-    Log(lfi_, line_ ? line_ : __LINE__, LogCat::Info | LogCat::Db)("DB tansaction rollback");
+    util::Log(lfi_, line_ ? line_ : __LINE__, LogCat::Info | LogCat::Db)("DB tansaction rollback");
     PGresult * res = PQexec(td_.conn, "ROLLBACK");
     if (PQresultStatus(res) != PGRES_COMMAND_OK) {
-        Log(lfi_, line_ ? line_ : __LINE__, LogCat::Warn | LogCat::Db)(
+        util::Log(lfi_, line_ ? line_ : __LINE__, LogCat::Warn | LogCat::Db)(
             "DB transaction rollback failed: %1", PQerrorMessage(td_.conn));
     }
     PQclear(res);
@@ -405,8 +403,8 @@ bool PSql::exec(const String & query)
 
     lastQuery_ = query.toUtf8();
     if (!PQsendQueryParams(td_.conn, lastQuery_.constData(), 0, NULL, NULL, NULL, NULL, 1)) {
-        Log(lfi_, line_ ? line_ : __LINE__, LogCat::Debug | LogCat::Db)("query: %1", lastQuery_);
-        Log(lfi_, line_ ? line_ : __LINE__, LogCat::Warn  | LogCat::Db)("cannot send query: %1", PQerrorMessage(td_.conn));
+        util::Log(lfi_, line_ ? line_ : __LINE__, LogCat::Debug | LogCat::Db)("query: %1", lastQuery_);
+        util::Log(lfi_, line_ ? line_ : __LINE__, LogCat::Warn  | LogCat::Db)("cannot send query: %1", PQerrorMessage(td_.conn));
         return false;
     }
 
@@ -418,8 +416,8 @@ bool PSql::execMultiple(const String & query)
     const ByteArray utf8 = query.toUtf8();
     PGresult * res = PQexec(td_.conn, utf8.constData());
     if (PQresultStatus(res) != PGRES_TUPLES_OK && PQresultStatus(res) != PGRES_COMMAND_OK) {
-        Log(lfi_, line_ ? line_ : __LINE__, LogCat::Debug | LogCat::Db)("query: %1", lastQuery_);
-        Log(lfi_, line_ ? line_ : __LINE__, LogCat::Warn  | LogCat::Db)("cannot send query: %1", PQerrorMessage(td_.conn));
+        util::Log(lfi_, line_ ? line_ : __LINE__, LogCat::Debug | LogCat::Db)("query: %1", lastQuery_);
+        util::Log(lfi_, line_ ? line_ : __LINE__, LogCat::Warn  | LogCat::Db)("cannot send query: %1", PQerrorMessage(td_.conn));
         PQclear(res);
         return false;
     }
@@ -438,7 +436,7 @@ void PSql::prepare(const ByteArray & query)
 bool PSql::exec(uint keepFields)
 {
     if (lastQuery_.isNull()) {
-        Log(lfi_, line_ ? line_ : __LINE__, LogCat::Warn | LogCat::Db)(
+        util::Log(lfi_, line_ ? line_ : __LINE__, LogCat::Warn | LogCat::Db)(
             "exec called without prepare");
         return false;
     }
@@ -454,8 +452,8 @@ bool PSql::exec(uint keepFields)
         PGresult * res = PQprepare(td_.conn, instanceName_.constData(),
             lastQuery_.constData(), prepareParamCount_, prepareParamTypes_);
         if (PQresultStatus(res) != PGRES_COMMAND_OK) {
-            Log(lfi_, line_ ? line_ : __LINE__, LogCat::Debug | LogCat::Db)("query: %1", lastQuery_);
-            Log(lfi_, line_ ? line_ : __LINE__, LogCat::Warn  | LogCat::Db)("cannot prepare query: %1", PQerrorMessage(td_.conn));
+            util::Log(lfi_, line_ ? line_ : __LINE__, LogCat::Debug | LogCat::Db)("query: %1", lastQuery_);
+            util::Log(lfi_, line_ ? line_ : __LINE__, LogCat::Warn  | LogCat::Db)("cannot prepare query: %1", PQerrorMessage(td_.conn));
             PQclear(res);
             return false;
         }
@@ -473,8 +471,8 @@ bool PSql::exec(uint keepFields)
     if (!PQsendQueryPrepared(td_.conn, instanceName_.constData(),
         prepareParamCount_, prepareParamValues, prepareParamLengths_, ParamFormats, 1))
     {
-        Log(lfi_, line_ ? line_ : __LINE__, LogCat::Debug | LogCat::Db)("query: %1", lastQuery_);
-        Log(lfi_, line_ ? line_ : __LINE__, LogCat::Warn  | LogCat::Db)("cannot send query: %1", PQerrorMessage(td_.conn));
+        util::Log(lfi_, line_ ? line_ : __LINE__, LogCat::Debug | LogCat::Db)("query: %1", lastQuery_);
+        util::Log(lfi_, line_ ? line_ : __LINE__, LogCat::Warn  | LogCat::Db)("cannot send query: %1", PQerrorMessage(td_.conn));
         return false;
     }
 
@@ -495,7 +493,7 @@ bool PSql::next()
 
         resultFieldCount_ = PQnfields((PGresult *)res_);
         if (resultFieldCount_ > MAX_FIELD_COUNT) {
-            Log(lfi_, line_ ? line_ : __LINE__, LogCat::Warn | LogCat::Db)(
+            util::Log(lfi_, line_ ? line_ : __LINE__, LogCat::Warn | LogCat::Db)(
                 "too many fields in result set (got: %1, max: %2)", resultFieldCount_, MAX_FIELD_COUNT);
             clearResult();
             return false;
@@ -526,14 +524,14 @@ bool PSql::next()
 PSql & PSql::operator<<(float val)
 {
     uint8 * dest = setParamType(PSql_float, sizeof(float), false);
-    if (dest) writeBE32(dest, FloatInt{val}.i);
+    if (dest) util::writeBE32(dest, FloatInt{val}.i);
     return *this;
 }
 
 PSql & PSql::operator<<(double val)
 {
     uint8 * dest = setParamType(PSql_double, sizeof(double), false);
-    if (dest) writeBE64(dest, DoubleInt{val}.i);
+    if (dest) util::writeBE64(dest, DoubleInt{val}.i);
     return *this;
 }
 
@@ -543,7 +541,7 @@ PSql & PSql::operator<<(const DateTime & val)
         setParamType(PSql_timestampWithTimeZone, 0, true);
     } else {
         uint8 * dest = setParamType(PSql_timestampWithTimeZone, sizeof(int64), false);
-        if (dest) writeBE64(dest, (uint64)((val.toMSecsSinceEpoch() - MsecDelta) * 1000));
+        if (dest) util::writeBE64(dest, (uint64)((val.toMSecsSinceEpoch() - MsecDelta) * 1000));
     }
     return *this;
 }
@@ -595,7 +593,7 @@ PSql & PSql::operator>>(float & val)
     if (!checkField(PSql_float, sizeof(float))) return *this;
     if (!lastFieldIsNull_) {
         FloatInt fi;
-        fi.i = readBE32((const uint8 *)PQgetvalue((PGresult *)res_, 0, currentFieldId_));
+        fi.i = util::readBE32((const uint8 *)PQgetvalue((PGresult *)res_, 0, currentFieldId_));
         val = fi.f;
     }
     ++currentFieldId_;
@@ -608,7 +606,7 @@ PSql & PSql::operator>>(double & val)
     if (!checkField(PSql_double, sizeof(double))) return *this;
     if (!lastFieldIsNull_) {
         DoubleInt di;
-        di.i = readBE64((const uint8 *)PQgetvalue((PGresult *)res_, 0, currentFieldId_));
+        di.i = util::readBE64((const uint8 *)PQgetvalue((PGresult *)res_, 0, currentFieldId_));
         val = di.d;
     }
     ++currentFieldId_;
@@ -620,7 +618,7 @@ PSql & PSql::operator>>(DateTime & val)
     val = DateTime();
     if (!checkField(PSql_timestampWithTimeZone, sizeof(int64))) return *this;
     if (!lastFieldIsNull_) {
-        int64 rawTime = (int64)readBE64((const uint8 *)PQgetvalue((PGresult *)res_, 0, currentFieldId_));
+        int64 rawTime = (int64)util::readBE64((const uint8 *)PQgetvalue((PGresult *)res_, 0, currentFieldId_));
         val = DateTime::fromMSecsSinceEpoch(rawTime / 1000 + MsecDelta);
     }
     ++currentFieldId_;
@@ -671,19 +669,19 @@ void PSql::setBool(bool val)
 void PSql::setInt16(int16 val)
 {
     uint8 * dest = setParamType(PSql_int16, sizeof(int16), false);
-    if (dest) writeBE16(dest, (uint16)val);
+    if (dest) util::writeBE16(dest, (uint16)val);
 }
 
 void PSql::setInt32(int32 val)
 {
     uint8 * dest = setParamType(PSql_int32, sizeof(int32), false);
-    if (dest) writeBE32(dest, (uint32)val);
+    if (dest) util::writeBE32(dest, (uint32)val);
 }
 
 void PSql::setInt64(int64 val)
 {
     uint8 * dest = setParamType(PSql_int64, sizeof(int64), false);
-    if (dest) writeBE64(dest, (uint64)val);
+    if (dest) util::writeBE64(dest, (uint64)val);
 }
 
 void PSql::getBool(bool & val)
@@ -701,7 +699,7 @@ void PSql::getInt16(int16 & val)
     val = 0;
     if (!checkField(PSql_int16, sizeof(int16))) return;
     if (!lastFieldIsNull_) {
-        val = (int16)readBE16((const uint8 *)PQgetvalue((PGresult *)res_, 0, currentFieldId_));
+        val = (int16)util::readBE16((const uint8 *)PQgetvalue((PGresult *)res_, 0, currentFieldId_));
     }
     ++currentFieldId_;
 }
@@ -711,7 +709,7 @@ void PSql::getInt32(int32 & val)
     val = 0;
     if (!checkField(PSql_int32, sizeof(int32))) return;
     if (!lastFieldIsNull_) {
-        val = (int32)readBE32((const uint8 *)PQgetvalue((PGresult *)res_, 0, currentFieldId_));
+        val = (int32)util::readBE32((const uint8 *)PQgetvalue((PGresult *)res_, 0, currentFieldId_));
     }
     ++currentFieldId_;
 }
@@ -721,7 +719,7 @@ void PSql::getInt64(int64 & val)
     val = 0;
     if (!checkField(PSql_int64, sizeof(int64))) return;
     if (!lastFieldIsNull_) {
-        val = (int64)readBE64((const uint8 *)PQgetvalue((PGresult *)res_, 0, currentFieldId_));
+        val = (int64)util::readBE64((const uint8 *)PQgetvalue((PGresult *)res_, 0, currentFieldId_));
     }
     ++currentFieldId_;
 }
@@ -729,7 +727,7 @@ void PSql::getInt64(int64 & val)
 bool PSql::initResult()
 {
     if (!PQsetSingleRowMode(td_.conn)) {
-        Log(lfi_, line_ ? line_ : __LINE__, LogCat::Warn  | LogCat::Db)("cannot set single row mode: %1", PQerrorMessage(td_.conn));
+        util::Log(lfi_, line_ ? line_ : __LINE__, LogCat::Warn  | LogCat::Db)("cannot set single row mode: %1", PQerrorMessage(td_.conn));
         return false;
     }
 
@@ -744,8 +742,8 @@ bool PSql::initResult()
 
     if (status != PGRES_COMMAND_OK && status != PGRES_TUPLES_OK) {
         logDebug("result status: %1", (int)status);
-        Log(lfi_, line_ ? line_ : __LINE__, LogCat::Debug | LogCat::Db)("query: %1", lastQuery_);
-        Log(lfi_, line_ ? line_ : __LINE__, LogCat::Warn  | LogCat::Db)("cannot get result: %1", PQerrorMessage(td_.conn));
+        util::Log(lfi_, line_ ? line_ : __LINE__, LogCat::Debug | LogCat::Db)("query: %1", lastQuery_);
+        util::Log(lfi_, line_ ? line_ : __LINE__, LogCat::Warn  | LogCat::Db)("cannot get result: %1", PQerrorMessage(td_.conn));
         return false;
     }
     return true;
@@ -764,20 +762,20 @@ bool PSql::checkField(int fieldType, int fieldSize)
     lastFieldIsNull_ = true;
 
     if (!res_) {
-        Log(lfi_, line_ ? line_ : __LINE__, LogCat::Warn | LogCat::Db)(
+        util::Log(lfi_, line_ ? line_ : __LINE__, LogCat::Warn | LogCat::Db)(
             "no result available");
         return false;
     }
 
     if (currentFieldId_ >= resultFieldCount_) {
-        Log(lfi_, line_ ? line_ : __LINE__, LogCat::Warn | LogCat::Db)(
+        util::Log(lfi_, line_ ? line_ : __LINE__, LogCat::Warn | LogCat::Db)(
             "not enough fields in result (got: %1)", resultFieldCount_);
         clearResult();
         return false;
     }
 
     if (fieldType != PSql_null && resultFieldTypes_[currentFieldId_] != typeOids[fieldType]) {
-        Log(lfi_, line_ ? line_ : __LINE__, LogCat::Warn | LogCat::Db)(
+        util::Log(lfi_, line_ ? line_ : __LINE__, LogCat::Warn | LogCat::Db)(
             "wrong result type (got: %1, want: %2)", resultFieldTypes_[currentFieldId_], typeOids[fieldType]);
         clearResult();
         return false;
@@ -788,7 +786,7 @@ bool PSql::checkField(int fieldType, int fieldSize)
     if (fieldSize > 0) {
         const int len = PQgetlength((PGresult *)res_, 0, currentFieldId_);
         if (len != fieldSize) {
-            Log(lfi_, line_ ? line_ : __LINE__, LogCat::Warn | LogCat::Db)(
+            util::Log(lfi_, line_ ? line_ : __LINE__, LogCat::Warn | LogCat::Db)(
                 "wrong result size (got: %1, want: %2)", len, fieldSize);
             clearResult();
             return false;
@@ -802,7 +800,7 @@ bool PSql::checkField(int fieldType, int fieldSize)
 uint8 * PSql::setParamType(int fieldType, int fieldSize, bool isNull)
 {
     if (prepareParamCount_ >= MAX_FIELD_COUNT) {
-        Log(lfi_, line_ ? line_ : __LINE__, LogCat::Warn | LogCat::Db)(
+        util::Log(lfi_, line_ ? line_ : __LINE__, LogCat::Warn | LogCat::Db)(
             "too many fields for prepare statement (max: %1)", MAX_FIELD_COUNT);
         return 0;
     }

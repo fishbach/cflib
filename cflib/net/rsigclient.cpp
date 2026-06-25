@@ -7,9 +7,6 @@
 
 #include "rsigclient.h"
 
-using namespace cflib::serialize;
-using namespace cflib::net;
-
 namespace cflib::net {
 
 RSigClientBase::RSigClientBase(RMIRemoteService & service, const String & name) :
@@ -25,7 +22,7 @@ RSigClientBase::~RSigClientBase()
 void RSigClientBase::unreg()
 {
     if (id_ == 0) return;
-    BERSerializer ser = service_.getSer();
+    serialize::BERSerializer ser = service_.getSer();
     ser << name_ << false << id_;
     service_.unregisterRSig(id_, ser.data());
 }

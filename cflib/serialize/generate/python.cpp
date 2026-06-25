@@ -13,7 +13,6 @@
 #include <dirent.h>
 #include <filesystem>
 
-using namespace cflib::util;
 using namespace std::filesystem;
 
 USE_LOG(LogCat::JS)
@@ -404,7 +403,7 @@ void generatePython(const StructuredTypeInfos & typeInfos, const String & dest)
 
     // services -----------------------------------------------------------
     const String destServices = destPy + "services/";
-    mkPath(destServices);
+    util::mkPath(destServices);
     // py/ itself is a sources root added to sys.path, not a package -> no __init__ there
     ensureInit(destServices.left(destServices.length() - 1), writtenInits);
     Set<String> serviceFiles;
@@ -420,7 +419,7 @@ void generatePython(const StructuredTypeInfos & typeInfos, const String & dest)
             while ((ent = readdir(d)) != nullptr) {
                 String name(ent->d_name);
                 if (name == "." || name == "..") continue;
-                if (!serviceFiles.contains(name)) removeFile(destServices + name);
+                if (!serviceFiles.contains(name)) util::removeFile(destServices + name);
             }
             closedir(d);
         }
@@ -430,7 +429,7 @@ void generatePython(const StructuredTypeInfos & typeInfos, const String & dest)
     Set<String> classFiles;
     for (const SerializeTypeInfo & ti : typeInfos.types()) {
         String relDir = ti.getNSPath();
-        mkPath(destPy + relDir);
+        util::mkPath(destPy + relDir);
 
         // ensure __init__.py up the package chain
         String cur;

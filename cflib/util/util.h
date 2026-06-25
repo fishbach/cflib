@@ -21,6 +21,8 @@ uint32 calcCRC32Raw(uint32 crc, const char * data, uint64 size);
 inline uint32 calcCRC32(const char * data, uint64 size) { return calcCRC32Raw(0xffffffffL, data, size) ^ 0xffffffffL; }
 inline uint32 calcCRC32(const ByteArray & data) { return calcCRC32(data.constData(), data.size()); }
 
+ByteArray unsafeRandom(uint size);
+
 // 0 -> no compression, 1 -> fast, 9 -> small
 void gzip(ByteArray & data, int compressionLevel = -1);
 void deflateRaw(ByteArray & data, int compressionLevel = -1);

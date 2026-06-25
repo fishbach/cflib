@@ -10,8 +10,6 @@
 #include <cflib/util/endian.h>
 #include <cflib/util/log.h>
 
-using namespace cflib::util;
-
 USE_LOG(LogCat::Http)
 
 namespace cflib::net::impl {
@@ -170,11 +168,11 @@ bool readLength(const ByteArray & frame,
         lengthEnd = 2;
     } else if (len == 126) {
         if (frameSize < 4) return false;
-        len = readBE16(data + 2);
+        len = util::readBE16(data + 2);
         lengthEnd = 4;
     } else {
         if (frameSize < 10) return false;
-        len = readBE64(data + 2);
+        len = util::readBE64(data + 2);
         lengthEnd = 10;
     }
 
@@ -209,12 +207,12 @@ void writeLength(ByteArray & frame,
         } else if (payloadSize < 0x10000) {
             frame += 126 | (mask ? Mask : 0);
             uint8 bytes[2];
-            writeBE16(bytes, payloadSize);
+            util::writeBE16(bytes, payloadSize);
             frame.append((const char *)bytes, 2);
         } else {
             frame += 127 | (mask ? Mask : 0);
             uint8 bytes[8];
-            writeBE64(bytes, payloadSize);
+            util::writeBE64(bytes, payloadSize);
             frame.append((const char *)bytes, 8);
         }
     } else {
@@ -225,11 +223,11 @@ void writeLength(ByteArray & frame,
             break;
         case 4:    // payloadLength < 0x10000
             frame[1] = 126 | (mask ? Mask : 0);
-            writeBE16((uint8 *)(frame.data() + 2), payloadSize);
+            util::writeBE16((uint8 *)(frame.data() + 2), payloadSize);
             break;
         case 10:   // payloadLength >= 0x10000
             frame[1] = 127 | (mask ? Mask : 0);
-            writeBE16((uint8 *)(frame.data() + 2), payloadSize);
+            util::writeBE16((uint8 *)(frame.data() + 2), payloadSize);
             break;
         default:   // Invalid
             logWarn("Invalid lengthSize %1 of frame with payload size %2", lengthSize, payloadSize);

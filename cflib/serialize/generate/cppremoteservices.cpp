@@ -12,8 +12,6 @@
 
 #include <dirent.h>
 
-using namespace cflib::util;
-
 USE_LOG(LogCat::JS)
 
 namespace cflib::serialize::generate {
@@ -197,7 +195,7 @@ void generateCppRemoteServices(const StructuredTypeInfos & typeInfos, const Stri
     const String destPath = dest + "/";
     Set<String> files;
     for (const SerializeTypeInfo & ti : typeInfos.services()) {
-        mkPath(destPath + ti.getNSPath());
+        util::mkPath(destPath + ti.getNSPath());
         String header = ti.getFilePath();
         String impl = header + ".cpp";
         header += ".h";
@@ -214,7 +212,7 @@ void generateCppRemoteServices(const StructuredTypeInfos & typeInfos, const Stri
             while ((ent = readdir(d)) != nullptr) {
                 String name(ent->d_name);
                 if (name == "." || name == "..") continue;
-                if (!files.contains(name)) removeFile(destPath + name);
+                if (!files.contains(name)) util::removeFile(destPath + name);
             }
             closedir(d);
         }

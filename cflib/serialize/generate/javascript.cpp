@@ -13,7 +13,6 @@
 #include <dirent.h>
 #include <filesystem>
 
-using namespace cflib::util;
 using namespace std::filesystem;
 
 USE_LOG(LogCat::JS)
@@ -469,13 +468,13 @@ void generateJavaScript(const StructuredTypeInfos & typeInfos, const String & de
         String file = ti.getFilePath() + ".js";
         files << file;
         String js = generate(ti);
-        mkPath(destJs + ti.getNSPath());
+        util::mkPath(destJs + ti.getNSPath());
         File::write(destJs + file, js.toUtf8());
     }
 
     // write classes
     for (const SerializeTypeInfo & ti : typeInfos.types()) {
-        mkPath(destJs + ti.getNSPath());
+        util::mkPath(destJs + ti.getNSPath());
         String path = ti.getFilePath() + ".js";
         files << path;
         logInfo("added to files: %1", path);

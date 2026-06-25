@@ -14,8 +14,6 @@
 #include <cflib/util/threadverify.h>
 #include <cflib/util/util.h>
 
-using namespace cflib::util;
-
 USE_LOG(LogCat::Http)
 
 namespace cflib::net {
@@ -24,7 +22,7 @@ namespace {
 
 class TCPForwarder;
 
-class TCPReader : public TCPConn, public ThreadVerify
+class TCPReader : public TCPConn, public util::ThreadVerify
 {
 public:
     TCPReader(TCPConnData * data, TCPForwarder * forwarder) :
@@ -54,7 +52,7 @@ private:
 };
 
 // Forwarder holds outgoing connection
-class TCPForwarder : public TCPConn, public ThreadVerify
+class TCPForwarder : public TCPConn, public util::ThreadVerify
 {
 public:
     TCPForwarder(TCPConnData * data, const Request & request) :

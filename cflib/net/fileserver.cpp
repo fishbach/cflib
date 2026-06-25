@@ -8,7 +8,6 @@
 #include "fileserver.h"
 
 #include <cflib/base.h>
-#include <cflib/crypt/util.h>
 #include <cflib/net/request.h>
 #include <cflib/util/log.h>
 #include <cflib/util/util.h>
@@ -146,7 +145,7 @@ FileServer::FileServer(const String & path, const String & prefix, bool parseHtm
     noCache_(noCache),
     removeSlash_(removeSlash),
     useHostAsDir_(useHostAsDir),
-    eTag_(crypt::random(4).toHex()),
+    eTag_(util::unsafeRandom(4).toHex()),
     pathRE_("^(/(?:(?:.well-known|[_\\-\\w][._\\-\\w]*)(?:/[_\\-\\w][._\\-\\w]*)*/?)?)(?:\\?.*)?$"),
     endingRE_("\\.(\\w+)$"),
     elementRE_("<!\\s*(\\$|inc |if |else|end|etag|importmap)(.*?)!>")
