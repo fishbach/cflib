@@ -54,7 +54,7 @@ function(cf_set_version_defines file)
 endfunction()
 
 function(cf_git_version var)
-    if(ENV{CI_COMMIT_SHA})
+    if(NOT "$ENV{CI_COMMIT_SHA}" STREQUAL "")
         set(GIT_HASH $ENV{CI_COMMIT_SHA})
     else()
         execute_process(
