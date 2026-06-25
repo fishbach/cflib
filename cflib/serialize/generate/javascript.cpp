@@ -425,7 +425,8 @@ String generate(const SerializeTypeInfo & ti)
 
         // build path
         String rv;
-        for (size_t i = 0 ; i < from.size() ; ++i) rv += "../";
+        if (from.isEmpty()) rv += "./";
+        else for (size_t i = 0 ; i < from.size() ; ++i) rv += "../";
         rv += to.join('/');
         rv += "/";
         return rv;
