@@ -54,12 +54,16 @@ function(cf_set_version_defines file)
 endfunction()
 
 function(cf_git_version var)
-    execute_process(
-        COMMAND git rev-parse HEAD
-        WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
-        OUTPUT_VARIABLE GIT_HASH
-        OUTPUT_STRIP_TRAILING_WHITESPACE
-        ERROR_QUIET
-    )
+    if(ENV{CI_COMMIT_SHA})
+        set(GIT_HASH $ENV{CI_COMMIT_SHA})
+    else()
+        execute_process(
+            COMMAND git rev-parse HEAD
+            WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
+            OUTPUT_VARIABLE GIT_HASH
+            OUTPUT_STRIP_TRAILING_WHITESPACE
+            ERROR_QUIET
+        )
+    endif()
     set(${var} ${GIT_HASH} PARENT_SCOPE)
 endfunction()
