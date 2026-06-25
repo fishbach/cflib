@@ -47,7 +47,7 @@ int main(int argc, char *argv[])
     Option help    ('h', "help"                   ); cmdLine << help;
     Option typesOpt('t', "type", true, false, true); cmdLine << typesOpt;
     Option destOpt ('d', "dest", true, false      ); cmdLine << destOpt;
-    Option gitOpt  ('g', "git",  true, false      ); cmdLine << gitOpt;
+    Option gitOpt  ('g', "git",  true             ); cmdLine << gitOpt;
     Option nameOpt ('n', "name", true, false      ); cmdLine << nameOpt;
     Arg    headers (false, true                   ); cmdLine << headers;
     if (!cmdLine.parse() || help.isSet()) return showUsage(cmdLine.executable());
@@ -71,7 +71,7 @@ int main(int argc, char *argv[])
         "\n"
         "# " << name << "\n"
         "\n"
-        "git hash: " << gitOpt.value() << "\n";
+        "git hash: " << gitOpt.value("-") << "\n";
     File::write(destOpt.value() + "/version.md", readme.toUtf8());
 
     StructuredTypeInfos infos;

@@ -293,11 +293,16 @@ function(cf_generate_api)
         list(APPEND output_types -t ${type})
     endforeach()
 
-    # command
+    # git hash
     cf_git_version(GIT_HASH)
+    if(NOT "${GIT_HASH}" STREQUAL "")
+        set(GIT_HASH --git ${GIT_HASH})
+    endif()
+
+    # command
     add_custom_command(
         OUTPUT ${output}
-        COMMAND apiexporter --dest "${REMOTE_ABS_DIR}" --git ${GIT_HASH} --name ${app} ${output_types} ${RMI_HEADERS}
+        COMMAND apiexporter --dest "${REMOTE_ABS_DIR}" ${GIT_HASH} --name ${app} ${output_types} ${RMI_HEADERS}
         DEPENDS apiexporter ${RMI_HEADERS}
         VERBATIM
     )
