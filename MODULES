@@ -7,14 +7,15 @@ Licensed under the MIT License.
 Dependencies:
 -------------
 
-cflib/base      ->
-cflib/util      ->                                                 cflib/base
-cflib/crypt     ->                                      cflib/util cflib/base
-cflib/serialize ->                                      cflib/util cflib/base
-cflib/db        ->                                      cflib/util cflib/base
-cflib/dao       -> cflib/db             cflib/serialize cflib/util cflib/base
-cflib/net       ->          cflib/crypt cflib/serialize cflib/util cflib/base
+cflib/base           ->
+cflib/util           ->                                                                      cflib/base
+cflib/crypt          ->                                                           cflib/util cflib/base
+cflib/serialize      ->                                                           cflib/util cflib/base
+cflib/db             ->                                                           cflib/util cflib/base
+cflib/dao            -> cflib/db                                  cflib/serialize cflib/util cflib/base
+cflib/net            ->          cflib/net/fileserver cflib/crypt cflib/serialize cflib/util cflib/base
+cflib/net/fileserver ->                                                           cflib/util cflib/base
 
 Total order:
 
-cflib/dao -> cflib/db -> cflib/net -> cflib/crypt -> cflib/serialize -> cflib/util -> cflib/base
+cflib/dao -> cflib/db -> cflib/net -> cflib/net/fileserver -> cflib/crypt -> cflib/serialize -> cflib/util -> cflib/base

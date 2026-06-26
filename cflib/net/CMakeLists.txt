@@ -7,6 +7,7 @@
 cf_lib(cflib_net
     PUBLIC
         cflib_crypt
+        cflib_fileserver
         cflib_serialize
     DIRS impl
     ENABLE_SER

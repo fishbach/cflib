@@ -11,9 +11,9 @@
 #include <cflib/net/requesthandler.h>
 #include <cflib/util/threadverify.h>
 
-namespace cflib::net::fileserver {
+namespace cflib::net {
 
-class FileServer : public FileServerBase, public RequestHandler, public util::ThreadVerify
+class FileServer : public fileserver::FileServerBase, public RequestHandler, public util::ThreadVerify
 {
 public:
     FileServer(const String & path,

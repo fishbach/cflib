@@ -19,7 +19,7 @@
 
 USE_LOG(LogCat::Http)
 
-namespace cflib::net::fileserver {
+namespace cflib::net {
 
 namespace {
 
