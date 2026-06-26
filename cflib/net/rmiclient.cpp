@@ -26,7 +26,6 @@ public:
         ThreadVerify("RMIClient", Net),
         parent_(parent),
         ws_(credentials, this),
-        reconnectTimer_(this, &Impl::doConnect),
         aliveTimeoutTimer_(this, &Impl::checkAliveTimeout)
     {
         init();
@@ -36,7 +35,6 @@ public:
         ThreadVerify(other),
         parent_(parent),
         ws_(credentials, this),
-        reconnectTimer_(this, &Impl::doConnect),
         aliveTimeoutTimer_(this, &Impl::checkAliveTimeout)
     {
         init();
@@ -73,7 +71,6 @@ public:
     {
         if (!verifySyncedThreadCall(&Impl::disconnect)) return;
 
-        reconnectTimer_.stop();
         ws_.disconnect();
     }
 
@@ -175,8 +172,6 @@ private:
         requestActive_ = false;
         requestCallback_ = nullptr;
         parent_.disconnected();
-
-        reconnectTimer_.singleShot(5.0);
     }
 
     void wsReceive(const ByteArray & data, bool isBinary)
@@ -271,7 +266,6 @@ private:
 
     RMIClient & parent_;
     WebSocketClient ws_;
-    util::EVTimer reconnectTimer_;
     util::EVTimer aliveTimeoutTimer_;
 
     Url url_;
