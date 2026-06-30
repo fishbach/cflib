@@ -25,6 +25,8 @@ void RSigClientBase::unreg()
     serialize::BERSerializer ser = service_.getSer();
     ser << name_ << false << id_;
     service_.unregisterRSig(id_, ser.data());
+    id_ = 0;
+    regData_.clear();
 }
 
 } // namespace cflib::net

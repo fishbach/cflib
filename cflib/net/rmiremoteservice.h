@@ -42,7 +42,7 @@ public:
 
     size_t nextRSigId();
     serialize::BERSerializer getSer() const { return ser_; }
-    void registerRSig(RSigClientBase * rsig, uint64 id, const ByteArray & regData);
+    void registerRSig(RSigClientBase * rsig);
     void unregisterRSig(uint64 id, const ByteArray & unregData);
 
 private:

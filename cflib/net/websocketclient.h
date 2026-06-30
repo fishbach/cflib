@@ -28,6 +28,7 @@ public:
 
     void connect(const Url & url, const ByteArrayList & headers = {});
     void disconnect();
+    bool isConnected() const;
 
     void send(const ByteArray & data, bool isBinary);
 

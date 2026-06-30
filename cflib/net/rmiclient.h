@@ -32,7 +32,7 @@ public:
     void sendAsync(const ByteArray & data, bool doNotBuffer = false);
 
     size_t nextRSigId();
-    void registerRSig(RSigClientBase * rsig, uint64 id, const ByteArray & regData);
+    void registerRSig(RSigClientBase * rsig);
     void unregisterRSig(uint64 rsigId, const ByteArray & unregData);
 
     void registerHandler(uint tagNo, const std::function<void (const ByteArray &)> & func);
@@ -43,6 +43,9 @@ cfsignals:
     sig<void ()> connected;
     sig<void ()> disconnected;
     sig<void ()> identityReset;
+
+private:
+    static void getRegData(const RSigClientBase & rsig, uint64 & id, ByteArray & regData);
 
 private:
     class Impl;

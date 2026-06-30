@@ -97,12 +97,15 @@ public:
 
     size_t nextRSigId() { return ++nextRsigId_; }
 
-    void registerRSig(RSigClientBase * rsig, uint64 id, const ByteArray & regData)
+    void registerRSig(RSigClientBase * rsig)
     {
-        if (!verifyThreadCall(&Impl::registerRSig, rsig, id, regData)) return;
+        if (!verifyThreadCall(&Impl::registerRSig, rsig)) return;
 
+        uint64 id;
+        ByteArray regData;
+        parent_.getRegData(*rsig, id, regData);
         rsigHandlers_[id] = rsig;
-        ws_.send(regData, true);
+        if (ws_.isConnected()) ws_.send(regData, true);
     }
 
     void unregisterRSig(uint64 rsigId, const ByteArray & unregData)
@@ -152,9 +155,13 @@ private:
         }
         ws_.send(ser.data(), true);
 
-        // for (auto & [id, data] : rsigHandlers_) {
-        //     sendRsigRegistration(data.service, data.name, true, id);
-        // }
+        // re-register rsigs
+        for (const RSigClientBase * rsig : rsigHandlers_.values()) {
+            uint64 id;
+            ByteArray regData;
+            parent_.getRegData(*rsig, id, regData);
+            ws_.send(regData, true);
+        }
 
         for (auto & data : waitingAsync_) {
             ws_.send(data, true);
@@ -329,9 +336,9 @@ size_t RMIClient::nextRSigId()
     return impl_->nextRSigId();
 }
 
-void RMIClient::registerRSig(RSigClientBase * rsig, uint64 id, const ByteArray & regData)
+void RMIClient::registerRSig(RSigClientBase * rsig)
 {
-    impl_->registerRSig(rsig, id, regData);
+    impl_->registerRSig(rsig);
 }
 
 void RMIClient::unregisterRSig(uint64 rsigId, const ByteArray & unregData)
@@ -347,6 +354,12 @@ void RMIClient::setAliveTimeoutHandler(uint timeoutMs, const std::function<void 
 void RMIClient::registerHandler(uint tagNo, const std::function<void (const ByteArray &)> & func)
 {
     impl_->registerHandler(tagNo, func);
+}
+
+void RMIClient::getRegData(const RSigClientBase & rsig, uint64 & id, ByteArray & regData)
+{
+    id      = rsig.id_;
+    regData = rsig.regData_;
 }
 
 } // namespace cflib::net

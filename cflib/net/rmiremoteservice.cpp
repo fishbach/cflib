@@ -46,9 +46,9 @@ size_t RMIRemoteService::nextRSigId()
     return client_.nextRSigId();
 }
 
-void RMIRemoteService::registerRSig(RSigClientBase * rsig, uint64 id, const ByteArray & regData)
+void RMIRemoteService::registerRSig(RSigClientBase * rsig)
 {
-    client_.registerRSig(rsig, id, regData);
+    client_.registerRSig(rsig);
 }
 
 void RMIRemoteService::unregisterRSig(uint64 id, const ByteArray & unregData)

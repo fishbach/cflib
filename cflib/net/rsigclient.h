@@ -21,6 +21,7 @@
 
 namespace cflib::net {
 
+class RMIClient;
 class RMIRemoteService;
 
 class RSigClientBase
@@ -37,6 +38,8 @@ protected:
     RMIRemoteService & service_;
     const String name_;
     uint64 id_ = 0;
+    ByteArray regData_;
+    friend class RMIClient;
 };
 
 template<typename F, typename R> class RSigClient;
@@ -64,12 +67,12 @@ RSigClient<void (P...), void (R...)>::RSigClient(RMIRemoteService & service, con
 template<typename... P, typename... R>
 RSigClient<void (P...), void (R...)> & RSigClient<void (P...), void (R...)>::reg(R... p)
 {
-    if (id_) return *this;
-    id_ = service_.nextRSigId();
+    if (id_ == 0) id_ = service_.nextRSigId();
     serialize::BERSerializer ser = service_.getSer();
     ser << name_ << true << id_;
     serialize::toByteArray(ser, std::forward<R>(p)...);
-    service_.registerRSig(this, id_, ser.data());
+    regData_ = ser.data();
+    service_.registerRSig(this);
     return *this;
 }
 

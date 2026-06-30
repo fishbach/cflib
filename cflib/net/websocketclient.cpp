@@ -71,6 +71,13 @@ public:
 
     void disconnect();
 
+    bool isConnected() const
+    {
+        SyncedThreadCall<bool> stc(this);
+        if (!stc.verify(&Impl::isConnected)) return stc.retval();
+        return connected_.loadAcquire();
+    }
+
     void send(const ByteArray & data, bool isBinary);
 
 private:
@@ -86,7 +93,7 @@ private:
 
     class Conn;
     Conn * conn_;
-    std::atomic<bool> connected_ = false;
+    AtomicBool connected_ = false;
 };
 
 class WebSocketClient::Impl::Conn : public TCPConn, public util::ThreadVerify
@@ -240,7 +247,7 @@ protected:
         if (impl_) {
             impl_->conn_ = nullptr;
             impl_->reconnectTimer_.singleShot(retryDelayMs / 1000.0);
-            impl_->connected_ = false;
+            impl_->connected_.storeRelease(false);
             impl_->parent_.disconnected();
         }
 
@@ -301,7 +308,7 @@ private:
 
         // allow connect handler to send some initial data
         if (impl_) {
-            impl_->connected_ = true;
+            impl_->connected_.storeRelease(true);
             impl_->parent_.connected();
         }
 
@@ -333,7 +340,7 @@ void WebSocketClient::Impl::disconnect()
         conn_ = nullptr;
     }
 
-    connected_ = false;
+    connected_.storeRelease(false);
     parent_.disconnected();
 }
 
@@ -405,6 +412,11 @@ void WebSocketClient::connect(const Url & url, const ByteArrayList & headers)
 void WebSocketClient::disconnect()
 {
     impl_->disconnect();
+}
+
+bool WebSocketClient::isConnected() const
+{
+    return impl_->isConnected();
 }
 
 void WebSocketClient::send(const ByteArray & data, bool isBinary)
