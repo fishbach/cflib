@@ -104,10 +104,8 @@ inline String dirName(const String & path) {
 
 // ============================================================================
 
-FileServerBase::FileServerBase(const String & path, const String & prefix, bool removeSlash) :
+FileServerBase::FileServerBase(const String & path) :
     path_(path),
-    prefix_(prefix),
-    removeSlash_(removeSlash),
     eTag_(util::unsafeRandom(4).toHex()),
     elementRE_("<!\\s*(\\$|inc |if |else|end|etag|importmap)(.*?)!>")
 {

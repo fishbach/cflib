@@ -14,7 +14,7 @@ namespace cflib::net::fileserver {
 class FileServerBase
 {
 public:
-    FileServerBase(const String & path, const String & prefix = String{}, bool removeSlash = true);
+    FileServerBase(const String & path);
 
     void exportTo(const String & dest) const;
 
@@ -27,8 +27,6 @@ private:
 
 protected:
     const String path_;
-    const String prefix_;
-    const bool removeSlash_;
     const ByteArray eTag_;
 
 private:

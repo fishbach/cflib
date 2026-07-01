@@ -43,9 +43,11 @@ private:
     String createIndex(const String & fullPath, const String & path);
 
 private:
+    const String prefix_;
     const bool parseHtml_;
     const bool enableIndex_;
     const bool noCache_;
+    const bool removeSlash_;
     const bool useHostAsDir_;
     const Regex pathRE_;
     const Regex endingRE_;

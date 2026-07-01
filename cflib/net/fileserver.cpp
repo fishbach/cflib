@@ -49,11 +49,13 @@ FileServer::FileServer(const String & path, const char * prefix, bool parseHtml,
 }
 
 FileServer::FileServer(const String & path, const String & prefix, bool parseHtml, uint threadCount, bool enableIndex, bool noCache, bool removeSlash, bool useHostAsDir) :
-    FileServerBase(path, prefix, removeSlash),
+    FileServerBase(path),
     ThreadVerify("FileServer", Worker, threadCount),
+    prefix_(prefix),
     parseHtml_(parseHtml),
     enableIndex_(enableIndex),
     noCache_(noCache),
+    removeSlash_(removeSlash),
     useHostAsDir_(useHostAsDir),
     pathRE_("^(/(?:(?:.well-known|[_\\-\\w][._\\-\\w]*)(?:/[_\\-\\w][._\\-\\w]*)*/?)?)(?:\\?.*)?$"),
     endingRE_("\\.(\\w+)$")
@@ -84,7 +86,10 @@ void FileServer::handleRequest(const Request & request)
         if (removeSlash_ && path.endsWith("/")) { request.sendRedirect(path.left(path.length() - 1).toUtf8()); return; }
 
         path.remove(0, prefix_.length());
-        if (path.isEmpty()) path += '/';
+        if (path.isEmpty()) {
+            if (!removeSlash_) { request.sendRedirect(request.getUri() + '/'); return; }
+            path += '/';
+        }
     } else {
         // remove trailing slash
         if (removeSlash_ && path.length() > 1 && path.endsWith("/")) { request.sendRedirect(path.left(path.length() - 1).toUtf8()); return; }
@@ -140,8 +145,10 @@ void FileServer::handleRequest(const Request & request)
     }
     fullPath += path;
 
-    bool fileIsDir = isDirectory(fullPath);
-    if (fileIsDir) {
+    if (isDirectory(fullPath)) {
+        // add trailing slash
+        if (!removeSlash_ && !path.endsWith("/")) { request.sendRedirect(request.getUri() + '/'); return; }
+
         if (enableIndex_) {
             request.addHeaderLine("Cache-Control: no-cache");
             if (request.isHEAD()) request.sendText("");
