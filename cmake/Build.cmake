@@ -59,7 +59,6 @@ function(cf_app app)
         endif()
         cf_configure_target(${app}_dao FALSE "" TRUE)
         target_include_directories(${app}_dao PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}")
-        target_link_libraries(${app}_dao PUBLIC cflib_dao)
         target_link_libraries(${app}_dao PUBLIC cflib_serialize)
         target_link_libraries(${app} PRIVATE ${app}_dao)
         set_target_properties(${app} PROPERTIES
@@ -70,13 +69,15 @@ function(cf_app app)
     # remote APIs
     if(ARG_REMOTE_APIS)
         # collect all RMI_HEADERS
-        get_target_property(RMI_HEADERS         ${app}    RMI_HEADERS        )
-        get_target_property(CFLIB_DAO_HEADERS   cflib_dao RMI_HEADERS        )
-        list(APPEND RMI_HEADERS ${CFLIB_DAO_HEADERS})
-        if(ARG_DAO)
-            get_target_property(DAO_RMI_HEADERS ${app}_dao RMI_HEADERS)
-            list(APPEND RMI_HEADERS ${DAO_RMI_HEADERS})
-        endif()
+        get_target_property(RMI_HEADERS         ${app} RMI_HEADERS)
+        get_target_property(RMI_SERVICE_HEADERS ${app} RMI_SERVICE_HEADERS)
+        cf_get_dependent_targets(${app} DEP_TARGETS)
+        foreach(dep_target IN LISTS DEP_TARGETS)
+            get_target_property(dep_headers ${dep_target} RMI_HEADERS)
+            if(NOT dep_headers STREQUAL "dep_headers-NOTFOUND")
+                list(APPEND RMI_HEADERS ${dep_headers})
+            endif()
+        endforeach()
 
         # parse DEST from parameters
         set(REMOTE_DIR)
@@ -157,11 +158,18 @@ function(cf_configure_target target enable_exceptions pch enable_ser)
 
         # filter by containing of SERIALIZE_CLASS
         set(RMI_HEADERS)
+        set(RMI_SERVICE_HEADERS)
         foreach(header ${headers})
             file(STRINGS "${header}" lines REGEX "SERIALIZE_CLASS")
             if(NOT lines)
                 list(REMOVE_ITEM headers "${header}")
                 continue()
+            endif()
+
+            # check for service
+            file(STRINGS "${header}" lines REGEX "RMIService")
+            if(lines)
+                list(APPEND RMI_SERVICE_HEADERS "${header}")
             endif()
 
             cmake_path(APPEND CMAKE_CURRENT_SOURCE_DIR "${header}" OUTPUT_VARIABLE header_full_path)
@@ -174,7 +182,8 @@ function(cf_configure_target target enable_exceptions pch enable_ser)
         endif()
 
         # store found headers
-        set_target_properties(${target} PROPERTIES RMI_HEADERS "${RMI_HEADERS}")
+        set_target_properties(${target} PROPERTIES RMI_HEADERS         "${RMI_HEADERS}")
+        set_target_properties(${target} PROPERTIES RMI_SERVICE_HEADERS "${RMI_SERVICE_HEADERS}")
 
         foreach(header ${headers})
             # get output filename (dir/header.h -> target_autogen/dir/header_ser.cpp)
@@ -256,17 +265,10 @@ function(cf_generate_api)
         endif()
 
         # add cpp output files
-        foreach(header ${RMI_HEADERS})
-            # check for service
-            file(STRINGS "${header}" lines REGEX "RMIService")
-            if(NOT lines)
-                continue()
-            endif()
-
+        foreach(header ${RMI_SERVICE_HEADERS})
             # remove .h
             get_filename_component(dir  "${header}" DIRECTORY)
             get_filename_component(file "${header}" NAME_WLE )
-            file(RELATIVE_PATH dir "${CMAKE_CURRENT_SOURCE_DIR}" "${dir}")
             set(file "${dir}/${file}")
 
             list(APPEND output

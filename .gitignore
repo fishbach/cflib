@@ -9,7 +9,7 @@
 .vscode
 /bin
 /js/dao
-/js/services
+/js/net/logservice.js
 CMakeLists.txt.user
 Makefile
 Makefile.*

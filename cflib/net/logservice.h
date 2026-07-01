@@ -20,7 +20,7 @@ public:
     ~LogService();
 
 rmi:
-    void log(const String & file, int line, cflib::util::LogCategory category, const String & str);
+    void log(const String & file, int line, uint16 category, const String & str);
 };
 
 } // namespace
