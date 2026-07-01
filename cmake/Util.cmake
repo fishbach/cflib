@@ -69,7 +69,7 @@ function(cf_git_version var)
 endfunction()
 
 function(cf_get_dependent_targets target var)
-    set(rv)
+    set(rv ${target})
     get_target_property(LINKED_LIBS ${target} LINK_LIBRARIES)
     foreach(sub_target IN LISTS LINKED_LIBS)
         if(TARGET ${sub_target})
