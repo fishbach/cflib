@@ -5,5 +5,6 @@
 # Licensed under the MIT License.
 
 cf_app(chatclient
+    cflib_dao
     chatserver::services
 )
