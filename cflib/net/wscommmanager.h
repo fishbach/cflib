@@ -195,10 +195,11 @@ public:
         uint connectionTimeoutSec = 10, uint sessionTimeoutSec = 86400);
     ~WSCommManager();
 
-    void setConnDataChecker(ConnDataChecker & checker)    { connDataChecker_ = &checker; checker.mgr_ = this; }
-    void registerStateListener (StateListener & listener) { stateListener_ << &listener; listener.mgr_ = this; }
-    void registerTextMsgHandler(TextMsgHandler & hdl)     { textMsgHandler_ << &hdl; hdl.mgr_ = this; }
-    void registerMsgHandler(uint64 tag, MsgHandler & hdl) { msgHandler_[tag] = &hdl; hdl.mgr_ = this; }
+    void setConnDataChecker    (ConnDataChecker & checker)    { connDataChecker_ = &checker; checker.mgr_ = this;  }
+    void registerStateListener (StateListener & listener)     { stateListener_ << &listener; listener.mgr_ = this; }
+    void registerTextMsgHandler(TextMsgHandler & hdl)         { textMsgHandler_ << &hdl;     hdl.mgr_ = this;      }
+    void registerMsgHandler    (uint64 tag, MsgHandler & hdl) { msgHandler_[tag] = &hdl;     hdl.mgr_ = this;      }
+
     void updateConnData(uint connDataId, const C & connData);
     void getConnData(const ByteArray & clientId, C & connData, uint & connDataId);
     void getConnData(uint connId, C & connData, uint & connDataId);
@@ -260,10 +261,10 @@ public:
     WSCommManager(const String & path, const Regex & allowedOrigin = Regex(),
         uint connectionTimeoutSec = 10, uint sessionTimeoutSec = 86400);
 
-    void setConnDataChecker(ConnDataChecker & checker)    { connDataChecker_ = &checker;  checker.mgr_  = this; }
-    void registerStateListener (StateListener & listener) { stateListener_  << &listener; listener.mgr_ = this; }
-    void registerTextMsgHandler(TextMsgHandler & hdl)     { textMsgHandler_ << &hdl;      hdl.mgr_      = this; }
-    void registerMsgHandler(uint64 tag, MsgHandler & hdl) { msgHandler_[tag] = &hdl;      hdl.mgr_      = this; }
+    void setConnDataChecker    (ConnDataChecker & checker)    { connDataChecker_ = &checker;  checker.mgr_  = this; }
+    void registerStateListener (StateListener & listener)     { stateListener_  << &listener; listener.mgr_ = this; }
+    void registerTextMsgHandler(TextMsgHandler & hdl)         { textMsgHandler_ << &hdl;      hdl.mgr_      = this; }
+    void registerMsgHandler    (uint64 tag, MsgHandler & hdl) { msgHandler_[tag] = &hdl;      hdl.mgr_      = this; }
 
 protected:
     bool hasConnDataChecker() const override;

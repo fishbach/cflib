@@ -39,6 +39,11 @@ public:
         }
     }
 
+    void registerService(RMIService<void> & service)
+    {
+        RMIServerBase::registerService(service);
+    }
+
     void handleMsg(uint64,
         const ByteArray & data, int tagLen, int lengthSize, int32 valueLen,
         const C & connData, uint connDataId, uint connId) override

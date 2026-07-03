@@ -57,8 +57,8 @@ int main(int argc, char * argv[])
     MainLoop loop;
     UnixSignal unixSignal(true);
 
-    WSCommManager<int> commMgr("/ws");
-    RMIServer<int>     rmiServer(commMgr);
+    WSCommManager<void> commMgr("/ws");
+    RMIServer<void>     rmiServer(commMgr);
 
     // services
     ChatService chatService; rmiServer.registerService(chatService);

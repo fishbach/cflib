@@ -14,7 +14,7 @@
 
 namespace chatserver::services {
 
-class ChatService : public cflib::net::RMIServiceBase
+class ChatService : public cflib::net::RMIService<void>
 {
     SERIALIZE_CLASS
 public:

@@ -10,7 +10,7 @@
 namespace chatserver::services {
 
 ChatService::ChatService() :
-    RMIServiceBase(serializeTypeInfo().typeName)
+    RMIService(serializeTypeInfo().typeName)
 {
 }
 
