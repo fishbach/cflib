@@ -17,11 +17,11 @@ class Url
 public:
     Url() : port_(-1) {}
 
-    explicit Url(const String & url) : port_(-1) {
+    Url(const String & url) : port_(-1) {
         parse(url.str());
     }
 
-    explicit Url(const char * url) : port_(-1) {
+    Url(const char * url) : port_(-1) {
         if (url) parse(std::string(url));
     }
 
