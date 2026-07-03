@@ -41,9 +41,6 @@ public:
     virtual cflib::serialize::SerializeTypeInfo getServiceInfo() const = 0;
 
 protected:
-    RMIServiceBase(const String & threadName, uint threadCount = 1, LoopType loopType = Worker);
-    RMIServiceBase(ThreadVerify * other);
-
     inline uint connDataId() const { return connDataId_; }
     inline uint connId()     const { return connId_;     }
     RMIReplier delayReply();
@@ -58,6 +55,9 @@ protected:
     virtual RSigBase * getCfSignal(uint sigNo) = 0;
 
 private:
+    RMIServiceBase(const String & threadName, uint threadCount, LoopType loopType);
+    RMIServiceBase(ThreadVerify * other);
+
     void processRMIServiceCall(serialize::BERDeserializer deser, uint callNo, uint type, uint connDataId, uint connId);
     void connectionClosed(uint connDataId, uint connId, bool isLast);
 
@@ -77,6 +77,8 @@ protected:
     RMIService(const String & threadName, uint threadCount = 1, LoopType loopType = Worker) :
         RMIServiceBase(threadName, threadCount, loopType) {}
     RMIService(ThreadVerify * other) : RMIServiceBase(other) {}
+
+    using RMIServiceBase::connectionClosed;    // prevent hidden virtual warning
 
     inline const C & connData() const { return connData_; }
     virtual void connDataChange() {}
@@ -117,11 +119,17 @@ private:
         connData_ = C{};
     }
 
-    using RMIServiceBase::connectionClosed;    // prevent hidden virtual warning
-
 private:
     static inline thread_local C connData_;
     friend class impl::RMIServerBase;
+};
+
+template<>
+class RMIService<void> : public RMIServiceBase
+{
+protected:
+    RMIService(const String & threadName, uint threadCount = 1, LoopType loopType = Worker);
+    RMIService(ThreadVerify * other);
 };
 
 } // namespace

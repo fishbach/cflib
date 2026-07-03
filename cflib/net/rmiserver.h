@@ -26,16 +26,16 @@ public:
         commMgr.registerStateListener(*this);
     }
 
-    void registerService(RMIServiceBase & serviceBase)
+    void registerService(RMIService<C> & service)
     {
-        RMIServerBase::registerService(serviceBase);
+        RMIServerBase::registerService(service);
         {
-            WSCommConnDataChecker<C> * service = dynamic_cast<WSCommConnDataChecker<C> *>(&serviceBase);
-            if (service) this->commMgr().setConnDataChecker(*service);
+            WSCommConnDataChecker<C> * checker = dynamic_cast<WSCommConnDataChecker<C> *>(&service);
+            if (checker) this->commMgr().setConnDataChecker(*checker);
         }
         {
-            WSCommStateListener<C> * service = dynamic_cast<WSCommStateListener<C> *>(&serviceBase);
-            if (service) this->commMgr().registerStateListener(*service);
+            WSCommStateListener<C> * listener = dynamic_cast<WSCommStateListener<C> *>(&service);
+            if (listener) this->commMgr().registerStateListener(*listener);
         }
     }
 
@@ -71,16 +71,16 @@ public:
         commMgr.registerStateListener(*this);
     }
 
-    void registerService(RMIServiceBase & serviceBase)
+    void registerService(RMIService<void> & service)
     {
-        RMIServerBase::registerService(serviceBase);
+        RMIServerBase::registerService(service);
         {
-            WSCommConnDataChecker<void> * service = dynamic_cast<WSCommConnDataChecker<void> *>(&serviceBase);
-            if (service) this->commMgr().setConnDataChecker(*service);
+            WSCommConnDataChecker<void> * checker = dynamic_cast<WSCommConnDataChecker<void> *>(&service);
+            if (checker) this->commMgr().setConnDataChecker(*checker);
         }
         {
-            WSCommStateListener<void> * service = dynamic_cast<WSCommStateListener<void> *>(&serviceBase);
-            if (service) this->commMgr().registerStateListener(*service);
+            WSCommStateListener<void> * listener = dynamic_cast<WSCommStateListener<void> *>(&service);
+            if (listener) this->commMgr().registerStateListener(*listener);
         }
     }
 

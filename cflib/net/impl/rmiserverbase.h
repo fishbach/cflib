@@ -22,8 +22,6 @@ namespace impl {
 class RMIServerBase : public util::ThreadVerify
 {
 public:
-    RMIServerBase(WSCommManagerBase & wsService);
-
     void registerService(RMIServiceBase & service);
 
     void send(uint connId, const ByteArray & data);
@@ -69,6 +67,9 @@ public:
         }
     }
     void connectionClosed(uint connDataId, uint connId, bool isLast);
+
+protected:
+    RMIServerBase(WSCommManagerBase & wsService);
 
 private:
     struct ServiceFunctions {

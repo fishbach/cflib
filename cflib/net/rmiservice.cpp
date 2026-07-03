@@ -85,4 +85,14 @@ void RMIReplier::send()
     server_.send(connId_, *this);
 }
 
+RMIService<void>::RMIService(const String & threadName, uint threadCount, LoopType loopType) :
+    RMIServiceBase(threadName, threadCount, loopType)
+{
+}
+
+RMIService<void>::RMIService(ThreadVerify * other) :
+    RMIServiceBase(other)
+{
+}
+
 } // namespace

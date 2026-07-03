@@ -12,7 +12,7 @@
 
 namespace cflib::net {
 
-class LogService : public RMIServiceBase
+class LogService : public RMIService<void>
 {
     SERIALIZE_CLASS
 public:

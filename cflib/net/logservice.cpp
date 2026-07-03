@@ -12,7 +12,7 @@ USE_LOG(LogCat::Http)
 namespace cflib::net {
 
 LogService::LogService() :
-    RMIServiceBase(serializeTypeInfo().typeName)
+    RMIService(serializeTypeInfo().typeName)
 {
 }
 
