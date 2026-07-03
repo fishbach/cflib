@@ -57,4 +57,44 @@ public:
     }
 };
 
+// ----------------------------------------------------------------------------
+
+template<>
+class RMIServer<void> :
+    public WSCommMsgHandler<void>,
+    public WSCommStateListener<void>,
+    private impl::RMIServerBase
+{
+public:
+    RMIServer(WSCommManager<void> & commMgr) : RMIServerBase(commMgr) {
+        commMgr.registerMsgHandler(2, *this);
+        commMgr.registerStateListener(*this);
+    }
+
+    void registerService(RMIServiceBase & serviceBase)
+    {
+        RMIServerBase::registerService(serviceBase);
+        {
+            WSCommConnDataChecker<void> * service = dynamic_cast<WSCommConnDataChecker<void> *>(&serviceBase);
+            if (service) this->commMgr().setConnDataChecker(*service);
+        }
+        {
+            WSCommStateListener<void> * service = dynamic_cast<WSCommStateListener<void> *>(&serviceBase);
+            if (service) this->commMgr().registerStateListener(*service);
+        }
+    }
+
+    void handleMsg(uint64,
+        const ByteArray & data, int tagLen, int lengthSize, int32 valueLen,
+        uint connDataId, uint connId) override
+    {
+        handleCall(data, (const uint8 *)data.constData() + tagLen + lengthSize, valueLen, connDataId, connId);
+    }
+
+    void connectionClosed(uint connDataId, uint connId, bool isLast) override
+    {
+        RMIServerBase::connectionClosed(connDataId, connId, isLast);
+    }
+};
+
 } // namespace

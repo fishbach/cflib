@@ -14,22 +14,21 @@
 namespace cflib::net {
 
 RMIServiceBase::RMIServiceBase(const String & threadName, uint threadCount, LoopType loopType) :
-    util::ThreadVerify(threadName, loopType, threadCount),
-    server_(0)
+    util::ThreadVerify(threadName, loopType, threadCount)
 {
 }
 
 RMIServiceBase::RMIServiceBase(util::ThreadVerify * other) :
-    util::ThreadVerify(other),
-    server_(0)
+    util::ThreadVerify(other)
 {
 }
 
-void RMIServiceBase::processRMIServiceCall(serialize::BERDeserializer deser, uint callNo, uint type, uint connId)
+void RMIServiceBase::processRMIServiceCall(serialize::BERDeserializer deser, uint callNo, uint type, uint connDataId, uint connId)
 {
-    if (!verifyThreadCall(&RMIServiceBase::processRMIServiceCall, deser, callNo, type, connId)) return;
+    if (!verifyThreadCall(&RMIServiceBase::processRMIServiceCall, deser, callNo, type, connDataId, connId)) return;
 
-    connId_ = connId;
+    connDataId_ = connDataId;
+    connId_     = connId;
     preCallInit();
     if (type == 0) {
         processRMIServiceCallImpl(deser, callNo);
@@ -45,12 +44,13 @@ void RMIServiceBase::processRMIServiceCall(serialize::BERDeserializer deser, uin
         else                   sig.unregClient(connId, deser);
         return;
     }
-    connId_ = 0;
+    connId_     = 0;
+    connDataId_ = 0;
 }
 
-void RMIServiceBase::connectionClosed(uint connId, bool isLast)
+void RMIServiceBase::connectionClosed(uint connDataId, uint connId, bool isLast)
 {
-    if (!verifyThreadCall(&RMIServiceBase::connectionClosed, connId, isLast)) return;
+    if (!verifyThreadCall(&RMIServiceBase::connectionClosed, connDataId, connId, isLast)) return;
 
     // remove rsig clients
     int i = getServiceInfo().cfSignals.size();
@@ -62,9 +62,11 @@ void RMIServiceBase::connectionClosed(uint connId, bool isLast)
             listeners.end());
     }
 
-    connId_ = connId;
+    connDataId_ = connDataId;
+    connId_     = connId;
     connectionClosed(isLast);
-    connId_ = 0;
+    connId_     = 0;
+    connDataId_ = 0;
 }
 
 RMIReplier RMIServiceBase::delayReply()

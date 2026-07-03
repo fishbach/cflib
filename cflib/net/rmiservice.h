@@ -44,7 +44,8 @@ protected:
     RMIServiceBase(const String & threadName, uint threadCount = 1, LoopType loopType = Worker);
     RMIServiceBase(ThreadVerify * other);
 
-    inline uint connId() const { return connId_; }
+    inline uint connDataId() const { return connDataId_; }
+    inline uint connId()     const { return connId_;     }
     RMIReplier delayReply();
     ByteArray getRemoteIP() const;
     virtual void preCallInit() {}
@@ -57,11 +58,12 @@ protected:
     virtual RSigBase * getCfSignal(uint sigNo) = 0;
 
 private:
-    void processRMIServiceCall(serialize::BERDeserializer deser, uint callNo, uint type, uint connId);
-    void connectionClosed(uint connId, bool isLast);
+    void processRMIServiceCall(serialize::BERDeserializer deser, uint callNo, uint type, uint connDataId, uint connId);
+    void connectionClosed(uint connDataId, uint connId, bool isLast);
 
 private:
-    impl::RMIServerBase * server_;
+    impl::RMIServerBase * server_ = nullptr;
+    static inline thread_local uint connDataId_ = 0;
     static inline thread_local uint connId_ = 0;
     static inline thread_local bool delayedReply_ = false;
     friend class impl::RMIServerBase;
@@ -77,7 +79,6 @@ protected:
     RMIService(ThreadVerify * other) : RMIServiceBase(other) {}
 
     inline const C & connData() const { return connData_; }
-    inline uint connDataId() const { return connDataId_; }
     virtual void connDataChange() {}
 
 private:
@@ -88,10 +89,8 @@ private:
             connData, connDataId, connId)) return;
 
         connData_ = connData;
-        connDataId_ = connDataId;
-        RMIServiceBase::processRMIServiceCall(deser, callNo, type, connId);
-        connData_ = C();
-        connDataId_ = 0;
+        RMIServiceBase::processRMIServiceCall(deser, callNo, type, connDataId, connId);
+        connData_ = C{};
     }
 
     void connDataChange(const C & connData, uint connDataId, const Set<uint> & connIds)
@@ -105,8 +104,8 @@ private:
             connDataChange();
         }
         connId_     = 0;
-        connData_   = C();
         connDataId_ = 0;
+        connData_   = C{};
     }
 
     void connectionClosed(const C & connData, uint connDataId, uint connId, bool isLast)
@@ -114,17 +113,14 @@ private:
         if (!verifyThreadCall(&RMIService::connectionClosed, connData, connDataId, connId, isLast)) return;
 
         connData_ = connData;
-        connDataId_ = connDataId;
-        RMIServiceBase::connectionClosed(connId, isLast);
-        connData_ = C();
-        connDataId_ = 0;
+        RMIServiceBase::connectionClosed(connDataId, connId, isLast);
+        connData_ = C{};
     }
 
     using RMIServiceBase::connectionClosed;    // prevent hidden virtual warning
 
 private:
-    static inline thread_local C    connData_;
-    static inline thread_local uint connDataId_ = 0;
+    static inline thread_local C connData_;
     friend class impl::RMIServerBase;
 };
 

@@ -51,6 +51,27 @@ void RMIServerBase::registerService(RMIServiceBase & service)
     }
 }
 
+void RMIServerBase::handleCall(const ByteArray & ba, const uint8 * data, int len, uint connDataId, uint connId)
+{
+    if (!verifyThreadCall<RMIServerBase, const ByteArray &, const uint8 *, int, uint, uint>(&RMIServerBase::handleCall, ba, data, len, connDataId, connId)) return;
+
+    serialize::BERDeserializer deser(ba, data, len);
+    uint callNo;
+    uint type;
+    RMIServiceBase * serviceBase = checkServiceCall(deser, connId, callNo, type);
+    if (!serviceBase) return;
+    serviceBase->processRMIServiceCall(deser, callNo, type, connDataId, connId);
+}
+
+void RMIServerBase::connectionClosed(uint connDataId, uint connId, bool isLast)
+{
+    if (!verifyThreadCall<RMIServerBase, uint, uint, bool>(&RMIServerBase::connectionClosed, connDataId, connId, isLast)) return;
+
+    for (auto & [name, sf] : services_) {
+        sf.service->connectionClosed(connDataId, connId, isLast);
+    }
+}
+
 void RMIServerBase::send(uint connId, const ByteArray & data)
 {
     if (!verifyThreadCall(&RMIServerBase::send, connId, data)) return;

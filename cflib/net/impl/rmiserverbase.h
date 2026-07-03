@@ -41,8 +41,9 @@ public:
         if (!serviceBase) return;
         RMIService<C> * service = dynamic_cast<RMIService<C> *>(serviceBase);
         if (service) service    ->processRMIServiceCall(deser, callNo, type, connData, connDataId, connId);
-        else         serviceBase->processRMIServiceCall(deser, callNo, type, connId);
+        else         serviceBase->processRMIServiceCall(deser, callNo, type, connDataId, connId);
     }
+    void handleCall(const ByteArray & ba, const uint8 * data, int len, uint connDataId, uint connId);
 
     template<typename C>
     void connDataChange(const C & connData, uint connDataId, const Set<uint> & connIds)
@@ -64,9 +65,10 @@ public:
             RMIServiceBase * serviceBase = sf.service;
             RMIService<C> * service = dynamic_cast<RMIService<C> *>(serviceBase);
             if (service) service    ->connectionClosed(connData, connDataId, connId, isLast);
-            else         serviceBase->connectionClosed(connId, isLast);
+            else         serviceBase->connectionClosed(connDataId, connId, isLast);
         }
     }
+    void connectionClosed(uint connDataId, uint connId, bool isLast);
 
 private:
     struct ServiceFunctions {
