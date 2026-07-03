@@ -257,7 +257,8 @@ template<>
 class WSCommManager<void> : public WSCommManagerBase
 {
 public:
-    using WSCommManagerBase::WSCommManagerBase;
+    WSCommManager(const String & path, const Regex & allowedOrigin = Regex(),
+        uint connectionTimeoutSec = 10, uint sessionTimeoutSec = 86400);
 
     void setConnDataChecker(ConnDataChecker & checker)    { connDataChecker_ = &checker;  checker.mgr_  = this; }
     void registerStateListener (StateListener & listener) { stateListener_  << &listener; listener.mgr_ = this; }
@@ -273,6 +274,7 @@ protected:
     bool dispatchMsg(uint64 tag,
         const ByteArray & data, int tagLen, int lengthSize, int32 valueLen,
         uint connDataId, uint connId) override;
+    void connDataIdRemoved(uint connDataId) override;
 
 private:
     ConnDataChecker *          connDataChecker_ = nullptr;

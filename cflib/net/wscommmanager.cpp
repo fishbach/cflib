@@ -102,6 +102,13 @@ uint WSCommManagerBase::getConnDataId(uint connId) const
 
 // ----------------------------------------------------------------------------
 
+WSCommManager<void>::WSCommManager(const String & path, const Regex & allowedOrigin,
+    uint connectionTimeoutSec, uint sessionTimeoutSec)
+:
+    WSCommManagerBase(path, allowedOrigin, connectionTimeoutSec, sessionTimeoutSec)
+{
+}
+
 bool WSCommManager<void>::hasConnDataChecker() const
 {
     return connDataChecker_ != 0;
@@ -138,6 +145,11 @@ bool WSCommManager<void>::dispatchMsg(uint64 tag,
     if (!hdl) return false;
     hdl->handleMsg(tag, data, tagLen, lengthSize, valueLen, connDataId, connId);
     return true;
+}
+
+void WSCommManager<void>::connDataIdRemoved(uint connDataId)
+{
+    CF_UNUSED(connDataId);
 }
 
 // ----------------------------------------------------------------------------
