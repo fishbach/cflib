@@ -54,6 +54,7 @@ public:
 
     void shutdown()
     {
+        shuttingDown_.storeRelease(true);
         ws_.shutdown();
         stopVerifyThread();
     }
@@ -69,16 +70,22 @@ public:
 
     void disconnect()
     {
-        if (!verifySyncedThreadCall(&Impl::disconnect)) return;
+        if (!verifyThreadCall(&Impl::disconnect)) return;
 
         ws_.disconnect();
     }
 
     void sendRequest(const ByteArray & data, const std::function<void (const ByteArray &)> & callback)
     {
+        if (shuttingDown_.loadAcquire()) {
+            callback(ByteArray{});
+            return;
+        }
         if (!verifyThreadCall(&Impl::sendRequest, data, callback)) return;
 
-        if (requestActive_) {
+        if (!connected_) {
+            callback(ByteArray{});
+        } else if (requestActive_) {
             waitingRequests_ << Request{data, callback};
         } else {
             requestActive_ = true;
@@ -110,7 +117,7 @@ public:
 
     void unregisterRSig(uint64 rsigId, const ByteArray & unregData)
     {
-        if (!verifySyncedThreadCall(&Impl::unregisterRSig, rsigId, unregData)) return;
+        if (!verifyThreadCall(&Impl::unregisterRSig, rsigId, unregData)) return;
 
         RSigClientBase * rsig = rsigHandlers_.value(rsigId);
         if (!rsig) return;
@@ -148,6 +155,8 @@ private:
     void wsConnected()
     {
         logDebug("WebSocket connected");
+
+        connected_ = true;
 
         serialize::BERSerializer ser(1);
         if (!clientId_.isNull()) {
@@ -279,6 +288,7 @@ private:
     ByteArrayList headers_;
     ByteArray clientId_;
 
+    AtomicBool shuttingDown_ = false;
     bool connected_ = false;
     bool requestActive_ = false;
     std::function<void (const ByteArray &)> requestCallback_;
