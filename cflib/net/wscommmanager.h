@@ -155,12 +155,10 @@ protected:
     bool verifyConnData(uint connDataId);
 
 protected:
-    class ConnInfo {
-    public:
-        ConnInfo() : connDataVerified(true) {}
+    struct ConnInfo {
         ConnIds connIds;
         DateTime lastClosed;
-        bool connDataVerified;
+        bool connDataVerified = true;
     };
 
     Hash<uint, uint> connId2dataId_;
