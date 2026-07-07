@@ -40,8 +40,8 @@ void RMIServiceBase::processRMIServiceCall(serialize::BERDeserializer deser, uin
         else               server_->send(connId_, ser.data());
     } else {    // cfsignals
         RSigBase & sig = *getCfSignal(callNo);
-        if (deser.get<bool>()) sig.  regClient(connId, deser);
-        else                   sig.unregClient(connId, deser);
+        if (deser.get<bool>()) sig.  regClient(connDataId, connId, deser);
+        else                   sig.unregClient(connDataId, connId, deser);
         return;
     }
     connId_     = 0;
@@ -53,13 +53,11 @@ void RMIServiceBase::connectionClosed(uint connDataId, uint connId, bool isLast)
     if (!verifyThreadCall(&RMIServiceBase::connectionClosed, connDataId, connId, isLast)) return;
 
     // remove rsig clients
+    serialize::BERDeserializer deser{ByteArray{}};
     int i = getServiceInfo().cfSignals.size();
     while (i > 0) {
-        auto & listeners = getCfSignal(i--)->defaultListeners;
-        listeners.erase(
-            std::remove_if(listeners.begin(), listeners.end(),
-                [connId](const net::RSigBase::ConnIdRegId & p) { return p.first == connId; }),
-            listeners.end());
+        cflib::net::RSigBase * sig = getCfSignal(i--);
+        sig->unregClient(connDataId, connId, deser);
     }
 
     connDataId_ = connDataId;

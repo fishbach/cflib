@@ -121,10 +121,16 @@ public:
     template<typename Sep>
     T join(Sep sep) const {
         T r;
-        for (size_t i = 0; i < d.size(); ++i) {
+        for (size_t i = 0 ; i < d.size() ; ++i) {
             if (i > 0) r += sep;
             r += d[i];
         }
+        return r;
+    }
+
+    T concatenated() const {
+        T r;
+        for (size_t i = 0 ; i < d.size() ; ++i) r += d[i];
         return r;
     }
 

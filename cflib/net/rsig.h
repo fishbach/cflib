@@ -20,16 +20,17 @@ namespace impl { class RMIServerBase; }
 class RSigBase
 {
 public:
-    typedef Pair<uint64, uint64> ConnIdRegId;
-    typedef List<ConnIdRegId> Listeners;
+    typedef Pair<uint64, uint64>  ConnIdRegId;
+    typedef List<ConnIdRegId>     Listeners;
+    typedef Hash<uint, Listeners> ConnDataIdRegs;
 
 public:
     RSigBase() : server_(0) {}
 
-    virtual void regClient(uint connId, serialize::BERDeserializer & deser) = 0;
-    virtual void unregClient(uint connId, serialize::BERDeserializer & deser) = 0;
+    virtual void   regClient(uint connDataId, uint connId, serialize::BERDeserializer & deser) = 0;
+    virtual void unregClient(uint connDataId, uint connId, serialize::BERDeserializer & deser) = 0;
 
-    Listeners defaultListeners;
+    ConnDataIdRegs defaultListeners;
 
 protected:
     void send(uint connId, const ByteArray & data);
@@ -59,26 +60,34 @@ public:
         Base::bind(this, &RSig::handleRemote);
     }
 
-    virtual void regClient(uint connId, serialize::BERDeserializer & deser)
+    void regClient(uint connDataId, uint connId, serialize::BERDeserializer & deser) override
     {
         uint64 regId; deser >> regId;
         if (!registerFunc_) {
-            defaultListeners << Pair(connId, regId);
+            defaultListeners[connDataId] << ConnIdRegId(connId, regId);
             return;
         }
-        serialize::readAndCall<R...>(deser, [this, connId, regId](R... r) {
-            registerFunc_(connId, regId, std::forward<R>(r)...);
+        serialize::readAndCall<R...>(deser, [this, connDataId, connId, regId](R... r) {
+            registerFunc_(connDataId, connId, regId, std::forward<R>(r)...);
         });
     }
 
-    virtual void unregClient(uint connId, serialize::BERDeserializer & deser)
+    void unregClient(uint connDataId, uint connId, serialize::BERDeserializer & deser) override
     {
         uint64 regId; deser >> regId;
         if (!unregisterFunc_) {
-            defaultListeners.erase(std::remove(defaultListeners.begin(), defaultListeners.end(), Pair<uint64, uint64>(connId, regId)), defaultListeners.end());
+            Listeners & regs = defaultListeners[connDataId];
+            for (auto it = regs.begin() ; it != regs.end() ; ) {
+                if (it->first == connId && (regId == 0 || it->second == regId)) {
+                    it = regs.erase(it);
+                } else {
+                    ++it;
+                }
+            }
+            if (regs.isEmpty()) defaultListeners.erase(connDataId);
             return;
         }
-        unregisterFunc_(connId, regId);
+        unregisterFunc_(connDataId, connId, regId);
     }
 
     template<typename F>
@@ -88,15 +97,15 @@ public:
     }
 
     template<typename C>
-    void setRegisterFunction(C * obj, void (C::*func)(uint connId, uint regId, R...))
+    void setRegisterFunction(C * obj, void (C::*func)(uint connDataId, uint connId, uint regId, R...))
     {
-        registerFunc_ = util::Delegate<C *, void, uint, uint, R...>(obj, func);
+        registerFunc_ = util::Delegate<C *, void, uint, uint, uint, R...>(obj, func);
     }
 
     template<typename C>
-    void setRegisterFunction(const C * obj, void (C::*func)(uint connId, uint regId, R...) const)
+    void setRegisterFunction(const C * obj, void (C::*func)(uint connDataId, uint connId, uint regId, R...) const)
     {
-        registerFunc_ = util::Delegate<const C *, void, uint, uint, R...>(obj, func);
+        registerFunc_ = util::Delegate<const C *, void, uint, uint, uint, R...>(obj, func);
     }
 
     template<typename F>
@@ -106,15 +115,15 @@ public:
     }
 
     template<typename C>
-    void setUnregisterFunction(C * obj, void (C::*func)(uint connId, uint regId))
+    void setUnregisterFunction(C * obj, void (C::*func)(uint connDataId, uint connId, uint regId))
     {
-        unregisterFunc_ = util::Delegate<C *, void, uint, uint>(obj, func);
+        unregisterFunc_ = util::Delegate<C *, void, uint, uint, uint>(obj, func);
     }
 
     template<typename C>
-    void setUnregisterFunction(const C * obj, bool (C::*func)(uint connId, uint regId) const)
+    void setUnregisterFunction(const C * obj, bool (C::*func)(uint connDataId, uint connId, uint regId) const)
     {
-        unregisterFunc_ = util::Delegate<const C *, void, uint, uint>(obj, func);
+        unregisterFunc_ = util::Delegate<const C *, void, uint, uint, uint>(obj, func);
     }
 
     template<typename F>
@@ -135,6 +144,14 @@ public:
         filterFunc_ = util::Delegate<const C *, Listeners, P...>(obj, func);
     }
 
+    RSig & to(uint connDataId)
+    {
+        filterFunc_ = [listeners = defaultListeners.value(connDataId)](P...) {
+            return listeners;
+        };
+        return *this;
+    }
+
 private:
     void handleRemote(P... p)
     {
@@ -144,7 +161,10 @@ private:
             serialize::toByteArray(ser, std::forward<P>(p)...);
             encodedParams = ser.data();
         }
-        for (const ConnIdRegId & dest : (filterFunc_ ? filterFunc_(std::forward<P>(p)...) : defaultListeners)) {
+        for (const ConnIdRegId & dest : (filterFunc_ ?
+                filterFunc_(std::forward<P>(p)...) :
+                defaultListeners.values().concatenated()))
+        {
             serialize::BERSerializer ser(3);
             ser << dest.second << encodedParams;
             send(dest.first, ser.data());
@@ -152,8 +172,8 @@ private:
     }
 
 private:
-    std::function<void (uint connId, uint regId, R... r)> registerFunc_;
-    std::function<void (uint connId, uint regId)> unregisterFunc_;
+    std::function<void (uint connDataId, uint connId, uint regId, R... r)> registerFunc_;
+    std::function<void (uint connDataId, uint connId, uint regId)>         unregisterFunc_;
     std::function<Listeners (P... p)> filterFunc_;
 };
 

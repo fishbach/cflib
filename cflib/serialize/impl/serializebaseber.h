@@ -87,7 +87,7 @@ public:
 
         // some error occured
         bytesAvailable_ = 0;
-        cl = T();    // default construct
+        cl = T{};    // default construct
         return *this;
     }
 
