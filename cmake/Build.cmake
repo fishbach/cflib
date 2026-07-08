@@ -70,11 +70,18 @@ function(cf_app app)
     if(ARG_REMOTE_APIS)
         # collect all RMI_HEADERS
         set(RMI_HEADERS)
+        set(RMI_SERVICE_HEADERS)
+        set(RMI_SERVICE_TARGETS)
         cf_get_dependent_targets(${app} DEP_TARGETS)
         foreach(dep_target IN LISTS DEP_TARGETS)
             get_target_property(dep_headers ${dep_target} DAO_HEADERS)
             if(NOT dep_headers STREQUAL "dep_headers-NOTFOUND")
                 list(APPEND RMI_HEADERS ${dep_headers})
+            endif()
+            get_target_property(dep_headers ${dep_target} RMI_SERVICE_HEADERS)
+            if(NOT dep_headers STREQUAL "dep_headers-NOTFOUND")
+                list(APPEND RMI_SERVICE_HEADERS ${dep_headers})
+                list(APPEND RMI_SERVICE_TARGETS ${dep_target})
             endif()
         endforeach()
         list(APPEND RMI_HEADERS ${RMI_SERVICE_HEADERS})
@@ -182,9 +189,11 @@ function(cf_configure_target target enable_exceptions pch enable_ser)
         endif()
 
         # store found headers
-        set_target_properties(${target} PROPERTIES DAO_HEADERS "${DAO_HEADERS}")
+        if(DAO_HEADERS)
+            set_target_properties(${target} PROPERTIES DAO_HEADERS "${DAO_HEADERS}")
+        endif()
         if(RMI_SERVICE_HEADERS)
-            set(RMI_SERVICE_HEADERS "${RMI_SERVICE_HEADERS}" PARENT_SCOPE)
+            set_target_properties(${target} PROPERTIES RMI_SERVICE_HEADERS "${RMI_SERVICE_HEADERS}")
         endif()
 
         foreach(header ${headers})
@@ -261,21 +270,28 @@ function(cf_generate_api)
         endif()
 
         # add cpp output files
-        foreach(header ${RMI_SERVICE_HEADERS})
-            # remove .h
-            get_filename_component(dir  "${header}" DIRECTORY)
-            get_filename_component(file "${header}" NAME_WLE )
-            file(RELATIVE_PATH dir "${CMAKE_CURRENT_SOURCE_DIR}" "${dir}")
-            set(file "${dir}/${file}")
+        foreach(target ${RMI_SERVICE_TARGETS})
+            get_target_property(RMI_SERVICE_HEADERS ${target} RMI_SERVICE_HEADERS)
+            get_target_property(TARGET_SOURCE_DIR   ${target} INTERFACE_INCLUDE_DIRECTORIES)
+            if(TARGET_SOURCE_DIR STREQUAL "TARGET_SOURCE_DIR-NOTFOUND")
+                get_target_property(TARGET_SOURCE_DIR ${target} SOURCE_DIR)
+            endif()
+            foreach(header ${RMI_SERVICE_HEADERS})
+                # remove .h
+                get_filename_component(dir  "${header}" DIRECTORY)
+                get_filename_component(file "${header}" NAME_WLE )
+                file(RELATIVE_PATH dir "${TARGET_SOURCE_DIR}" "${dir}")
+                set(file "${dir}/${file}")
 
-            list(APPEND output
-                "${REMOTE_ABS_DIR}/cpp/remote/${file}.h"
-                "${REMOTE_ABS_DIR}/cpp/remote/${file}.cpp"
-            )
-            target_sources(${app}_services
-                PUBLIC  "${REMOTE_DIR}/cpp/remote/${file}.h"
-                PRIVATE "${REMOTE_DIR}/cpp/remote/${file}.cpp"
-            )
+                list(APPEND output
+                    "${REMOTE_ABS_DIR}/cpp/remote/${file}.h"
+                    "${REMOTE_ABS_DIR}/cpp/remote/${file}.cpp"
+                )
+                target_sources(${app}_services
+                    PUBLIC  "${REMOTE_DIR}/cpp/remote/${file}.h"
+                    PRIVATE "${REMOTE_DIR}/cpp/remote/${file}.cpp"
+                )
+            endforeach()
         endforeach()
     else()
         string(MAKE_C_IDENTIFIER "${app}_${REMOTE_DIR}_api" target)
