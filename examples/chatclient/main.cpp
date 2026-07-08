@@ -5,7 +5,7 @@
  * Licensed under the MIT License.
  */
 
-#include <chatserver/services/chatservice.h>
+#include <remote/chatserver/services/chatservice.h>
 
 #include <cflib/net/rmiclient.h>
 #include <cflib/util/cmdline.h>
@@ -16,7 +16,7 @@
 using namespace cflib::net;
 using namespace cflib::util;
 using namespace chatserver::dao;
-using namespace chatserver::services;
+using namespace remote::chatserver::services;
 
 USE_LOG(LogCat::Network)
 
