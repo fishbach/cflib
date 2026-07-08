@@ -58,7 +58,7 @@ function(cf_app app)
             add_library(${app}_dao ${sources})
         endif()
         cf_configure_target(${app}_dao FALSE "" TRUE)
-        target_include_directories(${app}_dao PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}")
+        target_include_directories(${app}_dao PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
         target_link_libraries(${app}_dao PUBLIC cflib_serialize)
         target_link_libraries(${app} PRIVATE ${app}_dao)
         set_target_properties(${app} PROPERTIES
@@ -247,7 +247,7 @@ function(cf_generate_api)
     list(APPEND output "${version_full_path}")
 
     if(cpp IN_LIST REMOTE_APIS)
-        # add _services lib
+        # add ::services lib
         if(ONLY_GENERATORS)
             add_library(${app}_services EXCLUDE_FROM_ALL)
         else()
@@ -255,15 +255,9 @@ function(cf_generate_api)
         endif()
         add_library(${app}::services ALIAS ${app}_services)
         target_include_directories(${app}_services PUBLIC "${REMOTE_ABS_DIR}/cpp")
-        target_link_libraries(${app}_services PUBLIC ${app}_dao cflib_net)
-
-        # create symlink for dao
+        target_link_libraries(${app}_services PUBLIC cflib_net)
         if(ARG_DAO)
-            set(dao_link "${REMOTE_ABS_DIR}/cpp/${ARG_DAO}")
-            get_filename_component(dao_base_dir "${dao_link}" DIRECTORY)
-            file(MAKE_DIRECTORY "${dao_base_dir}")
-            file(RELATIVE_PATH dao_rel_path "${dao_base_dir}" "${CMAKE_CURRENT_SOURCE_DIR}/${ARG_DAO}")
-            execute_process(COMMAND ${CMAKE_COMMAND} -E create_symlink "${dao_rel_path}" "${dao_link}")
+            target_link_libraries(${app}_services PUBLIC ${app}_dao)
         endif()
 
         # add cpp output files
@@ -275,12 +269,12 @@ function(cf_generate_api)
             set(file "${dir}/${file}")
 
             list(APPEND output
-                "${REMOTE_ABS_DIR}/cpp/${file}.h"
-                "${REMOTE_ABS_DIR}/cpp/${file}.cpp"
+                "${REMOTE_ABS_DIR}/cpp/remote/${file}.h"
+                "${REMOTE_ABS_DIR}/cpp/remote/${file}.cpp"
             )
             target_sources(${app}_services
-                PUBLIC  "${REMOTE_DIR}/cpp/${file}.h"
-                PRIVATE "${REMOTE_DIR}/cpp/${file}.cpp"
+                PUBLIC  "${REMOTE_DIR}/cpp/remote/${file}.h"
+                PRIVATE "${REMOTE_DIR}/cpp/remote/${file}.cpp"
             )
         endforeach()
     else()

@@ -63,10 +63,12 @@ String SerializeTypeInfo::toString() const
     return "void";
 }
 
-String SerializeTypeInfo::getName() const
+String SerializeTypeInfo::getName(bool absNs) const
 {
     if (ns.isEmpty()) return typeName;
-    String retval = ns;
+    String retval;
+    if (absNs) retval = "::";
+    retval += ns;
     retval += "::";
     retval += typeName;
     return retval;

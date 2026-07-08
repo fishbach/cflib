@@ -23,7 +23,7 @@ String signature(const SerializeFunctionTypeInfo & fti, bool isRSig, const Strin
     String rv;
     if (isRSig) rv += "rsig<";
     if (fti.returnType.isNull()) rv += "void ";
-    else rv << fti.returnType.getName() << ' ';
+    else rv << fti.returnType.getName(true) << ' ';
     if (isRSig) rv += "(";
     else {
         if (!className.isEmpty()) rv << className << "::";
@@ -35,7 +35,7 @@ String signature(const SerializeFunctionTypeInfo & fti, bool isRSig, const Strin
         if (isFirst) isFirst = false;
         else rv += ", ";
         if (!vti.isRef) rv += "const ";
-        rv << vti.type.getName() << " &";
+        rv << vti.type.getName(true) << " &";
         if (!vti.name.isEmpty()) rv << ' ' << vti.name;
         else if (!className.isEmpty()) rv << " __param_" << String::number(++id);
     }
@@ -45,7 +45,7 @@ String signature(const SerializeFunctionTypeInfo & fti, bool isRSig, const Strin
             if (isFirst) isFirst = false;
             else rv += ", ";
             if (!vti.isRef) rv += "const ";
-            rv << vti.type.getName() << " &";
+            rv << vti.type.getName(true) << " &";
             if (!vti.name.isEmpty()) rv << ' ' << vti.name;
         }
     }
@@ -58,7 +58,7 @@ String generateImpl(const SerializeFunctionTypeInfo & fti)
 {
     String rv;
     rv <<
-        "    cflib::net::RMIRemoteCall __call = newCall();\n"
+        "    ::cflib::net::RMIRemoteCall __call = newCall();\n"
         "    __call << \"" << fti.signature() << "\"";
 
     int id = 0;
@@ -72,7 +72,7 @@ String generateImpl(const SerializeFunctionTypeInfo & fti)
     if (!fti.hasReturnValues()) {
         rv << "    __call.callAsync();\n";
     } else {
-        if (!fti.returnType.isNull()) rv << "    " << fti.returnType.getName() << " __retval;\n";
+        if (!fti.returnType.isNull()) rv << "    " << fti.returnType.getName(true) << " __retval;\n";
         rv << "    __call.callSync()";
         if (!fti.returnType.isNull()) rv << " >> __retval";
         int id = 0;
@@ -120,20 +120,20 @@ String generate(const SerializeTypeInfo & ti, bool isHeader)
     }
 
     // namespace
-    if (!ti.ns.isEmpty()) cpp <<
-        "namespace " << ti.ns << " {\n"
+    cpp <<
+        "namespace remote" << (ti.ns.isEmpty() ? "" : "::") << ti.ns << " {\n"
         "\n";
 
     // class head and constructor
     if (isHeader) cpp <<
-        "class " << ti.typeName << " : public cflib::net::RMIRemoteService\n"
+        "class " << ti.typeName << " : public ::cflib::net::RMIRemoteService\n"
         "{\n"
         "public:\n"
-        "    " << ti.typeName << "(cflib::net::RMIClient & client);\n"
+        "    " << ti.typeName << "(::cflib::net::RMIClient & client);\n"
         "\n";
     else {
         cpp <<
-            ti.typeName << "::" << ti.typeName << "(cflib::net::RMIClient & client) :\n"
+            ti.typeName << "::" << ti.typeName << "(::cflib::net::RMIClient & client) :\n"
             "    RMIRemoteService(client, \"" << ti.typeName.toLower() << "\")";
         for (const SerializeFunctionTypeInfo & fti : ti.cfSignals) {
             cpp <<
@@ -174,7 +174,7 @@ String generate(const SerializeTypeInfo & ti, bool isHeader)
         "};\n";
 
     // namespace end
-    if (!ti.ns.isEmpty()) cpp <<
+    cpp <<
         "\n"
         "}\n";
 
@@ -192,7 +192,7 @@ void writeWhenChanged(const String & path, const String & data)
 void generateCppRemoteServices(const StructuredTypeInfos & typeInfos, const String & dest)
 {
     // write services
-    const String destPath = dest + "/";
+    const String destPath = dest + "/remote/";
     Set<String> files;
     for (const SerializeTypeInfo & ti : typeInfos.services()) {
         util::mkPath(destPath + ti.getNSPath());

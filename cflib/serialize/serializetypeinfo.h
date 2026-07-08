@@ -51,7 +51,7 @@ public:
     bool operator<(const SerializeTypeInfo & rhs) const { return getName() < rhs.getName(); }
 
     bool isNull() const { return type == Null; }
-    String getName() const;
+    String getName(bool absNs = false) const;
     String getFilePath() const;
     String getNSPath() const;
 
