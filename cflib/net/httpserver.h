@@ -30,6 +30,8 @@ public:
     bool isRunning() const;
 
     void registerHandler(RequestHandler & handler);
+    template<typename T>
+    void registerHandler(std::unique_ptr<T> & handler) { if (handler) registerHandler(*handler); }
 
 private:
     class Impl;
