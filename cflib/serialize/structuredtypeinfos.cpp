@@ -111,7 +111,7 @@ void StructuredTypeInfos::fixPlaceholder(Map<String, SerializeTypeInfo> & missin
         return;
     }
 
-    static const Regex container1RE(R"(^(Flags|List|Set)<([^,]+),([^>]+)>$)");
+    static const Regex container1RE(R"(^(Flags|List|Set)<([^>]+)>$)");
     m = container1RE.matchResult(ti.typeName);
     if (m.hasMatch()) {
         if (m.captured(1) == "Flags") {
@@ -128,7 +128,7 @@ void StructuredTypeInfos::fixPlaceholder(Map<String, SerializeTypeInfo> & missin
         ti.bases << base;
         ti.ns.clear();
         fixPlaceholders(missing, ti.bases[0]);
-        ti.typeName = m.captured(1) + "<" + ti.bases[0].getName() + ">";
+        ti.typeName = "List";
         return;
     }
 
@@ -146,7 +146,8 @@ void StructuredTypeInfos::fixPlaceholder(Map<String, SerializeTypeInfo> & missin
         ti.ns.clear();
         fixPlaceholders(missing, ti.bases[0]);
         fixPlaceholders(missing, ti.bases[1]);
-        ti.typeName = m.captured(1) + "<" + ti.bases[0].getName() + "," + ti.bases[1].getName() + ">";
+        ti.typeName = m.captured(1);
+        if (ti.typeName == "Hash") ti.typeName = "Map";
         return;
     }
 

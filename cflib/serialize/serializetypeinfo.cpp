@@ -60,11 +60,32 @@ String SerializeTypeInfo::toString() const
         return retval + "}";
     }
 
+    if (type == Placeholder) {
+        String retval;
+        if (!ns.isEmpty()) retval += ns + " :: ";
+        retval += typeName;
+        retval += " (placeholder)";
+        return retval;
+    }
+
     return "void";
 }
 
 String SerializeTypeInfo::getName(bool absNs) const
 {
+    if (type == Container) {
+        String retval = typeName;
+        retval += '<';
+        bool isFirst = true;
+        for (const SerializeTypeInfo & base : bases) {
+            if (isFirst) isFirst = false;
+            else         retval += ',';
+            retval += base.getName(absNs);
+        }
+        retval += '>';
+        return retval;
+    }
+
     if (ns.isEmpty()) return typeName;
     String retval;
     if (absNs) retval = "::";

@@ -41,15 +41,15 @@ String getSerializeCode(const SerializeTypeInfo & ti, const String & name)
     if (ti.type == SerializeTypeInfo::Class) {
         js << ".o(" << name << ")";
     } else if (ti.type == SerializeTypeInfo::Container) {
-        if (ti.typeName.startsWith("Pair<")) {
+        if (ti.typeName == "Pair") {
             js    << ".p(" << name << ", function(__e, __S) { __S"
                 << getSerializeCode(ti.bases[0], "__e[0]")
                 << getSerializeCode(ti.bases[1], "__e[1]")
                 << "; })";
-        } else if (ti.typeName.startsWith("List<")) {
+        } else if (ti.typeName == "List") {
             js    << ".map(" << name << ", function(__e, __S) { __S"
                 << getSerializeCode(ti.bases[0], "__e") << "; })";
-        } else if (ti.typeName.startsWith("Map<")) {
+        } else if (ti.typeName == "Map") {
             js    << ".map(" << name << ", function(__e, __S) { __S"
                 << getSerializeCode(ti.bases[0], "__e[0]")
                 << getSerializeCode(ti.bases[1], "__e[1]")
@@ -143,14 +143,14 @@ String getDeserializeCode(const SerializeTypeInfo & ti)
         cl.replace("::", "__");
         js << "new " << cl << "(__D.a())";
     } else if (ti.type == SerializeTypeInfo::Container) {
-        if (ti.typeName.startsWith("Pair<")) {
+        if (ti.typeName == "Pair") {
             js    << "(function(__data) { var __D = __ber.D(__data); return ["
                 << getDeserializeCode(ti.bases[0]) << ", "
                 << getDeserializeCode(ti.bases[1]) << "]; })(__D.a())";
-        } else if (ti.typeName.startsWith("List<")) {
+        } else if (ti.typeName == "List") {
             js    << "__D.map(function(__D) { return "
                 << getDeserializeCode(ti.bases[0]) << "; })";
-        } else if (ti.typeName.startsWith("Map<")) {
+        } else if (ti.typeName == "Map") {
             js    << "__D.map(function(__D) { return ["
                 << getDeserializeCode(ti.bases[0]) << ", "
                 << getDeserializeCode(ti.bases[1]) << "]; })";

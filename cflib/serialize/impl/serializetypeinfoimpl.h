@@ -70,7 +70,7 @@ inline void serializeTypeInfo(SerializeTypeInfoImpl & si, Pair<T1, T2> *)
     SerializeTypeInfoImpl si2;
     serializeTypeInfo(si2, (T2 *)0);
     si.type = SerializeTypeInfo::Container;
-    si.typeName = String("Pair<") + si1.getName() + "," + si2.getName() + ">";
+    si.typeName = "Pair";
     si.bases.push_back(si1);
     si.bases.push_back(si2);
 }
@@ -81,7 +81,7 @@ inline void serializeTypeInfo(SerializeTypeInfoImpl & si, List<T> *)
     SerializeTypeInfoImpl si1;
     serializeTypeInfo(si1, (T *)0);
     si.type = SerializeTypeInfo::Container;
-    si.typeName = String("List<") + si1.getName() + ">";
+    si.typeName = "List";
     si.bases.push_back(si1);
 }
 
@@ -99,7 +99,7 @@ inline void serializeTypeInfo(SerializeTypeInfoImpl & si, Map<Key, T> *)
     SerializeTypeInfoImpl si2;
     serializeTypeInfo(si2, (T *)0);
     si.type = SerializeTypeInfo::Container;
-    si.typeName = String("Map<") + si1.getName() + "," + si2.getName() + ">";
+    si.typeName = "Map";
     si.bases.push_back(si1);
     si.bases.push_back(si2);
 }

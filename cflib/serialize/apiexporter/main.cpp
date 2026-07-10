@@ -12,6 +12,7 @@
 #include <cflib/serialize/headerparser.h>
 #include <cflib/serialize/structuredtypeinfos.h>
 #include <cflib/util/cmdline.h>
+#include <cflib/util/log.h>
 
 #include <iostream>
 
@@ -30,6 +31,7 @@ int showUsage(const ByteArray & executable)
     err << "Usage: " << executable.toStdString() << " -d <dir> -t <type> [-t ...] <headers>"  << std::endl
         << "Options:"                                                       << std::endl
         << "  -h, --help        => this help"                               << std::endl
+        << "  -l, --log <level> => set log level 1 -> all, 7 -> off"        << std::endl
         << "  -d, --dest <dir>  => destination dir"                         << std::endl
         << "  -g, --git  <hash> => git hash"                                << std::endl
         << "  -t, --type <type> => type of API to be exported (repeatable)" << std::endl
@@ -45,9 +47,10 @@ int main(int argc, char *argv[])
 {
     CmdLine cmdLine(argc, argv);
     Option help    ('h', "help"                   ); cmdLine << help;
-    Option typesOpt('t', "type", true, false, true); cmdLine << typesOpt;
+    Option logOpt  ('l', "log",  true             ); cmdLine << logOpt;
     Option destOpt ('d', "dest", true, false      ); cmdLine << destOpt;
     Option gitOpt  ('g', "git",  true             ); cmdLine << gitOpt;
+    Option typesOpt('t', "type", true, false, true); cmdLine << typesOpt;
     Option nameOpt ('n', "name", true, false      ); cmdLine << nameOpt;
     Arg    headers (false, true                   ); cmdLine << headers;
     if (!cmdLine.parse() || help.isSet()) return showUsage(cmdLine.executable());
@@ -56,6 +59,11 @@ int main(int argc, char *argv[])
         err << "unknown API type: " << type.toStdString() << std::endl;
         return 1;
     }
+
+    // logging
+    Log::start("-");
+    if (logOpt.isSet()) Log::setLogLevel(logOpt.value().toUInt());
+    else                Log::setLogLevel(LogCat::Warn);
 
     String name;
     if (nameOpt.isSet()) {
