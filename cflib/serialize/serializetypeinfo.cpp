@@ -28,7 +28,8 @@ String SerializeTypeInfo::toString() const
     if (type == Basic) return typeName;
 
     if (type == Container) {
-        String retval = typeName.left(typeName.indexOf('<') + 1);
+        String retval = typeName;
+        retval += '<';
         retval += bases[0].toString();
         if (bases.size() > 1) retval += String(",") + bases[1].toString();
         retval += '>';
