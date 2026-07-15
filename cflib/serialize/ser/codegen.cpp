@@ -196,6 +196,17 @@ int genSerialize(const std::string & headerName, const HeaderParser & hp, std::o
         "#include <cflib/serialize/serializeber.h>\n",
         headerName.c_str());
 
+    if (!hp.permissions().isEmpty()) {
+        out << "\n";
+        for (const HeaderParser::NameDesc & nd : hp.permissions()) {
+            String var = nd.name;
+            var.replace(".", "::");
+            out << "cflib::serialize::CFPermission " << var.str() << "(\"" << nd.name.str() << "\"";
+            if (!nd.desc.isNull()) out << ", \"" << nd.desc.str() << "\"";
+            out << ");\n";
+        }
+    }
+
     for (const SerializeTypeInfo & cl : hp.classes()) {
 
         out << "\n";

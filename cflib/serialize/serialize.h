@@ -7,6 +7,7 @@
 
 #pragma once
 
+#include <cflib/serialize/cfpermission.h>
 #include <cflib/serialize/impl/registerclass.h>
 #include <cflib/serialize/serializeber.h>
 #include <cflib/serialize/serializetypeinfo.h>
@@ -59,3 +60,5 @@
     public
 
 #define SERIALIZE_SKIP(member)
+
+#define CFPerm extern cflib::serialize::CFPermission

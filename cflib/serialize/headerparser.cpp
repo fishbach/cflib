@@ -243,6 +243,27 @@ bool HeaderParser::getMemberBlocks(const String & in, int start, int end, Serial
     return true;
 }
 
+bool HeaderParser::getPermissions(const String & in, int start, int end, SerializeTypeInfo & cl)
+{
+    if (start >= end) return true;
+
+    String prefix = cl.getName().replace("::", ".");
+    if (!prefix.isEmpty() && !prefix.endsWith(".")) prefix += '.';
+
+    static const Regex permRE(R"((?:^|\n)\s*CFPerm\s+(\w+)\s*;(?:\s*//([\w,.?! \t]+))?)");
+    int permStart = start;
+    Regex::MatchResult permMR = permRE.matchResult(in.mid(permStart, end - permStart));
+    while (permMR.hasMatch()) {
+        String desc = permMR.captured(2).trimmed();
+        if (desc.isEmpty()) desc.clear();
+        permissions_ << NameDesc{prefix + permMR.captured(1), desc};
+        permStart += permMR.capturedStart() + permMR.capturedLength();
+        permMR = permRE.matchResult(in.mid(permStart, end - permStart));
+    }
+
+    return true;
+}
+
 bool HeaderParser::getClasses(const String & in, int start, int end, SerializeTypeInfo cl)
 {
     static const Regex classOrNamespaceRE(
@@ -258,6 +279,7 @@ bool HeaderParser::getClasses(const String & in, int start, int end, SerializeTy
         const String base = m.captured(3);
 
         // handle rest of previous
+        getPermissions(in, start, pos, cl);
         if (pos > start && !cl.typeName.isEmpty()) {
             if (!getMemberBlocks(in, start, pos, cl, state)) return false;
         }
@@ -284,7 +306,8 @@ bool HeaderParser::getClasses(const String & in, int start, int end, SerializeTy
         start = blockEnd + 1;
     }
 
-    // handle rest of previous
+    // handle rest to end
+    getPermissions(in, start, end, cl);
     if (start < end && !cl.typeName.isEmpty()) {
         if (!getMemberBlocks(in, start, end, cl, state)) return false;
     }
@@ -300,19 +323,27 @@ bool HeaderParser::removeCommentsAndStringContents(String & header)
     size_t readPos = 0;
     size_t writePos = 0;
     size_t currentLine = 1;
+    size_t currentLineStart = 0;
     size_t openLine = 1;
     State state = State::None;
 
     while (readPos < header.size()) {
         const char c     = header[readPos++];
         const char nextC = readPos < header.size() ? header[readPos] : '\0';
-        if (c == '\n') ++currentLine;
+        if (c == '\n') {
+            currentLineStart = readPos;
+            ++currentLine;
+        }
 
         switch (state) {
             case State::None:
                 if (c == '/' && nextC == '/') {
-                    state = State::InLineComment;
-                    ++readPos;
+                    if (header.mid(currentLineStart, readPos - currentLineStart).contains("CFPerm")) {
+                        header[writePos++] = c;
+                    } else {
+                        state = State::InLineComment;
+                        ++readPos;
+                    }
                     continue;
                 }
                 if (c == '/' && nextC == '*') {
@@ -385,7 +416,8 @@ bool HeaderParser::removeCommentsAndStringContents(String & header)
 
 bool HeaderParser::parse(const String & headerRef)
 {
-    if (headerRef.indexOf("SERIALIZE_CLASS") == -1) return true;
+    static const Regex relevantRE(R"(SERIALIZE_CLASS|(?:^|\n)\s*CFPerm\s+\w+)");
+    if (!relevantRE.matchResult(headerRef).hasMatch()) return true;
 
     String header = headerRef;
 

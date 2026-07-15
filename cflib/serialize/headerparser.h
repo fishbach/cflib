@@ -14,11 +14,18 @@ namespace cflib::serialize {
 class HeaderParser
 {
 public:
+    struct NameDesc {
+        String name;
+        String desc;
+    };
+
+public:
     bool parse(const String & header);
     String lastError() const { return lastError_; }
 
-    bool hasSerializeElements() const { return !classes_.isEmpty(); }
+    bool hasSerializeElements() const { return !(classes_.isEmpty() && permissions_.isEmpty()); }
     SerializeTypeInfos classes() const { return classes_; }
+    const List<NameDesc> & permissions() const { return permissions_; }
 
 private:
     bool getVariables   (const String & in, int start, int end, SerializeTypeInfo & cl);
@@ -27,12 +34,14 @@ private:
     bool getCfSignals   (const String & in, int start, int end, SerializeTypeInfo & cl);
     bool getMembers     (const String & in, int start, int end, SerializeTypeInfo & cl, int & state);
     bool getMemberBlocks(const String & in, int start, int end, SerializeTypeInfo & cl, int & state);
+    bool getPermissions (const String & in, int start, int end, SerializeTypeInfo & cl);
     bool getClasses     (const String & in, int start, int end, SerializeTypeInfo cl);
     bool removeCommentsAndStringContents(String & header);
 
 private:
     String lastError_;
     SerializeTypeInfos classes_;
+    List<NameDesc> permissions_;
 };
 
 } // namespace
