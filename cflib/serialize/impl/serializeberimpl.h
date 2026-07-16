@@ -336,7 +336,7 @@ inline void serializeBER(const Set<T> & cl, uint64 tagNo, ByteArray & data, BERS
 {
     TLWriter tlw(data, tagNo);
     BERSerializerBase ser(data, true);
-    if (cl.empty()) return;
+    if (cl.isEmpty()) return;
     for (auto it = cl.begin() ; it != cl.end() ; ++it) ser << *it;
 }
 

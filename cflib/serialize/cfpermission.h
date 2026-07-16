@@ -18,6 +18,7 @@ public:
 
     static List<String> all();
     static CFPermission * lookup(const String & name);
+    static void assignIds(const Map<String, uint64> & permissionIds);
 
 public:
     const String name;

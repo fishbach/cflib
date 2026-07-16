@@ -5,7 +5,11 @@
  * Licensed under the MIT License.
  */
 
- #include "cfpermission.h"
+#include "cfpermission.h"
+
+#include <cflib/util/log.h>
+
+USE_LOG(LogCat::User)
 
 namespace cflib::serialize {
 
@@ -24,6 +28,15 @@ List<String> CFPermission::all()
 CFPermission * CFPermission::lookup(const String & name)
 {
     return registry().value(name);
+}
+
+void CFPermission::assignIds(const Map<String, uint64> & permissionIds)
+{
+    for (const String & perm : registry().keys()) {
+        uint64 id = permissionIds.value(perm);
+        if (id == 0) logWarn("no id for permission '%1' found", perm);
+        else         registry().value(perm)->id = id;
+    }
 }
 
 Map<String, CFPermission *> & CFPermission::registry()
