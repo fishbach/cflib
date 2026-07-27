@@ -198,11 +198,11 @@ int genSerialize(const std::string & headerName, const HeaderParser & hp, std::o
 
     if (!hp.permissions().isEmpty()) {
         out << "\n";
-        for (const HeaderParser::NameDesc & nd : hp.permissions()) {
-            String var = nd.name;
+        for (const CFPermission & perm : hp.permissions()) {
+            String var = perm.name;
             var.replace(".", "::");
-            out << "cflib::serialize::CFPermission " << var.str() << "(\"" << nd.name.str() << "\"";
-            if (!nd.desc.isNull()) out << ", \"" << nd.desc.str() << "\"";
+            out << "cflib::serialize::CFPermission " << var.str() << "(\"" << perm.name.str() << "\"";
+            if (!perm.description.isNull()) out << ", \"" << perm.description.str() << "\"";
             out << ");\n";
         }
     }

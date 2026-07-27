@@ -256,7 +256,7 @@ bool HeaderParser::getPermissions(const String & in, int start, int end, Seriali
     while (permMR.hasMatch()) {
         String desc = permMR.captured(2).trimmed();
         if (desc.isEmpty()) desc.clear();
-        permissions_ << NameDesc{prefix + permMR.captured(1), desc};
+        permissions_ << CFPermission{prefix + permMR.captured(1), desc};
         permStart += permMR.capturedStart() + permMR.capturedLength();
         permMR = permRE.matchResult(in.mid(permStart, end - permStart));
     }

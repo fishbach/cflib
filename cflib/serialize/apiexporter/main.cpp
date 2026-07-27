@@ -95,6 +95,7 @@ int main(int argc, char *argv[])
             return 3;
         }
         for (const SerializeTypeInfo & info : parser.classes()) infos << info;
+        infos.permissions += parser.permissions();
     }
 
     const SerializeTypeInfos missing = infos.fixPlaceholders();

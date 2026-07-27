@@ -13,16 +13,23 @@ USE_LOG(LogCat::User)
 
 namespace cflib::serialize {
 
-CFPermission::CFPermission(const char * name, const char * description) :
+CFPermission::CFPermission(const String & name, const String & description) :
     name(name),
     description(description)
 {
     registry()[this->name] = this;
 }
 
-List<String> CFPermission::all()
+String CFPermission::getNS() const
 {
-    return registry().keys();
+    ssize_t pos = name.lastIndexOf(".");
+    if (pos == -1) return {};
+    return name.left(pos).replace(".", "::");
+}
+
+StringList CFPermission::all()
+{
+    return registry().keys().sorted();
 }
 
 CFPermission * CFPermission::lookup(const String & name)
