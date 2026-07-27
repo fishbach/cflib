@@ -7,7 +7,7 @@
 
 #pragma once
 
-#include <cflib/serialize/cfpermission.h>
+#include <cflib/serialize/permission.h>
 #include <cflib/serialize/serializetypeinfo.h>
 
 namespace cflib::serialize {
@@ -20,7 +20,7 @@ public:
 
     bool hasSerializeElements() const { return !(classes_.isEmpty() && permissions_.isEmpty()); }
     SerializeTypeInfos classes() const { return classes_; }
-    const List<CFPermission> & permissions() const { return permissions_; }
+    const List<Permission> & permissions() const { return permissions_; }
 
 private:
     bool getVariables   (const String & in, int start, int end, SerializeTypeInfo & cl);
@@ -36,7 +36,7 @@ private:
 private:
     String lastError_;
     SerializeTypeInfos classes_;
-    List<CFPermission> permissions_;
+    List<Permission> permissions_;
 };
 
 } // namespace

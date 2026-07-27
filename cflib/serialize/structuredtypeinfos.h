@@ -7,7 +7,7 @@
 
 #pragma once
 
-#include <cflib/serialize/cfpermission.h>
+#include <cflib/serialize/permission.h>
 #include <cflib/serialize/serializetypeinfo.h>
 
 namespace cflib::serialize {
@@ -26,7 +26,7 @@ public:
     SerializeTypeInfos types()        const;
     SerializeTypeInfos services()     const { return services_.values(); }
 
-    List<CFPermission> permissions;
+    List<Permission> permissions;
 
 private:
     void checkNeeds(Map<String, SerializeTypeInfo> & needed, const SerializeTypeInfo & ti) const;

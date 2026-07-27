@@ -5,7 +5,7 @@
  * Licensed under the MIT License.
  */
 
-#include "cfpermission.h"
+#include "permission.h"
 
 #include <cflib/util/log.h>
 
@@ -13,31 +13,36 @@ USE_LOG(LogCat::User)
 
 namespace cflib::serialize {
 
-CFPermission::CFPermission(const String & name, const String & description) :
+Permission::Permission(const String & name, const String & description) :
     name(name),
     description(description)
 {
     registry()[this->name] = this;
 }
 
-String CFPermission::getNS() const
+String Permission::getNS() const
 {
     ssize_t pos = name.lastIndexOf(".");
     if (pos == -1) return {};
     return name.left(pos).replace(".", "::");
 }
 
-StringList CFPermission::all()
+String Permission::getNSPath() const
+{
+    return getNS().replace("::", "/").toLower();
+}
+
+StringList Permission::all()
 {
     return registry().keys().sorted();
 }
 
-CFPermission * CFPermission::lookup(const String & name)
+Permission * Permission::lookup(const String & name)
 {
     return registry().value(name);
 }
 
-void CFPermission::assignIds(const Map<String, uint64> & permissionIds)
+void Permission::assignIds(const Map<String, uint64> & permissionIds)
 {
     for (const String & perm : registry().keys()) {
         uint64 id = permissionIds.value(perm);
@@ -46,9 +51,9 @@ void CFPermission::assignIds(const Map<String, uint64> & permissionIds)
     }
 }
 
-Map<String, CFPermission *> & CFPermission::registry()
+Map<String, Permission *> & Permission::registry()
 {
-    static Map<String, CFPermission *> reg;
+    static Map<String, Permission *> reg;
     return reg;
 }
 

@@ -11,15 +11,16 @@
 
 namespace cflib::serialize {
 
-class CFPermission
+class Permission
 {
 public:
-    CFPermission(const String & name, const String & description = {});
+    Permission(const String & name, const String & description = {});
 
     String getNS() const;
+    String getNSPath() const;
 
     static StringList all();
-    static CFPermission * lookup(const String & name);
+    static Permission * lookup(const String & name);
     static void assignIds(const Map<String, uint64> & permissionIds);
 
 public:
@@ -28,7 +29,7 @@ public:
     uint32 id = 0;
 
 private:
-    static Map<String, CFPermission *> & registry();
+    static Map<String, Permission *> & registry();
 };
 
 }

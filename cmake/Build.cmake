@@ -21,7 +21,7 @@ endfunction()
 
 # application
 function(cf_app app)
-    cmake_parse_arguments(ARG "ENABLE_EXCEPTIONS;ENABLE_SER;CF_GENERATOR" "PCH;DAO" "DIRS;RESOURCES;OTHER_FILES;REMOTE_APIS" ${ARGN})
+    cmake_parse_arguments(ARG "ENABLE_EXCEPTIONS;ENABLE_SER;CF_GENERATOR" "PCH" "DIRS;RESOURCES;OTHER_FILES;DAO;REMOTE_APIS" ${ARGN})
     if(ARG_REMOTE_APIS)
         set(ARG_ENABLE_SER TRUE)
     endif()
@@ -61,9 +61,6 @@ function(cf_app app)
         target_include_directories(${app}_dao PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
         target_link_libraries(${app}_dao PUBLIC cflib_serialize)
         target_link_libraries(${app} PRIVATE ${app}_dao)
-        set_target_properties(${app} PROPERTIES
-            DAO_LIB_PATH ${ARG_DAO}
-        )
     endif()
 
     # remote APIs

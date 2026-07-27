@@ -23,20 +23,20 @@ public:
 
     void basic()
     {
-        TVERIFY(TestPerm1.name                              == "TestPerm1");
-        TVERIFY(TestPerm1.description                       == "some comment.");
-        TVERIFY(TestPerm1.id                                == 0);
-        TVERIFY(CFPermission::lookup("TestPerm1")           == &TestPerm1);
-        TVERIFY(test::perm::TestPerm2.name                  == "test.perm.TestPerm2");
-        TVERIFY(test::perm::TestPerm2.description           == "another, description?!");
-        TVERIFY(test::perm::TestPerm2.id                    == 0);
-        TVERIFY(CFPermission::lookup("test.perm.TestPerm2") == &test::perm::TestPerm2);
-        TVERIFY(test::perm::TestPerm3.name                  == "test.perm.TestPerm3");
-        TVERIFY(test::perm::TestPerm3.id                    == 0);
-        TVERIFY(CFPermission::lookup("test.perm.TestPerm3") == &test::perm::TestPerm3);
-        TVERIFY(testPerm::TestPerm4.name                    == "testPerm.TestPerm4");
-        TVERIFY(testPerm::TestPerm4.id                      == 0);
-        TVERIFY(CFPermission::lookup("testPerm.TestPerm4")  == &testPerm::TestPerm4);
+        TVERIFY(TestPerm1.name                            == "TestPerm1");
+        TVERIFY(TestPerm1.description                     == "some comment.");
+        TVERIFY(TestPerm1.id                              == 0);
+        TVERIFY(Permission::lookup("TestPerm1")           == &TestPerm1);
+        TVERIFY(test::perm::TestPerm2.name                == "test.perm.TestPerm2");
+        TVERIFY(test::perm::TestPerm2.description         == "another, description?!");
+        TVERIFY(test::perm::TestPerm2.id                  == 0);
+        TVERIFY(Permission::lookup("test.perm.TestPerm2") == &test::perm::TestPerm2);
+        TVERIFY(test::perm::TestPerm3.name                == "test.perm.TestPerm3");
+        TVERIFY(test::perm::TestPerm3.id                  == 0);
+        TVERIFY(Permission::lookup("test.perm.TestPerm3") == &test::perm::TestPerm3);
+        TVERIFY(testPerm::TestPerm4.name                  == "testPerm.TestPerm4");
+        TVERIFY(testPerm::TestPerm4.id                    == 0);
+        TVERIFY(Permission::lookup("testPerm.TestPerm4")  == &testPerm::TestPerm4);
     }
 };
 
