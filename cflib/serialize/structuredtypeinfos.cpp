@@ -8,6 +8,9 @@
 #include "structuredtypeinfos.h"
 
 #include <cflib/serialize/impl/registerclass.h>
+#include <cflib/util/log.h>
+
+USE_LOG(LogCat::Etc)
 
 namespace cflib::serialize {
 
@@ -97,7 +100,9 @@ void StructuredTypeInfos::fixPlaceholders(Map<String, SerializeTypeInfo> & missi
 
 void StructuredTypeInfos::fixPlaceholder(Map<String, SerializeTypeInfo> & missing, SerializeTypeInfo & ti)
 {
-    static const Regex basicRE(R"(^bool|u?int(?:8|16|32|64)?|float|(?:long)?double|ByteArray|String|DateTime$)");
+    const String phTypeName = ti.typeName;
+
+    static const Regex basicRE(R"(^(bool|u?int(?:8|16|32|64)?|float|(?:long)?double|ByteArray|String|DateTime)$)");
     Regex::MatchResult m = basicRE.matchResult(ti.typeName);
     if (m.hasMatch()) {
         ti.type = SerializeTypeInfo::Basic;
@@ -108,6 +113,7 @@ void StructuredTypeInfos::fixPlaceholder(Map<String, SerializeTypeInfo> & missin
         else if (m.captured(0) == "double"    ) ti.typeName = "float64";
         else if (m.captured(0) == "longdouble") ti.typeName = "float128";
         else                                    ti.typeName = m.captured(0);
+        logDebug("placeholder basic: %1 -> %2", phTypeName, ti.toString());
         return;
     }
 
@@ -129,6 +135,7 @@ void StructuredTypeInfos::fixPlaceholder(Map<String, SerializeTypeInfo> & missin
         ti.ns.clear();
         fixPlaceholders(missing, ti.bases[0]);
         ti.typeName = "List";
+        logDebug("placeholder list: %1 -> %2", phTypeName, ti.toString());
         return;
     }
 
@@ -148,6 +155,7 @@ void StructuredTypeInfos::fixPlaceholder(Map<String, SerializeTypeInfo> & missin
         fixPlaceholders(missing, ti.bases[1]);
         ti.typeName = m.captured(1);
         if (ti.typeName == "Hash") ti.typeName = "Map";
+        logDebug("placeholder map: %1 -> %2", phTypeName, ti.toString());
         return;
     }
 
@@ -158,6 +166,7 @@ void StructuredTypeInfos::fixPlaceholder(Map<String, SerializeTypeInfo> & missin
             SerializeTypeInfo & existing = types_[name];
             fixPlaceholders(missing, existing);
             ti = existing;
+            logDebug("placeholder obj: %1 -> %2", phTypeName, ti.toString());
             return;
         }
         if (ns.isEmpty()) {

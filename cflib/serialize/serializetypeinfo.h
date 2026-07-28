@@ -76,6 +76,8 @@ public:
     SerializeVariableTypeInfo() = default;
     SerializeVariableTypeInfo(const String & name, const SerializeTypeInfo & type, bool isRef = false) :
         name(name), type(type), isRef(isRef) {}
+
+    String toString() const;
 };
 
 class SerializeFunctionTypeInfo

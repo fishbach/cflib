@@ -16,6 +16,12 @@
     #undef minor
 #endif
 
+#define CF_SET_PROJECT_VERSION cflib::dao::Version::setCurrent(cflib::dao::Version( \
+    PROJECT_VERSION_MAJOR, \
+    PROJECT_VERSION_MINOR, \
+    PROJECT_VERSION_PATCH, \
+    PROJECT_VERSION_SUFFIX));
+
 namespace cflib::dao {
 
 class Version

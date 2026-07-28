@@ -22,6 +22,7 @@ public:
     static StringList all();
     static Permission * lookup(const String & name);
     static void assignIds(const Map<String, uint64> & permissionIds);
+    static Map<String, uint64> getPermissionIds();
 
 public:
     String name;

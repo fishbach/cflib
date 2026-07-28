@@ -7,6 +7,10 @@
 
 #include "headerparser.h"
 
+#include <cflib/util/log.h>
+
+USE_LOG(LogCat::Etc)
+
 namespace cflib::serialize {
 
 namespace {
@@ -59,6 +63,7 @@ bool HeaderParser::getVariables(const String & in, int start, int end, Serialize
         SerializeVariableTypeInfo var;
         var.type = rawTypeInfo(cl.getName(), m.captured(1));
         var.name = m.captured(2);
+        logDebug("var: %1", var.toString());
         cl.members.push_back(var);
         pos += m.capturedStart(0) + m.capturedLength(0);
     }

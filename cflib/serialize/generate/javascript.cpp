@@ -211,7 +211,7 @@ String formatTypeConstruction(const SerializeTypeInfo & ti, const String & raw)
     if (ti.type == SerializeTypeInfo::Class) {
         js << "new " << formatClassname(ti) << "(" << (raw == "null" ? "" : raw) << ")";
     } else if (ti.type == SerializeTypeInfo::Container) {
-        if (ti.typeName.startsWith("Pair<")) {
+        if (ti.typeName == "Pair") {
             if (raw == "null") js << "["
                 << formatTypeConstruction(ti.bases[0], "null") << ", "
                 << formatTypeConstruction(ti.bases[1], "null") << "]";
@@ -220,11 +220,11 @@ String formatTypeConstruction(const SerializeTypeInfo & ti, const String & raw)
                 << formatTypeConstruction(ti.bases[1], "null") << "] : ["
                 << formatTypeConstruction(ti.bases[0], raw + "[0]") << ", "
                 << formatTypeConstruction(ti.bases[1], raw + "[1]") << "])";
-        } else if (ti.typeName.startsWith("List<")) {
+        } else if (ti.typeName == "List") {
             if (raw == "null") js << "[]";
             else js << "(" << raw << " || []).map(function(__e) { return "
                 << formatTypeConstruction(ti.bases[0], "__e") << "; })";
-        } else if (ti.typeName.startsWith("Map<")) {
+        } else if (ti.typeName == "Map") {
             if (raw == "null") js << "[]";
             else js << "(" << raw << " || []).map(function(__e) { return ["
                 << formatTypeConstruction(ti.bases[0], "__e[0]")
@@ -487,6 +487,7 @@ String generatePermissions(const String & nsPath, const List<Permission> & permi
 
     for (const Permission & perm : permissions) {
         if (perm.getNSPath() != nsPath) continue;
+        logDebug("permission: %1 - %2", perm.name, perm.description);
         js << (nsPath.isEmpty() ? "export const " : "") << perm.name << " = new __permission(\""
             << perm.name << "\"" << (perm.description.isNull() ? "" : (", \"" + perm.description + "\"")) << ");\n";
     }
@@ -508,6 +509,7 @@ void generateJavaScript(const StructuredTypeInfos & typeInfos, const String & de
     // write services
     Set<String> files;
     for (const SerializeTypeInfo & ti : typeInfos.services()) {
+        logDebug("service: %1", ti.toString());
         String file = ti.getFilePath() + ".js";
         files << file;
         String js = generate(ti);
@@ -517,6 +519,7 @@ void generateJavaScript(const StructuredTypeInfos & typeInfos, const String & de
 
     // write classes
     for (const SerializeTypeInfo & ti : typeInfos.types()) {
+        logDebug("class: %1", ti.toString());
         util::mkPath(destJs + ti.getNSPath());
         String path = ti.getFilePath() + ".js";
         files << path;

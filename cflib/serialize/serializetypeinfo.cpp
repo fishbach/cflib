@@ -46,7 +46,7 @@ String SerializeTypeInfo::toString() const
         for (const SerializeVariableTypeInfo & inf : members) {
             if (isFirst) isFirst = false;
             else retval += ',';
-            if (inf.type.type != Null) retval += inf.type.toString() + " " + inf.name;
+            retval += inf.toString();
         }
         for (const SerializeFunctionTypeInfo & fn : functions) {
             if (isFirst) isFirst = false;
@@ -140,15 +140,23 @@ SerializeTypeInfos SerializeTypeInfo::allUsedClasses() const
     return rv.toList().sorted();
 }
 
+String SerializeVariableTypeInfo::toString() const
+{
+    if (type.isNull()) return {};
+    String rv = type.toString();
+    if (isRef) rv += " &";
+    if (!name.isEmpty()) rv += " " + name;
+    return rv;
+}
+
 String SerializeFunctionTypeInfo::toString() const
 {
     String retval = returnType.toString() + " " + name + "(";
     bool isFirst2 = true;
     for (const SerializeVariableTypeInfo & inf : parameters) {
         if (isFirst2) isFirst2 = false;
-        else retval += ',';
-        retval += inf.type.toString();
-        if (!inf.name.isEmpty()) retval += " " + inf.name;
+        else retval += ", ";
+        retval += inf.toString();
     }
     retval += ')';
     return retval;

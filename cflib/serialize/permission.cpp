@@ -51,6 +51,13 @@ void Permission::assignIds(const Map<String, uint64> & permissionIds)
     }
 }
 
+Map<String, uint64> Permission::getPermissionIds()
+{
+    Map<String, uint64> rv;
+    for (Permission * perm : registry().values()) rv[perm->name] = perm->id;
+    return rv;
+}
+
 Map<String, Permission *> & Permission::registry()
 {
     static Map<String, Permission *> reg;

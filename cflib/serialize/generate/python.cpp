@@ -116,14 +116,14 @@ String getSerializeCode(const SerializeTypeInfo & ti, const String & name)
     if (ti.type == SerializeTypeInfo::Class) {
         py << ".o(" << name << ")";
     } else if (ti.type == SerializeTypeInfo::Container) {
-        if (ti.typeName.startsWith("Pair<")) {
+        if (ti.typeName == "Pair") {
             py << ".p(" << name << ", lambda _e, _S: _S"
                << getSerializeCode(ti.bases[0], "_e[0]")
                << getSerializeCode(ti.bases[1], "_e[1]") << ")";
-        } else if (ti.typeName.startsWith("List<")) {
+        } else if (ti.typeName == "List") {
             py << ".map(" << name << ", lambda _e, _S: _S"
                << getSerializeCode(ti.bases[0], "_e") << ")";
-        } else if (ti.typeName.startsWith("Map<")) {
+        } else if (ti.typeName == "Map") {
             py << ".map((" << name << ".items() if " << name << " else None), lambda _e, _S: _S"
                << getSerializeCode(ti.bases[0], "_e[0]")
                << getSerializeCode(ti.bases[1], "_e[1]") << ")";
@@ -153,12 +153,12 @@ String getDeserializeCode(const SerializeTypeInfo & ti)
     if (ti.type == SerializeTypeInfo::Class) {
         py << formatClassname(ti) << "._deserialize(_D.a())";
     } else if (ti.type == SerializeTypeInfo::Container) {
-        if (ti.typeName.startsWith("Pair<")) {
+        if (ti.typeName == "Pair") {
             py << "(lambda _D: (" << getDeserializeCode(ti.bases[0]) << ", "
                << getDeserializeCode(ti.bases[1]) << "))(_ber.D(_D.a()))";
-        } else if (ti.typeName.startsWith("List<")) {
+        } else if (ti.typeName == "List") {
             py << "_D.map(lambda _D: " << getDeserializeCode(ti.bases[0]) << ")";
-        } else if (ti.typeName.startsWith("Map<")) {
+        } else if (ti.typeName == "Map") {
             py << "dict(_D.map(lambda _D: (" << getDeserializeCode(ti.bases[0]) << ", "
                << getDeserializeCode(ti.bases[1]) << ")))";
         } else {
