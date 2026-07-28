@@ -45,17 +45,17 @@ String SerializeTypeInfo::toString() const
         bool isFirst = true;
         for (const SerializeVariableTypeInfo & inf : members) {
             if (isFirst) isFirst = false;
-            else retval += ',';
+            else retval += ", ";
             retval += inf.toString();
         }
         for (const SerializeFunctionTypeInfo & fn : functions) {
             if (isFirst) isFirst = false;
-            else retval += ',';
+            else retval += ", ";
             retval += fn.toString();
         }
         for (const SerializeFunctionTypeInfo & fn : cfSignals) {
             if (isFirst) isFirst = false;
-            else retval += ',';
+            else retval += ", ";
             retval += fn.toString();
         }
         return retval + "}";
