@@ -5,14 +5,20 @@
  * Licensed under the MIT License.
  */
 
+const registry = {};
+
 var Permission = function(name, description) {
     this.name = name;
     this.description = description ? description : null;
     this.id = 0;
 
-    Permission.registry[name] = this;
+    registry[name] = this;
 };
 
-Permission.registry = {};
+Permission.assignIds = function(permissionIds) {
+    for (const nameId of permissionIds) {
+        if (nameId[0] in registry) registry[nameId[0]].id = nameId[1];
+    }
+};
 
 export default Permission;
