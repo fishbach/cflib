@@ -258,6 +258,9 @@ public:
         return it != d.end() ? it->second : def;
     }
 
+    K firstKey()   const { return d.empty() ? K() : d.begin()->first;  }
+    V firstValue() const { return d.empty() ? V() : d.begin()->second; }
+
     List<K> keys() const {
         List<K> r;
         r.reserve(d.size());
