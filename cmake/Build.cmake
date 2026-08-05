@@ -168,26 +168,31 @@ function(cf_configure_target target enable_exceptions pch enable_ser)
     endif()
 
     # resources
-    foreach(resource ${ARGN})
-        # get output filename (dir/resource.bin -> target_autogen/dir/resource.bin_rc.cpp)
-        set(rel_dir "${CMAKE_CURRENT_BINARY_DIR}/${target}_autogen")
-        get_filename_component(dir "${resource}" DIRECTORY)
-        if(dir)
-            set(rel_dir "${rel_dir}/${dir}")
-        endif()
-        set(source "${rel_dir}/${resource}_rc.cpp")
+    if(ARGN)
+        add_library(${target}_resources OBJECT)
+        target_link_libraries(${target}_resources PRIVATE cflib_base)
+        target_link_libraries(${target} PUBLIC ${target}_resources)
+        foreach(resource ${ARGN})
+            # get output filename (dir/resource.bin -> target_autogen/dir/resource.bin_rc.cpp)
+            set(rel_dir "${CMAKE_CURRENT_BINARY_DIR}/${target}_autogen")
+            get_filename_component(dir "${resource}" DIRECTORY)
+            if(dir)
+                set(rel_dir "${rel_dir}/${dir}")
+            endif()
+            set(source "${rel_dir}/${resource}_rc.cpp")
 
-        # add generation step
-        add_custom_command(
-            OUTPUT "${source}"
-            WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
-            COMMAND ${CMAKE_COMMAND} -E make_directory "${rel_dir}"
-            COMMAND bin2src "${resource}" "${source}"
-            DEPENDS bin2src "${resource}"
-            VERBATIM
-        )
-        target_sources(${target} PRIVATE "${source}")
-    endforeach()
+            # add generation step
+            add_custom_command(
+                OUTPUT "${source}"
+                WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
+                COMMAND ${CMAKE_COMMAND} -E make_directory "${rel_dir}"
+                COMMAND bin2src "${resource}" "${source}"
+                DEPENDS bin2src "${resource}"
+                VERBATIM
+            )
+            target_sources(${target}_resources PUBLIC "${source}")
+        endforeach()
+    endif()
 endfunction()
 
 # API generation
