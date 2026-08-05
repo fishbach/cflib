@@ -5,7 +5,6 @@
 # Licensed under the MIT License.
 
 cf_app(chatserver
-        cflib_dao
         cflib_net
     DIRS
         chatserver/services

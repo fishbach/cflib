@@ -6,17 +6,25 @@
 
 # library
 function(cf_lib lib)
-    cmake_parse_arguments(ARG "ENABLE_EXCEPTIONS;ENABLE_SER" "PCH" "PUBLIC;PRIVATE;DIRS;OTHER_FILES" ${ARGN})
+    cmake_parse_arguments(ARG "ENABLE_EXCEPTIONS;ENABLE_SER" "PCH" "PUBLIC;PRIVATE;DIRS;RESOURCES;OTHER_FILES;DAO;REMOTE_APIS" ${ARGN})
+    if(ARG_REMOTE_APIS)
+        set(ARG_ENABLE_SER TRUE)
+    endif()
 
+    # sources, libs and general config
     cf_find_sources(sources . ${ARG_DIRS} OTHER_FILES ${ARG_OTHER_FILES})
     if(ONLY_GENERATORS)
         add_library(${lib} EXCLUDE_FROM_ALL ${sources})
     else()
         add_library(${lib} ${sources})
     endif()
-    cf_configure_target(${lib} ${ARG_ENABLE_EXCEPTIONS} "${ARG_PCH}" ${ARG_ENABLE_SER})
+    cf_configure_target(${lib} ${ARG_ENABLE_EXCEPTIONS} "${ARG_PCH}" ${ARG_ENABLE_SER} ${ARG_RESOURCES})
     target_include_directories(${lib} PUBLIC "${PROJECT_SOURCE_DIR}")
     target_link_libraries(${lib} PUBLIC ${ARG_PUBLIC} PRIVATE ${ARG_PRIVATE})
+
+    # ARG_DAO and ARG_REMOTE_APIS
+    string(REGEX REPLACE "lib$" "" api_name ${lib})
+    cf_handle_args_dao_remote_apis(${lib} ${api_name})
 endfunction()
 
 # application
@@ -49,24 +57,8 @@ function(cf_app app)
     endif()
     target_link_libraries(${app} PRIVATE ${ARG_UNPARSED_ARGUMENTS})
 
-    # dao as lib
-    if(ARG_DAO)
-        cf_find_sources(sources ${ARG_DAO})
-        if(ONLY_GENERATORS)
-            add_library(${app}_dao EXCLUDE_FROM_ALL ${sources})
-        else()
-            add_library(${app}_dao ${sources})
-        endif()
-        cf_configure_target(${app}_dao FALSE "" TRUE)
-        target_include_directories(${app}_dao PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
-        target_link_libraries(${app}_dao PUBLIC cflib_serialize)
-        target_link_libraries(${app} PRIVATE ${app}_dao)
-    endif()
-
-    # remote APIs
-    if(ARG_REMOTE_APIS)
-        cf_handle_arg_remote_apis()
-    endif()
+    # ARG_DAO and ARG_REMOTE_APIS
+    cf_handle_args_dao_remote_apis(${app} ${app})
 
     # strip release builds and split debug info
     if(NOT APPLE)
@@ -199,10 +191,29 @@ function(cf_configure_target target enable_exceptions pch enable_ser)
 endfunction()
 
 # API generation
-function(cf_handle_arg_remote_apis)
+function(cf_handle_args_dao_remote_apis link_target api_name)
+    # dao as lib
+    if(ARG_DAO)
+        cf_find_sources(sources ${ARG_DAO})
+        if(ONLY_GENERATORS)
+            add_library(${api_name}_dao EXCLUDE_FROM_ALL ${sources})
+        else()
+            add_library(${api_name}_dao ${sources})
+        endif()
+        cf_configure_target(${api_name}_dao FALSE "" TRUE)
+        target_include_directories(${api_name}_dao PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
+        target_link_libraries(${api_name}_dao PUBLIC cflib_dao cflib_serialize)
+        target_link_libraries(${link_target} PUBLIC ${api_name}_dao)
+    endif()
+
+    # remote APIs
+    if(NOT ARG_REMOTE_APIS)
+        return()
+    endif()
+
     # collect all RMI_HEADERS
     set(RMI_HEADERS)
-    cf_get_dependent_targets(${app} DEP_TARGETS)
+    cf_get_dependent_targets(${link_target} DEP_TARGETS)
     foreach(dep_target IN LISTS DEP_TARGETS)
         get_target_property(dep_headers ${dep_target} DAO_HEADERS)
         if(NOT dep_headers STREQUAL "dep_headers-NOTFOUND")
@@ -256,7 +267,7 @@ function(cf_generate_api)
     endif()
 
     if(NOT RMI_SERVICE_TARGETS)
-        set(RMI_SERVICE_TARGETS ${app})
+        set(RMI_SERVICE_TARGETS ${link_target})
     endif()
 
     foreach(target ${RMI_SERVICE_TARGETS})
@@ -275,15 +286,15 @@ function(cf_generate_api)
     if(cpp IN_LIST REMOTE_APIS)
         # add ::services lib
         if(ONLY_GENERATORS)
-            add_library(${app}_services EXCLUDE_FROM_ALL)
+            add_library(${api_name}_services EXCLUDE_FROM_ALL)
         else()
-            add_library(${app}_services)
+            add_library(${api_name}_services)
         endif()
-        add_library(${app}::services ALIAS ${app}_services)
-        target_include_directories(${app}_services PUBLIC "${REMOTE_ABS_DIR}/cpp")
-        target_link_libraries(${app}_services PUBLIC cflib_net)
+        add_library(${api_name}::services ALIAS ${api_name}_services)
+        target_include_directories(${api_name}_services PUBLIC "${REMOTE_ABS_DIR}/cpp")
+        target_link_libraries(${api_name}_services PUBLIC cflib_net)
         if(ARG_DAO)
-            target_link_libraries(${app}_services PUBLIC ${app}_dao)
+            target_link_libraries(${api_name}_services PUBLIC ${api_name}_dao)
         endif()
 
         # add cpp output files
@@ -304,14 +315,14 @@ function(cf_generate_api)
                     "${REMOTE_ABS_DIR}/cpp/remote/${file}.h"
                     "${REMOTE_ABS_DIR}/cpp/remote/${file}.cpp"
                 )
-                target_sources(${app}_services
+                target_sources(${api_name}_services
                     PUBLIC  "${REMOTE_DIR}/cpp/remote/${file}.h"
                     PRIVATE "${REMOTE_DIR}/cpp/remote/${file}.cpp"
                 )
             endforeach()
         endforeach()
     else()
-        string(MAKE_C_IDENTIFIER "${app}_${REMOTE_DIR}_api" target)
+        string(MAKE_C_IDENTIFIER "${api_name}_${REMOTE_DIR}_api" target)
         if(ONLY_GENERATORS)
             add_custom_target(${target} EXCLUDE_FROM_ALL DEPENDS ${output})
         else()
@@ -334,7 +345,7 @@ function(cf_generate_api)
     # command
     add_custom_command(
         OUTPUT ${output}
-        COMMAND apiexporter --dest "${REMOTE_ABS_DIR}" ${GIT_HASH} --name ${app} ${output_types} ${RMI_HEADERS}
+        COMMAND apiexporter --dest "${REMOTE_ABS_DIR}" ${GIT_HASH} --name ${api_name} ${output_types} ${RMI_HEADERS}
         DEPENDS apiexporter ${RMI_HEADERS}
         VERBATIM
     )
