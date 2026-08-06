@@ -12,6 +12,9 @@ project(
     LANGUAGES C CXX
 )
 
+option(BUILD_TESTS    "activate build for tests"    ON)
+option(BUILD_EXAMPLES "activate build for examples" ON)
+
 if(NOT COMMAND cf_lib)
     include(cmake/ProjectConfig.cmake)
 endif()
@@ -24,9 +27,6 @@ cf_add_other(cflib_files
     README.md
     js/*
 )
-
-option(BUILD_TESTS    "activate build for tests"    ON)
-option(BUILD_EXAMPLES "activate build for examples" ON)
 
 add_subdirectory(cflib)
 if(BUILD_EXAMPLES)
