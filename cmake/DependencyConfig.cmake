@@ -22,3 +22,11 @@ find_package(ZLIB REQUIRED)
 
 # Threads
 find_package(Threads REQUIRED)
+
+# doctest
+if(BUILD_TESTS)
+    find_package(
+        doctest 2.5.3
+        REQUIRED
+    )
+endif()

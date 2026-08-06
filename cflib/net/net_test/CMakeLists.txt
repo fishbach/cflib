@@ -4,4 +4,4 @@
 #
 # Licensed under the MIT License.
 
-cf_test(net_test cflib_net DIRS test ENABLE_SER)
+cf_test_old(net_test cflib_net DIRS test ENABLE_SER)

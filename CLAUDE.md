@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 # Claude Code Configuration
 
-IMPORTANT: Before performing any task or modifying code, you MUST read the `AGENTS.md` file in the root directory. It contains the build/test commands, build options, CMake macros (`cf_lib`/`cf_app`/`cf_test`/`cf_remote`), code-generation tooling, the test framework, and common mistakes.
+IMPORTANT: Before performing any task or modifying code, you MUST read the `AGENTS.md` file in the root directory. It contains the build/test commands, build options, CMake macros (`cf_lib`/`cf_app`/`cf_test_old`/`cf_remote`), code-generation tooling, the test framework, and common mistakes.
 
 - Always cross-reference `AGENTS.md` for build commands and architectural decisions.
 - Do not duplicate content from `AGENTS.md` here. This file covers only the big-picture architecture that spans multiple files/modules.

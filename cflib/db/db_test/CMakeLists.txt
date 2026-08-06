@@ -4,7 +4,7 @@
 #
 # Licensed under the MIT License.
 
-cf_test(db_test cflib_db
+cf_test_old(db_test cflib_db
     RESOURCES schema.sql
 )
 

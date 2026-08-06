@@ -18,7 +18,7 @@ ctest [--test-dir build] [--parallel] [-R <regex>]
 | `ENABLE_PSQL` | OFF | Build PostgreSQL support |
 | `ENABLE_SQLITE` | OFF | Build SQLite support (FetchContent) |
 | `BUILD_EXAMPLES` | ON | Build example applications |
-| `ENABLE_SER` | - | Enable auto-code generation in `cf_lib()`/`cf_app()`/`cf_test()` |
+| `ENABLE_SER` | - | Enable auto-code generation in `cf_lib()`/`cf_app()`/`cf_test_old()` |
 | `ENABLE_EXCEPTIONS` | - | Enable/disable exceptions (default: ON for crypt, OFF for others) |
 
 ## C++ Standard
@@ -45,7 +45,7 @@ See `MODULES` file for complete dependency information.
 
 ## CMake Macros
 
-### `cf_lib(lib, ...)` / `cf_app(app, ...)` / `cf_test(test, lib, ...)`
+### `cf_lib(lib, ...)` / `cf_app(app, ...)` / `cf_test_old(test, lib, ...)`
 
 See parameters in current version. Key flags: `ENABLE_EXCEPTIONS`, `ENABLE_SER`, `PCH <header>`, `DIRS <dirs>`, `OTHER_FILES <files>`.
 
@@ -55,7 +55,7 @@ Used in `remote/` subdirectory of apps with RMI services. Creates `app_services`
 
 ## Code Generation (ENABLE_SER)
 
-When `ENABLE_SER` is enabled in `cf_lib()`/`cf_app()`/`cf_test()`:
+When `ENABLE_SER` is enabled in `cf_lib()`/`cf_app()`/`cf_test_old()`:
 - Scans all `.h` files for `SERIALIZE_CLASS` markers
 - Generates `*_ser.cpp` files in `target_autogen/`
 - If `SERIALIZE_CLASS` combined with `RMIService` markers: generates RMI service handler code
@@ -96,6 +96,6 @@ Macros:
 
 1. **Running cmake only once**—must re-run after adding new source files
 2. **Assuming all modules build by default**—`db` requires `ENABLE_PSQL` or `ENABLE_SQLITE`
-3. **Misunderstanding `ENABLE_SER`**—needs to be explicitly passed to `cf_lib()`/`cf_app()`/`cf_test()` to enable codegen
+3. **Misunderstanding `ENABLE_SER`**—needs to be explicitly passed to `cf_lib()`/`cf_app()`/`cf_test_old()` to enable codegen
 4. **Typo in compile commands flag**—use `CMAKE_EXPORT_COMPILER_COMMANDS`, not `CMAKE_EXPORT_COMPILE_COMMANDS`
 5. **Wrong module dependency order**—see `MODULES` file (uses underscores: `cflib_base`, not dots: `cflib.base`)
