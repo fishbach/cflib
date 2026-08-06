@@ -10,71 +10,61 @@
 
 using namespace cflib::serialize;
 
-class Dynamic_Test : public cflib::util::TestBase
+TEST_SUITE("Dynamic") {
+
+TEST_CASE("Dynamic: serializeNull")
 {
-public:
-    std::vector<cflib::util::TestMethod> testMethods() const override {
-        auto self = const_cast<Dynamic_Test *>(this);
-        return {
-            {"serializeNull", [self]() { self->serializeNull(); }},
-            {"serialize",     [self]() { self->serialize(); }}
-        };
-    }
+    DynamicUse in;
+    in.y = 23;
+    BERSerializer ser;
+    ser << in;
 
-    void serializeNull()
-    {
-        DynamicUse in;
-        in.y = 23;
-        BERSerializer ser;
-        ser << in;
+    DynamicUse out;
+    BERDeserializer deser(ser.data());
+    deser >> out;
 
-        DynamicUse out;
-        BERDeserializer deser(ser.data());
-        deser >> out;
+    REQUIRE(in.y == out.y);
+    REQUIRE(!in.d);
+    REQUIRE(in.e.isEmpty());
+    REQUIRE(in.z == out.z);
+}
 
-        TVERIFY(in.y == out.y);
-        TVERIFY(!in.d);
-        TVERIFY(in.e.isEmpty());
-        TVERIFY(in.z == out.z);
-    }
+TEST_CASE("Dynamic: serialize")
+{
+    DynamicUse in;
+    in.y = 23;
+    DynamicA * dynA = new DynamicA();
+    dynA->x = 42;
+    dynA->t1 = 1;
+    dynA->t2 = 2;
+    dynA->t3 = 3;
+    dynA->a = 45;
+    in.d.reset(dynA);
+    DynamicB * dynB = new DynamicB();
+    dynB->b = 123.45;
+    in.e.push_back(SharedPtr<DynamicBase>(dynB));
+    in.z = 666;
+    BERSerializer ser;
+    ser << in;
 
-    void serialize()
-    {
-        DynamicUse in;
-        in.y = 23;
-        DynamicA * dynA = new DynamicA();
-        dynA->x = 42;
-        dynA->t1 = 1;
-        dynA->t2 = 2;
-        dynA->t3 = 3;
-        dynA->a = 45;
-        in.d.reset(dynA);
-        DynamicB * dynB = new DynamicB();
-        dynB->b = 123.45;
-        in.e.push_back(SharedPtr<DynamicBase>(dynB));
-        in.z = 666;
-        BERSerializer ser;
-        ser << in;
+    DynamicUse out;
+    BERDeserializer deser(ser.data());
+    deser >> out;
 
-        DynamicUse out;
-        BERDeserializer deser(ser.data());
-        deser >> out;
+    REQUIRE_EQ(out.y, 23);
+    REQUIRE(out.d);
+    auto da = cflib::base::dynamic_pointer_cast<DynamicA>(out.d);
+    REQUIRE(da);
+    REQUIRE_EQ(da->x, 42);
+    REQUIRE_EQ(da->t1, 1);
+    REQUIRE_EQ(da->t2, 2);
+    REQUIRE_EQ(da->t3, 3);
+    REQUIRE_EQ(da->a, 45);
+    REQUIRE_EQ((int)out.e.size(), 1);
+    auto db = cflib::base::dynamic_pointer_cast<DynamicB>(out.e[0]);
+    REQUIRE(db);
+    REQUIRE_EQ(db->b, 123.45);
+    REQUIRE_EQ(out.z, 666);
+}
 
-        TCOMPARE(out.y, 23);
-        TVERIFY(out.d);
-        auto da = cflib::base::dynamic_pointer_cast<DynamicA>(out.d);
-        TVERIFY(da);
-        TCOMPARE(da->x, 42);
-        TCOMPARE(da->t1, 1);
-        TCOMPARE(da->t2, 2);
-        TCOMPARE(da->t3, 3);
-        TCOMPARE(da->a, 45);
-        TCOMPARE((int)out.e.size(), 1);
-        auto db = cflib::base::dynamic_pointer_cast<DynamicB>(out.e[0]);
-        TVERIFY(db);
-        TCOMPARE(db->b, 123.45);
-        TCOMPARE(out.z, 666);
-    }
-};
-
-ADD_TEST(Dynamic_Test)
+}

@@ -123,309 +123,295 @@ protected:
 
 }
 
-class TCP_Test : public cflib::util::TestBase
+TEST_SUITE("TCP") {
+
+TEST_CASE("TCP: writerClose")
 {
-public:
-    std::vector<cflib::util::TestMethod> testMethods() const override {
-        auto self = const_cast<TCP_Test *>(this);
-        return {
-            {"test_writerClose",       [self]() { self->test_writerClose(); }},
-            {"test_readerClose",       [self]() { self->test_readerClose(); }},
-            {"test_hardClose",         [self]() { self->test_hardClose(); }},
-            {"test_sendAndDelete",     [self]() { self->test_sendAndDelete(); }},
-            {"test_connectionRefused", [self]() { self->test_connectionRefused(); }},
-            {"test_encryption",        [self]() { self->test_encryption(); }},
-            {"test_IPv6",              [self]() { self->test_IPv6(); }}
-        };
+    Server serv;
+    REQUIRE(serv.start("127.0.0.1", 12301));
+    TCPManager cli;
+    TCPConnData * data = cli.openConnection("127.0.0.1", 12301);
+    REQUIRE(data != 0);
+    ClientConn * conn = new ClientConn(data);
+
+    msgSem.acquire(2);
+    REQUIRE_EQ((int)msgs.size(), 2);
+    REQUIRE(msgs.contains("cli new: 127.0.0.1:12301"));
+    REQUIRE(msgs.contains("srv new: 127.0.0.1"));
+    msgs.clear();
+
+    conn->write("1st msg", true);
+    msgSem.acquire(2);
+    REQUIRE_EQ((int)msgs.size(), 2);
+    REQUIRE(msgs.contains("cli writeFinished"));
+    REQUIRE(msgs.contains("srv read: 1st msg"));
+    msgs.clear();
+
+    conn->write("ping 1");
+    msgSem.acquire(2);
+    REQUIRE_EQ((int)msgs.size(), 2);
+    REQUIRE(msgs.contains("srv read: ping 1"));
+    REQUIRE(msgs.contains("cli read: pong 1"));
+    msgs.clear();
+
+    conn->write("ping 2");
+    conn->close(TCPConn::WriteClosed);
+    conn->write("no msg");
+    msgSem.acquire(3);
+    REQUIRE_EQ((int)msgs.size(), 3);
+    REQUIRE(msgs.contains("srv read: ping 2"));
+    REQUIRE(msgs.contains("cli read: pong 2"));
+    REQUIRE(msgs.contains("srv closed: 1"));
+    msgs.clear();
+
+    conn->close();
+    msgSem.acquire(1);
+    REQUIRE_EQ((int)msgs.size(), 1);
+    REQUIRE(msgs.contains("cli closed: 3"));
+    msgs.clear();
+
+    delete conn;
+    for (auto * sc : serv.conns) delete sc;
+    msgSem.acquire(2);
+    REQUIRE_EQ((int)msgs.size(), 2);
+    REQUIRE(msgs.contains("cli deleted"));
+    REQUIRE(msgs.contains("srv deleted"));
+    msgs.clear();
+}
+
+TEST_CASE("TCP: readerClose")
+{
+    Server serv;
+    REQUIRE(serv.start("127.0.0.1", 12301));
+    TCPManager cli;
+    TCPConnData * data = cli.openConnection("127.0.0.1", 12301);
+    REQUIRE(data != 0);
+    ClientConn * conn = new ClientConn(data);
+
+    msgSem.acquire(2);
+    REQUIRE_EQ((int)msgs.size(), 2);
+    REQUIRE(msgs.contains("cli new: 127.0.0.1:12301"));
+    REQUIRE(msgs.contains("srv new: 127.0.0.1"));
+    msgs.clear();
+
+    conn->write("1st msg");
+    msgSem.acquire(1);
+    REQUIRE_EQ((int)msgs.size(), 1);
+    REQUIRE(msgs.contains("srv read: 1st msg"));
+    msgs.clear();
+
+    conn->write("close");
+    msgSem.acquire(3);
+    REQUIRE_EQ((int)msgs.size(), 3);
+    REQUIRE(msgs.contains("srv read: close"));
+    REQUIRE(msgs.contains("srv closed: 3"));
+    REQUIRE(msgs.contains("cli closed: 1"));
+    msgs.clear();
+
+    delete conn;
+    for (auto * sc : serv.conns) delete sc;
+    msgSem.acquire(2);
+    REQUIRE_EQ((int)msgs.size(), 2);
+    REQUIRE(msgs.contains("cli deleted"));
+    REQUIRE(msgs.contains("srv deleted"));
+    msgs.clear();
+}
+
+TEST_CASE("TCP: hardClose")
+{
+    Server serv;
+    REQUIRE(serv.start("127.0.0.1", 12301));
+    TCPManager cli;
+    TCPConnData * data = cli.openConnection("127.0.0.1", 12301);
+    REQUIRE(data != 0);
+    ClientConn * conn = new ClientConn(data);
+
+    msgSem.acquire(2);
+    REQUIRE_EQ((int)msgs.size(), 2);
+    REQUIRE(msgs.contains("cli new: 127.0.0.1:12301"));
+    REQUIRE(msgs.contains("srv new: 127.0.0.1"));
+    msgs.clear();
+
+    conn->write("1st msg");
+    msgSem.acquire(1);
+    REQUIRE_EQ((int)msgs.size(), 1);
+    REQUIRE(msgs.contains("srv read: 1st msg"));
+    msgs.clear();
+
+    conn->write("hard");
+
+    msgSem.acquire(3);
+    REQUIRE_EQ((int)msgs.size(), 3);
+    REQUIRE(msgs.contains("srv read: hard"));
+    REQUIRE(msgs.contains("srv closed: 7"));
+    REQUIRE(msgs.contains("cli closed: 7"));
+    msgs.clear();
+
+    delete conn;
+    for (auto * sc : serv.conns) delete sc;
+    msgSem.acquire(2);
+    REQUIRE_EQ((int)msgs.size(), 2);
+    REQUIRE(msgs.contains("cli deleted"));
+    REQUIRE(msgs.contains("srv deleted"));
+    msgs.clear();
+}
+
+TEST_CASE("TCP: sendAndDelete")
+{
+    Server serv;
+    REQUIRE(serv.start("127.0.0.1", 12301));
+    TCPManager cli;
+    TCPConnData * data = cli.openConnection("127.0.0.1", 12301);
+    REQUIRE(data != 0);
+    ClientConn * conn = new ClientConn(data);
+
+    msgSem.acquire(2);
+    REQUIRE_EQ((int)msgs.size(), 2);
+    REQUIRE(msgs.contains("cli new: 127.0.0.1:12301"));
+    REQUIRE(msgs.contains("srv new: 127.0.0.1"));
+    msgs.clear();
+
+    conn->write("writeclose");
+    msgSem.acquire(2);
+    REQUIRE_EQ((int)msgs.size(), 2);
+    REQUIRE(msgs.contains("srv read: writeclose"));
+    REQUIRE(msgs.contains("cli closed: 1"));
+    msgs.clear();
+
+    conn->write("1st msg");
+    delete conn;
+    msgSem.acquire(3);
+    REQUIRE_EQ((int)msgs.size(), 3);
+    REQUIRE(msgs.contains("cli deleted"));
+    REQUIRE(msgs.contains("srv read: 1st msg"));
+    REQUIRE(msgs.contains("srv closed: 3"));
+    msgs.clear();
+
+    for (auto * sc : serv.conns) delete sc;
+    msgSem.acquire(1);
+    REQUIRE_EQ((int)msgs.size(), 1);
+    REQUIRE(msgs.contains("srv deleted"));
+    msgs.clear();
+}
+
+TEST_CASE("TCP: connectionRefused")
+{
+    TCPManager cli;
+    TCPConnData * data = cli.openConnection("127.0.0.1", 12301);
+    REQUIRE(data != 0);
+    ClientConn * conn = new ClientConn(data);
+
+    msgSem.acquire(2);
+    REQUIRE_EQ((int)msgs.size(), 2);
+    REQUIRE(msgs.contains("cli new: 127.0.0.1:12301"));
+    REQUIRE(msgs.contains("cli closed: 7"));
+    msgs.clear();
+
+    conn->write("no msg", true);
+    delete conn;
+    msgSem.acquire(1);
+    REQUIRE_EQ((int)msgs.size(), 1);
+    REQUIRE(msgs.contains("cli deleted"));
+    msgs.clear();
+}
+
+TEST_CASE("TCP: encryption")
+{
+    TLSCredentials serverCreds;
+    REQUIRE_EQ((int)serverCreds.addCerts(cert1 + cert2 + cert3), 3);
+    REQUIRE(serverCreds.addPrivateKey(detach(cert1PrivateKey), "SuperSecure123"));
+
+    Server serv(1);
+    REQUIRE(serv.start("127.0.0.1", 12301, serverCreds));
+
+    TCPManager cli(1);
+    REQUIRE_EQ((int)cli.clientCredentials().addCerts(cert3, true), 1);
+    REQUIRE_EQ((int)cli.clientCredentials().addRevocationLists(cert2Crl), 1);
+
+    TCPConnData * data = cli.openTLSConnection("127.0.0.1", 12301);
+    REQUIRE(data != 0);
+    ClientConn * conn = new ClientConn(data);
+
+    msgSem.acquire(2);
+    REQUIRE_EQ((int)msgs.size(), 2);
+    REQUIRE(msgs.contains("cli new: 127.0.0.1:12301"));
+    REQUIRE(msgs.contains("srv new: 127.0.0.1"));
+    msgs.clear();
+
+    conn->write("ping 1", true);
+    msgSem.acquire(3);
+    REQUIRE_EQ((int)msgs.size(), 3);
+    REQUIRE(msgs.contains("cli writeFinished"));
+    REQUIRE(msgs.contains("srv read: ping 1"));
+    REQUIRE(msgs.contains("cli read: pong 1"));
+    msgs.clear();
+
+    conn->close(TCPConn::ReadClosed);
+    msgSem.acquire(1);
+    REQUIRE_EQ((int)msgs.size(), 1);
+    REQUIRE(msgs.contains("cli closed: 1"));
+    msgs.clear();
+
+    delete conn;
+    msgSem.acquire(2);
+    REQUIRE_EQ((int)msgs.size(), 2);
+    REQUIRE(msgs.contains("cli deleted"));
+    REQUIRE(msgs.contains("srv closed: 1"));
+    msgs.clear();
+
+    for (auto * sc : serv.conns) delete sc;
+    msgSem.acquire(1);
+    REQUIRE_EQ((int)msgs.size(), 1);
+    REQUIRE(msgs.contains("srv deleted"));
+    msgs.clear();
+}
+
+TEST_CASE("TCP: IPv6")
+{
+    if (system("ifconfig | grep -q 'inet6 ::1'") != 0) {
+        MESSAGE("SKIP: no IPv6 loopback device");
+        return;
     }
 
-    void test_writerClose()
-    {
-        Server serv;
-        TVERIFY(serv.start("127.0.0.1", 12301));
-        TCPManager cli;
-        TCPConnData * data = cli.openConnection("127.0.0.1", 12301);
-        TVERIFY(data != 0);
-        ClientConn * conn = new ClientConn(data);
+    Server serv;
+    REQUIRE(serv.start("::1", 12301));
+    TCPManager cli;
+    TCPConnData * data = cli.openConnection("::1", 12301);
+    REQUIRE(data != 0);
+    ClientConn * conn = new ClientConn(data);
 
-        msgSem.acquire(2);
-        TCOMPARE((int)msgs.size(), 2);
-        TVERIFY(msgs.contains("cli new: 127.0.0.1:12301"));
-        TVERIFY(msgs.contains("srv new: 127.0.0.1"));
-        msgs.clear();
+    msgSem.acquire(2);
+    REQUIRE_EQ((int)msgs.size(), 2);
+    REQUIRE(msgs.contains("cli new: ::1:12301"));
+    REQUIRE(msgs.contains("srv new: ::1"));
+    msgs.clear();
 
-        conn->write("1st msg", true);
-        msgSem.acquire(2);
-        TCOMPARE((int)msgs.size(), 2);
-        TVERIFY(msgs.contains("cli writeFinished"));
-        TVERIFY(msgs.contains("srv read: 1st msg"));
-        msgs.clear();
+    conn->write("ping 1", true);
+    msgSem.acquire(3);
+    REQUIRE_EQ((int)msgs.size(), 3);
+    REQUIRE(msgs.contains("cli writeFinished"));
+    REQUIRE(msgs.contains("srv read: ping 1"));
+    REQUIRE(msgs.contains("cli read: pong 1"));
+    msgs.clear();
 
-        conn->write("ping 1");
-        msgSem.acquire(2);
-        TCOMPARE((int)msgs.size(), 2);
-        TVERIFY(msgs.contains("srv read: ping 1"));
-        TVERIFY(msgs.contains("cli read: pong 1"));
-        msgs.clear();
+    conn->close(TCPConn::ReadClosed);
+    msgSem.acquire(1);
+    REQUIRE_EQ((int)msgs.size(), 1);
+    REQUIRE(msgs.contains("cli closed: 1"));
+    msgs.clear();
 
-        conn->write("ping 2");
-        conn->close(TCPConn::WriteClosed);
-        conn->write("no msg");
-        msgSem.acquire(3);
-        TCOMPARE((int)msgs.size(), 3);
-        TVERIFY(msgs.contains("srv read: ping 2"));
-        TVERIFY(msgs.contains("cli read: pong 2"));
-        TVERIFY(msgs.contains("srv closed: 1"));
-        msgs.clear();
+    delete conn;
+    msgSem.acquire(2);
+    REQUIRE_EQ((int)msgs.size(), 2);
+    REQUIRE(msgs.contains("cli deleted"));
+    REQUIRE(msgs.contains("srv closed: 1"));
+    msgs.clear();
 
-        conn->close();
-        msgSem.acquire(1);
-        TCOMPARE((int)msgs.size(), 1);
-        TVERIFY(msgs.contains("cli closed: 3"));
-        msgs.clear();
+    for (auto * sc : serv.conns) delete sc;
+    msgSem.acquire(1);
+    REQUIRE_EQ((int)msgs.size(), 1);
+    REQUIRE(msgs.contains("srv deleted"));
+    msgs.clear();
+}
 
-        delete conn;
-        for (auto * sc : serv.conns) delete sc;
-        msgSem.acquire(2);
-        TCOMPARE((int)msgs.size(), 2);
-        TVERIFY(msgs.contains("cli deleted"));
-        TVERIFY(msgs.contains("srv deleted"));
-        msgs.clear();
-    }
-
-    void test_readerClose()
-    {
-        Server serv;
-        TVERIFY(serv.start("127.0.0.1", 12301));
-        TCPManager cli;
-        TCPConnData * data = cli.openConnection("127.0.0.1", 12301);
-        TVERIFY(data != 0);
-        ClientConn * conn = new ClientConn(data);
-
-        msgSem.acquire(2);
-        TCOMPARE((int)msgs.size(), 2);
-        TVERIFY(msgs.contains("cli new: 127.0.0.1:12301"));
-        TVERIFY(msgs.contains("srv new: 127.0.0.1"));
-        msgs.clear();
-
-        conn->write("1st msg");
-        msgSem.acquire(1);
-        TCOMPARE((int)msgs.size(), 1);
-        TVERIFY(msgs.contains("srv read: 1st msg"));
-        msgs.clear();
-
-        conn->write("close");
-        msgSem.acquire(3);
-        TCOMPARE((int)msgs.size(), 3);
-        TVERIFY(msgs.contains("srv read: close"));
-        TVERIFY(msgs.contains("srv closed: 3"));
-        TVERIFY(msgs.contains("cli closed: 1"));
-        msgs.clear();
-
-        delete conn;
-        for (auto * sc : serv.conns) delete sc;
-        msgSem.acquire(2);
-        TCOMPARE((int)msgs.size(), 2);
-        TVERIFY(msgs.contains("cli deleted"));
-        TVERIFY(msgs.contains("srv deleted"));
-        msgs.clear();
-    }
-
-    void test_hardClose()
-    {
-        Server serv;
-        TVERIFY(serv.start("127.0.0.1", 12301));
-        TCPManager cli;
-        TCPConnData * data = cli.openConnection("127.0.0.1", 12301);
-        TVERIFY(data != 0);
-        ClientConn * conn = new ClientConn(data);
-
-        msgSem.acquire(2);
-        TCOMPARE((int)msgs.size(), 2);
-        TVERIFY(msgs.contains("cli new: 127.0.0.1:12301"));
-        TVERIFY(msgs.contains("srv new: 127.0.0.1"));
-        msgs.clear();
-
-        conn->write("1st msg");
-        msgSem.acquire(1);
-        TCOMPARE((int)msgs.size(), 1);
-        TVERIFY(msgs.contains("srv read: 1st msg"));
-        msgs.clear();
-
-        conn->write("hard");
-
-        msgSem.acquire(3);
-        TCOMPARE((int)msgs.size(), 3);
-        TVERIFY(msgs.contains("srv read: hard"));
-        TVERIFY(msgs.contains("srv closed: 7"));
-        TVERIFY(msgs.contains("cli closed: 7"));
-        msgs.clear();
-
-        delete conn;
-        for (auto * sc : serv.conns) delete sc;
-        msgSem.acquire(2);
-        TCOMPARE((int)msgs.size(), 2);
-        TVERIFY(msgs.contains("cli deleted"));
-        TVERIFY(msgs.contains("srv deleted"));
-        msgs.clear();
-    }
-
-    void test_sendAndDelete()
-    {
-        Server serv;
-        TVERIFY(serv.start("127.0.0.1", 12301));
-        TCPManager cli;
-        TCPConnData * data = cli.openConnection("127.0.0.1", 12301);
-        TVERIFY(data != 0);
-        ClientConn * conn = new ClientConn(data);
-
-        msgSem.acquire(2);
-        TCOMPARE((int)msgs.size(), 2);
-        TVERIFY(msgs.contains("cli new: 127.0.0.1:12301"));
-        TVERIFY(msgs.contains("srv new: 127.0.0.1"));
-        msgs.clear();
-
-        conn->write("writeclose");
-        msgSem.acquire(2);
-        TCOMPARE((int)msgs.size(), 2);
-        TVERIFY(msgs.contains("srv read: writeclose"));
-        TVERIFY(msgs.contains("cli closed: 1"));
-        msgs.clear();
-
-        conn->write("1st msg");
-        delete conn;
-        msgSem.acquire(3);
-        TCOMPARE((int)msgs.size(), 3);
-        TVERIFY(msgs.contains("cli deleted"));
-        TVERIFY(msgs.contains("srv read: 1st msg"));
-        TVERIFY(msgs.contains("srv closed: 3"));
-        msgs.clear();
-
-        for (auto * sc : serv.conns) delete sc;
-        msgSem.acquire(1);
-        TCOMPARE((int)msgs.size(), 1);
-        TVERIFY(msgs.contains("srv deleted"));
-        msgs.clear();
-    }
-
-    void test_connectionRefused()
-    {
-        TCPManager cli;
-        TCPConnData * data = cli.openConnection("127.0.0.1", 12301);
-        TVERIFY(data != 0);
-        ClientConn * conn = new ClientConn(data);
-
-        msgSem.acquire(2);
-        TCOMPARE((int)msgs.size(), 2);
-        TVERIFY(msgs.contains("cli new: 127.0.0.1:12301"));
-        TVERIFY(msgs.contains("cli closed: 7"));
-        msgs.clear();
-
-        conn->write("no msg", true);
-        delete conn;
-        msgSem.acquire(1);
-        TCOMPARE((int)msgs.size(), 1);
-        TVERIFY(msgs.contains("cli deleted"));
-        msgs.clear();
-    }
-
-    void test_encryption()
-    {
-        TLSCredentials serverCreds;
-        TCOMPARE((int)serverCreds.addCerts(cert1 + cert2 + cert3), 3);
-        TVERIFY(serverCreds.addPrivateKey(detach(cert1PrivateKey), "SuperSecure123"));
-
-        Server serv(1);
-        TVERIFY(serv.start("127.0.0.1", 12301, serverCreds));
-
-        TCPManager cli(1);
-        TCOMPARE((int)cli.clientCredentials().addCerts(cert3, true), 1);
-        TCOMPARE((int)cli.clientCredentials().addRevocationLists(cert2Crl), 1);
-
-        TCPConnData * data = cli.openTLSConnection("127.0.0.1", 12301);
-        TVERIFY(data != 0);
-        ClientConn * conn = new ClientConn(data);
-
-        msgSem.acquire(2);
-        TCOMPARE((int)msgs.size(), 2);
-        TVERIFY(msgs.contains("cli new: 127.0.0.1:12301"));
-        TVERIFY(msgs.contains("srv new: 127.0.0.1"));
-        msgs.clear();
-
-        conn->write("ping 1", true);
-        msgSem.acquire(3);
-        TCOMPARE((int)msgs.size(), 3);
-        TVERIFY(msgs.contains("cli writeFinished"));
-        TVERIFY(msgs.contains("srv read: ping 1"));
-        TVERIFY(msgs.contains("cli read: pong 1"));
-        msgs.clear();
-
-        conn->close(TCPConn::ReadClosed);
-        msgSem.acquire(1);
-        TCOMPARE((int)msgs.size(), 1);
-        TVERIFY(msgs.contains("cli closed: 1"));
-        msgs.clear();
-
-        delete conn;
-        msgSem.acquire(2);
-        TCOMPARE((int)msgs.size(), 2);
-        TVERIFY(msgs.contains("cli deleted"));
-        TVERIFY(msgs.contains("srv closed: 1"));
-        msgs.clear();
-
-        for (auto * sc : serv.conns) delete sc;
-        msgSem.acquire(1);
-        TCOMPARE((int)msgs.size(), 1);
-        TVERIFY(msgs.contains("srv deleted"));
-        msgs.clear();
-    }
-
-    void test_IPv6()
-    {
-        if (system("ifconfig | grep -q 'inet6 ::1'") != 0) {
-            QSKIP("no IPv6 loopback device");
-        }
-
-        Server serv;
-        TVERIFY(serv.start("::1", 12301));
-        TCPManager cli;
-        TCPConnData * data = cli.openConnection("::1", 12301);
-        TVERIFY(data != 0);
-        ClientConn * conn = new ClientConn(data);
-
-        msgSem.acquire(2);
-        TCOMPARE((int)msgs.size(), 2);
-        TVERIFY(msgs.contains("cli new: ::1:12301"));
-        TVERIFY(msgs.contains("srv new: ::1"));
-        msgs.clear();
-
-        conn->write("ping 1", true);
-        msgSem.acquire(3);
-        TCOMPARE((int)msgs.size(), 3);
-        TVERIFY(msgs.contains("cli writeFinished"));
-        TVERIFY(msgs.contains("srv read: ping 1"));
-        TVERIFY(msgs.contains("cli read: pong 1"));
-        msgs.clear();
-
-        conn->close(TCPConn::ReadClosed);
-        msgSem.acquire(1);
-        TCOMPARE((int)msgs.size(), 1);
-        TVERIFY(msgs.contains("cli closed: 1"));
-        msgs.clear();
-
-        delete conn;
-        msgSem.acquire(2);
-        TCOMPARE((int)msgs.size(), 2);
-        TVERIFY(msgs.contains("cli deleted"));
-        TVERIFY(msgs.contains("srv closed: 1"));
-        msgs.clear();
-
-        for (auto * sc : serv.conns) delete sc;
-        msgSem.acquire(1);
-        TCOMPARE((int)msgs.size(), 1);
-        TVERIFY(msgs.contains("srv deleted"));
-        msgs.clear();
-    }
-};
-
-ADD_TEST(TCP_Test)
+}

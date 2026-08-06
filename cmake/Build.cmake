@@ -73,31 +73,30 @@ endfunction()
 
 # test
 function(cf_test test lib)
-    cmake_parse_arguments(ARG "ENABLE_EXCEPTIONS;ENABLE_SER" "PCH" "DIRS;RESOURCES" ${ARGN})
+    cmake_parse_arguments(ARG "ENABLE_SER;NO_DISCOVER" "PCH" "DIRS;RESOURCES;PROPERTIES" ${ARGN})
 
+    # sources, libs and general config
     cf_find_sources(sources . ${ARG_DIRS})
     if(ONLY_GENERATORS)
         add_executable(${test} EXCLUDE_FROM_ALL ${sources})
     else()
         add_executable(${test} ${sources})
     endif()
-    cf_configure_target(${test} ${ARG_ENABLE_EXCEPTIONS} "${ARG_PCH}" ${ARG_ENABLE_SER} ${ARG_RESOURCES})
+    if(NOT ARG_PCH)
+        set(ARG_PCH "${cflib_SOURCE_DIR}/cflib/base.h")
+    endif()
+    cf_configure_target(${test} TRUE "${ARG_PCH}" ${ARG_ENABLE_SER} ${ARG_RESOURCES})
     target_link_libraries(${test} PRIVATE ${lib} cflib_testmain)
-    doctest_discover_tests(${test})
-endfunction()
 
-function(cf_test_old test lib)
-    cmake_parse_arguments(ARG "ENABLE_EXCEPTIONS;ENABLE_SER" "PCH" "DIRS;RESOURCES" ${ARGN})
-
-    cf_find_sources(sources . ${ARG_DIRS})
-    if(ONLY_GENERATORS)
-        add_executable(${test} EXCLUDE_FROM_ALL ${sources})
+    # register for ctest
+    if(ARG_NO_DISCOVER)
+        add_test(NAME ${test} COMMAND ${test})
+        if(ARG_PROPERTIES)
+            set_tests_properties(${test} PROPERTIES ${ARG_PROPERTIES})
+        endif()
     else()
-        add_executable(${test} ${sources})
+        doctest_discover_tests(${test} PROPERTIES ${ARG_PROPERTIES})
     endif()
-    cf_configure_target(${test} ${ARG_ENABLE_EXCEPTIONS} "${ARG_PCH}" ${ARG_ENABLE_SER} ${ARG_RESOURCES})
-    target_link_libraries(${test} PRIVATE ${lib})
-    add_test(NAME ${test} COMMAND ${test})
 endfunction()
 
 # configure target

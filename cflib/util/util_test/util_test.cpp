@@ -14,126 +14,112 @@
 
 using namespace cflib::util;
 
-class Util_Test : public cflib::util::TestBase
+TEST_SUITE("util") {
+
+TEST_CASE("util: flatten")
 {
-public:
-    std::vector<cflib::util::TestMethod> testMethods() const override {
-        auto self = const_cast<Util_Test *>(this);
-        return {
-            {"test_flatten", [self]() { self->test_flatten(); }},
-            {"test_String", [self]() { self->test_String(); }},
-            {"test_ByteArray", [self]() { self->test_ByteArray(); }},
-            {"test_deflate", [self]() { self->test_deflate(); }},
-            {"test_tupleCompare", [self]() { self->test_tupleCompare(); }},
-            {"test_callWithTupleParams", [self]() { self->test_callWithTupleParams(); }}
-        };
-    }
+    REQUIRE_EQ(flatten(String()), String());
+    REQUIRE_EQ(flatten(""), String(""));
+    REQUIRE_EQ(flatten("      \r\n"), String(""));
+    REQUIRE_EQ(flatten("     ab_c & 1.2-3\r\n"), String("ab_c_1.2-3"));
+    REQUIRE_EQ(flatten("     _ \r\n_"), String("_"));
+}
 
-    void test_flatten()
-    {
-        TCOMPARE(flatten(String()), String());
-        TCOMPARE(flatten(""), String(""));
-        TCOMPARE(flatten("      \r\n"), String(""));
-        TCOMPARE(flatten("     ab_c & 1.2-3\r\n"), String("ab_c_1.2-3"));
-        TCOMPARE(flatten("     _ \r\n_"), String("_"));
-    }
+TEST_CASE("util: String")
+{
+    REQUIRE(String().isNull());
+    REQUIRE(!String("").isNull());
+}
 
-    void test_String()
-    {
-        TVERIFY(String().isNull());
-        TVERIFY(!String("").isNull());
-    }
+TEST_CASE("util: ByteArray")
+{
+    ByteArray ba;
+    REQUIRE(ba.isNull());
+    ba.reserve(997);
+    REQUIRE(ba.capacity() >= (size_t)997);
+    ba.resize(123);
+    REQUIRE_EQ(ba.size(), (size_t)123);
+    REQUIRE(ba.capacity() >= (size_t)997);
+    ba.resize(0);
+    REQUIRE(!ba.isNull());
+    REQUIRE_EQ(ba.size(), (size_t)0);
+    REQUIRE(ba.capacity() >= (size_t)997);
+    ba.clear();
+    REQUIRE(ba.isNull());
+    REQUIRE(!ByteArray("").isNull());
+}
 
-    void test_ByteArray()
-    {
-        ByteArray ba;
-        TVERIFY(ba.isNull());
-        ba.reserve(997);
-        TVERIFY(ba.capacity() >= (size_t)997);
-        ba.resize(123);
-        TCOMPARE(ba.size(), (size_t)123);
-        TVERIFY(ba.capacity() >= (size_t)997);
-        ba.resize(0);
-        TVERIFY(!ba.isNull());
-        TCOMPARE(ba.size(), (size_t)0);
-        TVERIFY(ba.capacity() >= (size_t)997);
-        ba.clear();
-        TVERIFY(ba.isNull());
-        TVERIFY(!ByteArray("").isNull());
-    }
-
-    void test_deflate()
-    {
-        auto checkDeflate = [](const ByteArray & source, const ByteArray & enc, int level) -> bool {
-            ByteArray data = source;
-            deflateRaw(data, level);
-            if (data != ByteArray::fromHex(enc)) {
-                std::cout << std::format("compressed differs:\nis: {}\nex: {}\n",
-                    data.toHex().constData(), enc.constData());
-                return false;
-            }
-            inflateRaw(data);
-            if (data != source) {
-                std::cout << std::format("decompressed differs:\nis: {}\nex: {}\n",
-                    data.toHex().constData(), source.toHex().constData());
-                return false;
-            }
-            return true;
-        };
-
-        TVERIFY(checkDeflate(ByteArray(),                 "00",                     1));
-        TVERIFY(checkDeflate(ByteArray(),                 "00",                     0));
-        TVERIFY(checkDeflate(ByteArray("\0", 1),          "620000",                 1));
-        TVERIFY(checkDeflate(ByteArray("A"),              "720400",                 1));
-        TVERIFY(checkDeflate(ByteArray("A"),              "000100feff4100",         0));
-        TVERIFY(checkDeflate(ByteArray("bc"),             "4a4a0600",               1));
-        TVERIFY(checkDeflate(ByteArray("Hello"),          "f248cdc9c90700",         1));
-        TVERIFY(checkDeflate(ByteArray("Hello"),          "000500faff48656c6c6f00", 0));
-        ByteArray data;
+TEST_CASE("util: deflate")
+{
+    auto checkDeflate = [](const ByteArray & source, const ByteArray & enc, int level) -> bool {
+        ByteArray data = source;
+        deflateRaw(data, level);
+        if (data != ByteArray::fromHex(enc)) {
+            std::cout << std::format("compressed differs:\nis: {}\nex: {}\n",
+                data.toHex().constData(), enc.constData());
+            return false;
+        }
         inflateRaw(data);
-        TVERIFY(data.isEmpty());
-        data = "\x00";
-        inflateRaw(data);
-        TVERIFY(data.isEmpty());
-    }
+        if (data != source) {
+            std::cout << std::format("decompressed differs:\nis: {}\nex: {}\n",
+                data.toHex().constData(), source.toHex().constData());
+            return false;
+        }
+        return true;
+    };
 
-    void test_tupleCompare()
-    {
-        TVERIFY( equal(std::tuple<int, float>(2, 3.14f), 2, 3.14f));
-        TVERIFY(!equal(std::tuple<int, float>(2, 3.14f), 2, 3.2f));
-        TVERIFY( equal(std::tuple<int, float>(2, 3.14f), 2));
-        TVERIFY(!equal(std::tuple<int, float>(2, 3.14f), 3));
-        TVERIFY( equal(std::tuple<int, float>(2, 3.14f)));
+    REQUIRE(checkDeflate(ByteArray(),                 "00",                     1));
+    REQUIRE(checkDeflate(ByteArray(),                 "00",                     0));
+    REQUIRE(checkDeflate(ByteArray("\0", 1),          "620000",                 1));
+    REQUIRE(checkDeflate(ByteArray("A"),              "720400",                 1));
+    REQUIRE(checkDeflate(ByteArray("A"),              "000100feff4100",         0));
+    REQUIRE(checkDeflate(ByteArray("bc"),             "4a4a0600",               1));
+    REQUIRE(checkDeflate(ByteArray("Hello"),          "f248cdc9c90700",         1));
+    REQUIRE(checkDeflate(ByteArray("Hello"),          "000500faff48656c6c6f00", 0));
+    ByteArray data;
+    inflateRaw(data);
+    REQUIRE(data.isEmpty());
+    data = "\x00";
+    inflateRaw(data);
+    REQUIRE(data.isEmpty());
+}
 
-        TVERIFY( partialEqual(std::tuple<int, float>(2, 3.14f), 2, 2, 3.14f));
-        TVERIFY(!partialEqual(std::tuple<int, float>(2, 3.14f), 2, 2, 3.2f));
-        TVERIFY(!partialEqual(std::tuple<int, float>(2, 3.14f), 2, 3, 3.14f));
-        TVERIFY( partialEqual(std::tuple<int, float>(2, 3.14f), 2, 2));
-        TVERIFY(!partialEqual(std::tuple<int, float>(2, 3.14f), 2, 3));
-        TVERIFY( partialEqual(std::tuple<int, float>(2, 3.14f), 2));
+TEST_CASE("util: tupleCompare")
+{
+    REQUIRE( equal(std::tuple<int, float>(2, 3.14f), 2, 3.14f));
+    REQUIRE(!equal(std::tuple<int, float>(2, 3.14f), 2, 3.2f));
+    REQUIRE( equal(std::tuple<int, float>(2, 3.14f), 2));
+    REQUIRE(!equal(std::tuple<int, float>(2, 3.14f), 3));
+    REQUIRE( equal(std::tuple<int, float>(2, 3.14f)));
 
-        TVERIFY( partialEqual(std::tuple<int, float>(2, 3.14f), 1, 2, 3.14f));
-        TVERIFY( partialEqual(std::tuple<int, float>(2, 3.14f), 1, 2, 3.2f));
-        TVERIFY(!partialEqual(std::tuple<int, float>(2, 3.14f), 1, 3, 3.14f));
-        TVERIFY( partialEqual(std::tuple<int, float>(2, 3.14f), 1, 2));
-        TVERIFY(!partialEqual(std::tuple<int, float>(2, 3.14f), 1, 3));
-        TVERIFY( partialEqual(std::tuple<int, float>(2, 3.14f), 1));
+    REQUIRE( partialEqual(std::tuple<int, float>(2, 3.14f), 2, 2, 3.14f));
+    REQUIRE(!partialEqual(std::tuple<int, float>(2, 3.14f), 2, 2, 3.2f));
+    REQUIRE(!partialEqual(std::tuple<int, float>(2, 3.14f), 2, 3, 3.14f));
+    REQUIRE( partialEqual(std::tuple<int, float>(2, 3.14f), 2, 2));
+    REQUIRE(!partialEqual(std::tuple<int, float>(2, 3.14f), 2, 3));
+    REQUIRE( partialEqual(std::tuple<int, float>(2, 3.14f), 2));
 
-        TVERIFY( partialEqual(std::tuple<int, float>(2, 3.14f), 0, 3, 3.2f));
-        TVERIFY( partialEqual(std::tuple<int, float>(2, 3.14f), 0));
-    }
+    REQUIRE( partialEqual(std::tuple<int, float>(2, 3.14f), 1, 2, 3.14f));
+    REQUIRE( partialEqual(std::tuple<int, float>(2, 3.14f), 1, 2, 3.2f));
+    REQUIRE(!partialEqual(std::tuple<int, float>(2, 3.14f), 1, 3, 3.14f));
+    REQUIRE( partialEqual(std::tuple<int, float>(2, 3.14f), 1, 2));
+    REQUIRE(!partialEqual(std::tuple<int, float>(2, 3.14f), 1, 3));
+    REQUIRE( partialEqual(std::tuple<int, float>(2, 3.14f), 1));
 
-    void test_callWithTupleParams()
-    {
-        int i = 0;
-        float f = 0.0;
-        callWithTupleParams<void>([&](int pi, float pf) { i = pi; f = pf; }, std::tuple<int, float>(2, 3.14f));
-        TCOMPARE(i, 2);
-        TCOMPARE(f, 3.14f);
-        callWithTupleParams<void>([&](int & i, float pf) { ++i; f = pf; }, std::tuple<float>(2.34f), i);
-        TCOMPARE(i, 3);
-        TCOMPARE(f, 2.34f);
-    }
+    REQUIRE( partialEqual(std::tuple<int, float>(2, 3.14f), 0, 3, 3.2f));
+    REQUIRE( partialEqual(std::tuple<int, float>(2, 3.14f), 0));
+}
 
-};
-ADD_TEST(Util_Test)
+TEST_CASE("util: callWithTupleParams")
+{
+    int i = 0;
+    float f = 0.0;
+    callWithTupleParams<void>([&](int pi, float pf) { i = pi; f = pf; }, std::tuple<int, float>(2, 3.14f));
+    REQUIRE_EQ(i, 2);
+    REQUIRE_EQ(f, 3.14f);
+    callWithTupleParams<void>([&](int & i, float pf) { ++i; f = pf; }, std::tuple<float>(2.34f), i);
+    REQUIRE_EQ(i, 3);
+    REQUIRE_EQ(f, 2.34f);
+}
+
+}

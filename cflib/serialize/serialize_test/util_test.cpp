@@ -10,104 +10,91 @@
 
 using namespace cflib::serialize;
 
-class Util_Test : public cflib::util::TestBase
+TEST_SUITE("serialize") {
+
+TEST_CASE("serialize: getTLVLength")
 {
-public:
-    std::vector<cflib::util::TestMethod> testMethods() const override {
-        auto self = const_cast<Util_Test *>(this);
-        return {
-            {"test_getTLVLength",  [self]() { self->test_getTLVLength(); }},
-            {"test_toByteArray",   [self]() { self->test_toByteArray(); }},
-            {"test_fromByteArray", [self]() { self->test_fromByteArray(); }},
-            {"test_sizes",         [self]() { self->test_sizes(); }},
-            {"test_readAndCall",   [self]() { self->test_readAndCall(); }}
-        };
-    }
+    uint64 tag;
+    int tagLen;
+    int lengthSize;
+    REQUIRE_EQ(getTLVLength(ByteArray::fromHex(""            ), tag, tagLen, lengthSize), -1);
+    REQUIRE_EQ(getTLVLength(ByteArray::fromHex("c1"          ), tag, tagLen, lengthSize), -1);
+    REQUIRE_EQ(getTLVLength(ByteArray::fromHex("c100"        ), tag, tagLen, lengthSize),  0); REQUIRE_EQ(lengthSize, 1);
+    REQUIRE_EQ(getTLVLength(ByteArray::fromHex("c18100"      ), tag, tagLen, lengthSize),  0); REQUIRE_EQ(lengthSize, 2);
+    REQUIRE_EQ(getTLVLength(ByteArray::fromHex("c180"        ), tag, tagLen, lengthSize), -2);
+    REQUIRE_EQ(getTLVLength(ByteArray::fromHex("c101"        ), tag, tagLen, lengthSize), -1);
+    REQUIRE_EQ(getTLVLength(ByteArray::fromHex("c10100"      ), tag, tagLen, lengthSize),  1); REQUIRE_EQ(lengthSize, 1);
+    REQUIRE_EQ(getTLVLength(ByteArray::fromHex("c1810100"    ), tag, tagLen, lengthSize),  1); REQUIRE_EQ(lengthSize, 2);
+    REQUIRE_EQ(getTLVLength(ByteArray::fromHex("c1847FFFFFF9"), tag, tagLen, lengthSize), -1);
+    REQUIRE_EQ(getTLVLength(ByteArray::fromHex("c1847FFFFFFA"), tag, tagLen, lengthSize), -3);
+    REQUIRE_EQ(getTLVLength(ByteArray::fromHex("c18480000000"), tag, tagLen, lengthSize), -3);
+    REQUIRE_EQ(getTLVLength(ByteArray::fromHex("c188"        ), tag, tagLen, lengthSize), -1);
+    REQUIRE_EQ(getTLVLength(ByteArray::fromHex("c189"        ), tag, tagLen, lengthSize), -3);
 
-    void test_getTLVLength()
-    {
-        uint64 tag;
-        int tagLen;
-        int lengthSize;
-        TCOMPARE(getTLVLength(ByteArray::fromHex(""            ), tag, tagLen, lengthSize), -1);
-        TCOMPARE(getTLVLength(ByteArray::fromHex("c1"          ), tag, tagLen, lengthSize), -1);
-        TCOMPARE(getTLVLength(ByteArray::fromHex("c100"        ), tag, tagLen, lengthSize),  0); TCOMPARE(lengthSize, 1);
-        TCOMPARE(getTLVLength(ByteArray::fromHex("c18100"      ), tag, tagLen, lengthSize),  0); TCOMPARE(lengthSize, 2);
-        TCOMPARE(getTLVLength(ByteArray::fromHex("c180"        ), tag, tagLen, lengthSize), -2);
-        TCOMPARE(getTLVLength(ByteArray::fromHex("c101"        ), tag, tagLen, lengthSize), -1);
-        TCOMPARE(getTLVLength(ByteArray::fromHex("c10100"      ), tag, tagLen, lengthSize),  1); TCOMPARE(lengthSize, 1);
-        TCOMPARE(getTLVLength(ByteArray::fromHex("c1810100"    ), tag, tagLen, lengthSize),  1); TCOMPARE(lengthSize, 2);
-        TCOMPARE(getTLVLength(ByteArray::fromHex("c1847FFFFFF9"), tag, tagLen, lengthSize), -1);
-        TCOMPARE(getTLVLength(ByteArray::fromHex("c1847FFFFFFA"), tag, tagLen, lengthSize), -3);
-        TCOMPARE(getTLVLength(ByteArray::fromHex("c18480000000"), tag, tagLen, lengthSize), -3);
-        TCOMPARE(getTLVLength(ByteArray::fromHex("c188"        ), tag, tagLen, lengthSize), -1);
-        TCOMPARE(getTLVLength(ByteArray::fromHex("c189"        ), tag, tagLen, lengthSize), -3);
+    getTLVLength(ByteArray::fromHex("c000"    ), tag, tagLen, lengthSize); REQUIRE_EQ(tag, (uint64)  0); REQUIRE_EQ(tagLen, 1);
+    getTLVLength(ByteArray::fromHex("c100"    ), tag, tagLen, lengthSize); REQUIRE_EQ(tag, (uint64)  1); REQUIRE_EQ(tagLen, 1);
+    getTLVLength(ByteArray::fromHex("DE00"    ), tag, tagLen, lengthSize); REQUIRE_EQ(tag, (uint64) 30); REQUIRE_EQ(tagLen, 1);
+    getTLVLength(ByteArray::fromHex("DF1F00"  ), tag, tagLen, lengthSize); REQUIRE_EQ(tag, (uint64) 31); REQUIRE_EQ(tagLen, 2);
+    getTLVLength(ByteArray::fromHex("DF7F00"  ), tag, tagLen, lengthSize); REQUIRE_EQ(tag, (uint64)127); REQUIRE_EQ(tagLen, 2);
+    getTLVLength(ByteArray::fromHex("DF810000"), tag, tagLen, lengthSize); REQUIRE_EQ(tag, (uint64)128); REQUIRE_EQ(tagLen, 3);
+    getTLVLength(ByteArray::fromHex("DF810100"), tag, tagLen, lengthSize); REQUIRE_EQ(tag, (uint64)129); REQUIRE_EQ(tagLen, 3);
+}
 
-        getTLVLength(ByteArray::fromHex("c000"    ), tag, tagLen, lengthSize); TCOMPARE(tag, (uint64)  0); TCOMPARE(tagLen, 1);
-        getTLVLength(ByteArray::fromHex("c100"    ), tag, tagLen, lengthSize); TCOMPARE(tag, (uint64)  1); TCOMPARE(tagLen, 1);
-        getTLVLength(ByteArray::fromHex("DE00"    ), tag, tagLen, lengthSize); TCOMPARE(tag, (uint64) 30); TCOMPARE(tagLen, 1);
-        getTLVLength(ByteArray::fromHex("DF1F00"  ), tag, tagLen, lengthSize); TCOMPARE(tag, (uint64) 31); TCOMPARE(tagLen, 2);
-        getTLVLength(ByteArray::fromHex("DF7F00"  ), tag, tagLen, lengthSize); TCOMPARE(tag, (uint64)127); TCOMPARE(tagLen, 2);
-        getTLVLength(ByteArray::fromHex("DF810000"), tag, tagLen, lengthSize); TCOMPARE(tag, (uint64)128); TCOMPARE(tagLen, 3);
-        getTLVLength(ByteArray::fromHex("DF810100"), tag, tagLen, lengthSize); TCOMPARE(tag, (uint64)129); TCOMPARE(tagLen, 3);
-    }
+TEST_CASE("serialize: toByteArray")
+{
+    REQUIRE_EQ(toByteArray(0, 0), ByteArray::fromHex("C08100"));
+    REQUIRE_EQ(toByteArray(0), ByteArray::fromHex(""));
 
-    void test_toByteArray()
-    {
-        TCOMPARE(toByteArray(0, 0), ByteArray::fromHex("C08100"));
-        TCOMPARE(toByteArray(0), ByteArray::fromHex(""));
+    REQUIRE_EQ(toByteArray(1), ByteArray::fromHex("C10101"));
+    REQUIRE_EQ(toByteArray(-1), ByteArray::fromHex("C101FF"));
+    REQUIRE_EQ(toByteArray("bla"), ByteArray::fromHex("C103626C61"));
 
-        TCOMPARE(toByteArray(1), ByteArray::fromHex("C10101"));
-        TCOMPARE(toByteArray(-1), ByteArray::fromHex("C101FF"));
-        TCOMPARE(toByteArray("bla"), ByteArray::fromHex("C103626C61"));
+    REQUIRE_EQ(toByteArray(1,    30), ByteArray::fromHex("DE0101"));
+    REQUIRE_EQ(toByteArray(1,    31), ByteArray::fromHex("DF1F0101"));
+    REQUIRE_EQ(toByteArray(1,   127), ByteArray::fromHex("DF7F0101"));
+    REQUIRE_EQ(toByteArray(1,   128), ByteArray::fromHex("DF81000101"));
+    REQUIRE_EQ(toByteArray(1,   129), ByteArray::fromHex("DF81010101"));
+    REQUIRE_EQ(toByteArray(1,   255), ByteArray::fromHex("DF817F0101"));
+    REQUIRE_EQ(toByteArray(1,   256), ByteArray::fromHex("DF82000101"));
+    REQUIRE_EQ(toByteArray(1, 16383), ByteArray::fromHex("DFFF7F0101"));
+    REQUIRE_EQ(toByteArray(1, 16384), ByteArray::fromHex("DF8180000101"));
 
-        TCOMPARE(toByteArray(1,    30), ByteArray::fromHex("DE0101"));
-        TCOMPARE(toByteArray(1,    31), ByteArray::fromHex("DF1F0101"));
-        TCOMPARE(toByteArray(1,   127), ByteArray::fromHex("DF7F0101"));
-        TCOMPARE(toByteArray(1,   128), ByteArray::fromHex("DF81000101"));
-        TCOMPARE(toByteArray(1,   129), ByteArray::fromHex("DF81010101"));
-        TCOMPARE(toByteArray(1,   255), ByteArray::fromHex("DF817F0101"));
-        TCOMPARE(toByteArray(1,   256), ByteArray::fromHex("DF82000101"));
-        TCOMPARE(toByteArray(1, 16383), ByteArray::fromHex("DFFF7F0101"));
-        TCOMPARE(toByteArray(1, 16384), ByteArray::fromHex("DF8180000101"));
+    REQUIRE_EQ(toByteArray(ByteArray(),   3), ByteArray::fromHex(""));
+    REQUIRE_EQ(toByteArray(ByteArray(""), 3), ByteArray::fromHex("C300"));
+}
 
-        TCOMPARE(toByteArray(ByteArray(),   3), ByteArray::fromHex(""));
-        TCOMPARE(toByteArray(ByteArray(""), 3), ByteArray::fromHex("C300"));
-    }
+TEST_CASE("serialize: fromByteArray")
+{
+    REQUIRE_EQ(fromByteArray<int>(ByteArray::fromHex("")), 0);
+    REQUIRE_EQ(fromByteArray<int>(ByteArray::fromHex("C000")), 0);
+    REQUIRE_EQ(fromByteArray<int>(ByteArray::fromHex("C08100")), 0);
+    REQUIRE_EQ(fromByteArray<int>(ByteArray::fromHex("C10101")), 1);
+    REQUIRE_EQ(fromByteArray<int>(ByteArray::fromHex("C101FF")), -1);
+    REQUIRE_EQ(fromByteArray<String>(ByteArray::fromHex("")), String());
+    REQUIRE_EQ(fromByteArray<String>(ByteArray::fromHex("C000")), String());
+    REQUIRE(!fromByteArray<String>(ByteArray::fromHex("C000")).isNull());
+    REQUIRE_EQ(fromByteArray<String>(ByteArray::fromHex("C08100")), String());
+    REQUIRE(fromByteArray<String>(ByteArray::fromHex("C08100")).isNull());
+    REQUIRE_EQ(fromByteArray<String>(ByteArray::fromHex("C103626C61")), String("bla"));
+}
 
-    void test_fromByteArray()
-    {
-        TCOMPARE(fromByteArray<int>(ByteArray::fromHex("")), 0);
-        TCOMPARE(fromByteArray<int>(ByteArray::fromHex("C000")), 0);
-        TCOMPARE(fromByteArray<int>(ByteArray::fromHex("C08100")), 0);
-        TCOMPARE(fromByteArray<int>(ByteArray::fromHex("C10101")), 1);
-        TCOMPARE(fromByteArray<int>(ByteArray::fromHex("C101FF")), -1);
-        TCOMPARE(fromByteArray<String>(ByteArray::fromHex("")), String());
-        TCOMPARE(fromByteArray<String>(ByteArray::fromHex("C000")), String());
-        TVERIFY(!fromByteArray<String>(ByteArray::fromHex("C000")).isNull());
-        TCOMPARE(fromByteArray<String>(ByteArray::fromHex("C08100")), String());
-        TVERIFY(fromByteArray<String>(ByteArray::fromHex("C08100")).isNull());
-        TCOMPARE(fromByteArray<String>(ByteArray::fromHex("C103626C61")), String("bla"));
-    }
+TEST_CASE("serialize: sizes")
+{
+    REQUIRE_EQ((int)sizeof(float      ),  4);
+    REQUIRE_EQ((int)sizeof(double     ),  8);
+    REQUIRE_EQ((int)sizeof(long double), 16);
+}
 
-    void test_sizes()
-    {
-        TCOMPARE((int)sizeof(float      ),  4);
-        TCOMPARE((int)sizeof(double     ),  8);
-        TCOMPARE((int)sizeof(long double), 16);
-    }
+TEST_CASE("serialize: readAndCall")
+{
+    BERSerializer ser;
+    ser << 34 << "bla";
+    BERDeserializer deser(ser.data());
+    int i = 0;
+    String s;
+    readAndCall<int, const String &>(deser, [&](int pi, const String & ps) { i = pi; s = ps; });
+    REQUIRE_EQ(i, 34);
+    REQUIRE_EQ(s, String("bla"));
+}
 
-    void test_readAndCall()
-    {
-        BERSerializer ser;
-        ser << 34 << "bla";
-        BERDeserializer deser(ser.data());
-        int i = 0;
-        String s;
-        readAndCall<int, const String &>(deser, [&](int pi, const String & ps) { i = pi; s = ps; });
-        TCOMPARE(i, 34);
-        TCOMPARE(s, String("bla"));
-    }
-};
-
-ADD_TEST(Util_Test)
+}

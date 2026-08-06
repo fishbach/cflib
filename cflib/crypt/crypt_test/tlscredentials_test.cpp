@@ -13,81 +13,70 @@
 
 using namespace cflib::crypt;
 
-class TLSCredentials_test : public cflib::util::TestBase
+TEST_SUITE("TLSCredentials") {
+
+TEST_CASE("TLSCredentials: addCerts")
 {
-public:
-    std::vector<cflib::util::TestMethod> testMethods() const override {
-        auto self = const_cast<TLSCredentials_test *>(this);
-        return {
-            {"test_addCerts",         [self]() { self->test_addCerts(); }},
-            {"test_addCerts_trusted", [self]() { self->test_addCerts_trusted(); }},
-            {"test_setPrivateKey",    [self]() { self->test_setPrivateKey(); }}
-        };
-    }
+    TLSCredentials creds;
 
-    void test_addCerts()
-    {
-        TLSCredentials creds;
+    REQUIRE(creds.getAllCertsPEM().size() == 0);
 
-        TVERIFY(creds.getAllCertsPEM().size() == 0);
+    REQUIRE_EQ((int)creds.addCerts(ByteArray()), 0);
+    REQUIRE_EQ((int)creds.addCerts(cert3 + cert1), 2);
+    REQUIRE_EQ((int)creds.addCerts(cert1), 0);
+    REQUIRE_EQ((int)creds.addCerts(cert2), 1);
+    REQUIRE(!creds.addPrivateKey(detach(cert1PrivateKey)));
+    REQUIRE(!creds.addPrivateKey(detach(cert1PrivateKey), "wrong"));
+    REQUIRE(creds.addPrivateKey(detach(cert1PrivateKey), "SuperSecure123"));
 
-        TCOMPARE((int)creds.addCerts(ByteArray()), 0);
-        TCOMPARE((int)creds.addCerts(cert3 + cert1), 2);
-        TCOMPARE((int)creds.addCerts(cert1), 0);
-        TCOMPARE((int)creds.addCerts(cert2), 1);
-        TVERIFY(!creds.addPrivateKey(detach(cert1PrivateKey)));
-        TVERIFY(!creds.addPrivateKey(detach(cert1PrivateKey), "wrong"));
-        TVERIFY(creds.addPrivateKey(detach(cert1PrivateKey), "SuperSecure123"));
+    const List<TLSCertInfo> infos = creds.getCertChainInfos();
+    REQUIRE_EQ((int)infos.size(), 3);
+    REQUIRE_EQ(infos[0].subjectName, ByteArray("127.0.0.1"));
+    REQUIRE_EQ(infos[0].issuerName,  ByteArray("ca"));
+    REQUIRE(!infos[0].isCA);
+    REQUIRE(!infos[0].isTrusted);
+    REQUIRE_EQ(infos[1].subjectName, ByteArray("ca"));
+    REQUIRE_EQ(infos[1].issuerName,  ByteArray("rootca"));
+    REQUIRE( infos[1].isCA);
+    REQUIRE(!infos[1].isTrusted);
+    REQUIRE_EQ(infos[2].subjectName, ByteArray("rootca"));
+    REQUIRE_EQ(infos[2].issuerName,  ByteArray("rootca"));
+    REQUIRE( infos[2].isCA);
+    REQUIRE(!infos[2].isTrusted);
 
-        const List<TLSCertInfo> infos = creds.getCertChainInfos();
-        TCOMPARE((int)infos.size(), 3);
-        TCOMPARE(infos[0].subjectName, ByteArray("127.0.0.1"));
-        TCOMPARE(infos[0].issuerName,  ByteArray("ca"));
-        TVERIFY(!infos[0].isCA);
-        TVERIFY(!infos[0].isTrusted);
-        TCOMPARE(infos[1].subjectName, ByteArray("ca"));
-        TCOMPARE(infos[1].issuerName,  ByteArray("rootca"));
-        TVERIFY( infos[1].isCA);
-        TVERIFY(!infos[1].isTrusted);
-        TCOMPARE(infos[2].subjectName, ByteArray("rootca"));
-        TCOMPARE(infos[2].issuerName,  ByteArray("rootca"));
-        TVERIFY( infos[2].isCA);
-        TVERIFY(!infos[2].isTrusted);
+    REQUIRE(creds.getAllCertsPEM().size() > 0);
+}
 
-        TVERIFY(creds.getAllCertsPEM().size() > 0);
-    }
+TEST_CASE("TLSCredentials: addCerts_trusted")
+{
+    TLSCredentials creds;
 
-    void test_addCerts_trusted()
-    {
-        TLSCredentials creds;
+    REQUIRE_EQ((int)creds.addCerts(cert2 + cert1), 2);
+    REQUIRE_EQ((int)creds.addCerts(cert3, true), 1);
+    REQUIRE(creds.addPrivateKey(detach(cert1PrivateKey), "SuperSecure123"));
 
-        TCOMPARE((int)creds.addCerts(cert2 + cert1), 2);
-        TCOMPARE((int)creds.addCerts(cert3, true), 1);
-        TVERIFY(creds.addPrivateKey(detach(cert1PrivateKey), "SuperSecure123"));
+    const List<TLSCertInfo> infos = creds.getCertChainInfos();
+    REQUIRE_EQ((int)infos.size(), 3);
+    REQUIRE_EQ(infos[0].subjectName, ByteArray("127.0.0.1"));
+    REQUIRE(!infos[0].isTrusted);
+    REQUIRE_EQ(infos[1].subjectName, ByteArray("ca"));
+    REQUIRE(!infos[1].isTrusted);
+    REQUIRE_EQ(infos[2].subjectName, ByteArray("rootca"));
+    REQUIRE( infos[2].isTrusted);
+}
 
-        const List<TLSCertInfo> infos = creds.getCertChainInfos();
-        TCOMPARE((int)infos.size(), 3);
-        TCOMPARE(infos[0].subjectName, ByteArray("127.0.0.1"));
-        TVERIFY(!infos[0].isTrusted);
-        TCOMPARE(infos[1].subjectName, ByteArray("ca"));
-        TVERIFY(!infos[1].isTrusted);
-        TCOMPARE(infos[2].subjectName, ByteArray("rootca"));
-        TVERIFY( infos[2].isTrusted);
-    }
+TEST_CASE("TLSCredentials: setPrivateKey")
+{
+    TLSCredentials creds;
 
-    void test_setPrivateKey()
-    {
-        TLSCredentials creds;
+    REQUIRE(!creds.addPrivateKey(ByteArray()));
+    REQUIRE(!creds.addPrivateKey(detach(cert1PrivateKey)));
 
-        TVERIFY(!creds.addPrivateKey(ByteArray()));
-        TVERIFY(!creds.addPrivateKey(detach(cert1PrivateKey)));
+    REQUIRE_EQ((int)creds.addCerts(cert2), 1);
+    REQUIRE(!creds.addPrivateKey(detach(cert1PrivateKey)));
 
-        TCOMPARE((int)creds.addCerts(cert2), 1);
-        TVERIFY(!creds.addPrivateKey(detach(cert1PrivateKey)));
+    REQUIRE_EQ((int)creds.addCerts(cert1), 1);
+    REQUIRE(creds.addPrivateKey(detach(cert1PrivateKey), "SuperSecure123"));
+}
 
-        TCOMPARE((int)creds.addCerts(cert1), 1);
-        TVERIFY(creds.addPrivateKey(detach(cert1PrivateKey), "SuperSecure123"));
-    }
-};
-
-ADD_TEST(TLSCredentials_test)
+}

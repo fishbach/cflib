@@ -10,83 +10,71 @@
 
 using namespace cflib::util;
 
-class Sig_Test : public cflib::util::TestBase
+TEST_SUITE("Sig") {
+
+TEST_CASE("Sig: simple")
 {
-public:
-    std::vector<cflib::util::TestMethod> testMethods() const override {
-        auto self = const_cast<Sig_Test *>(this);
-        return {
-            {"simple_test", [self]() { self->simple_test(); }},
-            {"return_test", [self]() { self->return_test(); }},
-            {"ref_test", [self]() { self->ref_test(); }},
-            {"member_test", [self]() { self->member_test(); }}
-        };
-    }
+    int callCount = 0;
+    Sig<void (int)> sig;
+    sig.bind([&callCount](int x) { callCount += x; });
+    REQUIRE_EQ(callCount, 0);
+    sig(3);
+    REQUIRE_EQ(callCount, 3);
+    sig(5);
+    REQUIRE_EQ(callCount, 8);
+    sig.bind([&callCount](int x) { callCount += 2 * x; });
+    sig(2);
+    REQUIRE_EQ(callCount, 14);
+    sig.unbindAll();
+    sig(7);
+    REQUIRE_EQ(callCount, 14);
+}
 
-    void simple_test()
+TEST_CASE("Sig: return")
+{
+    Sig<int (int)> sig;
+    sig.bind([](int x) { return x + 7; });
+    REQUIRE_EQ(sig(3), 10);
+    REQUIRE_EQ(sig(7), 14);
+}
+
+TEST_CASE("Sig: ref")
+{
+    Sig<void (int &)> sig;
+    sig.bind([](int & x) { x += 2; });
+    sig.bind([](int & x) { x *= 3; });
+    int x = 5;
+    sig(x);
+    REQUIRE_EQ(x, 21);
+}
+
+TEST_CASE("Sig: member")
+{
+    class Test
     {
-        int callCount = 0;
-        Sig<void (int)> sig;
-        sig.bind([&callCount](int x) { callCount += x; });
-        TCOMPARE(callCount, 0);
-        sig(3);
-        TCOMPARE(callCount, 3);
-        sig(5);
-        TCOMPARE(callCount, 8);
-        sig.bind([&callCount](int x) { callCount += 2 * x; });
-        sig(2);
-        TCOMPARE(callCount, 14);
-        sig.unbindAll();
-        sig(7);
-        TCOMPARE(callCount, 14);
-    }
+    public:
+        void test() { ++x; }
+        int rv() const { return x + 7; }
+        int x;
+    };
+    Test t;
+    t.x = 0;
 
-    void return_test()
-    {
-        Sig<int (int)> sig;
-        sig.bind([](int x) { return x + 7; });
-        TCOMPARE(sig(3), 10);
-        TCOMPARE(sig(7), 14);
-    }
+    Sig<void ()> sig;
+    sig.bind(&t, &Test::test);
+    REQUIRE_EQ(t.x, 0);
+    sig();
+    REQUIRE_EQ(t.x, 1);
 
-    void ref_test()
-    {
-        Sig<void (int &)> sig;
-        sig.bind([](int & x) { x += 2; });
-        sig.bind([](int & x) { x *= 3; });
-        int x = 5;
-        sig(x);
-        TCOMPARE(x, 21);
-    }
+    Sig<int ()> sig2;
+    sig2.bind(&t, &Test::rv);
+    REQUIRE_EQ(sig2(), 8);
+    sig();
 
-    void member_test()
-    {
-        class Test
-        {
-        public:
-            void test() { ++x; }
-            int rv() const { return x + 7; }
-            int x;
-        };
-        Test t;
-        t.x = 0;
+    const Test & t2(t);
+    Sig<int ()> sig3;
+    sig3.bind(&t2, &Test::rv);
+    REQUIRE_EQ(sig3(), 9);
+}
 
-        Sig<void ()> sig;
-        sig.bind(&t, &Test::test);
-        TCOMPARE(t.x, 0);
-        sig();
-        TCOMPARE(t.x, 1);
-
-        Sig<int ()> sig2;
-        sig2.bind(&t, &Test::rv);
-        TCOMPARE(sig2(), 8);
-        sig();
-
-        const Test & t2(t);
-        Sig<int ()> sig3;
-        sig3.bind(&t2, &Test::rv);
-        TCOMPARE(sig3(), 9);
-    }
-
-};
-ADD_TEST(Sig_Test)
+}

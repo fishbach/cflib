@@ -13,77 +13,61 @@
 
 using namespace cflib::crypt;
 
-class Util_test : public cflib::util::TestBase
+TEST_SUITE("crypt") {
+
+TEST_CASE("crypt: random")
 {
-public:
-    std::vector<cflib::util::TestMethod> testMethods() const override {
-        auto self = const_cast<Util_test *>(this);
-        return {
-            {"test_random",          [self]() { self->test_random(); }},
-            {"test_randomId",        [self]() { self->test_randomId(); }},
-            {"test_randomUInt32",    [self]() { self->test_randomUInt32(); }},
-            {"test_randomUInt64",    [self]() { self->test_randomUInt64(); }},
-            {"test_memorableRandom", [self]() { self->test_memorableRandom(); }},
-            {"test_hashPassword",    [self]() { self->test_hashPassword(); }},
-            {"test_sha1",            [self]() { self->test_sha1(); }},
-            {"test_sha1ForWebSocket",[self]() { self->test_sha1ForWebSocket(); }}
-        };
-    }
+    REQUIRE_EQ((int)random( 0).size(),  0);
+    REQUIRE_EQ((int)random( 1).size(),  1);
+    REQUIRE_EQ((int)random(13).size(), 13);
+    REQUIRE(random(8) != random(8));
+}
 
-    void test_random()
-    {
-        TCOMPARE((int)random( 0).size(),  0);
-        TCOMPARE((int)random( 1).size(),  1);
-        TCOMPARE((int)random(13).size(), 13);
-        TVERIFY(random(8) != random(8));
-    }
+TEST_CASE("crypt: randomId")
+{
+    REQUIRE_EQ((int)randomId().size(), 40);
+    REQUIRE(randomId() != randomId());
+}
 
-    void test_randomId()
-    {
-        TCOMPARE((int)randomId().size(), 40);
-        TVERIFY(randomId() != randomId());
-    }
+TEST_CASE("crypt: randomUInt32")
+{
+    REQUIRE(randomUInt32() != randomUInt32());
+}
 
-    void test_randomUInt32()
-    {
-        TVERIFY(randomUInt32() != randomUInt32());
-    }
+TEST_CASE("crypt: randomUInt64")
+{
+    REQUIRE(randomUInt64() != randomUInt64());
+}
 
-    void test_randomUInt64()
-    {
-        TVERIFY(randomUInt64() != randomUInt64());
-    }
+TEST_CASE("crypt: memorableRandom")
+{
+    std::cout << std::format("random: '{}'\n", memorableRandom().data());
+    REQUIRE_EQ((int)memorableRandom().size(), 8);
+    REQUIRE(memorableRandom() != memorableRandom());
+}
 
-    void test_memorableRandom()
-    {
-        std::cout << std::format("random: '{}'\n", memorableRandom().data());
-        TCOMPARE((int)memorableRandom().size(), 8);
-        TVERIFY(memorableRandom() != memorableRandom());
-    }
+TEST_CASE("crypt: hashPassword")
+{
+    REQUIRE(hashPassword("pwd") != hashPassword("pwd"));
+    REQUIRE(checkPassword("", hashPassword("")));
+    REQUIRE(checkPassword("p", hashPassword("p")));
+    REQUIRE(checkPassword("abcABC123!@#,.", hashPassword("abcABC123!@#,.")));
+    REQUIRE(!checkPassword("pwd1", hashPassword("pwd2")));
+}
 
-    void test_hashPassword()
-    {
-        TVERIFY(hashPassword("pwd") != hashPassword("pwd"));
-        TVERIFY(checkPassword("", hashPassword("")));
-        TVERIFY(checkPassword("p", hashPassword("p")));
-        TVERIFY(checkPassword("abcABC123!@#,.", hashPassword("abcABC123!@#,.")));
-        TVERIFY(!checkPassword("pwd1", hashPassword("pwd2")));
-    }
+TEST_CASE("crypt: sha1")
+{
+    REQUIRE_EQ(sha1(""),    ByteArray::fromHex("da39a3ee5e6b4b0d3255bfef95601890afd80709"));
+    REQUIRE_EQ(sha1("a"),   ByteArray::fromHex("86f7e437faa5a7fce15d1ddcb9eaeaea377667b8"));
+    REQUIRE_EQ(sha1("abc"), ByteArray::fromHex("a9993e364706816aba3e25717850c26c9cd0d89d"));
+}
 
-    void test_sha1()
-    {
-        TCOMPARE(sha1(""),    ByteArray::fromHex("da39a3ee5e6b4b0d3255bfef95601890afd80709"));
-        TCOMPARE(sha1("a"),   ByteArray::fromHex("86f7e437faa5a7fce15d1ddcb9eaeaea377667b8"));
-        TCOMPARE(sha1("abc"), ByteArray::fromHex("a9993e364706816aba3e25717850c26c9cd0d89d"));
-    }
+TEST_CASE("crypt: sha1ForWebSocket")
+{
+    REQUIRE_EQ(
+        sha1("x3JJHMbDL1EzLkh9GBhXDw==258EAFA5-E914-47DA-95CA-C5AB0DC85B11").toBase64(),
+        ByteArray("HSmrc0sMlYUkAGmm5OPpG2HaGWk=")
+    );
+}
 
-    void test_sha1ForWebSocket()
-    {
-        TCOMPARE(
-            sha1("x3JJHMbDL1EzLkh9GBhXDw==258EAFA5-E914-47DA-95CA-C5AB0DC85B11").toBase64(),
-            ByteArray("HSmrc0sMlYUkAGmm5OPpG2HaGWk=")
-        );
-    }
-};
-
-ADD_TEST(Util_test)
+}

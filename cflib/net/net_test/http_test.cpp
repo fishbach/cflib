@@ -74,98 +74,88 @@ protected:
 
 }
 
-class HTTP_Test : public cflib::util::TestBase
+TEST_SUITE("HTTP") {
+
+TEST_CASE("HTTP: keepAlive")
 {
-public:
-    std::vector<cflib::util::TestMethod> testMethods() const override {
-        auto self = const_cast<HTTP_Test *>(this);
-        return {
-            {"test_keepAlive",      [self]() { self->test_keepAlive(); }},
-            {"test_immediateClose", [self]() { self->test_immediateClose(); }}
-        };
-    }
+    TestHdl hdl;
+    HttpServer server;
+    server.registerHandler(hdl);
+    server.start("127.0.0.1", 12301);
 
-    void test_keepAlive()
-    {
-        TestHdl hdl;
-        HttpServer server;
-        server.registerHandler(hdl);
-        server.start("127.0.0.1", 12301);
+    TCPManager mgr;
+    TestClient cli(mgr, true);
 
-        TCPManager mgr;
-        TestClient cli(mgr, true);
+    cli.get("127.0.0.1", 12301, "/test1");
+    msgSem.acquire(2);
+    REQUIRE_EQ((int)msgs.size(), 2);
+    REQUIRE(msgs.contains("new request: /test1"));
+    REQUIRE(msgsMatchRegex(
+        "http reply: HTTP/1\\.1 200 OK\\|"
+        "Date: .*\\|"
+        "Server: cflib/.*\\|"
+        "Connection: keep-alive\\|"
+        "Content-Type: text/html; charset=utf-8|Content-Length: 7||reply 1"
+    ));
+    msgs.clear();
 
-        cli.get("127.0.0.1", 12301, "/test1");
-        msgSem.acquire(2);
-        TCOMPARE((int)msgs.size(), 2);
-        TVERIFY(msgs.contains("new request: /test1"));
-        TVERIFY(msgsMatchRegex(
-            "http reply: HTTP/1\\.1 200 OK\\|"
-            "Date: .*\\|"
-            "Server: cflib/.*\\|"
-            "Connection: keep-alive\\|"
-            "Content-Type: text/html; charset=utf-8|Content-Length: 7||reply 1"
-        ));
-        msgs.clear();
+    cli.get("127.0.0.1", 12301, "/test2");
+    msgSem.acquire(2);
+    REQUIRE_EQ((int)msgs.size(), 2);
+    REQUIRE(msgs.contains("new request: /test2"));
+    REQUIRE(msgsMatchRegex(
+        "http reply: HTTP/1\\.1 200 OK\\|"
+        "Date: .*\\|"
+        "Server: cflib/.*\\|"
+        "Connection: keep-alive\\|"
+        "Content-Type: text/html; charset=utf-8|Content-Length: 7||reply 2"
+    ));
+    msgs.clear();
 
-        cli.get("127.0.0.1", 12301, "/test2");
-        msgSem.acquire(2);
-        TCOMPARE((int)msgs.size(), 2);
-        TVERIFY(msgs.contains("new request: /test2"));
-        TVERIFY(msgsMatchRegex(
-            "http reply: HTTP/1\\.1 200 OK\\|"
-            "Date: .*\\|"
-            "Server: cflib/.*\\|"
-            "Connection: keep-alive\\|"
-            "Content-Type: text/html; charset=utf-8|Content-Length: 7||reply 2"
-        ));
-        msgs.clear();
+    cli.get("127.0.0.1", 12301, "/abort");
+    msgSem.acquire(2);
+    REQUIRE_EQ((int)msgs.size(), 2);
+    REQUIRE(msgs.contains("new request: /abort"));
+    REQUIRE(msgs.contains("http reply: "));
+    msgs.clear();
+}
 
-        cli.get("127.0.0.1", 12301, "/abort");
-        msgSem.acquire(2);
-        TCOMPARE((int)msgs.size(), 2);
-        TVERIFY(msgs.contains("new request: /abort"));
-        TVERIFY(msgs.contains("http reply: "));
-        msgs.clear();
-    }
+TEST_CASE("HTTP: immediateClose")
+{
+    TestHdl hdl;
 
-    void test_immediateClose()
-    {
-        TestHdl hdl;
+    HttpServer server;
+    server.registerHandler(hdl);
+    server.start("127.0.0.1", 12301);
 
-        HttpServer server;
-        server.registerHandler(hdl);
-        server.start("127.0.0.1", 12301);
+    TCPManager mgr;
+    TestClient cli(mgr, false);
 
-        TCPManager mgr;
-        TestClient cli(mgr, false);
+    cli.get("127.0.0.1", 12301, "/test1");
+    msgSem.acquire(2);
+    REQUIRE_EQ((int)msgs.size(), 2);
+    REQUIRE(msgs.contains("new request: /test1"));
+    REQUIRE(msgsMatchRegex(
+        "http reply: HTTP/1\\.1 200 OK\\|"
+        "Date: .*\\|"
+        "Server: cflib/.*\\|"
+        "Connection: keep-alive\\|"
+        "Content-Type: text/html; charset=utf-8|Content-Length: 7||reply 1"
+    ));
+    msgs.clear();
 
-        cli.get("127.0.0.1", 12301, "/test1");
-        msgSem.acquire(2);
-        TCOMPARE((int)msgs.size(), 2);
-        TVERIFY(msgs.contains("new request: /test1"));
-        TVERIFY(msgsMatchRegex(
-            "http reply: HTTP/1\\.1 200 OK\\|"
-            "Date: .*\\|"
-            "Server: cflib/.*\\|"
-            "Connection: keep-alive\\|"
-            "Content-Type: text/html; charset=utf-8|Content-Length: 7||reply 1"
-        ));
-        msgs.clear();
+    cli.get("127.0.0.1", 12301, "/test2");
+    msgSem.acquire(2);
+    REQUIRE_EQ((int)msgs.size(), 2);
+    REQUIRE(msgs.contains("new request: /test2"));
+    REQUIRE(msgsMatchRegex(
+        "http reply: HTTP/1\\.1 200 OK\\|"
+        "Date: .*\\|"
+        "Server: cflib/.*\\|"
+        "Connection: keep-alive\\|"
+        "Content-Type: text/html; charset=utf-8|Content-Length: 7||reply 2"
+    ));
+    msgs.clear();
+}
 
-        cli.get("127.0.0.1", 12301, "/test2");
-        msgSem.acquire(2);
-        TCOMPARE((int)msgs.size(), 2);
-        TVERIFY(msgs.contains("new request: /test2"));
-        TVERIFY(msgsMatchRegex(
-            "http reply: HTTP/1\\.1 200 OK\\|"
-            "Date: .*\\|"
-            "Server: cflib/.*\\|"
-            "Connection: keep-alive\\|"
-            "Content-Type: text/html; charset=utf-8|Content-Length: 7||reply 2"
-        ));
-        msgs.clear();
-    }
-};
-
-ADD_TEST(HTTP_Test)
+}

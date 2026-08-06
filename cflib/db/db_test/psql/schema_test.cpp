@@ -71,108 +71,94 @@ String connParam(const String & dbName)
 
 }
 
-class Schema_test : public cflib::util::TestBase
+TEST_SUITE("Schema") {
+
+TEST_CASE("Schema: initTestCase")
 {
-public:
-    std::vector<cflib::util::TestMethod> testMethods() const override {
-        auto self = const_cast<Schema_test *>(this);
-        return {
-            {"initTestCase",    [self]() { self->initTestCase(); }},
-            {"basic_test",      [self]() { self->basic_test(); }},
-            {"update_test",     [self]() { self->update_test(); }},
-            {"resetDB",         [self]() { self->resetDB(); }},
-            {"empty_head_test", [self]() { self->empty_head_test(); }},
-            {"cleanupTestCase", [self]() { self->cleanupTestCase(); }},
-        };
-    }
+    PSql::closeThreadConnection();
+    PSql sql(connParam("postgres"));
+    sql.exec("DROP DATABASE cflib_db_test");
+    REQUIRE(sql.exec("CREATE DATABASE cflib_db_test"));
+    REQUIRE(PSql::setParameter(connParam("cflib_db_test")));
+}
 
-    void initTestCase()
-    {
-        PSql::closeThreadConnection();
-        PSql sql(connParam("postgres"));
-        sql.exec("DROP DATABASE cflib_db_test");
-        TVERIFY(sql.exec("CREATE DATABASE cflib_db_test"));
-        TVERIFY(PSql::setParameter(connParam("cflib_db_test")));
-    }
+TEST_CASE("Schema: basic")
+{
+    REQUIRE((schema::update<PSql, Migrator>()));
 
-    void cleanupTestCase()
-    {
-        PSql::closeThreadConnection();
-        PSql sql(connParam("postgres"));
-        TVERIFY(sql.exec("DROP DATABASE cflib_db_test"));
-    }
+    PSqlConn;
+    REQUIRE(sql.exec("SELECT key, value, value2, value3, value4 FROM config ORDER BY key"));
+    String key, value;
+    int32 value2, value3, value4;
 
-    void basic_test()
-    {
-        TVERIFY((schema::update<PSql, Migrator>()));
+    REQUIRE(sql.next());
+    sql >> key >> value >> value2 >> value3 >> value4;
+    REQUIRE_EQ(key, String("test1"));
+    REQUIRE_EQ(value, String("val1"));
+    REQUIRE_EQ(value2, 0);
+    REQUIRE_EQ(value3, 0);
+    REQUIRE_EQ(value4, 0);
 
-        PSqlConn;
-        TVERIFY(sql.exec("SELECT key, value, value2, value3, value4 FROM config ORDER BY key"));
-        String key, value;
-        int32 value2, value3, value4;
+    REQUIRE(sql.next());
+    sql >> key >> value >> value2 >> value3 >> value4;
+    REQUIRE_EQ(key, String("test2"));
+    REQUIRE_EQ(value, String("val2"));
+    REQUIRE_EQ(value2, 2);
+    REQUIRE_EQ(value3, 0);
+    REQUIRE_EQ(value4, 0);
 
-        TVERIFY(sql.next());
-        sql >> key >> value >> value2 >> value3 >> value4;
-        TCOMPARE(key, String("test1"));
-        TCOMPARE(value, String("val1"));
-        TCOMPARE(value2, 0);
-        TCOMPARE(value3, 0);
-        TCOMPARE(value4, 0);
+    REQUIRE(sql.next());
+    REQUIRE(sql.next());
+    REQUIRE(sql.next());
+    REQUIRE(!sql.next());
+}
 
-        TVERIFY(sql.next());
-        sql >> key >> value >> value2 >> value3 >> value4;
-        TCOMPARE(key, String("test2"));
-        TCOMPARE(value, String("val2"));
-        TCOMPARE(value2, 2);
-        TCOMPARE(value3, 0);
-        TCOMPARE(value4, 0);
+TEST_CASE("Schema: update")
+{
+    ByteArray schema = File::read(":/schema.sql");
+    REQUIRE(schema::update<PSql>(schema));
 
-        TVERIFY(sql.next());
-        TVERIFY(sql.next());
-        TVERIFY(sql.next());
-        TVERIFY(!sql.next());
-    }
+    schema +=
+        "-- REVISION neu\n"
+        "\n"
+        "INSERT INTO config (key) VALUES ('neu')\n"
+    ;
+    REQUIRE(schema::update<PSql>(schema));
+    PSqlConn;
+    REQUIRE(sql.exec("SELECT COUNT(*) FROM config WHERE key = 'neu'"));
+    REQUIRE(sql.next());
+    REQUIRE_EQ(sql.get<int64>(0), (int64)1);
+}
 
-    void update_test()
-    {
-        ByteArray schema = File::read(":/schema.sql");
-        TVERIFY(schema::update<PSql>(schema));
+TEST_CASE("Schema: resetDB")
+{
+    PSql::closeThreadConnection();
+    PSql sql(connParam("postgres"));
+    REQUIRE(sql.exec("DROP DATABASE cflib_db_test"));
+    REQUIRE(sql.exec("CREATE DATABASE cflib_db_test"));
+    REQUIRE(PSql::setParameter(connParam("cflib_db_test")));
+}
 
-        schema +=
-            "-- REVISION neu\n"
-            "\n"
-            "INSERT INTO config (key) VALUES ('neu')\n"
-        ;
-        TVERIFY(schema::update<PSql>(schema));
-        PSqlConn;
-        TVERIFY(sql.exec("SELECT COUNT(*) FROM config WHERE key = 'neu'"));
-        TVERIFY(sql.next());
-        TCOMPARE(sql.get<int64>(0), (int64)1);
-    }
+TEST_CASE("Schema: empty_head")
+{
+    REQUIRE(schema::update<PSql>(ByteArray(
+        "-- REVISION first\n"
+        "CREATE TABLE config (\n"
+        "  key   text NOT NULL, \n"
+        "  value text, \n"
+        "  PRIMARY KEY (key)\n"
+        ");\n"
+    )));
 
-    void resetDB()
-    {
-        PSql::closeThreadConnection();
-        PSql sql(connParam("postgres"));
-        TVERIFY(sql.exec("DROP DATABASE cflib_db_test"));
-        TVERIFY(sql.exec("CREATE DATABASE cflib_db_test"));
-        TVERIFY(PSql::setParameter(connParam("cflib_db_test")));
-    }
+    PSqlConn;
+    REQUIRE(sql.exec("SELECT key, value FROM config"));
+}
 
-    void empty_head_test()
-    {
-        TVERIFY(schema::update<PSql>(ByteArray(
-            "-- REVISION first\n"
-            "CREATE TABLE config (\n"
-            "  key   text NOT NULL, \n"
-            "  value text, \n"
-            "  PRIMARY KEY (key)\n"
-            ");\n"
-        )));
+TEST_CASE("Schema: cleanupTestCase")
+{
+    PSql::closeThreadConnection();
+    PSql sql(connParam("postgres"));
+    REQUIRE(sql.exec("DROP DATABASE cflib_db_test"));
+}
 
-        PSqlConn;
-        TVERIFY(sql.exec("SELECT key, value FROM config"));
-    }
-
-};
-ADD_TEST(Schema_test)
+}

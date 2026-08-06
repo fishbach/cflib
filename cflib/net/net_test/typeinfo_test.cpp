@@ -13,36 +13,27 @@
 
 using namespace cflib::serialize;
 
-class TypeInfo_Test : public cflib::util::TestBase
+TEST_SUITE("TypeInfo") {
+
+TEST_CASE("TypeInfo: toString")
 {
-public:
-    std::vector<cflib::util::TestMethod> testMethods() const override {
-        auto self = const_cast<TypeInfo_Test *>(this);
-        return {
-            {"toString", [self]() { self->toString(); }}
-        };
-    }
+    REQUIRE_EQ(GenTestRMI::serializeTypeInfo().toString(), String(
+        "GenTestRMI{void f3(int32, String), List<int32> f4(), int32 f5(int32 x, int32 y), void f6()}"));
+    REQUIRE_EQ(GenTest1::serializeTypeInfo().toString(), String(
+        "GenTest1{int32 a, , int32 c, String d}"));
+    REQUIRE_EQ(GenTest2::serializeTypeInfo().toString(), String(
+        "GenTest2{GenTest1{int32 a, , int32 c, String d} a, int32 b}"));
+    REQUIRE_EQ(gentest::GenTest3::serializeTypeInfo().toString(), String(
+        "gentest::GenTest3[GenTest1{int32 a, , int32 c, String d}]{int32 e, int32 f}"));
+    REQUIRE_EQ(gentest::GenTest3::Inner1::serializeTypeInfo().toString(), String(
+        "gentest::GenTest3::Inner1{int32 a}"));
+    REQUIRE_EQ(gentest::GenTest3::Inner2::serializeTypeInfo().toString(), String(
+        "gentest::GenTest3::Inner2{}"));
+    REQUIRE_EQ(gentest::gentest2::GenTest4::serializeTypeInfo().toString(), String(
+        "gentest::gentest2::GenTest4[List<String>]"
+        "{int32 a, List<int32> b, List<GenTest2{GenTest1{int32 a, , int32 c, String d} a, int32 b}> c}"));
+    REQUIRE_EQ(GenTest6::serializeTypeInfo().toString(), String(
+        "GenTest6{int32 a}"));
+}
 
-    void toString()
-    {
-        TCOMPARE(GenTestRMI::serializeTypeInfo().toString(), String(
-            "GenTestRMI{void f3(int32, String), List<int32> f4(), int32 f5(int32 x, int32 y), void f6()}"));
-        TCOMPARE(GenTest1::serializeTypeInfo().toString(), String(
-            "GenTest1{int32 a, , int32 c, String d}"));
-        TCOMPARE(GenTest2::serializeTypeInfo().toString(), String(
-            "GenTest2{GenTest1{int32 a, , int32 c, String d} a, int32 b}"));
-        TCOMPARE(gentest::GenTest3::serializeTypeInfo().toString(), String(
-            "gentest::GenTest3[GenTest1{int32 a, , int32 c, String d}]{int32 e, int32 f}"));
-        TCOMPARE(gentest::GenTest3::Inner1::serializeTypeInfo().toString(), String(
-            "gentest::GenTest3::Inner1{int32 a}"));
-        TCOMPARE(gentest::GenTest3::Inner2::serializeTypeInfo().toString(), String(
-            "gentest::GenTest3::Inner2{}"));
-        TCOMPARE(gentest::gentest2::GenTest4::serializeTypeInfo().toString(), String(
-            "gentest::gentest2::GenTest4[List<String>]"
-            "{int32 a, List<int32> b, List<GenTest2{GenTest1{int32 a, , int32 c, String d} a, int32 b}> c}"));
-        TCOMPARE(GenTest6::serializeTypeInfo().toString(), String(
-            "GenTest6{int32 a}"));
-    }
-};
-
-ADD_TEST(TypeInfo_Test)
+}

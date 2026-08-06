@@ -11,33 +11,24 @@
 
 using namespace cflib::serialize;
 
-class Permission_Test : public cflib::util::TestBase
+TEST_SUITE("Permission") {
+
+TEST_CASE("Permission: basic")
 {
-public:
-    std::vector<cflib::util::TestMethod> testMethods() const override {
-        auto self = const_cast<Permission_Test *>(this);
-        return {
-            {"basic", [self]() { self->basic(); }}
-        };
-    }
+    REQUIRE(TestPerm1.name                            == "TestPerm1");
+    REQUIRE(TestPerm1.description                     == "some comment.");
+    REQUIRE(TestPerm1.id                              == 0);
+    REQUIRE(Permission::lookup("TestPerm1")           == &TestPerm1);
+    REQUIRE(test::perm::TestPerm2.name                == "test.perm.TestPerm2");
+    REQUIRE(test::perm::TestPerm2.description         == "another, description?!");
+    REQUIRE(test::perm::TestPerm2.id                  == 0);
+    REQUIRE(Permission::lookup("test.perm.TestPerm2") == &test::perm::TestPerm2);
+    REQUIRE(test::perm::TestPerm3.name                == "test.perm.TestPerm3");
+    REQUIRE(test::perm::TestPerm3.id                  == 0);
+    REQUIRE(Permission::lookup("test.perm.TestPerm3") == &test::perm::TestPerm3);
+    REQUIRE(testPerm::TestPerm4.name                  == "testPerm.TestPerm4");
+    REQUIRE(testPerm::TestPerm4.id                    == 0);
+    REQUIRE(Permission::lookup("testPerm.TestPerm4")  == &testPerm::TestPerm4);
+}
 
-    void basic()
-    {
-        TVERIFY(TestPerm1.name                            == "TestPerm1");
-        TVERIFY(TestPerm1.description                     == "some comment.");
-        TVERIFY(TestPerm1.id                              == 0);
-        TVERIFY(Permission::lookup("TestPerm1")           == &TestPerm1);
-        TVERIFY(test::perm::TestPerm2.name                == "test.perm.TestPerm2");
-        TVERIFY(test::perm::TestPerm2.description         == "another, description?!");
-        TVERIFY(test::perm::TestPerm2.id                  == 0);
-        TVERIFY(Permission::lookup("test.perm.TestPerm2") == &test::perm::TestPerm2);
-        TVERIFY(test::perm::TestPerm3.name                == "test.perm.TestPerm3");
-        TVERIFY(test::perm::TestPerm3.id                  == 0);
-        TVERIFY(Permission::lookup("test.perm.TestPerm3") == &test::perm::TestPerm3);
-        TVERIFY(testPerm::TestPerm4.name                  == "testPerm.TestPerm4");
-        TVERIFY(testPerm::TestPerm4.id                    == 0);
-        TVERIFY(Permission::lookup("testPerm.TestPerm4")  == &testPerm::TestPerm4);
-    }
-};
-
-ADD_TEST(Permission_Test)
+}

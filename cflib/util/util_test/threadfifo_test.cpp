@@ -61,56 +61,46 @@ private:
 
 }
 
-class ThreadFifo_Test : public cflib::util::TestBase
+TEST_SUITE("ThreadFifo") {
+
+TEST_CASE("ThreadFifo: basic")
 {
-public:
-    std::vector<cflib::util::TestMethod> testMethods() const override {
-        auto self = const_cast<ThreadFifo_Test *>(this);
-        return {
-            {"basic_test", [self]() { self->basic_test(); }},
-            {"thread_test", [self]() { self->thread_test(); }}
-        };
-    }
+    ThreadFifo<int> fifo(1023);
+    for (int i =    1 ; i <= 1023 ; ++i) REQUIRE(fifo.put(i));
+    REQUIRE(!fifo.put(1024));
+    for (int i =    1 ; i <= 1023 ; ++i) REQUIRE_EQ(fifo.take(), i);
+    REQUIRE_EQ(fifo.take(), 0);
+    for (int i =    1 ; i <=  500 ; ++i) REQUIRE(fifo.put(i));
+    for (int i =    1 ; i <=  200 ; ++i) REQUIRE_EQ(fifo.take(), i);
+    for (int i =  501 ; i <= 1223 ; ++i) REQUIRE(fifo.put(i));
+    REQUIRE(!fifo.put(1224));
+    for (int i =  201 ; i <=  923 ; ++i) REQUIRE_EQ(fifo.take(), i);
+    for (int i = 1224 ; i <= 1723 ; ++i) REQUIRE(fifo.put(i));
+    for (int i =  924 ; i <= 1723 ; ++i) REQUIRE_EQ(fifo.take(), i);
+    REQUIRE_EQ(fifo.take(), 0);
+}
 
-    void basic_test()
-    {
-        ThreadFifo<int> fifo(1023);
-        for (int i =    1 ; i <= 1023 ; ++i) TVERIFY(fifo.put(i));
-        TVERIFY(!fifo.put(1024));
-        for (int i =    1 ; i <= 1023 ; ++i) TCOMPARE(fifo.take(), i);
-        TCOMPARE(fifo.take(), 0);
-        for (int i =    1 ; i <=  500 ; ++i) TVERIFY(fifo.put(i));
-        for (int i =    1 ; i <=  200 ; ++i) TCOMPARE(fifo.take(), i);
-        for (int i =  501 ; i <= 1223 ; ++i) TVERIFY(fifo.put(i));
-        TVERIFY(!fifo.put(1224));
-        for (int i =  201 ; i <=  923 ; ++i) TCOMPARE(fifo.take(), i);
-        for (int i = 1224 ; i <= 1723 ; ++i) TVERIFY(fifo.put(i));
-        for (int i =  924 ; i <= 1723 ; ++i) TCOMPARE(fifo.take(), i);
-        TCOMPARE(fifo.take(), 0);
-    }
+TEST_CASE("ThreadFifo: thread")
+{
+    ThreadFifo<int> fifo(1024);
+    Worker w1(fifo, 1);
+    Worker w2(fifo, 2);
+    Worker w3(fifo, 3);
+    Worker w4(fifo, 4);
+    Worker w5(fifo, 5);
+    Worker w6(fifo, 6);
+    Worker w7(fifo, 7);
+    Worker w8(fifo, 8);
+    int i = 0;
+    if (w1.ok()) ++i;
+    if (w2.ok()) ++i;
+    if (w3.ok()) ++i;
+    if (w4.ok()) ++i;
+    if (w5.ok()) ++i;
+    if (w6.ok()) ++i;
+    if (w7.ok()) ++i;
+    if (w8.ok()) ++i;
+    REQUIRE_EQ(i, 8);
+}
 
-    void thread_test()
-    {
-        ThreadFifo<int> fifo(1024);
-        Worker w1(fifo, 1);
-        Worker w2(fifo, 2);
-        Worker w3(fifo, 3);
-        Worker w4(fifo, 4);
-        Worker w5(fifo, 5);
-        Worker w6(fifo, 6);
-        Worker w7(fifo, 7);
-        Worker w8(fifo, 8);
-        int i = 0;
-        if (w1.ok()) ++i;
-        if (w2.ok()) ++i;
-        if (w3.ok()) ++i;
-        if (w4.ok()) ++i;
-        if (w5.ok()) ++i;
-        if (w6.ok()) ++i;
-        if (w7.ok()) ++i;
-        if (w8.ok()) ++i;
-        TCOMPARE(i, 8);
-    }
-
-};
-ADD_TEST(ThreadFifo_Test)
+}
