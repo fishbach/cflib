@@ -82,7 +82,9 @@ else()
 endif()
 
 # enable tests
-enable_testing()
+if(BUILD_TESTS)
+    enable_testing()
+endif()
 
 # cmake modules
 list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_LIST_DIR})
