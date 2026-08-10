@@ -95,7 +95,10 @@ function(cf_test test lib)
             set_tests_properties(${test} PROPERTIES ${ARG_PROPERTIES})
         endif()
     else()
-        doctest_discover_tests(${test} PROPERTIES ${ARG_PROPERTIES})
+        doctest_discover_tests(${test}
+            ADD_LABELS 1
+            PROPERTIES ${ARG_PROPERTIES}
+        )
     endif()
 endfunction()
 
