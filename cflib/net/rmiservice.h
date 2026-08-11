@@ -19,23 +19,30 @@ namespace impl { class RMIServerBase; }
 class RMIReplier
 {
 public:
-    RMIReplier(const RMIReplier &  other) = default;
-    RMIReplier(      RMIReplier && other) = default;
+    RMIReplier(const RMIReplier &  other);
+    RMIReplier(      RMIReplier && other);
+    ~RMIReplier();
+
     RMIReplier & operator=(const RMIReplier &  other) = delete;
     RMIReplier & operator=(      RMIReplier && other) = delete;
 
-    void send();
-    uint connId() const { return connId_; }
+    uint connId() const { return d->connId; }
 
     template<typename T>
-    inline RMIReplier & operator<<(const T & cl             ) { ser_ << cl; return *this; }
-    inline RMIReplier & operator<<(serialize::Placeholder ph) { ser_ << ph; return *this; }
+    inline RMIReplier & operator<<(const T & cl             ) { d->ser << cl; return *this; }
+    inline RMIReplier & operator<<(serialize::Placeholder ph) { d->ser << ph; return *this; }
 
 private:
-    RMIReplier(impl::RMIServerBase & server, uint connId) : server_(server), connId_(connId), ser_(2) {}
-    impl::RMIServerBase & server_;
-    const uint connId_;
-    serialize::BERSerializer ser_;
+    RMIReplier(impl::RMIServerBase & server, uint connId) : d(new Shared{server, connId}) {}
+    struct Shared
+    {
+        impl::RMIServerBase & server;
+        const uint connId;
+        serialize::BERSerializer ser{2};
+        AtomicInt ref{1};
+    };
+    Shared * d;
+
     friend class RMIServiceBase;
 };
 

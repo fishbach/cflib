@@ -78,9 +78,24 @@ ByteArray RMIServiceBase::getRemoteIP() const
     return server_->getRemoteIP(connId_);
 }
 
-void RMIReplier::send()
+RMIReplier::RMIReplier(const RMIReplier & other) :
+    d(other.d)
 {
-    server_.send(connId_, ser_.data());
+    d->ref.ref();
+}
+
+RMIReplier::RMIReplier(RMIReplier && other) :
+    d(other.d)
+{
+    other.d = nullptr;
+}
+
+RMIReplier::~RMIReplier()
+{
+    if (d && !d->ref.deref()) {
+        d->server.send(d->connId, d->ser.data());
+        delete d;
+    }
 }
 
 RMIService<void>::RMIService(const String & threadName, uint threadCount, LoopType loopType) :
