@@ -66,9 +66,11 @@ struct BddConsoleReporter : public doctest::IReporter
         };
 
         stream << "  Scenarios  : ";
-        printStat(in.numTestCases - in.numTestCasesFailed, in.numTestCasesFailed, in.numTestCases);
+        printStat(in.numTestCasesPassingFilters - in.numTestCasesFailed, in.numTestCasesFailed, in.numTestCasesPassingFilters);
+        unsigned skipped = in.numTestCases - in.numTestCasesPassingFilters;
+        if (skipped > 0) stream << "  Skipped    :                               " << std::setw(5) << skipped << " total\n";
         stream << "  Assertions : ";
-        printStat(in.numAsserts - in.numAssertsFailed,       in.numAssertsFailed, in.numAsserts  );
+        printStat(in.numAsserts - in.numAssertsFailed, in.numAssertsFailed, in.numAsserts);
 
         stream << BOLD << CYAN
             << "============================================================\n"
@@ -77,10 +79,11 @@ struct BddConsoleReporter : public doctest::IReporter
 
     void test_case_start(const doctest::TestCaseData & in) override
     {
-        stream << "\n" << BOLD << "📌 Scenario: " << in.m_name << RESET << "\n";
+        bool hasIndent = doctest::String(in.m_name).substr(0, 2) == "  ";
+        stream << "\n" << BOLD << (hasIndent ? "" : "  ") << in.m_name << RESET << "\n";
     }
 
-    void test_case_end(const doctest::CurrentTestCaseStats& in) override
+    void test_case_end(const doctest::CurrentTestCaseStats & in) override
     {
         bool passed = (in.failure_flags == doctest::TestCaseFailureReason::None);
 
@@ -95,24 +98,21 @@ struct BddConsoleReporter : public doctest::IReporter
 
     void subcase_start(const doctest::SubcaseSignature & in) override
     {
-        stream << "   " << GRAY << "🔹 " << RESET << in.m_name << "\n";
+        bool given = in.m_name.substr(0, 10) == "   Given: ";
+        stream << GRAY << (given ? "   🔹" : "    ") << in.m_name << RESET << "\n";
     }
 
     void subcase_end() override
     {
     }
 
-    void log_assert(const doctest::AssertData& in) override
+    void log_assert(const doctest::AssertData & in) override
     {
-        if (in.m_failed) {
-            stream << "      " << BOLD << RED << "❌ FAILED: "
-                << in.m_expr << " (in " << in.m_file << ":" << in.m_line << ")"
-                << RESET << "\n";
-            if (in.m_decomp.size() > 0) {
-                stream << "         " << GRAY << in.m_decomp.c_str()
-                    << RESET << "\n";
-            }
-        }
+        if (!in.m_failed) return;
+
+        stream << "        " << BOLD << RED << "❌ FAILED: " << in.m_expr << RESET << "\n";
+        if (in.m_decomp.size() > 0) stream << "           " << in.m_decomp.c_str() << "\n";
+        stream << "           " << in.m_file << ":" << in.m_line << "\n";
     }
 
     void log_message(const doctest::MessageData &) override
