@@ -10,6 +10,7 @@
 
 #include <cflib/util/log.h>
 
+#include <iomanip>
 #include <iostream>
 #include <string_view>
 
@@ -45,9 +46,31 @@ struct BddConsoleReporter : public doctest::IReporter
                << RESET;
     }
 
-    void test_run_end(const doctest::TestRunStats &) override
+    void test_run_end(const doctest::TestRunStats & in) override
     {
         stream << "\n" << BOLD << CYAN
+            << "============================================================\n"
+            << RESET;
+
+        stream << BOLD << "SUMMARY: ";
+        if (in.numTestCasesFailed == 0) stream << GREEN << "✅ ALL TESTS PASSED";
+        else                            stream << RED << "❌ SOME TESTS FAILED";
+        stream << RESET << "\n";
+
+        auto printStat = [&](int passed, int failed, int total) {
+            stream << std::right
+                << BOLD << std::setw(5) << passed << RESET << " passed | ";
+            if (failed > 0) stream << RED << BOLD << std::setw(5) << failed << RESET << " failed";
+            else            stream << std::setw(5) << 0 << " failed";
+            stream << " | " << std::setw(5) << total << " total\n";
+        };
+
+        stream << "  Scenarios  : ";
+        printStat(in.numTestCases - in.numTestCasesFailed, in.numTestCasesFailed, in.numTestCases);
+        stream << "  Assertions : ";
+        printStat(in.numAsserts - in.numAssertsFailed,       in.numAssertsFailed, in.numAsserts  );
+
+        stream << BOLD << CYAN
             << "============================================================\n"
             << RESET << "\n";
     }
