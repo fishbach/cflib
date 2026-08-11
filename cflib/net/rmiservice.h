@@ -16,16 +16,26 @@ namespace cflib::net {
 
 namespace impl { class RMIServerBase; }
 
-class RMIReplier : public ByteArray
+class RMIReplier
 {
 public:
+    RMIReplier(const RMIReplier &  other) = default;
+    RMIReplier(      RMIReplier && other) = default;
+    RMIReplier & operator=(const RMIReplier &  other) = delete;
+    RMIReplier & operator=(      RMIReplier && other) = delete;
+
     void send();
     uint connId() const { return connId_; }
 
+    template<typename T>
+    inline RMIReplier & operator<<(const T & cl             ) { ser_ << cl; return *this; }
+    inline RMIReplier & operator<<(serialize::Placeholder ph) { ser_ << ph; return *this; }
+
 private:
-    RMIReplier(impl::RMIServerBase & server, uint connId) : server_(server), connId_(connId) {}
+    RMIReplier(impl::RMIServerBase & server, uint connId) : server_(server), connId_(connId), ser_(2) {}
     impl::RMIServerBase & server_;
-    uint connId_;
+    const uint connId_;
+    serialize::BERSerializer ser_;
     friend class RMIServiceBase;
 };
 

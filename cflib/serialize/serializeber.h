@@ -25,10 +25,10 @@ public:
         }
     }
 
-    BERSerializer(const BERSerializer & other) : lenPos_(other.lenPos_), data_(other.data_), base_(data_, other.base_) {}
-    BERSerializer(BERSerializer && other) : lenPos_(other.lenPos_), data_(std::move(other.data_)), base_(data_, other.base_) {}
-    BERSerializer & operator=(const BERSerializer & other) = delete;
-    BERSerializer & operator=(BERSerializer && other) = delete;
+    BERSerializer(const BERSerializer &  other) : lenPos_(other.lenPos_), data_(other.data_), base_(data_, other.base_) {}
+    BERSerializer(      BERSerializer && other) : lenPos_(other.lenPos_), data_(std::move(other.data_)), base_(data_, other.base_) {}
+    BERSerializer & operator=(const BERSerializer &  other) = delete;
+    BERSerializer & operator=(      BERSerializer && other) = delete;
 
     ByteArray data() {
         if (lenPos_) {
@@ -39,8 +39,7 @@ public:
     }
 
     template<typename T>
-    inline BERSerializer & operator<<(const T & cl) { base_ << cl; return *this; }
-
+    inline BERSerializer & operator<<(const T & cl  ) { base_ << cl; return *this; }
     inline BERSerializer & operator<<(Placeholder ph) { base_ << ph; return *this; }
 
 private:

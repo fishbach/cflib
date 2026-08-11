@@ -80,7 +80,7 @@ ByteArray RMIServiceBase::getRemoteIP() const
 
 void RMIReplier::send()
 {
-    server_.send(connId_, *this);
+    server_.send(connId_, ser_.data());
 }
 
 RMIService<void>::RMIService(const String & threadName, uint threadCount, LoopType loopType) :
