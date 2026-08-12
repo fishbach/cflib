@@ -208,6 +208,7 @@ int genSerialize(const std::string & headerName, const HeaderParser & hp, std::o
     }
 
     for (const SerializeTypeInfo & cl : hp.classes()) {
+        if (cl.type == SerializeTypeInfo::Using) continue;
 
         out << "\n";
         std::vector<std::string> nsList = splitStr(cl.ns.str(), "::");

@@ -30,6 +30,7 @@ private:
     bool getMembers     (const String & in, int start, int end, SerializeTypeInfo & cl, int & state);
     bool getMemberBlocks(const String & in, int start, int end, SerializeTypeInfo & cl, int & state);
     bool getPermissions (const String & in, int start, int end, SerializeTypeInfo & cl);
+    bool getUsings      (const String & in, int start, int end, SerializeTypeInfo & cl);
     bool getClasses     (const String & in, int start, int end, SerializeTypeInfo cl);
     bool removeCommentsAndStringContents(String & header);
 

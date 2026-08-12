@@ -34,6 +34,7 @@ public:
         Basic,
         Class,
         Container,
+        Using,
         Placeholder
     };
 

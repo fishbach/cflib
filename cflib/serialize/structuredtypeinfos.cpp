@@ -29,6 +29,9 @@ StructuredTypeInfos & StructuredTypeInfos::operator<<(const SerializeTypeInfo & 
     } else if (ti.type == SerializeTypeInfo::Class) {
         if (types_.contains(ti.getName())) return *this;
         types_[ti.getName()] = ti;
+    } else if (ti.type == SerializeTypeInfo::Using) {
+        if (usings_.contains(ti.getName())) return *this;
+        usings_[ti.getName()] = ti;
     }
     return *this;
 }
@@ -167,6 +170,13 @@ void StructuredTypeInfos::fixPlaceholder(Map<String, SerializeTypeInfo> & missin
             fixPlaceholders(missing, existing);
             ti = existing;
             logDebug("placeholder obj: %1 -> %2", phTypeName, ti.toString());
+            return;
+        }
+        if (usings_.contains(name)) {
+            SerializeTypeInfo & existing = usings_[name].bases[0];
+            fixPlaceholders(missing, existing);
+            ti = existing;
+            logDebug("placeholder obj with using: %1 -> %2", phTypeName, ti.toString());
             return;
         }
         if (ns.isEmpty()) {

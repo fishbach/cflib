@@ -262,6 +262,30 @@ bool HeaderParser::getPermissions(const String & in, int start, int end, Seriali
         String desc = permMR.captured(2).trimmed();
         if (desc.isEmpty()) desc.clear();
         permissions_ << Permission{prefix + permMR.captured(1), desc};
+
+        permStart += permMR.capturedStart() + permMR.capturedLength();
+        permMR = permRE.matchResult(in.mid(permStart, end - permStart));
+    }
+
+    return true;
+}
+
+bool HeaderParser::getUsings(const String & in, int start, int end, SerializeTypeInfo & cl)
+{
+    if (start >= end) return true;
+
+    static const Regex permRE(R"((?:^|\n)\s*using\s+(\w+)\s*=\s*([\w<>]+)\s*;)");
+    int permStart = start;
+    Regex::MatchResult permMR = permRE.matchResult(in.mid(permStart, end - permStart));
+    while (permMR.hasMatch()) {
+        SerializeTypeInfo ti;
+        ti.type = SerializeTypeInfo::Using;
+        ti.ns = cl.getName();
+        ti.typeName = permMR.captured(1);
+        ti.bases << rawTypeInfo(ti.ns, permMR.captured(2));
+        classes_ << ti;
+        logDebug("using: %1 = %2 (ns: %3)", ti.typeName, ti.bases[0].typeName, ti.ns);
+
         permStart += permMR.capturedStart() + permMR.capturedLength();
         permMR = permRE.matchResult(in.mid(permStart, end - permStart));
     }
@@ -285,6 +309,7 @@ bool HeaderParser::getClasses(const String & in, int start, int end, SerializeTy
 
         // handle rest of previous
         getPermissions(in, start, pos, cl);
+        getUsings(in, start, pos, cl);
         if (pos > start && !cl.typeName.isEmpty()) {
             if (!getMemberBlocks(in, start, pos, cl, state)) return false;
         }
@@ -313,6 +338,7 @@ bool HeaderParser::getClasses(const String & in, int start, int end, SerializeTy
 
     // handle rest to end
     getPermissions(in, start, end, cl);
+    getUsings(in, start, end, cl);
     if (start < end && !cl.typeName.isEmpty()) {
         if (!getMemberBlocks(in, start, end, cl, state)) return false;
     }

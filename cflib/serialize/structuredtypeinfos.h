@@ -36,6 +36,7 @@ private:
 private:
     Map<String, SerializeTypeInfo> services_;
     Map<String, SerializeTypeInfo> types_;
+    Map<String, SerializeTypeInfo> usings_;
 };
 
 } // namespace

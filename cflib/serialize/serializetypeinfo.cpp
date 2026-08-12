@@ -129,14 +129,18 @@ SerializeTypeInfos SerializeTypeInfo::allUsedClasses() const
         for (const SerializeVariableTypeInfo & vti : fti.parameters) allClasses << vti.type;
     }
 
-    Set<SerializeTypeInfo> rv;
-    for (const SerializeTypeInfo & ti : allClasses) {
-        if (ti.type == Class) {
-            rv << ti;
-        } else if (ti.type == Container) {
-            for (const SerializeTypeInfo & ti : ti.bases) rv << ti;
+    // add container types
+    std::function<void (const SerializeTypeInfo &)> resolveContainers = [&](const SerializeTypeInfo & ti) {
+        if (ti.type != Container) return;
+        for (const SerializeTypeInfo & base : ti.bases) {
+            allClasses << base;
+            resolveContainers(base);
         }
-    }
+    };
+    for (const SerializeTypeInfo & ti : Set<SerializeTypeInfo>(allClasses)) resolveContainers(ti);
+
+    Set<SerializeTypeInfo> rv;
+    for (const SerializeTypeInfo & ti : allClasses) if (ti.type == Class) rv << ti;
     return rv.toList().sorted();
 }
 
