@@ -120,6 +120,7 @@ public:
     }
     bool contains(const char * s) const { return d->data.find(s) != std::string::npos; }
     bool contains(char c) const { return d->data.find(c) != std::string::npos; }
+    bool contains(const ByteArray & other) const { return d->data.find(other.d->data) != std::string::npos; }
 
     ssize_t indexOf(char c, size_t from = 0) const {
         size_t pos = d->data.find(c, from);
@@ -324,10 +325,10 @@ public:
     bool operator==(const ByteArray & o) const { return d->data == o.d->data; }
     bool operator!=(const ByteArray & o) const { return d->data != o.d->data; }
     bool operator< (const ByteArray & o) const { return d->data <  o.d->data; }
-    bool operator==(const char * o) const { return d->data == o; }
-    bool operator!=(const char * o) const { return d->data != o; }
+    bool operator==(const char * o) const { return o ? d->data == o : d->isNull; }
+    bool operator!=(const char * o) const { return !((*this) == o); }
 
-private:
+protected:
     struct Shared
     {
         bool isNull = true;
@@ -341,6 +342,20 @@ inline ByteArray operator+(const char * lhs, const ByteArray & rhs) {
     ByteArray r(lhs);
     r += rhs;
     return r;
+}
+
+// The bodies must not call `rhs == lhs` / `rhs != lhs`: under C++20
+// rewritten-candidate rules that expression would resolve back to these
+// free functions themselves (infinite recursion). Comparing the underlying
+// std::string directly keeps them recursion-proof and mirrors the
+// null-aware member semantics. They are also required for the `char* ==
+// ByteArray` direction, which GCC 13 fails to resolve via the member
+// operator alone (see string.h).
+inline bool operator==(const char * lhs, const ByteArray & rhs) {
+    return lhs ? rhs.toStdString() == lhs : rhs.isNull();
+}
+inline bool operator!=(const char * lhs, const ByteArray & rhs) {
+    return lhs ? !(rhs.toStdString() == lhs) : !rhs.isNull();
 }
 
 inline ByteArray & operator<<(ByteArray & lhs, const ByteArray & rhs) { return lhs += rhs; }

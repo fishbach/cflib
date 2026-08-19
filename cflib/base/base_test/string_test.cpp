@@ -475,4 +475,57 @@ TEST_CASE("String: unicode")
     REQUIRE_EQ(fromBa, String("ö"));
 }
 
+// Inheritance from ByteArray tests
+TEST_CASE("String: inherits_ByteArray")
+{
+    static_assert(std::is_base_of_v<ByteArray, String>);
+    static_assert(sizeof(String) == sizeof(ByteArray));
+
+    // Concatenation operators keep the String type
+    String a("foo"), b("bar");
+    static_assert(std::is_same_v<decltype(a + b), String>);
+    static_assert(std::is_same_v<decltype(a + "x"), String>);
+    static_assert(std::is_same_v<decltype(a + 'x'), String>);
+    static_assert(std::is_same_v<decltype(a += b), String &>);
+    static_assert(std::is_same_v<decltype(a << b), String &>);
+
+    // Byte-level operations inherited from ByteArray
+    String s("hello world");
+    REQUIRE_EQ(s.indexOf("world"), (ssize_t)6);
+    REQUIRE_EQ(s.indexOf('w'), (ssize_t)6);
+    ByteArray sub("world");
+    REQUIRE_EQ(s.indexOf(sub), (ssize_t)6);   // inherited ByteArray overload
+    REQUIRE(s.contains(sub));
+    REQUIRE(s.startsWith("hello"));
+    REQUIRE(s.endsWith(sub));
+    s.replace("world", "cflib");              // inherited in-place replace
+    REQUIRE_EQ(s, String("hello cflib"));
+    s.append("!");                            // inherited
+    REQUIRE_EQ(s, String("hello cflib!"));
+    s.prepend(">> ");                         // inherited
+    REQUIRE_EQ(s, String(">> hello cflib!"));
+    REQUIRE(ByteArray::fromHex(s.toHex()) == s);   // inherited Hex roundtrip
+
+    // COW across types: String and ByteArray share storage
+    ByteArray src("shared");
+    String sharedStr(src);
+    ByteArray sharedBa = sharedStr.toUtf8();
+    REQUIRE(sharedBa.constData() == sharedStr.constData());   // shared
+    src.append("-mutated");                       // detaches src only
+    REQUIRE_EQ(sharedStr, String("shared"));
+    REQUIRE(sharedBa == ByteArray("shared"));
+    sharedStr.append("-s");                       // detaches sharedStr only
+    REQUIRE_EQ(src, ByteArray("shared-mutated"));
+    REQUIRE_EQ(sharedStr, String("shared-s"));
+
+    // Null semantics
+    String nullStr;
+    REQUIRE(nullStr == nullptr);
+    nullStr.resize(0);
+    REQUIRE(nullStr.isNull());
+    nullStr.resize(3);
+    REQUIRE(!nullStr.isNull());
+    REQUIRE_EQ(nullStr.byteSize(), (size_t)3);
+}
+
 }

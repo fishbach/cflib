@@ -21,55 +21,40 @@ namespace cflib::base {
 class String;
 using StringList = List<String>;
 
-class String
+// A String is UTF-8 encoded text. Since UTF-8 text is a byte sequence,
+// String is a ByteArray with text-specific operations layered on top.
+// Everything that operates on bytes (append, indexOf, replace, Base64, Hex,
+// ...) is inherited from ByteArray; only methods with text semantics or a
+// String-typed result are redeclared here.
+//
+// Note: size() / length() count bytes, not Unicode characters. Use
+// charCount() for the number of codepoints.
+
+class String : public ByteArray
 {
 public:
-    static constexpr size_t npos = std::string::npos;
+    String() : ByteArray() {}
+    String(const char * utf8) : ByteArray(utf8) {}
+    String(const char * utf8, size_t len) : ByteArray(utf8, len) {}
+    String(std::string s) : ByteArray(std::move(s)) {}
+    String(size_t n, char c) : ByteArray(n, c) {}
+    String(std::string_view sv) : ByteArray(sv) {}
+    String(const ByteArray & ba) : ByteArray(ba) {}
 
-    String() : d(new Shared) {}
-    String(const char * utf8) : d(new Shared{utf8 == nullptr, utf8 ? utf8 : ""}) {}
-    String(const char * utf8, size_t len) : d(new Shared{false, std::string(utf8, len)}) {}
-    String(std::string s) : d(new Shared{false, std::move(s)}) {}
-    String(size_t n, char c) : d(new Shared{false, std::string(n, c)}) {}
-    String(std::string_view sv) : d(new Shared{false, std::string(sv)}) {}
-    String(const ByteArray & ba) : d(new Shared{ba.isNull(), ba.constData()}) {}
+    // A null string stays null when resized to zero, otherwise behave like
+    // ByteArray::resize (which detaches and clears the null flag).
+    void resize(size_t n) { if (isNull() && n == 0) return; ByteArray::resize(n); }
+    using ByteArray::resize;
 
-    // implicit sharing
-    String(const String & other) : d(other.d) { d->ref.ref(); }
-    String(String && other) : d(other.d) { other.d = new Shared; }
-    ~String() { if (!d->ref.deref()) delete d; }
-    String & operator=(const String & other) {
-        if (d == other.d) return *this;
-        if (!d->ref.deref()) delete d;
-        d = other.d;
-        d->ref.ref();
-        return *this;
-    }
-    String& operator=(String && other) {
-        std::swap(d, other.d);
-        return *this;
-    }
-    void detach() {
-        if (d->ref.loadAcquire() == 1) return;
-        Shared * newD = new Shared{d->isNull, d->data};
-        if (!d->ref.deref()) delete d;
-        d = newD;
-    }
+    const std::string & str()      const { return toStdString(); }
+    const char *        c_str()    const { return constData(); }
+    size_t              byteSize() const { return size(); }
 
-    const std::string & str()      const { return d->data; }
-    const char *        c_str()    const { return d->data.c_str(); }
-    size_t              byteSize() const { return (size_t)d->data.size(); }
-    size_t              size()     const { return (size_t)d->data.size(); }
-    size_t              length()   const { return (size_t)d->data.size(); }
-    bool                isEmpty()  const { return d->data.empty(); }
-    bool                isNull()   const { return d->isNull; }
-
-    void resize(size_t newSize);
-
-    ByteArray toUtf8()   const { return ByteArray(d->data.data(), (size_t)d->data.size()); }
+    // O(1): the UTF-8 byte sequence, shared (copy-on-write)
+    ByteArray toUtf8()   const { return *this; }
     ByteArray toLatin1() const { return toUtf8(); }
 
-    // Codepoint count
+    // Number of Unicode codepoints (UTF-8 scan, O(n))
     size_t charCount() const {
         size_t count = 0;
         for (size_t i = 0; i < (size_t)d->data.size(); ) {
@@ -83,35 +68,9 @@ public:
         return count;
     }
 
-    ssize_t indexOf(const char * s, size_t from = 0) const {
-        size_t pos = d->data.find(s, from);
-        return pos == std::string::npos ? -1 : (size_t)pos;
-    }
-    ssize_t indexOf(const String & s, size_t from = 0) const {
-        size_t pos = d->data.find(s.d->data, from);
-        return pos == std::string::npos ? -1 : (size_t)pos;
-    }
-    ssize_t indexOf(char c, size_t from = 0) const {
-        size_t pos = d->data.find(c, from);
-        return pos == std::string::npos ? -1 : (size_t)pos;
-    }
     ssize_t lastIndexOf(const char * s) const {
         size_t pos = d->data.rfind(s);
         return pos == std::string::npos ? -1 : (size_t)pos;
-    }
-
-    bool contains(const char * s) const { return d->data.find(s) != std::string::npos; }
-    bool contains(char c) const { return d->data.find(c) != std::string::npos; }
-    bool startsWith(const char * s) const { return d->data.rfind(s, 0) == 0; }
-    bool startsWith(const String & s) const { return d->data.rfind(s.d->data, 0) == 0; }
-    bool endsWith(const char * s) const {
-        size_t slen = strlen(s);
-        if (slen > (size_t)d->data.size()) return false;
-        return d->data.compare(d->data.size() - slen, slen, s) == 0;
-    }
-    bool endsWith(const String & s) const {
-        if (s.d->data.size() > d->data.size()) return false;
-        return d->data.compare(d->data.size() - s.d->data.size(), s.d->data.size(), s.d->data) == 0;
     }
 
     size_t count(const String & subStr) const {
@@ -175,23 +134,6 @@ public:
         return result;
     }
 
-    String & replace(const char * before, const char * after) {
-        detach();
-        const size_t blen = strlen(before);
-        const size_t alen = strlen(after);
-        size_t pos = 0;
-        while ((pos = d->data.find(before, pos)) != std::string::npos) {
-            d->data.replace(pos, blen, after, alen);
-            pos += alen;
-        }
-        return *this;
-    }
-    String & replace(size_t pos, size_t len, const char * s) {
-        detach();
-        d->data.replace(pos, len, s);
-        return *this;
-    }
-
     String join(const StringList & list) const {
         std::string r;
         for (size_t i = 0; i < (size_t)list.size(); ++i) {
@@ -228,67 +170,39 @@ public:
         if (!s) return String();
         return String(len == npos ? std::string(s) : std::string(s, len));
     }
-    static String fromUtf8(const ByteArray & ba) {
-        if (ba.isNull()) return {};
-        return String(std::string(ba.constData(), ba.size()));
-    }
+    static String fromUtf8(const ByteArray & ba) { return String(ba); }
     static String fromLatin1(const char * s) { return s ? String(s) : String(); }
 
-    bool operator==(const String & o) const { return d->data == o.d->data; }
-    bool operator==(const char * o)     const { return o ? d->data == o : d->isNull; }
-    bool operator!=(const String & o) const { return d->data != o.d->data; }
-    bool operator!=(const char * o)     const { return !((*this) == o); }
-    bool operator< (const String & o) const { return d->data <  o.d->data; }
-    bool operator<=(const String & o) const { return d->data <= o.d->data; }
-    bool operator> (const String & o) const { return d->data >  o.d->data; }
-    bool operator>=(const String & o) const { return d->data >= o.d->data; }
+    bool operator<= (const String & o) const { return d->data <= o.d->data; }
+    bool operator>  (const String & o) const { return d->data >  o.d->data; }
+    bool operator>= (const String & o) const { return d->data >= o.d->data; }
 
     String   operator+ (const String & o) const { return String(d->data + o.d->data); }
     String   operator+ (const char * s)   const { return String(d->data + s); }
-    String & operator+=(const String & o)       { detach(); d->data += o.d->data; d->isNull = false; return *this; }
-    String & operator+=(const char * s)         { detach(); d->data += s;       d->isNull = false; return *this; }
-    String & operator+=(char c)                 { detach(); d->data += c;       d->isNull = false; return *this; }
+    String   operator+ (char c)            const { String r(*this); r += c; return r; }
+    String & operator+=(const String & o)  { detach(); d->data += o.d->data; d->isNull = false; return *this; }
+    String & operator+=(const char * s)    { detach(); d->data += s;       d->isNull = false; return *this; }
+    String & operator+=(char c)            { detach(); d->data += c;       d->isNull = false; return *this; }
 
-    String & operator<<(const String & o) { detach(); return *this += o; }
-    String & operator<<(const char * s)   { detach(); return *this += s; }
-    String & operator<<(char c)           { detach(); return *this += c; }
-
-    void clear() { detach(); d->data.clear(); d->isNull = true; }
-    void remove(size_t pos, size_t len) { detach(); d->data.erase(pos, len); }
-
-    char operator[](size_t i) const { return d->data[i]; }
-    char & operator[](size_t i) { detach(); return d->data[i]; }
-
-    uint32 toUInt(bool * ok = nullptr) const {
-        if (d->data.empty()) { if (ok) *ok = false; return 0; }
-        char * end = nullptr;
-        unsigned long v = strtoul(d->data.c_str(), &end, 10);
-        if (ok) *ok = (end != d->data.c_str() && *end == '\0');
-        return (uint32)v;
-    }
-
-    int32 toInt(bool * ok = nullptr) const {
-        if (d->data.empty()) { if (ok) *ok = false; return 0; }
-        char * end = nullptr;
-        long v = strtol(d->data.c_str(), &end, 10);
-        if (ok) *ok = (end != d->data.c_str() && *end == '\0');
-        return (int32)v;
-    }
+    String & operator<<(const String & o)    { detach(); return *this += o; }
+    String & operator<<(const ByteArray & o) { detach(); d->data += o.toStdString(); d->isNull = false; return *this; }
+    String & operator<<(const char * s)      { detach(); return *this += s; }
+    String & operator<<(char c)              { detach(); return *this += c; }
 
     String simplified() const;
-
-private:
-    struct Shared
-    {
-        bool isNull = true;
-        std::string data;
-        AtomicInt ref{1};
-    };
-    Shared * d;
 };
 
-inline bool operator==(const char * lhs, const String & rhs) { return rhs == lhs; }
-inline bool operator!=(const char * lhs, const String & rhs) { return rhs != lhs; }
+// The bodies must not call `rhs == lhs` / `rhs != lhs`: under C++20
+// rewritten-candidate rules that expression would resolve back to these
+// free functions themselves (infinite recursion). Comparing the underlying
+// std::string directly keeps them recursion-proof and mirrors the
+// null-aware member semantics of ByteArray.
+inline bool operator==(const char * lhs, const String & rhs) {
+    return lhs ? rhs.str() == lhs : rhs.isNull();
+}
+inline bool operator!=(const char * lhs, const String & rhs) {
+    return lhs ? !(rhs.str() == lhs) : !rhs.isNull();
+}
 
 inline String operator+(const char * lhs, const String & rhs) {
     return String(std::string(lhs) + rhs.str());

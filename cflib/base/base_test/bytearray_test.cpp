@@ -472,4 +472,21 @@ TEST_CASE("ByteArray: implicit_sharing")
     REQUIRE(ba3.constData() != ba4.constData());
 }
 
+// char* on the left side of comparisons (free function, direct body)
+TEST_CASE("ByteArray: char_ptr_comparison")
+{
+    ByteArray ba("hello");
+    REQUIRE("hello" == ba);
+    REQUIRE("world" != ba);
+    REQUIRE(ba == "hello");
+    REQUIRE(ba != "world");
+
+    const char * cp = nullptr;
+    ByteArray nullBa;
+    REQUIRE(cp == nullBa);
+    REQUIRE(cp != ba);
+    REQUIRE(nullBa == cp);
+    REQUIRE(ba != cp);
+}
+
 }
