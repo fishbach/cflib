@@ -26,12 +26,12 @@ namespace {
 // Check if path is a directory
 inline bool isDirectory(const String & path) {
     struct stat st;
-    return stat(path.c_str(), &st) == 0 && S_ISDIR(st.st_mode);
+    return stat(path.toStdString().c_str(), &st) == 0 && S_ISDIR(st.st_mode);
 }
 
 // Check if a file is readable
 inline bool isReadable(const String & path) {
-    return access(path.c_str(), R_OK) == 0;
+    return access(path.toStdString().c_str(), R_OK) == 0;
 }
 
 }
@@ -272,7 +272,7 @@ String FileServer::createIndex(const String & fullPath, const String & path)
     }
 
     // List directory entries
-    DIR * d = opendir(fullPath.c_str());
+    DIR * d = opendir(fullPath.toStdString().c_str());
     if (d) {
         // Collect entries, then sort
         StringList dirs, files;
@@ -282,7 +282,7 @@ String FileServer::createIndex(const String & fullPath, const String & path)
             if (name == "." || name == "..") continue;
             struct stat st;
             String full = fullPath + "/" + name;
-            if (stat(full.c_str(), &st) != 0) continue;
+            if (stat(full.toStdString().c_str(), &st) != 0) continue;
             if (S_ISDIR(st.st_mode)) dirs.push_back(name);
             else files.push_back(name);
         }

@@ -134,7 +134,7 @@ LogCategory Log::logLevelCategory_ = 0;
 void Log::start(const String & fileName)
 {
     if (active) {
-        std::cerr << std::format("logging already started with log file: {}\n", file.fileName().c_str());
+        std::cerr << std::format("logging already started with log file: {}\n", file.fileName().toStdString());
         return;
     }
 
@@ -143,7 +143,7 @@ void Log::start(const String & fileName)
     } else {
         file.setFileName(fileName);
         if (!file.open(File::WriteOnly | File::Append)) {
-            std::cerr << std::format("could not open log file: {} ({})\n", fileName.c_str(), file.errorString().c_str());
+            std::cerr << std::format("could not open log file: {} ({})\n", fileName.toStdString(), file.errorString().toStdString());
             return;
         }
         file.setPermissions(File::ReadOwner | File::WriteOwner | File::ReadGroup);

@@ -19,7 +19,7 @@ struct StringMaker<cflib::base::String>
     static String convert(const cflib::base::String & value)
     {
         if (value.isNull()) return "<null>";
-        return String(value.c_str(), (String::size_type)value.byteSize());
+        return String(value.constData(), value.size());
     }
 };
 

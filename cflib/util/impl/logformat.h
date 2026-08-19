@@ -83,7 +83,7 @@ inline void logFormat(ByteArray & dest, double val) { dest += ByteArray::number(
 inline void logFormat(ByteArray & dest, char * str)            { dest += str; }
 inline void logFormat(ByteArray & dest, const char * str)      { dest += str; }
 inline void logFormat(ByteArray & dest, const ByteArray & ba) { dest += ba; }
-inline void logFormat(ByteArray & dest, const String & str)   { dest.append(str.c_str()); }
+inline void logFormat(ByteArray & dest, const String & str)   { dest += str; }
 
 // DateTime
 inline void logFormat(ByteArray & dest, const DateTime & dt) {
@@ -103,6 +103,12 @@ struct HasCharConstData : std::false_type {};
 template<typename T>
 struct HasCharConstData<T, std::enable_if_t<std::is_same_v<decltype(std::declval<const T&>().constData()), const char*>>> : std::true_type {};
 
+template<typename T, typename = void>
+struct HasToStringConstData : std::false_type {};
+template<typename T>
+struct HasToStringConstData<T, std::void_t<decltype(std::declval<const T&>().toString().constData())>> : std::true_type {};
+
+// toString() returning std::string (NUL-terminated, plain c_str() append)
 template<typename T, typename = void>
 struct HasToStringCStr : std::false_type {};
 template<typename T>
@@ -129,11 +135,22 @@ inline auto logFormat(ByteArray & dest, const T & val)
     dest.append(val.constData(), val.size());
 }
 
-// Fallback for types with toString() returning String-like (has c_str())
+// Fallback for types with toString() returning bytes (constData()/size())
 template<typename T>
 inline auto logFormat(ByteArray & dest, const T & val)
     -> std::enable_if_t<!std::is_same_v<T, ByteArray> && !std::is_same_v<T, String>
-        && !HasToUtf8<T>::value && !HasCharConstData<T>::value && HasToStringCStr<T>::value>
+        && !HasToUtf8<T>::value && !HasCharConstData<T>::value && HasToStringConstData<T>::value>
+{
+    const auto s = val.toString();
+    dest.append(s.constData(), s.size());
+}
+
+// Fallback for types with toString() returning std::string
+template<typename T>
+inline auto logFormat(ByteArray & dest, const T & val)
+    -> std::enable_if_t<!std::is_same_v<T, ByteArray> && !std::is_same_v<T, String>
+        && !HasToUtf8<T>::value && !HasCharConstData<T>::value
+        && !HasToStringConstData<T>::value && HasToStringCStr<T>::value>
 {
     dest.append(val.toString().c_str());
 }
@@ -141,7 +158,8 @@ inline auto logFormat(ByteArray & dest, const T & val)
 template<typename T>
 inline auto logFormat(ByteArray & dest, const T & val)
     -> std::enable_if_t<!std::is_same_v<T, ByteArray> && !std::is_same_v<T, String>
-        && !HasToUtf8<T>::value && !HasCharConstData<T>::value && !HasToStringCStr<T>::value && HasToStringToUtf8<T>::value>
+        && !HasToUtf8<T>::value && !HasCharConstData<T>::value
+        && !HasToStringConstData<T>::value && !HasToStringCStr<T>::value && HasToStringToUtf8<T>::value>
 {
     auto utf8 = val.toString().toUtf8();
     dest.append(utf8.constData(), utf8.size());

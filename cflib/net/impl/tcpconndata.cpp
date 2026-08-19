@@ -17,7 +17,7 @@ USE_LOG(LogCat::Network)
 namespace cflib::net {
 
 TCPConnData::TCPConnData(impl::TCPManagerImpl & impl,
-    int socket, const char * peerIP, uint16 peerPort,
+    int socket, const ByteArray & peerIP, uint16 peerPort,
     crypt::TLSStream * tlsStream, uint tlsThreadId)
 :
     impl(impl), conn(0),

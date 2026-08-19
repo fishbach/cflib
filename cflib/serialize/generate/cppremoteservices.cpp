@@ -206,7 +206,7 @@ void generateCppRemoteServices(const StructuredTypeInfos & typeInfos, const Stri
 
     // remove old
     {
-        DIR * d = opendir(destPath.c_str());
+        DIR * d = opendir(destPath.toStdString().c_str());
         if (d) {
             struct dirent * ent;
             while ((ent = readdir(d)) != nullptr) {

@@ -30,7 +30,7 @@ void LogService::log(const String & file, int line, cflib::util::LogCategory cat
         if (c < 0x20 || c > 0x7E) fileBa[i] = '_';
     }
 
-    cflib::util::Log(cflib::util::LogFileInfo(fileBa.constData(), LogCat::JS),
+    cflib::util::Log(cflib::util::LogFileInfo(fileBa.toStdString().c_str(), LogCat::JS),
         line, category)("%1", str.toUtf8());
 }
 

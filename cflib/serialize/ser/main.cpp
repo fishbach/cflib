@@ -41,7 +41,7 @@ int serialize(const std::string & header, const std::string & dest)
 
     HeaderParser hp;
     if (!hp.parse(contents)) {
-        std::cerr << std::format("cannot parse: {} error: {}\n", header.c_str(), hp.lastError().c_str());
+        std::cerr << std::format("cannot parse: {} error: {}\n", header.c_str(), hp.lastError().toStdString());
         return 3;
     }
 

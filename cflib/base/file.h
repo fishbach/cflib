@@ -94,7 +94,7 @@ public:
         if (perms & WriteGroup) m |= S_IWGRP;
         if (perms & ReadOther)  m |= S_IROTH;
         if (perms & WriteOther) m |= S_IWOTH;
-        return chmod(path_.c_str(), m) == 0;
+        return chmod(path_.toStdString().c_str(), m) == 0;
     }
 
     String fileName() const { return path_; }
@@ -102,7 +102,7 @@ public:
 
     static bool exists(const String & path) {
         struct stat st;
-        return stat(path.c_str(), &st) == 0;
+        return stat(path.toStdString().c_str(), &st) == 0;
     }
 
     static void registerData(const String & file, const uint8 * data, size_t size);

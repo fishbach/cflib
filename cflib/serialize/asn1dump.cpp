@@ -37,7 +37,7 @@ String writeStr(const ByteArray & msg)
         } else ++p;
     }
     if (p > start) rv.append(start, p - start);
-    return 100 * specialCount / msg.size() > 10 ? String() : String(rv.constData());
+    return 100 * specialCount / msg.size() > 10 ? String() : rv;
 }
 
 String showValue(const uint8 * data, int len)
@@ -85,7 +85,7 @@ String showValue(const uint8 * data, int len)
     }
 
     rv += "0x";
-    rv += String(ByteArray::fromRawData((const char *)data, len).toHex().constData()).toUpper();
+    rv += String(ByteArray::fromRawData((const char *)data, len).toHex()).toUpper();
 
     return rv;
 }

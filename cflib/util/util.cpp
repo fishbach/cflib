@@ -358,7 +358,7 @@ String flatten(const String & str)
     std::string rv;
     rv.reserve(str.size());
     for (size_t i = 0; i < str.size(); ++i) {
-        char c = str.c_str()[i];
+        char c = str.constData()[i];
         if ((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9') ||
             c == '-' || c == '.' || c == '_' || c == ' ' || c == '\t' || c == '\r' || c == '\n') {
             rv += c;
@@ -416,7 +416,7 @@ bool isValidEmail(const String & str)
 {
     // Hand-written email validation replacing QRegularExpression
     // Pattern: ^[\w.\-_]+@\w[\w.\-]+\.\w+$
-    const char * s = str.c_str();
+    const char * s = str.constData();
     size_t len = str.size();
     if (len == 0) return false;
 
@@ -532,19 +532,19 @@ bool mkPath(const String & path)
 {
     if (path.isEmpty()) return false;
     struct stat st;
-    if (stat(path.c_str(), &st) == 0) return S_ISDIR(st.st_mode);
+    if (stat(path.toStdString().c_str(), &st) == 0) return S_ISDIR(st.st_mode);
 
     // Recursively create parent
     size_t pos = path.str().rfind('/');
     if (pos != std::string::npos && pos > 0) {
         if (!mkPath(path.left(pos))) return false;
     }
-    return mkdir(path.c_str(), 0755) == 0 || errno == EEXIST;
+    return mkdir(path.toStdString().c_str(), 0755) == 0 || errno == EEXIST;
 }
 
 bool removeFile(const String & path)
 {
-    return unlink(path.c_str()) == 0;
+    return unlink(path.toStdString().c_str()) == 0;
 }
 
 bool copyFile(const String & src, const String & dest)
@@ -555,7 +555,7 @@ bool copyFile(const String & src, const String & dest)
 
 String canonicalPath(const String & path)
 {
-    char * real = realpath(path.c_str(), nullptr);
+    char * real = realpath(path.toStdString().c_str(), nullptr);
     if (!real) return path;
     String result(real);
     free(real);

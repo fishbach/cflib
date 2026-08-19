@@ -56,13 +56,13 @@ TEST_CASE("util: deflate")
         deflateRaw(data, level);
         if (data != ByteArray::fromHex(enc)) {
             std::cout << std::format("compressed differs:\nis: {}\nex: {}\n",
-                data.toHex().constData(), enc.constData());
+                data.toHex().sv(), enc.sv());
             return false;
         }
         inflateRaw(data);
         if (data != source) {
             std::cout << std::format("decompressed differs:\nis: {}\nex: {}\n",
-                data.toHex().constData(), source.toHex().constData());
+                data.toHex().sv(), source.toHex().sv());
             return false;
         }
         return true;

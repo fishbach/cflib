@@ -164,7 +164,7 @@ String FileServerBase::parseHtml(const String & fullPath, bool isPart, const Str
             const String suffix = String("?") + eTag_ + "\"";
             bool isFirst = true;
             walkMjs = [&](const String & dir) {
-                DIR * d = opendir(dir.c_str());
+                DIR * d = opendir(dir.toStdString().c_str());
                 if (!d) return;
                 struct dirent * ent;
                 while ((ent = readdir(d)) != nullptr) {
@@ -172,7 +172,7 @@ String FileServerBase::parseHtml(const String & fullPath, bool isPart, const Str
                     if (name == "." || name == "..") continue;
                     String full = dir + "/" + name;
                     struct stat st;
-                    if (stat(full.c_str(), &st) != 0) continue;
+                    if (stat(full.toStdString().c_str(), &st) != 0) continue;
                     if (S_ISDIR(st.st_mode)) {
                         walkMjs(full);
                     } else if (name.endsWith(".js")) {
@@ -237,7 +237,7 @@ void FileServerBase::exportDir(const String & fullPath, const String & path, con
 {
     if (path == "/include") return;
 
-    DIR * d = opendir(fullPath.c_str());
+    DIR * d = opendir(fullPath.toStdString().c_str());
     if (!d) return;
 
     // Create destination directory
@@ -249,7 +249,7 @@ void FileServerBase::exportDir(const String & fullPath, const String & path, con
         if (name == "." || name == "..") continue;
         String filePath = util::canonicalPath(fullPath + "/" + name);
         struct stat st;
-        if (stat(filePath.c_str(), &st) != 0) continue;
+        if (stat(filePath.toStdString().c_str(), &st) != 0) continue;
 
         if (S_ISREG(st.st_mode)) {
             if (name == "index.html") {
@@ -269,7 +269,7 @@ void FileServerBase::exportDir(const String & fullPath, const String & path, con
     closedir(d);
 
     // Process subdirectories
-    d = opendir(fullPath.c_str());
+    d = opendir(fullPath.toStdString().c_str());
     if (!d) return;
     String p = path;
     if (path.length() > 1) p += '/';
@@ -278,7 +278,7 @@ void FileServerBase::exportDir(const String & fullPath, const String & path, con
         if (name == "." || name == "..") continue;
         String subPath = fullPath + "/" + name;
         struct stat st;
-        if (stat(subPath.c_str(), &st) != 0) continue;
+        if (stat(subPath.toStdString().c_str(), &st) != 0) continue;
         if (S_ISDIR(st.st_mode)) {
             exportDir(util::canonicalPath(subPath), p + name, dest + "/" + name);
         }

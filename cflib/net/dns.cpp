@@ -35,7 +35,7 @@ List<ByteArray> getIPFromDNS(const ByteArray & name, bool preferIPv6)
     }
 
     struct addrinfo * res;
-    int err = getaddrinfo(name.constData(), 0, 0, &res);
+    int err = getaddrinfo(name.toStdString().c_str(), 0, 0, &res);
     if (err != 0) {
         logWarn("getaddrinfo failed with error: %1", err);
         return List<ByteArray>();

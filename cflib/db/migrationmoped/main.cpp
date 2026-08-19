@@ -31,7 +31,7 @@ int showUsage(const ByteArray & executable)
         "  -d, --db <param>       => set DB parameters\n"
         "  -m, --migrator <param> => set migrator executable\n"
         "  -l, --log <level>      => set log level 0 -> all, 7 -> off\n",
-        executable.constData());
+        executable.sv());
     return 1;
 }
 
@@ -62,7 +62,7 @@ int main(int argc, char *argv[])
         String migratorExe = String::fromUtf8(migratorOpt.value());
         migrator = [&migratorExe](const ByteArray & name) {
             String cmd = migratorExe + " " + String::fromUtf8(name);
-            return system(cmd.c_str()) == 0;
+            return system(cmd.toStdString().c_str()) == 0;
         };
     }
 

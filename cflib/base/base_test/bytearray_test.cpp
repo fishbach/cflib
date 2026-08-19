@@ -92,7 +92,7 @@ TEST_CASE("ByteArray: accessors")
 
     REQUIRE_EQ(ba.size(), (size_t)5);
     REQUIRE_EQ(ba.length(), (size_t)5);
-    REQUIRE_EQ(strcmp(ba.constData(), "hello"), 0);
+    REQUIRE(ba == "hello");
     REQUIRE(!ba.isEmpty());
     REQUIRE(!ba.isNull());
 
@@ -528,6 +528,42 @@ TEST_CASE("ByteArray: char_ptr_comparison")
     REQUIRE(cp != ba);
     REQUIRE(nullBa == cp);
     REQUIRE(ba != cp);
+}
+
+// Move-assignment into a ByteArray that already holds a block must
+// release the old block (previously leaked; verified under ASan/LSan)
+TEST_CASE("ByteArray: move_semantics")
+{
+    ByteArray a("hello");
+    ByteArray b("world");
+
+    ByteArray c = std::move(b);
+    REQUIRE_EQ(c, ByteArray("world"));
+    REQUIRE(b.isNull());
+
+    a = std::move(c);
+    REQUIRE_EQ(a, ByteArray("world"));
+    REQUIRE(c.isNull());
+
+    // self move-assign is a no-op
+    a = std::move(a);
+    REQUIRE_EQ(a, ByteArray("world"));
+
+    // shared block: move-assign releases the shared old block correctly
+    ByteArray x("shared");
+    ByteArray y = x;           // x, y share
+    ByteArray z("other");
+    x = std::move(z);          // x releases "shared"
+    REQUIRE_EQ(x, ByteArray("other"));
+    REQUIRE_EQ(y, ByteArray("shared"));
+    REQUIRE(z.isNull());
+
+    // String: the `s = s.left(n)` pattern (substring assigned to self)
+    String s("abcdefgh");
+    s = s.left(3);
+    REQUIRE_EQ(s, String("abc"));
+    s = s.left(1);
+    REQUIRE_EQ(s, String("a"));
 }
 
 }

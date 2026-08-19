@@ -110,7 +110,7 @@ protected:
             return;
         }
 
-        const size_t length = ByteArray(match.captured(1).c_str()).toInt();
+        const size_t length = match.captured(1).toULong();
         if (buf_.size() < headerEndPos + 4 + length) {
             startReadWatcher();
             return;
@@ -122,7 +122,7 @@ protected:
             return;
         }
 
-        const int status = ByteArray(match.captured(1).c_str()).toInt();
+        const int status = match.captured(1).toInt();
 
         if (parent_) parent_->reply(status, buf_.mid(headerEndPos + 4, length));
         gotReply_ = true;

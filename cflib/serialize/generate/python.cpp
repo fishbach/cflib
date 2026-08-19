@@ -413,7 +413,7 @@ void generatePython(const StructuredTypeInfos & typeInfos, const String & dest)
         writeWhenChanged(destServices + file, generate(ti));
     }
     {
-        DIR * d = opendir(destServices.c_str());
+        DIR * d = opendir(destServices.toStdString().c_str());
         if (d) {
             struct dirent * ent;
             while ((ent = readdir(d)) != nullptr) {

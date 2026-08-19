@@ -29,9 +29,9 @@ ByteArray fromStdVector(const std::vector<std::string> & vec)
 String TLSCertInfo::toString() const
 {
     String rv("subject: \"");
-    rv += String(subjectName.constData());
+    rv.append(subjectName.constData(), subjectName.size());
     rv += "\", issuer: \"";
-    rv += String(issuerName.constData());
+    rv.append(issuerName.constData(), issuerName.size());
     rv += "\", isCA: ";
     rv += String::number((int32)isCA);
     rv += ", isTrusted: ";
@@ -250,12 +250,12 @@ bool TLSCredentials::loadFromDir(const String & path)
 {
     detach();
 
-    DIR * dir = opendir(path.c_str());
+    DIR * dir = opendir(path.toStdString().c_str());
     if (!dir) return false;
     struct dirent * entry;
     while ((entry = readdir(dir)) != nullptr) {
         String name(entry->d_name);
-        String file = String(path.str() + "/" + name.str());
+        String file = path + "/" + name;
         if (name.endsWith("_crt.pem")) {
             ByteArray data = File::read(file);
             if (data.isEmpty()) {

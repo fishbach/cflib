@@ -94,7 +94,7 @@ TEST_CASE("String: accessors")
     String s("hello");
 
     REQUIRE_EQ(s.str(), std::string("hello"));
-    REQUIRE_EQ(strcmp(s.c_str(), "hello"), 0);
+    REQUIRE_EQ(std::string(s), std::string("hello"));
     REQUIRE_EQ(s.byteSize(), (size_t)5);
     REQUIRE_EQ(s.size(), (size_t)5);
     REQUIRE_EQ(s.length(), (size_t)5);
@@ -346,9 +346,9 @@ TEST_CASE("String: implicit_sharing")
     // Initially share (same data)
     REQUIRE_EQ(s1, s2);
 
-    // Verify const pointers point to same address while sharing
-    const char * cstr1 = s1.c_str();
-    const char * cstr2 = s2.c_str();
+    // Verify data pointers point to the same block while sharing
+    const char * cstr1 = s1.constData();
+    const char * cstr2 = s2.constData();
     REQUIRE(cstr1 == cstr2);
 
     // Modify s2 - should detach
@@ -359,8 +359,8 @@ TEST_CASE("String: implicit_sharing")
     // s1 should not be affected by s2's modification
     REQUIRE(s1 != s2);
 
-    // Verify const pointers now point to different addresses after detach
-    REQUIRE(s1.c_str() != s2.c_str());
+    // Verify data pointers now point to different blocks after detach
+    REQUIRE(s1.constData() != s2.constData());
 
     // Test detach on shared data
     String s3("test");
@@ -370,8 +370,8 @@ TEST_CASE("String: implicit_sharing")
     REQUIRE_EQ(s3, String("xest"));
     REQUIRE_EQ(s4, String("test"));
 
-    // Verify const pointers are different after explicit detach
-    REQUIRE(s3.c_str() != s4.c_str());
+    // Verify data pointers are different after explicit detach
+    REQUIRE(s3.constData() != s4.constData());
 }
 
 // UTF-8 charCount tests

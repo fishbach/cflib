@@ -13,7 +13,6 @@
 #include <cstring>
 #include <string>
 #include <string_view>
-#include <vector>
 
 namespace cflib::base {
 
@@ -45,149 +44,83 @@ public:
     void resize(size_t n) { if (isNull() && n == 0) return; ByteArray::resize(n); }
     using ByteArray::resize;
 
-    const std::string & str()      const { return toStdString(); }
-    const char *        c_str()    const { return constData(); }
-    size_t              byteSize() const { return size(); }
+    // O(1) non-owning view over the UTF-8 bytes; copy via toStdString().
+    // The buffer is not NUL-terminated, so there is no c_str(); pass
+    // toStdString().c_str() where a C string is required.
+    std::string_view str() const { return sv(); }
+    size_t           byteSize() const { return size(); }
 
     // O(1): the UTF-8 byte sequence, shared (copy-on-write)
     ByteArray toUtf8()   const { return *this; }
     ByteArray toLatin1() const { return toUtf8(); }
 
     // Number of Unicode codepoints (UTF-8 scan, O(n))
-    size_t charCount() const {
-        size_t count = 0;
-        for (size_t i = 0; i < (size_t)d->data.size(); ) {
-            uint8 c = (uint8)d->data[i];
-            if      (c < 0x80) i += 1;
-            else if (c < 0xE0) i += 2;
-            else if (c < 0xF0) i += 3;
-            else               i += 4;
-            ++count;
-        }
-        return count;
-    }
+    size_t charCount() const;
 
-    ssize_t lastIndexOf(const char * s) const {
-        size_t pos = d->data.rfind(s);
-        return pos == std::string::npos ? -1 : (size_t)pos;
-    }
+    ssize_t lastIndexOf(const char * s) const;
 
-    size_t count(const String & subStr) const {
-        const std::string & sub = subStr.d->data;
-        size_t rv = 0;
-        size_t pos = 0;
-        while ((pos = d->data.find(sub, pos)) != std::string::npos) {
-            ++rv;
-            pos += sub.size();
-        }
-        return rv;
-    }
+    size_t count(const String & subStr) const;
 
-    String mid(size_t bytePos, size_t len = npos) const {
-        if (bytePos >= (size_t)d->data.size()) return String();
-        return String(d->data.substr(bytePos, len));
-    }
-    String left(size_t n) const { return mid(0, n); }
+    String mid(size_t bytePos, size_t len = npos) const;
+    String left(size_t n) const  { return mid(0, n); }
     String right(size_t n) const {
-        if (n >= (size_t)d->data.size()) return *this;
-        return mid(d->data.size() - n);
+        if (n >= size()) return *this;
+        return mid(size() - n);
     }
 
-    String trimmed() const {
-        size_t s = d->data.find_first_not_of(" \t\r\n");
-        if (s == std::string::npos) return String();
-        size_t e = d->data.find_last_not_of(" \t\r\n");
-        return String(d->data.substr(s, e - s + 1));
-    }
+    String trimmed() const;
+    String toLower() const;
+    String toUpper() const;
 
-    String toLower() const {
-        std::string r = d->data;
-        for (char & c : r) if (c >= 'A' && c <= 'Z') c += 32;
-        return String(std::move(r));
-    }
-    String toUpper() const {
-        std::string r = d->data;
-        for (char & c : r) if (c >= 'a' && c <= 'z') c -= 32;
-        return String(std::move(r));
-    }
+    StringList split(char delim) const;
+    StringList split(const char * delim) const;
 
-    StringList split(char delim) const {
-        StringList result;
-        size_t start = 0, pos;
-        while ((pos = d->data.find(delim, start)) != std::string::npos) {
-            result << String(d->data.substr(start, pos - start));
-            start = pos + 1;
-        }
-        result << String(d->data.substr(start));
-        return result;
-    }
-    StringList split(const char * delim) const {
-        StringList result;
-        size_t dlen = strlen(delim);
-        size_t start = 0, pos;
-        while ((pos = d->data.find(delim, start)) != std::string::npos) {
-            result << String(d->data.substr(start, pos - start));
-            start = pos + dlen;
-        }
-        result << String(d->data.substr(start));
-        return result;
-    }
+    String join(const StringList & list) const;
 
-    String join(const StringList & list) const {
-        std::string r;
-        for (size_t i = 0; i < (size_t)list.size(); ++i) {
-            if (i > 0) r += d->data;
-            r += list[i].d->data;
-        }
-        return String(std::move(r));
-    }
-
-    static String fromUtf8(const char * s, size_t len = npos) {
-        if (!s) return String();
-        return String(len == npos ? std::string(s) : std::string(s, len));
-    }
+    static String fromUtf8(const char * s, size_t len = npos);
     static String fromUtf8(const ByteArray & ba) { return String(ba); }
     static String fromLatin1(const char * s) { return s ? String(s) : String(); }
 
-    bool operator<= (const String & o) const { return d->data <= o.d->data; }
-    bool operator>  (const String & o) const { return d->data >  o.d->data; }
-    bool operator>= (const String & o) const { return d->data >= o.d->data; }
+    bool operator<= (const String & o) const { return d->sv() <= o.d->sv(); }
+    bool operator>  (const String & o) const { return d->sv() >  o.d->sv(); }
+    bool operator>= (const String & o) const { return d->sv() >= o.d->sv(); }
 
-    String   operator+ (const String & o) const { return String(d->data + o.d->data); }
-    String   operator+ (const char * s)   const { return String(d->data + s); }
-    String   operator+ (char c)            const { String r(*this); r += c; return r; }
-    String & operator+=(const String & o)  { detach(); d->data += o.d->data; d->isNull = false; return *this; }
-    String & operator+=(const char * s)    { detach(); d->data += s;       d->isNull = false; return *this; }
-    String & operator+=(char c)            { detach(); d->data += c;       d->isNull = false; return *this; }
+    // libstdc++ 13 provides no operator+ for string_view (neither view+view
+    // nor string+view), so the combined buffer is built via std::string
+    String  operator+ (const String & o) const { return String(std::string(d->sv()) + std::string(o.d->sv())); }
+    String  operator+ (const char * s)   const { return String(std::string(d->sv()) + s); }
+    String  operator+ (char c)           const { String r(*this); r += c; return r; }
+    String & operator+=(const String & o) {
+        detach();
+        d = d->append(o.constData(), o.size());
+        d->setNull(false);
+        return *this;
+    }
+    String & operator+=(const char * s)   {
+        detach();
+        d = d->append(s, std::strlen(s));
+        d->setNull(false);
+        return *this;
+    }
+    String & operator+=(char c)           {
+        detach();
+        d = d->append(&c, 1);
+        d->setNull(false);
+        return *this;
+    }
 
     String & operator<<(const String & o)    { detach(); return *this += o; }
-    String & operator<<(const ByteArray & o) { detach(); d->data += o.toStdString(); d->isNull = false; return *this; }
+    String & operator<<(const ByteArray & o) { appendBytes(o.constData(), o.size()); return *this; }
     String & operator<<(const char * s)      { detach(); return *this += s; }
     String & operator<<(char c)              { detach(); return *this += c; }
 };
-
-// The bodies must not call `rhs == lhs` / `rhs != lhs`: under C++20
-// rewritten-candidate rules that expression would resolve back to these
-// free functions themselves (infinite recursion). Comparing the underlying
-// std::string directly keeps them recursion-proof and mirrors the
-// null-aware member semantics of ByteArray.
-inline bool operator==(const char * lhs, const String & rhs) {
-    return lhs ? rhs.str() == lhs : rhs.isNull();
-}
-inline bool operator!=(const char * lhs, const String & rhs) {
-    return lhs ? !(rhs.str() == lhs) : !rhs.isNull();
-}
-
-inline String operator+(const char * lhs, const String & rhs) {
-    return String(std::string(lhs) + rhs.str());
-}
 
 } // namespace
 
 namespace std {
 template<> struct hash<cflib::base::String> {
     size_t operator()(const cflib::base::String & s) const {
-        return hash<string>()(s.str());
+        return hash<string_view>()(s.str());
     }
 };
 }

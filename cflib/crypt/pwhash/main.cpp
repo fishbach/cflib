@@ -30,7 +30,7 @@ int main(int argc, char * argv[])
     if (argc == 2) workFactor = String(argv[1]).toUInt();
 
     ByteArray hash = cflib::crypt::hashPassword(pwd, workFactor);
-    std::cout << std::format("{}\n", hash.constData());
+    std::cout << std::format("{}\n", std::string(hash.constData(), hash.size()));
 
     return 0;
 }

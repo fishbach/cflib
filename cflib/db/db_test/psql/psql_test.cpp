@@ -913,24 +913,27 @@ TEST_CASE("PSql: transaction_blocking_commit")
     REQUIRE(sql.exec());
 
     std::thread thread([&sem, &threadResult]() {
-        PSqlConn;
-        sql.prepare(
-            "INSERT INTO "
-                "cflib_db_test "
-            "("
-                "id"
-            ") VALUES ("
-                "$1"
-            ")"
-        );
+        {
+            PSqlConn;
+            sql.prepare(
+                "INSERT INTO "
+                    "cflib_db_test "
+                "("
+                    "id"
+                ") VALUES ("
+                    "$1"
+                ")"
+            );
 
-        sql << 11;
-        threadResult = sql.exec();
-        sem.release();
+            sql << 11;
+            threadResult = sql.exec();
+            sem.release();
 
-        sql << 10;
-        threadResult = sql.exec();
-        sem.release();
+            sql << 10;
+            threadResult = sql.exec();
+            sem.release();
+        }
+        PSql::closeThreadConnection();
     });
 
     // Insert of different key works.
@@ -970,20 +973,23 @@ TEST_CASE("PSql: transaction_blocking_rollback")
     REQUIRE(sql.exec());
 
     std::thread thread([&sem, &threadResult]() {
-        PSqlConn;
-        sql.prepare(
-            "INSERT INTO "
-                "cflib_db_test "
-            "("
-                "id"
-            ") VALUES ("
-                "$1"
-            ")"
-        );
+        {
+            PSqlConn;
+            sql.prepare(
+                "INSERT INTO "
+                    "cflib_db_test "
+                "("
+                    "id"
+                ") VALUES ("
+                    "$1"
+                ")"
+            );
 
-        sql << 12;
-        threadResult = sql.exec();
-        sem.release();
+            sql << 12;
+            threadResult = sql.exec();
+            sem.release();
+        }
+        PSql::closeThreadConnection();
     });
 
     // Insert of same key blocks until our transaction has finished.

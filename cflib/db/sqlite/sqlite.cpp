@@ -57,7 +57,7 @@ public:
             return;
         }
 
-        int rc = sqlite3_open(connectionParameter_.c_str(), &conn);
+        int rc = sqlite3_open(connectionParameter_.toStdString().c_str(), &conn);
         if (rc != SQLITE_OK) {
             logWarn("cannot open database '%1': %2", connectionParameter_, sqlite3_errmsg(conn));
             sqlite3_close(conn);
@@ -96,13 +96,13 @@ bool SQLite::setParameter(const String & connectionParameterRef, const String & 
 
     String connectionParameter = connectionParameterRef;
     if (!overrideEnvVar.isEmpty()) {
-        const char * envVal = getenv(overrideEnvVar.c_str());
+        const char * envVal = getenv(overrideEnvVar.toStdString().c_str());
         if (envVal) connectionParameter = String(envVal);
     }
 
     // test-open the database
     sqlite3 * testConn = nullptr;
-    int rc = sqlite3_open(connectionParameter.c_str(), &testConn);
+    int rc = sqlite3_open(connectionParameter.toStdString().c_str(), &testConn);
     if (rc != SQLITE_OK) {
         logWarn("cannot open database '%1': %2", connectionParameter, sqlite3_errmsg(testConn));
         sqlite3_close(testConn);
@@ -315,7 +315,7 @@ bool SQLite::execMultiple(const String & query)
 {
     const ByteArray utf8 = query.toUtf8();
     char * errMsg = nullptr;
-    int rc = sqlite3_exec(td_.conn, utf8.constData(), nullptr, nullptr, &errMsg);
+    int rc = sqlite3_exec(td_.conn, utf8.toStdString().c_str(), nullptr, nullptr, &errMsg);
     if (rc != SQLITE_OK) {
         cflib::util::Log(lfi_, line_ ? line_ : __LINE__, LogCat::Debug | LogCat::Db)("query: %1", utf8);
         cflib::util::Log(lfi_, line_ ? line_ : __LINE__, LogCat::Warn  | LogCat::Db)(

@@ -347,7 +347,7 @@ Request::LoginPass Request::getBasicAuth(const ByteArray & authorization)
 
     const Regex::MatchResult match = authRe.matchResult(authorization);
     if (!match.hasMatch()) return LoginPass();
-    const List<ByteArray> userPass = ByteArray::fromBase64(ByteArray(match.captured(1).c_str())).split(':');
+    const List<ByteArray> userPass = ByteArray::fromBase64(ByteArray(match.captured(1))).split(':');
     if (userPass.size() != 2) return LoginPass();
     return { userPass[0], userPass[1] };
 }

@@ -50,7 +50,7 @@ Mailer::Mailer(bool isEnabled) :
         if (!candidate.endsWith("/")) candidate += "/";
         candidate += "sendmail";
         struct stat st;
-        if (stat(candidate.c_str(), &st) == 0 && (st.st_mode & S_IXUSR)) {
+        if (stat(candidate.toStdString().c_str(), &st) == 0 && (st.st_mode & S_IXUSR)) {
             sendmailPath_ = candidate;
             break;
         }
@@ -110,7 +110,7 @@ void Mailer::doSend(const Mail & mail)
 
     if (sendmailPath_.isNull()) {
         logInfo("mailer not active, mail from %1 to %2 dropped", mail.from, mail.to);
-        std::cout << std::format("--------\n{}\n--------\n", mail.raw(fromAddr, toAddr).constData());
+        std::cout << std::format("--------\n{}\n--------\n", mail.raw(fromAddr, toAddr).sv());
         return;
     }
 
@@ -145,6 +145,11 @@ void Mailer::startProcess()
     const ByteArray raw = mail.raw(from, to);
     logDebug("exec: %1 -f %2 %3", sendmailPath_, from, to);
 
+    // C strings for the child's execl, made before the fork
+    const std::string sendmailC = sendmailPath_.toStdString();
+    const std::string fromC     = from.toStdString();
+    const std::string toC       = to.toStdString();
+
     int pipefd[2];
     if (pipe(pipefd) != 0) {
         logWarn("pipe failed for sendmail");
@@ -175,7 +180,7 @@ void Mailer::startProcess()
             close(devnull);
         }
 
-        execl(sendmailPath_.c_str(), "sendmail", "-f", from.c_str(), to.c_str(), (char *)nullptr);
+        execl(sendmailC.c_str(), "sendmail", "-f", fromC.c_str(), toC.c_str(), (char *)nullptr);
         _exit(127);
     }
 

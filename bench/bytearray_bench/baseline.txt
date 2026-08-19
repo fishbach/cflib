@@ -1,0 +1,25 @@
+bytearray_bench baseline - cflib main @ abaab10 (2026-08-19T17:55:38+02:00)
+c++ (Ubuntu 13.3.0-6ubuntu2~24.04.1) 13.3.0
+model name	: Intel(R) Core(TM) i9-9980HK CPU @ 2.40GHz
+ldd (Ubuntu GLIBC 2.39-0ubuntu8.8) 2.39
+
+bytearray_bench (heap allocations counted via operator new)
+scenario                                iters        ns/op  allocs/op peakLive
+null: default ctor/dtor               1000000       106.16     1.0000        1
+                                        1.000 x [32,64)   
+null: append 1 byte                   1000000       155.49     1.0000        1
+                                        1.000 x [32,64)   
+short 100B: create+5 copies+mutate     200000       665.46     5.0000        5
+                                        2.000 x [32,64)     2.000 x [64,128)    1.000 x [128,256) 
+long 10KB: create+5 copies+mutate       20000      1193.89     5.0000        5
+                                        2.000 x [32,64)     2.000 x [4K,16K)    1.000 x [16K,64K) 
+grow: append 1B until 1 MiB (single pass)          1  52935568.00    18.0000        3
+                                        1.000 x [16,32)     2.000 x [32,64)     1.000 x [64,128)    1.000 x [128,256)   1.000 x [256,512)   1.000 x [512,1K)    2.000 x [1K,4K)     2.000 x [4K,16K)    2.000 x [16K,64K)   2.000 x [64K,256K)  2.000 x [256K,1M)   1.000 x [1M,4M)   
+indexOf: full scan of 100KB (absent)      50000      1106.73     0.0000        0
+toStdString(): copy 10KB               100000       286.27     1.0000        1
+                                        1.000 x [4K,16K)  
+split(','): 8 fields                   200000      4399.71    21.0000       11
+                                        1.000 x <16         1.000 x [16,32)    18.000 x [32,64)     1.000 x [64,128)  
+String 100B: ctor/charCount/dtor       200000       915.46     2.0000        2
+                                        1.000 x [32,64)     1.000 x [64,128)  
+operator== char* (mismatch)           1000000        15.41     0.0000        0

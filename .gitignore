@@ -15,6 +15,7 @@ Makefile
 Makefile.*
 build
 build-*
+test.log
 config.cmake
 .claude/
 .cache/

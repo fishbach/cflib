@@ -12,8 +12,9 @@ project(
     LANGUAGES C CXX
 )
 
-option(BUILD_TESTS    "activate build for tests"    ON)
-option(BUILD_EXAMPLES "activate build for examples" ON)
+option(BUILD_TESTS    "activate build for tests"      ON)
+option(BUILD_EXAMPLES "activate build for examples"   ON)
+option(BUILD_BENCH    "activate build for benchmarks" ON)
 
 if(NOT COMMAND cf_lib)
     include(cmake/ProjectConfig.cmake)
@@ -31,4 +32,7 @@ cf_add_other(cflib_files
 add_subdirectory(cflib)
 if(BUILD_EXAMPLES)
     add_subdirectory(examples)
+endif()
+if(BUILD_BENCH)
+    add_subdirectory(bench)
 endif()

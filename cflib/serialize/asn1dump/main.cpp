@@ -38,7 +38,7 @@ int showUsage(const ByteArray & executable)
         "  -h, --help   => this help\n"
         "  -x, --hex    => input is hex encoded\n"
         "  -b, --base64 => input is Base64 encoded\n",
-        executable.constData());
+        executable.sv());
     return 1;
 }
 
@@ -49,7 +49,7 @@ void show(const ByteArray & data, bool hex, bool)
         hex ? ByteArray::fromHex(data) :
         data;
 
-    std::cout << std::format("{}\n", printAsn1(rawData).c_str());
+    std::cout << std::format("{}\n", printAsn1(rawData).toStdString());
 }
 
 }
