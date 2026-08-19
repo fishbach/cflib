@@ -11,7 +11,6 @@
 #include <cflib/base/container.h>
 
 #include <cstring>
-#include <format>
 #include <string>
 #include <string_view>
 #include <vector>
@@ -141,29 +140,6 @@ public:
             r += list[i].d->data;
         }
         return String(std::move(r));
-    }
-
-    // Number formatting
-    static String number(std::integral auto v) {
-        return String(std::format("{}", v).c_str());
-    }
-    static String number(std::floating_point auto v) {
-        return String(std::format("{:g}", v).c_str());
-    }
-
-    int64  toLong(bool * ok = nullptr) const {
-        if (d->data.empty()) { if (ok) *ok = false; return 0; }
-        char * end = nullptr;
-        int64 v = strtoll(d->data.c_str(), &end, 10);
-        if (ok) *ok = (end != d->data.c_str() && *end == '\0');
-        return v;
-    }
-    uint64 toULong(bool * ok = nullptr) const {
-        if (d->data.empty()) { if (ok) *ok = false; return 0; }
-        char * end = nullptr;
-        uint64 v = strtoull(d->data.c_str(), &end, 10);
-        if (ok) *ok = (end != d->data.c_str() && *end == '\0');
-        return v;
     }
 
     static String fromUtf8(const char * s, size_t len = npos) {

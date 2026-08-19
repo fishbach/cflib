@@ -390,11 +390,42 @@ TEST_CASE("ByteArray: numeric_conversions")
     REQUIRE_EQ(ByteArray("abc").toInt(&ok), (int32)0);
     REQUIRE(!ok);
 
-    // toULongLong
-    REQUIRE_EQ(ByteArray("123456789012345").toULongLong(&ok), (uint64)123456789012345LL);
+    // toULong
+    REQUIRE_EQ(ByteArray("42").toULong(&ok), (uint64)42);
     REQUIRE(ok);
-    REQUIRE_EQ(ByteArray("abc").toULongLong(&ok), (uint64)0);
+    REQUIRE_EQ(ByteArray("123456789012345").toULong(&ok), (uint64)123456789012345LL);
+    REQUIRE(ok);
+    REQUIRE_EQ(ByteArray("abc").toULong(&ok), (uint64)0);
     REQUIRE(!ok);
+
+    // toLong
+    REQUIRE_EQ(ByteArray("42").toLong(&ok), (int64)42);
+    REQUIRE(ok);
+    REQUIRE_EQ(ByteArray("-42").toLong(&ok), (int64)-42);
+    REQUIRE(ok);
+    REQUIRE_EQ(ByteArray("").toLong(&ok), (int64)0);
+    REQUIRE(!ok);
+    REQUIRE_EQ(ByteArray("abc").toLong(&ok), (int64)0);
+    REQUIRE(!ok);
+    REQUIRE_EQ(ByteArray("123abc").toLong(&ok), (int64)123);
+    REQUIRE(!ok);  // trailing characters
+    REQUIRE_EQ(ByteArray("42 ").toLong(&ok), (int64)42);
+    REQUIRE(!ok);  // trailing space means not fully consumed
+    REQUIRE_EQ(ByteArray("9223372036854775807").toLong(&ok), (int64)9223372036854775807LL);
+    REQUIRE(ok);
+    REQUIRE_EQ(ByteArray("-9223372036854775807").toLong(&ok), (int64)-9223372036854775807LL);
+    REQUIRE(ok);
+}
+
+// Number formatting tests
+TEST_CASE("ByteArray: number")
+{
+    REQUIRE_EQ(ByteArray::number(42), ByteArray("42"));
+    REQUIRE_EQ(ByteArray::number(-42), ByteArray("-42"));
+    REQUIRE_EQ(ByteArray::number(9223372036854775807LL), ByteArray("9223372036854775807"));
+    REQUIRE_EQ(ByteArray::number(-9223372036854775807LL), ByteArray("-9223372036854775807"));
+    REQUIRE(ByteArray::number(3.14159).indexOf("3.14") == 0);
+    REQUIRE(ByteArray::number(2.71828).indexOf("2.71") == 0);
 }
 
 // Split test

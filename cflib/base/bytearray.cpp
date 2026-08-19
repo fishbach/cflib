@@ -25,4 +25,20 @@ int32 ByteArray::toInt(bool * ok) const {
     return (int32)v;
 }
 
+uint64 ByteArray::toULong(bool * ok) const {
+    if (d->data.empty()) { if (ok) *ok = false; return 0; }
+    char * end = nullptr;
+    unsigned long long v = strtoull(d->data.c_str(), &end, 10);
+    if (ok) *ok = (end != d->data.c_str() && *end == '\0');
+    return (uint64)v;
+}
+
+int64 ByteArray::toLong(bool * ok) const {
+    if (d->data.empty()) { if (ok) *ok = false; return 0; }
+    char * end = nullptr;
+    long long v = strtoll(d->data.c_str(), &end, 10);
+    if (ok) *ok = (end != d->data.c_str() && *end == '\0');
+    return (int64)v;
+}
+
 } // namespace

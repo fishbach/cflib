@@ -171,7 +171,9 @@ public:
 
     // Numeric conversions
     uint32 toUInt(bool * ok = nullptr) const;
-    int32 toInt(bool * ok = nullptr) const;
+    int32  toInt(bool * ok = nullptr) const;
+    uint64 toULong(bool * ok = nullptr) const;
+    int64  toLong(bool * ok = nullptr) const;
 
     ByteArray trimmed() const {
         size_t s = d->data.find_first_not_of(" \t\r\n");
@@ -191,14 +193,6 @@ public:
         }
         if (!r.empty() && r.back() == ' ') r.pop_back();
         return ByteArray(std::move(r));
-    }
-
-    uint64 toULongLong(bool * ok = nullptr) const {
-        if (d->data.empty()) { if (ok) *ok = false; return 0; }
-        char * end = nullptr;
-        unsigned long long v = strtoull(d->data.c_str(), &end, 10);
-        if (ok) *ok = (end != d->data.c_str() && *end == '\0');
-        return (uint64)v;
     }
 
     ByteArray toLower() const {

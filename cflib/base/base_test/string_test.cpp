@@ -310,46 +310,6 @@ TEST_CASE("String: replace")
     REQUIRE_EQ(s3, String("xesx"));
 }
 
-// toLong and toULong tests
-TEST_CASE("String: toLong_toULong")
-{
-    bool ok;
-
-    // Valid positive
-    REQUIRE_EQ(String("42").toLong(&ok), (int64)42);
-    REQUIRE(ok);
-
-    // Valid negative
-    REQUIRE_EQ(String("-42").toLong(&ok), (int64)-42);
-    REQUIRE(ok);
-
-    // Valid unsigned
-    REQUIRE_EQ(String("42").toULong(&ok), (uint64)42);
-    REQUIRE(ok);
-
-    // Invalid - empty string
-    REQUIRE_EQ(String("").toLong(&ok), (int64)0);
-    REQUIRE(!ok);
-
-    // Invalid - non-numeric
-    REQUIRE_EQ(String("abc").toLong(&ok), (int64)0);
-    REQUIRE(!ok);
-
-    // Invalid - mixed
-    REQUIRE_EQ(String("123abc").toLong(&ok), (int64)123);
-    REQUIRE(!ok);  // should fail because of trailing characters
-
-    // Valid with trailing space is ok (stops at space)
-    REQUIRE_EQ(String("42 ").toLong(&ok), (int64)42);
-    REQUIRE(!ok);  // trailing space means not fully consumed
-
-    // Large numbers
-    REQUIRE_EQ(String("9223372036854775807").toLong(&ok), (int64)9223372036854775807LL);
-    REQUIRE(ok);
-    REQUIRE_EQ(String("-9223372036854775807").toLong(&ok), (int64)-9223372036854775807LL);
-    REQUIRE(ok);
-}
-
 // Concatenation tests
 TEST_CASE("String: concatenation")
 {

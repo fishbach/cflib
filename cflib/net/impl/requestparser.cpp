@@ -224,7 +224,7 @@ bool RequestParser::parseHeader()
 
         if (key == "content-length") {
             bool ok;
-            contentLength_ = value.toULongLong(&ok);
+            contentLength_ = value.toULong(&ok);
             if (!ok) {
                 logWarn("could not understand Content-Length: %1", value);
                 return false;
