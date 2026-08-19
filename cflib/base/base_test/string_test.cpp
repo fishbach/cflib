@@ -220,21 +220,13 @@ TEST_CASE("String: mid_left_right")
     REQUIRE_EQ(s.right(20), String("hello world"));
 }
 
-// trimmed and simplified tests
-TEST_CASE("String: trimmed_simplified")
+// trimmed tests
+TEST_CASE("String: trimmed")
 {
-    // trimmed
     REQUIRE_EQ(String("  hello  ").trimmed(), String("hello"));
     REQUIRE_EQ(String("\t\nhello\r\n  ").trimmed(), String("hello"));
     REQUIRE_EQ(String("  \t  ").trimmed(), String(""));
     REQUIRE_EQ(String(" hello world ").trimmed(), String("hello world"));
-
-    // simplified
-    REQUIRE_EQ(String("  hello  ").simplified(), String("hello"));
-    REQUIRE_EQ(String("  hello   world  ").simplified(), String("hello world"));
-    REQUIRE_EQ(String("\t\nhello\r\n  world\t").simplified(), String("hello world"));
-    REQUIRE_EQ(String("  \t  ").simplified(), String(""));
-    REQUIRE_EQ(String("hello").simplified(), String("hello"));
 }
 
 // toLower and toUpper tests

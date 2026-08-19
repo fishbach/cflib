@@ -188,8 +188,6 @@ public:
     String & operator<<(const ByteArray & o) { detach(); d->data += o.toStdString(); d->isNull = false; return *this; }
     String & operator<<(const char * s)      { detach(); return *this += s; }
     String & operator<<(char c)              { detach(); return *this += c; }
-
-    String simplified() const;
 };
 
 // The bodies must not call `rhs == lhs` / `rhs != lhs`: under C++20

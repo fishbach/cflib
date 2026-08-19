@@ -321,6 +321,16 @@ TEST_CASE("ByteArray: trimmed")
     REQUIRE_EQ(ByteArray(" hello world ").trimmed(), ByteArray("hello world"));
 }
 
+// Simplified test
+TEST_CASE("ByteArray: simplified")
+{
+    REQUIRE_EQ(ByteArray("  hello  ").simplified(), ByteArray("hello"));
+    REQUIRE_EQ(ByteArray("  hello   world  ").simplified(), ByteArray("hello world"));
+    REQUIRE_EQ(ByteArray("\t\nhello\r\n  world\t").simplified(), ByteArray("hello world"));
+    REQUIRE_EQ(ByteArray("  \t  ").simplified(), ByteArray(""));
+    REQUIRE_EQ(ByteArray("hello").simplified(), ByteArray("hello"));
+}
+
 // Base64 tests
 TEST_CASE("ByteArray: toBase64_fromBase64")
 {

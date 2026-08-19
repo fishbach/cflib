@@ -180,6 +180,19 @@ public:
         return ByteArray(d->data.substr(s, e - s + 1));
     }
 
+    // trim and collapse runs of whitespace to single spaces
+    ByteArray simplified() const {
+        std::string r;
+        bool lastWasSpace = true;
+        for (char c : d->data) {
+            if (c == ' ' || c == '\t' || c == '\r' || c == '\n') {
+                if (!lastWasSpace) { r += ' '; lastWasSpace = true; }
+            } else { r += c; lastWasSpace = false; }
+        }
+        if (!r.empty() && r.back() == ' ') r.pop_back();
+        return ByteArray(std::move(r));
+    }
+
     uint64 toULongLong(bool * ok = nullptr) const {
         if (d->data.empty()) { if (ok) *ok = false; return 0; }
         char * end = nullptr;
