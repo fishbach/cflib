@@ -106,10 +106,25 @@ struct ByteArrayShared
         m->capacity = cap;
         return m;
     }
+    // grow() may realloc the block to a new address, freeing the old one. If the
+    // source range [p, p+len) overlaps this block's live buffer, reading it after
+    // grow() would be a use-after-free (e.g. self-append `ba += ba`). Snapshot the
+    // bytes into `tmp` and return a safe pointer; otherwise return p unchanged.
+    const char * safeSource(const char * p, size_t len, std::vector<char> & tmp) const
+    {
+        if (p >= data() && p < data() + size) {
+            tmp.assign(p, p + len);
+            return tmp.data();
+        }
+        return p;
+    }
+
     ByteArrayShared * append(const char * p, size_t len)
     {
+        std::vector<char> tmp;
+        const char * src = safeSource(p, len, tmp);
         ByteArrayShared * s = grow(size + len);
-        std::memcpy(s->data() + s->size, p, len);
+        std::memcpy(s->data() + s->size, src, len);
         s->size += len;
         return s;
     }
@@ -117,9 +132,11 @@ struct ByteArrayShared
     ByteArrayShared * insert(size_t pos, const char * p, size_t len)
     {
         if (pos > size) pos = size;
+        std::vector<char> tmp;
+        const char * src = safeSource(p, len, tmp);
         ByteArrayShared * s = grow(size + len);
         std::memmove(s->data() + pos + len, s->data() + pos, s->size - pos);
-        std::memcpy(s->data() + pos, p, len);
+        std::memcpy(s->data() + pos, src, len);
         s->size += len;
         return s;
     }
@@ -133,17 +150,19 @@ struct ByteArrayShared
     }
     ByteArrayShared * replace(size_t pos, size_t len, const char * p, size_t plen)
     {
+        std::vector<char> tmp;
+        const char * src = safeSource(p, plen, tmp);
         if (pos + len > size) {
             // past the end: NUL-pad to pos, then append
             ByteArrayShared * s = grow(pos + plen);
             if (pos > s->size) std::memset(s->data() + s->size, 0, pos - s->size);
-            std::memcpy(s->data() + pos, p, plen);
+            std::memcpy(s->data() + pos, src, plen);
             s->size = pos + plen;
             return s;
         }
         ByteArrayShared * s = grow(size + plen - len);
         std::memmove(s->data() + pos + plen, s->data() + pos + len, s->size - pos - len);
-        std::memcpy(s->data() + pos, p, plen);
+        std::memcpy(s->data() + pos, src, plen);
         s->size += plen - len;
         return s;
     }

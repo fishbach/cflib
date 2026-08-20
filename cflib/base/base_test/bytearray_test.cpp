@@ -312,6 +312,30 @@ TEST_CASE("ByteArray: replace")
     REQUIRE_EQ(ba4, ByteArray("azzzef"));
 }
 
+// Self-modification: the source aliases the block's own buffer. Before the
+// safeSource() guard, grow() would realloc the block (freeing the old buffer)
+// and the subsequent copy would read freed memory (use-after-free). These force
+// a grow so the regression is covered under ASan.
+TEST_CASE("ByteArray: self_modification")
+{
+    // self-append doubles the content; 300 -> 600 > capacity 512 forces grow()
+    ByteArray a(300, 'x');
+    a += a;
+    REQUIRE_EQ(a.size(), (size_t)600);
+    REQUIRE(a.startsWith("xxxx"));
+    REQUIRE_EQ(a[599], 'x');
+
+    // self-insert at the front
+    ByteArray b("abc");
+    b.insert(0, b);
+    REQUIRE_EQ(b, ByteArray("abcabc"));
+
+    // self-replace (insert the whole content at pos 0)
+    ByteArray c("abcd");
+    c.replace(0, 0, c.constData(), 4);
+    REQUIRE_EQ(c, ByteArray("abcdabcd"));
+}
+
 // Trimmed test
 TEST_CASE("ByteArray: trimmed")
 {
