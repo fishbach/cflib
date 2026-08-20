@@ -83,10 +83,13 @@ struct ByteArrayShared
         if (n) std::memset(s->data(), c, n);
         return s;
     }
-    // exclusive copy of an existing block (same capacity)
-    static ByteArrayShared * copy(const ByteArrayShared & o)
+    // exclusive copy of an existing block (same capacity), unless `hint`
+    // demands a larger one, so a resize/reserve right after the copy
+    // does not need a second allocation
+    static ByteArrayShared * copy(const ByteArrayShared & o, size_t hint = 0)
     {
         size_t cap = blockCapacity(o.capacity ? o.capacity : CapacityMin);
+        if (hint > cap) cap = blockCapacity(hint);
         void * mem = std::malloc(HeaderSize + cap);
         if (!mem) std::terminate();
         ByteArrayShared * s = new (mem) ByteArrayShared(o.size, cap, o.flags);
@@ -213,10 +216,11 @@ inline ByteArray & ByteArray::operator=(ByteArray && other) {
     other.d = byteArrayNullShared();
     return *this;
 }
-// acquire an exclusive block when the content is shared
-inline void ByteArray::detach() {
+// acquire an exclusive block when the content is shared; when this
+// detaches, the fresh block is allocated with at least blockCapacity(hint)
+inline void ByteArray::detach(size_t hint) {
     if (d != byteArrayNullShared() && d->ref.loadAcquire() == 1) return;
-    Shared * s = Shared::copy(*d);
+    Shared * s = Shared::copy(*d, hint);
     if (d != byteArrayNullShared() && !d->ref.deref()) deleteShared(d);
     d = s;
 }
@@ -234,19 +238,19 @@ inline bool     ByteArray::isEmpty() const { return d->size == 0; }
 inline bool     ByteArray::isNull() const { return d->isNull(); }
 
 inline void ByteArray::resize(size_t n) {
-    detach();
+    detach(n);
     d = d->grow(n);
     d->size = n;
     d->setNull(false);
 }
 inline void ByteArray::resize(size_t n, char c) {
-    detach();
+    detach(n);
     d = d->grow(n);
     if (n > d->size) std::memset(d->data() + d->size, c, n - d->size);
     d->size = n;
     d->setNull(false);
 }
-inline void ByteArray::reserve(size_t n) { detach(); d = d->grow(n); }
+inline void ByteArray::reserve(size_t n) { detach(n); d = d->grow(n); }
 inline void ByteArray::clear() { detach(); d->size = 0; d->setNull(true); }
 inline size_t ByteArray::capacity() const { return d->capacity; }
 

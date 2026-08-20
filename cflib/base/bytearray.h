@@ -24,6 +24,16 @@ struct ByteArrayShared;
 // A ByteArray is a copy-on-write sequence of raw bytes (no encoding
 // semantics; for UTF-8 text use String). References to the same content
 // share one heap block until one of them is mutated.
+//
+// Building a large string: size the buffer up front and write into it,
+// rather than appending byte by byte (each append re-checks
+// exclusivity and may grow the block):
+//
+//     ByteArray ba;
+//     ba.resize(total);                    // single allocation
+//     std::memcpy(ba.data(), src, total);  // direct, unchecked writes
+//
+// The buffer is not NUL-terminated.
 class ByteArray
 {
 public:
@@ -45,8 +55,10 @@ public:
 
     ByteArray & operator=(const ByteArray & other);
     ByteArray & operator=(ByteArray && other);
-    // acquire an exclusive block when the content is shared
-    void detach();
+    // acquire an exclusive block when the content is shared; when this
+    // detaches, the fresh block is allocated with enough capacity for
+    // `hint` bytes, so a resize/reserve to `hint` costs one allocation
+    void detach(size_t hint = 0);
 
     static ByteArray fromRawData(const char * data, size_t len);
 

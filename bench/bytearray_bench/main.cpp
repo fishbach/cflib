@@ -22,6 +22,7 @@
 
 #include <chrono>
 #include <cstdio>
+#include <cstring>
 #include <string>
 
 using namespace cflib;
@@ -127,6 +128,14 @@ int main()
         ByteArray b(a), c(a), d(a), e(a), f(a);
         b.append('!');
         doNotOptimizeAway(a.size() + b.size());
+    });
+
+    // bulk build idiom: resize up front, write into the buffer
+    run("null: resize 10KB + write (bulk)", 100000, [&](int) {
+        ByteArray ba;
+        ba.resize(midS.size());
+        std::memcpy(ba.data(), midS.data(), midS.size());
+        doNotOptimizeAway(ba.size());
     });
 
     run("grow: append 1B until 1 MiB (single pass)", 1, [&](int) {

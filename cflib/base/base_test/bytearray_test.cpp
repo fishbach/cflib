@@ -135,6 +135,28 @@ TEST_CASE("ByteArray: resize_reserve_clear")
 
     // Empty string is not null
     REQUIRE(!ByteArray("").isNull());
+
+    // bulk build: sizing up front from null reaches the final capacity
+    // in a single size-up (no grow after the detach)
+    ByteArray big;
+    big.resize(10000);
+    REQUIRE_EQ(big.size(), (size_t)10000);
+    REQUIRE(big.capacity() >= (size_t)10000);
+    REQUIRE(!big.isNull());
+    std::memset(big.data(), 'z', big.size());
+    REQUIRE_EQ(big.indexOf('z'), (ssize_t)0);
+    REQUIRE_EQ(big.indexOf('a'), (ssize_t)-1);
+
+    // the same when sharing: the copy detaches at the target size and
+    // the shared original is untouched
+    ByteArray shared("hello");
+    ByteArray diverged = shared;
+    diverged.resize(10000, 'q');
+    REQUIRE_EQ(diverged.size(), (size_t)10000);
+    REQUIRE(diverged.capacity() >= (size_t)10000);
+    REQUIRE_EQ(diverged[0], 'h');
+    REQUIRE_EQ(diverged[9999], 'q');
+    REQUIRE_EQ(shared, ByteArray("hello"));
 }
 
 // Append/Prepend tests
