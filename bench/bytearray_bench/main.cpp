@@ -93,6 +93,14 @@ std::string makeContent(size_t n, char base)
 
 } // namespace
 
+// Defined in grow.cpp (a separate translation unit): inlined into
+// main(), the loop's codegen would depend on main()'s size -- once
+// main() gets large, GCC stops inlining ByteArray::detach into the
+// append call, and the single shot's timing jumps ~2x when unrelated
+// scenarios are added. From its own TU it measures the codegen a
+// normal (non-benchmark) program gets.
+size_t growTo1MiB();
+
 int main()
 {
     const std::string shortS = makeContent(100, 'a');        // 100 B
@@ -138,10 +146,8 @@ int main()
         doNotOptimizeAway(ba.size());
     });
 
-    run("grow: append 1B until 1 MiB (single pass)", 1, [&](int) {
-        ByteArray a;
-        for (size_t i = 0; i < (size_t)(1 << 20); ++i) a.append('a');
-        doNotOptimizeAway(a.size());
+    run("grow: append 1B until 1 MiB (single pass)", 1, [](int) {
+        doNotOptimizeAway(growTo1MiB());
     }, /*warmup*/ 2);
 
     run("indexOf: full scan of 100KB (absent)", 50000, [&](int) {

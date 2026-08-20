@@ -25,19 +25,15 @@ namespace cflib::base {
 //
 // The block consists of this fixed 32 byte header (refcount, size,
 // capacity, flags) immediately followed by the byte buffer, so bytes and
-// bookkeeping live in the same cache region. Strings up to
-// InlineCapacity occupy exactly one BlockSize block; longer strings use
-// one block of HeaderSize + capacity.
+// bookkeeping live in the same cache region.
 //
 // Growth: capacity is a power of two, minimum CapacityMin. Growing to
 // `need` uses the smallest such capacity (realloc, which may extend in
 // place). Shrinking never reduces capacity.
 struct ByteArrayShared
 {
-    static constexpr size_t HeaderSize     = 32;
-    static constexpr size_t InlineCapacity = 256;
-    static constexpr size_t BlockSize      = HeaderSize + InlineCapacity;
-    static constexpr size_t CapacityMin    = 256;
+    static constexpr size_t HeaderSize  = 32;
+    static constexpr size_t CapacityMin = 32;
 
     AtomicInt  ref{1};
     size_t     size{0};
