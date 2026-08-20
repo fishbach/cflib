@@ -155,7 +155,7 @@ private:
     // 0 -> stop, 1 -> continue, 2 -> need more data
     uint handleData()
     {
-        uint8 * data = (uint8 *)buf_.constData();
+        uint8 * data = buf_.data();
         uint dLen = buf_.size();
         const bool fin = data[0] & 0x80;
         const bool deflate = deflateEnabled_ && (data[0] & 0x40);
@@ -231,7 +231,7 @@ private:
             stopRead = true;
         } else if (opcode == 0x9) {    // ping
             // send pong
-            uint8 * orig = (uint8 *)buf_.constData();
+            uint8 * orig = buf_.data();
             orig[0] = (orig[0] & 0xF0) | 0xA;
             orig[1] &= 0x7F;
             ByteArray pong((const char *)orig, buf_.size() - dLen - 4);

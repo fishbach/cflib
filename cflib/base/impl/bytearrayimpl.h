@@ -248,7 +248,9 @@ inline uint8 * ByteArray::data() {
 inline const uint8 * ByteArray::data() const {
     return isNull() ? nullptr : reinterpret_cast<const uint8 *>(d->data());
 }
-inline const char * ByteArray::constData() const { return d->data(); }
+// no-detach const view; delegates to charPtr() const so the null handling
+// (nullptr for a null value) has one source of truth
+inline const char * ByteArray::constData() const { return charPtr(); }
 inline std::string_view ByteArray::sv() const { return d->sv(); }
 
 inline size_t ByteArray::size()   const { return d->size; }

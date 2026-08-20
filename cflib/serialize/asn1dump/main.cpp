@@ -62,7 +62,7 @@ int main(int argc, char *argv[])
     Option base64Opt('b', "base64"); cmdLine << base64Opt;
     if (!cmdLine.parse() || help.isSet() || (hexOpt.isSet() && base64Opt.isSet())) return showUsage(cmdLine.executable());
 
-    const ByteArray buf(0x10000, '\0');
+    ByteArray buf(0x10000, '\0');
     ByteArray data;
 
     struct timeval tv;
@@ -80,7 +80,7 @@ int main(int argc, char *argv[])
             return 1;
         }
         if (retval > 0) {
-            int64 count = read(0, (void *)buf.constData(), buf.size());
+            int64 count = read(0, buf.data(), buf.size());
             if (count == 0) {
                 // eof
                 if (!data.isEmpty()) show(data, hexOpt.isSet(), base64Opt.isSet());

@@ -27,7 +27,7 @@ inline void writeUInt(ByteArray & dest, T val)
 
     // write int
     dest.resize(size);
-    char * pos = (char *)dest.constData() + size;    // constData for performance
+    char * pos = dest.charPtr() + size;
     for ( ; val > 0 ; val /= 10) *(--pos) = '0' + (val % 10);
 }
 
@@ -51,7 +51,7 @@ inline void writeInt(ByteArray & dest, T val)
 
     // write int
     dest.resize(size);
-    char * pos = (char *)dest.constData() + size;    // constData for performance
+    char * pos = dest.charPtr() + size;
     for ( ; val > 0 ; val /= 10) *(--pos) = '0' + (val % 10);
     if (neg) *(--pos) = '-';
 }

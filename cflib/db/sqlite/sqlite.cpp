@@ -707,7 +707,7 @@ uint8 * SQLite::setParam(int type, int size, bool isNull)
 
     const int oldSize = prepareData_.size();
     prepareData_.resize(oldSize + size);
-    return (uint8 *)prepareData_.constData() + oldSize;
+    return prepareData_.data() + oldSize;
 }
 
 } // namespace

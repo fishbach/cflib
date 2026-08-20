@@ -422,7 +422,7 @@ void TCPManagerImpl::readable(ev_loop * loop, ev_io * w, int)
     TCPConnData * conn = (TCPConnData *)w->data;
     TCPManagerImpl & impl = conn->impl;
 
-    char * data = (char *)conn->readBuf.constData();
+    char * data = conn->readBuf.charPtr();
     const int fd = conn->socket;
 
     const ssize_t count = ::recv(fd, data, conn->readBuf.size(), 0);

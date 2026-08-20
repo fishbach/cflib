@@ -72,6 +72,10 @@ public:
     // raw byte view of the same buffer; nullptr for a null value
     uint8 *      data();
     const uint8 * data() const;
+    // const, no-detach view of the buffer: reads the shared block without a
+    // copy (the fast read path), so it is the COW read accessor. For reading
+    // only — to modify bytes, use the detaching charPtr()/data(). nullptr for
+    // a null value.
     const char * constData() const;
     std::string_view sv() const;
 

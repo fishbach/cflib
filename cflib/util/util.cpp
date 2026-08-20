@@ -226,7 +226,7 @@ void deflateRaw(ByteArray & data, int compressionLevel)
     deflateInit2(&s, compressionLevel, Z_DEFLATED, -15, 8, Z_DEFAULT_STRATEGY);
     ByteArray out((size_t)deflateBound(&s, data.size()), '\0');
     s.avail_out = (uInt)   out.size();
-    s.next_out  = (Bytef *)out.constData();
+    s.next_out  = (Bytef *)out.data();
     deflate(&s, Z_SYNC_FLUSH);
     deflateEnd(&s);
     int size = s.total_out;
@@ -254,7 +254,7 @@ void inflateRaw(ByteArray & data)
     s.avail_in  = (uInt)   in.size();
     s.next_in   = (Bytef *)in.constData();
     s.avail_out = (uInt)   out.size();
-    s.next_out  = (Bytef *)out.constData();
+    s.next_out  = (Bytef *)out.data();
     inflateInit2(&s, -15);
     for (;;) {
         int rv = inflate(&s, Z_NO_FLUSH);
@@ -264,7 +264,7 @@ void inflateRaw(ByteArray & data)
         const size_t ext = oldSize * 3 / 2;
         out.resize(oldSize + ext);
         s.avail_out = (uInt)   ext;
-        s.next_out  = (Bytef *)out.constData() + oldSize;
+        s.next_out  = (Bytef *)out.data() + oldSize;
     }
     inflateEnd(&s);
     out.resize(s.total_out);

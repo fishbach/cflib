@@ -831,7 +831,7 @@ uint8 * PSql::setParamType(int fieldType, int fieldSize, bool isNull)
 
     const int oldSize = prepareData_.size();
     prepareData_.resize(oldSize + fieldSize);
-    return (uint8 *)prepareData_.constData() + oldSize;
+    return prepareData_.data() + oldSize;
 }
 
 void PSql::removePreparedStatement()

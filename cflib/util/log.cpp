@@ -166,7 +166,7 @@ void Log::writeLog(const char * filename, int lineNo, LogCategory category, cons
     ByteArray line;
     line.reserve(256);
     line.resize(54);
-    char * pos = (char *)line.constData();    // constData for performance
+    char * pos = line.charPtr();
 
     // bug in gcc
     #pragma GCC diagnostic push

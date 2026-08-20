@@ -70,7 +70,7 @@ public:
 
     inline ByteArray getData()
     {
-        cfToBigEndian<int32>(data_.size() - 4, (uint8 *)data_.constData());
+        cfToBigEndian<int32>(data_.size() - 4, data_.data());
         return data_;
     }
 
@@ -110,7 +110,7 @@ private:
     { \
         const int oldSize = out.data_.size(); \
         out.data_.resize(oldSize + sizeof(type)); \
-        cfToBigEndian<type>(val, (uint8 *)(out.data_.constData() + oldSize)); \
+        cfToBigEndian<type>(val, out.data_.data() + oldSize); \
         return out; \
     } \
 
