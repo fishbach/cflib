@@ -569,8 +569,10 @@ TEST_CASE("ByteArray: move_semantics")
     REQUIRE_EQ(a, ByteArray("world"));
     REQUIRE(c.isNull());
 
-    // self move-assign is a no-op
-    a = std::move(a);
+    // self move-assign is a no-op (through an alias so the test itself
+    // does not trigger -Wself-move)
+    ByteArray & self = a;
+    a = std::move(self);
     REQUIRE_EQ(a, ByteArray("world"));
 
     // shared block: move-assign releases the shared old block correctly

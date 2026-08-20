@@ -278,7 +278,7 @@ TEST_CASE("Concurrent: byteArray_cow_diverge")
     threads.reserve(N);
 
     for (size_t t = 0; t < N; ++t) {
-        threads.emplace_back([&source, baseLen, GROWS, &failed, t]() {
+        threads.emplace_back([&source, baseLen, &failed, t]() {
             ByteArray local(source);      // share source's block (ref++)
             char chunk[CHUNK] = {'t', char('a' + (t % 26)), char('0' + (t % 10)), 'x'};
             for (size_t i = 0; i < GROWS; ++i) {
@@ -316,7 +316,7 @@ TEST_CASE("Concurrent: byteArray_shared_read_while_cow")
     std::vector<std::thread> threads;
 
     for (size_t t = 0; t < N; ++t) {
-        threads.emplace_back([&source, baseLen, READS, &failed]() {
+        threads.emplace_back([&source, baseLen, &failed]() {
             ByteArray local(source);      // share source's block, read-only
             for (size_t i = 0; i < READS; ++i) {
                 if (local.size() != baseLen ||
@@ -329,7 +329,7 @@ TEST_CASE("Concurrent: byteArray_shared_read_while_cow")
             }
         });
     }
-    threads.emplace_back([&source, GROWS]() {
+    threads.emplace_back([&source]() {
         ByteArray w(source);              // shares, then COW-diverges
         const char chunk[4] = {'w', 'r', 'i', 't'};
         for (size_t i = 0; i < GROWS; ++i) {
