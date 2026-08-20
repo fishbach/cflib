@@ -258,4 +258,88 @@ TEST_CASE("Concurrent: mixed_atomic_operations")
     std::cout << std::format("  duration: {} ms\n", duration);
 }
 
+// COW diverge: N threads each copy a shared source block, then grow their own
+// private copy. The first append on each copy triggers detach() -> Shared::copy
+// (reads the shared block) and grow() -> realloc, which may relocate the block
+// and thereby the AtomicInt refcount that lives in its header. This exercises
+// refcount atomicity, COW reads of the shared block, and the realloc move under
+// concurrency. TSan must report no data race and every result must be correct.
+TEST_CASE("Concurrent: byteArray_cow_diverge")
+{
+    const size_t N = 8;
+    const size_t GROWS = 20000;
+    const size_t CHUNK = 4;
+
+    ByteArray source(100, 'a');           // shared block, ref == 1
+    const size_t baseLen = source.size();
+
+    std::atomic<bool> failed{false};
+    std::vector<std::thread> threads;
+    threads.reserve(N);
+
+    for (size_t t = 0; t < N; ++t) {
+        threads.emplace_back([&source, baseLen, GROWS, &failed, t]() {
+            ByteArray local(source);      // share source's block (ref++)
+            char chunk[CHUNK] = {'t', char('a' + (t % 26)), char('0' + (t % 10)), 'x'};
+            for (size_t i = 0; i < GROWS; ++i) {
+                local.append(chunk, CHUNK);   // detach (COW) + grow (realloc)
+            }
+            if (local.size() != baseLen + GROWS * CHUNK ||
+                !local.startsWith("aaaa")) {
+                failed.store(true);
+            }
+        });
+    }
+    for (auto & th : threads) th.join();
+
+    REQUIRE(!failed.load());
+    // Writers copied-on-write; the shared source must be untouched.
+    REQUIRE_EQ(source.size(), baseLen);
+    REQUIRE(source.startsWith("aaaa"));
+}
+
+// Read-mostly: N readers concurrently read a shared block (size, first/last
+// byte, prefix) while a single writer diverges via COW and repeatedly grows
+// its private copy (churning the refcount and realloc-ing its block). The
+// shared block is only ever read here, so TSan must stay silent; if any path
+// wrote to a shared block, the reader reads would race with it.
+TEST_CASE("Concurrent: byteArray_shared_read_while_cow")
+{
+    const size_t N = 8;
+    const size_t READS = 20000;
+    const size_t GROWS = 20000;
+
+    ByteArray source(100, 'a');
+    const size_t baseLen = source.size();
+
+    std::atomic<bool> failed{false};
+    std::vector<std::thread> threads;
+
+    for (size_t t = 0; t < N; ++t) {
+        threads.emplace_back([&source, baseLen, READS, &failed]() {
+            ByteArray local(source);      // share source's block, read-only
+            for (size_t i = 0; i < READS; ++i) {
+                if (local.size() != baseLen ||
+                    local[0] != 'a' ||
+                    local[baseLen - 1] != 'a' ||
+                    !local.startsWith("aaaa")) {
+                    failed.store(true);
+                    return;
+                }
+            }
+        });
+    }
+    threads.emplace_back([&source, GROWS]() {
+        ByteArray w(source);              // shares, then COW-diverges
+        const char chunk[4] = {'w', 'r', 'i', 't'};
+        for (size_t i = 0; i < GROWS; ++i) {
+            w.append(chunk, 4);
+        }
+    });
+    for (auto & th : threads) th.join();
+
+    REQUIRE(!failed.load());
+    REQUIRE_EQ(source.size(), baseLen);   // shared block never mutated
+}
+
 }
