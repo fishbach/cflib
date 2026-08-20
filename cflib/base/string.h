@@ -45,8 +45,8 @@ public:
     using ByteArray::resize;
 
     // O(1) non-owning view over the UTF-8 bytes; copy via toStdString().
-    // The buffer is not NUL-terminated, so there is no c_str(); pass
-    // toStdString().c_str() where a C string is required.
+    // The buffer is NUL-terminated, so charPtr() is a free C string
+    // (nullptr for a null value).
     std::string_view str() const { return sv(); }
     size_t           byteSize() const { return size(); }
 

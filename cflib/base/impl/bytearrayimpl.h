@@ -47,6 +47,11 @@ struct ByteArrayShared
     bool isNull() const { return flags & 1u; }
     void setNull(bool v) { v ? (flags |= 1u) : (flags &= ~1u); }
 
+    // set the content length and write the trailing NUL; every size change
+    // goes through here, which is what keeps the buffer NUL-terminated. The
+    // caller must have ensured capacity >= n + 1 (create/copy/grow do).
+    void setSize(size_t n) { size = n; data()[n] = 0; }
+
     char *       data()       { return reinterpret_cast<char *>(this) + HeaderSize; }
     const char * data() const { return reinterpret_cast<const char *>(this) + HeaderSize; }
     std::string_view sv() const { return std::string_view(data(), size); }
@@ -59,24 +64,27 @@ struct ByteArrayShared
         return cap;
     }
 
-    // fresh block owning a copy of [p, p+len)
+    // fresh block owning a copy of [p, p+len); NUL-terminated, so capacity
+    // always leaves one byte past the content
     static ByteArrayShared * create(const char * p, size_t len)
     {
-        size_t cap = blockCapacity(len);
+        size_t cap = blockCapacity(len + 1);
         void * mem = std::malloc(HeaderSize + cap);
         if (!mem) std::terminate();
         ByteArrayShared * s = new (mem) ByteArrayShared(len, cap);
         if (len) std::memcpy(s->data(), p, len);
+        s->setSize(len);
         return s;
     }
-    // fresh block of n bytes, all set to c
+    // fresh block of n bytes, all set to c; NUL-terminated
     static ByteArrayShared * create(size_t n, char c)
     {
-        size_t cap = blockCapacity(n);
+        size_t cap = blockCapacity(n + 1);
         void * mem = std::malloc(HeaderSize + cap);
         if (!mem) std::terminate();
         ByteArrayShared * s = new (mem) ByteArrayShared(n, cap);
         if (n) std::memset(s->data(), c, n);
+        s->setSize(n);
         return s;
     }
     // exclusive copy of an existing block (same capacity), unless `hint`
@@ -85,20 +93,21 @@ struct ByteArrayShared
     static ByteArrayShared * copy(const ByteArrayShared & o, size_t hint = 0)
     {
         size_t cap = blockCapacity(o.capacity ? o.capacity : CapacityMin);
-        if (hint > cap) cap = blockCapacity(hint);
+        if (hint + 1 > cap) cap = blockCapacity(hint + 1);
         void * mem = std::malloc(HeaderSize + cap);
         if (!mem) std::terminate();
         ByteArrayShared * s = new (mem) ByteArrayShared(o.size, cap, o.flags);
         if (o.size) std::memcpy(s->data(), o.data(), o.size);
+        s->setSize(o.size);
         return s;
     }
 
-    // grow the block so it can hold `need` bytes; realloc may move it,
-    // so callers must use the returned pointer
+    // grow the block so it can hold `need` content bytes plus the trailing
+    // NUL; realloc may move it, so callers must use the returned pointer
     ByteArrayShared * grow(size_t need)
     {
-        if (need <= capacity) return this;
-        size_t cap = blockCapacity(need);
+        if (need < capacity) return this;
+        size_t cap = blockCapacity(need + 1);
         void * mem = std::realloc(static_cast<void *>(this), HeaderSize + cap);
         if (!mem) std::terminate();
         ByteArrayShared * m = static_cast<ByteArrayShared *>(mem);
@@ -124,7 +133,7 @@ struct ByteArrayShared
         const char * src = safeSource(p, len, tmp);
         ByteArrayShared * s = grow(size + len);
         std::memcpy(s->data() + s->size, src, len);
-        s->size += len;
+        s->setSize(s->size + len);
         return s;
     }
     // positions are clamped to [0, size]; callers may pass npos-style values
@@ -136,7 +145,7 @@ struct ByteArrayShared
         ByteArrayShared * s = grow(size + len);
         std::memmove(s->data() + pos + len, s->data() + pos, s->size - pos);
         std::memcpy(s->data() + pos, src, len);
-        s->size += len;
+        s->setSize(s->size + len);
         return s;
     }
     // erase [pos, pos+len), clamped to [0, size]; no reallocation
@@ -145,7 +154,7 @@ struct ByteArrayShared
         if (pos >= size) return;
         if (pos + len > size) len = size - pos;
         std::memmove(data() + pos, data() + pos + len, size - pos - len);
-        size -= len;
+        setSize(size - len);
     }
     ByteArrayShared * replace(size_t pos, size_t len, const char * p, size_t plen)
     {
@@ -156,13 +165,13 @@ struct ByteArrayShared
             ByteArrayShared * s = grow(pos + plen);
             if (pos > s->size) std::memset(s->data() + s->size, 0, pos - s->size);
             std::memcpy(s->data() + pos, src, plen);
-            s->size = pos + plen;
+            s->setSize(pos + plen);
             return s;
         }
         ByteArrayShared * s = grow(size + plen - len);
         std::memmove(s->data() + pos + plen, s->data() + pos + len, s->size - pos - len);
         std::memcpy(s->data() + pos, src, plen);
-        s->size += plen - len;
+        s->setSize(s->size + plen - len);
         return s;
     }
 
@@ -223,8 +232,22 @@ inline void ByteArray::detach(size_t hint) {
 
 inline ByteArray ByteArray::fromRawData(const char * data, size_t len) { return ByteArray(data, len); }
 
-inline char * ByteArray::data()       { detach(); return d->data(); }
-inline const char * ByteArray::data() const { return d->data(); }
+inline char * ByteArray::charPtr() {
+    if (isNull()) return nullptr;
+    detach();
+    return d->data();
+}
+inline const char * ByteArray::charPtr() const {
+    return isNull() ? nullptr : d->data();
+}
+inline uint8 * ByteArray::data() {
+    if (isNull()) return nullptr;
+    detach();
+    return reinterpret_cast<uint8 *>(d->data());
+}
+inline const uint8 * ByteArray::data() const {
+    return isNull() ? nullptr : reinterpret_cast<const uint8 *>(d->data());
+}
 inline const char * ByteArray::constData() const { return d->data(); }
 inline std::string_view ByteArray::sv() const { return d->sv(); }
 
@@ -236,18 +259,18 @@ inline bool     ByteArray::isNull() const { return d->isNull(); }
 inline void ByteArray::resize(size_t n) {
     detach(n);
     d = d->grow(n);
-    d->size = n;
+    d->setSize(n);
     d->setNull(false);
 }
 inline void ByteArray::resize(size_t n, char c) {
     detach(n);
     d = d->grow(n);
     if (n > d->size) std::memset(d->data() + d->size, c, n - d->size);
-    d->size = n;
+    d->setSize(n);
     d->setNull(false);
 }
 inline void ByteArray::reserve(size_t n) { detach(n); d = d->grow(n); }
-inline void ByteArray::clear() { detach(); d->size = 0; d->setNull(true); }
+inline void ByteArray::clear() { detach(); d->setSize(0); d->setNull(true); }
 inline size_t ByteArray::capacity() const { return d->capacity; }
 
 inline char   ByteArray::operator[](size_t i) const { return d->data()[i]; }

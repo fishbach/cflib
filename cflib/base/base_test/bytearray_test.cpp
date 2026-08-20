@@ -110,6 +110,76 @@ TEST_CASE("ByteArray: accessors")
     REQUIRE_EQ(ba.at(4), 'o');
 }
 
+// The buffer is always NUL-terminated, so charPtr() is a free C string.
+// Pin the invariant: charPtr()[size()] == '\0' after every mutation, the
+// block always keeps one byte of slack (capacity >= size + 1), null maps to
+// nullptr, and data() and charPtr() point at the same bytes.
+TEST_CASE("ByteArray: nul_termination")
+{
+    auto check = [](const ByteArray & ba) {
+        if (ba.isNull()) return;
+        REQUIRE(ba.charPtr()[ba.size()] == '\0');
+        REQUIRE(ba.capacity() >= ba.size() + 1);
+    };
+
+    // null -> nullptr for both accessors, const and non-const
+    ByteArray nullBa;
+    REQUIRE(nullBa.charPtr() == nullptr);
+    REQUIRE(nullBa.data() == nullptr);
+    REQUIRE(nullBa.charPtr() == nullptr);   // non-const overload
+    REQUIRE(nullBa.data() == nullptr);
+
+    // construct
+    ByteArray a("hello");
+    check(a);
+    REQUIRE(std::strcmp(a.charPtr(), "hello") == 0);
+    REQUIRE(a.data() == reinterpret_cast<uint8 *>(a.charPtr()));
+
+    // every mutation keeps the buffer terminated
+    a.append('!');          check(a); REQUIRE(std::strcmp(a.charPtr(), "hello!") == 0);
+    a.append(" world");     check(a); REQUIRE(std::strcmp(a.charPtr(), "hello! world") == 0);
+    a.prepend(">>");        check(a); REQUIRE(std::strcmp(a.charPtr(), ">>hello! world") == 0);
+    a.insert(2, "xx");      check(a); REQUIRE(std::strcmp(a.charPtr(), ">>xxhello! world") == 0);
+    a.remove(0, 2);         check(a); REQUIRE(std::strcmp(a.charPtr(), "xxhello! world") == 0);
+    a.replace('x', "y");    check(a); REQUIRE(std::strcmp(a.charPtr(), "yyhello! world") == 0);
+    a.resize(4);            check(a); REQUIRE(std::strcmp(a.charPtr(), "yyhe") == 0);
+    a.resize(8, 'z');       check(a); REQUIRE(std::strcmp(a.charPtr(), "yyhezzzz") == 0);
+    a[0] = 'A';             check(a); REQUIRE(std::strcmp(a.charPtr(), "Ayhezzzz") == 0);
+
+    // clear -> null again
+    a.clear();
+    REQUIRE(a.isNull());
+    REQUIRE(a.charPtr() == nullptr);
+
+    // empty (non-null) is "" 
+    ByteArray e("");
+    REQUIRE(!e.isNull());
+    REQUIRE(std::strcmp(e.charPtr(), "") == 0);
+
+    // binary content: the NUL is a sentinel after the bytes, size() is
+    // authoritative (so strcmp is not usable here)
+    ByteArray bin("\x00\x01\x02", 3);
+    check(bin);
+    REQUIRE_EQ(bin.size(), (size_t)3);
+    REQUIRE(bin.charPtr()[3] == '\0');
+
+    // a size that is exactly a power of two still keeps the slack byte
+    ByteArray p2(32, 'a');
+    check(p2);
+    p2.append('b');
+    check(p2);
+    REQUIRE(p2.capacity() >= p2.size() + 1);
+
+    // non-const charPtr() detaches: the copy diverges, the original is safe
+    ByteArray shared("shared");
+    ByteArray copy = shared;
+    char * cp = copy.charPtr();
+    cp[0] = 'S';
+    check(copy);
+    REQUIRE(shared.charPtr()[0] == 's');
+    REQUIRE(copy.charPtr()[0] == 'S');
+}
+
 // Resize/reserve/clear tests
 TEST_CASE("ByteArray: resize_reserve_clear")
 {

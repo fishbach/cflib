@@ -33,7 +33,9 @@ struct ByteArrayShared;
 //     ba.resize(total);                    // single allocation
 //     std::memcpy(ba.data(), src, total);  // direct, unchecked writes
 //
-// The buffer is not NUL-terminated.
+// The buffer is always NUL-terminated: charPtr() is a free, NUL-terminated
+// const char * (nullptr for a null value), so converting to a C string costs
+// nothing. data() exposes the same buffer as a uint8 * byte view.
 class ByteArray
 {
 public:
@@ -62,8 +64,14 @@ public:
 
     static ByteArray fromRawData(const char * data, size_t len);
 
-    char *       data();
-    const char * data() const;
+    // NUL-terminated C-string view of the buffer; nullptr for a null value.
+    // Converting to a C string is therefore free (no copy). The non-const
+    // overload detaches, so the bytes may then be modified in place.
+    char *       charPtr();
+    const char * charPtr() const;
+    // raw byte view of the same buffer; nullptr for a null value
+    uint8 *      data();
+    const uint8 * data() const;
     const char * constData() const;
     std::string_view sv() const;
 

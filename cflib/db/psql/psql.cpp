@@ -102,7 +102,7 @@ public:
             return;
         }
 
-        conn = PQconnectdb(connectionParameter_.toStdString().c_str());
+        conn = PQconnectdb(connectionParameter_.charPtr());
         if (PQstatus(conn) != CONNECTION_OK) {
             logWarn("cannot connect to database (error: %1)", PQerrorMessage(conn));
             PQfinish(conn);
@@ -135,7 +135,7 @@ public:
             PQfinish(conn);
 
             // try reconnect
-            conn = PQconnectdb(connectionParameter_.toStdString().c_str());
+            conn = PQconnectdb(connectionParameter_.charPtr());
             if (PQstatus(conn) != CONNECTION_OK) {
                 logWarn("cannot connect to database (error: %1)", PQerrorMessage(conn));
                 PQfinish(conn);
@@ -164,7 +164,7 @@ bool PSql::setParameter(const String & connectionParameterRef, const String & ov
 
     String connectionParameter = connectionParameterRef;
     if (!overrideEnvVar.isEmpty()) {
-        const char * envVal = getenv(overrideEnvVar.toStdString().c_str());
+        const char * envVal = getenv(overrideEnvVar.charPtr());
         if (envVal) connectionParameter = String(envVal);
     }
 
@@ -180,7 +180,7 @@ bool PSql::setParameter(const String & connectionParameterRef, const String & ov
     typeOids[PSql_null] = (Oid)0;
     for (Oid oid = PSql_null + 1 ; oid < PSql_lastEntry ; ++oid) {
         ByteArray query = ByteArray("SELECT '") + PostgresTypeNames[oid] + "'::regtype::oid";
-        PGresult * res = PQexec(conn, query.toStdString().c_str());
+        PGresult * res = PQexec(conn, query.charPtr());
         if (PQresultStatus(res) != PGRES_TUPLES_OK) {
             logWarn("cannot get oids (error: %1)", PQerrorMessage(conn));
             PQclear(res);
@@ -354,7 +354,7 @@ bool PSql::commit()
 
     // try again to remove prepared statements
     for (const ByteArray & in : td_.preparedStatements) {
-        PQclear(PQexec(td_.conn, ("DEALLOCATE " + in).toStdString().c_str()));
+        PQclear(PQexec(td_.conn, ("DEALLOCATE " + in).charPtr()));
     }
     td_.preparedStatements.clear();
 
@@ -387,7 +387,7 @@ void PSql::rollback()
 
     // try again to remove prepared statements
     for (const ByteArray & in : td_.preparedStatements) {
-        PQclear(PQexec(td_.conn, ("DEALLOCATE " + in).toStdString().c_str()));
+        PQclear(PQexec(td_.conn, ("DEALLOCATE " + in).charPtr()));
     }
     td_.preparedStatements.clear();
 
@@ -399,10 +399,15 @@ bool PSql::exec(const String & query)
 {
     if (td_.doRollback) return false;
 
+    if (query.isNull()) {
+        util::Log(lfi_, line_ ? line_ : __LINE__, LogCat::Warn | LogCat::Db)("exec called with null query");
+        return false;
+    }
+
     clearResult();
 
     lastQuery_ = query.toUtf8();
-    if (!PQsendQueryParams(td_.conn, lastQuery_.toStdString().c_str(), 0, NULL, NULL, NULL, NULL, 1)) {
+    if (!PQsendQueryParams(td_.conn, lastQuery_.charPtr(), 0, NULL, NULL, NULL, NULL, 1)) {
         util::Log(lfi_, line_ ? line_ : __LINE__, LogCat::Debug | LogCat::Db)("query: %1", lastQuery_);
         util::Log(lfi_, line_ ? line_ : __LINE__, LogCat::Warn  | LogCat::Db)("cannot send query: %1", PQerrorMessage(td_.conn));
         return false;
@@ -413,8 +418,12 @@ bool PSql::exec(const String & query)
 
 bool PSql::execMultiple(const String & query)
 {
+    if (query.isNull()) {
+        util::Log(lfi_, line_ ? line_ : __LINE__, LogCat::Warn | LogCat::Db)("execMultiple called with null query");
+        return false;
+    }
     const ByteArray utf8 = query.toUtf8();
-    PGresult * res = PQexec(td_.conn, utf8.toStdString().c_str());
+    PGresult * res = PQexec(td_.conn, utf8.charPtr());
     if (PQresultStatus(res) != PGRES_TUPLES_OK && PQresultStatus(res) != PGRES_COMMAND_OK) {
         util::Log(lfi_, line_ ? line_ : __LINE__, LogCat::Debug | LogCat::Db)("query: %1", lastQuery_);
         util::Log(lfi_, line_ ? line_ : __LINE__, LogCat::Warn  | LogCat::Db)("cannot send query: %1", PQerrorMessage(td_.conn));
@@ -449,8 +458,8 @@ bool PSql::exec(uint keepFields)
         isPrepared_ = true;
 
         removePreparedStatement();
-        PGresult * res = PQprepare(td_.conn, instanceName_.toStdString().c_str(),
-            lastQuery_.toStdString().c_str(), prepareParamCount_, prepareParamTypes_);
+        PGresult * res = PQprepare(td_.conn, instanceName_.charPtr(),
+            lastQuery_.charPtr(), prepareParamCount_, prepareParamTypes_);
         if (PQresultStatus(res) != PGRES_COMMAND_OK) {
             util::Log(lfi_, line_ ? line_ : __LINE__, LogCat::Debug | LogCat::Db)("query: %1", lastQuery_);
             util::Log(lfi_, line_ ? line_ : __LINE__, LogCat::Warn  | LogCat::Db)("cannot prepare query: %1", PQerrorMessage(td_.conn));
@@ -468,7 +477,7 @@ bool PSql::exec(uint keepFields)
         pos += prepareParamLengths_[i];
     }
 
-    if (!PQsendQueryPrepared(td_.conn, instanceName_.toStdString().c_str(),
+    if (!PQsendQueryPrepared(td_.conn, instanceName_.charPtr(),
         prepareParamCount_, prepareParamValues, prepareParamLengths_, ParamFormats, 1))
     {
         util::Log(lfi_, line_ ? line_ : __LINE__, LogCat::Debug | LogCat::Db)("query: %1", lastQuery_);
@@ -830,7 +839,7 @@ void PSql::removePreparedStatement()
     if (!prepareUsed_) return;
     prepareUsed_ = false;
 
-    PGresult * res = PQexec(td_.conn, ("DEALLOCATE " + instanceName_).toStdString().c_str());
+    PGresult * res = PQexec(td_.conn, ("DEALLOCATE " + instanceName_).charPtr());
     if (PQresultStatus(res) != PGRES_TUPLES_OK) {
         td_.preparedStatements << instanceName_;
     }
