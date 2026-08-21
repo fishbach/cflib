@@ -94,7 +94,7 @@ TEST_CASE("String: accessors")
     String s("hello");
 
     REQUIRE_EQ(s.str(), std::string("hello"));
-    REQUIRE_EQ(std::string(s), std::string("hello"));
+    REQUIRE_EQ(s.toStdString(), std::string("hello"));
     REQUIRE_EQ(s.byteSize(), (size_t)5);
     REQUIRE_EQ(s.size(), (size_t)5);
     REQUIRE_EQ(s.length(), (size_t)5);

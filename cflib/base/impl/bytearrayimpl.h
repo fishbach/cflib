@@ -30,7 +30,7 @@ namespace cflib::base {
 // Growth: capacity is a power of two, minimum CapacityMin. Growing to
 // `need` uses the smallest such capacity (realloc, which may extend in
 // place). Shrinking never reduces capacity.
-struct ByteArrayShared
+struct ByteArray::Shared
 {
     static constexpr size_t HeaderSize  = 32;
     static constexpr size_t CapacityMin = 32;
@@ -40,9 +40,9 @@ struct ByteArrayShared
     size_t     capacity{0};
     uint32_t   flags{0};
 
-    ByteArrayShared() = default;
-    ~ByteArrayShared() = default;
-    ByteArrayShared(size_t s, size_t c, uint32_t f = 0) : size(s), capacity(c), flags(f) {}
+    Shared() = default;
+    ~Shared() = default;
+    Shared(size_t s, size_t c, uint32_t f = 0) : size(s), capacity(c), flags(f) {}
 
     bool isNull() const { return flags & 1u; }
     void setNull(bool v) { v ? (flags |= 1u) : (flags &= ~1u); }
@@ -66,23 +66,23 @@ struct ByteArrayShared
 
     // fresh block owning a copy of [p, p+len); NUL-terminated, so capacity
     // always leaves one byte past the content
-    static ByteArrayShared * create(const char * p, size_t len)
+    static Shared * create(const char * p, size_t len)
     {
         size_t cap = blockCapacity(len + 1);
         void * mem = std::malloc(HeaderSize + cap);
         if (!mem) std::terminate();
-        ByteArrayShared * s = new (mem) ByteArrayShared(len, cap);
+        Shared * s = new (mem) Shared(len, cap);
         if (len) std::memcpy(s->data(), p, len);
         s->setSize(len);
         return s;
     }
     // fresh block of n bytes, all set to c; NUL-terminated
-    static ByteArrayShared * create(size_t n, char c)
+    static Shared * create(size_t n, char c)
     {
         size_t cap = blockCapacity(n + 1);
         void * mem = std::malloc(HeaderSize + cap);
         if (!mem) std::terminate();
-        ByteArrayShared * s = new (mem) ByteArrayShared(n, cap);
+        Shared * s = new (mem) Shared(n, cap);
         if (n) std::memset(s->data(), c, n);
         s->setSize(n);
         return s;
@@ -90,13 +90,13 @@ struct ByteArrayShared
     // exclusive copy of an existing block (same capacity), unless `hint`
     // demands a larger one, so a resize/reserve right after the copy
     // does not need a second allocation
-    static ByteArrayShared * copy(const ByteArrayShared & o, size_t hint = 0)
+    static Shared * copy(const Shared & o, size_t hint = 0)
     {
         size_t cap = blockCapacity(o.capacity ? o.capacity : CapacityMin);
         if (hint + 1 > cap) cap = blockCapacity(hint + 1);
         void * mem = std::malloc(HeaderSize + cap);
         if (!mem) std::terminate();
-        ByteArrayShared * s = new (mem) ByteArrayShared(o.size, cap, o.flags);
+        Shared * s = new (mem) Shared(o.size, cap, o.flags);
         if (o.size) std::memcpy(s->data(), o.data(), o.size);
         s->setSize(o.size);
         return s;
@@ -104,13 +104,13 @@ struct ByteArrayShared
 
     // grow the block so it can hold `need` content bytes plus the trailing
     // NUL; realloc may move it, so callers must use the returned pointer
-    ByteArrayShared * grow(size_t need)
+    Shared * grow(size_t need)
     {
         if (need < capacity) return this;
         size_t cap = blockCapacity(need + 1);
         void * mem = std::realloc(static_cast<void *>(this), HeaderSize + cap);
         if (!mem) std::terminate();
-        ByteArrayShared * m = static_cast<ByteArrayShared *>(mem);
+        Shared * m = static_cast<Shared *>(mem);
         m->capacity = cap;
         return m;
     }
@@ -127,22 +127,22 @@ struct ByteArrayShared
         return p;
     }
 
-    ByteArrayShared * append(const char * p, size_t len)
+    Shared * append(const char * p, size_t len)
     {
         std::vector<char> tmp;
         const char * src = safeSource(p, len, tmp);
-        ByteArrayShared * s = grow(size + len);
+        Shared * s = grow(size + len);
         std::memcpy(s->data() + s->size, src, len);
         s->setSize(s->size + len);
         return s;
     }
     // positions are clamped to [0, size]; callers may pass npos-style values
-    ByteArrayShared * insert(size_t pos, const char * p, size_t len)
+    Shared * insert(size_t pos, const char * p, size_t len)
     {
         if (pos > size) pos = size;
         std::vector<char> tmp;
         const char * src = safeSource(p, len, tmp);
-        ByteArrayShared * s = grow(size + len);
+        Shared * s = grow(size + len);
         std::memmove(s->data() + pos + len, s->data() + pos, s->size - pos);
         std::memcpy(s->data() + pos, src, len);
         s->setSize(s->size + len);
@@ -156,19 +156,19 @@ struct ByteArrayShared
         std::memmove(data() + pos, data() + pos + len, size - pos - len);
         setSize(size - len);
     }
-    ByteArrayShared * replace(size_t pos, size_t len, const char * p, size_t plen)
+    Shared * replace(size_t pos, size_t len, const char * p, size_t plen)
     {
         std::vector<char> tmp;
         const char * src = safeSource(p, plen, tmp);
         if (pos + len > size) {
             // past the end: NUL-pad to pos, then append
-            ByteArrayShared * s = grow(pos + plen);
+            Shared * s = grow(pos + plen);
             if (pos > s->size) std::memset(s->data() + s->size, 0, pos - s->size);
             std::memcpy(s->data() + pos, src, plen);
             s->setSize(pos + plen);
             return s;
         }
-        ByteArrayShared * s = grow(size + plen - len);
+        Shared * s = grow(size + plen - len);
         std::memmove(s->data() + pos + plen, s->data() + pos + len, s->size - pos - len);
         std::memcpy(s->data() + pos, src, plen);
         s->setSize(s->size + plen - len);
@@ -188,14 +188,14 @@ struct ByteArrayShared
 // null values share it, so they cost zero allocations. All mutation
 // paths go through detach(), which never writes to it; it is never
 // deleted.
-inline ByteArrayShared * byteArrayNullShared()
+inline ByteArray::Shared * ByteArray::sharedNull()
 {
-    static ByteArrayShared s(0, 0, 1u); // isNull flag
+    static Shared s(0, 0, 1u); // isNull flag
     return &s;
 }
 
-inline ByteArray::ByteArray() : d(byteArrayNullShared()) {}
-inline ByteArray::ByteArray(const char * data) : d(data ? Shared::create(data, std::strlen(data)) : byteArrayNullShared()) {}
+inline ByteArray::ByteArray() : d(sharedNull()) {}
+inline ByteArray::ByteArray(const char * data) : d(data ? Shared::create(data, std::strlen(data)) : sharedNull()) {}
 inline ByteArray::ByteArray(const char * data, size_t len) : d(Shared::create(data, len)) {}
 inline ByteArray::ByteArray(const uint8 * data, size_t len) : d(Shared::create(reinterpret_cast<const char *>(data), len)) {}
 inline ByteArray::ByteArray(size_t n, char c) : d(Shared::create(n, c)) {}
@@ -203,30 +203,30 @@ inline ByteArray::ByteArray(std::string_view sv) : d(Shared::create(sv.data(), s
 inline ByteArray::ByteArray(std::string s) : d(Shared::create(s.data(), s.size())) {}
 
 // implicit sharing
-inline ByteArray::ByteArray(const ByteArray & other) : d(other.d) { if (d != byteArrayNullShared()) d->ref.ref(); }
-inline ByteArray::ByteArray(ByteArray && other) : d(other.d) { other.d = byteArrayNullShared(); }
+inline ByteArray::ByteArray(const ByteArray & other) : d(other.d) { if (d != sharedNull()) d->ref.ref(); }
+inline ByteArray::ByteArray(ByteArray && other) : d(other.d) { other.d = sharedNull(); }
 inline ByteArray::~ByteArray() { release(); }
 
 inline ByteArray & ByteArray::operator=(const ByteArray & other) {
     if (d == other.d) return *this;
     release();
     d = other.d;
-    if (d != byteArrayNullShared()) d->ref.ref();
+    if (d != sharedNull()) d->ref.ref();
     return *this;
 }
 inline ByteArray & ByteArray::operator=(ByteArray && other) {
     if (this == &other) return *this;
     release();                     // drop the block we currently hold
     d = other.d;                   // take over other's block
-    other.d = byteArrayNullShared();
+    other.d = sharedNull();
     return *this;
 }
 // acquire an exclusive block when the content is shared; when this
 // detaches, the fresh block is allocated with at least blockCapacity(hint)
 inline void ByteArray::detach(size_t hint) {
-    if (d != byteArrayNullShared() && d->ref.loadAcquire() == 1) return;
+    if (d != sharedNull() && d->ref.loadAcquire() == 1) return;
     Shared * s = Shared::copy(*d, hint);
-    if (d != byteArrayNullShared() && !d->ref.deref()) deleteShared(d);
+    if (d != sharedNull() && !d->ref.deref()) deleteShared(d);
     d = s;
 }
 
@@ -360,7 +360,6 @@ inline ByteArray & ByteArray::remove(size_t pos, size_t len) {
 
 // explicit, owning conversion: copies the bytes (O(n))
 inline std::string ByteArray::toStdString() const { return std::string(d->data(), d->size); }
-inline ByteArray::operator std::string() const { return toStdString(); }
 
 // Hex conversion (fromHex(const char *) is implemented in bytearray.cpp)
 inline ByteArray ByteArray::fromHex(const ByteArray & hex) { return fromHex(hex.toStdString().c_str()); }
@@ -402,11 +401,11 @@ inline void ByteArray::appendBytes(const char * s, size_t len) {
 }
 
 inline void ByteArray::deleteShared(const Shared * s) {
-    s->~ByteArrayShared();
+    s->~Shared();
     std::free(const_cast<void *>(static_cast<const void *>(s)));
 }
 inline void ByteArray::release() {
-    if (d != byteArrayNullShared() && !d->ref.deref()) deleteShared(d);
+    if (d != sharedNull() && !d->ref.deref()) deleteShared(d);
 }
 
 inline ByteArray operator+(const char * lhs, const ByteArray & rhs) {

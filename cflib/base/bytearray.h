@@ -17,10 +17,6 @@
 
 namespace cflib::base {
 
-// copy-on-write payload shared by ByteArray references; defined in
-// impl/bytearrayimpl.h, which this header includes at the bottom
-struct ByteArrayShared;
-
 // A ByteArray is a copy-on-write sequence of raw bytes (no encoding
 // semantics; for UTF-8 text use String). References to the same content
 // share one heap block until one of them is mutated.
@@ -39,7 +35,6 @@ struct ByteArrayShared;
 class ByteArray
 {
 public:
-    using Shared = ByteArrayShared;
     static constexpr size_t npos = std::string::npos;
 
     ByteArray();
@@ -47,7 +42,7 @@ public:
     ByteArray(const char * data, size_t len);
     ByteArray(const uint8 * data, size_t len);
     ByteArray(size_t n, char c);
-    ByteArray(std::string_view sv);
+    explicit ByteArray(std::string_view sv);
     explicit ByteArray(std::string s);
 
     // implicit sharing
@@ -57,9 +52,6 @@ public:
 
     ByteArray & operator=(const ByteArray & other);
     ByteArray & operator=(ByteArray && other);
-    // acquire an exclusive block when the content is shared; when this
-    // detaches, the fresh block is allocated with enough capacity for
-    // `hint` bytes, so a resize/reserve to `hint` costs one allocation
     void detach(size_t hint = 0);
 
     static ByteArray fromRawData(const char * data, size_t len);
@@ -153,7 +145,6 @@ public:
 
     // explicit, owning conversion: copies the bytes (O(n))
     std::string toStdString() const;
-    explicit operator std::string() const;
 
     // Hex conversion (implemented in bytearray.cpp)
     static ByteArray fromHex(const char * hex);
@@ -175,17 +166,16 @@ public:
     bool operator==(const ByteArray & o) const;
     bool operator!=(const ByteArray & o) const;
     bool operator< (const ByteArray & o) const;
-    // compare against an explicit string_view: `sv == const char*` is
-    // ambiguous under C++20 rewritten candidates (GCC 13, fixed in C++23)
     bool operator==(const char * o) const;
     bool operator!=(const char * o) const;
 
 protected:
+    struct Shared;
     Shared * d;
-    // raw byte append, for subclasses that manage the null flag themselves
     void appendBytes(const char * s, size_t len);
 
 private:
+    inline static Shared * sharedNull();
     static void deleteShared(const Shared * s);
     void release();
 };
@@ -194,8 +184,7 @@ using ByteArrayList = List<ByteArray>;
 
 } // namespace
 
-#include <cflib/base/impl/bytearrayimpl.h>
-
+// std::hash for ByteArray
 namespace std {
 template<> struct hash<cflib::base::ByteArray> {
     size_t operator()(const cflib::base::ByteArray & ba) const {
@@ -203,3 +192,5 @@ template<> struct hash<cflib::base::ByteArray> {
     }
 };
 }
+
+#include <cflib/base/impl/bytearrayimpl.h>
