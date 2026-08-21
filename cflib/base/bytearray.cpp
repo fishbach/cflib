@@ -215,14 +215,16 @@ ByteArray ByteArray::fromInt(T v)
 {
     return ByteArray(std::format("{}", v).c_str());
 }
-template ByteArray ByteArray::fromInt(int8     );
-template ByteArray ByteArray::fromInt(uint8    );
-template ByteArray ByteArray::fromInt(int16    );
-template ByteArray ByteArray::fromInt(uint16   );
-template ByteArray ByteArray::fromInt(int32    );
-template ByteArray ByteArray::fromInt(uint32   );
-template ByteArray ByteArray::fromInt(int64    );
-template ByteArray ByteArray::fromInt(uint64   );
+template ByteArray ByteArray::fromInt(char              );
+template ByteArray ByteArray::fromInt(short             );
+template ByteArray ByteArray::fromInt(int               );
+template ByteArray ByteArray::fromInt(long              );
+template ByteArray ByteArray::fromInt(long long         );
+template ByteArray ByteArray::fromInt(unsigned char     );
+template ByteArray ByteArray::fromInt(unsigned short    );
+template ByteArray ByteArray::fromInt(unsigned int      );
+template ByteArray ByteArray::fromInt(unsigned long     );
+template ByteArray ByteArray::fromInt(unsigned long long);
 
 template <typename T>
 ByteArray ByteArray::fromFloat(T v)
