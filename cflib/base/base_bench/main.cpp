@@ -5,20 +5,8 @@
  * Licensed under the MIT License.
  */
 
-// Micro-benchmarks for cflib::base::ByteArray and its String subclass.
-//
-// The counting allocator (alloc_counter.cpp) intercepts every global
-// operator new/delete and malloc/calloc/realloc/free call of this
-// process, so "allocs/op" below are real heap allocations, not
-// estimates. Each scenario runs two passes:
-// one with counting enabled (allocations) and one with counting
-// disabled (timing, free of counter overhead).
-//
-//   bin/bytearray_bench
-
+#include <cflib/base/base_bench/alloc_counter.h>
 #include <cflib/base/bytearray.h>
-
-#include "alloc_counter.h"
 
 #include <chrono>
 #include <cstdio>

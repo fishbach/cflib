@@ -151,7 +151,7 @@ TEST_CASE("ByteArray: nul_termination")
     REQUIRE(a.isNull());
     REQUIRE(a.charPtr() == nullptr);
 
-    // empty (non-null) is "" 
+    // empty (non-null) is ""
     ByteArray e("");
     REQUIRE(!e.isNull());
     REQUIRE(std::strcmp(e.charPtr(), "") == 0);

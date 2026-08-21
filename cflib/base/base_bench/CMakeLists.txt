@@ -4,4 +4,4 @@
 #
 # Licensed under the MIT License.
 
-add_subdirectory(bytearray_bench)
+cf_app(base_bench cflib_base)

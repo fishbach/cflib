@@ -4,18 +4,16 @@
 #
 # Licensed under the MIT License.
 
-*~
+.cache/
+.claude/
 .DS_Store
 .vscode
+*~
 /bin
 /js/dao
 /js/net/logservice.js
-CMakeLists.txt.user
-Makefile
-Makefile.*
 build
 build-*
-test.log
+CMakeLists.txt.user
 config.cmake
-.claude/
-.cache/
+test.log
