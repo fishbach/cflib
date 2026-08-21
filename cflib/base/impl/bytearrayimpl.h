@@ -7,17 +7,9 @@
 
 #pragma once
 
-#include <cflib/base/bytearray.h>
 #include <cflib/base/concurrent.h>
 
-#include <concepts>
-#include <cstdlib>
 #include <cstring>
-#include <format>
-#include <new>
-#include <string>
-#include <string_view>
-#include <vector>
 
 namespace cflib::base {
 
@@ -361,18 +353,6 @@ inline std::string ByteArray::toStdString() const { return std::string(d->data()
 
 // Hex conversion (fromHex(const char *) is implemented in bytearray.cpp)
 inline ByteArray ByteArray::fromHex(const ByteArray & hex) { return fromHex(hex.toStdString().c_str()); }
-
-// Number formatting
-template <std::integral T>
-ByteArray ByteArray::fromInt(T v)
-{
-    return ByteArray(std::format("{}", v).c_str());
-}
-template <std::floating_point T>
-ByteArray ByteArray::fromFloat(T v)
-{
-    return ByteArray(std::format("{:g}", v).c_str());
-}
 
 inline ByteArray & ByteArray::operator+=(char c)              { return append(c); }
 inline ByteArray & ByteArray::operator+=(const char * s)      { return append(s); }

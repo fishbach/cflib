@@ -61,8 +61,8 @@ TEST_CASE("String: constructors")
     // Number conversions
     REQUIRE_EQ(String::fromInt(42), String("42"));
     REQUIRE_EQ(String::fromInt(-42), String("-42"));
-    REQUIRE_EQ(String::fromInt(9223372036854775807LL), String("9223372036854775807"));
-    REQUIRE_EQ(String::fromInt(-9223372036854775807LL), String("-9223372036854775807"));
+    REQUIRE_EQ(String::fromInt(INT64_C(9223372036854775807)), String("9223372036854775807"));
+    REQUIRE_EQ(String::fromInt(INT64_C(-9223372036854775807)), String("-9223372036854775807"));
     REQUIRE(String::fromFloat(3.14159).indexOf("3.14") == 0);
     REQUIRE(String::fromFloat(2.71828).indexOf("2.71") == 0);
 }

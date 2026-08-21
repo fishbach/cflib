@@ -8,6 +8,7 @@
 #include <cflib/base/bytearray.h>
 
 #include <cstdlib>
+#include <format>
 
 namespace cflib::base {
 
@@ -208,5 +209,27 @@ ByteArray ByteArray::toHex() const {
     }
     return out;
 }
+
+template <typename T>
+ByteArray ByteArray::fromInt(T v)
+{
+    return ByteArray(std::format("{}", v).c_str());
+}
+template ByteArray ByteArray::fromInt(int8     );
+template ByteArray ByteArray::fromInt(uint8    );
+template ByteArray ByteArray::fromInt(int16    );
+template ByteArray ByteArray::fromInt(uint16   );
+template ByteArray ByteArray::fromInt(int32    );
+template ByteArray ByteArray::fromInt(uint32   );
+template ByteArray ByteArray::fromInt(int64    );
+template ByteArray ByteArray::fromInt(uint64   );
+
+template <typename T>
+ByteArray ByteArray::fromFloat(T v)
+{
+    return ByteArray(std::format("{:g}", v).c_str());
+}
+template ByteArray ByteArray::fromFloat(float );
+template ByteArray ByteArray::fromFloat(double);
 
 } // namespace

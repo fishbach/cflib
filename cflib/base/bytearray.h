@@ -9,7 +9,6 @@
 
 #include <cflib/base/container.h>
 
-#include <concepts>
 #include <string>
 #include <string_view>
 
@@ -18,12 +17,14 @@ namespace cflib::base {
 class ByteArray;
 using ByteArrayList = List<ByteArray>;
 
-// A ByteArray is a copy-on-write sequence of raw bytes (no encoding
-// semantics; for UTF-8 text use String).
+// A ByteArray is a copy-on-write sequence of raw bytes.
+// There is no encoding semantics. For UTF-8 text use String.
 //
-// The buffer is always NUL-terminated: constCharPtr() is a free, NUL-terminated
-// const char * (nullptr for a null value), so converting to a C string costs
-// nothing. data() exposes the same buffer as a uint8 * byte view.
+// Capacity is a power of two.
+// Shrinking never reduces capacity.
+//
+// The buffer has always a '\0' after the accessable data,
+// to make access to const char * cheap.
 class ByteArray
 {
 public:
@@ -122,8 +123,10 @@ public:
     int32  toInt  (bool * ok = nullptr) const;
     uint64 toULong(bool * ok = nullptr) const;
     int64  toLong (bool * ok = nullptr) const;
-    template <std::integral T>       static ByteArray fromInt(T v);
-    template <std::floating_point T> static ByteArray fromFloat(T v);
+    template <typename T>
+    static ByteArray fromInt(T v);
+    template <typename T>
+    static ByteArray fromFloat(T v);
 
     // Hex
     ByteArray toHex() const;

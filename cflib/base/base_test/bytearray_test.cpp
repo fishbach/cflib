@@ -527,9 +527,9 @@ TEST_CASE("ByteArray: numeric_conversions")
     REQUIRE(!ok);  // trailing characters
     REQUIRE_EQ(ByteArray("42 ").toLong(&ok), (int64)42);
     REQUIRE(!ok);  // trailing space means not fully consumed
-    REQUIRE_EQ(ByteArray("9223372036854775807").toLong(&ok), (int64)9223372036854775807LL);
+    REQUIRE_EQ(ByteArray("9223372036854775807").toLong(&ok), INT64_C(9223372036854775807));
     REQUIRE(ok);
-    REQUIRE_EQ(ByteArray("-9223372036854775807").toLong(&ok), (int64)-9223372036854775807LL);
+    REQUIRE_EQ(ByteArray("-9223372036854775807").toLong(&ok), INT64_C(-9223372036854775807));
     REQUIRE(ok);
 }
 
@@ -538,8 +538,8 @@ TEST_CASE("ByteArray: number")
 {
     REQUIRE_EQ(ByteArray::fromInt(42), ByteArray("42"));
     REQUIRE_EQ(ByteArray::fromInt(-42), ByteArray("-42"));
-    REQUIRE_EQ(ByteArray::fromInt(9223372036854775807LL), ByteArray("9223372036854775807"));
-    REQUIRE_EQ(ByteArray::fromInt(-9223372036854775807LL), ByteArray("-9223372036854775807"));
+    REQUIRE_EQ(ByteArray::fromInt(INT64_C(9223372036854775807)), ByteArray("9223372036854775807"));
+    REQUIRE_EQ(ByteArray::fromInt(INT64_C(-9223372036854775807)), ByteArray("-9223372036854775807"));
     REQUIRE(ByteArray::fromFloat(3.14159).indexOf("3.14") == 0);
     REQUIRE(ByteArray::fromFloat(2.71828).indexOf("2.71") == 0);
 }
