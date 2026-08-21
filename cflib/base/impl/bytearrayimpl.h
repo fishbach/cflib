@@ -300,10 +300,10 @@ inline ByteArray & ByteArray::insert(size_t pos, const char * s, size_t len) {
     return *this;
 }
 
-inline ByteArray ByteArray::mid(size_t pos, size_t len) const {
+inline ByteArray ByteArray::mid(size_t pos, ssize_t len) const {
     if (pos >= d->size) return ByteArray();
     size_t avail = d->size - pos;
-    return ByteArray(d->data() + pos, len == npos || len > avail ? avail : len);
+    return ByteArray(d->data() + pos, len == -1 || len > avail ? avail : len);
 }
 inline ByteArray ByteArray::left(size_t n) const  { return mid(0, n); }
 inline ByteArray ByteArray::right(size_t n) const {
@@ -320,21 +320,21 @@ inline bool ByteArray::endsWith(const char * s) const {
     return sv.compare(sv.size() - slen, slen, s) == 0;
 }
 inline bool ByteArray::endsWith(const ByteArray & other) const { return d->toStdStringView().ends_with(other.d->toStdStringView()); }
-inline bool ByteArray::contains(const char * s) const { return d->toStdStringView().find(s) != npos; }
-inline bool ByteArray::contains(char c) const { return d->toStdStringView().find(c) != npos; }
-inline bool ByteArray::contains(const ByteArray & other) const { return d->toStdStringView().find(other.d->toStdStringView()) != npos; }
+inline bool ByteArray::contains(const char * s) const { return d->toStdStringView().find(s) != std::string::npos; }
+inline bool ByteArray::contains(char c) const { return d->toStdStringView().find(c) != std::string::npos; }
+inline bool ByteArray::contains(const ByteArray & other) const { return d->toStdStringView().find(other.d->toStdStringView()) != std::string::npos; }
 
 inline ssize_t ByteArray::indexOf(char c, size_t from) const {
     size_t pos = d->toStdStringView().find(c, from);
-    return pos == npos ? -1 : (ssize_t)pos;
+    return pos == std::string::npos ? -1 : (ssize_t)pos;
 }
 inline ssize_t ByteArray::indexOf(const char * s, size_t from) const {
     size_t pos = d->toStdStringView().find(s, from);
-    return pos == npos ? -1 : (ssize_t)pos;
+    return pos == std::string::npos ? -1 : (ssize_t)pos;
 }
 inline ssize_t ByteArray::indexOf(const ByteArray & other, size_t from) const {
     size_t pos = d->toStdStringView().find(other.d->toStdStringView(), from);
-    return pos == npos ? -1 : (ssize_t)pos;
+    return pos == std::string::npos ? -1 : (ssize_t)pos;
 }
 
 // replace(pos, len, newData, newLen) -- in-place substitution

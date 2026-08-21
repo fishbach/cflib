@@ -8,14 +8,15 @@
 #pragma once
 
 #include <cflib/base/container.h>
-#include <cflib/base/types.h>
 
 #include <concepts>
 #include <string>
 #include <string_view>
-#include <vector>
 
 namespace cflib::base {
+
+class ByteArray;
+using ByteArrayList = List<ByteArray>;
 
 // A ByteArray is a copy-on-write sequence of raw bytes (no encoding
 // semantics; for UTF-8 text use String).
@@ -26,13 +27,11 @@ namespace cflib::base {
 class ByteArray
 {
 public:
-    static constexpr size_t npos = std::string::npos;
-
     ByteArray();
-    ByteArray(const char * data);
-    ByteArray(const char * data, size_t len);
+    ByteArray(const char  * data);
+    ByteArray(const char  * data, size_t len);
     ByteArray(const uint8 * data, size_t len);
-    ByteArray(size_t n, char c);
+    explicit ByteArray(size_t n, char c = '\0');
     ~ByteArray();
 
     // implicit sharing
@@ -45,10 +44,17 @@ public:
     static ByteArray fromRawData(const void * data, size_t len);
 
     // null and size
-    bool   isNull()  const;
-    bool   isEmpty() const;
-    size_t size()    const;
-    size_t length()  const;
+    bool   isNull()   const;
+    bool   isEmpty()  const;
+    size_t size()     const;
+    size_t length()   const;
+    size_t capacity() const;
+
+    // resize
+    void resize(size_t n);
+    void resize(size_t n, char c);
+    void reserve(size_t n);
+    void clear();
 
     // returns nullptr, if isNull()
     // '\0'-terminated C-string otherwise
@@ -63,33 +69,12 @@ public:
     std::string      toStdString    () const;
     std::string_view toStdStringView() const;
 
-    void resize(size_t n);
-    void resize(size_t n, char c);
-    void reserve(size_t n);
-    void clear();
-    size_t capacity() const;
-
+    // char access
+    char   at(size_t i) const;
     char   operator[](size_t i) const;
     char & operator[](size_t i);
-    char   at(size_t i) const;
 
-    ByteArray & prepend(const char * s, size_t len);
-    ByteArray & prepend(const char * s);
-
-    ByteArray & insert(size_t pos, const ByteArray & ba);
-    ByteArray & insert(size_t pos, const char * s, size_t len);
-
-    ByteArray & append(char c);
-    ByteArray & append(const char * s);
-    ByteArray & append(const char * s, size_t len);
-    ByteArray & append(const ByteArray & other);
-
-    ByteArray & remove(size_t pos, size_t len);
-
-    ByteArray left (size_t n) const;
-    ByteArray right(size_t n) const;
-    ByteArray mid  (size_t pos, size_t len = npos) const;
-
+    // search
     bool startsWith(const ByteArray & other) const;
     bool startsWith(const char * s) const;
     bool endsWith  (const ByteArray & other) const;
@@ -103,14 +88,34 @@ public:
     ssize_t indexOf(const char * s, size_t from = 0) const;
     ssize_t indexOf(const ByteArray & other, size_t from = 0) const;
 
+    // substring
+    ByteArray left (size_t n) const;
+    ByteArray right(size_t n) const;
+    ByteArray mid  (size_t pos, ssize_t len = -1) const;
+
+    // add, remove
+    ByteArray & prepend(const char * s, size_t len);
+    ByteArray & prepend(const char * s);
+
+    ByteArray & insert(size_t pos, const ByteArray & ba);
+    ByteArray & insert(size_t pos, const char * s, size_t len);
+
+    ByteArray & append(char c);
+    ByteArray & append(const char * s);
+    ByteArray & append(const char * s, size_t len);
+    ByteArray & append(const ByteArray & other);
+
+    ByteArray & remove(size_t pos, size_t len);
+
+    // change
     ByteArray & replace(char before, const char * after);
     ByteArray & replace(const char * before, const char * after);
     ByteArray & replace(size_t pos, size_t len, const char * newData);
     ByteArray & replace(size_t pos, size_t len, const char * newData, size_t newLen);
 
-    ByteArray trimmed() const;
+    ByteArray trimmed()    const;
     ByteArray simplified() const;
-    ByteArray toLower() const;
+    ByteArray toLower()    const;
 
     // Numbers
     uint32 toUInt (bool * ok = nullptr) const;
@@ -129,7 +134,8 @@ public:
     ByteArray toBase64() const;
     static ByteArray fromBase64(const ByteArray & base64);
 
-    std::vector<ByteArray> split(char delim) const;
+    // split
+    ByteArrayList split(char delim) const;
 
     ByteArray & operator+=(char c);
     ByteArray & operator+=(const char * s);
@@ -139,6 +145,7 @@ public:
     ByteArray operator+(const char * s)      const;
     ByteArray operator+(const ByteArray & o) const;
 
+    // compare
     bool operator==(const ByteArray & o) const;
     bool operator!=(const ByteArray & o) const;
     bool operator< (const ByteArray & o) const;
@@ -155,8 +162,6 @@ private:
     static void deleteShared(const Shared * s);
     void release();
 };
-
-using ByteArrayList = List<ByteArray>;
 
 } // namespace
 

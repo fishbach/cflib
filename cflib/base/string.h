@@ -61,7 +61,7 @@ public:
 
     size_t count(const String & subStr) const;
 
-    String mid(size_t bytePos, size_t len = npos) const;
+    String mid(size_t bytePos, ssize_t len = -1) const;
     String left(size_t n) const  { return mid(0, n); }
     String right(size_t n) const {
         if (n >= size()) return *this;
@@ -77,7 +77,7 @@ public:
 
     String join(const StringList & list) const;
 
-    static String fromUtf8(const char * s, size_t len = npos);
+    static String fromUtf8(const char * s, ssize_t len = -1);
     static String fromUtf8(const ByteArray & ba) { return String(ba); }
     static String fromLatin1(const char * s) { return s ? String(s) : String(); }
 
