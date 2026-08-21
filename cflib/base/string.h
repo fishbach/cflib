@@ -47,7 +47,7 @@ public:
     // O(1) non-owning view over the UTF-8 bytes; copy via toStdString().
     // The buffer is NUL-terminated, so charPtr() is a free C string
     // (nullptr for a null value).
-    std::string_view str() const { return sv(); }
+    std::string_view str() const { return toStdStringView(); }
     size_t           byteSize() const { return size(); }
 
     // O(1): the UTF-8 byte sequence, shared (copy-on-write)
@@ -81,14 +81,14 @@ public:
     static String fromUtf8(const ByteArray & ba) { return String(ba); }
     static String fromLatin1(const char * s) { return s ? String(s) : String(); }
 
-    bool operator<= (const String & o) const { return d->sv() <= o.d->sv(); }
-    bool operator>  (const String & o) const { return d->sv() >  o.d->sv(); }
-    bool operator>= (const String & o) const { return d->sv() >= o.d->sv(); }
+    bool operator<= (const String & o) const { return d->toStdStringView() <= o.d->toStdStringView(); }
+    bool operator>  (const String & o) const { return d->toStdStringView() >  o.d->toStdStringView(); }
+    bool operator>= (const String & o) const { return d->toStdStringView() >= o.d->toStdStringView(); }
 
     // libstdc++ 13 provides no operator+ for string_view (neither view+view
     // nor string+view), so the combined buffer is built via std::string
-    String  operator+ (const String & o) const { return String(std::string(d->sv()) + std::string(o.d->sv())); }
-    String  operator+ (const char * s)   const { return String(std::string(d->sv()) + s); }
+    String  operator+ (const String & o) const { return String(std::string(d->toStdStringView()) + std::string(o.d->toStdStringView())); }
+    String  operator+ (const char * s)   const { return String(std::string(d->toStdStringView()) + s); }
     String  operator+ (char c)           const { String r(*this); r += c; return r; }
     String & operator+=(const String & o) {
         detach();

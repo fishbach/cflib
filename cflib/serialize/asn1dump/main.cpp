@@ -38,7 +38,7 @@ int showUsage(const ByteArray & executable)
         "  -h, --help   => this help\n"
         "  -x, --hex    => input is hex encoded\n"
         "  -b, --base64 => input is Base64 encoded\n",
-        executable.sv());
+        executable.toStdStringView());
     return 1;
 }
 

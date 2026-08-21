@@ -41,7 +41,7 @@ TEST_CASE("crypt: randomUInt64")
 
 TEST_CASE("crypt: memorableRandom")
 {
-    std::cout << std::format("random: '{}'\n", memorableRandom().sv());
+    std::cout << std::format("random: '{}'\n", memorableRandom().toStdStringView());
     REQUIRE_EQ((int)memorableRandom().size(), 8);
     REQUIRE(memorableRandom() != memorableRandom());
 }

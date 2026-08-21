@@ -54,7 +54,7 @@ struct ByteArray::Shared
 
     char *       data()       { return reinterpret_cast<char *>(this) + HeaderSize; }
     const char * data() const { return reinterpret_cast<const char *>(this) + HeaderSize; }
-    std::string_view sv() const { return std::string_view(data(), size); }
+    std::string_view toStdStringView() const { return std::string_view(data(), size); }
 
     // smallest power of two that is >= max(need, CapacityMin)
     static size_t blockCapacity(size_t need)
@@ -251,7 +251,7 @@ inline const uint8 * ByteArray::data() const {
 // no-detach const view; delegates to charPtr() const so the null handling
 // (nullptr for a null value) has one source of truth
 inline const char * ByteArray::constData() const { return charPtr(); }
-inline std::string_view ByteArray::sv() const { return d->sv(); }
+inline std::string_view ByteArray::toStdStringView() const { return d->toStdStringView(); }
 
 inline size_t ByteArray::size()   const { return d->size; }
 inline size_t ByteArray::length() const { return d->size; }
@@ -313,29 +313,29 @@ inline ByteArray ByteArray::right(size_t n) const {
     return mid(d->size - n);
 }
 
-inline bool ByteArray::startsWith(const char * s) const { return d->sv().starts_with(s); }
-inline bool ByteArray::startsWith(const ByteArray & other) const { return d->sv().starts_with(other.d->sv()); }
+inline bool ByteArray::startsWith(const char * s) const { return d->toStdStringView().starts_with(s); }
+inline bool ByteArray::startsWith(const ByteArray & other) const { return d->toStdStringView().starts_with(other.d->toStdStringView()); }
 inline bool ByteArray::endsWith(const char * s) const {
-    std::string_view sv = d->sv();
+    std::string_view sv = d->toStdStringView();
     size_t slen = std::char_traits<char>::length(s);
     if (slen > sv.size()) return false;
     return sv.compare(sv.size() - slen, slen, s) == 0;
 }
-inline bool ByteArray::endsWith(const ByteArray & other) const { return d->sv().ends_with(other.d->sv()); }
-inline bool ByteArray::contains(const char * s) const { return d->sv().find(s) != npos; }
-inline bool ByteArray::contains(char c) const { return d->sv().find(c) != npos; }
-inline bool ByteArray::contains(const ByteArray & other) const { return d->sv().find(other.d->sv()) != npos; }
+inline bool ByteArray::endsWith(const ByteArray & other) const { return d->toStdStringView().ends_with(other.d->toStdStringView()); }
+inline bool ByteArray::contains(const char * s) const { return d->toStdStringView().find(s) != npos; }
+inline bool ByteArray::contains(char c) const { return d->toStdStringView().find(c) != npos; }
+inline bool ByteArray::contains(const ByteArray & other) const { return d->toStdStringView().find(other.d->toStdStringView()) != npos; }
 
 inline ssize_t ByteArray::indexOf(char c, size_t from) const {
-    size_t pos = d->sv().find(c, from);
+    size_t pos = d->toStdStringView().find(c, from);
     return pos == npos ? -1 : (ssize_t)pos;
 }
 inline ssize_t ByteArray::indexOf(const char * s, size_t from) const {
-    size_t pos = d->sv().find(s, from);
+    size_t pos = d->toStdStringView().find(s, from);
     return pos == npos ? -1 : (ssize_t)pos;
 }
 inline ssize_t ByteArray::indexOf(const ByteArray & other, size_t from) const {
-    size_t pos = d->sv().find(other.d->sv(), from);
+    size_t pos = d->toStdStringView().find(other.d->toStdStringView(), from);
     return pos == npos ? -1 : (ssize_t)pos;
 }
 
@@ -384,12 +384,12 @@ inline ByteArray ByteArray::operator+(char c)              const { ByteArray r(*
 inline ByteArray ByteArray::operator+(const char * s)      const { ByteArray r(*this); r += s; return r; }
 inline ByteArray ByteArray::operator+(const ByteArray & o) const { ByteArray r(*this); r += o; return r; }
 
-inline bool ByteArray::operator==(const ByteArray & o) const { return d->sv() == o.d->sv(); }
-inline bool ByteArray::operator!=(const ByteArray & o) const { return d->sv() != o.d->sv(); }
-inline bool ByteArray::operator< (const ByteArray & o) const { return d->sv() <  o.d->sv(); }
+inline bool ByteArray::operator==(const ByteArray & o) const { return d->toStdStringView() == o.d->toStdStringView(); }
+inline bool ByteArray::operator!=(const ByteArray & o) const { return d->toStdStringView() != o.d->toStdStringView(); }
+inline bool ByteArray::operator< (const ByteArray & o) const { return d->toStdStringView() <  o.d->toStdStringView(); }
 // compare against an explicit string_view: `sv == const char*` is
 // ambiguous under C++20 rewritten candidates (GCC 13, fixed in C++23)
-inline bool ByteArray::operator==(const char * o) const { return o ? d->sv() == std::string_view(o) : d->isNull(); }
+inline bool ByteArray::operator==(const char * o) const { return o ? d->toStdStringView() == std::string_view(o) : d->isNull(); }
 inline bool ByteArray::operator!=(const char * o) const { return !((*this) == o); }
 
 // raw byte append, for subclasses that manage the null flag themselves
@@ -422,10 +422,10 @@ inline ByteArray operator+(const char * lhs, const ByteArray & rhs) {
 // ByteArray` direction, which GCC 13 fails to resolve via the member
 // operator alone (see string.h).
 inline bool operator==(const char * lhs, const ByteArray & rhs) {
-    return lhs ? rhs.sv() == std::string_view(lhs) : rhs.isNull();
+    return lhs ? rhs.toStdStringView() == std::string_view(lhs) : rhs.isNull();
 }
 inline bool operator!=(const char * lhs, const ByteArray & rhs) {
-    return lhs ? !(rhs.sv() == std::string_view(lhs)) : !rhs.isNull();
+    return lhs ? !(rhs.toStdStringView() == std::string_view(lhs)) : !rhs.isNull();
 }
 
 inline ByteArray & operator<<(ByteArray & lhs, const ByteArray & rhs) { return lhs += rhs; }

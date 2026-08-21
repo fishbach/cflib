@@ -54,10 +54,10 @@ ByteArray & ByteArray::replace(const char * before, const char * after) {
     if (blen == 0) return *this;
     detach();
     size_t pos = 0;
-    std::string_view hay = d->sv();
+    std::string_view hay = d->toStdStringView();
     while ((pos = hay.find(before, pos)) != npos) {
         d = d->replace(pos, blen, after, alen);
-        hay = d->sv();
+        hay = d->toStdStringView();
         pos += alen;
     }
     return *this;
@@ -67,17 +67,17 @@ ByteArray & ByteArray::replace(char before, const char * after) {
     const size_t alen = std::strlen(after);
     detach();
     size_t pos = 0;
-    std::string_view hay = d->sv();
+    std::string_view hay = d->toStdStringView();
     while ((pos = hay.find(before, pos)) != npos) {
         d = d->replace(pos, 1, after, alen);
-        hay = d->sv();
+        hay = d->toStdStringView();
         pos += alen;
     }
     return *this;
 }
 
 ByteArray ByteArray::trimmed() const {
-    std::string_view sv = d->sv();
+    std::string_view sv = d->toStdStringView();
     size_t s = sv.find_first_not_of(" \t\r\n");
     if (s == npos) return ByteArray();
     size_t e = sv.find_last_not_of(" \t\r\n");
@@ -111,7 +111,7 @@ ByteArray ByteArray::toLower() const {
 std::vector<ByteArray> ByteArray::split(char delim) const {
     std::vector<ByteArray> result;
     size_t start = 0, pos;
-    std::string_view sv = d->sv();
+    std::string_view sv = d->toStdStringView();
     while ((pos = sv.find(delim, start)) != npos) {
         result.push_back(ByteArray(sv.data() + start, pos - start));
         start = pos + 1;

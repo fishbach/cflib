@@ -110,7 +110,7 @@ void Mailer::doSend(const Mail & mail)
 
     if (sendmailPath_.isNull()) {
         logInfo("mailer not active, mail from %1 to %2 dropped", mail.from, mail.to);
-        std::cout << std::format("--------\n{}\n--------\n", mail.raw(fromAddr, toAddr).sv());
+        std::cout << std::format("--------\n{}\n--------\n", mail.raw(fromAddr, toAddr).toStdStringView());
         return;
     }
 

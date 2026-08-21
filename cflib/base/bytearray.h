@@ -69,7 +69,7 @@ public:
     // only — to modify bytes, use the detaching charPtr()/data(). nullptr for
     // a null value.
     const char * constData() const;
-    std::string_view sv() const;
+    std::string_view toStdStringView() const;
 
     size_t size()   const;
     size_t length() const;
@@ -188,7 +188,7 @@ using ByteArrayList = List<ByteArray>;
 namespace std {
 template<> struct hash<cflib::base::ByteArray> {
     size_t operator()(const cflib::base::ByteArray & ba) const {
-        return hash<string_view>()(ba.sv());
+        return hash<string_view>()(ba.toStdStringView());
     }
 };
 }

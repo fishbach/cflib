@@ -22,16 +22,16 @@ size_t String::charCount() const {
 }
 
 ssize_t String::lastIndexOf(const char * s) const {
-    size_t pos = d->sv().rfind(s);
+    size_t pos = d->toStdStringView().rfind(s);
     return pos == npos ? -1 : (ssize_t)pos;
 }
 
 size_t String::count(const String & subStr) const {
-    std::string_view sub = subStr.sv();
+    std::string_view sub = subStr.toStdStringView();
     if (sub.empty()) return 0;
     size_t rv = 0;
     size_t pos = 0;
-    while ((pos = d->sv().find(sub, pos)) != npos) {
+    while ((pos = d->toStdStringView().find(sub, pos)) != npos) {
         ++rv;
         pos += sub.size();
     }
@@ -45,7 +45,7 @@ String String::mid(size_t bytePos, size_t len) const {
 }
 
 String String::trimmed() const {
-    std::string_view sv = d->sv();
+    std::string_view sv = d->toStdStringView();
     size_t s = sv.find_first_not_of(" \t\r\n");
     if (s == npos) return String();
     size_t e = sv.find_last_not_of(" \t\r\n");
@@ -73,7 +73,7 @@ String String::toUpper() const {
 StringList String::split(char delim) const {
     StringList result;
     size_t start = 0, pos;
-    std::string_view sv = d->sv();
+    std::string_view sv = d->toStdStringView();
     while ((pos = sv.find(delim, start)) != npos) {
         result << String(std::string_view(sv.data() + start, pos - start));
         start = pos + 1;
@@ -86,7 +86,7 @@ StringList String::split(const char * delim) const {
     size_t dlen = std::strlen(delim);
     StringList result;
     size_t start = 0, pos;
-    std::string_view sv = d->sv();
+    std::string_view sv = d->toStdStringView();
     while ((pos = sv.find(delim, start)) != npos) {
         result << String(std::string_view(sv.data() + start, pos - start));
         start = pos + dlen;

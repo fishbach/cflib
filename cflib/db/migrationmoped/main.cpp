@@ -31,7 +31,7 @@ int showUsage(const ByteArray & executable)
         "  -d, --db <param>       => set DB parameters\n"
         "  -m, --migrator <param> => set migrator executable\n"
         "  -l, --log <level>      => set log level 0 -> all, 7 -> off\n",
-        executable.sv());
+        executable.toStdStringView());
     return 1;
 }
 
