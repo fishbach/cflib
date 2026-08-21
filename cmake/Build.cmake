@@ -75,6 +75,11 @@ endfunction()
 function(cf_test test lib)
     cmake_parse_arguments(ARG "ENABLE_SER;NO_DISCOVER" "PCH" "DIRS;RESOURCES;PROPERTIES" ${ARGN})
 
+    # intern for base_test and util_test
+    if(lib STREQUAL "-")
+        unset(lib)
+    endif()
+
     # sources, libs and general config
     cf_find_sources(sources . ${ARG_DIRS})
     if(ONLY_GENERATORS)
