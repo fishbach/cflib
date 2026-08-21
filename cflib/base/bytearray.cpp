@@ -12,44 +12,48 @@
 
 namespace cflib::base {
 
-// the buffer is not NUL-terminated, so the C parsers get a local copy
-uint32 ByteArray::toUInt(bool * ok) const {
+uint32 ByteArray::toUInt(bool * ok) const
+{
     if (d->size == 0) { if (ok) *ok = false; return 0; }
-    std::string s(d->data(), d->size);
+
     char * end = nullptr;
-    unsigned long v = std::strtoul(s.c_str(), &end, 10);
-    if (ok) *ok = (end != s.c_str() && *end == '\0');
+    unsigned long v = std::strtoul(d->data(), &end, 10);
+    if (ok) *ok = (end != d->data() && *end == '\0');
     return (uint32)v;
 }
 
-int32 ByteArray::toInt(bool * ok) const {
+int32 ByteArray::toInt(bool * ok) const
+{
     if (d->size == 0) { if (ok) *ok = false; return 0; }
-    std::string s(d->data(), d->size);
+
     char * end = nullptr;
-    long v = std::strtol(s.c_str(), &end, 10);
-    if (ok) *ok = (end != s.c_str() && *end == '\0');
+    long v = std::strtol(d->data(), &end, 10);
+    if (ok) *ok = (end != d->data() && *end == '\0');
     return (int32)v;
 }
 
-uint64 ByteArray::toULong(bool * ok) const {
+uint64 ByteArray::toULong(bool * ok) const
+{
     if (d->size == 0) { if (ok) *ok = false; return 0; }
-    std::string s(d->data(), d->size);
+
     char * end = nullptr;
-    unsigned long long v = std::strtoull(s.c_str(), &end, 10);
-    if (ok) *ok = (end != s.c_str() && *end == '\0');
+    unsigned long long v = std::strtoull(d->data(), &end, 10);
+    if (ok) *ok = (end != d->data() && *end == '\0');
     return (uint64)v;
 }
 
-int64 ByteArray::toLong(bool * ok) const {
+int64 ByteArray::toLong(bool * ok) const
+{
     if (d->size == 0) { if (ok) *ok = false; return 0; }
-    std::string s(d->data(), d->size);
+
     char * end = nullptr;
-    long long v = std::strtoll(s.c_str(), &end, 10);
-    if (ok) *ok = (end != s.c_str() && *end == '\0');
+    long long v = std::strtoll(d->data(), &end, 10);
+    if (ok) *ok = (end != d->data() && *end == '\0');
     return (int64)v;
 }
 
-ByteArray & ByteArray::replace(const char * before, const char * after) {
+ByteArray & ByteArray::replace(const char * before, const char * after)
+{
     const size_t blen = std::strlen(before);
     const size_t alen = std::strlen(after);
     if (blen == 0) return *this;
@@ -64,7 +68,8 @@ ByteArray & ByteArray::replace(const char * before, const char * after) {
     return *this;
 }
 
-ByteArray & ByteArray::replace(char before, const char * after) {
+ByteArray & ByteArray::replace(char before, const char * after)
+{
     const size_t alen = std::strlen(after);
     detach();
     size_t pos = 0;
@@ -77,7 +82,8 @@ ByteArray & ByteArray::replace(char before, const char * after) {
     return *this;
 }
 
-ByteArray ByteArray::trimmed() const {
+ByteArray ByteArray::trimmed() const
+{
     std::string_view sv = d->toStdStringView();
     size_t s = sv.find_first_not_of(" \t\r\n");
     if (s == std::string::npos) return ByteArray();
@@ -85,8 +91,8 @@ ByteArray ByteArray::trimmed() const {
     return ByteArray(sv.data() + s, e - s + 1);
 }
 
-// trim and collapse runs of whitespace to single spaces
-ByteArray ByteArray::simplified() const {
+ByteArray ByteArray::simplified() const
+{
     ByteArray out;
     out.reserve(d->size);
     bool lastWasSpace = true;
@@ -100,7 +106,8 @@ ByteArray ByteArray::simplified() const {
     return out;
 }
 
-ByteArray ByteArray::toLower() const {
+ByteArray ByteArray::toLower() const
+{
     ByteArray out(d->data(), d->size);
     for (size_t i = 0; i < out.size(); ++i) {
         char & c = out[i];
@@ -122,7 +129,8 @@ ByteArrayList ByteArray::split(char delim) const
     return result;
 }
 
-ByteArray ByteArray::toBase64() const {
+ByteArray ByteArray::toBase64() const
+{
     static const char table[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
     std::string out;
     out.reserve(((d->size + 2) / 3) * 4);
@@ -152,7 +160,8 @@ ByteArray ByteArray::toBase64() const {
     return ByteArray(std::move(out));
 }
 
-ByteArray ByteArray::fromBase64(const ByteArray & base64) {
+ByteArray ByteArray::fromBase64(const ByteArray & base64)
+{
     auto decode = [](char c) -> int {
         if (c >= 'A' && c <= 'Z') return c - 'A';
         if (c >= 'a' && c <= 'z') return c - 'a' + 26;
@@ -177,7 +186,8 @@ ByteArray ByteArray::fromBase64(const ByteArray & base64) {
     return ByteArray(std::move(out));
 }
 
-ByteArray ByteArray::fromHex(const char * hex) {
+ByteArray ByteArray::fromHex(const char * hex)
+{
     ByteArray out;
     size_t len = std::strlen(hex);
     out.reserve(len / 2);
@@ -199,7 +209,8 @@ ByteArray ByteArray::fromHex(const char * hex) {
     return out;
 }
 
-ByteArray ByteArray::toHex() const {
+ByteArray ByteArray::toHex() const
+{
     static const char * digits = "0123456789abcdef";
     ByteArray out(d->size * 2, '\0');
     for (size_t i = 0; i < d->size; ++i) {
