@@ -142,8 +142,8 @@ public:
         // Fill frame
         ByteArray frame;
         frame.resize(frameSize);
-        const uint8 * payloadData = !payload.isNull() ? (const uint8 *)payload.data() : (const uint8 *)data.data();
-        memcpy(((uint8 *)frame.data()) + lengthSize + KeySize, payloadData, (size_t)payloadSize);
+        const uint8 * payloadData = !payload.isNull() ? (const uint8 *)payload.constData() : (const uint8 *)data.constData();
+        memcpy(((uint8 *)frame.constData()) + lengthSize + KeySize, payloadData, (size_t)payloadSize);
 
         impl::ws::maskPayload(frame, rng_.uint32(), (uint32)lengthSize);
         impl::ws::writeLength(frame,

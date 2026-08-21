@@ -27,7 +27,7 @@ inline void serializeBERInt(T v, uint64 tagNo, ByteArray & data, bool isMaxUInt 
     const uint8 tagLen = calcTagLen(tagNo);
     const int size = data.size();
     data.resize(size + tagLen + 1 + len);
-    uint8 * p = (uint8 *)data.data() + size;
+    uint8 * p = (uint8 *)data.constData() + size;
 
     // write tag
     writeTagBytes(p, tagNo, false, tagLen);
@@ -57,7 +57,7 @@ inline void serializeBERInt(bool v, uint64 tagNo, ByteArray & data, bool)
     const uint8 tagLen = calcTagLen(tagNo);
     const int size = data.size();
     data.resize(size + tagLen + 2);
-    uint8 * p = (uint8 *)data.data() + size;
+    uint8 * p = (uint8 *)data.constData() + size;
 
     // write tag
     writeTagBytes(p, tagNo, false, tagLen);
@@ -122,7 +122,7 @@ inline void serializeBER(float d, uint64 tagNo, ByteArray & data, BERSerializerB
     const uint8 tagLen = calcTagLen(tagNo);
     const int oldSize = data.size();
     data.resize(oldSize + tagLen + 5);
-    uint8 * pos = (uint8 *)data.data() + oldSize;
+    uint8 * pos = (uint8 *)data.constData() + oldSize;
     writeTagBytes(pos, tagNo, false, tagLen);
     pos += tagLen;
     *(pos++) = 4;
@@ -141,7 +141,7 @@ inline void serializeBER(double d, uint64 tagNo, ByteArray & data, BERSerializer
     const uint8 tagLen = calcTagLen(tagNo);
     const int oldSize = data.size();
     data.resize(oldSize + tagLen + 9);
-    uint8 * pos = (uint8 *)data.data() + oldSize;
+    uint8 * pos = (uint8 *)data.constData() + oldSize;
     writeTagBytes(pos, tagNo, false, tagLen);
     pos += tagLen;
     *(pos++) = 8;
@@ -160,7 +160,7 @@ inline void serializeBER(long double d, uint64 tagNo, ByteArray & data, BERSeria
     const uint8 tagLen = calcTagLen(tagNo);
     const int oldSize = data.size();
     data.resize(oldSize + tagLen + 17);
-    uint8 * pos = (uint8 *)data.data() + oldSize;
+    uint8 * pos = (uint8 *)data.constData() + oldSize;
     writeTagBytes(pos, tagNo, false, tagLen);
     pos += tagLen;
     *(pos++) = 16;
@@ -191,10 +191,10 @@ inline void serializeBER(const ByteArray & ba, uint64 tagNo, ByteArray & data, B
     const uint8 lengthSize = calcBERlengthSize(ba.size());
     const int oldSize = data.size();
     data.resize(oldSize + tagLen + lengthSize + ba.size());
-    uint8 * pos = (uint8 *)data.data() + oldSize;
+    uint8 * pos = (uint8 *)data.constData() + oldSize;
     writeTagBytes(pos, tagNo, false, tagLen);
     writeLenBytes(pos + tagLen, ba.size(), lengthSize);
-    memcpy(pos + tagLen + lengthSize, ba.constData(), ba.size());
+    memcpy(pos + tagLen + lengthSize, ba.constCharPtr(), ba.size());
 }
 
 inline void deserializeBER(ByteArray & ba, const uint8 * data, int len, BERDeserializerBase &)
@@ -234,7 +234,7 @@ inline void serializeBER(const char * str, uint64 tagNo, ByteArray & data, BERSe
     const uint8 lengthSize = calcBERlengthSize(len);
     const int oldSize = data.size();
     data.resize(oldSize + tagLen + lengthSize + len);
-    uint8 * pos = (uint8 *)data.data() + oldSize;
+    uint8 * pos = (uint8 *)data.constData() + oldSize;
     writeTagBytes(pos, tagNo, false, tagLen);
     writeLenBytes(pos + tagLen, len, lengthSize);
     memcpy(pos + tagLen + lengthSize, str, len);

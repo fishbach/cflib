@@ -19,7 +19,7 @@ struct StringMaker<cflib::base::String>
     static String convert(const cflib::base::String & value)
     {
         if (value.isNull()) return "<null>";
-        return String(value.constData(), value.size());
+        return String(value.constCharPtr(), value.size());
     }
 };
 
@@ -30,7 +30,7 @@ struct StringMaker<cflib::base::ByteArray>
     {
         if (value.isNull()) return "<null>";
         const cflib::base::ByteArray hex = value.toHex();
-        return String(hex.constData(), (String::size_type)hex.size());
+        return String(hex.constCharPtr(), (String::size_type)hex.size());
     }
 };
 

@@ -21,7 +21,7 @@ String writeStr(const ByteArray & msg)
 {
     uint specialCount = 0;
     ByteArray rv;
-    const char * start = msg.constData();
+    const char * start = msg.constCharPtr();
     const char * p = start;
     for (size_t i = 0 ; i < msg.length() ; ++i) {
         const uint8 c = (uint8)*p;
@@ -57,23 +57,23 @@ String showValue(const uint8 * data, int len)
         uint64 val;
         impl::deserializeBERInt(val, data, len);
         rv += '(';
-        rv += String::number(val);
+        rv += String::fromInt(val);
         rv += ") ";
     } else if (len < 9) {
         int64 val;
         impl::deserializeBERInt(val, data, len);
         rv += '(';
-        rv += String::number(val);
+        rv += String::fromInt(val);
         if (len == 4) {
             rv += " / ";
             float f;
             memcpy(&f, data, sizeof(float));
-            rv += String::number((double)f);
+            rv += String::fromFloat((double)f);
         } else if (len == 8) {
             rv += " / ";
             double d;
             memcpy(&d, data, sizeof(double));
-            rv += String::number(d);
+            rv += String::fromFloat(d);
         } else if (val >= 946681200000 && val < 4102441200000) {
             rv += " / ";
             DateTime dt = DateTime::fromMSecsSinceEpoch(val);
@@ -139,7 +139,7 @@ String printAsn1(const uint8 * data, int len, int indent)
 
 String printAsn1(const ByteArray & data)
 {
-    return printAsn1((const uint8 *)data.constData(), data.size(), 0);
+    return printAsn1((const uint8 *)data.constCharPtr(), data.size(), 0);
 }
 
 }

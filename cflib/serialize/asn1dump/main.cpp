@@ -86,7 +86,7 @@ int main(int argc, char *argv[])
                 if (!data.isEmpty()) show(data, hexOpt.isSet(), base64Opt.isSet());
                 break;
             }
-            data.append(buf.constData(), count);
+            data.append(buf.constCharPtr(), count);
         } else if (!data.isEmpty()) {
             // timeout
             show(data, hexOpt.isSet(), base64Opt.isSet());

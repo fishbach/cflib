@@ -68,7 +68,7 @@ public:
 
     int64 write(const ByteArray & data) {
         if (!fp_) return -1;
-        return (int64)fwrite(data.constData(), 1, data.size(), fp_);
+        return (int64)fwrite(data.constCharPtr(), 1, data.size(), fp_);
     }
     int64 write(const char * data, size_t len) {
         if (!fp_) return -1;

@@ -187,7 +187,7 @@ void Mailer::startProcess()
     // Parent
     close(pipefd[0]); // close read end
     // Write mail data to pipe
-    const char * data = raw.constData();
+    const char * data = raw.constCharPtr();
     size_t remaining = raw.size();
     while (remaining > 0) {
         ssize_t written = write(pipefd[1], data, remaining);

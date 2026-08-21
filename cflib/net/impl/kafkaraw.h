@@ -81,7 +81,7 @@ public:
 
     inline uint8 * getCurrentRawData()
     {
-        return (uint8 *)data_.data();
+        return (uint8 *)data_.constData();
     }
 
     inline int getCurrentSize()
@@ -146,7 +146,7 @@ class KafkaRawReader
 {
 public:
     KafkaRawReader(const ByteArray & data) :
-        readPtr_(data.constData()),
+        readPtr_(data.constCharPtr()),
         bytesLeft_(data.size())
     {
     }

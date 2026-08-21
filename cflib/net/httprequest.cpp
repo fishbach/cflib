@@ -51,7 +51,7 @@ public:
 
         // host
         request += "Host: " + url.host().toUtf8();
-        if (url.port() != -1) request += ":" + ByteArray::number((int64)url.port());
+        if (url.port() != -1) request += ":" + ByteArray::fromInt((int64)url.port());
         request += "\r\n";
 
         // login / password
@@ -65,7 +65,7 @@ public:
         if (postData.isNull()) {
             request += "\r\n";
         } else {
-            request += "Content-Length: " + ByteArray::number((int64)postData.size()) + "\r\n";
+            request += "Content-Length: " + ByteArray::fromInt((int64)postData.size()) + "\r\n";
             request += "Content-Type: " + contentType + "\r\n";
             request += "\r\n";
             request += postData;

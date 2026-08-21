@@ -59,12 +59,12 @@ TEST_CASE("String: constructors")
     REQUIRE_EQ(s8, String("xxxxx"));
 
     // Number conversions
-    REQUIRE_EQ(String::number(42), String("42"));
-    REQUIRE_EQ(String::number(-42), String("-42"));
-    REQUIRE_EQ(String::number(9223372036854775807LL), String("9223372036854775807"));
-    REQUIRE_EQ(String::number(-9223372036854775807LL), String("-9223372036854775807"));
-    REQUIRE(String::number(3.14159).indexOf("3.14") == 0);
-    REQUIRE(String::number(2.71828).indexOf("2.71") == 0);
+    REQUIRE_EQ(String::fromInt(42), String("42"));
+    REQUIRE_EQ(String::fromInt(-42), String("-42"));
+    REQUIRE_EQ(String::fromInt(9223372036854775807LL), String("9223372036854775807"));
+    REQUIRE_EQ(String::fromInt(-9223372036854775807LL), String("-9223372036854775807"));
+    REQUIRE(String::fromFloat(3.14159).indexOf("3.14") == 0);
+    REQUIRE(String::fromFloat(2.71828).indexOf("2.71") == 0);
 }
 
 // Null and empty tests
@@ -347,8 +347,8 @@ TEST_CASE("String: implicit_sharing")
     REQUIRE_EQ(s1, s2);
 
     // Verify data pointers point to the same block while sharing
-    const char * cstr1 = s1.constData();
-    const char * cstr2 = s2.constData();
+    const char * cstr1 = s1.constCharPtr();
+    const char * cstr2 = s2.constCharPtr();
     REQUIRE(cstr1 == cstr2);
 
     // Modify s2 - should detach
@@ -360,7 +360,7 @@ TEST_CASE("String: implicit_sharing")
     REQUIRE(s1 != s2);
 
     // Verify data pointers now point to different blocks after detach
-    REQUIRE(s1.constData() != s2.constData());
+    REQUIRE(s1.constCharPtr() != s2.constCharPtr());
 
     // Test detach on shared data
     String s3("test");
@@ -371,7 +371,7 @@ TEST_CASE("String: implicit_sharing")
     REQUIRE_EQ(s4, String("test"));
 
     // Verify data pointers are different after explicit detach
-    REQUIRE(s3.constData() != s4.constData());
+    REQUIRE(s3.constCharPtr() != s4.constCharPtr());
 }
 
 // UTF-8 charCount tests
@@ -462,7 +462,7 @@ TEST_CASE("String: inherits_ByteArray")
     ByteArray src("shared");
     String sharedStr(src);
     ByteArray sharedBa = sharedStr.toUtf8();
-    REQUIRE(sharedBa.constData() == sharedStr.constData());   // shared
+    REQUIRE(sharedBa.constCharPtr() == sharedStr.constCharPtr());   // shared
     src.append("-mutated");                       // detaches src only
     REQUIRE_EQ(sharedStr, String("shared"));
     REQUIRE(sharedBa == ByteArray("shared"));

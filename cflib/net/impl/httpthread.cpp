@@ -13,7 +13,7 @@
 namespace cflib::net::impl {
 
 HttpThread::HttpThread(uint no, uint count) :
-    ThreadVerify(String("HTTP-Server ") + String::number(no) + "/" + String::number(count), util::ThreadVerify::Worker)
+    ThreadVerify(String("HTTP-Server ") + String::fromInt(no) + "/" + String::fromInt(count), util::ThreadVerify::Worker)
 {
 }
 

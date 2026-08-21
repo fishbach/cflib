@@ -110,58 +110,58 @@ TEST_CASE("ByteArray: accessors")
     REQUIRE_EQ(ba.at(4), 'o');
 }
 
-// The buffer is always NUL-terminated, so charPtr() is a free C string.
-// Pin the invariant: charPtr()[size()] == '\0' after every mutation, the
+// The buffer is always NUL-terminated, so constCharPtr() is a free C string.
+// Pin the invariant: constCharPtr()[size()] == '\0' after every mutation, the
 // block always keeps one byte of slack (capacity >= size + 1), null maps to
-// nullptr, and data() and charPtr() point at the same bytes.
+// nullptr, and data() and constCharPtr() point at the same bytes.
 TEST_CASE("ByteArray: nul_termination")
 {
     auto check = [](const ByteArray & ba) {
         if (ba.isNull()) return;
-        REQUIRE(ba.charPtr()[ba.size()] == '\0');
+        REQUIRE(ba.constCharPtr()[ba.size()] == '\0');
         REQUIRE(ba.capacity() >= ba.size() + 1);
     };
 
     // null -> nullptr for both accessors, const and non-const
     ByteArray nullBa;
-    REQUIRE(nullBa.charPtr() == nullptr);
-    REQUIRE(nullBa.data() == nullptr);
-    REQUIRE(nullBa.charPtr() == nullptr);   // non-const overload
-    REQUIRE(nullBa.data() == nullptr);
+    REQUIRE(nullBa.constCharPtr() == nullptr);
+    REQUIRE(nullBa.constData() == nullptr);
+    REQUIRE(nullBa.constCharPtr() == nullptr);   // non-const overload
+    REQUIRE(nullBa.constData() == nullptr);
 
     // construct
     ByteArray a("hello");
     check(a);
-    REQUIRE(std::strcmp(a.charPtr(), "hello") == 0);
-    REQUIRE(a.data() == reinterpret_cast<uint8 *>(a.charPtr()));
+    REQUIRE(std::strcmp(a.constCharPtr(), "hello") == 0);
+    REQUIRE(a.constData() == reinterpret_cast<uint8 *>(a.charPtr()));
 
     // every mutation keeps the buffer terminated
-    a.append('!');          check(a); REQUIRE(std::strcmp(a.charPtr(), "hello!") == 0);
-    a.append(" world");     check(a); REQUIRE(std::strcmp(a.charPtr(), "hello! world") == 0);
-    a.prepend(">>");        check(a); REQUIRE(std::strcmp(a.charPtr(), ">>hello! world") == 0);
-    a.insert(2, "xx");      check(a); REQUIRE(std::strcmp(a.charPtr(), ">>xxhello! world") == 0);
-    a.remove(0, 2);         check(a); REQUIRE(std::strcmp(a.charPtr(), "xxhello! world") == 0);
-    a.replace('x', "y");    check(a); REQUIRE(std::strcmp(a.charPtr(), "yyhello! world") == 0);
-    a.resize(4);            check(a); REQUIRE(std::strcmp(a.charPtr(), "yyhe") == 0);
-    a.resize(8, 'z');       check(a); REQUIRE(std::strcmp(a.charPtr(), "yyhezzzz") == 0);
-    a[0] = 'A';             check(a); REQUIRE(std::strcmp(a.charPtr(), "Ayhezzzz") == 0);
+    a.append('!');          check(a); REQUIRE(std::strcmp(a.constCharPtr(), "hello!") == 0);
+    a.append(" world");     check(a); REQUIRE(std::strcmp(a.constCharPtr(), "hello! world") == 0);
+    a.prepend(">>");        check(a); REQUIRE(std::strcmp(a.constCharPtr(), ">>hello! world") == 0);
+    a.insert(2, "xx");      check(a); REQUIRE(std::strcmp(a.constCharPtr(), ">>xxhello! world") == 0);
+    a.remove(0, 2);         check(a); REQUIRE(std::strcmp(a.constCharPtr(), "xxhello! world") == 0);
+    a.replace('x', "y");    check(a); REQUIRE(std::strcmp(a.constCharPtr(), "yyhello! world") == 0);
+    a.resize(4);            check(a); REQUIRE(std::strcmp(a.constCharPtr(), "yyhe") == 0);
+    a.resize(8, 'z');       check(a); REQUIRE(std::strcmp(a.constCharPtr(), "yyhezzzz") == 0);
+    a[0] = 'A';             check(a); REQUIRE(std::strcmp(a.constCharPtr(), "Ayhezzzz") == 0);
 
     // clear -> null again
     a.clear();
     REQUIRE(a.isNull());
-    REQUIRE(a.charPtr() == nullptr);
+    REQUIRE(a.constCharPtr() == nullptr);
 
     // empty (non-null) is ""
     ByteArray e("");
     REQUIRE(!e.isNull());
-    REQUIRE(std::strcmp(e.charPtr(), "") == 0);
+    REQUIRE(std::strcmp(e.constCharPtr(), "") == 0);
 
     // binary content: the NUL is a sentinel after the bytes, size() is
     // authoritative (so strcmp is not usable here)
     ByteArray bin("\x00\x01\x02", 3);
     check(bin);
     REQUIRE_EQ(bin.size(), (size_t)3);
-    REQUIRE(bin.charPtr()[3] == '\0');
+    REQUIRE(bin.constCharPtr()[3] == '\0');
 
     // a size that is exactly a power of two still keeps the slack byte
     ByteArray p2(32, 'a');
@@ -170,14 +170,14 @@ TEST_CASE("ByteArray: nul_termination")
     check(p2);
     REQUIRE(p2.capacity() >= p2.size() + 1);
 
-    // non-const charPtr() detaches: the copy diverges, the original is safe
+    // non-const constCharPtr() detaches: the copy diverges, the original is safe
     ByteArray shared("shared");
     ByteArray copy = shared;
     char * cp = copy.charPtr();
     cp[0] = 'S';
     check(copy);
-    REQUIRE(shared.charPtr()[0] == 's');
-    REQUIRE(copy.charPtr()[0] == 'S');
+    REQUIRE(shared.constCharPtr()[0] == 's');
+    REQUIRE(copy.constCharPtr()[0] == 'S');
 }
 
 // Resize/reserve/clear tests
@@ -424,7 +424,7 @@ TEST_CASE("ByteArray: self_modification")
 
     // self-replace (insert the whole content at pos 0)
     ByteArray c("abcd");
-    c.replace(0, 0, c.constData(), 4);
+    c.replace(0, 0, c.constCharPtr(), 4);
     REQUIRE_EQ(c, ByteArray("abcdabcd"));
 }
 
@@ -536,12 +536,12 @@ TEST_CASE("ByteArray: numeric_conversions")
 // Number formatting tests
 TEST_CASE("ByteArray: number")
 {
-    REQUIRE_EQ(ByteArray::number(42), ByteArray("42"));
-    REQUIRE_EQ(ByteArray::number(-42), ByteArray("-42"));
-    REQUIRE_EQ(ByteArray::number(9223372036854775807LL), ByteArray("9223372036854775807"));
-    REQUIRE_EQ(ByteArray::number(-9223372036854775807LL), ByteArray("-9223372036854775807"));
-    REQUIRE(ByteArray::number(3.14159).indexOf("3.14") == 0);
-    REQUIRE(ByteArray::number(2.71828).indexOf("2.71") == 0);
+    REQUIRE_EQ(ByteArray::fromInt(42), ByteArray("42"));
+    REQUIRE_EQ(ByteArray::fromInt(-42), ByteArray("-42"));
+    REQUIRE_EQ(ByteArray::fromInt(9223372036854775807LL), ByteArray("9223372036854775807"));
+    REQUIRE_EQ(ByteArray::fromInt(-9223372036854775807LL), ByteArray("-9223372036854775807"));
+    REQUIRE(ByteArray::fromFloat(3.14159).indexOf("3.14") == 0);
+    REQUIRE(ByteArray::fromFloat(2.71828).indexOf("2.71") == 0);
 }
 
 // Split test
@@ -602,8 +602,8 @@ TEST_CASE("ByteArray: implicit_sharing")
     REQUIRE_EQ(ba1, ba2);
 
     // Verify const pointers point to same address while sharing
-    const char * data1 = ba1.constData();
-    const char * data2 = ba2.constData();
+    const char * data1 = ba1.constCharPtr();
+    const char * data2 = ba2.constCharPtr();
     REQUIRE(data1 == data2);
 
     // Modify ba2 - should detach
@@ -615,7 +615,7 @@ TEST_CASE("ByteArray: implicit_sharing")
     REQUIRE(ba1 != ba2);
 
     // Verify const pointers now point to different addresses after detach
-    REQUIRE(ba1.constData() != ba2.constData());
+    REQUIRE(ba1.constCharPtr() != ba2.constCharPtr());
 
     // Test detach on shared data
     ByteArray ba3("test");
@@ -626,7 +626,7 @@ TEST_CASE("ByteArray: implicit_sharing")
     REQUIRE_EQ(ba4, ByteArray("test"));
 
     // Verify const pointers are different after explicit detach
-    REQUIRE(ba3.constData() != ba4.constData());
+    REQUIRE(ba3.constCharPtr() != ba4.constCharPtr());
 }
 
 // char* on the left side of comparisons (free function, direct body)

@@ -76,8 +76,8 @@ inline void logFormat(ByteArray & dest, long val) { writeInt(dest, (int64)val); 
 inline void logFormat(ByteArray & dest, void *  ptr) { writeUInt(dest, (uintptr)ptr); }
 
 // floating point
-inline void logFormat(ByteArray & dest, float  val) { dest += ByteArray::number(val); }
-inline void logFormat(ByteArray & dest, double val) { dest += ByteArray::number(val); }
+inline void logFormat(ByteArray & dest, float  val) { dest += ByteArray::fromFloat(val); }
+inline void logFormat(ByteArray & dest, double val) { dest += ByteArray::fromFloat(val); }
 
 // strings
 inline void logFormat(ByteArray & dest, char * str)            { dest += str; }
@@ -101,12 +101,12 @@ struct HasToUtf8<T, std::void_t<decltype(std::declval<const T&>().toUtf8())>> : 
 template<typename T, typename = void>
 struct HasCharConstData : std::false_type {};
 template<typename T>
-struct HasCharConstData<T, std::enable_if_t<std::is_same_v<decltype(std::declval<const T&>().constData()), const char*>>> : std::true_type {};
+struct HasCharConstData<T, std::enable_if_t<std::is_same_v<decltype(std::declval<const T&>().constCharPtr()), const char*>>> : std::true_type {};
 
 template<typename T, typename = void>
 struct HasToStringConstData : std::false_type {};
 template<typename T>
-struct HasToStringConstData<T, std::void_t<decltype(std::declval<const T&>().toString().constData())>> : std::true_type {};
+struct HasToStringConstData<T, std::void_t<decltype(std::declval<const T&>().toString().constCharPtr())>> : std::true_type {};
 
 // toString() returning std::string (NUL-terminated, plain c_str() append)
 template<typename T, typename = void>
@@ -124,7 +124,7 @@ inline auto logFormat(ByteArray & dest, const T & val)
     -> std::enable_if_t<!std::is_same_v<T, String> && !std::is_same_v<T, ByteArray> && HasToUtf8<T>::value>
 {
     auto utf8 = val.toUtf8();
-    dest.append(utf8.constData(), utf8.size());
+    dest.append(utf8.constCharPtr(), utf8.size());
 }
 
 template<typename T>
@@ -132,7 +132,7 @@ inline auto logFormat(ByteArray & dest, const T & val)
     -> std::enable_if_t<!std::is_same_v<T, ByteArray> && !std::is_same_v<T, String>
         && !HasToUtf8<T>::value && HasCharConstData<T>::value>
 {
-    dest.append(val.constData(), val.size());
+    dest.append(val.constCharPtr(), val.size());
 }
 
 // Fallback for types with toString() returning bytes (constData()/size())
@@ -142,7 +142,7 @@ inline auto logFormat(ByteArray & dest, const T & val)
         && !HasToUtf8<T>::value && !HasCharConstData<T>::value && HasToStringConstData<T>::value>
 {
     const auto s = val.toString();
-    dest.append(s.constData(), s.size());
+    dest.append(s.constCharPtr(), s.size());
 }
 
 // Fallback for types with toString() returning std::string
@@ -162,7 +162,7 @@ inline auto logFormat(ByteArray & dest, const T & val)
         && !HasToStringConstData<T>::value && !HasToStringCStr<T>::value && HasToStringToUtf8<T>::value>
 {
     auto utf8 = val.toString().toUtf8();
-    dest.append(utf8.constData(), utf8.size());
+    dest.append(utf8.constCharPtr(), utf8.size());
 }
 
 } // namespace

@@ -68,22 +68,22 @@ String removeComments(const String & query)
 
     while (pos < len) {
         // Check for comment at start of string or after newline
-        bool isLineStart = (pos == 0) || (s.constData()[pos - 1] == '\n');
-        if (isLineStart && pos + 1 < len && s.constData()[pos] == '-' && s.constData()[pos + 1] == '-') {
+        bool isLineStart = (pos == 0) || (s.constCharPtr()[pos - 1] == '\n');
+        if (isLineStart && pos + 1 < len && s.constCharPtr()[pos] == '-' && s.constCharPtr()[pos + 1] == '-') {
             // Skip to end of line
-            while (pos < len && s.constData()[pos] != '\n') ++pos;
+            while (pos < len && s.constCharPtr()[pos] != '\n') ++pos;
             if (pos < len) ++pos; // skip the newline
             continue;
         }
         // Also check for -- after newline within the string
-        if (pos + 1 < len && s.constData()[pos] == '\n' && pos + 2 < len && s.constData()[pos + 1] == '-' && s.constData()[pos + 2] == '-') {
+        if (pos + 1 < len && s.constCharPtr()[pos] == '\n' && pos + 2 < len && s.constCharPtr()[pos + 1] == '-' && s.constCharPtr()[pos + 2] == '-') {
             result += '\n';
             pos += 1;
             // Skip the comment
-            while (pos < len && s.constData()[pos] != '\n') ++pos;
+            while (pos < len && s.constCharPtr()[pos] != '\n') ++pos;
             continue;
         }
-        result += s.constData()[pos];
+        result += s.constCharPtr()[pos];
         ++pos;
     }
     return result;
@@ -105,7 +105,7 @@ bool execSql(const String & query)
 // Sets matchEnd to the end of the match and methodName to the captured name.
 size_t findExecDirective(const String & query, size_t startPos, size_t & matchEnd, ByteArray & methodName)
 {
-    const char * data = query.constData();
+    const char * data = query.constCharPtr();
     size_t len = query.size();
     size_t pos = startPos;
 
@@ -143,7 +143,7 @@ size_t findExecDirective(const String & query, size_t startPos, size_t & matchEn
 // Find "-- REVISION <name>" pattern at the beginning of a line.
 size_t findRevisionDirective(const String & query, size_t startPos, size_t & matchEnd, String & revName)
 {
-    const char * data = query.constData();
+    const char * data = query.constCharPtr();
     size_t len = query.size();
     size_t pos = startPos;
 

@@ -23,7 +23,7 @@ bool checkSer(T val, const char * hex)
     const ByteArray expected = ByteArray::fromHex(hex);
     if (ser.data() != expected) {
         std::cout << std::format("serialized hex differs:\nis       : {}\nexpected : {}\n",
-            ser.data().toHex().charPtr(), expected.toHex().charPtr());
+            ser.data().toHex().constCharPtr(), expected.toHex().constCharPtr());
         return false;
     }
     return true;
@@ -77,7 +77,7 @@ bool testBigTag(int tagNr, const char * hex)
     const ByteArray expected = ByteArray::fromHex(hex) + ByteArray::fromHex("0142");
     if (ser.data() != expected) {
         std::cout << std::format("serialized hex differs:\nis       : {}\nexpected : {}\n",
-            ser.data().toHex().charPtr(), expected.toHex().charPtr());
+            ser.data().toHex().constCharPtr(), expected.toHex().constCharPtr());
         retval = false;
     }
     BERDeserializer deser(expected);

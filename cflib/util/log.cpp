@@ -110,7 +110,7 @@ inline void writeCategory(char * dest, LogCategory cat)
 // allow only ASCII for security reasons
 inline void writeMsg(ByteArray & out, const ByteArray & msg)
 {
-    const char * start = msg.constData();
+    const char * start = msg.constCharPtr();
     const char * p = start;
     for (size_t i = 0 ; i < msg.length() ; ++i) {
         const uint8 c = (uint8)*p;

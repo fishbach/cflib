@@ -13,7 +13,7 @@ Version Version::current_;
 
 String Version::toString() const
 {
-    String result = String::number((uint32)major) + "." + String::number((uint32)minor) + "." + String::number((uint32)revision);
+    String result = String::fromInt((uint32)major) + "." + String::fromInt((uint32)minor) + "." + String::fromInt((uint32)revision);
     if (!patchLevel.isEmpty()) result += "-" + patchLevel;
     return result;
 }

@@ -139,7 +139,7 @@ inline void insertBERLength(ByteArray & data, int oldSize)
     const int64 length = data.size() - oldSize;
     const uint8 lengthSize = calcBERlengthSize(length);
     if (lengthSize > 1) data.insert(oldSize, ByteArray(lengthSize - 1, '\0'));
-    writeLenBytes((uint8 *)data.data() + oldSize - 1, length, lengthSize);
+    writeLenBytes((uint8 *)data.constData() + oldSize - 1, length, lengthSize);
 }
 
 inline uint8 calcTagLen(uint64 tagNo)
@@ -171,7 +171,7 @@ inline void writeNull(ByteArray & data, uint64 tagNo)
     const uint8 tagLen = calcTagLen(tagNo);
     const int oldSize = data.size();
     data.resize(oldSize + tagLen + 2);
-    uint8 * pos = (uint8 *)data.data() + oldSize;
+    uint8 * pos = (uint8 *)data.constData() + oldSize;
     writeTagBytes(pos, tagNo, false, tagLen);
     pos[tagLen] = 0x81;
     pos[tagLen + 1] = 0;
@@ -182,7 +182,7 @@ inline void writeZero(ByteArray & data, uint64 tagNo)
     const uint8 tagLen = calcTagLen(tagNo);
     const int oldSize = data.size();
     data.resize(oldSize + tagLen + 1);
-    uint8 * pos = (uint8 *)data.data() + oldSize;
+    uint8 * pos = (uint8 *)data.constData() + oldSize;
     writeTagBytes(pos, tagNo, false, tagLen);
     pos[tagLen] = 0;
 }
@@ -196,7 +196,7 @@ public:
         const int oldSize = data.size();
         oldSize_ = oldSize + tagLen_ + 1;
         data.resize(oldSize_);
-        uint8 * pos = (uint8 *)data.data() + oldSize;
+        uint8 * pos = (uint8 *)data.constData() + oldSize;
         writeTagBytes(pos, tagNo, true, tagLen_);
         pos[tagLen_] = '\0';
     }

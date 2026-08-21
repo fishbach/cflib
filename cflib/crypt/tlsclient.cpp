@@ -33,7 +33,7 @@ public:
             detachedShared(creds),
             policy,
             detachedShared(rng),
-            TLS::Server_Information(std::string(hostname.constData(), hostname.size())))
+            TLS::Server_Information(std::string(hostname.constCharPtr(), hostname.size())))
     {
     }
 
@@ -135,10 +135,10 @@ bool TLSClient::received(const ByteArray & encrypted, ByteArray & plain, ByteArr
     impl_->outgoingEncryptedPtr = &sendBack;
     impl_->incomingPlainPtr     = &plain;
     TRY {
-        impl_->client.received_data((const byte *)encrypted.constData(), encrypted.size());
+        impl_->client.received_data((const byte *)encrypted.constCharPtr(), encrypted.size());
         ByteArray & tmpBuf = impl_->outgoingPlainTmpBuf;
         if (!tmpBuf.isEmpty() && impl_->isReady && !impl_->hasError) {
-            impl_->client.send((const byte *)tmpBuf.constData(), tmpBuf.size());
+            impl_->client.send((const byte *)tmpBuf.constCharPtr(), tmpBuf.size());
             tmpBuf.clear();
         }
         return !impl_->hasError;
@@ -152,7 +152,7 @@ bool TLSClient::send(const ByteArray & plain, ByteArray & encrypted)
     if (impl_->hasError) return false;
     impl_->outgoingEncryptedPtr = &encrypted;
     TRY {
-        if (impl_->isReady) impl_->client.send((const byte *)plain.constData(), plain.size());
+        if (impl_->isReady) impl_->client.send((const byte *)plain.constCharPtr(), plain.size());
         else                impl_->outgoingPlainTmpBuf.append(plain);
         return !impl_->hasError;
     } CATCH

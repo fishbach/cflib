@@ -44,7 +44,7 @@ public:
             remoteIP = parser->peerIP();
         }
         watch.start();
-        id << ByteArray::number(connId) << '-' << ByteArray::number(requestId);
+        id << ByteArray::fromInt(connId) << '-' << ByteArray::fromInt(requestId);
         logDebug("new request %1 (body len: %2)", id, headerFields.count("content-length") ? headerFields.at("content-length") : ByteArray());
     }
 
@@ -109,7 +109,7 @@ public:
 
         if (method != Request::HEAD) {
             header
-                << "Content-Length: " << ByteArray::number((int64)body.size()) << "\r\n"
+                << "Content-Length: " << ByteArray::fromInt((int64)body.size()) << "\r\n"
                 << "\r\n"
                 << body;
         } else {

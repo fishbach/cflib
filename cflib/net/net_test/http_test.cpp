@@ -51,7 +51,7 @@ protected:
         if (request.getUri() == "/abort") {
             request.abort();
         } else {
-            request.sendText("reply " + String::number(++count_));
+            request.sendText("reply " + String::fromInt(++count_));
         }
     }
 private:

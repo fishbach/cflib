@@ -45,7 +45,7 @@ public:
     using ByteArray::resize;
 
     // O(1) non-owning view over the UTF-8 bytes; copy via toStdString().
-    // The buffer is NUL-terminated, so charPtr() is a free C string
+    // The buffer is NUL-terminated, so constCharPtr() is a free C string
     // (nullptr for a null value).
     std::string_view str() const { return toStdStringView(); }
     size_t           byteSize() const { return size(); }
@@ -92,7 +92,7 @@ public:
     String  operator+ (char c)           const { String r(*this); r += c; return r; }
     String & operator+=(const String & o) {
         detach();
-        d = d->append(o.constData(), o.size());
+        d = d->append(o.constCharPtr(), o.size());
         d->setNull(false);
         return *this;
     }
@@ -110,7 +110,7 @@ public:
     }
 
     String & operator<<(const String & o)    { detach(); return *this += o; }
-    String & operator<<(const ByteArray & o) { appendBytes(o.constData(), o.size()); return *this; }
+    String & operator<<(const ByteArray & o) { appendBytes(o.constCharPtr(), o.size()); return *this; }
     String & operator<<(const char * s)      { detach(); return *this += s; }
     String & operator<<(char c)              { detach(); return *this += c; }
 };

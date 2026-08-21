@@ -230,14 +230,14 @@ inline void ByteArray::detach(size_t hint) {
     d = s;
 }
 
-inline ByteArray ByteArray::fromRawData(const char * data, size_t len) { return ByteArray(data, len); }
+inline ByteArray ByteArray::fromRawData(const void * data, size_t len) { return ByteArray((const char *)data, len); }
 
 inline char * ByteArray::charPtr() {
     if (isNull()) return nullptr;
     detach();
     return d->data();
 }
-inline const char * ByteArray::charPtr() const {
+inline const char * ByteArray::constCharPtr() const {
     return isNull() ? nullptr : d->data();
 }
 inline uint8 * ByteArray::data() {
@@ -245,12 +245,10 @@ inline uint8 * ByteArray::data() {
     detach();
     return reinterpret_cast<uint8 *>(d->data());
 }
-inline const uint8 * ByteArray::data() const {
+inline const uint8 * ByteArray::constData() const {
     return isNull() ? nullptr : reinterpret_cast<const uint8 *>(d->data());
 }
-// no-detach const view; delegates to charPtr() const so the null handling
-// (nullptr for a null value) has one source of truth
-inline const char * ByteArray::constData() const { return charPtr(); }
+
 inline std::string_view ByteArray::toStdStringView() const { return d->toStdStringView(); }
 
 inline size_t ByteArray::size()   const { return d->size; }
@@ -282,7 +280,7 @@ inline char   ByteArray::at(size_t i) const         { return d->data()[i]; }
 inline ByteArray & ByteArray::append(char c)                    { detach(); d = d->append(&c, 1); d->setNull(false); return *this; }
 inline ByteArray & ByteArray::append(const char * s)            { if (s && *s) { detach(); d = d->append(s, std::strlen(s)); d->setNull(false); } return *this; }
 inline ByteArray & ByteArray::append(const char * s, size_t len){ if (s && len) { detach(); d = d->append(s, len); d->setNull(false); } return *this; }
-inline ByteArray & ByteArray::append(const ByteArray & other)   { return append(other.constData(), other.size()); }
+inline ByteArray & ByteArray::append(const ByteArray & other)   { return append(other.constCharPtr(), other.size()); }
 
 inline ByteArray & ByteArray::prepend(const char * s, size_t len) {
     if (!s || !len) return *this;
@@ -293,7 +291,7 @@ inline ByteArray & ByteArray::prepend(const char * s, size_t len) {
 }
 inline ByteArray & ByteArray::prepend(const char * s) { return prepend(s, std::strlen(s)); }
 
-inline ByteArray & ByteArray::insert(size_t pos, const ByteArray & ba) { return insert(pos, ba.constData(), ba.size()); }
+inline ByteArray & ByteArray::insert(size_t pos, const ByteArray & ba) { return insert(pos, ba.constCharPtr(), ba.size()); }
 inline ByteArray & ByteArray::insert(size_t pos, const char * s, size_t len) {
     if (!s || !len) return *this;
     detach();
@@ -366,12 +364,12 @@ inline ByteArray ByteArray::fromHex(const ByteArray & hex) { return fromHex(hex.
 
 // Number formatting
 template <std::integral T>
-ByteArray ByteArray::number(T v)
+ByteArray ByteArray::fromInt(T v)
 {
     return ByteArray(std::format("{}", v).c_str());
 }
 template <std::floating_point T>
-ByteArray ByteArray::number(T v)
+ByteArray ByteArray::fromFloat(T v)
 {
     return ByteArray(std::format("{:g}", v).c_str());
 }

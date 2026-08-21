@@ -459,9 +459,9 @@ void TCPManagerImpl::writeable(ev_loop * loop, ev_io * w, int)
     const int fd = conn->socket;
 
 #ifdef __linux__
-    const ssize_t count = ::send(fd, buf.constData(), buf.size(), MSG_NOSIGNAL);
+    const ssize_t count = ::send(fd, buf.constCharPtr(), buf.size(), MSG_NOSIGNAL);
 #else
-    const ssize_t count = ::send(fd, buf.constData(), buf.size(), 0);
+    const ssize_t count = ::send(fd, buf.constCharPtr(), buf.size(), 0);
 #endif
     logTrace("wrote %1 / %2 bytes on %3", (int64)count, buf.size(), fd);
     if (count < (ssize_t)buf.size()) {

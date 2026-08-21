@@ -154,11 +154,11 @@ void gzip(ByteArray & data, int compressionLevel)
     s.zfree     = Z_NULL;
     s.opaque    = Z_NULL;
     s.avail_in  = (uInt)data.size();
-    s.next_in   = (Bytef *)data.constData();
+    s.next_in   = (Bytef *)data.constCharPtr();
     deflateInit2(&s, compressionLevel, Z_DEFLATED, 31, 8, Z_DEFAULT_STRATEGY);
     ByteArray out((size_t)deflateBound(&s, data.size()), '\0');
     s.avail_out = (uInt)out.size();
-    s.next_out  = (Bytef *)out.data();
+    s.next_out  = (Bytef *)out.constData();
     deflate(&s, Z_FINISH);
     out.resize(s.total_out);
     deflateEnd(&s);
@@ -177,11 +177,11 @@ void gzip(ByteArray & data, int compressionLevel)
     s2.zfree     = Z_NULL;
     s2.opaque    = Z_NULL;
     s2.avail_in  = (uInt)data.size();
-    s2.next_in   = (Bytef *)data.constData();
+    s2.next_in   = (Bytef *)data.constCharPtr();
     deflateInit2(&s2, compressionLevel, Z_DEFLATED, -15, 8, Z_DEFAULT_STRATEGY);
     ByteArray compressed((size_t)deflateBound(&s2, data.size()), '\0');
     s2.avail_out = (uInt)compressed.size();
-    s2.next_out  = (Bytef *)compressed.data();
+    s2.next_out  = (Bytef *)compressed.constData();
     deflate(&s2, Z_FINISH);
     compressed.resize(s2.total_out);
     deflateEnd(&s2);
@@ -222,11 +222,11 @@ void deflateRaw(ByteArray & data, int compressionLevel)
     s.zfree     = Z_NULL;
     s.opaque    = Z_NULL;
     s.avail_in  = (uInt)   data.size();
-    s.next_in   = (Bytef *)data.constData();
+    s.next_in   = (Bytef *)data.constCharPtr();
     deflateInit2(&s, compressionLevel, Z_DEFLATED, -15, 8, Z_DEFAULT_STRATEGY);
     ByteArray out((size_t)deflateBound(&s, data.size()), '\0');
     s.avail_out = (uInt)   out.size();
-    s.next_out  = (Bytef *)out.data();
+    s.next_out  = (Bytef *)out.constData();
     deflate(&s, Z_SYNC_FLUSH);
     deflateEnd(&s);
     int size = s.total_out;
@@ -252,9 +252,9 @@ void inflateRaw(ByteArray & data)
     s.zfree     = Z_NULL;
     s.opaque    = Z_NULL;
     s.avail_in  = (uInt)   in.size();
-    s.next_in   = (Bytef *)in.constData();
+    s.next_in   = (Bytef *)in.constCharPtr();
     s.avail_out = (uInt)   out.size();
-    s.next_out  = (Bytef *)out.data();
+    s.next_out  = (Bytef *)out.constData();
     inflateInit2(&s, -15);
     for (;;) {
         int rv = inflate(&s, Z_NO_FLUSH);
@@ -264,7 +264,7 @@ void inflateRaw(ByteArray & data)
         const size_t ext = oldSize * 3 / 2;
         out.resize(oldSize + ext);
         s.avail_out = (uInt)   ext;
-        s.next_out  = (Bytef *)out.data() + oldSize;
+        s.next_out  = (Bytef *)out.constData() + oldSize;
     }
     inflateEnd(&s);
     out.resize(s.total_out);
@@ -280,7 +280,7 @@ const char * const Hex = "0123456789ABCDEF";
 ByteArray encodeQuotedPrintable(const String & text)
 {
     ByteArray utf8 = text.toUtf8();
-    const unsigned char * pos = (const unsigned char *)utf8.constData();
+    const unsigned char * pos = (const unsigned char *)utf8.constCharPtr();
     const unsigned char * second = pos + 1;
     const unsigned char * end = pos + utf8.length();
     ByteArray retval;
@@ -320,7 +320,7 @@ ByteArray encodeQuotedPrintable(const String & text)
 ByteArray encodeWord(const String & str, bool strict)
 {
     ByteArray utf8 = str.toUtf8();
-    const unsigned char * pos = (const unsigned char *)utf8.constData();
+    const unsigned char * pos = (const unsigned char *)utf8.constCharPtr();
     const unsigned char * end = pos + utf8.length();
     ByteArray retval = "=?utf-8?Q?";
     bool onlyDirect = true;
@@ -358,7 +358,7 @@ String flatten(const String & str)
     std::string rv;
     rv.reserve(str.size());
     for (size_t i = 0; i < str.size(); ++i) {
-        char c = str.constData()[i];
+        char c = str.constCharPtr()[i];
         if ((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9') ||
             c == '-' || c == '.' || c == '_' || c == ' ' || c == '\t' || c == '\r' || c == '\n') {
             rv += c;
@@ -416,7 +416,7 @@ bool isValidEmail(const String & str)
 {
     // Hand-written email validation replacing QRegularExpression
     // Pattern: ^[\w.\-_]+@\w[\w.\-]+\.\w+$
-    const char * s = str.constData();
+    const char * s = str.constCharPtr();
     size_t len = str.size();
     if (len == 0) return false;
 

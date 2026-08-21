@@ -18,7 +18,7 @@ public:
         if (tagNo > 0) {
             const uint8 tagLen = impl::calcTagLen(tagNo);
             data_.resize(tagLen + 1);
-            uint8 * pos = (uint8 *)data_.data();
+            uint8 * pos = (uint8 *)data_.constData();
             impl::writeTagBytes(pos, tagNo, true, tagLen);
             pos[tagLen] = '\0';
             lenPos_ = tagLen + 1;
@@ -52,7 +52,7 @@ class BERDeserializer
 {
 public:
     BERDeserializer(const ByteArray & data) :
-        data_(data), base_((const uint8 *)data_.constData(), data_.size()) {}
+        data_(data), base_((const uint8 *)data_.constCharPtr(), data_.size()) {}
     BERDeserializer(const ByteArray & ba, const uint8 * data, int len) :
         data_(ba), base_(data, len) {}
 

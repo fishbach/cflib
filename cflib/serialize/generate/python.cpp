@@ -66,7 +66,7 @@ String getParameters(const SerializeFunctionTypeInfo & func)
     int id = 0;
     for (const auto & p : func.parameters) {
         py << ", ";
-        if (p.name.isEmpty()) py << "_param_" << String::number(++id);
+        if (p.name.isEmpty()) py << "_param_" << String::fromInt(++id);
         else py << p.name;
     }
     return py;
@@ -187,7 +187,7 @@ String getSerializeParameters(const SerializeFunctionTypeInfo & func)
     int id = 0;
     for (const auto & p : func.parameters) {
         String name = p.name;
-        if (name.isEmpty()) name << "_param_" << String::number(++id);
+        if (name.isEmpty()) name << "_param_" << String::fromInt(++id);
         py << getSerializeCode(p.type, name);
     }
     return py;
@@ -217,7 +217,7 @@ String generateForClass(const SerializeTypeInfo & ti)
 
     // class head
     py << "class " << name << "(" << (baseAlias.isEmpty() ? "object" : baseAlias) << "):\n";
-    if (ti.classId != 0) py << "    _class_id = " << String::number(ti.classId) << "\n\n";
+    if (ti.classId != 0) py << "    _class_id = " << String::fromInt(ti.classId) << "\n\n";
 
     // __init__
     py << "    def __init__(self";
@@ -256,7 +256,7 @@ String generateForClass(const SerializeTypeInfo & ti)
     // _serialize
     py << "    def _serialize(self, _S):\n"
           "        return (_S\n            ";
-    if (ti.classId != 0) py << ".i(" << String::number(ti.classId) << ")";
+    if (ti.classId != 0) py << ".i(" << String::fromInt(ti.classId) << ")";
     else                 py << ".n()";
     if (!baseAlias.isEmpty()) py << ".o(self, " << baseAlias << "._serialize)";
     for (const auto & vti : ti.members) {
