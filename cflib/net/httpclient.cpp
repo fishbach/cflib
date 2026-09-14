@@ -72,7 +72,7 @@ void HttpClient::get(const ByteArray & ip, uint16 port, const ByteArray & url)
     ByteArray request;
     request <<
         "GET " << url << " HTTP/1.1\r\n"
-        "Host: " << ip << ":" << ByteArray::number(port) << "\r\n"
+        "Host: " << ip << ":" << ByteArray::fromInt(port) << "\r\n"
         << (keepAlive_ ? "Connection: keep-alive\r\n" : "") <<
         "\r\n";
     conn_->write(request);

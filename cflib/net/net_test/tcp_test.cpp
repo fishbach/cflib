@@ -65,7 +65,7 @@ protected:
 
     virtual void closed(CloseType type)
     {
-        msg("srv closed: " + String::number((int)type));
+        msg("srv closed: " + String::fromInt((int)type));
     }
 
     virtual void writeFinished()
@@ -94,7 +94,7 @@ public:
     ClientConn(TCPConnData * data) :
         TCPConn(data)
     {
-        msg("cli new: " + String(peerIP()) + ":" + String::number(peerPort()));
+        msg("cli new: " + String(peerIP()) + ":" + String::fromInt(peerPort()));
         startReadWatcher();
     }
 
@@ -112,7 +112,7 @@ protected:
 
     virtual void closed(CloseType type)
     {
-        msg("cli closed: " + String::number((int)type));
+        msg("cli closed: " + String::fromInt((int)type));
     }
 
     virtual void writeFinished()

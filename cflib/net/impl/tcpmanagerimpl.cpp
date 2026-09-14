@@ -75,14 +75,14 @@ inline bool callWithSockaddr(const ByteArray & ip, uint16 port, std::function<bo
         struct sockaddr_in6 addr;
         memset(&addr, 0, sizeof(addr));
         addr.sin6_family = AF_INET6;
-        if (inet_pton(AF_INET6, ip.constData(), &addr.sin6_addr) == 0) return false;
+        if (inet_pton(AF_INET6, ip.toStdString().c_str(), &addr.sin6_addr) == 0) return false;
         addr.sin6_port = htons(port);
         return func((struct sockaddr *)&addr, sizeof(addr));
     } else {
         struct sockaddr_in addr;
         memset(&addr, 0, sizeof(addr));
         addr.sin_family = AF_INET;
-        if (inet_pton(AF_INET, ip.constData(), &addr.sin_addr) == 0) return false;
+        if (inet_pton(AF_INET, ip.toStdString().c_str(), &addr.sin_addr) == 0) return false;
         addr.sin_port = htons(port);
         return func((struct sockaddr *)&addr, sizeof(addr));
     }
@@ -422,7 +422,7 @@ void TCPManagerImpl::readable(ev_loop * loop, ev_io * w, int)
     TCPConnData * conn = (TCPConnData *)w->data;
     TCPManagerImpl & impl = conn->impl;
 
-    char * data = (char *)conn->readBuf.constData();
+    char * data = conn->readBuf.charPtr();
     const int fd = conn->socket;
 
     const ssize_t count = ::recv(fd, data, conn->readBuf.size(), 0);
@@ -459,9 +459,9 @@ void TCPManagerImpl::writeable(ev_loop * loop, ev_io * w, int)
     const int fd = conn->socket;
 
 #ifdef __linux__
-    const ssize_t count = ::send(fd, buf.constData(), buf.size(), MSG_NOSIGNAL);
+    const ssize_t count = ::send(fd, buf.constCharPtr(), buf.size(), MSG_NOSIGNAL);
 #else
-    const ssize_t count = ::send(fd, buf.constData(), buf.size(), 0);
+    const ssize_t count = ::send(fd, buf.constCharPtr(), buf.size(), 0);
 #endif
     logTrace("wrote %1 / %2 bytes on %3", (int64)count, buf.size(), fd);
     if (count < (ssize_t)buf.size()) {
@@ -534,10 +534,10 @@ void TCPManagerImpl::listenSocketReadable(ev_loop *, ev_io * w, int)
         logDebug("new connection (%1) from %2:%3", newSock, ip, port);
 
         TCPConnData * conn = impl->credentials_ ?
-            new TCPConnData(*impl, newSock, ip, port,
+            new TCPConnData(*impl, newSock, ByteArray(ip), port,
                 new crypt::TLSServer(tlsSessions(), *(impl->credentials_)),
                 ++impl->tlsConnId_ % impl->tlsThreads_.size()) :
-            new TCPConnData(*impl, newSock, ip, port, 0, 0);
+            new TCPConnData(*impl, newSock, ByteArray(ip), port, 0, 0);
         impl->connections_ << conn;
         impl->parent.newConnection(conn);
     }
@@ -558,9 +558,9 @@ TCPConnData * TCPManagerImpl::addConnection(int sock, const ByteArray & destIP, 
     if (!stc.verify(&TCPManagerImpl::addConnection, sock, destIP, destPort, credentials, destAddress)) return stc.retval();
 
     TCPConnData * conn = credentials ?
-        new TCPConnData(*this, sock, destIP.constData(), destPort,
+        new TCPConnData(*this, sock, destIP, destPort,
             new crypt::TLSClient(tlsSessions(), *credentials, destAddress), ++tlsConnId_ % tlsThreads_.size()) :
-        new TCPConnData(*this, sock, destIP.constData(), destPort, 0, 0);
+        new TCPConnData(*this, sock, destIP, destPort, 0, 0);
     connections_ << conn;
     return conn;
 }

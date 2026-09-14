@@ -37,7 +37,7 @@ String signature(const SerializeFunctionTypeInfo & fti, bool isRSig, const Strin
         if (!vti.isRef) rv += "const ";
         rv << vti.type.getName(true) << " &";
         if (!vti.name.isEmpty()) rv << ' ' << vti.name;
-        else if (!className.isEmpty()) rv << " __param_" << String::number(++id);
+        else if (!className.isEmpty()) rv << " __param_" << String::fromInt(++id);
     }
     if (isRSig) {
         rv += "), void (";
@@ -65,7 +65,7 @@ String generateImpl(const SerializeFunctionTypeInfo & fti)
     for (const SerializeVariableTypeInfo & vti : fti.parameters) {
         rv << " << ";
         if (!vti.name.isEmpty()) rv << vti.name;
-        else rv << "__param_" << String::number(++id);
+        else rv << "__param_" << String::fromInt(++id);
     }
     rv << ";\n";
 
@@ -81,7 +81,7 @@ String generateImpl(const SerializeFunctionTypeInfo & fti)
             if (!vti.isRef) continue;
             rv << " >> ";
             if (!vti.name.isEmpty()) rv << vti.name;
-            else rv << "__param_" << String::number(id);
+            else rv << "__param_" << String::fromInt(id);
         }
         rv << ";\n";
         if (!fti.returnType.isNull()) rv << "    return __retval;\n";
@@ -206,7 +206,7 @@ void generateCppRemoteServices(const StructuredTypeInfos & typeInfos, const Stri
 
     // remove old
     {
-        DIR * d = opendir(destPath.c_str());
+        DIR * d = opendir(destPath.toStdString().c_str());
         if (d) {
             struct dirent * ent;
             while ((ent = readdir(d)) != nullptr) {

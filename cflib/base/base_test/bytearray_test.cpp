@@ -92,7 +92,7 @@ TEST_CASE("ByteArray: accessors")
 
     REQUIRE_EQ(ba.size(), (size_t)5);
     REQUIRE_EQ(ba.length(), (size_t)5);
-    REQUIRE_EQ(strcmp(ba.constData(), "hello"), 0);
+    REQUIRE(ba == "hello");
     REQUIRE(!ba.isEmpty());
     REQUIRE(!ba.isNull());
 
@@ -108,6 +108,76 @@ TEST_CASE("ByteArray: accessors")
     // at()
     REQUIRE_EQ(ba.at(0), 'h');
     REQUIRE_EQ(ba.at(4), 'o');
+}
+
+// The buffer is always NUL-terminated, so constCharPtr() is a free C string.
+// Pin the invariant: constCharPtr()[size()] == '\0' after every mutation, the
+// block always keeps one byte of slack (capacity >= size + 1), null maps to
+// nullptr, and data() and constCharPtr() point at the same bytes.
+TEST_CASE("ByteArray: nul_termination")
+{
+    auto check = [](const ByteArray & ba) {
+        if (ba.isNull()) return;
+        REQUIRE(ba.constCharPtr()[ba.size()] == '\0');
+        REQUIRE(ba.capacity() >= ba.size() + 1);
+    };
+
+    // null -> nullptr for both accessors, const and non-const
+    ByteArray nullBa;
+    REQUIRE(nullBa.constCharPtr() == nullptr);
+    REQUIRE(nullBa.constData() == nullptr);
+    REQUIRE(nullBa.constCharPtr() == nullptr);   // non-const overload
+    REQUIRE(nullBa.constData() == nullptr);
+
+    // construct
+    ByteArray a("hello");
+    check(a);
+    REQUIRE(std::strcmp(a.constCharPtr(), "hello") == 0);
+    REQUIRE(a.constData() == reinterpret_cast<uint8 *>(a.charPtr()));
+
+    // every mutation keeps the buffer terminated
+    a.append('!');          check(a); REQUIRE(std::strcmp(a.constCharPtr(), "hello!") == 0);
+    a.append(" world");     check(a); REQUIRE(std::strcmp(a.constCharPtr(), "hello! world") == 0);
+    a.prepend(">>");        check(a); REQUIRE(std::strcmp(a.constCharPtr(), ">>hello! world") == 0);
+    a.insert(2, "xx");      check(a); REQUIRE(std::strcmp(a.constCharPtr(), ">>xxhello! world") == 0);
+    a.remove(0, 2);         check(a); REQUIRE(std::strcmp(a.constCharPtr(), "xxhello! world") == 0);
+    a.replace('x', "y");    check(a); REQUIRE(std::strcmp(a.constCharPtr(), "yyhello! world") == 0);
+    a.resize(4);            check(a); REQUIRE(std::strcmp(a.constCharPtr(), "yyhe") == 0);
+    a.resize(8, 'z');       check(a); REQUIRE(std::strcmp(a.constCharPtr(), "yyhezzzz") == 0);
+    a[0] = 'A';             check(a); REQUIRE(std::strcmp(a.constCharPtr(), "Ayhezzzz") == 0);
+
+    // clear -> null again
+    a.clear();
+    REQUIRE(a.isNull());
+    REQUIRE(a.constCharPtr() == nullptr);
+
+    // empty (non-null) is ""
+    ByteArray e("");
+    REQUIRE(!e.isNull());
+    REQUIRE(std::strcmp(e.constCharPtr(), "") == 0);
+
+    // binary content: the NUL is a sentinel after the bytes, size() is
+    // authoritative (so strcmp is not usable here)
+    ByteArray bin("\x00\x01\x02", 3);
+    check(bin);
+    REQUIRE_EQ(bin.size(), (size_t)3);
+    REQUIRE(bin.constCharPtr()[3] == '\0');
+
+    // a size that is exactly a power of two still keeps the slack byte
+    ByteArray p2(32, 'a');
+    check(p2);
+    p2.append('b');
+    check(p2);
+    REQUIRE(p2.capacity() >= p2.size() + 1);
+
+    // non-const constCharPtr() detaches: the copy diverges, the original is safe
+    ByteArray shared("shared");
+    ByteArray copy = shared;
+    char * cp = copy.charPtr();
+    cp[0] = 'S';
+    check(copy);
+    REQUIRE(shared.constCharPtr()[0] == 's');
+    REQUIRE(copy.constCharPtr()[0] == 'S');
 }
 
 // Resize/reserve/clear tests
@@ -135,6 +205,28 @@ TEST_CASE("ByteArray: resize_reserve_clear")
 
     // Empty string is not null
     REQUIRE(!ByteArray("").isNull());
+
+    // bulk build: sizing up front from null reaches the final capacity
+    // in a single size-up (no grow after the detach)
+    ByteArray big;
+    big.resize(10000);
+    REQUIRE_EQ(big.size(), (size_t)10000);
+    REQUIRE(big.capacity() >= (size_t)10000);
+    REQUIRE(!big.isNull());
+    std::memset(big.data(), 'z', big.size());
+    REQUIRE_EQ(big.indexOf('z'), (ssize_t)0);
+    REQUIRE_EQ(big.indexOf('a'), (ssize_t)-1);
+
+    // the same when sharing: the copy detaches at the target size and
+    // the shared original is untouched
+    ByteArray shared("hello");
+    ByteArray diverged = shared;
+    diverged.resize(10000, 'q');
+    REQUIRE_EQ(diverged.size(), (size_t)10000);
+    REQUIRE(diverged.capacity() >= (size_t)10000);
+    REQUIRE_EQ(diverged[0], 'h');
+    REQUIRE_EQ(diverged[9999], 'q');
+    REQUIRE_EQ(shared, ByteArray("hello"));
 }
 
 // Append/Prepend tests
@@ -312,6 +404,30 @@ TEST_CASE("ByteArray: replace")
     REQUIRE_EQ(ba4, ByteArray("azzzef"));
 }
 
+// Self-modification: the source aliases the block's own buffer. Before the
+// safeSource() guard, grow() would realloc the block (freeing the old buffer)
+// and the subsequent copy would read freed memory (use-after-free). These force
+// a grow so the regression is covered under ASan.
+TEST_CASE("ByteArray: self_modification")
+{
+    // self-append doubles the content; 300 -> 600 > capacity 512 forces grow()
+    ByteArray a(300, 'x');
+    a += a;
+    REQUIRE_EQ(a.size(), (size_t)600);
+    REQUIRE(a.startsWith("xxxx"));
+    REQUIRE_EQ(a[599], 'x');
+
+    // self-insert at the front
+    ByteArray b("abc");
+    b.insert(0, b);
+    REQUIRE_EQ(b, ByteArray("abcabc"));
+
+    // self-replace (insert the whole content at pos 0)
+    ByteArray c("abcd");
+    c.replace(0, 0, c.constCharPtr(), 4);
+    REQUIRE_EQ(c, ByteArray("abcdabcd"));
+}
+
 // Trimmed test
 TEST_CASE("ByteArray: trimmed")
 {
@@ -319,6 +435,16 @@ TEST_CASE("ByteArray: trimmed")
     REQUIRE_EQ(ByteArray("\t\nhello\r\n  ").trimmed(), ByteArray("hello"));
     REQUIRE_EQ(ByteArray("  \t  ").trimmed(), ByteArray(""));
     REQUIRE_EQ(ByteArray(" hello world ").trimmed(), ByteArray("hello world"));
+}
+
+// Simplified test
+TEST_CASE("ByteArray: simplified")
+{
+    REQUIRE_EQ(ByteArray("  hello  ").simplified(), ByteArray("hello"));
+    REQUIRE_EQ(ByteArray("  hello   world  ").simplified(), ByteArray("hello world"));
+    REQUIRE_EQ(ByteArray("\t\nhello\r\n  world\t").simplified(), ByteArray("hello world"));
+    REQUIRE_EQ(ByteArray("  \t  ").simplified(), ByteArray(""));
+    REQUIRE_EQ(ByteArray("hello").simplified(), ByteArray("hello"));
 }
 
 // Base64 tests
@@ -380,11 +506,42 @@ TEST_CASE("ByteArray: numeric_conversions")
     REQUIRE_EQ(ByteArray("abc").toInt(&ok), (int32)0);
     REQUIRE(!ok);
 
-    // toULongLong
-    REQUIRE_EQ(ByteArray("123456789012345").toULongLong(&ok), (uint64)123456789012345LL);
+    // toULong
+    REQUIRE_EQ(ByteArray("42").toULong(&ok), (uint64)42);
     REQUIRE(ok);
-    REQUIRE_EQ(ByteArray("abc").toULongLong(&ok), (uint64)0);
+    REQUIRE_EQ(ByteArray("123456789012345").toULong(&ok), (uint64)123456789012345LL);
+    REQUIRE(ok);
+    REQUIRE_EQ(ByteArray("abc").toULong(&ok), (uint64)0);
     REQUIRE(!ok);
+
+    // toLong
+    REQUIRE_EQ(ByteArray("42").toLong(&ok), (int64)42);
+    REQUIRE(ok);
+    REQUIRE_EQ(ByteArray("-42").toLong(&ok), (int64)-42);
+    REQUIRE(ok);
+    REQUIRE_EQ(ByteArray("").toLong(&ok), (int64)0);
+    REQUIRE(!ok);
+    REQUIRE_EQ(ByteArray("abc").toLong(&ok), (int64)0);
+    REQUIRE(!ok);
+    REQUIRE_EQ(ByteArray("123abc").toLong(&ok), (int64)123);
+    REQUIRE(!ok);  // trailing characters
+    REQUIRE_EQ(ByteArray("42 ").toLong(&ok), (int64)42);
+    REQUIRE(!ok);  // trailing space means not fully consumed
+    REQUIRE_EQ(ByteArray("9223372036854775807").toLong(&ok), INT64_C(9223372036854775807));
+    REQUIRE(ok);
+    REQUIRE_EQ(ByteArray("-9223372036854775807").toLong(&ok), INT64_C(-9223372036854775807));
+    REQUIRE(ok);
+}
+
+// Number formatting tests
+TEST_CASE("ByteArray: number")
+{
+    REQUIRE_EQ(ByteArray::fromInt(42), ByteArray("42"));
+    REQUIRE_EQ(ByteArray::fromInt(-42), ByteArray("-42"));
+    REQUIRE_EQ(ByteArray::fromInt(INT64_C(9223372036854775807)), ByteArray("9223372036854775807"));
+    REQUIRE_EQ(ByteArray::fromInt(INT64_C(-9223372036854775807)), ByteArray("-9223372036854775807"));
+    REQUIRE(ByteArray::fromFloat(3.14159).indexOf("3.14") == 0);
+    REQUIRE(ByteArray::fromFloat(2.71828).indexOf("2.71") == 0);
 }
 
 // Split test
@@ -445,8 +602,8 @@ TEST_CASE("ByteArray: implicit_sharing")
     REQUIRE_EQ(ba1, ba2);
 
     // Verify const pointers point to same address while sharing
-    const char * data1 = ba1.constData();
-    const char * data2 = ba2.constData();
+    const char * data1 = ba1.constCharPtr();
+    const char * data2 = ba2.constCharPtr();
     REQUIRE(data1 == data2);
 
     // Modify ba2 - should detach
@@ -458,7 +615,7 @@ TEST_CASE("ByteArray: implicit_sharing")
     REQUIRE(ba1 != ba2);
 
     // Verify const pointers now point to different addresses after detach
-    REQUIRE(ba1.constData() != ba2.constData());
+    REQUIRE(ba1.constCharPtr() != ba2.constCharPtr());
 
     // Test detach on shared data
     ByteArray ba3("test");
@@ -469,7 +626,62 @@ TEST_CASE("ByteArray: implicit_sharing")
     REQUIRE_EQ(ba4, ByteArray("test"));
 
     // Verify const pointers are different after explicit detach
-    REQUIRE(ba3.constData() != ba4.constData());
+    REQUIRE(ba3.constCharPtr() != ba4.constCharPtr());
+}
+
+// char* on the left side of comparisons (free function, direct body)
+TEST_CASE("ByteArray: char_ptr_comparison")
+{
+    ByteArray ba("hello");
+    REQUIRE("hello" == ba);
+    REQUIRE("world" != ba);
+    REQUIRE(ba == "hello");
+    REQUIRE(ba != "world");
+
+    const char * cp = nullptr;
+    ByteArray nullBa;
+    REQUIRE(cp == nullBa);
+    REQUIRE(cp != ba);
+    REQUIRE(nullBa == cp);
+    REQUIRE(ba != cp);
+}
+
+// Move-assignment into a ByteArray that already holds a block must
+// release the old block (previously leaked; verified under ASan/LSan)
+TEST_CASE("ByteArray: move_semantics")
+{
+    ByteArray a("hello");
+    ByteArray b("world");
+
+    ByteArray c = std::move(b);
+    REQUIRE_EQ(c, ByteArray("world"));
+    REQUIRE(b.isNull());
+
+    a = std::move(c);
+    REQUIRE_EQ(a, ByteArray("world"));
+    REQUIRE(c.isNull());
+
+    // self move-assign is a no-op (through an alias so the test itself
+    // does not trigger -Wself-move)
+    ByteArray & self = a;
+    a = std::move(self);
+    REQUIRE_EQ(a, ByteArray("world"));
+
+    // shared block: move-assign releases the shared old block correctly
+    ByteArray x("shared");
+    ByteArray y = x;           // x, y share
+    ByteArray z("other");
+    x = std::move(z);          // x releases "shared"
+    REQUIRE_EQ(x, ByteArray("other"));
+    REQUIRE_EQ(y, ByteArray("shared"));
+    REQUIRE(z.isNull());
+
+    // String: the `s = s.left(n)` pattern (substring assigned to self)
+    String s("abcdefgh");
+    s = s.left(3);
+    REQUIRE_EQ(s, String("abc"));
+    s = s.left(1);
+    REQUIRE_EQ(s, String("a"));
 }
 
 }

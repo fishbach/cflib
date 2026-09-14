@@ -34,7 +34,7 @@ bool msgsMatchRegex(const char * pattern)
 {
     std::regex re(pattern, std::regex::ECMAScript);
     for (const auto & s : msgs) {
-        if (std::regex_search(s.c_str(), re)) return true;
+        if (std::regex_search(s.toStdString(), re)) return true;
     }
     return false;
 }
@@ -51,7 +51,7 @@ protected:
         if (request.getUri() == "/abort") {
             request.abort();
         } else {
-            request.sendText("reply " + String::number(++count_));
+            request.sendText("reply " + String::fromInt(++count_));
         }
     }
 private:

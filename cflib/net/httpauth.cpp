@@ -38,7 +38,7 @@ void HttpAuth::handleRequest(const Request & request)
 {
     if (!htpasswd_.isEmpty()) {
         struct stat st;
-        bool readable = stat(htpasswd_.c_str(), &st) == 0 && S_ISREG(st.st_mode);
+        bool readable = stat(htpasswd_.toStdString().c_str(), &st) == 0 && S_ISREG(st.st_mode);
         if (!readable) {
             htpasswdLastMod_ = DateTime();
             users_.clear();

@@ -39,7 +39,7 @@ int showUsage(const ByteArray & executable)
         "  paste last certificate to: openssl x509 -noout -text\n"
         "  curl http://crl.identrust.com/DSTROOTCAX3CRL.crl | openssl crl -inform DER\n"
         "  curl http://apps.identrust.com/roots/dstrootcax3.p7c | openssl pkcs7 -inform DER -print_certs\n",
-        executable.constData());
+        executable.constCharPtr());
     return 1;
 }
 
@@ -80,7 +80,7 @@ int main(int argc, char *argv[])
     HttpRequest * request = new HttpRequest(mgr);
     request->reply.bind([](int status, const ByteArray & reply) {
         std::cout << std::format("Status: {}\n\n", status);
-        fwrite(reply.constData(), 1, reply.size(), stdout);
+        fwrite(reply.constCharPtr(), 1, reply.size(), stdout);
         std::cout << "\n";
         threadSafeExit(status == 200 ? 0 : 1);
     });

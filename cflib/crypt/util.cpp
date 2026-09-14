@@ -18,7 +18,7 @@ ByteArray random(uint size)
     TRY {
         AutoSeeded_RNG rng;
         ByteArray retval(size, '\0');
-        rng.randomize((byte *)retval.data(), size);
+        rng.randomize((byte *)retval.constData(), size);
         return retval;
     } CATCH
     return ByteArray();
@@ -93,7 +93,7 @@ ByteArray hashPassword(const String & password, uint16 workFactor)
 bool checkPassword(const String & password, const ByteArray & hash)
 {
     TRY {
-        return check_bcrypt(password.str(), std::string(hash.constData(), hash.length()));
+        return check_bcrypt(password.str(), std::string(hash.constCharPtr(), hash.length()));
     } CATCH
     return false;
 }
@@ -102,7 +102,7 @@ ByteArray sha1(const ByteArray & data)
 {
     TRY {
         Pipe pipe(new Hash_Filter("SHA-1"));
-        pipe.process_msg((const byte *)data.constData(), data.size());
+        pipe.process_msg((const byte *)data.constCharPtr(), data.size());
         std::string hash = pipe.read_all_as_string();
         return ByteArray(hash.c_str(), (size_t)hash.length());
     } CATCH
@@ -113,7 +113,7 @@ ByteArray sha256(const ByteArray & data)
 {
     TRY {
         Pipe pipe(new Hash_Filter("SHA-256"));
-        pipe.process_msg((const byte *)data.constData(), data.size());
+        pipe.process_msg((const byte *)data.constCharPtr(), data.size());
         std::string hash = pipe.read_all_as_string();
         return ByteArray(hash.c_str(), (size_t)hash.length());
     } CATCH
@@ -134,7 +134,7 @@ ByteArray rsaCreateKey(uint bits)
 bool rsaCheckKey(const ByteArray & privateKey)
 {
     TRY {
-        DataSource_Memory ds((const byte *)privateKey.constData(), privateKey.size());
+        DataSource_Memory ds((const byte *)privateKey.constCharPtr(), privateKey.size());
         std::unique_ptr<Private_Key> pk(PKCS8::load_key(ds));
         AutoSeeded_RNG rng;
         return pk && pk->check_key(rng, true);
@@ -145,7 +145,7 @@ bool rsaCheckKey(const ByteArray & privateKey)
 void rsaPublicModulusExponent(const ByteArray & privateKey, ByteArray & modulus, ByteArray & publicExponent)
 {
     TRY {
-        DataSource_Memory ds((const byte *)privateKey.constData(), privateKey.size());
+        DataSource_Memory ds((const byte *)privateKey.constCharPtr(), privateKey.size());
         std::unique_ptr<Private_Key> pk(PKCS8::load_key(ds));
         if (pk) {
             const RSA_PublicKey * rsaKey = dynamic_cast<const RSA_PrivateKey *>(pk.get());
@@ -163,12 +163,12 @@ void rsaPublicModulusExponent(const ByteArray & privateKey, ByteArray & modulus,
 ByteArray rsaSign(const ByteArray & privateKey, const ByteArray & msg)
 {
     TRY {
-        DataSource_Memory ds((const byte *)privateKey.constData(), privateKey.size());
+        DataSource_Memory ds((const byte *)privateKey.constCharPtr(), privateKey.size());
         std::unique_ptr<Private_Key> pk(PKCS8::load_key(ds));
         if (pk) {
             AutoSeeded_RNG rng;
             PK_Signer signer(*pk, rng, "EMSA3(SHA-256)");
-            std::vector<byte> bytes = signer.sign_message((const byte *)msg.constData(), msg.size(), rng);
+            std::vector<byte> bytes = signer.sign_message((const byte *)msg.constCharPtr(), msg.size(), rng);
             return ByteArray((const char *)bytes.data(), (size_t)bytes.size());
         }
     } CATCH
@@ -178,7 +178,7 @@ ByteArray rsaSign(const ByteArray & privateKey, const ByteArray & msg)
 ByteArray x509CreateCertReq(const ByteArray & privateKey, const List<ByteArray> subjectAltNames)
 {
     TRY {
-        DataSource_Memory ds((const byte *)privateKey.constData(), privateKey.size());
+        DataSource_Memory ds((const byte *)privateKey.constCharPtr(), privateKey.size());
         std::unique_ptr<Private_Key> pk(PKCS8::load_key(ds));
         if (!pk) return ByteArray();
 
@@ -187,7 +187,7 @@ ByteArray x509CreateCertReq(const ByteArray & privateKey, const List<ByteArray> 
         Extensions extensions;
         {
             AlternativeName subjectAN;
-            for (const ByteArray & an : subjectAltNames) subjectAN.add_dns(std::string(an.constData(), an.size()));
+            for (const ByteArray & an : subjectAltNames) subjectAN.add_dns(std::string(an.constCharPtr(), an.size()));
             extensions.add(std::unique_ptr<Certificate_Extension>(new Cert_Extension::Subject_Alternative_Name(subjectAN)));
         }
 
@@ -222,7 +222,7 @@ ByteArray der2pem(const ByteArray & der, const ByteArray & label)
 {
     TRY {
         const std::string pem = PEM_Code::encode(
-            (const byte *)der.constData(), der.size(), std::string(label.constData(), label.size()));
+            (const byte *)der.constCharPtr(), der.size(), std::string(label.constCharPtr(), label.size()));
         return ByteArray(pem.c_str(), (size_t)pem.size());
     } CATCH
     return ByteArray();

@@ -18,7 +18,7 @@ namespace cflib::serialize {
 // returns -3 if too big length was found (max TLV size is 2^32 - 1)
 inline int32 getTLVLength(const ByteArray & data, uint64 & tagNo, int & tagLen, int & lengthSize)
 {
-    const int64 valueLen = impl::decodeTLV((const uint8 *)data.constData(), data.size(), tagNo, tagLen, lengthSize);
+    const int64 valueLen = impl::decodeTLV((const uint8 *)data.constCharPtr(), data.size(), tagNo, tagLen, lengthSize);
     if (valueLen < 0) return valueLen;
     if (valueLen > (int64)0x7FFFFFFF - tagLen - lengthSize) return -3;
     if ((int64)data.size() < tagLen + lengthSize + valueLen) return -1;
@@ -29,7 +29,7 @@ inline ByteArray emptyTag(uint64 tagNo)
 {
     const uint8 tagLen = impl::calcTagLen(tagNo);
     ByteArray rv(tagLen + 1, '\0');
-    impl::writeTagBytes((uint8 *)rv.data(), tagNo, false, tagLen);
+    impl::writeTagBytes((uint8 *)rv.constData(), tagNo, false, tagLen);
     return rv;
 }
 
@@ -60,7 +60,7 @@ inline T fromByteArray(const ByteArray & data, int tagLen, int lengthSize, int32
     if (valueLen == 0 && lengthSize == 2) return T();
     T retval;
     impl::BERDeserializerBase * dummy = 0;
-    impl::deserializeBER(retval, (const uint8 *)data.constData() + tagLen + lengthSize, valueLen, *dummy);
+    impl::deserializeBER(retval, (const uint8 *)data.constCharPtr() + tagLen + lengthSize, valueLen, *dummy);
     return retval;
 }
 
@@ -76,7 +76,7 @@ inline T fromByteArray(const ByteArray & data)
     if (valueLen == 0 && lengthSize == 2) return T();
     T retval;
     impl::BERDeserializerBase * dummy = 0;
-    impl::deserializeBER(retval, (const uint8 *)data.constData() + tagLen + lengthSize, valueLen, *dummy);
+    impl::deserializeBER(retval, (const uint8 *)data.constCharPtr() + tagLen + lengthSize, valueLen, *dummy);
     return retval;
 }
 

@@ -29,13 +29,13 @@ ByteArray fromStdVector(const std::vector<std::string> & vec)
 String TLSCertInfo::toString() const
 {
     String rv("subject: \"");
-    rv += String(subjectName.constData());
+    rv.append(subjectName.constCharPtr(), subjectName.size());
     rv += "\", issuer: \"";
-    rv += String(issuerName.constData());
+    rv.append(issuerName.constCharPtr(), issuerName.size());
     rv += "\", isCA: ";
-    rv += String::number((int32)isCA);
+    rv += String::fromInt((int32)isCA);
     rv += ", isTrusted: ";
-    rv += String::number((int32)isTrusted);
+    rv += String::fromInt((int32)isTrusted);
     return rv;
 }
 
@@ -161,7 +161,7 @@ uint TLSCredentials::addCerts(const ByteArray & certs, bool isTrustedCA)
 
     uint rv = 0;
     try {
-        DataSource_Memory ds((const byte *)certs.constData(), certs.size());
+        DataSource_Memory ds((const byte *)certs.constCharPtr(), certs.size());
         while (true) {
             X509_Certificate crt(ds);
             bool found = false;
@@ -183,7 +183,7 @@ uint TLSCredentials::addRevocationLists(const ByteArray & crls)
 
     uint rv = 0;
     try {
-        DataSource_Memory ds((const byte *)crls.constData(), crls.size());
+        DataSource_Memory ds((const byte *)crls.constCharPtr(), crls.size());
         while (true) {
             X509_CRL crl(ds);
             d->trustedCAs.add_crl(crl);
@@ -198,12 +198,12 @@ bool TLSCredentials::addPrivateKey(const ByteArray & privateKey, const ByteArray
     detach();
 
     TRY {
-        DataSource_Memory ds((const byte *)privateKey.constData(), privateKey.size());
-        std::unique_ptr<Private_Key> pk(PKCS8::load_key(ds, std::string(password.constData(), password.size())));
+        DataSource_Memory ds((const byte *)privateKey.constCharPtr(), privateKey.size());
+        std::unique_ptr<Private_Key> pk(PKCS8::load_key(ds, std::string(password.constCharPtr(), password.size())));
 
         // destroy data in parameters
-        for (size_t i = 0 ; i < privateKey.size() ; ++i) ((char *)privateKey.constData())[i] = 0;
-        for (size_t i = 0 ; i < password.size()   ; ++i) ((char *)password  .constData())[i] = 0;
+        for (size_t i = 0 ; i < privateKey.size() ; ++i) ((char *)privateKey.constCharPtr())[i] = 0;
+        for (size_t i = 0 ; i < password.size()   ; ++i) ((char *)password  .constCharPtr())[i] = 0;
 
         if (!pk) return false;
 
@@ -250,12 +250,12 @@ bool TLSCredentials::loadFromDir(const String & path)
 {
     detach();
 
-    DIR * dir = opendir(path.c_str());
+    DIR * dir = opendir(path.toStdString().c_str());
     if (!dir) return false;
     struct dirent * entry;
     while ((entry = readdir(dir)) != nullptr) {
         String name(entry->d_name);
-        String file = String(path.str() + "/" + name.str());
+        String file = path + "/" + name;
         if (name.endsWith("_crt.pem")) {
             ByteArray data = File::read(file);
             if (data.isEmpty()) {

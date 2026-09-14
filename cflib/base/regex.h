@@ -22,7 +22,7 @@ public:
         : re_(pattern), valid_(true) {}
 
     explicit Regex(const String & pattern)
-        : re_(pattern.str()), valid_(true) {}
+        : re_(pattern.toStdString()), valid_(true) {}
 
     // Case-insensitive constructor
     Regex(const char * pattern, bool caseInsensitive)
@@ -30,14 +30,14 @@ public:
         , valid_(true) {}
 
     Regex(const String & pattern, bool caseInsensitive)
-        : re_(pattern.str(), caseInsensitive ? std::regex::ECMAScript | std::regex::icase : std::regex::ECMAScript)
+        : re_(pattern.toStdString(), caseInsensitive ? std::regex::ECMAScript | std::regex::icase : std::regex::ECMAScript)
         , valid_(true) {}
 
     bool isValid() const { return valid_; }
 
     bool match(const String & subject) const {
         if (!valid_) return false;
-        return std::regex_search(subject.str(), re_);
+        return std::regex_search(subject.toStdString(), re_);
     }
 
     bool match(const ByteArray & subject) const {
@@ -68,16 +68,19 @@ public:
         friend class Regex;
     };
 
+    // libstdc++ has no std::regex overloads for string_view, so the
+    // subject is explicitly copied for the regex engine
     MatchResult matchResult(const String & subject) const {
         MatchResult result;
         if (!valid_) return result;
+        const std::string s = subject.toStdString();
         std::smatch m;
-        if (!std::regex_search(subject.str(), m, re_)) return result;
+        if (!std::regex_search(s, m, re_)) return result;
         result.matched_ = true;
-        for (auto & s : m) {
-            result.groups_.push_back(String(s.str()));
-            result.positions_.push_back((int)(s.first - subject.str().begin()));
-            result.lengths_.push_back((int)s.length());
+        for (auto & sub : m) {
+            result.groups_.push_back(String(sub.str()));
+            result.positions_.push_back((int)(sub.first - s.begin()));
+            result.lengths_.push_back((int)sub.length());
         }
         return result;
     }
@@ -86,7 +89,7 @@ public:
         MatchResult result;
         if (!valid_) return result;
         std::smatch m;
-        const std::string & s = subject.toStdString();
+        const std::string s = subject.toStdString();
         if (!std::regex_search(s, m, re_)) return result;
         result.matched_ = true;
         for (auto & sub : m) {
@@ -100,14 +103,14 @@ public:
     // Replace first match
     String replace(const String & subject, const String & replacement) const {
         if (!valid_) return subject;
-        return String(std::regex_replace(subject.str(), re_, replacement.str(),
+        return String(std::regex_replace(subject.toStdString(), re_, replacement.toStdString(),
             std::regex_constants::format_first_only));
     }
 
     // Replace all matches
     String replaceAll(const String & subject, const String & replacement) const {
         if (!valid_) return subject;
-        return String(std::regex_replace(subject.str(), re_, replacement.str()));
+        return String(std::regex_replace(subject.toStdString(), re_, replacement.toStdString()));
     }
 
 private:

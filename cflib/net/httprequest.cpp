@@ -51,7 +51,7 @@ public:
 
         // host
         request += "Host: " + url.host().toUtf8();
-        if (url.port() != -1) request += ":" + ByteArray::number((int64)url.port());
+        if (url.port() != -1) request += ":" + ByteArray::fromInt((int64)url.port());
         request += "\r\n";
 
         // login / password
@@ -65,7 +65,7 @@ public:
         if (postData.isNull()) {
             request += "\r\n";
         } else {
-            request += "Content-Length: " + ByteArray::number((int64)postData.size()) + "\r\n";
+            request += "Content-Length: " + ByteArray::fromInt((int64)postData.size()) + "\r\n";
             request += "Content-Type: " + contentType + "\r\n";
             request += "\r\n";
             request += postData;
@@ -110,7 +110,7 @@ protected:
             return;
         }
 
-        const size_t length = ByteArray(match.captured(1).c_str()).toInt();
+        const size_t length = match.captured(1).toULong();
         if (buf_.size() < headerEndPos + 4 + length) {
             startReadWatcher();
             return;
@@ -122,7 +122,7 @@ protected:
             return;
         }
 
-        const int status = ByteArray(match.captured(1).c_str()).toInt();
+        const int status = match.captured(1).toInt();
 
         if (parent_) parent_->reply(status, buf_.mid(headerEndPos + 4, length));
         gotReply_ = true;

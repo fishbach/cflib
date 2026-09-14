@@ -139,7 +139,7 @@ int showUsage(const ByteArray & executable)
         "  globalQz  double precision NOT NULL,\n"
         "  PRIMARY KEY (id)\n"
         ");\n",
-        executable.constData());
+        executable.constCharPtr());
     return 1;
 }
 

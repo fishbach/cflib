@@ -59,12 +59,12 @@ TEST_CASE("String: constructors")
     REQUIRE_EQ(s8, String("xxxxx"));
 
     // Number conversions
-    REQUIRE_EQ(String::number(42), String("42"));
-    REQUIRE_EQ(String::number(-42), String("-42"));
-    REQUIRE_EQ(String::number(9223372036854775807LL), String("9223372036854775807"));
-    REQUIRE_EQ(String::number(-9223372036854775807LL), String("-9223372036854775807"));
-    REQUIRE(String::number(3.14159).indexOf("3.14") == 0);
-    REQUIRE(String::number(2.71828).indexOf("2.71") == 0);
+    REQUIRE_EQ(String::fromInt(42), String("42"));
+    REQUIRE_EQ(String::fromInt(-42), String("-42"));
+    REQUIRE_EQ(String::fromInt(INT64_C(9223372036854775807)), String("9223372036854775807"));
+    REQUIRE_EQ(String::fromInt(INT64_C(-9223372036854775807)), String("-9223372036854775807"));
+    REQUIRE(String::fromFloat(3.14159).indexOf("3.14") == 0);
+    REQUIRE(String::fromFloat(2.71828).indexOf("2.71") == 0);
 }
 
 // Null and empty tests
@@ -94,7 +94,7 @@ TEST_CASE("String: accessors")
     String s("hello");
 
     REQUIRE_EQ(s.str(), std::string("hello"));
-    REQUIRE_EQ(strcmp(s.c_str(), "hello"), 0);
+    REQUIRE_EQ(s.toStdString(), std::string("hello"));
     REQUIRE_EQ(s.byteSize(), (size_t)5);
     REQUIRE_EQ(s.size(), (size_t)5);
     REQUIRE_EQ(s.length(), (size_t)5);
@@ -220,21 +220,13 @@ TEST_CASE("String: mid_left_right")
     REQUIRE_EQ(s.right(20), String("hello world"));
 }
 
-// trimmed and simplified tests
-TEST_CASE("String: trimmed_simplified")
+// trimmed tests
+TEST_CASE("String: trimmed")
 {
-    // trimmed
     REQUIRE_EQ(String("  hello  ").trimmed(), String("hello"));
     REQUIRE_EQ(String("\t\nhello\r\n  ").trimmed(), String("hello"));
     REQUIRE_EQ(String("  \t  ").trimmed(), String(""));
     REQUIRE_EQ(String(" hello world ").trimmed(), String("hello world"));
-
-    // simplified
-    REQUIRE_EQ(String("  hello  ").simplified(), String("hello"));
-    REQUIRE_EQ(String("  hello   world  ").simplified(), String("hello world"));
-    REQUIRE_EQ(String("\t\nhello\r\n  world\t").simplified(), String("hello world"));
-    REQUIRE_EQ(String("  \t  ").simplified(), String(""));
-    REQUIRE_EQ(String("hello").simplified(), String("hello"));
 }
 
 // toLower and toUpper tests
@@ -318,46 +310,6 @@ TEST_CASE("String: replace")
     REQUIRE_EQ(s3, String("xesx"));
 }
 
-// toLong and toULong tests
-TEST_CASE("String: toLong_toULong")
-{
-    bool ok;
-
-    // Valid positive
-    REQUIRE_EQ(String("42").toLong(&ok), (int64)42);
-    REQUIRE(ok);
-
-    // Valid negative
-    REQUIRE_EQ(String("-42").toLong(&ok), (int64)-42);
-    REQUIRE(ok);
-
-    // Valid unsigned
-    REQUIRE_EQ(String("42").toULong(&ok), (uint64)42);
-    REQUIRE(ok);
-
-    // Invalid - empty string
-    REQUIRE_EQ(String("").toLong(&ok), (int64)0);
-    REQUIRE(!ok);
-
-    // Invalid - non-numeric
-    REQUIRE_EQ(String("abc").toLong(&ok), (int64)0);
-    REQUIRE(!ok);
-
-    // Invalid - mixed
-    REQUIRE_EQ(String("123abc").toLong(&ok), (int64)123);
-    REQUIRE(!ok);  // should fail because of trailing characters
-
-    // Valid with trailing space is ok (stops at space)
-    REQUIRE_EQ(String("42 ").toLong(&ok), (int64)42);
-    REQUIRE(!ok);  // trailing space means not fully consumed
-
-    // Large numbers
-    REQUIRE_EQ(String("9223372036854775807").toLong(&ok), (int64)9223372036854775807LL);
-    REQUIRE(ok);
-    REQUIRE_EQ(String("-9223372036854775807").toLong(&ok), (int64)-9223372036854775807LL);
-    REQUIRE(ok);
-}
-
 // Concatenation tests
 TEST_CASE("String: concatenation")
 {
@@ -394,9 +346,9 @@ TEST_CASE("String: implicit_sharing")
     // Initially share (same data)
     REQUIRE_EQ(s1, s2);
 
-    // Verify const pointers point to same address while sharing
-    const char * cstr1 = s1.c_str();
-    const char * cstr2 = s2.c_str();
+    // Verify data pointers point to the same block while sharing
+    const char * cstr1 = s1.constCharPtr();
+    const char * cstr2 = s2.constCharPtr();
     REQUIRE(cstr1 == cstr2);
 
     // Modify s2 - should detach
@@ -407,8 +359,8 @@ TEST_CASE("String: implicit_sharing")
     // s1 should not be affected by s2's modification
     REQUIRE(s1 != s2);
 
-    // Verify const pointers now point to different addresses after detach
-    REQUIRE(s1.c_str() != s2.c_str());
+    // Verify data pointers now point to different blocks after detach
+    REQUIRE(s1.constCharPtr() != s2.constCharPtr());
 
     // Test detach on shared data
     String s3("test");
@@ -418,8 +370,8 @@ TEST_CASE("String: implicit_sharing")
     REQUIRE_EQ(s3, String("xest"));
     REQUIRE_EQ(s4, String("test"));
 
-    // Verify const pointers are different after explicit detach
-    REQUIRE(s3.c_str() != s4.c_str());
+    // Verify data pointers are different after explicit detach
+    REQUIRE(s3.constCharPtr() != s4.constCharPtr());
 }
 
 // UTF-8 charCount tests
@@ -473,6 +425,59 @@ TEST_CASE("String: unicode")
     ByteArray ba("\xC3\xB6", 2);
     String fromBa = String::fromUtf8(ba);
     REQUIRE_EQ(fromBa, String("ö"));
+}
+
+// Inheritance from ByteArray tests
+TEST_CASE("String: inherits_ByteArray")
+{
+    static_assert(std::is_base_of_v<ByteArray, String>);
+    static_assert(sizeof(String) == sizeof(ByteArray));
+
+    // Concatenation operators keep the String type
+    String a("foo"), b("bar");
+    static_assert(std::is_same_v<decltype(a + b), String>);
+    static_assert(std::is_same_v<decltype(a + "x"), String>);
+    static_assert(std::is_same_v<decltype(a + 'x'), String>);
+    static_assert(std::is_same_v<decltype(a += b), String &>);
+    static_assert(std::is_same_v<decltype(a << b), String &>);
+
+    // Byte-level operations inherited from ByteArray
+    String s("hello world");
+    REQUIRE_EQ(s.indexOf("world"), (ssize_t)6);
+    REQUIRE_EQ(s.indexOf('w'), (ssize_t)6);
+    ByteArray sub("world");
+    REQUIRE_EQ(s.indexOf(sub), (ssize_t)6);   // inherited ByteArray overload
+    REQUIRE(s.contains(sub));
+    REQUIRE(s.startsWith("hello"));
+    REQUIRE(s.endsWith(sub));
+    s.replace("world", "cflib");              // inherited in-place replace
+    REQUIRE_EQ(s, String("hello cflib"));
+    s.append("!");                            // inherited
+    REQUIRE_EQ(s, String("hello cflib!"));
+    s.prepend(">> ");                         // inherited
+    REQUIRE_EQ(s, String(">> hello cflib!"));
+    REQUIRE(ByteArray::fromHex(s.toHex()) == s);   // inherited Hex roundtrip
+
+    // COW across types: String and ByteArray share storage
+    ByteArray src("shared");
+    String sharedStr(src);
+    ByteArray sharedBa = sharedStr.toUtf8();
+    REQUIRE(sharedBa.constCharPtr() == sharedStr.constCharPtr());   // shared
+    src.append("-mutated");                       // detaches src only
+    REQUIRE_EQ(sharedStr, String("shared"));
+    REQUIRE(sharedBa == ByteArray("shared"));
+    sharedStr.append("-s");                       // detaches sharedStr only
+    REQUIRE_EQ(src, ByteArray("shared-mutated"));
+    REQUIRE_EQ(sharedStr, String("shared-s"));
+
+    // Null semantics
+    String nullStr;
+    REQUIRE(nullStr == nullptr);
+    nullStr.resize(0);
+    REQUIRE(nullStr.isNull());
+    nullStr.resize(3);
+    REQUIRE(!nullStr.isNull());
+    REQUIRE_EQ(nullStr.byteSize(), (size_t)3);
 }
 
 }

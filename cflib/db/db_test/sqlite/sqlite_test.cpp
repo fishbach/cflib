@@ -803,10 +803,13 @@ TEST_CASE("SQLite: transaction_blocking_commit")
     REQUIRE(sql.exec("INSERT INTO cflib_db_test (id) VALUES (10)"));
 
     std::thread thread([&sem, &threadResult]() {
-        SQLiteConn;
-        // Blocks on write lock while main is in transaction; after commit, unique violation.
-        threadResult = sql.exec("INSERT INTO cflib_db_test (id) VALUES (10)");
-        sem.release();
+        {
+            SQLiteConn;
+            // Blocks on write lock while main is in transaction; after commit, unique violation.
+            threadResult = sql.exec("INSERT INTO cflib_db_test (id) VALUES (10)");
+            sem.release();
+        }
+        SQLite::closeThreadConnection();
     });
 
     usleep(1000000); // 1 second: give thread time to start and block on write lock
@@ -833,10 +836,13 @@ TEST_CASE("SQLite: transaction_blocking_rollback")
     REQUIRE(sql.exec("INSERT INTO cflib_db_test (id) VALUES (12)"));
 
     std::thread thread([&sem, &threadResult]() {
-        SQLiteConn;
-        // Blocks on write lock while main is in transaction; after rollback, succeeds.
-        threadResult = sql.exec("INSERT INTO cflib_db_test (id) VALUES (12)");
-        sem.release();
+        {
+            SQLiteConn;
+            // Blocks on write lock while main is in transaction; after rollback, succeeds.
+            threadResult = sql.exec("INSERT INTO cflib_db_test (id) VALUES (12)");
+            sem.release();
+        }
+        SQLite::closeThreadConnection();
     });
 
     usleep(1000000); // 1 second

@@ -102,7 +102,7 @@ bool HeaderParser::getFunctions(const String & in, int start, int end, Serialize
         const int pos = searchPos + m.capturedStart(0) + m.capturedLength(0);
         const int paramEnd = findClosingBrace(in, pos, '(', ')');
         if (paramEnd == -1 || paramEnd >= end) {
-            lastError_ = "cannot find closing brace at line: " + String::number(lineNr(in, pos - 1));
+            lastError_ = "cannot find closing brace at line: " + String::fromInt(lineNr(in, pos - 1));
             return false;
         }
 
@@ -129,7 +129,7 @@ bool HeaderParser::getCfSignals(const String & in, int start, int end, Serialize
         int pos = searchPos + m.capturedStart(0) + m.capturedLength(0);
         int paramEnd = findClosingBrace(in, pos, '(', ')');
         if (paramEnd == -1 || paramEnd >= end) {
-            lastError_ = "cannot find closing brace at line: " + String::number(lineNr(in, pos - 1));
+            lastError_ = "cannot find closing brace at line: " + String::fromInt(lineNr(in, pos - 1));
             return false;
         }
 
@@ -140,7 +140,7 @@ bool HeaderParser::getCfSignals(const String & in, int start, int end, Serialize
         pos = paramEnd + m2.capturedStart(0) + m2.capturedLength(0);
         paramEnd = findClosingBrace(in, pos, '(', ')');
         if (paramEnd == -1 || paramEnd >= end) {
-            lastError_ = "cannot find closing brace at line: " + String::number(lineNr(in, pos - 1));
+            lastError_ = "cannot find closing brace at line: " + String::fromInt(lineNr(in, pos - 1));
             return false;
         }
 
@@ -233,7 +233,7 @@ bool HeaderParser::getMemberBlocks(const String & in, int start, int end, Serial
         ++pos;
         const int blockEnd = findClosingBrace(in, pos, '{', '}');
         if (blockEnd == -1 || blockEnd >= end) {
-            lastError_ = "cannot find closing brace at line: " + String::number(lineNr(in, pos - 1));
+            lastError_ = "cannot find closing brace at line: " + String::fromInt(lineNr(in, pos - 1));
             return false;
         }
 
@@ -318,7 +318,7 @@ bool HeaderParser::getClasses(const String & in, int start, int end, SerializeTy
         const int afterMatch = pos + m.capturedLength(0);
         const int blockEnd = findClosingBrace(in, afterMatch, '{', '}');
         if (blockEnd == -1 || blockEnd >= end) {
-            lastError_ = "cannot find closing brace at line: " + String::number(lineNr(in, afterMatch - 1));
+            lastError_ = "cannot find closing brace at line: " + String::fromInt(lineNr(in, afterMatch - 1));
             return false;
         }
 
@@ -433,11 +433,11 @@ bool HeaderParser::removeCommentsAndStringContents(String & header)
     }
 
     if (state == State::InSingleQuote || state == State::InDoubleQuote) {
-        lastError_ = "cannot find closing quotes at line: " + String::number((int)openLine);
+        lastError_ = "cannot find closing quotes at line: " + String::fromInt((int)openLine);
         return false;
     }
     if (state == State::InBlockComment) {
-        lastError_ = "cannot find closing comment at line: " + String::number((int)openLine);
+        lastError_ = "cannot find closing comment at line: " + String::fromInt((int)openLine);
         return false;
     }
 

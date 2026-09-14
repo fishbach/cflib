@@ -19,7 +19,7 @@ ByteArray dateTimeForHTTP(const DateTime & dateTime);
 
 uint32 calcCRC32Raw(uint32 crc, const char * data, uint64 size);
 inline uint32 calcCRC32(const char * data, uint64 size) { return calcCRC32Raw(0xffffffffL, data, size) ^ 0xffffffffL; }
-inline uint32 calcCRC32(const ByteArray & data) { return calcCRC32(data.constData(), data.size()); }
+inline uint32 calcCRC32(const ByteArray & data) { return calcCRC32(data.constCharPtr(), data.size()); }
 
 ByteArray unsafeRandom(uint size);
 

@@ -68,7 +68,7 @@ public:
 
     int64 write(const ByteArray & data) {
         if (!fp_) return -1;
-        return (int64)fwrite(data.constData(), 1, data.size(), fp_);
+        return (int64)fwrite(data.constCharPtr(), 1, data.size(), fp_);
     }
     int64 write(const char * data, size_t len) {
         if (!fp_) return -1;
@@ -94,7 +94,7 @@ public:
         if (perms & WriteGroup) m |= S_IWGRP;
         if (perms & ReadOther)  m |= S_IROTH;
         if (perms & WriteOther) m |= S_IWOTH;
-        return chmod(path_.c_str(), m) == 0;
+        return chmod(path_.toStdString().c_str(), m) == 0;
     }
 
     String fileName() const { return path_; }
@@ -102,7 +102,7 @@ public:
 
     static bool exists(const String & path) {
         struct stat st;
-        return stat(path.c_str(), &st) == 0;
+        return stat(path.toStdString().c_str(), &st) == 0;
     }
 
     static void registerData(const String & file, const uint8 * data, size_t size);

@@ -42,7 +42,7 @@ void KafkaConnector::MetadataConnection::closed()
             for (const auto & [partitionId, nodeInfo] : partMap) {
                 if (isFirst) isFirst = false;
                 else         partitionStr += ' ';
-                partitionStr += ByteArray::number(partitionId);
+                partitionStr += ByteArray::fromInt(partitionId);
             }
             logInfo("found topic \"%1\" (partitions: %2)", topic, partitionStr);
         }

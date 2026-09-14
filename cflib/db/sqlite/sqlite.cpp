@@ -57,7 +57,7 @@ public:
             return;
         }
 
-        int rc = sqlite3_open(connectionParameter_.c_str(), &conn);
+        int rc = sqlite3_open(connectionParameter_.constCharPtr(), &conn);
         if (rc != SQLITE_OK) {
             logWarn("cannot open database '%1': %2", connectionParameter_, sqlite3_errmsg(conn));
             sqlite3_close(conn);
@@ -96,13 +96,13 @@ bool SQLite::setParameter(const String & connectionParameterRef, const String & 
 
     String connectionParameter = connectionParameterRef;
     if (!overrideEnvVar.isEmpty()) {
-        const char * envVal = getenv(overrideEnvVar.c_str());
+        const char * envVal = getenv(overrideEnvVar.constCharPtr());
         if (envVal) connectionParameter = String(envVal);
     }
 
     // test-open the database
     sqlite3 * testConn = nullptr;
-    int rc = sqlite3_open(connectionParameter.c_str(), &testConn);
+    int rc = sqlite3_open(connectionParameter.constCharPtr(), &testConn);
     if (rc != SQLITE_OK) {
         logWarn("cannot open database '%1': %2", connectionParameter, sqlite3_errmsg(testConn));
         sqlite3_close(testConn);
@@ -288,7 +288,7 @@ bool SQLite::exec(const String & query)
 
     const ByteArray utf8 = query.toUtf8();
     sqlite3_stmt * newStmt = nullptr;
-    int rc = sqlite3_prepare_v2(td_.conn, utf8.constData(), utf8.size(), &newStmt, nullptr);
+    int rc = sqlite3_prepare_v2(td_.conn, utf8.constCharPtr(), utf8.size(), &newStmt, nullptr);
     if (rc != SQLITE_OK) {
         cflib::util::Log(lfi_, line_ ? line_ : __LINE__, LogCat::Debug | LogCat::Db)("query: %1", utf8);
         cflib::util::Log(lfi_, line_ ? line_ : __LINE__, LogCat::Warn  | LogCat::Db)(
@@ -313,9 +313,13 @@ bool SQLite::exec(const String & query)
 
 bool SQLite::execMultiple(const String & query)
 {
+    if (query.isNull()) {
+        cflib::util::Log(lfi_, line_ ? line_ : __LINE__, LogCat::Warn  | LogCat::Db)("execMultiple called with null query");
+        return false;
+    }
     const ByteArray utf8 = query.toUtf8();
     char * errMsg = nullptr;
-    int rc = sqlite3_exec(td_.conn, utf8.constData(), nullptr, nullptr, &errMsg);
+    int rc = sqlite3_exec(td_.conn, utf8.constCharPtr(), nullptr, nullptr, &errMsg);
     if (rc != SQLITE_OK) {
         cflib::util::Log(lfi_, line_ ? line_ : __LINE__, LogCat::Debug | LogCat::Db)("query: %1", utf8);
         cflib::util::Log(lfi_, line_ ? line_ : __LINE__, LogCat::Warn  | LogCat::Db)(
@@ -355,7 +359,7 @@ bool SQLite::exec(uint keepFields)
         }
 
         sqlite3_stmt * newStmt = nullptr;
-        int rc = sqlite3_prepare_v2(td_.conn, lastQuery_.constData(), lastQuery_.size(),
+        int rc = sqlite3_prepare_v2(td_.conn, lastQuery_.constCharPtr(), lastQuery_.size(),
                                     &newStmt, nullptr);
         if (rc != SQLITE_OK) {
             cflib::util::Log(lfi_, line_ ? line_ : __LINE__, LogCat::Debug | LogCat::Db)("query: %1", lastQuery_);
@@ -452,7 +456,7 @@ SQLite & SQLite::operator<<(const ByteArray & val)
         setParam(Param_null, 0, true);
     } else {
         uint8 * dest = setParam(Param_blob, val.size(), false);
-        if (dest) memcpy(dest, val.constData(), val.size());
+        if (dest) memcpy(dest, val.constCharPtr(), val.size());
     }
     return *this;
 }
@@ -464,7 +468,7 @@ SQLite & SQLite::operator<<(const String & val)
     } else {
         const ByteArray utf8 = val.toUtf8();
         uint8 * dest = setParam(Param_text, utf8.size(), false);
-        if (dest) memcpy(dest, utf8.constData(), utf8.size());
+        if (dest) memcpy(dest, utf8.constCharPtr(), utf8.size());
     }
     return *this;
 }
@@ -653,7 +657,7 @@ bool SQLite::bindAllParams()
     sqlite3_stmt * stmt = (sqlite3_stmt *)preparedStmt_;
     sqlite3_clear_bindings(stmt);
 
-    const char * pos = prepareData_.constData();
+    const char * pos = prepareData_.constCharPtr();
     for (int i = 0; i < prepareParamCount_; ++i) {
         int idx = i + 1;  // SQLite parameters are 1-indexed
         if (prepareParamIsNull_[i]) {
@@ -703,7 +707,7 @@ uint8 * SQLite::setParam(int type, int size, bool isNull)
 
     const int oldSize = prepareData_.size();
     prepareData_.resize(oldSize + size);
-    return (uint8 *)prepareData_.constData() + oldSize;
+    return prepareData_.data() + oldSize;
 }
 
 } // namespace

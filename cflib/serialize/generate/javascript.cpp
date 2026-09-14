@@ -38,7 +38,7 @@ String getParameters(const SerializeFunctionTypeInfo & func)
     for (const auto & p : func.parameters) {
         if (isFirst) isFirst = false;
         else js << ", ";
-        if (p.name.isEmpty()) js << "__param_" << String::number(++id);
+        if (p.name.isEmpty()) js << "__param_" << String::fromInt(++id);
         else js << p.name;
     }
     return js;
@@ -98,7 +98,7 @@ String getSerializeParameters(const SerializeFunctionTypeInfo & func)
     int id = 0;
     for (const auto & p : func.parameters) {
         String name = p.name;
-        if (name.isEmpty()) name << "__param_" << String::number(++id);
+        if (name.isEmpty()) name << "__param_" << String::fromInt(++id);
         js << getSerializeCode(p.type, name);
     }
     return js;
@@ -325,7 +325,7 @@ String generateForClass(const SerializeTypeInfo & ti)
     if (base.isEmpty()) js << "__inherit.Base";
     else js << base;
     js << ");\n";
-    if (ti.classId != 0) js << typeName << ".__classId = " << String::number(ti.classId) << ";\n";
+    if (ti.classId != 0) js << typeName << ".__classId = " << String::fromInt(ti.classId) << ";\n";
     js << typeName << ".prototype.__init = function(param) {\n";
     if (base.isEmpty()) js << "    " << typeName << ".__super.apply(this, arguments);\n";
     js <<

@@ -87,10 +87,10 @@ bool TLSServer::received(const ByteArray & encrypted, ByteArray & plain, ByteArr
     impl_->outgoingEncryptedPtr = &sendBack;
     impl_->incomingPlainPtr     = &plain;
     TRY {
-        impl_->server.received_data((const byte *)encrypted.constData(), encrypted.size());
+        impl_->server.received_data((const byte *)encrypted.constCharPtr(), encrypted.size());
         ByteArray & tmpBuf = impl_->outgoingPlainTmpBuf;
         if (!tmpBuf.isEmpty() && impl_->isReady && !impl_->hasError) {
-            impl_->server.send((const byte *)tmpBuf.constData(), tmpBuf.size());
+            impl_->server.send((const byte *)tmpBuf.constCharPtr(), tmpBuf.size());
             tmpBuf.clear();
         }
         return !impl_->hasError;
@@ -104,7 +104,7 @@ bool TLSServer::send(const ByteArray & plain, ByteArray & encrypted)
     if (impl_->hasError) return false;
     impl_->outgoingEncryptedPtr = &encrypted;
     TRY {
-        if (impl_->isReady) impl_->server.send((const byte *)plain.constData(), plain.size());
+        if (impl_->isReady) impl_->server.send((const byte *)plain.constCharPtr(), plain.size());
         else                impl_->outgoingPlainTmpBuf.append(plain);
         return !impl_->hasError;
     } CATCH

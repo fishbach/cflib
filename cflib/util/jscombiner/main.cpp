@@ -224,11 +224,11 @@ int main(int argc, char * argv[])
     Arg    fileName(false                           ); cmdLine << fileName;
     if (!cmdLine.parse() || help.isSet()) return usage(argv[0]);
 
-    std::string mainFile(fileName.value().constData(), fileName.value().size());
+    std::string mainFile(fileName.value().constCharPtr(), fileName.value().size());
     if (access(mainFile.c_str(), R_OK) != 0) return usage(argv[0]);
 
     for (const auto & a : exclude.values())
-        excludes.insert(std::string(a.constData(), a.size()));
+        excludes.insert(std::string(a.constCharPtr(), a.size()));
 
     size_t slashPos = mainFile.rfind('/');
     if (slashPos != std::string::npos) basePath = mainFile.substr(0, slashPos + 1);

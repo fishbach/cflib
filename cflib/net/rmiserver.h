@@ -48,7 +48,7 @@ public:
         const ByteArray & data, int tagLen, int lengthSize, int32 valueLen,
         const C & connData, uint connDataId, uint connId) override
     {
-        handleCall(data, (const uint8 *)data.constData() + tagLen + lengthSize, valueLen, connData, connDataId, connId);
+        handleCall(data, (const uint8 *)data.constCharPtr() + tagLen + lengthSize, valueLen, connData, connDataId, connId);
     }
 
     void connDataChange(const C &, const C & newConnData, uint connDataId, const Set<uint> & connIds) override
@@ -93,7 +93,7 @@ public:
         const ByteArray & data, int tagLen, int lengthSize, int32 valueLen,
         uint connDataId, uint connId) override
     {
-        handleCall(data, (const uint8 *)data.constData() + tagLen + lengthSize, valueLen, connDataId, connId);
+        handleCall(data, (const uint8 *)data.constCharPtr() + tagLen + lengthSize, valueLen, connDataId, connId);
     }
 
     void connectionClosed(uint connDataId, uint connId, bool isLast) override

@@ -25,7 +25,7 @@ ByteArray createHttpRequest(const ByteArray & method, const Url & url,
 
     // host
     rv << "Host: " << url.host().toUtf8();
-    if (url.port() != -1) rv << ":" << ByteArray::number(url.port());
+    if (url.port() != -1) rv << ":" << ByteArray::fromInt(url.port());
     rv << "\r\n";
 
     // login / password
@@ -47,7 +47,7 @@ ByteArray createHttpRequest(const ByteArray & method, const Url & url,
         rv << "\r\n";
     } else {
         rv
-            << "Content-Length: " << ByteArray::number(postData.size()) << "\r\n"
+            << "Content-Length: " << ByteArray::fromInt(postData.size()) << "\r\n"
             << "\r\n"
             << postData;
     }
@@ -154,7 +154,7 @@ bool readLength(const ByteArray & frame,
     const int frameSize = frame.size();
     if (frameSize < 2) return false;
 
-    const uint8 * const data = (const uint8 *)frame.constData();
+    const uint8 * const data = (const uint8 *)frame.constCharPtr();
     const uint8 d0 = data[0];
     const uint8 d1 = data[1];
 
@@ -223,11 +223,11 @@ void writeLength(ByteArray & frame,
             break;
         case 4:    // payloadLength < 0x10000
             frame[1] = 126 | (mask ? Mask : 0);
-            util::writeBE16((uint8 *)(frame.data() + 2), payloadSize);
+            util::writeBE16((uint8 *)(frame.constData() + 2), payloadSize);
             break;
         case 10:   // payloadLength >= 0x10000
             frame[1] = 127 | (mask ? Mask : 0);
-            util::writeBE16((uint8 *)(frame.data() + 2), payloadSize);
+            util::writeBE16((uint8 *)(frame.constData() + 2), payloadSize);
             break;
         default:   // Invalid
             logWarn("Invalid lengthSize %1 of frame with payload size %2", lengthSize, payloadSize);
@@ -249,7 +249,7 @@ void maskPayload(ByteArray & frame, uint32 key, uint32 offsetFront)
 
     // endianness is not relevant here
     const uint8 * keyBytes = (const uint8 *)&key;
-    uint8 * data = (uint8 *)frame.data();
+    uint8 * data = (uint8 *)frame.constData();
     if (offsetFront > 0) {
         for (int i = 0 ; i < (int)(frame.size() - offsetFront - 4) ; ++i) data[offsetFront + 4 + i] ^= keyBytes[i % 4];
         for (int i = 0 ; i < 4 ; ++i) data[offsetFront + i] = keyBytes[i];
@@ -262,7 +262,7 @@ void maskPayload(ByteArray & frame, uint32 key, uint32 offsetFront)
 void unmaskPayload(ByteArray & payload)
 {
     // endianness is not relevant here
-    uint8 * keyBytes = (uint8 *)payload.data();
+    uint8 * keyBytes = (uint8 *)payload.constData();
     uint8 * data = keyBytes + 4;
     int len = payload.size() - 4;
     for (int i = 0 ; i < len ; ++i) data[i] ^= keyBytes[i % 4];

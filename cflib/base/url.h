@@ -22,7 +22,7 @@ public:
     }
 
     Url(const char * url) : port_(-1) {
-        if (url) parse(std::string(url));
+        if (url) parse(std::string_view(url));
     }
 
     String scheme() const { return scheme_; }
@@ -35,12 +35,13 @@ public:
     bool     hasQuery() const { return !query_.isEmpty(); }
 
 private:
-    void parse(const std::string & url) {
+    void parse(std::string_view url) {
+        constexpr size_t npos = std::string_view::npos;
         size_t pos = 0;
 
         // scheme
         size_t schemeEnd = url.find("://");
-        if (schemeEnd != std::string::npos) {
+        if (schemeEnd != npos) {
             scheme_ = String(url.substr(0, schemeEnd));
             pos = schemeEnd + 3;
         }
@@ -49,48 +50,48 @@ private:
         size_t pathStart = url.find('/', pos);
         size_t queryStart = url.find('?', pos);
         size_t authorityEnd = std::min(
-            pathStart  != std::string::npos ? pathStart  : url.size(),
-            queryStart != std::string::npos ? queryStart : url.size()
+            pathStart  != npos ? pathStart  : url.size(),
+            queryStart != npos ? queryStart : url.size()
         );
-        std::string authority = url.substr(pos, authorityEnd - pos);
+        std::string_view authority = url.substr(pos, authorityEnd - pos);
 
         // userinfo
         size_t atPos = authority.find('@');
         size_t hostStart = 0;
-        if (atPos != std::string::npos) {
+        if (atPos != npos) {
             userInfo_ = String(authority.substr(0, atPos));
             hostStart = atPos + 1;
         }
 
         // host:port
-        std::string hostPort = authority.substr(hostStart);
+        std::string_view hostPort = authority.substr(hostStart);
         size_t colonPos;
         if (!hostPort.empty() && hostPort[0] == '[') {
             // IPv6
             size_t bracket = hostPort.find(']');
-            if (bracket != std::string::npos) {
+            if (bracket != npos) {
                 host_ = String(hostPort.substr(1, bracket - 1));
                 if (bracket + 1 < hostPort.size() && hostPort[bracket + 1] == ':')
-                    port_ = std::atoi(hostPort.c_str() + bracket + 2);
+                    port_ = std::atoi(hostPort.data() + bracket + 2);
             }
         } else {
             colonPos = hostPort.rfind(':');
-            if (colonPos != std::string::npos) {
+            if (colonPos != npos) {
                 host_ = String(hostPort.substr(0, colonPos));
-                port_ = std::atoi(hostPort.c_str() + colonPos + 1);
+                port_ = std::atoi(hostPort.data() + colonPos + 1);
             } else {
                 host_ = String(hostPort);
             }
         }
 
         // path
-        if (pathStart != std::string::npos) {
-            size_t pEnd = queryStart != std::string::npos ? queryStart : url.size();
+        if (pathStart != npos) {
+            size_t pEnd = queryStart != npos ? queryStart : url.size();
             path_ = String(url.substr(pathStart, pEnd - pathStart));
         }
 
         // query
-        if (queryStart != std::string::npos) {
+        if (queryStart != npos) {
             query_ = String(url.substr(queryStart + 1));
         }
     }

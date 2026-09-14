@@ -110,7 +110,7 @@ inline void writeCategory(char * dest, LogCategory cat)
 // allow only ASCII for security reasons
 inline void writeMsg(ByteArray & out, const ByteArray & msg)
 {
-    const char * start = msg.constData();
+    const char * start = msg.constCharPtr();
     const char * p = start;
     for (size_t i = 0 ; i < msg.length() ; ++i) {
         const uint8 c = (uint8)*p;
@@ -134,7 +134,7 @@ LogCategory Log::logLevelCategory_ = 0;
 void Log::start(const String & fileName)
 {
     if (active) {
-        std::cerr << std::format("logging already started with log file: {}\n", file.fileName().c_str());
+        std::cerr << std::format("logging already started with log file: {}\n", file.fileName().toStdString());
         return;
     }
 
@@ -143,7 +143,7 @@ void Log::start(const String & fileName)
     } else {
         file.setFileName(fileName);
         if (!file.open(File::WriteOnly | File::Append)) {
-            std::cerr << std::format("could not open log file: {} ({})\n", fileName.c_str(), file.errorString().c_str());
+            std::cerr << std::format("could not open log file: {} ({})\n", fileName.toStdString(), file.errorString().toStdString());
             return;
         }
         file.setPermissions(File::ReadOwner | File::WriteOwner | File::ReadGroup);
@@ -166,7 +166,7 @@ void Log::writeLog(const char * filename, int lineNo, LogCategory category, cons
     ByteArray line;
     line.reserve(256);
     line.resize(54);
-    char * pos = (char *)line.constData();    // constData for performance
+    char * pos = line.charPtr();
 
     // bug in gcc
     #pragma GCC diagnostic push

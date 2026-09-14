@@ -26,7 +26,7 @@ bool File::open(int mode)
     else if ((mode & Truncate) && (mode & WriteOnly)) m = "wb";
     else if (mode & WriteOnly)                        m = "wb";
     else                                              m = "rb";
-    fp_ = fopen(path_.c_str(), m);
+    fp_ = fopen(path_.toStdString().c_str(), m);
     return fp_ != nullptr;
 }
 

@@ -38,7 +38,7 @@ int showUsage(const ByteArray & executable)
         "  -h, --help   => this help\n"
         "  -x, --hex    => input is hex encoded\n"
         "  -b, --base64 => input is Base64 encoded\n",
-        executable.constData());
+        executable.toStdStringView());
     return 1;
 }
 
@@ -49,7 +49,7 @@ void show(const ByteArray & data, bool hex, bool)
         hex ? ByteArray::fromHex(data) :
         data;
 
-    std::cout << std::format("{}\n", printAsn1(rawData).c_str());
+    std::cout << std::format("{}\n", printAsn1(rawData).toStdString());
 }
 
 }
@@ -62,7 +62,7 @@ int main(int argc, char *argv[])
     Option base64Opt('b', "base64"); cmdLine << base64Opt;
     if (!cmdLine.parse() || help.isSet() || (hexOpt.isSet() && base64Opt.isSet())) return showUsage(cmdLine.executable());
 
-    const ByteArray buf(0x10000, '\0');
+    ByteArray buf(0x10000, '\0');
     ByteArray data;
 
     struct timeval tv;
@@ -80,13 +80,13 @@ int main(int argc, char *argv[])
             return 1;
         }
         if (retval > 0) {
-            int64 count = read(0, (void *)buf.constData(), buf.size());
+            int64 count = read(0, buf.data(), buf.size());
             if (count == 0) {
                 // eof
                 if (!data.isEmpty()) show(data, hexOpt.isSet(), base64Opt.isSet());
                 break;
             }
-            data.append(buf.constData(), count);
+            data.append(buf.constCharPtr(), count);
         } else if (!data.isEmpty()) {
             // timeout
             show(data, hexOpt.isSet(), base64Opt.isSet());

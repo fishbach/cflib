@@ -206,7 +206,7 @@ private:
             return;
         }
 
-        const uint8 * valuePtr = (const uint8 *)data.constData() + tagLen + lengthSize;
+        const uint8 * valuePtr = (const uint8 *)data.constCharPtr() + tagLen + lengthSize;
 
         switch (tag) {
             case 1: {

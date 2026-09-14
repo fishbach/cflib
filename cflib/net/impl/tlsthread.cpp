@@ -14,7 +14,7 @@
 namespace cflib::net::impl {
 
 TLSThread::TLSThread(TCPManagerImpl & impl, uint no, uint total) :
-    ThreadVerify(String("TLSThread ") + String::number(no) + "/" + String::number(total), ThreadVerify::Worker),
+    ThreadVerify(String("TLSThread ") + String::fromInt(no) + "/" + String::fromInt(total), ThreadVerify::Worker),
     impl_(impl)
 {
 }
