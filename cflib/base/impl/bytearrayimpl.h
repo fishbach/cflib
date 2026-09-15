@@ -10,6 +10,7 @@
 #include <cflib/base/concurrent.h>
 
 #include <cstring>
+#include <exception>
 
 namespace cflib::base {
 

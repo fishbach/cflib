@@ -93,6 +93,7 @@ public:
     template<typename... A>
     inline R operator()(P... p, A...) const
     {
+        if (!listener_) return {};
         return listener_(std::forward<P>(p)...);
     }
 
