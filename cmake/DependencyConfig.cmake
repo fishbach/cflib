@@ -4,6 +4,8 @@
 #
 # Licensed under the MIT License.
 
+list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/find")
+
 # Botan
 if(NOT ONLY_GENERATORS)
     find_package(

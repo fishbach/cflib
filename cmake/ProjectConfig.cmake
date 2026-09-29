@@ -23,12 +23,13 @@ if(NOT cf_config_file_path)
 endif()
 
 # config options
-option(ENABLE_CCACHE   "enable ccache"                    ON)
-option(ENABLE_PCH      "enable precompiled headers (PCH)" ON)
-option(ENABLE_PSQL     "enable PostgreSQL"                OFF)
-option(ENABLE_SQLITE   "enable SQLite"                    OFF)
-option(ONLY_GENERATORS "only generators are build"        OFF)
-set(GENERATORS_BIN_DIR "" CACHE PATH "Use generators from given directory. Useful for cross compilation.")
+option(USE_FETCHCONTENT "use FetchContent for required libs" ON)
+option(ENABLE_CCACHE    "enable ccache"                      ON)
+option(ENABLE_PCH       "enable precompiled headers (PCH)"   ON)
+option(ENABLE_PSQL      "enable PostgreSQL"                  OFF)
+option(ENABLE_SQLITE    "enable SQLite"                      OFF)
+option(ONLY_GENERATORS  "only generators are build"          OFF)
+set(GENERATORS_BIN_DIR  "" CACHE PATH "Use generators from given directory. Useful for cross compilation.")
 
 # C++20
 set(CMAKE_CXX_STANDARD 20)
@@ -87,7 +88,7 @@ if(BUILD_TESTS)
 endif()
 
 # cmake modules
-list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_LIST_DIR})
+list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}")
 include(Build)
 include(Util)
 
