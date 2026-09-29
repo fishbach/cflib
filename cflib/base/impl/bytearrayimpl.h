@@ -295,7 +295,7 @@ inline ByteArray & ByteArray::insert(size_t pos, const char * s, size_t len) {
 
 inline ByteArray ByteArray::mid(size_t pos, ssize_t len) const {
     if (pos >= d->size) return ByteArray();
-    size_t avail = d->size - pos;
+    ssize_t avail = d->size - pos;
     return ByteArray(d->data() + pos, len == -1 || len > avail ? avail : len);
 }
 inline ByteArray ByteArray::left(size_t n) const  { return mid(0, n); }
