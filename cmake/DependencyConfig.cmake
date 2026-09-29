@@ -25,6 +25,14 @@ find_package(ZLIB REQUIRED)
 # Threads
 find_package(Threads REQUIRED)
 
+# SQLite
+if(ENABLE_SQLITE)
+    find_package(
+        Sqlite 3.51.3
+        REQUIRED
+    )
+endif()
+
 # doctest
 if(BUILD_TESTS)
     find_package(

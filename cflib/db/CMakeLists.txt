@@ -21,21 +21,7 @@ if(ENABLE_PSQL)
 endif()
 
 if(ENABLE_SQLITE)
-    include(FetchContent)
-    FetchContent_Declare(
-        sqlite3_src
-        DOWNLOAD_EXTRACT_TIMESTAMP TRUE
-        URL https://sqlite.org/2026/sqlite-amalgamation-3510300.zip
-    )
-    FetchContent_MakeAvailable(sqlite3_src)
-
-    target_sources(cflib_db PRIVATE ${sqlite3_src_SOURCE_DIR}/sqlite3.c)
-    set_source_files_properties(${sqlite3_src_SOURCE_DIR}/sqlite3.c PROPERTIES
-        SKIP_PRECOMPILE_HEADERS ON
-        COMPILE_OPTIONS         "-Wno-cast-align;-Wno-double-promotion;-Wno-null-dereference"
-    )
-    target_include_directories(cflib_db PRIVATE ${sqlite3_src_SOURCE_DIR})
-    target_link_libraries(cflib_db PRIVATE Threads::Threads ${CMAKE_DL_LIBS})
+    target_link_libraries(cflib_db PRIVATE cflib_sqlite)
 
     cf_find_sources(SQLITE_SOURCES sqlite)
     target_sources(cflib_db PRIVATE ${SQLITE_SOURCES})
