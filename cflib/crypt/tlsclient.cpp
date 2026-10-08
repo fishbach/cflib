@@ -84,7 +84,8 @@ public:
             if (usage != Usage_Type::TLS_SERVER_AUTH || cert_chain.empty()) throw e;
 
             const X509_Certificate & crt = cert_chain[0];
-            if (!crt.is_self_signed() || !crt.matches_dns_name(hostname)) throw e;
+            const std::optional<DNSName> dnsName = DNSName::from_string(hostname);
+            if (!crt.is_self_signed() || !dnsName || !crt.matches_dns_name(*dnsName)) throw e;
 
             for (Certificate_Store * cs : trusted_roots) {
                 std::optional<X509_Certificate> trusted = cs->find_cert(crt.subject_dn(), crt.subject_key_id());

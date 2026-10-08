@@ -58,7 +58,8 @@ public:
         CF_UNUSED(cert_signature_schemes);
         if (type != "tls-server") return std::vector<X509_Certificate>();
         for (const CertsPrivKey & ck : chains) {
-            if (context != "" && !ck.certs[0].matches_dns_name(context)) continue;
+            const std::optional<DNSName> dnsName = DNSName::from_string(context);
+            if (context != "" && (!dnsName || !ck.certs[0].matches_dns_name(*dnsName))) continue;
             for (const std::string & kt : cert_key_types) {
                 if (kt == ck.privateKey->algo_name()) return ck.certs;
             }

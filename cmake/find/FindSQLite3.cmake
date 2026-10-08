@@ -4,7 +4,7 @@
 #
 # Licensed under the MIT License.
 
-set(sqlite_version_year 2024)
+set(sqlite_version_year 2026)
 
 # format version for download (3.51.3 -> 3510300)
 string(REPLACE "." ";" sqlite_version_parts "${SQLite3_FIND_VERSION}")
@@ -41,7 +41,6 @@ find_package_handle_standard_args(SQLite3 DEFAULT_MSG sqlite_src_SOURCE_DIR)
 add_library(cflib_sqlite ${sqlite_src_SOURCE_DIR}/sqlite3.c)
 target_compile_options(cflib_sqlite PRIVATE
     -Wno-cast-align
-    -Wno-discarded-qualifiers
     -Wno-double-promotion
     -Wno-null-dereference
 )

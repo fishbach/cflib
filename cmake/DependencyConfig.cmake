@@ -10,11 +10,10 @@ endif()
 
 # Botan
 if(NOT ONLY_GENERATORS)
-    find_package(
-        Botan 3.10.0
-        REQUIRED
-    )
-    if(NOT USE_FETCHCONTENT)
+    if(USE_FETCHCONTENT)
+        find_package(Botan 3.13.0 REQUIRED)
+    else()
+        find_package(Botan 3.10.0 REQUIRED)
         add_library(cflib_botan ALIAS botan::botan)
     endif()
 endif()
@@ -32,20 +31,20 @@ find_package(Threads REQUIRED)
 
 # SQLite
 if(ENABLE_SQLITE)
-    find_package(
-        SQLite3 3.46.1
-        REQUIRED
-    )
-    if(NOT USE_FETCHCONTENT)
+    if(USE_FETCHCONTENT)
+        find_package(SQLite3 3.53.4 REQUIRED)
+    else()
+        find_package(SQLite3 3.46.1 REQUIRED)
         add_library(cflib_sqlite ALIAS SQLite::SQLite3)
     endif()
 endif()
 
 # doctest
 if(BUILD_TESTS)
-    find_package(
-        doctest 2.4.12
-        REQUIRED
-    )
+    if(USE_FETCHCONTENT)
+        find_package(doctest 2.5.3 REQUIRED)
+    else()
+        find_package(doctest 2.4.12 REQUIRED)
+    endif()
     include(doctest)
 endif()
