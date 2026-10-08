@@ -21,9 +21,8 @@ if(ENABLE_PSQL)
 endif()
 
 if(ENABLE_SQLITE)
-    target_link_libraries(cflib_db PRIVATE cflib_sqlite)
-
     cf_find_sources(SQLITE_SOURCES sqlite)
     target_sources(cflib_db PRIVATE ${SQLITE_SOURCES})
     target_compile_definitions(cflib_db PRIVATE ENABLE_SQLITE)
+    target_link_libraries(cflib_db PRIVATE cflib_sqlite)
 endif()

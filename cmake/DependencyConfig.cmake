@@ -4,14 +4,19 @@
 #
 # Licensed under the MIT License.
 
-list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/find")
+if(USE_FETCHCONTENT)
+    list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/find")
+endif()
 
 # Botan
 if(NOT ONLY_GENERATORS)
     find_package(
-        Botan 3.12.0
+        Botan 3.10.0
         REQUIRED
     )
+    if(NOT USE_FETCHCONTENT)
+        add_library(cflib_botan ALIAS botan::botan)
+    endif()
 endif()
 
 # PostgreSQL
@@ -28,15 +33,19 @@ find_package(Threads REQUIRED)
 # SQLite
 if(ENABLE_SQLITE)
     find_package(
-        Sqlite 3.51.3
+        SQLite3 3.46.1
         REQUIRED
     )
+    if(NOT USE_FETCHCONTENT)
+        add_library(cflib_sqlite ALIAS SQLite::SQLite3)
+    endif()
 endif()
 
 # doctest
 if(BUILD_TESTS)
     find_package(
-        doctest 2.5.3
+        doctest 2.4.12
         REQUIRED
     )
+    include(doctest)
 endif()

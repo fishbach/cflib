@@ -59,8 +59,8 @@ target_compile_options(cflib_botan PRIVATE
     -Wno-double-promotion
     -Wno-null-dereference
     -Wno-overloaded-virtual
+    -Wno-psabi
     -Wno-stringop-overread
     -Wno-unknown-warning-option
-    $<$<BOOL:${CMAKE_CROSSCOMPILING}>:-Wno-psabi>
 )
 target_include_directories(cflib_botan INTERFACE ${botan_src_SOURCE_DIR}/build/include/public)
