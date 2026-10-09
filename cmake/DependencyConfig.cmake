@@ -10,10 +10,8 @@ endif()
 
 # Botan
 if(NOT ONLY_GENERATORS)
-    if(USE_FETCHCONTENT)
-        find_package(Botan 3.13.0 REQUIRED)
-    else()
-        find_package(Botan 3.10.0 REQUIRED)
+    find_package(Botan 3.13.0 REQUIRED)
+    if(NOT USE_FETCHCONTENT)
         add_library(cflib_botan ALIAS botan::botan)
     endif()
 endif()
