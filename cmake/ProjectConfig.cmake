@@ -32,9 +32,10 @@ option(ONLY_GENERATORS  "only generators are build"          OFF)
 set(GENERATORS_BIN_DIR  "" CACHE PATH "Use generators from given directory. Useful for cross compilation.")
 
 # C++20
-set(CMAKE_CXX_STANDARD 20)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
-set(CMAKE_CXX_EXTENSIONS OFF)
+set(CMAKE_CXX_STANDARD          20 )
+set(CMAKE_CXX_STANDARD_REQUIRED ON )
+set(CMAKE_CXX_EXTENSIONS        OFF)
+set(CMAKE_CXX_SCAN_FOR_MODULES  OFF)
 
 # ccache
 if(ENABLE_CCACHE)
