@@ -22,6 +22,14 @@ if(NOT cf_config_file_path)
     unset(cf_config_file_list)
 endif()
 
+# generator binaries and support paths, used by cf_lib/cf_app/cf_test
+# (when cflib is used from installed packages, cflibConfig.cmake provides these instead)
+set(CFLIB_GEN_SER         ser)
+set(CFLIB_GEN_APIEXPORTER apiexporter)
+set(CFLIB_GEN_BIN2SRC     bin2src)
+set(CFLIB_PCH_HEADER      "${CMAKE_CURRENT_LIST_DIR}/../cflib/base.h")
+set(CFLIB_TESTMAIN_SOURCE "${CMAKE_CURRENT_LIST_DIR}/../cflib/util/testmain/main.cpp")
+
 # config options
 option(USE_FETCHCONTENT "use FetchContent for required libs" ON)
 option(ENABLE_CCACHE    "enable ccache"                      ON)
@@ -96,4 +104,13 @@ include(Util)
 # If only this file is included, add cflib as a whole.
 if(NOT TARGET cflib_base AND NOT "${CMAKE_CURRENT_LIST_DIR}" STREQUAL "${PROJECT_SOURCE_DIR}/cmake")
     add_subdirectory(${CMAKE_CURRENT_LIST_DIR}/..)
+elseif(TARGET cflib_base)
+    get_target_property(_cflib_base_imported cflib_base IMPORTED)
+    if(_cflib_base_imported)
+        message(FATAL_ERROR
+            "cflib: target 'cflib_base' is an IMPORTED target - find_package(cflib) was already called.\n"
+            "Do not mix installed package usage (find_package(cflib)) with source usage\n"
+            "(include(../3rd_party/cflib/cmake/ProjectConfig.cmake) / add_subdirectory). Use one or the other."
+        )
+    endif()
 endif()

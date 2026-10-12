@@ -19,7 +19,15 @@ function(cf_lib lib)
         add_library(${lib} ${sources})
     endif()
     cf_configure_target(${lib} ${ARG_ENABLE_EXCEPTIONS} "${ARG_PCH}" ${ARG_ENABLE_SER} ${ARG_RESOURCES})
-    target_include_directories(${lib} PUBLIC "${PROJECT_SOURCE_DIR}")
+    target_include_directories(${lib} PUBLIC
+        $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}>
+    )
+    if(CFLIB_ROOT_SOURCE_DIR)
+        target_include_directories(${lib} PUBLIC
+            $<BUILD_INTERFACE:${CFLIB_ROOT_SOURCE_DIR}>
+            $<INSTALL_INTERFACE:include>
+        )
+    endif()
     target_link_libraries(${lib} PUBLIC ${ARG_PUBLIC} PRIVATE ${ARG_PRIVATE})
 
     # ARG_DAO and ARG_REMOTE_APIS
@@ -80,6 +88,21 @@ function(cf_test test lib)
         unset(lib)
     endif()
 
+    # doctest (in source builds DependencyConfig already provides it)
+    if(NOT ARG_NO_DISCOVER AND NOT COMMAND doctest_discover_tests)
+        if(NOT TARGET doctest::doctest)
+            find_package(doctest REQUIRED)
+        endif()
+        if(NOT COMMAND doctest_discover_tests)
+            if(EXISTS "${doctest_DIR}/doctest.cmake")
+                include("${doctest_DIR}/doctest.cmake")
+            else()
+                list(APPEND CMAKE_MODULE_PATH "${doctest_SOURCE_DIR}/scripts/cmake")
+                include(doctest)
+            endif()
+        endif()
+    endif()
+
     # sources, libs and general config
     cf_find_sources(sources . ${ARG_DIRS})
     if(ONLY_GENERATORS)
@@ -88,10 +111,28 @@ function(cf_test test lib)
         add_executable(${test} ${sources})
     endif()
     if(NOT ARG_PCH)
-        set(ARG_PCH "${cflib_SOURCE_DIR}/cflib/base.h")
+        if(CFLIB_PCH_HEADER)
+            set(ARG_PCH "${CFLIB_PCH_HEADER}")
+        else()
+            set(ARG_PCH "${cflib_SOURCE_DIR}/cflib/base.h")
+        endif()
     endif()
     cf_configure_target(${test} TRUE "${ARG_PCH}" ${ARG_ENABLE_SER} ${ARG_RESOURCES})
-    target_link_libraries(${test} PRIVATE ${lib} cflib_testmain)
+
+    # test main
+    # When cflib's own tests are built, link the cflib_testmain object library
+    # by name (resolved at generate time, it is created in a later module
+    # directory). Otherwise (consumer projects, submodule usage without
+    # cflib tests) compile the test main directly; this needs doctest.
+    if(cflib_SOURCE_DIR AND BUILD_TESTS)
+        target_link_libraries(${test} PRIVATE ${lib} cflib_testmain)
+    else()
+        if(NOT TARGET doctest::doctest)
+            find_package(doctest REQUIRED)
+        endif()
+        target_link_libraries(${test} PRIVATE ${lib} doctest::doctest)
+        target_sources(${test} PRIVATE "${CFLIB_TESTMAIN_SOURCE}")
+    endif()
 
     # register for ctest
     if(ARG_NO_DISCOVER)
@@ -122,6 +163,8 @@ function(cf_configure_target target enable_exceptions pch enable_ser)
     if(ENABLE_PCH AND NOT "${target}" STREQUAL "cflib_base")
         if(pch)
             target_precompile_headers(${target} PRIVATE ${pch})
+        elseif(CFLIB_PCH_HEADER)
+            target_precompile_headers(${target} PRIVATE ${CFLIB_PCH_HEADER})
         else()
             target_precompile_headers(${target} REUSE_FROM cflib_base)
         endif()
@@ -180,8 +223,8 @@ function(cf_configure_target target enable_exceptions pch enable_ser)
             add_custom_command(
                 OUTPUT "${source}"
                 COMMAND ${CMAKE_COMMAND} -E make_directory "${rel_dir}"
-                COMMAND ser serialize "${CMAKE_CURRENT_SOURCE_DIR}/${header}" "${source}"
-                DEPENDS ser "${header}"
+                COMMAND ${CFLIB_GEN_SER} serialize "${CMAKE_CURRENT_SOURCE_DIR}/${header}" "${source}"
+                DEPENDS ${CFLIB_GEN_SER} "${header}"
                 VERBATIM
             )
             target_sources(${target} PRIVATE "${source}")
@@ -207,8 +250,8 @@ function(cf_configure_target target enable_exceptions pch enable_ser)
                 OUTPUT "${source}"
                 WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
                 COMMAND ${CMAKE_COMMAND} -E make_directory "${rel_dir}"
-                COMMAND bin2src "${resource}" "${source}"
-                DEPENDS bin2src "${resource}"
+                COMMAND ${CFLIB_GEN_BIN2SRC} "${resource}" "${source}"
+                DEPENDS ${CFLIB_GEN_BIN2SRC} "${resource}"
                 VERBATIM
             )
             target_sources(${target}_resources PUBLIC "${source}")
@@ -371,8 +414,8 @@ function(cf_generate_api)
     # command
     add_custom_command(
         OUTPUT ${output}
-        COMMAND apiexporter --dest "${REMOTE_ABS_DIR}" ${GIT_HASH} --name ${api_name} ${output_types} ${RMI_HEADERS}
-        DEPENDS apiexporter ${RMI_HEADERS}
+        COMMAND ${CFLIB_GEN_APIEXPORTER} --dest "${REMOTE_ABS_DIR}" ${GIT_HASH} --name ${api_name} ${output_types} ${RMI_HEADERS}
+        DEPENDS ${CFLIB_GEN_APIEXPORTER} ${RMI_HEADERS}
         VERBATIM
     )
 endfunction()

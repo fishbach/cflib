@@ -6,7 +6,9 @@
 
 cf_lib(cflib_base)
 if(ENABLE_PCH)
-    target_precompile_headers(cflib_base PUBLIC ../base.h)
+    # BUILD_INTERFACE: the PCH must not be exported to installed consumers,
+    # they get their PCH header via CFLIB_PCH_HEADER in cflibConfig.cmake
+    target_precompile_headers(cflib_base PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../base.h>)
 endif()
 
 if(BUILD_TESTS)

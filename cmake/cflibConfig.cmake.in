@@ -1,0 +1,67 @@
+# Copyright (C) 2013-2026 Christian Fischbach <cf@cflib.de>
+#
+# This file is part of cflib.
+#
+# Licensed under the MIT License.
+
+# cflib package configuration for installed builds (find_package(cflib))
+#
+# provides:
+#   - imported targets: cflib_base, cflib_util, cflib_crypt, cflib_serialize,
+#     cflib_db, cflib_dao, cflib_net, cflib_fileserver
+#     (plus cflib::base, cflib::util, ... aliases)
+#   - the cf_lib/cf_app/cf_test build functions (Build.cmake, Util.cmake)
+#   - build-time tools: ser, apiexporter, bin2src
+
+include(CMakeFindDependencyMacro)
+
+get_filename_component(CFLIB_INSTALL_PREFIX "${CMAKE_CURRENT_LIST_DIR}/../../.." ABSOLUTE)
+
+# one build must use either the installed package or the source (submodule),
+# never both
+if(TARGET cflib_base)
+    message(FATAL_ERROR
+        "cflib: target 'cflib_base' already exists in this build.\n"
+        "You are mixing source usage (include(.../cflib/cmake/ProjectConfig.cmake) or\n"
+        "add_subdirectory(.../cflib)) with find_package(cflib).\n"
+        "Use one or the other."
+    )
+endif()
+
+# dependencies as used when cflib was built and installed
+if(@CFLIB_BOTAN_BUNDLED@)
+    # botan was built from source and installed alongside cflib
+else()
+    find_dependency(Botan 3.13.0)
+endif()
+find_dependency(ZLIB)
+find_dependency(Threads)
+if(@ENABLE_PSQL@)
+    find_dependency(PostgreSQL)
+endif()
+if(@ENABLE_SQLITE@)
+    if(NOT @CFLIB_SQLITE_BUNDLED@)
+        find_dependency(SQLite3 @CFLIB_SQLITE_VERSION@)
+    endif()
+endif()
+
+include("${CMAKE_CURRENT_LIST_DIR}/cflibTargets.cmake")
+
+# namespaced aliases
+foreach(_t base util crypt serialize db dao net fileserver)
+    if(TARGET cflib_${_t})
+        add_library(cflib::${_t} ALIAS cflib_${_t})
+    endif()
+endforeach()
+unset(_t)
+
+# cf_* build functions
+include("${CMAKE_CURRENT_LIST_DIR}/Util.cmake")
+include("${CMAKE_CURRENT_LIST_DIR}/Build.cmake")
+
+# build-time tools and test support paths
+find_program(CFLIB_GEN_SER         NAMES ser         HINTS "${CFLIB_INSTALL_PREFIX}/bin" REQUIRED)
+find_program(CFLIB_GEN_APIEXPORTER NAMES apiexporter HINTS "${CFLIB_INSTALL_PREFIX}/bin" REQUIRED)
+find_program(CFLIB_GEN_BIN2SRC     NAMES bin2src     HINTS "${CFLIB_INSTALL_PREFIX}/bin" REQUIRED)
+set(CFLIB_PCH_HEADER      "${CFLIB_INSTALL_PREFIX}/include/cflib/base.h")
+set(CFLIB_TESTMAIN_SOURCE "${CFLIB_INSTALL_PREFIX}/@CMAKE_INSTALL_DATADIR@/cflib/testmain/main.cpp")

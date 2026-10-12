@@ -11,9 +11,16 @@ endif()
 # Botan
 if(NOT ONLY_GENERATORS)
     find_package(Botan 3.13.0 REQUIRED)
-    if(NOT USE_FETCHCONTENT)
+    if(USE_FETCHCONTENT)
+        # cflib_botan is a real target built from source,
+        # it gets installed alongside cflib
+        set(CFLIB_BOTAN_BUNDLED TRUE)
+    else()
+        set(CFLIB_BOTAN_BUNDLED FALSE)
         add_library(cflib_botan ALIAS botan::botan)
     endif()
+else()
+    set(CFLIB_BOTAN_BUNDLED FALSE)
 endif()
 
 # PostgreSQL
@@ -31,10 +38,18 @@ find_package(Threads REQUIRED)
 if(ENABLE_SQLITE)
     if(USE_FETCHCONTENT)
         find_package(SQLite3 3.53.4 REQUIRED)
+        set(CFLIB_SQLITE_VERSION 3.53.4)
+        # cflib_sqlite is a real target built from source,
+        # it gets installed alongside cflib
+        set(CFLIB_SQLITE_BUNDLED TRUE)
     else()
         find_package(SQLite3 3.46.1 REQUIRED)
+        set(CFLIB_SQLITE_VERSION 3.46.1)
+        set(CFLIB_SQLITE_BUNDLED FALSE)
         add_library(cflib_sqlite ALIAS SQLite::SQLite3)
     endif()
+else()
+    set(CFLIB_SQLITE_BUNDLED FALSE)
 endif()
 
 # doctest

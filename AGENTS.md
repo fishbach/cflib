@@ -55,14 +55,34 @@ ctest --test-dir build
   `-DUSE_FETCHCONTENT=OFF` (system libs), `-DONLY_GENERATORS=ON`
   (build only code generators, e.g. for cross compilation; see
   `GENERATORS_BIN_DIR`).
+- `BUILD_SHARED_LIBS` (default OFF = static). Shared builds get versioned
+  sonames and `INSTALL_RPATH` so installed libs/tools find each other.
+- `CFLIB_INSTALL` (default ON for top-level builds) controls the install
+  rules: headers to `include/cflib/...`, libs to `lib/`, tools
+  (`ser`, `apiexporter`, `bin2src`, ...) to `bin/`, test main to
+  `share/cflib/testmain/`, and the cmake package to `lib/cmake/cflib/`
+  (`cflibConfig.cmake`, `cflibTargets.cmake`, plus `Build.cmake`/
+  `Util.cmake` so `cf_lib`/`cf_app`/`cf_test` work from installed builds).
+  Shared deps fetched via FetchContent (botan/sqlite) are installed
+  alongside as `cflib_botan`/`cflib_sqlite`.
+- Consumers use either the source (`include(<cflib>/cmake/ProjectConfig.cmake)`)
+  or the installed package (`find_package(cflib ...)`), never both — both
+  entry points abort with an error on mix-up. Installed mode exports the
+  same target names (`cflib_base`, ...) plus `cflib::base`, ... aliases,
+  conveys C++20 via `cxx_std_20`, and resolves the build-time tools via
+  `CFLIB_GEN_*` (source mode: target names; installed mode: installed bins).
+- When used as a subproject (git submodule), `BUILD_TESTS`/`BUILD_EXAMPLES`/
+  `BUILD_BENCH` default to OFF; a consumer using `cf_test` then needs
+  doctest on the system.
 - A `config.cmake` is searched for by walking up the directory tree and
   included if present (local, untracked build customization).
 - Built apps land in `bin/` at the repo root (stripped in Release,
   debug-split in RelWithDebInfo). Generator binaries go to
   `build/generators/`.
 - Tests: doctest with CTest discovery (`doctest_discover_tests`, labels
-  enabled). Test targets live in `<module>/<module>_test/` subdirs and link
-  `cflib_testmain`.
+  enabled). Test targets live in `<module>/<module>_test/` subdirs; cflib's
+  own tests link `cflib_testmain`, consumer test targets compile
+  `testmain/main.cpp` directly.
 - Benchmarks live in `<module>/<module>_bench/`.
 
 ## Build System Conventions
@@ -77,11 +97,16 @@ use raw `add_library`/`add_executable` in module CMakeLists.
   `ENABLE_SER`, `PCH <header>`.
 - `cf_app(<name>)` — executable, same source discovery.
 - `cf_test(<name> <lib>)` — doctest executable; pass `NO_DISCOVER` for a
-  single registered test instead of per-case discovery.
+  single registered test instead of per-case discovery. cflib's own tests
+  link `cflib_testmain`; consumer test targets compile
+  `testmain/main.cpp` (via `CFLIB_TESTMAIN_SOURCE`) and need doctest.
 - **Exceptions are OFF by default** (`-fno-exceptions`); only enabled
   per-target with `ENABLE_EXCEPTIONS`.
-- PCH: `cflib_base` precompiles `cflib/base.h` (PUBLIC); all other targets
-  `REUSE_FROM cflib_base`. Tests reuse it by default.
+- PCH: `cflib_base` precompiles `cflib/base.h` (PUBLIC, build interface
+  only, so it is not exported). Other targets use the header from
+  `CFLIB_PCH_HEADER` (set by `ProjectConfig.cmake` in source builds and by
+  `cflibConfig.cmake` in installed builds), falling back to
+  `REUSE_FROM cflib_base` when that variable is not set.
 - **Source discovery is glob-based**: adding/removing a normal `.h`/`.cpp`
   file requires no CMakeLists.txt edit. (Re-run cmake configure if a new
   *directory* is added.)
