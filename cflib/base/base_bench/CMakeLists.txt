@@ -4,4 +4,4 @@
 #
 # Licensed under the MIT License.
 
-cf_app(base_bench cflib_base)
+cf_app(cflib_base_bench cflib_base)

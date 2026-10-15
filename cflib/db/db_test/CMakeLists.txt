@@ -4,16 +4,16 @@
 #
 # Licensed under the MIT License.
 
-cf_test(db_test cflib_db NO_DISCOVER
+cf_test(cflib_db_test cflib_db NO_DISCOVER
     RESOURCES schema.sql
 )
 
 if(ENABLE_PSQL)
     cf_find_sources(PSQL_SOURCES psql)
-    target_sources(db_test PRIVATE ${PSQL_SOURCES})
+    target_sources(cflib_db_test PRIVATE ${PSQL_SOURCES})
 endif()
 
 if(ENABLE_SQLITE)
     cf_find_sources(SQLITE_SOURCES sqlite)
-    target_sources(db_test PRIVATE ${SQLITE_SOURCES})
+    target_sources(cflib_db_test PRIVATE ${SQLITE_SOURCES})
 endif()

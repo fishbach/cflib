@@ -4,4 +4,4 @@
 #
 # Licensed under the MIT License.
 
-cf_app(asn1dump cflib_serialize)
+cf_app(cflib_asn1dump cflib_serialize)

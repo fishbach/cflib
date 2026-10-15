@@ -4,4 +4,4 @@
 #
 # Licensed under the MIT License.
 
-cf_app(migrationmoped cflib_db)
+cf_app(cflib_migrationmoped cflib_db)

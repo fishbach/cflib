@@ -4,4 +4,4 @@
 #
 # Licensed under the MIT License.
 
-cf_test(crypt_test cflib_crypt)
+cf_test(cflib_crypt_test cflib_crypt)

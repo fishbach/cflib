@@ -4,7 +4,7 @@
 #
 # Licensed under the MIT License.
 
-cf_test(net_test cflib_net
+cf_test(cflib_net_test cflib_net
     DIRS
         test
     PROPERTIES

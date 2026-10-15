@@ -4,4 +4,4 @@
 #
 # Licensed under the MIT License.
 
-cf_app(pwhash cflib_crypt)
+cf_app(cflib_pwhash cflib_crypt)

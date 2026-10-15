@@ -4,4 +4,4 @@
 #
 # Licensed under the MIT License.
 
-cf_app(ser cflib_serialize CF_GENERATOR)
+cf_app(cflib_ser cflib_serialize CF_GENERATOR)

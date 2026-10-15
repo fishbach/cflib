@@ -75,7 +75,7 @@ endfunction()
 function(cf_test test lib)
     cmake_parse_arguments(ARG "ENABLE_SER;NO_DISCOVER" "PCH" "DIRS;RESOURCES;PROPERTIES" ${ARGN})
 
-    # intern for base_test and util_test
+    # intern for cflib_base_test and cflib_util_test
     if(lib STREQUAL "-")
         unset(lib)
     endif()
@@ -180,8 +180,8 @@ function(cf_configure_target target enable_exceptions pch enable_ser)
             add_custom_command(
                 OUTPUT "${source}"
                 COMMAND ${CMAKE_COMMAND} -E make_directory "${rel_dir}"
-                COMMAND ser serialize "${CMAKE_CURRENT_SOURCE_DIR}/${header}" "${source}"
-                DEPENDS ser "${header}"
+                COMMAND cflib_ser serialize "${CMAKE_CURRENT_SOURCE_DIR}/${header}" "${source}"
+                DEPENDS cflib_ser "${header}"
                 VERBATIM
             )
             target_sources(${target} PRIVATE "${source}")
@@ -207,8 +207,8 @@ function(cf_configure_target target enable_exceptions pch enable_ser)
                 OUTPUT "${source}"
                 WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
                 COMMAND ${CMAKE_COMMAND} -E make_directory "${rel_dir}"
-                COMMAND bin2src "${resource}" "${source}"
-                DEPENDS bin2src "${resource}"
+                COMMAND cflib_bin2src "${resource}" "${source}"
+                DEPENDS cflib_bin2src "${resource}"
                 VERBATIM
             )
             target_sources(${target}_resources PUBLIC "${source}")
@@ -371,8 +371,8 @@ function(cf_generate_api)
     # command
     add_custom_command(
         OUTPUT ${output}
-        COMMAND apiexporter --dest "${REMOTE_ABS_DIR}" ${GIT_HASH} --name ${api_name} ${output_types} ${RMI_HEADERS}
-        DEPENDS apiexporter ${RMI_HEADERS}
+        COMMAND cflib_apiexporter --dest "${REMOTE_ABS_DIR}" ${GIT_HASH} --name ${api_name} ${output_types} ${RMI_HEADERS}
+        DEPENDS cflib_apiexporter ${RMI_HEADERS}
         VERBATIM
     )
 endfunction()

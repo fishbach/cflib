@@ -4,4 +4,4 @@
 #
 # Licensed under the MIT License.
 
-cf_test(util_test -)
+cf_test(cflib_util_test -)
