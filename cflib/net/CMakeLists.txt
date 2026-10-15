@@ -14,6 +14,6 @@ cf_lib(cflib_net
 )
 
 add_subdirectory(fileserver)
-if(BUILD_TESTS)
+if(CFLIB_BUILD_TESTS)
     add_subdirectory(net_test)
 endif()

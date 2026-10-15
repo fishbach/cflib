@@ -51,10 +51,10 @@ ctest --test-dir build
   doctest are pulled via FetchContent. Optional: PostgreSQL (`libpq-dev`),
   SQLite — both OFF by default.
 - Useful CMake options: `-DENABLE_PSQL=ON`, `-DENABLE_SQLITE=ON`,
-  `-DBUILD_TESTS=OFF`, `-DBUILD_EXAMPLES=OFF`, `-DBUILD_BENCH=OFF`,
-  `-DUSE_FETCHCONTENT=OFF` (system libs), `-DONLY_GENERATORS=ON`
+  `-DCFLIB_BUILD_TESTS=OFF`, `-DCFLIB_BUILD_EXAMPLES=OFF`, `-DCFLIB_BUILD_BENCH=OFF`,
+  `-DUSE_FETCHCONTENT=OFF` (system libs), `-DCFLIB_ONLY_GENERATORS=ON`
   (build only code generators, e.g. for cross compilation; see
-  `GENERATORS_BIN_DIR`).
+  `CFLIB_GENERATORS_BIN_DIR`).
 - A `config.cmake` is searched for by walking up the directory tree and
   included if present (local, untracked build customization).
 - Built apps land in `bin/` at the repo root (stripped in Release,

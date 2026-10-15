@@ -12,7 +12,7 @@ cf_lib(cflib_crypt
     ENABLE_EXCEPTIONS
 )
 
-if(BUILD_TESTS)
+if(CFLIB_BUILD_TESTS)
     add_subdirectory(crypt_test)
 endif()
 add_subdirectory(pwhash)

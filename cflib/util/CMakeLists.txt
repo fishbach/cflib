@@ -12,13 +12,13 @@ cf_lib(cflib_util
         impl/generate_templates.pl
 )
 
-if(BUILD_TESTS)
+if(CFLIB_BUILD_TESTS)
     add_library(cflib_testmain OBJECT testmain/main.cpp)
     target_link_libraries(cflib_testmain PUBLIC cflib_util doctest::doctest)
 endif()
 
 add_subdirectory(bin2src)
 add_subdirectory(jscombiner)
-if(BUILD_TESTS)
+if(CFLIB_BUILD_TESTS)
     add_subdirectory(util_test)
 endif()

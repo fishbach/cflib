@@ -6,7 +6,7 @@
 
 if(ENABLE_PSQL OR ENABLE_SQLITE)
     cf_lib(cflib_db PUBLIC cflib_util)
-    if(BUILD_TESTS)
+    if(CFLIB_BUILD_TESTS)
         add_subdirectory(db_test)
     endif()
 endif()

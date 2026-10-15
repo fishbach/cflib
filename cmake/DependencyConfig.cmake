@@ -9,7 +9,7 @@ if(USE_FETCHCONTENT)
 endif()
 
 # Botan
-if(NOT ONLY_GENERATORS)
+if(NOT CFLIB_ONLY_GENERATORS)
     find_package(Botan 3.13.0 REQUIRED)
     if(NOT USE_FETCHCONTENT)
         add_library(cflib_botan ALIAS botan::botan)
@@ -38,7 +38,7 @@ if(ENABLE_SQLITE)
 endif()
 
 # doctest
-if(BUILD_TESTS)
+if(CFLIB_BUILD_TESTS)
     if(USE_FETCHCONTENT)
         find_package(doctest 2.5.3 REQUIRED)
     else()
