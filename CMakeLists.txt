@@ -8,7 +8,7 @@ cmake_minimum_required(VERSION 3.28)
 
 project(
     cflib
-    VERSION 1.0.0
+    VERSION 0.9.1
     LANGUAGES C CXX
 )
 
@@ -32,4 +32,8 @@ cf_add_other(cflib_files
 add_subdirectory(cflib)
 if(CFLIB_BUILD_EXAMPLES)
     add_subdirectory(examples)
+endif()
+
+if(PROJECT_IS_TOP_LEVEL)
+    include(Install)
 endif()

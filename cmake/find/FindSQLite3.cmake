@@ -44,4 +44,4 @@ target_compile_options(cflib_sqlite PRIVATE
     -Wno-double-promotion
     -Wno-null-dereference
 )
-target_include_directories(cflib_sqlite INTERFACE ${sqlite_src_SOURCE_DIR})
+target_include_directories(cflib_sqlite INTERFACE $<BUILD_INTERFACE:${sqlite_src_SOURCE_DIR}>)

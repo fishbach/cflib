@@ -19,7 +19,7 @@ function(cf_lib lib)
         add_library(${lib} ${sources})
     endif()
     cf_configure_target(${lib} ${ARG_ENABLE_EXCEPTIONS} "${ARG_PCH}" ${ARG_ENABLE_SER} ${ARG_RESOURCES})
-    target_include_directories(${lib} PUBLIC "${PROJECT_SOURCE_DIR}")
+    target_include_directories(${lib} PUBLIC $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}>)
     target_link_libraries(${lib} PUBLIC ${ARG_PUBLIC} PRIVATE ${ARG_PRIVATE})
 
     # ARG_DAO and ARG_REMOTE_APIS
