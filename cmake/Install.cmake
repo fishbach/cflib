@@ -88,6 +88,12 @@ install(
     DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/cflib
 )
 
+# testmain OBJECT lib
+install(
+    FILES       "${CMAKE_CURRENT_SOURCE_DIR}/cflib/util/testmain/main.cpp"
+    DESTINATION ${CMAKE_INSTALL_DATADIR}/cflib/util/testmain
+)
+
 # export CMake scripts
 install(
     FILES
