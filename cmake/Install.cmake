@@ -37,6 +37,15 @@ install(
     DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/cflib
 )
 
+file(GLOB_RECURSE cflib_headers
+    RELATIVE "${CMAKE_CURRENT_SOURCE_DIR}"
+    "cflib/*.h"
+)
+foreach(header ${cflib_headers})
+    get_filename_component(dir ${header} DIRECTORY)
+    install(FILES "${header}" DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}/${dir}")
+endforeach()
+
 write_basic_package_version_file(
     "${CMAKE_CURRENT_BINARY_DIR}/cflib-config-version.cmake"
     VERSION ${cflib_VERSION}

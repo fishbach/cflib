@@ -6,7 +6,7 @@
 
 cf_lib(cflib_base)
 if(ENABLE_PCH)
-    target_precompile_headers(cflib_base PUBLIC ../base.h)
+    target_precompile_headers(cflib_base PRIVATE ../base.h)
 endif()
 
 if(CFLIB_BUILD_TESTS)
