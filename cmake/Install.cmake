@@ -53,12 +53,16 @@ endforeach()
 
 # targets to be exported
 set(cflib_targets
+    cflib_apiexporter
     cflib_base
+    cflib_bin2src
     cflib_crypt
     cflib_dao
     cflib_db
     cflib_fileserver
+    cflib_htmlexporter
     cflib_net
+    cflib_ser
     cflib_serialize
     cflib_util
 )
