@@ -22,6 +22,10 @@ if(ENABLE_SQLITE)
     list(APPEND cflib_targets cflib_sqlite)
 endif()
 
+foreach(target IN LISTS cflib_targets)
+    target_compile_features(${target} PUBLIC cxx_std_20)
+endforeach()
+
 install(
     TARGETS ${cflib_targets}
     EXPORT cflib-targets
