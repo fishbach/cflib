@@ -10,11 +10,11 @@ include(CMakePackageConfigHelpers)
 # cflib version config
 write_basic_package_version_file(
     "${CMAKE_CURRENT_BINARY_DIR}/cflib-config-version.cmake"
-    VERSION ${cflib_VERSION}
+    VERSION       ${cflib_VERSION}
     COMPATIBILITY SameMajorVersion
 )
-install(FILES
-    "${CMAKE_CURRENT_BINARY_DIR}/cflib-config-version.cmake"
+install(
+    FILES       "${CMAKE_CURRENT_BINARY_DIR}/cflib-config-version.cmake"
     DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/cflib
 )
 
@@ -35,8 +35,8 @@ configure_package_config_file(
     "${CMAKE_CURRENT_BINARY_DIR}/cflib-config.cmake"
     INSTALL_DESTINATION ${CMAKE_INSTALL_DATADIR}/cmake/cflib
 )
-install(FILES
-    "${CMAKE_CURRENT_BINARY_DIR}/cflib-config.cmake"
+install(
+    FILES       "${CMAKE_CURRENT_BINARY_DIR}/cflib-config.cmake"
     DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/cflib
 )
 
@@ -80,15 +80,23 @@ endforeach()
 
 # export cflib targets
 install(
-    TARGETS ${cflib_targets}
-    EXPORT cflib-targets
+    TARGETS  ${cflib_targets}
+    EXPORT   cflib-targets
     ARCHIVE  DESTINATION ${CMAKE_INSTALL_LIBDIR}
     INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
     LIBRARY  DESTINATION ${CMAKE_INSTALL_LIBDIR}
     RUNTIME  DESTINATION ${CMAKE_INSTALL_BINDIR}
 )
 install(
-    EXPORT cflib-targets
-    FILE cflib-targets.cmake
+    EXPORT      cflib-targets
+    FILE        cflib-targets.cmake
+    DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/cflib
+)
+
+# export CMake scripts
+install(
+    FILES
+        "${CMAKE_CURRENT_SOURCE_DIR}/cmake/Build.cmake"
+        "${CMAKE_CURRENT_SOURCE_DIR}/cmake/Util.cmake"
     DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/cflib
 )
