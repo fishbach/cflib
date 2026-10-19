@@ -9,6 +9,7 @@ FetchContent_Declare(
   doctest_src
   GIT_REPOSITORY https://github.com/doctest/doctest.git
   GIT_TAG        v${doctest_FIND_VERSION}
+  EXCLUDE_FROM_ALL
 )
 FetchContent_MakeAvailable(doctest_src)
 
