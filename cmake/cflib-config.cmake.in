@@ -13,5 +13,6 @@ include(CMakeFindDependencyMacro)
 include("${CMAKE_CURRENT_LIST_DIR}/cflib-targets.cmake")
 check_required_components(cflib)
 
-include("${CMAKE_CURRENT_LIST_DIR}/Build.cmake")
-include("${CMAKE_CURRENT_LIST_DIR}/Util.cmake")
+macro(cf_project_config)
+    include("${cflib_DIR}/ProjectConfig.cmake")
+endmacro()

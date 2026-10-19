@@ -19,7 +19,7 @@ option(CFLIB_BUILD_EXAMPLES "activate build for examples"   ${PROJECT_IS_TOP_LEV
 if(NOT COMMAND cf_lib)
     include(cmake/ProjectConfig.cmake)
 endif()
-include(DependencyConfig)
+include(cmake/DependencyConfig.cmake)
 
 cf_add_other(cflib_files
     .gitignore
@@ -35,5 +35,5 @@ if(CFLIB_BUILD_EXAMPLES)
 endif()
 
 if(PROJECT_IS_TOP_LEVEL)
-    include(Install)
+    include(cmake/Install.cmake)
 endif()

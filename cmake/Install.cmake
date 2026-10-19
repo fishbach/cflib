@@ -73,11 +73,6 @@ if(USE_FETCHCONTENT)
     endif()
 endif()
 
-# cflib only works with C++20
-foreach(target IN LISTS cflib_targets)
-    target_compile_features(${target} PUBLIC cxx_std_20)
-endforeach()
-
 # export cflib targets
 install(
     TARGETS  ${cflib_targets}
@@ -97,6 +92,7 @@ install(
 install(
     FILES
         "${CMAKE_CURRENT_SOURCE_DIR}/cmake/Build.cmake"
+        "${CMAKE_CURRENT_SOURCE_DIR}/cmake/ProjectConfig.cmake"
         "${CMAKE_CURRENT_SOURCE_DIR}/cmake/Util.cmake"
     DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/cflib
 )
