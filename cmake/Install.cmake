@@ -26,7 +26,7 @@ set(CFLIB_INSTALL_CONFIG_DEPS
 if(NOT USE_FETCHCONTENT)
     list(APPEND CFLIB_INSTALL_CONFIG_DEPS "find_dependency(Botan ${Botan_VERSION} REQUIRED)")
     if(ENABLE_SQLITE)
-        list(APPEND CFLIB_INSTALL_CONFIG_DEPS "find_dependency(SQLite3 3.46.1 REQUIRED)")
+        list(APPEND CFLIB_INSTALL_CONFIG_DEPS "find_dependency(SQLite3 ${CFLIB_SQLITE_SYSTEM_VERSION} REQUIRED)")
     endif()
 endif()
 string(JOIN "\n" CFLIB_INSTALL_CONFIG_DEPS ${CFLIB_INSTALL_CONFIG_DEPS})
@@ -90,7 +90,9 @@ install(
 
 # testmain OBJECT lib
 install(
-    FILES       "${CMAKE_CURRENT_SOURCE_DIR}/cflib/util/testmain/main.cpp"
+    FILES
+        "${CMAKE_CURRENT_SOURCE_DIR}/cflib/util/testmain/main.cpp"
+        "${CMAKE_CURRENT_SOURCE_DIR}/cflib/util/testmain/pch.h"
     DESTINATION ${CMAKE_INSTALL_DATADIR}/cflib/util/testmain
 )
 
