@@ -12,13 +12,14 @@ cf_lib(cflib_util
         impl/generate_templates.pl
 )
 
+add_subdirectory(bin2src)
+add_subdirectory(jscombiner)
+
 if(CFLIB_BUILD_TESTS)
     add_library(cflib_testmain OBJECT testmain/main.cpp)
     target_link_libraries(cflib_testmain PUBLIC cflib_util doctest::doctest)
-endif()
-
-add_subdirectory(bin2src)
-add_subdirectory(jscombiner)
-if(CFLIB_BUILD_TESTS)
+    if(ENABLE_PCH)
+        target_precompile_headers(cflib_testmain PRIVATE ../base.h)
+    endif()
     add_subdirectory(util_test)
 endif()
