@@ -11,10 +11,12 @@ See the provied file COPYING for details.
 # Requirements
 
 * C++ compiler which can do C++20
-* cmake >= 3.16
+* cmake >= 3.28
 * Botan (comes by FetchContent)
 * zlib (apt install zlib1g-dev)
 * optional: Postgres (apt install libpq-dev)
+* optional: SQLite  (comes by FetchContent)
+* optional: doctest (comes by FetchContent)
 
 # Download
 
