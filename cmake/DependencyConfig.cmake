@@ -4,16 +4,14 @@
 #
 # Licensed under the MIT License.
 
-if(USE_FETCHCONTENT)
-    list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/find")
-endif()
+# Threads
+find_package(Threads REQUIRED)
 
-# Botan
-if(NOT CFLIB_ONLY_GENERATORS)
-    find_package(Botan 3.13.0 REQUIRED)
-    if(NOT USE_FETCHCONTENT)
-        add_library(cflib_botan ALIAS botan::botan)
-    endif()
+# ZLIB
+find_package(ZLIB REQUIRED)
+
+if(CFLIB_ONLY_GENERATORS)
+    return()
 endif()
 
 # PostgreSQL
@@ -21,11 +19,15 @@ if(ENABLE_PSQL)
     find_package(PostgreSQL REQUIRED)
 endif()
 
-# ZLIB
-find_package(ZLIB REQUIRED)
+if(USE_FETCHCONTENT)
+    list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/find")
+endif()
 
-# Threads
-find_package(Threads REQUIRED)
+# Botan
+find_package(Botan 3.13.0 REQUIRED)
+if(NOT USE_FETCHCONTENT)
+    add_library(cflib_botan ALIAS botan::botan)
+endif()
 
 # SQLite
 if(ENABLE_SQLITE)

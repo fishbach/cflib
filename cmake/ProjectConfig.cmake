@@ -31,6 +31,14 @@ option(ENABLE_SQLITE         "enable SQLite"                      OFF)
 option(CFLIB_ONLY_GENERATORS "only generators are build"          OFF)
 set(CFLIB_GENERATORS_BIN_DIR "" CACHE PATH "Use generators from given directory. Useful for cross compilation.")
 
+if(CFLIB_ONLY_GENERATORS)
+    set(ENABLE_PSQL          OFF)
+    set(ENABLE_SQLITE        OFF)
+    set(CFLIB_BUILD_TESTS    OFF)
+    set(CFLIB_BUILD_BENCH    OFF)
+    set(CFLIB_BUILD_EXAMPLES OFF)
+endif()
+
 # C++20
 set(CMAKE_CXX_STANDARD          20 )
 set(CMAKE_CXX_STANDARD_REQUIRED ON )

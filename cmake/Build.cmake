@@ -82,11 +82,7 @@ function(cf_test test lib)
 
     # sources, libs and general config
     cf_find_sources(sources . ${ARG_DIRS})
-    if(CFLIB_ONLY_GENERATORS)
-        add_executable(${test} EXCLUDE_FROM_ALL ${sources})
-    else()
-        add_executable(${test} ${sources})
-    endif()
+    add_executable(${test} ${sources})
     cf_configure_target(${test} TRUE "${ARG_PCH}" ${ARG_ENABLE_SER} TRUE ${ARG_RESOURCES})
     target_link_libraries(${test} PRIVATE ${lib} cflib_testmain)
 

@@ -7,6 +7,21 @@
 include(GNUInstallDirs)
 include(CMakePackageConfigHelpers)
 
+# export generators
+set(cflib_targets
+    cflib_apiexporter
+    cflib_bin2src
+    cflib_htmlexporter
+    cflib_ser
+)
+if(CFLIB_ONLY_GENERATORS)
+    install(
+        TARGETS  ${cflib_targets}
+        RUNTIME  DESTINATION ${CMAKE_INSTALL_BINDIR}
+    )
+    return()
+endif()
+
 # cflib version config
 write_basic_package_version_file(
     "${CMAKE_CURRENT_BINARY_DIR}/cflib-config-version.cmake"
@@ -52,17 +67,13 @@ foreach(header ${cflib_headers})
 endforeach()
 
 # targets to be exported
-set(cflib_targets
-    cflib_apiexporter
+LIST(APPEND cflib_targets
     cflib_base
-    cflib_bin2src
     cflib_crypt
     cflib_dao
     cflib_db
     cflib_fileserver
-    cflib_htmlexporter
     cflib_net
-    cflib_ser
     cflib_serialize
     cflib_util
 )
