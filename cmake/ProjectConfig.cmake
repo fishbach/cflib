@@ -93,6 +93,6 @@ include(${CMAKE_CURRENT_LIST_DIR}/Build.cmake)
 include(${CMAKE_CURRENT_LIST_DIR}/Util.cmake)
 
 # If only this file is included, add cflib as a whole.
-if(NOT TARGET cflib_base AND NOT PROJECT_IS_TOP_LEVEL)
+if(NOT TARGET cflib_base AND NOT "${CMAKE_CURRENT_LIST_DIR}" STREQUAL "${PROJECT_SOURCE_DIR}/cmake")
     add_subdirectory(${CMAKE_CURRENT_LIST_DIR}/..)
 endif()
