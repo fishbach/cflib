@@ -103,3 +103,9 @@ install(
         "${CMAKE_CURRENT_SOURCE_DIR}/cmake/Util.cmake"
     DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/cflib
 )
+
+# JavaScript lib
+install(
+    DIRECTORY js
+    DESTINATION ${CMAKE_INSTALL_DATADIR}/cflib
+)
