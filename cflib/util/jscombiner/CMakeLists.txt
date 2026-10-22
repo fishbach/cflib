@@ -4,4 +4,4 @@
 #
 # Licensed under the MIT License.
 
-cf_app(cflib_jscombiner cflib_util)
+cf_app(cflib_jscombiner cflib_util CF_GENERATOR)

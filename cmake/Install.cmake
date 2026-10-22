@@ -8,18 +8,21 @@ include(GNUInstallDirs)
 include(CMakePackageConfigHelpers)
 
 # export generators
-set(cflib_targets
-    cflib_apiexporter
-    cflib_bin2src
-    cflib_htmlexporter
-    cflib_ser
-)
-if(CFLIB_ONLY_GENERATORS)
-    install(
-        TARGETS  ${cflib_targets}
-        RUNTIME  DESTINATION ${CMAKE_INSTALL_BINDIR}
+if(NOT CFLIB_GENERATORS_BIN_DIR)
+    set(cflib_targets
+        cflib_apiexporter
+        cflib_bin2src
+        cflib_htmlexporter
+        cflib_jscombiner
+        cflib_ser
     )
-    return()
+    if(CFLIB_ONLY_GENERATORS)
+        install(
+            TARGETS ${cflib_targets}
+            RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+        )
+        return()
+    endif()
 endif()
 
 # cflib version config
