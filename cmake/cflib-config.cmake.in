@@ -21,7 +21,9 @@ macro(cf_project_config)
         include(doctest)
         set(CFLIB_BUILD_TESTS ON)
     endif()
+
     include("${cflib_DIR}/ProjectConfig.cmake")
+    @CFLIB_INSTALL_GENERATORS_FROM_PATH@
     if("${ARGV0}" STREQUAL "ENABLE_TESTING")
         add_library(cflib_testmain OBJECT "${CFLIB_DATA_DIR}/util/testmain/main.cpp")
         target_link_libraries(cflib_testmain PUBLIC cflib_util doctest::doctest)

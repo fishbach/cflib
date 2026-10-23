@@ -35,9 +35,11 @@ function(cf_app app)
     endif()
 
     # use compiled generators (cross compile)
-    if(ARG_CF_GENERATOR AND CFLIB_GENERATORS_BIN_DIR)
+    if(ARG_CF_GENERATOR AND CFLIB_USE_GENERATORS_FROM_PATH)
+        find_program(generator_path NAMES ${app} REQUIRED)
         add_executable(${app} IMPORTED GLOBAL)
-        set_property(TARGET ${app} PROPERTY IMPORTED_LOCATION "${CFLIB_GENERATORS_BIN_DIR}/${app}")
+        set_property(TARGET ${app} PROPERTY IMPORTED_LOCATION "${generator_path}")
+        unset(generator_path CACHE)
         return()
     endif()
 
