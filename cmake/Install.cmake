@@ -54,6 +54,9 @@ if(NOT USE_FETCHCONTENT)
         list(APPEND CFLIB_INSTALL_CONFIG_DEPS "find_dependency(SQLite3 ${CFLIB_SQLITE_SYSTEM_VERSION} REQUIRED)")
     endif()
 endif()
+if(ENABLE_PSQL)
+    list(APPEND CFLIB_INSTALL_CONFIG_DEPS "find_dependency(PostgreSQL REQUIRED)")
+endif()
 string(JOIN "\n" CFLIB_INSTALL_CONFIG_DEPS ${CFLIB_INSTALL_CONFIG_DEPS})
 configure_package_config_file(
     "cmake/cflib-config.cmake.in"
