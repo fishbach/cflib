@@ -145,11 +145,12 @@ function(cf_configure_target target enable_exceptions pch enable_ser is_test)
 
             # check for service or dao
             cmake_path(APPEND CMAKE_CURRENT_SOURCE_DIR "${header}" OUTPUT_VARIABLE header_full_path)
+            file(RELATIVE_PATH header_rel_path "${PROJECT_SOURCE_DIR}" "${header_full_path}")
             file(STRINGS "${header}" lines REGEX "RMIService")
             if(lines)
-                list(APPEND RMI_SERVICE_HEADERS "${header_full_path}")
+                list(APPEND RMI_SERVICE_HEADERS "${header_rel_path}")
             else()
-                list(APPEND DAO_HEADERS "${header_full_path}")
+                list(APPEND DAO_HEADERS "${header_rel_path}")
             endif()
         endforeach()
 
@@ -182,7 +183,7 @@ function(cf_configure_target target enable_exceptions pch enable_ser is_test)
             add_custom_command(
                 OUTPUT "${source}"
                 COMMAND ${CMAKE_COMMAND} -E make_directory "${rel_dir}"
-                COMMAND cflib_ser serialize "${CMAKE_CURRENT_SOURCE_DIR}/${header}" "${source}"
+                COMMAND cflib_ser serialize "${CMAKE_CURRENT_SOURCE_DIR}/${header}" "${source}" "${PROJECT_SOURCE_DIR}"
                 DEPENDS cflib_ser "${header}"
                 VERBATIM
             )
