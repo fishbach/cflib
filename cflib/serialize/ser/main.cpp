@@ -10,6 +10,7 @@
 
 #include <cstdio>
 #include <cstring>
+#include <filesystem>
 #include <format>
 #include <fstream>
 #include <iostream>
@@ -17,13 +18,21 @@
 
 using namespace cflib::serialize;
 
+namespace fs = std::filesystem;
+
+std::string makeRelative(const std::string& fullHeaderPath, const std::string& prefixPath)
+{
+    if (prefixPath.empty()) return fullHeaderPath;
+    return fs::path(fullHeaderPath).lexically_relative(prefixPath).generic_string();
+}
+
 int usage(const char * progName)
 {
-    std::cerr << std::format("usage: {} serialize <header.h> <source_ser.cpp>\n", progName);
+    std::cerr << std::format("usage: {} serialize <header.h> <source_ser.cpp> [<remove-include-prefix-path>]\n", progName);
     return 1;
 }
 
-int serialize(const std::string & header, const std::string & dest)
+int serialize(const std::string & header, const std::string & dest, const std::string & removeIncludePrefixPath)
 {
     // Read input file
     FILE * inFile = fopen(header.c_str(), "rb");
@@ -51,14 +60,16 @@ int serialize(const std::string & header, const std::string & dest)
         return 4;
     }
 
-    return genSerialize(header, hp, outFile);
+    return genSerialize(makeRelative(header, removeIncludePrefixPath), hp, outFile);
 }
 
 int main(int argc, char *argv[])
 {
     if (argc < 2) return usage(argv[0]);
 
-    if (strcmp(argv[1], "serialize") == 0 && argc == 4) return serialize(argv[2], argv[3]);
+    const std::string removeIncludePrefixPath = argc == 5 ? argv[4] : "";
+
+    if (strcmp(argv[1], "serialize") == 0 && (argc == 4 || argc == 5)) return serialize(argv[2], argv[3], removeIncludePrefixPath);
 
     return usage(argv[0]);
 }
