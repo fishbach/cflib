@@ -97,6 +97,28 @@ if(USE_FETCHCONTENT)
     endif()
 endif()
 
+# fix paths for RMI
+foreach(target IN LISTS cflib_targets)
+    get_target_property(incl ${target} INCLUDE_DIRECTORIES)
+    cf_remove_genex(incl)
+    get_target_property(dao  ${target} DAO_HEADERS)
+    if(NOT dao STREQUAL "dao-NOTFOUND")
+        foreach(f IN LISTS dao)
+            cmake_path(RELATIVE_PATH f BASE_DIRECTORY "${incl}")
+            cmake_path(APPEND CMAKE_INSTALL_PREFIX "${CMAKE_INSTALL_INCLUDEDIR}" "${f}" OUTPUT_VARIABLE f)
+            message("XCF 1 : ${incl} | ${f}")
+        endforeach()
+    endif()
+    get_target_property(rmi  ${target} RMI_SERVICE_HEADERS)
+    if(NOT rmi STREQUAL "rmi-NOTFOUND")
+        foreach(f IN LISTS rmi)
+            cmake_path(RELATIVE_PATH f BASE_DIRECTORY "${incl}")
+            cmake_path(APPEND CMAKE_INSTALL_PREFIX "${CMAKE_INSTALL_INCLUDEDIR}" "${f}" OUTPUT_VARIABLE f)
+            message("XCF 2 : ${incl} | ${f}")
+        endforeach()
+    endif()
+endforeach()
+
 # export cflib targets
 install(
     TARGETS  ${cflib_targets}
