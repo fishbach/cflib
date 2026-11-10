@@ -11,6 +11,11 @@ function(cf_lib lib)
         set(ARG_ENABLE_SER TRUE)
     endif()
 
+    # remember target
+    if(lib MATCHES "^cflib_")
+        set_property(GLOBAL APPEND PROPERTY CFLIB_LIB_TARGETS ${lib})
+    endif()
+
     # sources, libs and general config
     cf_find_sources(sources . ${ARG_DIRS} OTHER_FILES ${ARG_OTHER_FILES})
     if(CFLIB_ONLY_GENERATORS)
@@ -35,12 +40,15 @@ function(cf_app app)
     endif()
 
     # use compiled generators (cross compile)
-    if(ARG_CF_GENERATOR AND CFLIB_USE_GENERATORS_FROM_PATH)
-        find_program(generator_path NAMES ${app} REQUIRED)
-        add_executable(${app} IMPORTED GLOBAL)
-        set_property(TARGET ${app} PROPERTY IMPORTED_LOCATION "${generator_path}")
-        unset(generator_path CACHE)
-        return()
+    if(ARG_CF_GENERATOR)
+        if(CFLIB_USE_GENERATORS_FROM_PATH)
+            find_program(generator_path NAMES ${app} REQUIRED)
+            add_executable(${app} IMPORTED GLOBAL)
+            set_property(TARGET ${app} PROPERTY IMPORTED_LOCATION "${generator_path}")
+            unset(generator_path CACHE)
+            return()
+        endif()
+        set_property(GLOBAL APPEND PROPERTY CFLIB_GENERATOR_TARGETS ${app})
     endif()
 
     # sources, libs and general config
@@ -161,11 +169,9 @@ function(cf_configure_target target enable_exceptions pch enable_ser is_test)
         # store found headers
         if(DAO_HEADERS)
             set_target_properties(${target} PROPERTIES DAO_HEADERS "${DAO_HEADERS}")
-            set_property(TARGET ${target} APPEND PROPERTY EXPORT_PROPERTIES DAO_HEADERS)
         endif()
         if(RMI_SERVICE_HEADERS)
             set_target_properties(${target} PROPERTIES RMI_SERVICE_HEADERS "${RMI_SERVICE_HEADERS}")
-            set_property(TARGET ${target} APPEND PROPERTY EXPORT_PROPERTIES RMI_SERVICE_HEADERS)
         endif()
 
         foreach(header ${headers})

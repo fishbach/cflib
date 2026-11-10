@@ -64,3 +64,4 @@ target_compile_options(cflib_botan PRIVATE
     -Wno-unknown-warning-option
 )
 target_include_directories(cflib_botan INTERFACE $<BUILD_INTERFACE:${botan_src_SOURCE_DIR}/build/include/public>)
+set_property(GLOBAL APPEND PROPERTY CFLIB_LIB_TARGETS cflib_botan)

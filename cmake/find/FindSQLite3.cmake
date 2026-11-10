@@ -45,3 +45,4 @@ target_compile_options(cflib_sqlite PRIVATE
     -Wno-null-dereference
 )
 target_include_directories(cflib_sqlite INTERFACE $<BUILD_INTERFACE:${sqlite_src_SOURCE_DIR}>)
+set_property(GLOBAL APPEND PROPERTY CFLIB_LIB_TARGETS cflib_sqlite)

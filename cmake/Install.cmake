@@ -4,35 +4,25 @@
 #
 # Licensed under the MIT License.
 
+block()
+
 include(GNUInstallDirs)
 include(CMakePackageConfigHelpers)
 
-# export generators
-set(cflib_targets
-    cflib_apiexporter
-    cflib_bin2src
-    cflib_htmlexporter
-    cflib_jscombiner
-    cflib_ser
-)
+# fetch targets
+get_property(CFLIB_LIB_TARGETS       GLOBAL PROPERTY CFLIB_LIB_TARGETS      )
+get_property(CFLIB_GENERATOR_TARGETS GLOBAL PROPERTY CFLIB_GENERATOR_TARGETS)
+
+# export only generators
 if(CFLIB_ONLY_GENERATORS)
     install(
-        TARGETS ${cflib_targets}
+        TARGETS ${CFLIB_GENERATOR_TARGETS}
         RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
     )
     return()
 endif()
 
-# generators from PATH
-if(CFLIB_USE_GENERATORS_FROM_PATH)
-    set(CFLIB_INSTALL_GENERATORS_FROM_PATH "\n    set(CFLIB_USE_GENERATORS_FROM_PATH ON)\n")
-    foreach(gen IN LISTS cflib_targets)
-        string(APPEND CFLIB_INSTALL_GENERATORS_FROM_PATH "    cf_app(${gen} CF_GENERATOR)\n")
-    endforeach()
-    set(cflib_targets)
-endif()
-
-# cflib version config
+# add version config
 write_basic_package_version_file(
     "${CMAKE_CURRENT_BINARY_DIR}/cflib-config-version.cmake"
     VERSION       ${cflib_VERSION}
@@ -43,7 +33,7 @@ install(
     DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/cflib
 )
 
-# dependency config
+# dependencies
 set(CFLIB_INSTALL_CONFIG_DEPS
     "find_dependency(Threads REQUIRED)"
     "find_dependency(ZLIB REQUIRED)"
@@ -58,6 +48,20 @@ if(ENABLE_PSQL)
     list(APPEND CFLIB_INSTALL_CONFIG_DEPS "find_dependency(PostgreSQL REQUIRED)")
 endif()
 string(JOIN "\n" CFLIB_INSTALL_CONFIG_DEPS ${CFLIB_INSTALL_CONFIG_DEPS})
+
+# generators from PATH
+if(CFLIB_USE_GENERATORS_FROM_PATH)
+    set(CFLIB_INSTALL_GENERATORS_FROM_PATH "set(CFLIB_USE_GENERATORS_FROM_PATH ON)")
+    foreach(gen IN LISTS CFLIB_GENERATOR_TARGETS)
+        string(APPEND CFLIB_INSTALL_GENERATORS_FROM_PATH "\n    cf_app(${gen} CF_GENERATOR)")
+    endforeach()
+    set(install_targets ${CFLIB_LIB_TARGETS})
+else()
+    set(CFLIB_INSTALL_GENERATORS_FROM_PATH "set(CFLIB_USE_GENERATORS_FROM_PATH OFF)")
+    set(install_targets ${CFLIB_LIB_TARGETS} ${CFLIB_GENERATOR_TARGETS})
+endif()
+
+# add config file
 configure_package_config_file(
     "cmake/cflib-config.cmake.in"
     "${CMAKE_CURRENT_BINARY_DIR}/cflib-config.cmake"
@@ -68,7 +72,7 @@ install(
     DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/cflib
 )
 
-# export headers
+# add header files
 file(GLOB_RECURSE cflib_headers
     RELATIVE "${CMAKE_CURRENT_SOURCE_DIR}"
     "cflib/*.h"
@@ -79,49 +83,37 @@ foreach(header ${cflib_headers})
     install(FILES "${header}" DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}/${dir}")
 endforeach()
 
-# targets to be exported
-LIST(APPEND cflib_targets
-    cflib_base
-    cflib_crypt
-    cflib_dao
-    cflib_db
-    cflib_fileserver
-    cflib_net
-    cflib_serialize
-    cflib_util
-)
-if(USE_FETCHCONTENT)
-    list(APPEND cflib_targets cflib_botan)
-    if(ENABLE_SQLITE)
-        list(APPEND cflib_targets cflib_sqlite)
-    endif()
-endif()
+# make RMI paths relative
+foreach(target IN LISTS CFLIB_LIB_TARGETS)
+    get_target_property(inc_dir ${target} INCLUDE_DIRECTORIES)
+    cf_remove_genex(inc_dir)
 
-# fix paths for RMI
-foreach(target IN LISTS cflib_targets)
-    get_target_property(incl ${target} INCLUDE_DIRECTORIES)
-    cf_remove_genex(incl)
-    get_target_property(dao  ${target} DAO_HEADERS)
-    if(NOT dao STREQUAL "dao-NOTFOUND")
-        foreach(f IN LISTS dao)
-            cmake_path(RELATIVE_PATH f BASE_DIRECTORY "${incl}")
-            cmake_path(APPEND CMAKE_INSTALL_PREFIX "${CMAKE_INSTALL_INCLUDEDIR}" "${f}" OUTPUT_VARIABLE f)
-            message("XCF 1 : ${incl} | ${f}")
+    get_target_property(daos ${target} DAO_HEADERS)
+    if(NOT daos STREQUAL "daos-NOTFOUND")
+        set(daos_rel)
+        foreach(f IN LISTS daos)
+            cmake_path(RELATIVE_PATH f BASE_DIRECTORY "${inc_dir}")
+            list(APPEND daos_rel "${f}")
         endforeach()
+        set_target_properties(${target} PROPERTIES DAO_HEADERS_REL "${daos_rel}")
+        set_property(TARGET ${target} APPEND PROPERTY EXPORT_PROPERTIES DAO_HEADERS_REL)
     endif()
-    get_target_property(rmi  ${target} RMI_SERVICE_HEADERS)
-    if(NOT rmi STREQUAL "rmi-NOTFOUND")
-        foreach(f IN LISTS rmi)
-            cmake_path(RELATIVE_PATH f BASE_DIRECTORY "${incl}")
-            cmake_path(APPEND CMAKE_INSTALL_PREFIX "${CMAKE_INSTALL_INCLUDEDIR}" "${f}" OUTPUT_VARIABLE f)
-            message("XCF 2 : ${incl} | ${f}")
+
+    get_target_property(rmis ${target} RMI_SERVICE_HEADERS)
+    if(NOT rmis STREQUAL "rmis-NOTFOUND")
+        set(rmis_rel)
+        foreach(f IN LISTS rmis)
+            cmake_path(RELATIVE_PATH f BASE_DIRECTORY "${inc_dir}")
+            list(APPEND rmis_rel "${f}")
         endforeach()
+        set_target_properties(${target} PROPERTIES RMI_SERVICE_HEADERS_REL "${rmis_rel}")
+        set_property(TARGET ${target} APPEND PROPERTY EXPORT_PROPERTIES RMI_SERVICE_HEADERS_REL)
     endif()
 endforeach()
 
 # export cflib targets
 install(
-    TARGETS  ${cflib_targets}
+    TARGETS  ${install_targets}
     EXPORT   cflib-targets
     ARCHIVE  DESTINATION ${CMAKE_INSTALL_LIBDIR}
     INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
@@ -155,3 +147,5 @@ install(
     DIRECTORY js
     DESTINATION ${CMAKE_INSTALL_DATADIR}/cflib
 )
+
+endblock()
