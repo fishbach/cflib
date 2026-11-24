@@ -83,34 +83,6 @@ foreach(header ${cflib_headers})
     install(FILES "${header}" DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}/${dir}")
 endforeach()
 
-# make RMI paths relative
-foreach(target IN LISTS CFLIB_LIB_TARGETS)
-    get_target_property(inc_dir ${target} INCLUDE_DIRECTORIES)
-    cf_remove_genex(inc_dir)
-
-    get_target_property(daos ${target} DAO_HEADERS)
-    if(NOT daos STREQUAL "daos-NOTFOUND")
-        set(daos_rel)
-        foreach(f IN LISTS daos)
-            cmake_path(RELATIVE_PATH f BASE_DIRECTORY "${inc_dir}")
-            list(APPEND daos_rel "${f}")
-        endforeach()
-        set_target_properties(${target} PROPERTIES DAO_HEADERS_REL "${daos_rel}")
-        set_property(TARGET ${target} APPEND PROPERTY EXPORT_PROPERTIES DAO_HEADERS_REL)
-    endif()
-
-    get_target_property(rmis ${target} RMI_SERVICE_HEADERS)
-    if(NOT rmis STREQUAL "rmis-NOTFOUND")
-        set(rmis_rel)
-        foreach(f IN LISTS rmis)
-            cmake_path(RELATIVE_PATH f BASE_DIRECTORY "${inc_dir}")
-            list(APPEND rmis_rel "${f}")
-        endforeach()
-        set_target_properties(${target} PROPERTIES RMI_SERVICE_HEADERS_REL "${rmis_rel}")
-        set_property(TARGET ${target} APPEND PROPERTY EXPORT_PROPERTIES RMI_SERVICE_HEADERS_REL)
-    endif()
-endforeach()
-
 # export cflib targets
 install(
     TARGETS  ${install_targets}

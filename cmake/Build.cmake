@@ -151,30 +151,10 @@ function(cf_configure_target target enable_exceptions pch enable_ser is_test)
                 continue()
             endif()
 
-            # check for service or dao
-            cmake_path(APPEND CMAKE_CURRENT_SOURCE_DIR "${header}" OUTPUT_VARIABLE header_full_path)
-            file(STRINGS "${header}" lines REGEX "RMIService")
-            if(lines)
-                list(APPEND RMI_SERVICE_HEADERS "${header_full_path}")
-            else()
-                list(APPEND DAO_HEADERS "${header_full_path}")
-            endif()
-        endforeach()
+            # change path relative to include dir
+            cmake_path(APPEND CMAKE_CURRENT_SOURCE_DIR "${header}" OUTPUT_VARIABLE header_with_path)
+            cmake_path(RELATIVE_PATH header_with_path BASE_DIRECTORY "${PROJECT_SOURCE_DIR}")
 
-        # Something to do?
-        if(NOT headers)
-            return()
-        endif()
-
-        # store found headers
-        if(DAO_HEADERS)
-            set_target_properties(${target} PROPERTIES DAO_HEADERS "${DAO_HEADERS}")
-        endif()
-        if(RMI_SERVICE_HEADERS)
-            set_target_properties(${target} PROPERTIES RMI_SERVICE_HEADERS "${RMI_SERVICE_HEADERS}")
-        endif()
-
-        foreach(header ${headers})
             # get output filename (dir/header.h -> target_autogen/dir/header_ser.cpp)
             set(rel_dir "${target}_autogen")
             get_filename_component(dir "${header}" DIRECTORY)
@@ -184,16 +164,33 @@ function(cf_configure_target target enable_exceptions pch enable_ser is_test)
             get_filename_component(source "${header}" NAME_WLE)
             set(source "${rel_dir}/${source}_ser.cpp")
 
-            # add generation step
+            # add generation step for DAO and service implementation
             add_custom_command(
                 OUTPUT "${source}"
+                WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}"
                 COMMAND ${CMAKE_COMMAND} -E make_directory "${rel_dir}"
-                COMMAND cflib_ser serialize "${CMAKE_CURRENT_SOURCE_DIR}/${header}" "${source}"
+                COMMAND cflib_ser serialize "${header_with_path}" "${CMAKE_CURRENT_BINARY_DIR}/${source}"
                 DEPENDS cflib_ser "${header}"
                 VERBATIM
             )
             target_sources(${target} PRIVATE "${source}")
+
+            # collect headers for remote API
+            file(STRINGS "${header}" lines REGEX "RMIService")
+            if(lines)
+                list(APPEND RMI_SERVICE_HEADERS "${header_with_path}")
+            else()
+                list(APPEND DAO_HEADERS "${header_with_path}")
+            endif()
         endforeach()
+
+        # save remote API headers to the target
+        if(DAO_HEADERS)
+            set_target_properties(${target} PROPERTIES DAO_HEADERS "${DAO_HEADERS}")
+        endif()
+        if(RMI_SERVICE_HEADERS)
+            set_target_properties(${target} PROPERTIES RMI_SERVICE_HEADERS "${RMI_SERVICE_HEADERS}")
+        endif()
     endif()
 
     # resources
@@ -245,16 +242,6 @@ function(cf_handle_args_dao_remote_apis link_target api_name)
         return()
     endif()
 
-    # collect all RMI_HEADERS
-    set(RMI_HEADERS)
-    cf_get_dependent_targets(${link_target} DEP_TARGETS)
-    foreach(dep_target IN LISTS DEP_TARGETS)
-        get_target_property(dep_headers ${dep_target} DAO_HEADERS)
-        if(NOT dep_headers STREQUAL "dep_headers-NOTFOUND")
-            list(APPEND RMI_HEADERS ${dep_headers})
-        endif()
-    endforeach()
-
     # parse DEST from parameters
     set(REMOTE_DIR)
     set(REMOTE_APIS)
@@ -262,6 +249,7 @@ function(cf_handle_args_dao_remote_apis link_target api_name)
     set(found_DEST FALSE)
     set(found_FOR FALSE)
     foreach(part IN LISTS ARG_REMOTE_APIS)
+        # DEST <destination>
         if(part STREQUAL "DEST")
             set(found_FOR FALSE)
             set(found_DEST TRUE)
@@ -271,20 +259,28 @@ function(cf_handle_args_dao_remote_apis link_target api_name)
                 set(RMI_SERVICE_TARGETS)
             endif()
             continue()
-        elseif(part STREQUAL "FOR")
+        endif()
+
+        # FOR <target 1> <target 2> ...
+        # If not given, current target is used.
+        if(part STREQUAL "FOR")
             set(found_FOR TRUE)
             continue()
-        elseif(part STREQUAL "TYPES")
+        endif()
+
+        # TYPES <type 1> <type 2> ...
+        # If FOR is used, you must use TYPES to separate from FOR.
+        # (see: apiexporter -h)
+        if(part STREQUAL "TYPES")
             set(found_FOR FALSE)
             continue()
         endif()
 
+        # values
         if(found_DEST)
             set(found_DEST FALSE)
             set(REMOTE_DIR "${part}")
-            continue()
-        endif()
-        if(found_FOR)
+        elseif(found_FOR)
             list(APPEND RMI_SERVICE_TARGETS ${part})
         else()
             list(APPEND REMOTE_APIS ${part})
@@ -300,14 +296,42 @@ function(cf_generate_api)
         message(FATAL_ERROR "No destination for REMOTE_APIS specified.")
     endif()
 
+    # If no FOR ... is given, use current target.
     if(NOT RMI_SERVICE_TARGETS)
         set(RMI_SERVICE_TARGETS ${link_target})
     endif()
 
-    foreach(target ${RMI_SERVICE_TARGETS})
+    # collect all api headers with absolute path
+    set(API_HEADERS)
+    foreach(target IN LISTS RMI_SERVICE_TARGETS)
+        # add RMI_SERVICE_HEADERS to API_HEADERS
         get_target_property(RMI_SERVICE_HEADERS ${target} RMI_SERVICE_HEADERS)
-        list(APPEND RMI_HEADERS ${RMI_SERVICE_HEADERS})
+        if(RMI_SERVICE_HEADERS STREQUAL "RMI_SERVICE_HEADERS-NOTFOUND")
+            message(FATAL_ERROR "No API headers for target ${target} found.")
+        endif()
+        cf_get_include_dir(${target} inc_dir)
+        foreach(header IN LISTS RMI_SERVICE_HEADERS)
+            cmake_path(APPEND inc_dir "${header}" OUTPUT_VARIABLE header)
+            file(REAL_PATH "${header}" header)
+            list(APPEND API_HEADERS "${header}")
+        endforeach()
+
+        # add dependant DAO_HEADERS to API_HEADERS
+        cf_get_dependent_targets(${target} DEP_TARGETS)
+        foreach(dep_target IN LISTS DEP_TARGETS)
+            get_target_property(DAO_HEADERS ${dep_target} DAO_HEADERS)
+            if(NOT DAO_HEADERS STREQUAL "DAO_HEADERS-NOTFOUND")
+                cf_get_include_dir(${dep_target} inc_dir)
+                foreach(header IN LISTS DAO_HEADERS)
+                    cmake_path(APPEND inc_dir "${header}" OUTPUT_VARIABLE header)
+                    file(REAL_PATH "${header}" header)
+                    list(APPEND API_HEADERS "${header}")
+                endforeach()
+            endif()
+        endforeach()
     endforeach()
+    list(SORT              API_HEADERS)
+    list(REMOVE_DUPLICATES API_HEADERS)
 
     # set REMOTE_ABS_DIR
     cmake_path(APPEND CMAKE_CURRENT_SOURCE_DIR "${REMOTE_DIR}" OUTPUT_VARIABLE REMOTE_ABS_DIR)
@@ -318,7 +342,7 @@ function(cf_generate_api)
     list(APPEND output "${version_full_path}")
 
     if(cpp IN_LIST REMOTE_APIS)
-        # add ::services lib
+        # new lib <target>_services with alias <target>::services
         if(CFLIB_ONLY_GENERATORS)
             add_library(${api_name}_services EXCLUDE_FROM_ALL)
         else()
@@ -334,16 +358,10 @@ function(cf_generate_api)
         # add cpp output files
         foreach(target ${RMI_SERVICE_TARGETS})
             get_target_property(RMI_SERVICE_HEADERS ${target} RMI_SERVICE_HEADERS)
-            get_target_property(TARGET_SOURCE_DIR   ${target} INTERFACE_INCLUDE_DIRECTORIES)
-            if(TARGET_SOURCE_DIR STREQUAL "TARGET_SOURCE_DIR-NOTFOUND")
-                get_target_property(TARGET_SOURCE_DIR ${target} SOURCE_DIR)
-            endif()
-            cf_remove_genex(TARGET_SOURCE_DIR)
             foreach(header ${RMI_SERVICE_HEADERS})
                 # remove .h
                 get_filename_component(dir  "${header}" DIRECTORY)
                 get_filename_component(file "${header}" NAME_WLE )
-                file(RELATIVE_PATH dir "${TARGET_SOURCE_DIR}" "${dir}")
                 set(file "${dir}/${file}")
 
                 list(APPEND output
@@ -357,6 +375,7 @@ function(cf_generate_api)
             endforeach()
         endforeach()
     else()
+        # dummy target e.g. for javascript generation
         string(MAKE_C_IDENTIFIER "${api_name}_${REMOTE_DIR}_api" target)
         if(CFLIB_ONLY_GENERATORS)
             add_custom_target(${target} EXCLUDE_FROM_ALL DEPENDS ${output})
@@ -380,8 +399,8 @@ function(cf_generate_api)
     # command
     add_custom_command(
         OUTPUT ${output}
-        COMMAND cflib_apiexporter --dest "${REMOTE_ABS_DIR}" ${GIT_HASH} --name ${api_name} ${output_types} ${RMI_HEADERS}
-        DEPENDS cflib_apiexporter ${RMI_HEADERS}
+        COMMAND cflib_apiexporter --dest "${REMOTE_ABS_DIR}" ${GIT_HASH} --name ${api_name} ${output_types} ${API_HEADERS}
+        DEPENDS cflib_apiexporter ${API_HEADERS}
         VERBATIM
     )
 endfunction()

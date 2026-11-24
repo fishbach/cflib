@@ -81,6 +81,26 @@ function(cf_get_dependent_targets target var)
     set(${var} ${rv} PARENT_SCOPE)
 endfunction()
 
+function(cf_get_include_dir target var)
+    # INTERFACE_INCLUDE_DIRECTORIES
+    get_target_property(dir ${target} INTERFACE_INCLUDE_DIRECTORIES)
+    if(NOT dir STREQUAL "dir-NOTFOUND")
+        cf_remove_genex(dir)
+        set(${var} "${dir}" PARENT_SCOPE)
+        return()
+    endif()
+
+    # INCLUDE_DIRECTORIES
+    get_target_property(dir ${target} INCLUDE_DIRECTORIES)
+    if(NOT dir STREQUAL "dir-NOTFOUND")
+        cf_remove_genex(dir)
+        set(${var} "${dir}" PARENT_SCOPE)
+        return()
+    endif()
+
+    set(${var} "${PROJECT_SOURCE_DIR}" PARENT_SCOPE)
+endfunction()
+
 function(cf_remove_genex var)
     if(${var} MATCHES "\\\$<[^:]+:")
         string(REGEX REPLACE "\\\$<[^:]+:([^>]+)>" "\\1" ${var} "${${var}}")

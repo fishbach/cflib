@@ -4,6 +4,12 @@
 #
 # Licensed under the MIT License.
 
+project(
+    chatserver
+    VERSION 0.1.0
+    LANGUAGES C CXX
+)
+
 cf_app(chatserver
         cflib_net
     DIRS
