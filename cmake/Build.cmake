@@ -156,7 +156,7 @@ function(cf_configure_target target enable_exceptions pch enable_ser is_test)
             cmake_path(RELATIVE_PATH header_with_path BASE_DIRECTORY "${PROJECT_SOURCE_DIR}")
 
             # get output filename (dir/header.h -> target_autogen/dir/header_ser.cpp)
-            set(rel_dir "${target}_autogen")
+            set(rel_dir "${CMAKE_CURRENT_BINARY_DIR}/${target}_autogen")
             get_filename_component(dir "${header}" DIRECTORY)
             if(dir)
                 set(rel_dir "${rel_dir}/${dir}")
@@ -169,7 +169,7 @@ function(cf_configure_target target enable_exceptions pch enable_ser is_test)
                 OUTPUT "${source}"
                 WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}"
                 COMMAND ${CMAKE_COMMAND} -E make_directory "${rel_dir}"
-                COMMAND cflib_ser serialize "${header_with_path}" "${CMAKE_CURRENT_BINARY_DIR}/${source}"
+                COMMAND cflib_ser serialize "${header_with_path}" "${source}"
                 DEPENDS cflib_ser "${header}"
                 VERBATIM
             )
