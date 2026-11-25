@@ -187,9 +187,11 @@ function(cf_configure_target target enable_exceptions pch enable_ser is_test)
         # save remote API headers to the target
         if(DAO_HEADERS)
             set_target_properties(${target} PROPERTIES DAO_HEADERS "${DAO_HEADERS}")
+            set_property(TARGET ${target} APPEND PROPERTY EXPORT_PROPERTIES DAO_HEADERS)
         endif()
         if(RMI_SERVICE_HEADERS)
             set_target_properties(${target} PROPERTIES RMI_SERVICE_HEADERS "${RMI_SERVICE_HEADERS}")
+            set_property(TARGET ${target} APPEND PROPERTY EXPORT_PROPERTIES RMI_SERVICE_HEADERS)
         endif()
     endif()
 
