@@ -28,16 +28,17 @@ const Set<ByteArray> allowedTypes = { "apidoc", "cpp", "javascript", "python" };
 
 int showUsage(const ByteArray & executable)
 {
-    err << "Usage: " << executable.toStdString() << " -d <dir> -t <type> [-t ...] <headers>"  << std::endl
-        << "Options:"                                                       << std::endl
-        << "  -h, --help        => this help"                               << std::endl
-        << "  -l, --log <level> => set log level 1 -> all, 7 -> off"        << std::endl
-        << "  -d, --dest <dir>  => destination dir"                         << std::endl
-        << "  -g, --git  <hash> => git hash"                                << std::endl
-        << "  -t, --type <type> => type of API to be exported (repeatable)" << std::endl
-        << "  -n, --name <name> => name of the service"                     << std::endl
-        << "API Types:"                                                     << std::endl
-        << "  " << allowedTypes.toList().sorted().join(' ').toStdString()   << std::endl;
+    err << "Usage: " << executable.toStdString() << " -d <dir> -n <name> -t <type> [-t ...] <headers>"  << std::endl
+        << "Options:"                                                        << std::endl
+        << "  -h, --help         => this help"                               << std::endl
+        << "  -d, --dest <dir>   => destination dir"                         << std::endl
+        << "  -n, --name <name>  => name of the service"                     << std::endl
+        << "  -t, --type <type>  => type of API to be exported (repeatable)" << std::endl
+        << "  -r, --rdir <dir>   => ressource dir"                           << std::endl
+        << "  -g, --git  <hash>  => git hash"                                << std::endl
+        << "  -l, --log  <level> => set log level 1 -> all, 7 -> off"        << std::endl
+        << "API Types:"                                                      << std::endl
+        << "  " << allowedTypes.toList().sorted().join(' ').toStdString()    << std::endl;
     return 1;
 }
 
@@ -47,11 +48,12 @@ int main(int argc, char *argv[])
 {
     CmdLine cmdLine(argc, argv);
     Option help    ('h', "help"                   ); cmdLine << help;
-    Option logOpt  ('l', "log",  true             ); cmdLine << logOpt;
     Option destOpt ('d', "dest", true, false      ); cmdLine << destOpt;
-    Option gitOpt  ('g', "git",  true             ); cmdLine << gitOpt;
-    Option typesOpt('t', "type", true, false, true); cmdLine << typesOpt;
     Option nameOpt ('n', "name", true, false      ); cmdLine << nameOpt;
+    Option typesOpt('t', "type", true, false, true); cmdLine << typesOpt;
+    Option rDirOpt ('r', "rdir", true             ); cmdLine << rDirOpt;
+    Option gitOpt  ('g', "git",  true             ); cmdLine << gitOpt;
+    Option logOpt  ('l', "log",  true             ); cmdLine << logOpt;
     Arg    headers (false, true                   ); cmdLine << headers;
     if (!cmdLine.parse() || help.isSet()) return showUsage(cmdLine.executable());
 
@@ -108,7 +110,7 @@ int main(int argc, char *argv[])
     for (const ByteArray & type : typesOpt.values()) {
         if      (type == "apidoc"    ) generateAPIDoc           (infos, destOpt.value() + "/apidoc", name);
         else if (type == "cpp"       ) generateCppRemoteServices(infos, destOpt.value() + "/cpp");
-        else if (type == "javascript") generateJavaScript       (infos, destOpt.value());
+        else if (type == "javascript") generateJavaScript       (infos, destOpt.value(), rDirOpt.value());
         else                           generatePython           (infos, destOpt.value());
     }
 

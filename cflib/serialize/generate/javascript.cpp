@@ -10,7 +10,6 @@
 #include <cflib/util/log.h>
 #include <cflib/util/util.h>
 
-#include <dirent.h>
 #include <filesystem>
 
 using namespace std::filesystem;
@@ -502,7 +501,7 @@ String generatePermissions(const String & nsPath, const List<Permission> & permi
 
 }
 
-void generateJavaScript(const StructuredTypeInfos & typeInfos, const String & dest)
+void generateJavaScript(const StructuredTypeInfos & typeInfos, const String & dest, const String & ressourceDir)
 {
     const String destJs = dest + "/js/";
 
@@ -559,6 +558,15 @@ void generateJavaScript(const StructuredTypeInfos & typeInfos, const String & de
         }
     };
     removeEmptyDirs(destJs.str());
+
+    // copy cflib JS files
+    if (!ressourceDir.isEmpty()) {
+        std::filesystem::copy(
+            ressourceDir.toStdString() + "/js",
+            destJs.toStdString() + "/cflib",
+            copy_options::recursive
+        );
+    }
 }
 
 } // namespace

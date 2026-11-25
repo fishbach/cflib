@@ -11,6 +11,6 @@
 
 namespace cflib::serialize::generate {
 
-void generateJavaScript(const StructuredTypeInfos & typeInfos, const String & dest);
+void generateJavaScript(const StructuredTypeInfos & typeInfos, const String & dest, const String & ressourceDir);
 
 } // namespace

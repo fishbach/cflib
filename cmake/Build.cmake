@@ -401,7 +401,7 @@ function(cf_generate_api)
     # command
     add_custom_command(
         OUTPUT ${output}
-        COMMAND cflib_apiexporter --dest "${REMOTE_ABS_DIR}" ${GIT_HASH} --name ${api_name} ${output_types} ${API_HEADERS}
+        COMMAND cflib_apiexporter --dest "${REMOTE_ABS_DIR}" --rdir "${CFLIB_DATA_DIR}" ${GIT_HASH} --name ${api_name} ${output_types} ${API_HEADERS}
         DEPENDS cflib_apiexporter ${API_HEADERS}
         VERBATIM
     )

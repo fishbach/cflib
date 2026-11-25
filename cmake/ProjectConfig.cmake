@@ -96,6 +96,11 @@ if(CFLIB_BUILD_TESTS)
     enable_testing()
 endif()
 
+# CFLIB_DATA_DIR
+if(NOT CFLIB_DATA_DIR)
+    file(REAL_PATH "${CMAKE_CURRENT_LIST_DIR}/.." CFLIB_DATA_DIR)
+endif()
+
 # cmake modules
 include(${CMAKE_CURRENT_LIST_DIR}/Build.cmake)
 include(${CMAKE_CURRENT_LIST_DIR}/Util.cmake)
