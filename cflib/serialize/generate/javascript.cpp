@@ -563,7 +563,8 @@ void generateJavaScript(const StructuredTypeInfos & typeInfos, const String & de
     if (!ressourceDir.isEmpty()) {
         std::filesystem::copy(
             ressourceDir.toStdString() + "/js",
-            destJs.toStdString() + "/cflib",
+            destJs.toStdString() + "cflib",
+            copy_options::overwrite_existing |
             copy_options::recursive
         );
     }
