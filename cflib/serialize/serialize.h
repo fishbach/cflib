@@ -61,4 +61,4 @@
 
 #define SERIALIZE_SKIP(member)
 
-#define CFPerm extern cflib::serialize::Permission
+#define CFPerm extern const cflib::serialize::Permission

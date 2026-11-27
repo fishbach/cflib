@@ -461,7 +461,7 @@ String generate(const SerializeTypeInfo & ti)
     return js;
 }
 
-String generatePermissions(const String & nsPath, const List<Permission> & permissions)
+String generatePermissions(const String & nsPath, const List<PermissionData> & permissions)
 {
     String js = header();
     js <<
@@ -484,7 +484,7 @@ String generatePermissions(const String & nsPath, const List<Permission> & permi
             "\n";
     }
 
-    for (const Permission & perm : permissions) {
+    for (const PermissionData & perm : permissions) {
         if (perm.getNSPath() != nsPath) continue;
         logDebug("permission: %1 - %2", perm.name, perm.description);
         js << (nsPath.isEmpty() ? "export const " : "") << perm.name << " = new __permission(\""
@@ -529,7 +529,7 @@ void generateJavaScript(const StructuredTypeInfos & typeInfos, const String & de
     // write permissions
     if (!typeInfos.permissions.isEmpty()) {
         Set<String> paths;
-        for (const Permission & perm : typeInfos.permissions) {
+        for (const PermissionData & perm : typeInfos.permissions) {
             paths << perm.getNSPath();
         }
         for (const String & nsPath : paths) {

@@ -26,7 +26,7 @@ public:
     SerializeTypeInfos types()        const;
     SerializeTypeInfos services()     const { return services_.values(); }
 
-    List<Permission> permissions;
+    List<PermissionData> permissions;
 
 private:
     void checkNeeds(Map<String, SerializeTypeInfo> & needed, const SerializeTypeInfo & ti) const;

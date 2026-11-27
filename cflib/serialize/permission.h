@@ -11,13 +11,28 @@
 
 namespace cflib::serialize {
 
-class Permission
+class PermissionData
+{
+public:
+    String getNS() const;
+    String getNSPath() const;
+
+public:
+    String name;
+    String description;
+};
+
+class Permission : public PermissionData
 {
 public:
     Permission(const String & name, const String & description = {});
 
-    String getNS() const;
-    String getNSPath() const;
+    // registry stores pointer of this
+    ~Permission() = default;
+    Permission(const Permission & other) = delete;
+    Permission(Permission && other) = delete;
+    Permission & operator=(const Permission & other) = delete;
+    Permission & operator=(Permission && other) = delete;
 
     static StringList all();
     static Permission * lookup(const String & name);
@@ -25,8 +40,6 @@ public:
     static Map<String, uint64> getPermissionIds();
 
 public:
-    String name;
-    String description;
     uint32 id = 0;
 
 private:

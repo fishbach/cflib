@@ -20,7 +20,7 @@ public:
 
     bool hasSerializeElements() const { return !(classes_.isEmpty() && permissions_.isEmpty()); }
     SerializeTypeInfos classes() const { return classes_; }
-    const List<Permission> & permissions() const { return permissions_; }
+    const List<PermissionData> & permissions() const { return permissions_; }
 
 private:
     bool getVariables   (const String & in, int start, int end, SerializeTypeInfo & cl);
@@ -37,7 +37,7 @@ private:
 private:
     String lastError_;
     SerializeTypeInfos classes_;
-    List<Permission> permissions_;
+    List<PermissionData> permissions_;
 };
 
 } // namespace
