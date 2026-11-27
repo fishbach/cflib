@@ -21,7 +21,7 @@ ByteArray random(uint size)
         rng.randomize((byte *)retval.constData(), size);
         return retval;
     } CATCH
-    return ByteArray();
+    return {};
 }
 
 uint32 randomUInt32()
@@ -51,7 +51,7 @@ ByteArray memorableRandom(const int length)
     const char * vowels     = "aeiou";
     const char * consonants = "bcdfghjklmnpqrstvwxyz";
     const ByteArray rnd = random(length+2);
-    if ((int)rnd.size() != length+2) return ByteArray();
+    if ((int)rnd.size() != length+2) return {};
     ByteArray rv(length+2, '\0');
     for (int i = 0 ; i < length ; ++i) rv[i] = (i % 2 == 0) ? consonants[(uint8)rnd[i] * 21 / 256] : vowels[(uint8)rnd[i] * 5 / 256];
     for (int i = length ; i < length+2 ; ++i) rv[i] = '0' + ((uint8)rnd[i] * 10 / 256);
@@ -87,7 +87,7 @@ ByteArray hashPassword(const String & password, uint16 workFactor)
         std::string hash = generate_bcrypt(password.str(), rng, workFactor);
         return ByteArray(hash.c_str(), (size_t)hash.length());
     } CATCH
-    return ByteArray();
+    return {};
 }
 
 bool checkPassword(const String & password, const ByteArray & hash)
@@ -101,23 +101,23 @@ bool checkPassword(const String & password, const ByteArray & hash)
 ByteArray sha1(const ByteArray & data)
 {
     TRY {
-        Pipe pipe(new Hash_Filter("SHA-1"));
-        pipe.process_msg((const byte *)data.constCharPtr(), data.size());
-        std::string hash = pipe.read_all_as_string();
-        return ByteArray(hash.c_str(), (size_t)hash.length());
+        auto hash = HashFunction::create("SHA-1");
+        if (!hash) throw std::runtime_error("SHA-1 not available");
+        const auto digest = hash->process(data.constData(), data.size());
+        return ByteArray(digest.data(), digest.size());
     } CATCH
-    return ByteArray();
+    return {};
 }
 
 ByteArray sha256(const ByteArray & data)
 {
     TRY {
-        Pipe pipe(new Hash_Filter("SHA-256"));
-        pipe.process_msg((const byte *)data.constCharPtr(), data.size());
-        std::string hash = pipe.read_all_as_string();
-        return ByteArray(hash.c_str(), (size_t)hash.length());
+        auto hash = HashFunction::create("SHA-256");
+        if (!hash) throw std::runtime_error("SHA-1 not available");
+        const auto digest = hash->process(data.constData(), data.size());
+        return ByteArray(digest.data(), digest.size());
     } CATCH
-    return ByteArray();
+    return {};
 }
 
 ByteArray rsaCreateKey(uint bits)
@@ -128,7 +128,7 @@ ByteArray rsaCreateKey(uint bits)
         const std::string pem = PKCS8::PEM_encode(key);
         return ByteArray(pem.c_str(), (size_t)pem.length());
     } CATCH
-    return ByteArray();
+    return {};
 }
 
 bool rsaCheckKey(const ByteArray & privateKey)
@@ -172,7 +172,7 @@ ByteArray rsaSign(const ByteArray & privateKey, const ByteArray & msg)
             return ByteArray((const char *)bytes.data(), (size_t)bytes.size());
         }
     } CATCH
-    return ByteArray();
+    return {};
 }
 
 ByteArray x509CreateCertReq(const ByteArray & privateKey, const List<ByteArray> subjectAltNames)
@@ -180,7 +180,7 @@ ByteArray x509CreateCertReq(const ByteArray & privateKey, const List<ByteArray> 
     TRY {
         DataSource_Memory ds((const byte *)privateKey.constCharPtr(), privateKey.size());
         std::unique_ptr<Private_Key> pk(PKCS8::load_key(ds));
-        if (!pk) return ByteArray();
+        if (!pk) return {};
 
         const size_t PKCS10_VERSION = 0;
 
@@ -215,7 +215,7 @@ ByteArray x509CreateCertReq(const ByteArray & privateKey, const List<ByteArray> 
         std::vector<byte> bytes = csr.BER_encode();
         return ByteArray((const char *)bytes.data(), (size_t)bytes.size());
     } CATCH
-    return ByteArray();
+    return {};
 }
 
 ByteArray der2pem(const ByteArray & der, const ByteArray & label)
@@ -225,7 +225,7 @@ ByteArray der2pem(const ByteArray & der, const ByteArray & label)
             (const byte *)der.constCharPtr(), der.size(), std::string(label.constCharPtr(), label.size()));
         return ByteArray(pem.c_str(), (size_t)pem.size());
     } CATCH
-    return ByteArray();
+    return {};
 }
 
 } // namespace

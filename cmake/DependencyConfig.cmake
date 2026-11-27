@@ -24,7 +24,7 @@ if(USE_FETCHCONTENT)
 endif()
 
 # Botan
-find_package(Botan 3.13.0 REQUIRED)
+find_package(Botan 3.14.1 REQUIRED)
 if(NOT USE_FETCHCONTENT)
     add_library(cflib_botan ALIAS botan::botan)
 endif()
